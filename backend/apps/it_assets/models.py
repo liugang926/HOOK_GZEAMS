@@ -249,3 +249,188 @@ class ITAssetInfo(BaseModel):
             parts.append(f"IP: {self.ip_address}")
 
         return " | ".join(parts) if parts else "No configuration available"
+
+
+class Software(BaseModel):
+    """
+    Software catalog model.
+
+    Represents software products available in the organization.
+    """
+
+    class Meta:
+        db_table = 'software'
+        verbose_name = 'Software'
+        verbose_name_plural = 'Software'
+        ordering = ['name', 'version']
+        indexes = [
+            models.Index(fields=['organization', 'name']),
+            models.Index(fields=['organization', 'vendor']),
+            models.Index(fields=['organization', 'category']),
+        ]
+
+    name = models.CharField(
+        max_length=200,
+        help_text='Software name'
+    )
+    vendor = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text='Software vendor/manufacturer'
+    )
+    version = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Software version'
+    )
+    category = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text='Software category (e.g., Productivity, Security, Development)'
+    )
+
+    LICENSE_TYPE_CHOICES = [
+        ('open_source', 'Open Source'),
+        ('freeware', 'Freeware'),
+        ('commercial', 'Commercial'),
+        ('enterprise', 'Enterprise'),
+        ('subscription', 'Subscription'),
+        ('oem', 'OEM'),
+    ]
+    license_type = models.CharField(
+        max_length=50,
+        choices=LICENSE_TYPE_CHOICES,
+        default='commercial',
+        help_text='Type of software license'
+    )
+
+    description = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Software description'
+    )
+    website_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text='Official website URL'
+    )
+
+    def __str__(self):
+        version_str = f" {self.version}" if self.version else ""
+        return f"{self.name}{version_str}"
+
+
+class SoftwareLicense(BaseModel):
+    """
+    Software License model.
+
+    Tracks purchased licenses and their usage.
+    """
+
+    class Meta:
+        db_table = 'software_license'
+        verbose_name = 'Software License'
+        verbose_name_plural = 'Software Licenses'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['organization', 'software']),
+            models.Index(fields=['organization', 'license_key']),
+        ]
+
+    software = models.ForeignKey(
+        Software,
+        on_delete=models.CASCADE,
+        related_name='licenses',
+        help_text='Related software'
+    )
+
+    license_key = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text='License key or serial number'
+    )
+
+    seats = models.PositiveIntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        help_text='Total number of licensed seats'
+    )
+
+    seats_used = models.PositiveIntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text='Number of seats currently in use'
+    )
+
+    purchase_date = models.DateField(
+        blank=True,
+        null=True,
+        help_text='License purchase date'
+    )
+
+    expiry_date = models.DateField(
+        blank=True,
+        null=True,
+        help_text='License expiration date (null for perpetual)'
+    )
+
+    cost = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(0)],
+        help_text='License purchase cost'
+    )
+
+    currency = models.CharField(
+        max_length=10,
+        default='USD',
+        help_text='Currency for cost field'
+    )
+
+    LICENSE_STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('expired', 'Expired'),
+        ('suspended', 'Suspended'),
+        ('terminated', 'Terminated'),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=LICENSE_STATUS_CHOICES,
+        default='active',
+        help_text='License status'
+    )
+
+    vendor_reference = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text='Vendor reference or purchase order number'
+    )
+
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Additional notes'
+    )
+
+    def __str__(self):
+        return f"{self.software.name} - {self.license_key or 'No Key'} ({self.seats_used}/{self.seats} seats)"
+
+    def available_seats(self):
+        """Calculate number of available seats."""
+        available = self.seats - self.seats_used
+        return max(0, available)
+
+    def is_expired(self):
+        """Check if the license is expired."""
+        if self.expiry_date is None:
+            return False  # Perpetual license
+        from django.utils import timezone
+        return self.expiry_date < timezone.now().date()

@@ -1,7 +1,7 @@
 import pytest
 import uuid
 from django.test import TestCase
-from apps.it_assets.models import ITAssetInfo
+from apps.it_assets.models import ITAssetInfo, Software, SoftwareLicense
 from apps.assets.models import Asset, AssetCategory, Location
 from apps.organizations.models import Organization
 from apps.accounts.models import User
@@ -79,3 +79,129 @@ class ITAssetInfoModelTest(TestCase):
         assert 'Intel Core i7' in config
         assert '32GB' in config
         assert '1024GB' in config
+
+
+class SoftwareModelTest(TestCase):
+    def setUp(self):
+        self.unique_suffix = uuid.uuid4().hex[:8]
+        self.org = Organization.objects.create(
+            name=f'Test Org {self.unique_suffix}',
+            code=f'TESTORG_{self.unique_suffix}'
+        )
+        self.user = User.objects.create_user(
+            username=f'testuser_{self.unique_suffix}',
+            organization=self.org
+        )
+
+    def test_create_software(self):
+        """Test creating software entry"""
+        software = Software.objects.create(
+            organization=self.org,
+            name='Microsoft Office 2021',
+            vendor='Microsoft',
+            version='2021',
+            category='Productivity',
+            license_type='commercial',
+            created_by=self.user
+        )
+
+        assert software.name == 'Microsoft Office 2021'
+        assert software.vendor == 'Microsoft'
+        assert software.version == '2021'
+        assert software.category == 'Productivity'
+        assert software.license_type == 'commercial'
+
+    def test_software_str(self):
+        """Test software string representation"""
+        software = Software.objects.create(
+            organization=self.org,
+            name='Adobe Photoshop',
+            vendor='Adobe',
+            version='CC 2024',
+            created_by=self.user
+        )
+
+        assert str(software) == 'Adobe Photoshop CC 2024'
+
+
+class SoftwareLicenseModelTest(TestCase):
+    def setUp(self):
+        self.unique_suffix = uuid.uuid4().hex[:8]
+        self.org = Organization.objects.create(
+            name=f'Test Org {self.unique_suffix}',
+            code=f'TESTORG_{self.unique_suffix}'
+        )
+        self.user = User.objects.create_user(
+            username=f'testuser_{self.unique_suffix}',
+            organization=self.org
+        )
+        self.software = Software.objects.create(
+            organization=self.org,
+            name='Microsoft Office 2021',
+            vendor='Microsoft',
+            version='2021',
+            created_by=self.user
+        )
+
+    def test_create_software_license(self):
+        """Test creating software license"""
+        from datetime import date
+
+        license = SoftwareLicense.objects.create(
+            organization=self.org,
+            software=self.software,
+            license_key='XXXXX-XXXXX-XXXXX-XXXXX-XXXXX',
+            seats=10,
+            seats_used=3,
+            purchase_date=date.today(),
+            expiry_date=date(2027, 12, 31),
+            cost=5000,
+            created_by=self.user
+        )
+
+        assert license.software == self.software
+        assert license.license_key == 'XXXXX-XXXXX-XXXXX-XXXXX-XXXXX'
+        assert license.seats == 10
+        assert license.seats_used == 3
+        assert license.expiry_date.year == 2027
+
+    def test_license_available_seats(self):
+        """Test available seats calculation"""
+        from datetime import date
+
+        license = SoftwareLicense.objects.create(
+            organization=self.org,
+            software=self.software,
+            license_key='KEY-1234',
+            seats=10,
+            seats_used=3,
+            created_by=self.user
+        )
+
+        assert license.available_seats() == 7
+
+    def test_license_is_expired(self):
+        """Test license expiry check"""
+        from datetime import date, timedelta
+
+        # Expired license
+        expired_license = SoftwareLicense.objects.create(
+            organization=self.org,
+            software=self.software,
+            license_key='KEY-EXPIRED',
+            seats=1,
+            expiry_date=date.today() - timedelta(days=1),
+            created_by=self.user
+        )
+        assert expired_license.is_expired() is True
+
+        # Valid license
+        valid_license = SoftwareLicense.objects.create(
+            organization=self.org,
+            software=self.software,
+            license_key='KEY-VALID',
+            seats=1,
+            expiry_date=date.today() + timedelta(days=30),
+            created_by=self.user
+        )
+        assert valid_license.is_expired() is False
