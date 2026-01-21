@@ -1,7 +1,7 @@
 import pytest
 import uuid
 from django.test import TestCase
-from apps.it_assets.models import ITAssetInfo, Software, SoftwareLicense
+from apps.it_assets.models import ITAssetInfo, Software, SoftwareLicense, LicenseAllocation
 from apps.assets.models import Asset, AssetCategory, Location
 from apps.organizations.models import Organization
 from apps.accounts.models import User
@@ -205,3 +205,114 @@ class SoftwareLicenseModelTest(TestCase):
             created_by=self.user
         )
         assert valid_license.is_expired() is False
+
+
+class LicenseAllocationModelTest(TestCase):
+    def setUp(self):
+        self.unique_suffix = uuid.uuid4().hex[:8]
+        self.org = Organization.objects.create(
+            name=f'Test Org {self.unique_suffix}',
+            code=f'TESTORG_{self.unique_suffix}'
+        )
+        self.user = User.objects.create_user(
+            username=f'testuser_{self.unique_suffix}',
+            organization=self.org
+        )
+        self.category = AssetCategory.objects.create(
+            organization=self.org,
+            code='COMPUTER',
+            name='Computer Equipment',
+            created_by=self.user
+        )
+        self.location = Location.objects.create(
+            name=f'Test Location {self.unique_suffix}',
+            path=f'Test Location {self.unique_suffix}',
+            organization=self.org
+        )
+        self.asset = Asset.objects.create(
+            organization=self.org,
+            asset_code=f'ASSET{self.unique_suffix}',
+            asset_name='Test Laptop',
+            asset_category=self.category,
+            location=self.location,
+            purchase_price=10000,
+            purchase_date='2026-01-01',
+            created_by=self.user
+        )
+        self.software = Software.objects.create(
+            organization=self.org,
+            name='Adobe Photoshop',
+            vendor='Adobe',
+            version='CC 2024',
+            created_by=self.user
+        )
+        self.license = SoftwareLicense.objects.create(
+            organization=self.org,
+            software=self.software,
+            license_key='KEY-1234',
+            seats=10,
+            seats_used=0,
+            created_by=self.user
+        )
+
+    def test_create_license_allocation(self):
+        """Test creating license allocation to an asset"""
+        from datetime import date
+
+        allocation = LicenseAllocation.objects.create(
+            organization=self.org,
+            license=self.license,
+            asset=self.asset,
+            allocated_by=self.user,
+            allocated_date=date.today()
+        )
+
+        assert allocation.license == self.license
+        assert allocation.asset == self.asset
+        assert allocation.allocated_by == self.user
+
+    def test_allocation_updates_seats_used(self):
+        """Test that allocation updates license seats_used count"""
+        from datetime import date
+
+        # Initial seats_used should be 0
+        self.license.refresh_from_db()
+        assert self.license.seats_used == 0
+
+        # Create allocation
+        allocation = LicenseAllocation.objects.create(
+            organization=self.org,
+            license=self.license,
+            asset=self.asset,
+            allocated_by=self.user,
+            allocated_date=date.today()
+        )
+
+        # seats_used should be incremented
+        self.license.refresh_from_db()
+        assert self.license.seats_used == 1
+
+    def test_deallocate_restores_seat(self):
+        """Test that deallocating restores a seat"""
+        from datetime import date, timedelta
+
+        # Create and allocate
+        allocation = LicenseAllocation.objects.create(
+            organization=self.org,
+            license=self.license,
+            asset=self.asset,
+            allocated_by=self.user,
+            allocated_date=date.today()
+        )
+
+        self.license.refresh_from_db()
+        assert self.license.seats_used == 1
+
+        # Deallocate
+        allocation.deallocated_date = date.today() + timedelta(days=30)
+        allocation.deallocated_by = self.user
+        allocation.save()
+
+        # seats_used should be decremented
+        self.license.refresh_from_db()
+        assert self.license.seats_used == 0

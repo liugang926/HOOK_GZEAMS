@@ -2,6 +2,7 @@
 IT Asset models for GZEAMS.
 """
 from django.db import models
+from django.db.models.functions import Greatest
 from django.core.validators import MinValueValidator
 from apps.common.models import BaseModel
 
@@ -434,3 +435,119 @@ class SoftwareLicense(BaseModel):
             return False  # Perpetual license
         from django.utils import timezone
         return self.expiry_date < timezone.now().date()
+
+
+class LicenseAllocation(BaseModel):
+    """
+    License Allocation model.
+
+    Tracks which assets have been allocated software licenses.
+    Automatically updates license seat usage.
+    """
+
+    class Meta:
+        db_table = 'license_allocation'
+        verbose_name = 'License Allocation'
+        verbose_name_plural = 'License Allocations'
+        ordering = ['-allocated_date']
+        indexes = [
+            models.Index(fields=['organization', 'license']),
+            models.Index(fields=['organization', 'asset']),
+            models.Index(fields=['organization', 'asset', 'license']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['asset', 'license', 'deallocated_date'],
+                condition=models.Q(deallocated_date__isnull=True),
+                name='unique_active_allocation'
+            )
+        ]
+
+    license = models.ForeignKey(
+        SoftwareLicense,
+        on_delete=models.CASCADE,
+        related_name='allocations',
+        help_text='Allocated license'
+    )
+
+    asset = models.ForeignKey(
+        'assets.Asset',
+        on_delete=models.CASCADE,
+        related_name='license_allocations',
+        help_text='Asset that received the license'
+    )
+
+    allocated_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='license_allocated',
+        help_text='User who allocated the license'
+    )
+
+    allocated_date = models.DateField(
+        help_text='Date when the license was allocated'
+    )
+
+    deallocated_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='license_deallocated',
+        help_text='User who deallocated the license'
+    )
+
+    deallocated_date = models.DateField(
+        blank=True,
+        null=True,
+        help_text='Date when the license was deallocated (null if active)'
+    )
+
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Notes about this allocation'
+    )
+
+    def __str__(self):
+        status = "Active" if self.is_active() else "Deallocated"
+        return f"{self.license.software.name} -> {self.asset.asset_name} ({status})"
+
+    def is_active(self):
+        """Check if the allocation is currently active."""
+        return self.deallocated_date is None
+
+    def save(self, *args, **kwargs):
+        """
+        Override save to update license seats_used count.
+        """
+        # Track if this is a new allocation or being deallocated
+        # Note: self.pk is set before first save due to default=uuid.uuid4
+        # So we need to check if the record exists in DB
+        try:
+            old_instance = LicenseAllocation.objects.get(pk=self.pk)
+            is_new = False
+        except LicenseAllocation.DoesNotExist:
+            old_instance = None
+            is_new = True
+
+        # Determine if deallocation status changed
+        was_active = old_instance.is_active() if old_instance else False
+        is_active_now = self.deallocated_date is None
+
+        # Save the instance
+        super().save(*args, **kwargs)
+
+        # Update license seats_used using direct query to avoid any caching issues
+        if is_new and is_active_now:
+            # New active allocation - increment seats_used
+            SoftwareLicense.objects.filter(pk=self.license.pk).update(
+                seats_used=models.F('seats_used') + 1
+            )
+        elif old_instance and was_active and not is_active_now:
+            # Allocation being deallocated - decrement seats_used (ensure not negative)
+            SoftwareLicense.objects.filter(pk=self.license.pk).update(
+                seats_used=Greatest(models.F('seats_used') - 1, 0)
+            )
