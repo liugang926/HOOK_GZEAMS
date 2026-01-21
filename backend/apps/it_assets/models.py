@@ -551,3 +551,159 @@ class LicenseAllocation(BaseModel):
             SoftwareLicense.objects.filter(pk=self.license.pk).update(
                 seats_used=Greatest(models.F('seats_used') - 1, 0)
             )
+
+
+class ITMaintenanceRecord(BaseModel):
+    """
+    IT Maintenance Record model.
+
+    Tracks maintenance activities performed on IT assets.
+    """
+
+    class Meta:
+        db_table = 'it_maintenance_record'
+        verbose_name = 'IT Maintenance Record'
+        verbose_name_plural = 'IT Maintenance Records'
+        ordering = ['-maintenance_date']
+        indexes = [
+            models.Index(fields=['organization', 'asset']),
+            models.Index(fields=['organization', 'maintenance_type']),
+            models.Index(fields=['organization', 'maintenance_date']),
+        ]
+
+    asset = models.ForeignKey(
+        'assets.Asset',
+        on_delete=models.CASCADE,
+        related_name='maintenance_records',
+        help_text='Asset that was maintained'
+    )
+
+    MAINTENANCE_TYPE_CHOICES = [
+        ('preventive', 'Preventive'),
+        ('corrective', 'Corrective'),
+        ('upgrade', 'Upgrade'),
+        ('replacement', 'Replacement'),
+        ('inspection', 'Inspection'),
+        ('cleaning', 'Cleaning'),
+        ('other', 'Other'),
+    ]
+    maintenance_type = models.CharField(
+        max_length=50,
+        choices=MAINTENANCE_TYPE_CHOICES,
+        help_text='Type of maintenance performed'
+    )
+
+    title = models.CharField(
+        max_length=200,
+        help_text='Brief title of the maintenance activity'
+    )
+
+    description = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Detailed description of work performed'
+    )
+
+    performed_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='maintenance_performed',
+        help_text='User who performed the maintenance'
+    )
+
+    maintenance_date = models.DateField(
+        help_text='Date when maintenance was performed'
+    )
+
+    cost = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(0)],
+        help_text='Cost of maintenance (if applicable)'
+    )
+
+    vendor = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text='External vendor who performed the maintenance'
+    )
+
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Additional notes'
+    )
+
+    def __str__(self):
+        return f"[{self.get_maintenance_type_display()}] {self.title} - {self.asset.asset_name}"
+
+
+class ConfigurationChange(BaseModel):
+    """
+    Configuration Change model.
+
+    Tracks configuration changes made to IT assets.
+    Provides an audit trail of hardware/software modifications.
+    """
+
+    class Meta:
+        db_table = 'configuration_change'
+        verbose_name = 'Configuration Change'
+        verbose_name_plural = 'Configuration Changes'
+        ordering = ['-change_date']
+        indexes = [
+            models.Index(fields=['organization', 'asset']),
+            models.Index(fields=['organization', 'field_name']),
+            models.Index(fields=['organization', 'change_date']),
+        ]
+
+    asset = models.ForeignKey(
+        'assets.Asset',
+        on_delete=models.CASCADE,
+        related_name='configuration_changes',
+        help_text='Asset that was changed'
+    )
+
+    field_name = models.CharField(
+        max_length=100,
+        help_text='Name of the field that was changed'
+    )
+
+    old_value = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Previous value'
+    )
+
+    new_value = models.TextField(
+        blank=True,
+        null=True,
+        help_text='New value'
+    )
+
+    change_reason = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Reason for the change'
+    )
+
+    changed_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='configuration_changes_made',
+        help_text='User who made the change'
+    )
+
+    change_date = models.DateField(
+        help_text='Date when the change was made'
+    )
+
+    def __str__(self):
+        return f"{self.field_name}: {self.old_value} -> {self.new_value}"
