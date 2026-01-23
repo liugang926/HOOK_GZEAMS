@@ -610,6 +610,192 @@ class AssetViewSet(BaseModelViewSetWithBatch):
             'results': results
         })
 
+    @action(detail=False, methods=['post'], url_path='export')
+    def export_assets(self, request):
+        """
+        Export assets to Excel file.
+
+        POST /api/assets/export/
+        Body:
+        {
+            "filters": {...},  // Optional filters
+            "columns": ["asset_code", "asset_name", ...]  // Columns to export
+        }
+
+        Returns an Excel file (.xlsx) with the filtered assets.
+        """
+        import openpyxl
+        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from datetime import datetime
+        from io import BytesIO
+        from django.core.paginator import Paginator
+
+        # Get request parameters
+        filters = request.data.get('filters', {})
+        columns = request.data.get('columns', [])
+
+        # Default columns if not specified
+        if not columns:
+            columns = [
+                'asset_code', 'asset_name', 'specification', 'brand', 'model',
+                'serial_number', 'asset_category', 'supplier', 'department',
+                'location', 'custodian', 'asset_status', 'purchase_date',
+                'original_value', 'net_value', 'useful_life', 'created_at'
+            ]
+
+        # Column headers mapping
+        column_headers = {
+            'asset_code': 'Asset Code',
+            'asset_name': 'Asset Name',
+            'specification': 'Specification',
+            'brand': 'Brand',
+            'model': 'Model',
+            'serial_number': 'Serial Number',
+            'asset_category': 'Category',
+            'supplier': 'Supplier',
+            'department': 'Department',
+            'location': 'Location',
+            'custodian': 'Custodian',
+            'asset_status': 'Status',
+            'purchase_date': 'Purchase Date',
+            'original_value': 'Original Value',
+            'net_value': 'Net Value',
+            'useful_life': 'Useful Life (months)',
+            'created_at': 'Created At'
+        }
+
+        # Get base queryset
+        organization_id = getattr(request, 'organization_id', None)
+        queryset = Asset.objects.filter(
+            organization_id=organization_id,
+            is_deleted=False
+        ).select_related(
+            'asset_category', 'supplier', 'department', 'location', 'custodian'
+        )
+
+        # Apply filters if provided
+        if filters:
+            # Filter by status
+            if 'asset_status' in filters:
+                queryset = queryset.filter(asset_status=filters['asset_status'])
+
+            # Filter by category
+            if 'asset_category_id' in filters:
+                queryset = queryset.filter(asset_category_id=filters['asset_category_id'])
+
+            # Filter by department
+            if 'department_id' in filters:
+                queryset = queryset.filter(department_id=filters['department_id'])
+
+            # Filter by location
+            if 'location_id' in filters:
+                queryset = queryset.filter(location_id=filters['location_id'])
+
+        # Create workbook
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Assets'
+
+        # Define header style
+        header_font = Font(bold=True, size=11)
+        header_fill = PatternFill(start_color='CCE5FF', end_color='CCE5FF', fill_type='solid')
+        header_alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        # Write headers
+        for col_idx, column in enumerate(columns, 1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.value = column_headers.get(column, column)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            cell.border = border
+
+        # Write data rows
+        row_idx = 2
+        for asset in queryset:
+            for col_idx, column in enumerate(columns, 1):
+                cell = ws.cell(row=row_idx, column=col_idx)
+                cell.border = border
+
+                # Get value based on column
+                value = ''
+                if column == 'asset_code':
+                    value = asset.asset_code or ''
+                elif column == 'asset_name':
+                    value = asset.asset_name or ''
+                elif column == 'specification':
+                    value = asset.specification or ''
+                elif column == 'brand':
+                    value = asset.brand or ''
+                elif column == 'model':
+                    value = asset.model or ''
+                elif column == 'serial_number':
+                    value = asset.serial_number or ''
+                elif column == 'asset_category':
+                    value = asset.asset_category.name if asset.asset_category else ''
+                elif column == 'supplier':
+                    value = asset.supplier.supplier_name if asset.supplier else ''
+                elif column == 'department':
+                    value = asset.department.department_name if asset.department else ''
+                elif column == 'location':
+                    value = asset.location.full_name if hasattr(asset.location, 'full_name') else (asset.location.location_name if asset.location else '')
+                elif column == 'custodian':
+                    value = asset.custodian.username if asset.custodian else ''
+                elif column == 'asset_status':
+                    value = asset.get_asset_status_display() or ''
+                elif column == 'purchase_date':
+                    value = asset.purchase_date.strftime('%Y-%m-%d') if asset.purchase_date else ''
+                elif column == 'original_value':
+                    value = float(asset.original_value) if asset.original_value else 0
+                elif column == 'net_value':
+                    value = float(asset.net_value) if asset.net_value else 0
+                elif column == 'useful_life':
+                    value = asset.useful_life or 0
+                elif column == 'created_at':
+                    value = asset.created_at.strftime('%Y-%m-%d %H:%M:%S') if asset.created_at else ''
+
+                cell.value = value
+                cell.alignment = Alignment(vertical='center')
+
+            row_idx += 1
+
+        # Auto-adjust column widths
+        for col in ws.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column].width = adjusted_width
+
+        # Save to bytes buffer
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'assets_export_{timestamp}.xlsx'
+
+        # Return as file download
+        response = HttpResponse(
+            buffer.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        return response
+
 
 class SupplierViewSet(BaseModelViewSetWithBatch):
     """
