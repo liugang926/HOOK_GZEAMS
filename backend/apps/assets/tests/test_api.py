@@ -4,6 +4,7 @@ Tests for AssetCategory, Asset, and Operation API endpoints.
 IMPORTANT: Due to multi-tenant organization isolation using thread-local storage,
 each test creates a fresh APIClient instance to ensure proper organization context.
 """
+import uuid
 import pytest
 from django.test import TestCase
 from django.urls import reverse
@@ -23,15 +24,15 @@ class AssetCategoryAPITest(APITestCase):
     """Test AssetCategory API endpoints."""
 
     def setUp(self):
-        """Set up test data."""
-        import uuid
+        """Set up test data with unique codes."""
+        self.unique_suffix = uuid.uuid4().hex[:8]
         self.org = Organization.objects.create(
-            name='Test Organization',
-            code=f'TEST_ORG_CAT_{uuid.uuid4().hex[:8]}'
+            name=f'Test Organization {self.unique_suffix}',
+            code=f'TEST_ORG_CAT_{self.unique_suffix}'
         )
         self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
+            username=f'testuser_{self.unique_suffix}',
+            email=f'test{self.unique_suffix}@example.com',
             password='testpass123',
             organization=self.org
         )
@@ -39,13 +40,13 @@ class AssetCategoryAPITest(APITestCase):
         # Create test categories
         self.parent = AssetCategory.objects.create(
             organization=self.org,
-            code='ELECTRONICS',
+            code=f'ELECTRONICS_{self.unique_suffix}',
             name='Electronics',
             created_by=self.user
         )
         self.child = AssetCategory.objects.create(
             organization=self.org,
-            code='COMPUTERS',
+            code=f'COMPUTERS_{self.unique_suffix}',
             name='Computers',
             parent=self.parent,
             created_by=self.user
@@ -63,6 +64,8 @@ class AssetCategoryAPITest(APITestCase):
         # Clear thread-local organization context
         from apps.common.middleware import clear_current_organization
         clear_current_organization()
+        # Call parent tearDown for proper Django TestCase cleanup
+        super().tearDown()
 
     def test_list_categories(self):
         """Test GET /api/assets/categories/"""
@@ -81,13 +84,13 @@ class AssetCategoryAPITest(APITestCase):
         response = client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['success'])
-        self.assertEqual(response.data['data']['code'], 'ELECTRONICS')
+        self.assertEqual(response.data['data']['code'], f'ELECTRONICS_{self.unique_suffix}')
 
     def test_create_category(self):
         """Test POST /api/assets/categories/"""
         url = '/api/assets/categories/'
         data = {
-            'code': 'FURNITURE',
+            'code': f'FURNITURE_{uuid.uuid4().hex[:8].upper()}',
             'name': 'Furniture',
             'depreciation_method': 'straight_line',
             'default_useful_life': 120,
@@ -102,7 +105,7 @@ class AssetCategoryAPITest(APITestCase):
         """Test PUT /api/assets/categories/{id}/"""
         url = f'/api/assets/categories/{self.parent.id}/'
         data = {
-            'code': 'ELECTRONICS',
+            'code': f'ELECTRONICS_{self.unique_suffix}',
             'name': 'Electronics Updated',
             'depreciation_method': 'double_declining',
             'default_useful_life': 48,
@@ -138,7 +141,7 @@ class AssetCategoryAPITest(APITestCase):
         """Test POST /api/assets/categories/{id}/add_child/"""
         url = f'/api/assets/categories/{self.parent.id}/add_child/'
         data = {
-            'code': 'PHONES',
+            'code': f'PHONES_{uuid.uuid4().hex[:8].upper()}',
             'name': 'Phones',
             'depreciation_method': 'straight_line'
         }
@@ -170,16 +173,16 @@ class AssetAPITest(APITestCase):
     """Test Asset API endpoints."""
 
     def setUp(self):
-        """Set up test data."""
+        """Set up test data with unique codes."""
         self.client = APIClient()
-        import uuid
+        self.unique_suffix = uuid.uuid4().hex[:8]
         self.org = Organization.objects.create(
-            name='Test Organization',
-            code=f'TEST_ORG_ASSET_{uuid.uuid4().hex[:8]}'
+            name=f'Test Organization {self.unique_suffix}',
+            code=f'TEST_ORG_ASSET_{self.unique_suffix}'
         )
         self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
+            username=f'testuser_{self.unique_suffix}',
+            email=f'test{self.unique_suffix}@example.com',
             password='testpass123',
             organization=self.org
         )
@@ -189,7 +192,7 @@ class AssetAPITest(APITestCase):
         # Create test category
         self.category = AssetCategory.objects.create(
             organization=self.org,
-            code='COMPUTER',
+            code=f'COMPUTER_{self.unique_suffix}',
             name='Computer Equipment',
             created_by=self.user
         )
@@ -198,7 +201,7 @@ class AssetAPITest(APITestCase):
         self.department = Department.objects.create(
             organization=self.org,
             name='IT Department',
-            code='IT'
+            code=f'IT_{self.unique_suffix}'
         )
 
         # Create test location
@@ -212,7 +215,7 @@ class AssetAPITest(APITestCase):
         # Create test supplier
         self.supplier = Supplier.objects.create(
             organization=self.org,
-            code='DELL',
+            code=f'DELL_{self.unique_suffix}',
             name='Dell Inc.',
             created_by=self.user
         )
@@ -426,21 +429,115 @@ class AssetAPITest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_get_asset_qr_code(self):
+        """Test GET /api/assets/{id}/qr_code/ - Get asset QR code image."""
+        asset = Asset.objects.create(
+            organization=self.org,
+            asset_name='Test Laptop',
+            asset_category=self.category,
+            purchase_price=Decimal('1000.00'),
+            purchase_date='2024-01-01',
+            asset_status='pending',
+            created_by=self.user
+        )
+
+        url = f'/api/assets/{asset.id}/qr_code/'
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['Content-Type'], 'image/png')
+        # Verify image data is returned
+        self.assertGreater(len(response.content), 0)
+
+    def test_batch_change_status(self):
+        """Test POST /api/assets/batch_change_status/ - Batch change asset status."""
+        unique_suffix = uuid.uuid4().hex[:8]
+
+        assets = []
+        for i in range(3):
+            asset = Asset.objects.create(
+                organization=self.org,
+                asset_category=self.category,
+                asset_code=f"AST-{unique_suffix}-{i}",
+                asset_name=f"Test Asset {i}",
+                purchase_price=Decimal('10000.00'),
+                purchase_date='2024-01-01',
+                asset_status='in_use',
+                created_by=self.user
+            )
+            assets.append(asset)
+
+        url = '/api/assets/batch_change_status/'
+        data = {
+            'ids': [str(a.id) for a in assets],
+            'new_status': 'maintenance'
+        }
+        response = self.client.post(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['summary']['succeeded'], 3)
+
+        # Verify all assets updated
+        for asset in assets:
+            asset.refresh_from_db()
+            self.assertEqual(asset.asset_status, 'maintenance')
+
+    def test_bulk_qr_codes_success(self):
+        """Test bulk QR code generation."""
+        unique_suffix = uuid.uuid4().hex[:8]
+
+        asset1 = Asset.objects.create(
+            organization=self.org,
+            asset_category=self.category,
+            asset_code=f'TEST{unique_suffix}001',
+            asset_name='Test Asset 1',
+            purchase_price=Decimal('1000.00'),
+            purchase_date='2024-01-01',
+            created_by=self.user
+        )
+        asset2 = Asset.objects.create(
+            organization=self.org,
+            asset_category=self.category,
+            asset_code=f'TEST{unique_suffix}002',
+            asset_name='Test Asset 2',
+            purchase_price=Decimal('2000.00'),
+            purchase_date='2024-01-01',
+            created_by=self.user
+        )
+
+        url = '/api/assets/bulk-qr-codes/'
+        data = {'ids': [str(asset1.id), str(asset2.id)]}
+        response = self.client.post(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['Content-Type'], 'application/zip')
+        self.assertIn('attachment', response['Content-Disposition'])
+        # Verify ZIP file content is returned
+        self.assertGreater(len(response.content), 0)
+
+    def tearDown(self):
+        """Clean up after each test."""
+        # Clear thread-local organization context
+        from apps.common.middleware import clear_current_organization
+        clear_current_organization()
+        # Call parent tearDown for proper Django TestCase cleanup
+        super().tearDown()
+
 
 class SupplierAPITest(APITestCase):
     """Test Supplier API endpoints."""
 
     def setUp(self):
-        """Set up test data."""
+        """Set up test data with unique codes."""
         self.client = APIClient()
-        import uuid
+        self.unique_suffix = uuid.uuid4().hex[:8]
         self.org = Organization.objects.create(
-            name='Test Organization',
-            code=f'TEST_ORG_SUPP_{uuid.uuid4().hex[:8]}'
+            name=f'Test Organization {self.unique_suffix}',
+            code=f'TEST_ORG_SUPP_{self.unique_suffix}'
         )
         self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
+            username=f'testuser_{self.unique_suffix}',
+            email=f'test{self.unique_suffix}@example.com',
             password='testpass123',
             organization=self.org
         )
@@ -451,7 +548,7 @@ class SupplierAPITest(APITestCase):
         """Test POST /api/assets/suppliers/"""
         url = '/api/assets/suppliers/'
         data = {
-            'code': 'DELL',
+            'code': f'DELL_{uuid.uuid4().hex[:8].upper()}',
             'name': 'Dell Inc.',
             'contact': 'John Doe',
             'phone': '123-456-7890',
@@ -467,7 +564,7 @@ class SupplierAPITest(APITestCase):
         """Test GET /api/assets/suppliers/"""
         Supplier.objects.create(
             organization=self.org,
-            code='DELL',
+            code=f'DELL_{uuid.uuid4().hex[:8].upper()}',
             name='Dell Inc.',
             created_by=self.user
         )
@@ -476,21 +573,29 @@ class SupplierAPITest(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def tearDown(self):
+        """Clean up after each test."""
+        # Clear thread-local organization context
+        from apps.common.middleware import clear_current_organization
+        clear_current_organization()
+        # Call parent tearDown for proper Django TestCase cleanup
+        super().tearDown()
+
 
 class LocationAPITest(APITestCase):
     """Test Location API endpoints."""
 
     def setUp(self):
-        """Set up test data."""
+        """Set up test data with unique codes."""
         self.client = APIClient()
-        import uuid
+        self.unique_suffix = uuid.uuid4().hex[:8]
         self.org = Organization.objects.create(
-            name='Test Organization',
-            code=f'TEST_ORG_LOC_{uuid.uuid4().hex[:8]}'
+            name=f'Test Organization {self.unique_suffix}',
+            code=f'TEST_ORG_LOC_{self.unique_suffix}'
         )
         self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
+            username=f'testuser_{self.unique_suffix}',
+            email=f'test{self.unique_suffix}@example.com',
             password='testpass123',
             organization=self.org
         )
@@ -525,6 +630,14 @@ class LocationAPITest(APITestCase):
         self.assertTrue(response.data['success'])
         self.assertIsInstance(response.data['data'], list)
 
+    def tearDown(self):
+        """Clean up after each test."""
+        # Clear thread-local organization context
+        from apps.common.middleware import clear_current_organization
+        clear_current_organization()
+        # Call parent tearDown for proper Django TestCase cleanup
+        super().tearDown()
+
 
 # ========== Operation API Tests ==========
 
@@ -533,21 +646,33 @@ class AssetPickupAPITest(APITestCase):
     """Test Asset Pickup API endpoints."""
 
     def setUp(self):
-        """Set up test data."""
+        """Set up test data with unique codes."""
         self.client = APIClient()
-        import uuid
-        self.org = Organization.objects.create(name='Test Org', code=f'TEST_PICKUP_{uuid.uuid4().hex[:8]}')
+        self.unique_suffix = uuid.uuid4().hex[:8]
+        self.org = Organization.objects.create(
+            name=f'Test Org {self.unique_suffix}',
+            code=f'TEST_PICKUP_{self.unique_suffix}'
+        )
         self.user = User.objects.create_user(
-            username='applicant', password='pass', organization=self.org
+            username=f'applicant_{self.unique_suffix}',
+            password='pass',
+            organization=self.org
         )
         self.approver = User.objects.create_user(
-            username='approver', password='pass', organization=self.org
+            username=f'approver_{self.unique_suffix}',
+            password='pass',
+            organization=self.org
         )
         self.dept = Department.objects.create(
-            organization=self.org, name='IT', code='IT'
+            organization=self.org,
+            name='IT',
+            code=f'IT_{self.unique_suffix}'
         )
         self.category = AssetCategory.objects.create(
-            organization=self.org, code='PC', name='Computer', created_by=self.user
+            organization=self.org,
+            code=f'PC_{self.unique_suffix}',
+            name='Computer',
+            created_by=self.user
         )
         self.asset = Asset.objects.create(
             organization=self.org,
@@ -644,29 +769,51 @@ class AssetPickupAPITest(APITestCase):
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def tearDown(self):
+        """Clean up after each test."""
+        # Clear thread-local organization context
+        from apps.common.middleware import clear_current_organization
+        clear_current_organization()
+        # Call parent tearDown for proper Django TestCase cleanup
+        super().tearDown()
+
 
 class AssetTransferAPITest(APITestCase):
     """Test Asset Transfer API endpoints."""
 
     def setUp(self):
-        """Set up test data."""
+        """Set up test data with unique codes."""
         self.client = APIClient()
-        import uuid
-        self.org = Organization.objects.create(name='Test Org', code=f'TEST_TRANSFER_{uuid.uuid4().hex[:8]}')
+        self.unique_suffix = uuid.uuid4().hex[:8]
+        self.org = Organization.objects.create(
+            name=f'Test Org {self.unique_suffix}',
+            code=f'TEST_TRANSFER_{self.unique_suffix}'
+        )
         self.user = User.objects.create_user(
-            username='mgr', password='pass', organization=self.org
+            username=f'mgr_{self.unique_suffix}',
+            password='pass',
+            organization=self.org
         )
         self.from_dept = Department.objects.create(
-            organization=self.org, name='IT', code='IT'
+            organization=self.org,
+            name='IT',
+            code=f'IT_{self.unique_suffix}'
         )
         self.to_dept = Department.objects.create(
-            organization=self.org, name='HR', code='HR'
+            organization=self.org,
+            name='HR',
+            code=f'HR_{self.unique_suffix}'
         )
         self.category = AssetCategory.objects.create(
-            organization=self.org, code='PC', name='Computer', created_by=self.user
+            organization=self.org,
+            code=f'PC_{self.unique_suffix}',
+            name='Computer',
+            created_by=self.user
         )
         self.location = Location.objects.create(
-            organization=self.org, name='Office', location_type='area'
+            organization=self.org,
+            name='Office',
+            location_type='area'
         )
         self.asset = Asset.objects.create(
             organization=self.org,
@@ -710,26 +857,46 @@ class AssetTransferAPITest(APITestCase):
         response = self.client.post(url, {'comment': 'OK'}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def tearDown(self):
+        """Clean up after each test."""
+        # Clear thread-local organization context
+        from apps.common.middleware import clear_current_organization
+        clear_current_organization()
+        # Call parent tearDown for proper Django TestCase cleanup
+        super().tearDown()
+
 
 class AssetReturnAPITest(APITestCase):
     """Test Asset Return API endpoints."""
 
     def setUp(self):
-        """Set up test data."""
+        """Set up test data with unique codes."""
         self.client = APIClient()
-        import uuid
-        self.org = Organization.objects.create(name='Test Org', code=f'TEST_RETURN_{uuid.uuid4().hex[:8]}')
+        self.unique_suffix = uuid.uuid4().hex[:8]
+        self.org = Organization.objects.create(
+            name=f'Test Org {self.unique_suffix}',
+            code=f'TEST_RETURN_{self.unique_suffix}'
+        )
         self.user = User.objects.create_user(
-            username='user', password='pass', organization=self.org
+            username=f'user_{self.unique_suffix}',
+            password='pass',
+            organization=self.org
         )
         self.admin = User.objects.create_user(
-            username='admin', password='pass', organization=self.org
+            username=f'admin_{self.unique_suffix}',
+            password='pass',
+            organization=self.org
         )
         self.location = Location.objects.create(
-            organization=self.org, name='Warehouse', location_type='warehouse'
+            organization=self.org,
+            name='Warehouse',
+            location_type='warehouse'
         )
         self.category = AssetCategory.objects.create(
-            organization=self.org, code='PC', name='Computer', created_by=self.user
+            organization=self.org,
+            code=f'PC_{self.unique_suffix}',
+            name='Computer',
+            created_by=self.user
         )
         self.asset = Asset.objects.create(
             organization=self.org,
@@ -777,23 +944,41 @@ class AssetReturnAPITest(APITestCase):
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def tearDown(self):
+        """Clean up after each test."""
+        # Clear thread-local organization context
+        from apps.common.middleware import clear_current_organization
+        clear_current_organization()
+        # Call parent tearDown for proper Django TestCase cleanup
+        super().tearDown()
+
 
 class AssetLoanAPITest(APITestCase):
     """Test Asset Loan API endpoints."""
 
     def setUp(self):
-        """Set up test data."""
+        """Set up test data with unique codes."""
         self.client = APIClient()
-        import uuid
-        self.org = Organization.objects.create(name='Test Org', code=f'TEST_LOAN_{uuid.uuid4().hex[:8]}')
+        self.unique_suffix = uuid.uuid4().hex[:8]
+        self.org = Organization.objects.create(
+            name=f'Test Org {self.unique_suffix}',
+            code=f'TEST_LOAN_{self.unique_suffix}'
+        )
         self.user = User.objects.create_user(
-            username='borrower', password='pass', organization=self.org
+            username=f'borrower_{self.unique_suffix}',
+            password='pass',
+            organization=self.org
         )
         self.admin = User.objects.create_user(
-            username='admin', password='pass', organization=self.org
+            username=f'admin_{self.unique_suffix}',
+            password='pass',
+            organization=self.org
         )
         self.category = AssetCategory.objects.create(
-            organization=self.org, code='PC', name='Computer', created_by=self.user
+            organization=self.org,
+            code=f'PC_{self.unique_suffix}',
+            name='Computer',
+            created_by=self.user
         )
         self.asset = Asset.objects.create(
             organization=self.org,
@@ -840,3 +1025,11 @@ class AssetLoanAPITest(APITestCase):
         data = {'approval': 'approved'}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def tearDown(self):
+        """Clean up after each test."""
+        # Clear thread-local organization context
+        from apps.common.middleware import clear_current_organization
+        clear_current_organization()
+        # Call parent tearDown for proper Django TestCase cleanup
+        super().tearDown()
