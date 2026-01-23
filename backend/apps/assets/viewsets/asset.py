@@ -7,6 +7,7 @@ Provides:
 - LocationViewSet: Location CRUD with tree support
 - AssetStatusLogViewSet: Status log viewing
 """
+import re
 from django.conf import settings
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -31,6 +32,27 @@ from apps.assets.serializers import (
 )
 from apps.assets.filters import AssetFilter, SupplierFilter, LocationFilter, AssetStatusLogFilter
 from apps.assets.services import AssetService, SupplierService, LocationService, AssetStatusLogService
+
+# Maximum number of QR codes that can be generated in a single bulk request
+MAX_BULK_QR_LIMIT = 1000
+
+
+def sanitize_filename(name: str) -> str:
+    r"""
+    Sanitize a string to be safe for use as a filename.
+
+    Removes or replaces characters that are invalid in Windows filenames:
+    < > : " / \ | ? *
+
+    Args:
+        name: The string to sanitize
+
+    Returns:
+        A sanitized string safe for use as a filename
+    """
+    # Replace invalid filename characters with underscore
+    invalid_chars = r'[<>:"/\\|?*]'
+    return re.sub(invalid_chars, '_', name)
 
 
 class AssetViewSet(BaseModelViewSetWithBatch):
@@ -418,16 +440,37 @@ class AssetViewSet(BaseModelViewSetWithBatch):
         }
 
         Returns a ZIP file containing PNG images.
+
+        Validation:
+        - ids must be a list
+        - ids cannot exceed MAX_BULK_QR_LIMIT (1000)
+        - ids cannot be empty
         """
         import qrcode
         from io import BytesIO
         from zipfile import ZipFile
 
         ids = request.data.get('ids', [])
+
+        # Validate that ids is a list
+        if not isinstance(ids, list):
+            return BaseResponse.error(
+                code='VALIDATION_ERROR',
+                message='ids parameter must be a list'
+            )
+
+        # Validate that ids is not empty
         if not ids:
             return BaseResponse.error(
                 code='VALIDATION_ERROR',
-                message='ids parameter is required'
+                message='ids parameter cannot be empty'
+            )
+
+        # Validate maximum limit
+        if len(ids) > MAX_BULK_QR_LIMIT:
+            return BaseResponse.error(
+                code='VALIDATION_ERROR',
+                message=f'Cannot generate more than {MAX_BULK_QR_LIMIT} QR codes at once'
             )
 
         organization_id = getattr(request, 'organization_id', None)
@@ -441,24 +484,31 @@ class AssetViewSet(BaseModelViewSetWithBatch):
         zip_buffer = BytesIO()
         frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173')
 
+        # Create reusable QRCode instance for better performance
+        qr_maker = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+
         with ZipFile(zip_buffer, 'w') as zip_file:
             for asset in assets:
+                # Sanitize asset code for safe filename usage
+                safe_code = sanitize_filename(asset.asset_code or str(asset.id))
                 qr_data = f'{frontend_url}/assets/{asset.id}'
-                qr = qrcode.QRCode(
-                    version=1,
-                    error_correction=qrcode.constants.ERROR_CORRECT_L,
-                    box_size=10,
-                    border=4,
-                )
-                qr.add_data(qr_data)
-                qr.make(fit=True)
-                img = qr.make_image(fill_color='black', back_color='white')
+
+                # Clear and reuse QRCode instance
+                qr_maker.clear()
+                qr_maker.add_data(qr_data)
+                qr_maker.make(fit=True)
+                img = qr_maker.make_image(fill_color='black', back_color='white')
 
                 img_buffer = BytesIO()
                 img.save(img_buffer, format='PNG')
                 img_buffer.seek(0)
 
-                filename = f"QR_{asset.asset_code or asset.id}.png"
+                filename = f"QR_{safe_code}.png"
                 zip_file.writestr(filename, img_buffer.read())
 
         zip_buffer.seek(0)

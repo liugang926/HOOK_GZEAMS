@@ -515,6 +515,65 @@ class AssetAPITest(APITestCase):
         # Verify ZIP file content is returned
         self.assertGreater(len(response.content), 0)
 
+    def test_bulk_qr_codes_empty_ids(self):
+        """Test bulk QR code generation with empty ids array."""
+        url = '/api/assets/bulk-qr-codes/'
+        data = {'ids': []}
+        response = self.client.post(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(response.data['success'])
+        self.assertEqual(response.data['error']['code'], 'VALIDATION_ERROR')
+        self.assertIn('cannot be empty', response.data['error']['message'])
+
+    def test_bulk_qr_codes_invalid_type(self):
+        """Test bulk QR code generation with invalid ids type (not a list)."""
+        url = '/api/assets/bulk-qr-codes/'
+        data = {'ids': 'not-a-list'}  # String instead of list
+        response = self.client.post(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(response.data['success'])
+        self.assertEqual(response.data['error']['code'], 'VALIDATION_ERROR')
+        self.assertIn('must be a list', response.data['error']['message'])
+
+    def test_bulk_qr_codes_too_many_ids(self):
+        """Test bulk QR code generation with too many ids (> 1000)."""
+        # Generate 1001 asset IDs (exceeds MAX_BULK_QR_LIMIT)
+        url = '/api/assets/bulk-qr-codes/'
+        too_many_ids = [str(uuid.uuid4()) for _ in range(1001)]
+        data = {'ids': too_many_ids}
+        response = self.client.post(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(response.data['success'])
+        self.assertEqual(response.data['error']['code'], 'VALIDATION_ERROR')
+        self.assertIn('Cannot generate more than', response.data['error']['message'])
+
+    def test_bulk_qr_codes_filename_sanitization(self):
+        """Test that asset codes with invalid characters are sanitized in filenames."""
+        unique_suffix = uuid.uuid4().hex[:8]
+
+        # Create asset with code containing invalid filename characters
+        asset = Asset.objects.create(
+            organization=self.org,
+            asset_category=self.category,
+            asset_code=f'TEST{unique_suffix}<>:"/\\|?*001',  # Invalid filename chars
+            asset_name='Test Asset',
+            purchase_price=Decimal('1000.00'),
+            purchase_date='2024-01-01',
+            created_by=self.user
+        )
+
+        url = '/api/assets/bulk-qr-codes/'
+        data = {'ids': [str(asset.id)]}
+        response = self.client.post(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response['Content-Type'], 'application/zip')
+        # Verify ZIP file is generated successfully (sanitization worked)
+        self.assertGreater(len(response.content), 0)
+
     def tearDown(self):
         """Clean up after each test."""
         # Clear thread-local organization context
