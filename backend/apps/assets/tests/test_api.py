@@ -137,6 +137,20 @@ class AssetCategoryAPITest(APITestCase):
         self.assertTrue(response.data['success'])
         self.assertIsInstance(response.data['data'], list)
 
+    def test_category_path_endpoint(self):
+        """Test GET /api/assets/categories/{id}/path/"""
+        url = f'/api/assets/categories/{self.child.id}/path/'
+        client = self._make_client()
+        response = client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['success'])
+        self.assertIsInstance(response.data['data'], list)
+        # Verify path has 2 items (parent -> child)
+        self.assertEqual(len(response.data['data']), 2)
+        # Verify path order is root to leaf
+        self.assertEqual(response.data['data'][0]['code'], f'ELECTRONICS_{self.unique_suffix}')
+        self.assertEqual(response.data['data'][1]['code'], f'COMPUTERS_{self.unique_suffix}')
+
     def test_add_child_action(self):
         """Test POST /api/assets/categories/{id}/add_child/"""
         url = f'/api/assets/categories/{self.parent.id}/add_child/'
