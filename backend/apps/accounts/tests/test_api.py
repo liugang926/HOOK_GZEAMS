@@ -17,7 +17,7 @@ class TestUserListAPI:
         """Test that unauthorized users cannot list users."""
         url = '/api/auth/users/'
         response = api_client.get(url)
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert response.data['success'] is False
         assert 'error' in response.data
 
@@ -124,7 +124,7 @@ class TestUserMeAPI:
         """Test that unauthorized users cannot get current user."""
         url = '/api/auth/users/me/'
         response = api_client.get(url)
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
         assert response.data['success'] is False
         assert 'error' in response.data
 
@@ -263,3 +263,91 @@ class TestOrganizationFilterAPI:
         if results:
             for u in results:
                 assert u['username'] == 'testuser'  # Only our test user
+
+
+class TestUserSelectorAPI:
+    """Test user selector endpoints."""
+
+    def test_selector_search(self, authenticated_client, user):
+        """Test user selector search endpoint."""
+        url = '/api/users/selector/search/?q=test'
+        response = authenticated_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['success'] is True
+        assert 'data' in response.data
+
+    def test_selector_by_organization(self, authenticated_client, user, organization):
+        """Test getting users by organization via selector."""
+        url = f'/api/users/selector/by-organization/{organization.id}/'
+        response = authenticated_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['success'] is True
+        assert len(response.data['data']) >= 1
+
+    def test_selector_by_department(self, authenticated_client, user, organization, department):
+        """Test getting users by department via selector."""
+        from apps.organizations.models import UserDepartment
+
+        # Add user to department
+        UserDepartment.objects.create(
+            user=user,
+            organization=organization,
+            department=department,
+            is_primary=True
+        )
+
+        url = f'/api/users/selector/by-department/{department.id}/'
+        response = authenticated_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['success'] is True
+        assert len(response.data['data']) >= 1
+        # Verify department field is present
+        assert 'department' in response.data['data'][0]
+        assert 'avatar_url' in response.data['data'][0]
+
+    def test_selector_current_user(self, authenticated_client, user):
+        """Test getting current user via selector."""
+        url = '/api/users/selector/current/'
+        response = authenticated_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['success'] is True
+        assert response.data['data']['username'] == 'testuser'
+        # Verify department and avatar_url fields are present
+        assert 'department' in response.data['data']
+        assert 'avatar_url' in response.data['data']
+
+    def test_selector_serializer_has_department_field(self, authenticated_client, user, organization, department):
+        """Test that UserSelectorSerializer includes department field."""
+        from apps.organizations.models import UserDepartment
+        from apps.accounts.serializers import UserSelectorSerializer
+
+        # Add user to department
+        UserDepartment.objects.create(
+            user=user,
+            organization=organization,
+            department=department,
+            is_primary=True
+        )
+
+        serializer = UserSelectorSerializer(
+            user,
+            context={'organization_id': str(organization.id)}
+        )
+        data = serializer.data
+
+        assert 'department' in data
+        assert 'avatar_url' in data
+        assert data['department'] is not None
+        assert data['department']['id'] == str(department.id)
+
+    def test_selector_serializer_without_department(self, authenticated_client, user):
+        """Test UserSelectorSerializer when user has no department."""
+        from apps.accounts.serializers import UserSelectorSerializer
+
+        serializer = UserSelectorSerializer(user)
+        data = serializer.data
+
+        assert 'department' in data
+        assert 'avatar_url' in data
+        assert data['department'] is None
+        assert data['avatar_url'] == ""

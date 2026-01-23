@@ -395,10 +395,12 @@ class UserSelectorSerializer(serializers.ModelSerializer):
     label = serializers.SerializerMethodField()
     value = serializers.CharField(source='id')
     full_name = serializers.SerializerMethodField()
+    department = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['value', 'username', 'full_name', 'email', 'label']
+        fields = ['value', 'username', 'full_name', 'email', 'label', 'department', 'avatar_url']
 
     def get_full_name(self, obj):
         """Get user's full name."""
@@ -414,3 +416,36 @@ class UserSelectorSerializer(serializers.ModelSerializer):
         if full_name:
             return f"{full_name} ({obj.username})"
         return obj.username
+
+    def get_department(self, obj):
+        """
+        Get user's primary department.
+
+        Returns primary department info or None.
+        """
+        from apps.organizations.models import UserDepartment
+
+        # Get current organization from context
+        organization_id = self.context.get('organization_id')
+
+        if organization_id:
+            primary_dept = UserDepartment.get_user_primary_department(
+                obj.id, organization_id
+            )
+            if primary_dept and primary_dept.department:
+                return {
+                    'id': str(primary_dept.department.id),
+                    'name': primary_dept.department.name,
+                    'full_path_name': primary_dept.department.full_path_name,
+                }
+
+        return None
+
+    def get_avatar_url(self, obj):
+        """
+        Get user's avatar URL.
+
+        Returns empty string as avatar feature is not implemented yet.
+        Can be extended to return actual avatar URL in the future.
+        """
+        return ""

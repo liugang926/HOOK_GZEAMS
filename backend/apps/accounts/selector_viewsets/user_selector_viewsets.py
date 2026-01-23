@@ -71,7 +71,11 @@ class UserSelectorViewSet(BaseModelViewSet):
             )
 
         users = queryset[:limit]
-        serializer = UserSelectorSerializer(users, many=True)
+        serializer = UserSelectorSerializer(
+            users,
+            many=True,
+            context={'organization_id': organization_id}
+        )
 
         return BaseResponse.success(
             data=serializer.data,
@@ -102,11 +106,59 @@ class UserSelectorViewSet(BaseModelViewSet):
         ).values_list('user_id', flat=True)
         users = users.filter(id__in=user_ids)
 
-        serializer = UserSelectorSerializer(users, many=True)
+        serializer = UserSelectorSerializer(
+            users,
+            many=True,
+            context={'organization_id': organization_id}
+        )
 
         return BaseResponse.success(
             data=serializer.data,
             message='Organization users retrieved successfully'
+        )
+
+    @action(detail=False, methods=['get'], url_path='by-department/(?P<department_id>[^/.]+)')
+    def by_department(self, request, department_id=None):
+        """
+        Get users in a specific department.
+
+        GET /api/users/selector/by-department/{department_id}/
+        """
+        from apps.accounts.serializers import UserSelectorSerializer
+        from apps.organizations.models import UserDepartment
+
+        organization_id = getattr(request, 'organization_id', None)
+
+        # Get UserDepartment records for this department
+        user_depts = UserDepartment.objects.filter(
+            is_deleted=False,
+            department_id=department_id
+        )
+
+        # Filter by organization if specified
+        if organization_id:
+            user_depts = user_depts.filter(organization_id=organization_id)
+
+        # Get user IDs
+        user_ids = user_depts.values_list('user_id', flat=True)
+
+        # Get active users
+        users = User.objects.filter(
+            id__in=user_ids,
+            is_deleted=False,
+            is_active=True
+        )
+
+        # Add organization_id to serializer context
+        serializer = UserSelectorSerializer(
+            users,
+            many=True,
+            context={'organization_id': organization_id}
+        )
+
+        return BaseResponse.success(
+            data=serializer.data,
+            message='Department users retrieved successfully'
         )
 
     @action(detail=False, methods=['get'], url_path='current')
@@ -118,7 +170,11 @@ class UserSelectorViewSet(BaseModelViewSet):
         """
         from apps.accounts.serializers import UserSelectorSerializer
 
-        serializer = UserSelectorSerializer(request.user)
+        organization_id = getattr(request, 'organization_id', None)
+        serializer = UserSelectorSerializer(
+            request.user,
+            context={'organization_id': organization_id}
+        )
 
         return BaseResponse.success(
             data=serializer.data,
