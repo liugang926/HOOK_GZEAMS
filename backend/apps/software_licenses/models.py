@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.core.validators import MinValueValidator
 from apps.common.models import BaseModel
 
@@ -293,11 +295,19 @@ class LicenseAllocation(BaseModel):
         return f"{self.license.software.name} -> {self.asset.asset_name} ({status})"
 
     def save(self, *args, **kwargs):
-        is_new = self.pk is None
-
-        # Update license usage on create (only if active)
-        if is_new and self.is_active:
-            self.license.used_units += 1
-            self.license.save()
-
+        # Just call parent save - signal will handle license usage
         super().save(*args, **kwargs)
+
+
+@receiver(post_save, sender=LicenseAllocation)
+def update_license_usage(sender, instance, created, **kwargs):
+    """
+    Signal handler to update license usage when allocation is created.
+
+    This is triggered after a LicenseAllocation is saved.
+    """
+    if created and instance.is_active:
+        # Increment used_units on the license using direct DB update
+        SoftwareLicense.objects.filter(id=instance.license.id).update(
+            used_units=models.F('used_units') + 1
+        )
