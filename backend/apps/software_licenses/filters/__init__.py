@@ -1,6 +1,6 @@
 from django_filters import rest_framework as filters
 from apps.common.filters.base import BaseModelFilter
-from .models import Software, SoftwareLicense, LicenseAllocation
+from apps.software_licenses.models import Software, SoftwareLicense, LicenseAllocation
 
 
 class SoftwareFilter(BaseModelFilter):

@@ -3,13 +3,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from apps.common.viewsets.base import BaseModelViewSetWithBatch
 from apps.common.permissions.base import IsOrganizationMember
-from .models import Software, SoftwareLicense, LicenseAllocation
-from .serializers import (
+from apps.software_licenses.models import Software, SoftwareLicense, LicenseAllocation
+from apps.software_licenses.serializers import (
     SoftwareSerializer, SoftwareListSerializer, SoftwareDetailSerializer,
     SoftwareLicenseSerializer, SoftwareLicenseListSerializer, SoftwareLicenseDetailSerializer,
     LicenseAllocationSerializer, LicenseAllocationListSerializer, LicenseAllocationDetailSerializer
 )
-from .filters import SoftwareFilter, SoftwareLicenseFilter, LicenseAllocationFilter
+from apps.software_licenses.filters import SoftwareFilter, SoftwareLicenseFilter, LicenseAllocationFilter
 
 
 # Base permission classes

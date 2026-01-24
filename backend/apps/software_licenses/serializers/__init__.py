@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.common.serializers.base import BaseModelSerializer
-from .models import Software, SoftwareLicense, LicenseAllocation
+from apps.software_licenses.models import Software, SoftwareLicense, LicenseAllocation
 
 
 class SoftwareSerializer(BaseModelSerializer):
