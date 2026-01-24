@@ -41,7 +41,10 @@ LOCAL_APPS = [
     'apps.lifecycle',
     'apps.workflows',
     'apps.inventory',
+    'apps.software_licenses',
     'apps.it_assets',
+    'apps.leasing',
+    'apps.insurance',
     'apps.mobile',
     'apps.notifications',
     'apps.permissions',
@@ -167,6 +170,9 @@ CORS_ALLOWED_ORIGINS = os.getenv(
     'http://localhost:5173,http://127.0.0.1:5173'
 ).split(',')
 CORS_ALLOW_CREDENTIALS = True
+
+# Frontend URL for QR code generation and other features
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
 # Redis Cache
 CACHES = {
