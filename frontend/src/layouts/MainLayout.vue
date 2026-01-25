@@ -43,6 +43,7 @@
               <el-menu-item index="/system/page-layouts">页面布局管理</el-menu-item>
               <el-menu-item index="/system/dictionary-types">数据字典管理</el-menu-item>
               <el-menu-item index="/system/sequence-rules">编号规则管理</el-menu-item>
+              <el-menu-item index="/system/config">系统配置管理</el-menu-item>
               <el-menu-item index="/system/departments">部门管理</el-menu-item>
               <el-menu-item index="/admin/permissions">权限管理</el-menu-item>
             </el-sub-menu>
@@ -93,6 +94,7 @@
                 <el-menu-item index="/system/page-layouts">页面布局管理</el-menu-item>
                 <el-menu-item index="/system/dictionary-types">数据字典管理</el-menu-item>
                 <el-menu-item index="/system/sequence-rules">编号规则管理</el-menu-item>
+                <el-menu-item index="/system/config">系统配置管理</el-menu-item>
                 <el-menu-item index="/system/departments">部门管理</el-menu-item>
                 <el-menu-item index="/admin/permissions">权限管理</el-menu-item>
               </el-sub-menu>

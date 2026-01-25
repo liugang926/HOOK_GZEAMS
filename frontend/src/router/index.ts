@@ -277,6 +277,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/system/SequenceRuleList.vue'),
         meta: { title: '编号规则管理' }
       },
+      // System - Configuration
+      {
+        path: 'system/config',
+        name: 'SystemConfigList',
+        component: () => import('@/views/system/SystemConfigList.vue'),
+        meta: { title: '系统配置管理' }
+      },
       // Workflow
       {
         path: 'workflow/tasks',
