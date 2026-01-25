@@ -52,8 +52,9 @@
               <el-menu-item index="/system/config">系统配置管理</el-menu-item>
               <el-menu-item index="/system/files">系统文件管理</el-menu-item>
               <el-menu-item index="/system/departments">部门管理</el-menu-item>
-              <el-menu-item index="/admin/permissions">权限管理</el-menu-item>
             </el-sub-menu>
+            <el-menu-item index="/integration/configs">集成配置</el-menu-item>
+            <el-menu-item index="/admin/permissions">权限管理</el-menu-item>
             <el-menu-item index="/workflow/tasks">我的待办</el-menu-item>
           </el-menu>
 
@@ -110,8 +111,9 @@
                 <el-menu-item index="/system/config">系统配置管理</el-menu-item>
                 <el-menu-item index="/system/files">系统文件管理</el-menu-item>
                 <el-menu-item index="/system/departments">部门管理</el-menu-item>
-                <el-menu-item index="/admin/permissions">权限管理</el-menu-item>
               </el-sub-menu>
+              <el-menu-item index="/integration/configs">集成配置</el-menu-item>
+              <el-menu-item index="/admin/permissions">权限管理</el-menu-item>
               <el-menu-item index="/workflow/tasks">我的待办</el-menu-item>
             </el-menu>
          </div>

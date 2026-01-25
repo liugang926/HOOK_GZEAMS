@@ -291,6 +291,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/system/SystemFileList.vue'),
         meta: { title: '系统文件管理' }
       },
+      // Integration
+      {
+        path: 'integration/configs',
+        name: 'IntegrationConfigList',
+        component: () => import('@/views/integration/IntegrationConfigList.vue'),
+        meta: { title: '集成配置管理' }
+      },
       // IT Assets
       {
         path: 'it-assets',
