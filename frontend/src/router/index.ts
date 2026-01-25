@@ -270,6 +270,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/system/DictionaryTypeList.vue'),
         meta: { title: '数据字典管理' }
       },
+      // System - Sequence Rules
+      {
+        path: 'system/sequence-rules',
+        name: 'SequenceRuleList',
+        component: () => import('@/views/system/SequenceRuleList.vue'),
+        meta: { title: '编号规则管理' }
+      },
       // Workflow
       {
         path: 'workflow/tasks',

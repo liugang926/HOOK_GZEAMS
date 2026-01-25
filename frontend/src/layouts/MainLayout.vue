@@ -42,6 +42,7 @@
               <el-menu-item index="/system/field-definitions">字段定义管理</el-menu-item>
               <el-menu-item index="/system/page-layouts">页面布局管理</el-menu-item>
               <el-menu-item index="/system/dictionary-types">数据字典管理</el-menu-item>
+              <el-menu-item index="/system/sequence-rules">编号规则管理</el-menu-item>
               <el-menu-item index="/system/departments">部门管理</el-menu-item>
               <el-menu-item index="/admin/permissions">权限管理</el-menu-item>
             </el-sub-menu>
@@ -91,6 +92,7 @@
                 <el-menu-item index="/system/field-definitions">字段定义管理</el-menu-item>
                 <el-menu-item index="/system/page-layouts">页面布局管理</el-menu-item>
                 <el-menu-item index="/system/dictionary-types">数据字典管理</el-menu-item>
+                <el-menu-item index="/system/sequence-rules">编号规则管理</el-menu-item>
                 <el-menu-item index="/system/departments">部门管理</el-menu-item>
                 <el-menu-item index="/admin/permissions">权限管理</el-menu-item>
               </el-sub-menu>
