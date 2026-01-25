@@ -170,3 +170,217 @@ export function getUsers(params?: any) {
         params
     })
 }
+
+// =============================================================================
+// Data Dictionary API
+// =============================================================================
+
+export interface DictionaryType {
+    id: string
+    code: string
+    name: string
+    name_en?: string
+    description?: string
+    is_system: boolean
+    is_active: boolean
+    sort_order: number
+    item_count?: number
+}
+
+export interface DictionaryItem {
+    id: string
+    dictionary_type: string
+    code: string
+    name: string
+    name_en?: string
+    description?: string
+    color?: string
+    icon?: string
+    extra_data?: Record<string, any>
+    is_default: boolean
+    is_active: boolean
+    sort_order: number
+}
+
+// Dictionary Type API
+export const dictionaryTypeApi = {
+    list(params?: any) {
+        return request({
+            url: '/system/dictionary-types/',
+            method: 'get',
+            params
+        })
+    },
+
+    detail(id: string) {
+        return request({
+            url: `/system/dictionary-types/${id}/`,
+            method: 'get'
+        })
+    },
+
+    create(data: Partial<DictionaryType>) {
+        return request({
+            url: '/system/dictionary-types/',
+            method: 'post',
+            data
+        })
+    },
+
+    update(id: string, data: Partial<DictionaryType>) {
+        return request({
+            url: `/system/dictionary-types/${id}/`,
+            method: 'put',
+            data
+        })
+    },
+
+    partialUpdate(id: string, data: Partial<DictionaryType>) {
+        return request({
+            url: `/system/dictionary-types/${id}/`,
+            method: 'patch',
+            data
+        })
+    },
+
+    delete(id: string) {
+        return request({
+            url: `/system/dictionary-types/${id}/`,
+            method: 'delete'
+        })
+    }
+}
+
+// Dictionary Item API
+export const dictionaryItemApi = {
+    list(params?: any) {
+        return request({
+            url: '/system/dictionary-items/',
+            method: 'get',
+            params
+        })
+    },
+
+    detail(id: string) {
+        return request({
+            url: `/system/dictionary-items/${id}/`,
+            method: 'get'
+        })
+    },
+
+    create(data: Partial<DictionaryItem>) {
+        return request({
+            url: '/system/dictionary-items/',
+            method: 'post',
+            data
+        })
+    },
+
+    update(id: string, data: Partial<DictionaryItem>) {
+        return request({
+            url: `/system/dictionary-items/${id}/`,
+            method: 'put',
+            data
+        })
+    },
+
+    partialUpdate(id: string, data: Partial<DictionaryItem>) {
+        return request({
+            url: `/system/dictionary-items/${id}/`,
+            method: 'patch',
+            data
+        })
+    },
+
+    delete(id: string) {
+        return request({
+            url: `/system/dictionary-items/${id}/`,
+            method: 'delete'
+        })
+    },
+
+    getByType(typeCode: string, params?: any) {
+        return request({
+            url: '/system/dictionary-items/',
+            method: 'get',
+            params: {
+                dictionary_type__code: typeCode,
+                is_active: true,
+                ordering: 'sort_order',
+                ...params
+            }
+        })
+    }
+}
+
+// =============================================================================
+// Sequence Rule API
+// =============================================================================
+
+export interface SequenceRule {
+    id: string
+    code: string
+    name: string
+    prefix?: string
+    pattern: string
+    seq_length: number
+    current_value: number
+    reset_period: 'never' | 'yearly' | 'monthly' | 'daily'
+    last_reset_date?: string
+    description?: string
+    is_active: boolean
+}
+
+export const sequenceRuleApi = {
+    list(params?: any) {
+        return request({
+            url: '/system/sequence-rules/',
+            method: 'get',
+            params
+        })
+    },
+
+    detail(id: string) {
+        return request({
+            url: `/system/sequence-rules/${id}/`,
+            method: 'get'
+        })
+    },
+
+    create(data: Partial<SequenceRule>) {
+        return request({
+            url: '/system/sequence-rules/',
+            method: 'post',
+            data
+        })
+    },
+
+    update(id: string, data: Partial<SequenceRule>) {
+        return request({
+            url: `/system/sequence-rules/${id}/`,
+            method: 'put',
+            data
+        })
+    },
+
+    delete(id: string) {
+        return request({
+            url: `/system/sequence-rules/${id}/`,
+            method: 'delete'
+        })
+    },
+
+    preview(code: string) {
+        return request({
+            url: `/system/sequence-rules/${code}/preview/`,
+            method: 'get'
+        })
+    },
+
+    reset(code: string) {
+        return request({
+            url: `/system/sequence-rules/${code}/reset/`,
+            method: 'post'
+        })
+    }
+}

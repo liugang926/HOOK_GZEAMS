@@ -263,6 +263,13 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/system/PageLayoutList.vue'),
         meta: { title: '页面布局管理' }
       },
+      // System - Dictionary Types
+      {
+        path: 'system/dictionary-types',
+        name: 'DictionaryTypeList',
+        component: () => import('@/views/system/DictionaryTypeList.vue'),
+        meta: { title: '数据字典管理' }
+      },
       // Workflow
       {
         path: 'workflow/tasks',

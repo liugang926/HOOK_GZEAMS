@@ -41,14 +41,15 @@
               <el-menu-item index="/system/business-objects">业务对象管理</el-menu-item>
               <el-menu-item index="/system/field-definitions">字段定义管理</el-menu-item>
               <el-menu-item index="/system/page-layouts">页面布局管理</el-menu-item>
+              <el-menu-item index="/system/dictionary-types">数据字典管理</el-menu-item>
               <el-menu-item index="/system/departments">部门管理</el-menu-item>
               <el-menu-item index="/admin/permissions">权限管理</el-menu-item>
             </el-sub-menu>
             <el-menu-item index="/workflow/tasks">我的待办</el-menu-item>
           </el-menu>
-          
+
           <div style="flex: 1"></div>
-          
+
           <NotificationBell />
         </div>
       </el-header>
@@ -89,6 +90,7 @@
                 <el-menu-item index="/system/business-objects">业务对象管理</el-menu-item>
                 <el-menu-item index="/system/field-definitions">字段定义管理</el-menu-item>
                 <el-menu-item index="/system/page-layouts">页面布局管理</el-menu-item>
+                <el-menu-item index="/system/dictionary-types">数据字典管理</el-menu-item>
                 <el-menu-item index="/system/departments">部门管理</el-menu-item>
                 <el-menu-item index="/admin/permissions">权限管理</el-menu-item>
               </el-sub-menu>
