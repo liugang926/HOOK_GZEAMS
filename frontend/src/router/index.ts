@@ -284,6 +284,25 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/system/SystemConfigList.vue'),
         meta: { title: '系统配置管理' }
       },
+      // IT Assets
+      {
+        path: 'it-assets',
+        name: 'ITAssetList',
+        component: () => import('@/views/it-assets/ITAssetList.vue'),
+        meta: { title: 'IT资产管理' }
+      },
+      {
+        path: 'it-assets/maintenance',
+        name: 'ITMaintenanceList',
+        component: () => import('@/views/it-assets/MaintenanceList.vue'),
+        meta: { title: 'IT维护记录' }
+      },
+      {
+        path: 'it-assets/configuration-changes',
+        name: 'ConfigurationChangeList',
+        component: () => import('@/views/it-assets/ConfigurationChangeList.vue'),
+        meta: { title: '配置变更记录' }
+      },
       // Workflow
       {
         path: 'workflow/tasks',

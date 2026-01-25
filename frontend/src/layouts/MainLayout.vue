@@ -30,6 +30,12 @@
               <el-menu-item index="/finance/depreciation">折旧管理</el-menu-item>
             </el-sub-menu>
             <el-menu-item index="/consumables">耗材管理</el-menu-item>
+            <el-sub-menu index="/it-assets">
+              <template #title>IT资产</template>
+              <el-menu-item index="/it-assets">IT资产列表</el-menu-item>
+              <el-menu-item index="/it-assets/maintenance">维护记录</el-menu-item>
+              <el-menu-item index="/it-assets/configuration-changes">配置变更</el-menu-item>
+            </el-sub-menu>
             <el-sub-menu index="/software-licenses">
               <template #title>软件许可</template>
               <el-menu-item index="/software-licenses/software">软件目录</el-menu-item>
@@ -81,6 +87,12 @@
                 <el-menu-item index="/finance/depreciation">折旧管理</el-menu-item>
               </el-sub-menu>
               <el-menu-item index="/consumables">耗材管理</el-menu-item>
+              <el-sub-menu index="/it-assets">
+                <template #title>IT资产</template>
+                <el-menu-item index="/it-assets">IT资产列表</el-menu-item>
+                <el-menu-item index="/it-assets/maintenance">维护记录</el-menu-item>
+                <el-menu-item index="/it-assets/configuration-changes">配置变更</el-menu-item>
+              </el-sub-menu>
               <el-sub-menu index="/software-licenses">
                 <template #title>软件许可</template>
                 <el-menu-item index="/software-licenses/software">软件目录</el-menu-item>
