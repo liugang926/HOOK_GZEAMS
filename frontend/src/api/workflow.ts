@@ -216,6 +216,13 @@ export const taskApi = {
    */
   rejectTask(id: string, data: { comment: string }): Promise<any> {
     return request.post(`/workflows/tasks/${id}/reject/`, data)
+  },
+
+  /**
+   * Return task to previous step
+   */
+  returnTask(id: string, data: { comment: string }): Promise<any> {
+    return request.post(`/workflows/tasks/${id}/return_task/`, data)
   }
 }
 
@@ -226,3 +233,4 @@ export const getTaskDetail = taskApi.getTaskDetail
 export const getTaskFormData = taskApi.getTaskFormData
 export const approveTask = taskApi.approveTask
 export const rejectTask = taskApi.rejectTask
+export const returnTask = taskApi.returnTask

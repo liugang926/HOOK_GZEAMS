@@ -14,6 +14,7 @@ const ConsumableList = () => import('@/views/consumables/ConsumableList.vue')
 const DepartmentList = () => import('@/views/system/DepartmentList.vue')
 const TaskCenter = () => import('@/views/workflow/TaskCenter.vue')
 const TaskDetail = () => import('@/views/workflow/TaskDetail.vue')
+const MyApprovals = () => import('@/views/workflow/MyApprovals.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -327,6 +328,12 @@ const routes: RouteRecordRaw[] = [
         path: 'workflow/task/:id',
         name: 'TaskDetail',
         component: TaskDetail
+      },
+      {
+        path: 'workflow/my-approvals',
+        name: 'MyApprovals',
+        component: MyApprovals,
+        meta: { title: '我的审批' }
       },
       // Software Licenses
       {
