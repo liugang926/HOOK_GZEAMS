@@ -108,12 +108,29 @@ export const workflowInstanceApi = {
    * Start workflow instance
    */
   startInstance(data: {
-    definitionId: string
-    businessDataType: string
-    businessDataId: string
+    definitionId?: string
+    definitionKey?: string
+    businessDataType?: string
+    businessDataId?: string
+    businessKey?: string
     variables?: Record<string, any>
   }): Promise<WorkflowInstance> {
     return request.post('/workflows/instances/start/', data)
+  },
+
+  /**
+   * Start workflow instance by process key (convenience method)
+   */
+  startProcess(data: {
+    processKey: string
+    businessKey: string
+    variables?: Record<string, any>
+  }): Promise<WorkflowInstance> {
+    return this.startInstance({
+      definitionKey: data.processKey,
+      businessKey: data.businessKey,
+      variables: data.variables
+    })
   },
 
   /**
@@ -143,7 +160,7 @@ export const workflowNodeApi = {
     pageSize?: number
     status?: string
   }): Promise<PaginatedResponse<any>> {
-    return request.get('/workflows/nodes/my-tasks/', { params })
+    return request.get('/workflows/tasks/my_tasks/', { params })
   },
 
   /**
@@ -167,3 +184,45 @@ export const workflowNodeApi = {
     return request.post(`/workflows/instances/${instanceId}/nodes/${nodeId}/delegate/`, { userId })
   }
 }
+
+/**
+ * Workflow Task API service
+ * For task approval and detail viewing
+ */
+export const taskApi = {
+  /**
+   * Get task detail by ID
+   */
+  getTaskDetail(id: string): Promise<any> {
+    return request.get(`/workflows/tasks/${id}/`)
+  },
+
+  /**
+   * Get task form data
+   */
+  getTaskFormData(taskId: string): Promise<any> {
+    return request.get(`/workflows/tasks/${taskId}/form-data/`)
+  },
+
+  /**
+   * Approve task
+   */
+  approveTask(id: string, data: { comment: string }): Promise<any> {
+    return request.post(`/workflows/tasks/${id}/approve/`, data)
+  },
+
+  /**
+   * Reject task
+   */
+  rejectTask(id: string, data: { comment: string }): Promise<any> {
+    return request.post(`/workflows/tasks/${id}/reject/`, data)
+  }
+}
+
+/**
+ * Legacy function exports for backward compatibility
+ */
+export const getTaskDetail = taskApi.getTaskDetail
+export const getTaskFormData = taskApi.getTaskFormData
+export const approveTask = taskApi.approveTask
+export const rejectTask = taskApi.rejectTask
