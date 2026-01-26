@@ -71,7 +71,7 @@ export default defineConfig({
     },
 
     // The following projects are disabled on CI for speed
-    ...(process.env.CI !== 'true' ? [
+    ...(!process.env.CI ? [
       {
         name: 'firefox',
         use: { ...devices['Desktop Firefox'] },
