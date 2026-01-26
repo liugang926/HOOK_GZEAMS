@@ -4,10 +4,84 @@ export interface BusinessObject {
     id: string
     code: string
     name: string
+    nameEn?: string
     description?: string
-    enable_workflow: boolean
-    enable_version: boolean
-    enable_soft_delete: boolean
+    enableWorkflow: boolean
+    enableVersion: boolean
+    enableSoftDelete: boolean
+    isHardcoded: boolean
+    djangoModelPath?: string
+    tableName?: string
+    fieldCount?: number
+    layoutCount?: number
+}
+
+// =============================================================================
+// Business Object API
+// =============================================================================
+
+export const businessObjectApi = {
+    list(params?: any) {
+        return request({
+            url: '/system/business-objects/',
+            method: 'get',
+            params
+        })
+    },
+
+    detail(code: string) {
+        return request({
+            url: `/system/business-objects/${code}/`,
+            method: 'get'
+        })
+    },
+
+    create(data: Partial<BusinessObject>) {
+        return request({
+            url: '/system/business-objects/',
+            method: 'post',
+            data
+        })
+    },
+
+    update(code: string, data: Partial<BusinessObject>) {
+        return request({
+            url: `/system/business-objects/${code}/`,
+            method: 'put',
+            data
+        })
+    },
+
+    partialUpdate(code: string, data: Partial<BusinessObject>) {
+        return request({
+            url: `/system/business-objects/${code}/`,
+            method: 'patch',
+            data
+        })
+    },
+
+    delete(code: string) {
+        return request({
+            url: `/system/business-objects/${code}/`,
+            method: 'delete'
+        })
+    },
+
+    // Get field definitions for a business object
+    getFields(code: string) {
+        return request({
+            url: `/system/business-objects/${code}/fields/`,
+            method: 'get'
+        })
+    },
+
+    // Sync model fields for hardcoded objects
+    syncFields(code: string) {
+        return request({
+            url: `/system/business-objects/${code}/sync-fields/`,
+            method: 'post'
+        })
+    }
 }
 
 export interface FieldDefinition {
@@ -27,18 +101,75 @@ export interface FieldDefinition {
 
 export interface PageLayout {
     id: string
-    layout_code: string
-    layout_name: string
-    layout_type: string
-    layout_config: {
-        sections: Array<{
+    layoutCode: string
+    layoutName: string
+    layoutType: 'form' | 'list' | 'detail' | 'search'
+    layoutTypeDisplay?: string
+    description?: string
+    layoutConfig: {
+        sections?: Array<{
             id: string
+            type?: string
             title?: string
-            fields: string[]
-            visible?: boolean
+            fields?: Array<{
+                id: string
+                fieldCode: string
+                label: string
+                span: number
+                readonly?: boolean
+                visible?: boolean
+                required?: boolean
+            }>
+            columns?: number
+            collapsible?: boolean
             collapsed?: boolean
         }>
+        columns?: Array<{
+            fieldCode: string
+            label: string
+            width?: number
+            fixed?: string
+            sortable?: boolean
+        }>
+        actions?: Array<{
+            code: string
+            label: string
+            type: string
+            position: string
+        }>
     }
+    status: 'draft' | 'published' | 'archived'
+    statusDisplay?: string
+    version: string
+    parentVersion?: string
+    isDefault: boolean
+    isActive: boolean
+    isSystem?: boolean
+    publishedAt?: string
+    publishedBy?: string
+    publishedByInfo?: {
+        id: string
+        username: string
+    }
+    business_object?: string
+    business_object_name?: string
+    history_count?: number
+}
+
+export interface LayoutHistory {
+    id: string
+    layout: string
+    version: string
+    config_snapshot: any
+    action: 'publish' | 'update' | 'rollback'
+    action_display?: string
+    change_summary?: string
+    published_by?: string
+    published_by_info?: {
+        id: string
+        username: string
+    }
+    created_at: string
 }
 
 // 获取业务对象详情
@@ -464,6 +595,124 @@ export const systemConfigApi = {
             url: '/system/configs/batch/',
             method: 'post',
             data
+        })
+    }
+}
+
+// =============================================================================
+// Page Layout API
+// =============================================================================
+
+export const pageLayoutApi = {
+    // List layouts for a business object
+    byObject(objectCode: string) {
+        return request({
+            url: `/system/page-layouts/by-object/${objectCode}/`,
+            method: 'get'
+        })
+    },
+
+    // Get layout by object code and type (with custom layout priority)
+    byObjectAndType(objectCode: string, layoutType: 'form' | 'list' | 'detail' | 'search') {
+        return request({
+            url: `/system/page-layouts/by-object/${objectCode}/${layoutType}/`,
+            method: 'get'
+        })
+    },
+
+    // Get default layout or template
+    getDefault(objectCode: string, layoutType: 'form' | 'list' | 'detail' | 'search') {
+        return request({
+            url: `/system/page-layouts/default/${objectCode}/${layoutType}/`,
+            method: 'get'
+        })
+    },
+
+    // CRUD operations
+    list(params?: any) {
+        return request({
+            url: '/system/page-layouts/',
+            method: 'get',
+            params
+        })
+    },
+
+    detail(id: string) {
+        return request({
+            url: `/system/page-layouts/${id}/`,
+            method: 'get'
+        })
+    },
+
+    create(data: Partial<PageLayout>) {
+        return request({
+            url: '/system/page-layouts/',
+            method: 'post',
+            data
+        })
+    },
+
+    update(id: string, data: Partial<PageLayout>) {
+        return request({
+            url: `/system/page-layouts/${id}/`,
+            method: 'put',
+            data
+        })
+    },
+
+    partialUpdate(id: string, data: Partial<PageLayout>) {
+        return request({
+            url: `/system/page-layouts/${id}/`,
+            method: 'patch',
+            data
+        })
+    },
+
+    delete(id: string) {
+        return request({
+            url: `/system/page-layouts/${id}/`,
+            method: 'delete'
+        })
+    },
+
+    // Publish layout (creates version and history)
+    publish(id: string, data?: { set_as_default?: boolean; change_summary?: string }) {
+        return request({
+            url: `/system/page-layouts/${id}/publish/`,
+            method: 'post',
+            data: data || {}
+        })
+    },
+
+    // Get version history
+    history(id: string) {
+        return request({
+            url: `/system/page-layouts/${id}/history/`,
+            method: 'get'
+        })
+    },
+
+    // Rollback to a specific version
+    rollback(id: string, version: string) {
+        return request({
+            url: `/system/page-layouts/${id}/rollback/${version}/`,
+            method: 'post'
+        })
+    },
+
+    // Set as default layout
+    setDefault(id: string) {
+        return request({
+            url: `/system/page-layouts/${id}/set-default/`,
+            method: 'post'
+        })
+    },
+
+    // Duplicate layout
+    duplicate(id: string) {
+        return request({
+            url: `/system/page-layouts/${id}/duplicate/`,
+            method: 'post'
         })
     }
 }
