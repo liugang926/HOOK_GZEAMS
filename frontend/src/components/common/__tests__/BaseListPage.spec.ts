@@ -15,7 +15,8 @@ import BaseListPage from '../BaseListPage.vue'
 // Mock Vue Router
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: {}, query: {} }),
-  useRouter: () => ({ push: vi.fn(), back: vi.fn() })
+  useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
+  createRouter: () => ({})
 }))
 
 // Mock Element Plus components (stub them)
