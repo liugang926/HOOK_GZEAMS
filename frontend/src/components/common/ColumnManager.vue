@@ -50,9 +50,12 @@
       <div class="column-list">
         <div
           v-for="(col, index) in internalColumns"
-          :key="col.prop"
+          :key="getFieldCode(col)"
           class="column-item"
-          :class="{ 'column-item-dragging': draggingIndex === index }"
+          :class="{
+            'column-item-dragging': draggingIndex === index,
+            'column-item-required': isRequired(col)
+          }"
           draggable="true"
           @dragstart="handleDragStart(index, $event)"
           @dragover="handleDragOver(index, $event)"
@@ -67,14 +70,50 @@
               <DCaret />
             </el-icon>
 
+            <!-- Field type badge -->
+            <span
+              v-if="(col as any).field_type"
+              class="field-type-badge"
+              :title="`Type: ${(col as any).field_type}`"
+            >
+              {{ getFieldTypeLabel((col as any).field_type) }}
+            </span>
+
             <el-checkbox
               :model-value="col.visible !== false"
+              :disabled="isRequired(col)"
               @update:model-value="(val: boolean) => handleToggleVisibility(col, val)"
             >
-              <span class="column-label">{{ col.label }}</span>
+              <span
+                class="column-label"
+                :title="(col as any).label_override ? col.label : ''"
+              >
+                {{ getDisplayLabel(col) }}
+              </span>
+              <el-tooltip
+                v-if="(col as any).label_override"
+                :content="`Original: ${col.label}`"
+                placement="top"
+              >
+                <el-icon class="override-icon" :size="12">
+                  <InfoFilled />
+                </el-icon>
+              </el-tooltip>
             </el-checkbox>
 
             <div class="column-actions">
+              <!-- Column fixed selector -->
+              <el-select
+                :model-value="(col.fixed || '') as string"
+                size="small"
+                style="width: 75px"
+                @update:model-value="(val) => handleFixedChange(col, val)"
+              >
+                <el-option label="None" value="" />
+                <el-option label="Left" value="left" />
+                <el-option label="Right" value="right" />
+              </el-select>
+
               <el-input-number
                 :model-value="col.width || col.defaultWidth || 120"
                 :min="50"
@@ -82,7 +121,7 @@
                 :step="10"
                 size="small"
                 controls-position="right"
-                style="width: 90px"
+                style="width: 85px"
                 @update:model-value="(val: number) => handleWidthChange(col, val)"
               />
             </div>
@@ -107,7 +146,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Setting, DCaret } from '@element-plus/icons-vue'
+import { Setting, DCaret, InfoFilled } from '@element-plus/icons-vue'
 import type { ColumnItem } from '@/hooks/useColumnConfig'
 
 interface Props {
@@ -129,6 +168,36 @@ const emit = defineEmits<Emits>()
 const internalColumns = ref<ColumnItem[]>([])
 const draggingIndex = ref<number | null>(null)
 const dragOverIndex = ref<number | null>(null)
+
+// Helper to get field_code with backward compatibility for prop
+const getFieldCode = (col: ColumnItem): string => {
+  return (col as any).field_code || col.prop || ''
+}
+
+// Helper to check if column is required (cannot be hidden)
+const isRequired = (col: ColumnItem): boolean => {
+  return (col as any).required_in_list === true
+}
+
+// Field type mapping for badges
+const getFieldTypeLabel = (type: string): string => {
+  const typeMap: Record<string, string> = {
+    text: 'T',
+    number: '#',
+    date: 'D',
+    datetime: 'DT',
+    boolean: 'B',
+    select: 'S',
+    user: 'U',
+    reference: 'R'
+  }
+  return typeMap[type] || type[0]?.toUpperCase() || ''
+}
+
+// Get display label (with override support)
+const getDisplayLabel = (col: ColumnItem): string => {
+  return (col as any).label_override || col.label
+}
 
 // Initialize columns
 const initColumns = () => {
@@ -191,14 +260,20 @@ const handleDragEnd = () => {
 
 // Column visibility toggle
 const handleToggleVisibility = (col: ColumnItem, visible: boolean) => {
+  if (isRequired(col) && !visible) {
+    ElMessage.warning('This column is required and cannot be hidden')
+    return
+  }
   col.visible = visible
   emitChanges()
 }
 
-// Toggle all columns
+// Toggle all columns (skip required columns)
 const handleToggleAll = (visible: boolean) => {
   internalColumns.value.forEach(col => {
-    col.visible = visible
+    if (!isRequired(col)) {
+      col.visible = visible
+    }
   })
   emitChanges()
 }
@@ -209,13 +284,21 @@ const handleWidthChange = (col: ColumnItem, width: number) => {
   emitChanges()
 }
 
+// Column fixed position change
+const handleFixedChange = (col: ColumnItem, value: string) => {
+  const fixedValue = value === '' ? null : value as 'left' | 'right' | null
+  col.fixed = fixedValue
+  emitChanges()
+}
+
 // Reset to default configuration
 const handleReset = () => {
   internalColumns.value = props.columns.map(col => ({
     ...col,
     defaultWidth: col.defaultWidth || col.width || 120,
     visible: col.defaultVisible !== false,
-    width: col.defaultWidth || col.width || 120
+    width: col.defaultWidth || col.width || 120,
+    fixed: undefined
   }))
   emit('reset')
   emitChanges()
@@ -281,6 +364,11 @@ const handleShow = () => {
   background: var(--el-fill-color);
 }
 
+.column-item-required {
+  background: var(--el-color-warning-light-9);
+  border-color: var(--el-color-warning-light-5);
+}
+
 .column-item-main {
   display: flex;
   align-items: center;
@@ -297,13 +385,36 @@ const handleShow = () => {
   cursor: grabbing;
 }
 
+.field-type-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+  font-weight: 500;
+  background: var(--el-color-info-light-9);
+  color: var(--el-color-info);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
 .column-label {
   font-size: 13px;
   user-select: none;
 }
 
+.override-icon {
+  margin-left: 4px;
+  color: var(--el-color-info);
+  cursor: help;
+  flex-shrink: 0;
+}
+
 .column-actions {
   margin-left: auto;
+  display: flex;
+  gap: 4px;
 }
 
 .column-manager-footer {
