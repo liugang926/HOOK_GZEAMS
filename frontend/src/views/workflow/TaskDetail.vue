@@ -1,24 +1,50 @@
 <template>
   <div class="task-detail">
-    <el-page-header @back="$router.back()" content="任务办理" class="page-header" />
+    <el-page-header
+      content="任务办理"
+      class="page-header"
+      @back="$router.back()"
+    />
 
-    <el-card v-loading="loading" class="mt-20">
+    <el-card
+      v-loading="loading"
+      class="mt-20"
+    >
       <template #header>
         <span>任务信息</span>
       </template>
-      <el-descriptions v-if="taskData" border :column="2">
-        <el-descriptions-item label="任务标题">{{ taskData.title }}</el-descriptions-item>
-        <el-descriptions-item label="任务类型">{{ taskData.workflowName || taskData.processName }}</el-descriptions-item>
-        <el-descriptions-item label="发起人">{{ taskData.initiator?.realName || taskData.initiatorName || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="发起时间">{{ formatDate(taskData.createdAt || taskData.created_at) }}</el-descriptions-item>
-        <el-descriptions-item label="当前节点">{{ taskData.currentNodeName || taskData.nodeName }}</el-descriptions-item>
+      <el-descriptions
+        v-if="taskData"
+        border
+        :column="2"
+      >
+        <el-descriptions-item label="任务标题">
+          {{ taskData.title }}
+        </el-descriptions-item>
+        <el-descriptions-item label="任务类型">
+          {{ taskData.workflowName || taskData.processName }}
+        </el-descriptions-item>
+        <el-descriptions-item label="发起人">
+          {{ taskData.initiator?.realName || taskData.initiatorName || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item label="发起时间">
+          {{ formatDate(taskData.createdAt || taskData.created_at) }}
+        </el-descriptions-item>
+        <el-descriptions-item label="当前节点">
+          {{ taskData.currentNodeName || taskData.nodeName }}
+        </el-descriptions-item>
         <el-descriptions-item label="任务状态">
-          <el-tag :type="getStatusType(taskData.status)">{{ getStatusText(taskData.status) }}</el-tag>
+          <el-tag :type="getStatusType(taskData.status)">
+            {{ getStatusText(taskData.status) }}
+          </el-tag>
         </el-descriptions-item>
       </el-descriptions>
     </el-card>
 
-    <el-card v-if="formData" class="mt-20">
+    <el-card
+      v-if="formData"
+      class="mt-20"
+    >
       <template #header>
         <span>表单信息</span>
       </template>
@@ -28,7 +54,10 @@
         :data="formData"
         :readonly="true"
       />
-      <el-descriptions v-else border>
+      <el-descriptions
+        v-else
+        border
+      >
         <el-descriptions-item
           v-for="(value, key) in displayFormData"
           :key="key"
@@ -39,12 +68,18 @@
       </el-descriptions>
     </el-card>
 
-    <el-card v-if="taskData && (taskData.status === 'pending' || taskData.status === 'in_progress')" class="mt-20">
+    <el-card
+      v-if="taskData && (taskData.status === 'pending' || taskData.status === 'in_progress')"
+      class="mt-20"
+    >
       <template #header>
         <span>审批处理</span>
       </template>
       <el-form label-width="80px">
-        <el-form-item label="审批意见" required>
+        <el-form-item
+          label="审批意见"
+          required
+        >
           <el-input
             v-model="comment"
             type="textarea"

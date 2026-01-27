@@ -2,73 +2,156 @@
   <div class="integration-config-list">
     <div class="page-header">
       <h3>Integration Configuration</h3>
-      <el-button type="primary" @click="handleCreate">New Integration</el-button>
+      <el-button
+        type="primary"
+        @click="handleCreate"
+      >
+        New Integration
+      </el-button>
     </div>
 
     <!-- Statistics Cards -->
-    <el-row :gutter="20" class="stats-row">
+    <el-row
+      :gutter="20"
+      class="stats-row"
+    >
       <el-col :span="6">
         <el-card>
           <div class="stat-item">
-            <div class="stat-value">{{ stats.total }}</div>
-            <div class="stat-label">Total Integrations</div>
+            <div class="stat-value">
+              {{ stats.total }}
+            </div>
+            <div class="stat-label">
+              Total Integrations
+            </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card>
           <div class="stat-item">
-            <div class="stat-value healthy">{{ stats.healthy }}</div>
-            <div class="stat-label">Healthy</div>
+            <div class="stat-value healthy">
+              {{ stats.healthy }}
+            </div>
+            <div class="stat-label">
+              Healthy
+            </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card>
           <div class="stat-item">
-            <div class="stat-value degraded">{{ stats.degraded }}</div>
-            <div class="stat-label">Degraded</div>
+            <div class="stat-value degraded">
+              {{ stats.degraded }}
+            </div>
+            <div class="stat-label">
+              Degraded
+            </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card>
           <div class="stat-item">
-            <div class="stat-value unhealthy">{{ stats.unhealthy }}</div>
-            <div class="stat-label">Unhealthy</div>
+            <div class="stat-value unhealthy">
+              {{ stats.unhealthy }}
+            </div>
+            <div class="stat-label">
+              Unhealthy
+            </div>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
     <!-- Filters -->
-    <el-form :model="filterForm" inline class="filter-form">
+    <el-form
+      :model="filterForm"
+      inline
+      class="filter-form"
+    >
       <el-form-item label="System Type">
-        <el-select v-model="filterForm.system_type" clearable placeholder="All Systems" @change="fetchData">
-          <el-option label="M18" value="m18" />
-          <el-option label="SAP" value="sap" />
-          <el-option label="Kingdee" value="kingdee" />
-          <el-option label="Yonyou" value="yonyou" />
-          <el-option label="Oracle EBS" value="oracle" />
-          <el-option label="Odoo" value="odoo" />
+        <el-select
+          v-model="filterForm.system_type"
+          clearable
+          placeholder="All Systems"
+          @change="fetchData"
+        >
+          <el-option
+            label="M18"
+            value="m18"
+          />
+          <el-option
+            label="SAP"
+            value="sap"
+          />
+          <el-option
+            label="Kingdee"
+            value="kingdee"
+          />
+          <el-option
+            label="Yonyou"
+            value="yonyou"
+          />
+          <el-option
+            label="Oracle EBS"
+            value="oracle"
+          />
+          <el-option
+            label="Odoo"
+            value="odoo"
+          />
         </el-select>
       </el-form-item>
       <el-form-item label="Status">
-        <el-select v-model="filterForm.is_enabled" clearable placeholder="All" @change="fetchData">
-          <el-option label="Enabled" :value="true" />
-          <el-option label="Disabled" :value="false" />
+        <el-select
+          v-model="filterForm.is_enabled"
+          clearable
+          placeholder="All"
+          @change="fetchData"
+        >
+          <el-option
+            label="Enabled"
+            :value="true"
+          />
+          <el-option
+            label="Disabled"
+            :value="false"
+          />
         </el-select>
       </el-form-item>
       <el-form-item label="Health">
-        <el-select v-model="filterForm.health_status" clearable placeholder="All" @change="fetchData">
-          <el-option label="Healthy" value="healthy" />
-          <el-option label="Degraded" value="degraded" />
-          <el-option label="Unhealthy" value="unhealthy" />
+        <el-select
+          v-model="filterForm.health_status"
+          clearable
+          placeholder="All"
+          @change="fetchData"
+        >
+          <el-option
+            label="Healthy"
+            value="healthy"
+          />
+          <el-option
+            label="Degraded"
+            value="degraded"
+          />
+          <el-option
+            label="Unhealthy"
+            value="unhealthy"
+          />
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="fetchData">Search</el-button>
-        <el-button @click="handleFilterReset">Reset</el-button>
+        <el-button
+          type="primary"
+          @click="fetchData"
+        >
+          Search
+        </el-button>
+        <el-button @click="handleFilterReset">
+          Reset
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -80,29 +163,45 @@
       stripe
       style="width: 100%"
     >
-      <el-table-column prop="system_name" label="Name" min-width="150" />
-      <el-table-column label="System Type" width="120">
+      <el-table-column
+        prop="system_name"
+        label="Name"
+        min-width="150"
+      />
+      <el-table-column
+        label="System Type"
+        width="120"
+      >
         <template #default="{ row }">
           <el-tag :type="getSystemTypeTagType(row.system_type)">
             {{ getSystemTypeLabel(row.system_type) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Health Status" width="100">
+      <el-table-column
+        label="Health Status"
+        width="100"
+      >
         <template #default="{ row }">
           <el-tag :type="getHealthStatusTagType(row.health_status)">
             {{ getHealthStatusLabel(row.health_status) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Status" width="100">
+      <el-table-column
+        label="Status"
+        width="100"
+      >
         <template #default="{ row }">
           <el-tag :type="row.is_enabled ? 'success' : 'info'">
             {{ row.is_enabled ? 'Enabled' : 'Disabled' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Modules" width="200">
+      <el-table-column
+        label="Modules"
+        width="200"
+      >
         <template #default="{ row }">
           <el-tag
             v-for="module in row.enabled_modules"
@@ -114,35 +213,77 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="last_sync_at" label="Last Sync" width="170">
+      <el-table-column
+        prop="last_sync_at"
+        label="Last Sync"
+        width="170"
+      >
         <template #default="{ row }">
           {{ row.last_sync_at ? formatDate(row.last_sync_at) : '-' }}
         </template>
       </el-table-column>
-      <el-table-column label="Last Sync Status" width="100">
+      <el-table-column
+        label="Last Sync Status"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-tag v-if="row.last_sync_status" :type="getSyncStatusTagType(row.last_sync_status)" size="small">
+          <el-tag
+            v-if="row.last_sync_status"
+            :type="getSyncStatusTagType(row.last_sync_status)"
+            size="small"
+          >
             {{ getSyncStatusLabel(row.last_sync_status) }}
           </el-tag>
           <span v-else>-</span>
         </template>
       </el-table-column>
-      <el-table-column label="Actions" width="320" fixed="right">
+      <el-table-column
+        label="Actions"
+        width="320"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" :loading="testing[row.id]" @click="handleTest(row)">
+          <el-button
+            link
+            type="primary"
+            :loading="testing[row.id]"
+            @click="handleTest(row)"
+          >
             Test Connection
           </el-button>
-          <el-button link type="primary" :loading="syncing[row.id]" @click="handleSync(row)">
+          <el-button
+            link
+            type="primary"
+            :loading="syncing[row.id]"
+            @click="handleSync(row)"
+          >
             Sync Now
           </el-button>
-          <el-button link type="primary" @click="handleViewLogs(row)">Logs</el-button>
-          <el-button link type="primary" @click="handleEdit(row)">Edit</el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleViewLogs(row)"
+          >
+            Logs
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleEdit(row)"
+          >
+            Edit
+          </el-button>
           <el-popconfirm
             title="Are you sure to delete this integration?"
             @confirm="handleDelete(row)"
           >
             <template #reference>
-              <el-button link type="danger">Delete</el-button>
+              <el-button
+                link
+                type="danger"
+              >
+                Delete
+              </el-button>
             </template>
           </el-popconfirm>
         </template>
@@ -175,76 +316,153 @@
         :rules="rules"
         label-width="150px"
       >
-        <el-divider content-position="left">Basic Configuration</el-divider>
+        <el-divider content-position="left">
+          Basic Configuration
+        </el-divider>
 
-        <el-form-item label="System Type" prop="system_type">
+        <el-form-item
+          label="System Type"
+          prop="system_type"
+        >
           <el-select
             v-model="formData.system_type"
             placeholder="Select system type"
             style="width: 100%"
             :disabled="isEdit"
           >
-            <el-option label="M18" value="m18" />
-            <el-option label="SAP" value="sap" />
-            <el-option label="Kingdee" value="kingdee" />
-            <el-option label="Yonyou" value="yonyou" />
-            <el-option label="Oracle EBS" value="oracle" />
-            <el-option label="Odoo" value="odoo" />
+            <el-option
+              label="M18"
+              value="m18"
+            />
+            <el-option
+              label="SAP"
+              value="sap"
+            />
+            <el-option
+              label="Kingdee"
+              value="kingdee"
+            />
+            <el-option
+              label="Yonyou"
+              value="yonyou"
+            />
+            <el-option
+              label="Oracle EBS"
+              value="oracle"
+            />
+            <el-option
+              label="Odoo"
+              value="odoo"
+            />
           </el-select>
         </el-form-item>
 
-        <el-form-item label="System Name" prop="system_name">
-          <el-input v-model="formData.system_name" placeholder="e.g., Production M18" />
+        <el-form-item
+          label="System Name"
+          prop="system_name"
+        >
+          <el-input
+            v-model="formData.system_name"
+            placeholder="e.g., Production M18"
+          />
         </el-form-item>
 
         <el-form-item label="Enabled">
           <el-switch v-model="formData.is_enabled" />
         </el-form-item>
 
-        <el-divider content-position="left">Connection Configuration</el-divider>
+        <el-divider content-position="left">
+          Connection Configuration
+        </el-divider>
 
         <el-form-item label="API Endpoint">
-          <el-input v-model="formData.connection_config.api_url" placeholder="https://api.example.com" />
+          <el-input
+            v-model="formData.connection_config.api_url"
+            placeholder="https://api.example.com"
+          />
         </el-form-item>
 
         <el-form-item label="API Key">
-          <el-input v-model="formData.connection_config.api_key" type="password" show-password placeholder="Enter API key" />
+          <el-input
+            v-model="formData.connection_config.api_key"
+            type="password"
+            show-password
+            placeholder="Enter API key"
+          />
         </el-form-item>
 
         <el-form-item label="API Secret">
-          <el-input v-model="formData.connection_config.api_secret" type="password" show-password placeholder="Enter API secret" />
+          <el-input
+            v-model="formData.connection_config.api_secret"
+            type="password"
+            show-password
+            placeholder="Enter API secret"
+          />
         </el-form-item>
 
         <el-form-item label="Timeout (seconds)">
-          <el-input-number v-model="formData.connection_config.timeout" :min="1" :max="300" style="width: 100%" />
+          <el-input-number
+            v-model="formData.connection_config.timeout"
+            :min="1"
+            :max="300"
+            style="width: 100%"
+          />
         </el-form-item>
 
-        <el-divider content-position="left">Module Configuration</el-divider>
+        <el-divider content-position="left">
+          Module Configuration
+        </el-divider>
 
         <el-form-item label="Enabled Modules">
           <el-checkbox-group v-model="formData.enabled_modules">
-            <el-checkbox label="procurement">Procurement</el-checkbox>
-            <el-checkbox label="finance">Finance</el-checkbox>
-            <el-checkbox label="inventory">Inventory</el-checkbox>
-            <el-checkbox label="hr">HR</el-checkbox>
-            <el-checkbox label="crm">CRM</el-checkbox>
+            <el-checkbox label="procurement">
+              Procurement
+            </el-checkbox>
+            <el-checkbox label="finance">
+              Finance
+            </el-checkbox>
+            <el-checkbox label="inventory">
+              Inventory
+            </el-checkbox>
+            <el-checkbox label="hr">
+              HR
+            </el-checkbox>
+            <el-checkbox label="crm">
+              CRM
+            </el-checkbox>
           </el-checkbox-group>
         </el-form-item>
 
-        <el-divider content-position="left">Sync Configuration</el-divider>
+        <el-divider content-position="left">
+          Sync Configuration
+        </el-divider>
 
         <el-form-item label="Auto Sync">
           <el-switch v-model="formData.sync_config.auto_sync" />
         </el-form-item>
 
-        <el-form-item v-if="formData.sync_config.auto_sync" label="Sync Interval (minutes)">
-          <el-input-number v-model="formData.sync_config.interval" :min="1" :max="1440" style="width: 100%" />
+        <el-form-item
+          v-if="formData.sync_config.auto_sync"
+          label="Sync Interval (minutes)"
+        >
+          <el-input-number
+            v-model="formData.sync_config.interval"
+            :min="1"
+            :max="1440"
+            style="width: 100%"
+          />
         </el-form-item>
       </el-form>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">Cancel</el-button>
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">
+        <el-button @click="dialogVisible = false">
+          Cancel
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="submitting"
+          @click="handleSubmit"
+        >
           {{ isEdit ? 'Save' : 'Create' }}
         </el-button>
       </template>
@@ -256,10 +474,19 @@
       title="Integration Logs"
       size="800px"
     >
-      <div v-if="currentConfig" class="logs-content">
+      <div
+        v-if="currentConfig"
+        class="logs-content"
+      >
         <div class="logs-header">
           <h4>{{ currentConfig.system_name }} - Logs</h4>
-          <el-button type="primary" size="small" @click="fetchLogs">Refresh</el-button>
+          <el-button
+            type="primary"
+            size="small"
+            @click="fetchLogs"
+          >
+            Refresh
+          </el-button>
         </div>
 
         <el-table
@@ -270,38 +497,85 @@
           size="small"
           style="width: 100%"
         >
-          <el-table-column prop="created_at" label="Time" width="160" />
-          <el-table-column prop="integration_type" label="Type" width="120" />
-          <el-table-column prop="action" label="Action" width="100">
+          <el-table-column
+            prop="created_at"
+            label="Time"
+            width="160"
+          />
+          <el-table-column
+            prop="integration_type"
+            label="Type"
+            width="120"
+          />
+          <el-table-column
+            prop="action"
+            label="Action"
+            width="100"
+          >
             <template #default="{ row }">
-              <el-tag size="small" :type="row.action === 'push' ? 'success' : 'warning'">
+              <el-tag
+                size="small"
+                :type="row.action === 'push' ? 'success' : 'warning'"
+              >
                 {{ row.action }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="request_method" label="Method" width="80" />
-          <el-table-column prop="status_code" label="Status" width="80">
+          <el-table-column
+            prop="request_method"
+            label="Method"
+            width="80"
+          />
+          <el-table-column
+            prop="status_code"
+            label="Status"
+            width="80"
+          >
             <template #default="{ row }">
-              <el-tag v-if="row.status_code" size="small" :type="row.status_code < 300 ? 'success' : 'danger'">
+              <el-tag
+                v-if="row.status_code"
+                size="small"
+                :type="row.status_code < 300 ? 'success' : 'danger'"
+              >
                 {{ row.status_code }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="Success" width="80">
+          <el-table-column
+            label="Success"
+            width="80"
+          >
             <template #default="{ row }">
-              <el-tag size="small" :type="row.success ? 'success' : 'danger'">
+              <el-tag
+                size="small"
+                :type="row.success ? 'success' : 'danger'"
+              >
                 {{ row.success ? 'Yes' : 'No' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="duration_ms" label="Duration" width="90">
+          <el-table-column
+            prop="duration_ms"
+            label="Duration"
+            width="90"
+          >
             <template #default="{ row }">
               {{ row.duration_ms ? `${row.duration_ms}ms` : '-' }}
             </template>
           </el-table-column>
-          <el-table-column label="Actions" width="80">
+          <el-table-column
+            label="Actions"
+            width="80"
+          >
             <template #default="{ row }">
-              <el-button link type="primary" size="small" @click="handleViewLogDetail(row)">View</el-button>
+              <el-button
+                link
+                type="primary"
+                size="small"
+                @click="handleViewLogDetail(row)"
+              >
+                View
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -326,15 +600,25 @@
       title="Log Detail"
       width="900px"
     >
-      <el-descriptions v-if="currentLog" :column="2" border>
-        <el-descriptions-item label="Time">{{ currentLog.created_at }}</el-descriptions-item>
-        <el-descriptions-item label="Integration Type">{{ currentLog.integration_type }}</el-descriptions-item>
+      <el-descriptions
+        v-if="currentLog"
+        :column="2"
+        border
+      >
+        <el-descriptions-item label="Time">
+          {{ currentLog.created_at }}
+        </el-descriptions-item>
+        <el-descriptions-item label="Integration Type">
+          {{ currentLog.integration_type }}
+        </el-descriptions-item>
         <el-descriptions-item label="Action">
           <el-tag :type="currentLog.action === 'push' ? 'success' : 'warning'">
             {{ currentLog.action }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="Method">{{ currentLog.request_method }}</el-descriptions-item>
+        <el-descriptions-item label="Method">
+          {{ currentLog.request_method }}
+        </el-descriptions-item>
         <el-descriptions-item label="Status Code">
           <el-tag :type="currentLog.status_code < 300 ? 'success' : 'danger'">
             {{ currentLog.status_code }}
@@ -345,8 +629,12 @@
             {{ currentLog.success ? 'Yes' : 'No' }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="Duration">{{ currentLog.duration_ms }}ms</el-descriptions-item>
-        <el-descriptions-item label="Business Type">{{ currentLog.business_type || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="Duration">
+          {{ currentLog.duration_ms }}ms
+        </el-descriptions-item>
+        <el-descriptions-item label="Business Type">
+          {{ currentLog.business_type || '-' }}
+        </el-descriptions-item>
       </el-descriptions>
 
       <el-divider>Request</el-divider>
@@ -359,7 +647,10 @@
         <pre><code>{{ JSON.stringify(currentLog?.response_body || {}, null, 2) }}</code></pre>
       </div>
 
-      <div v-if="currentLog?.error_message" class="error-message">
+      <div
+        v-if="currentLog?.error_message"
+        class="error-message"
+      >
         <el-divider>Error</el-divider>
         <pre>{{ currentLog.error_message }}</pre>
       </div>

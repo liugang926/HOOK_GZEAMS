@@ -11,9 +11,14 @@
       :rules="rules"
       label-width="160px"
     >
-      <el-divider content-position="left">Hardware Configuration</el-divider>
+      <el-divider content-position="left">
+        Hardware Configuration
+      </el-divider>
 
-      <el-form-item label="Asset" prop="asset">
+      <el-form-item
+        label="Asset"
+        prop="asset"
+      >
         <el-select
           v-model="formData.asset"
           placeholder="Select asset"
@@ -34,147 +39,344 @@
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="CPU Model" prop="cpu_model">
-            <el-input v-model="formData.cpu_model" placeholder="e.g., Intel Core i7-12700K" />
+          <el-form-item
+            label="CPU Model"
+            prop="cpu_model"
+          >
+            <el-input
+              v-model="formData.cpu_model"
+              placeholder="e.g., Intel Core i7-12700K"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="CPU Cores" prop="cpu_cores">
-            <el-input-number v-model="formData.cpu_cores" :min="1" :max="128" style="width: 100%" />
+          <el-form-item
+            label="CPU Cores"
+            prop="cpu_cores"
+          >
+            <el-input-number
+              v-model="formData.cpu_cores"
+              :min="1"
+              :max="128"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="CPU Threads" prop="cpu_threads">
-            <el-input-number v-model="formData.cpu_threads" :min="1" :max="256" style="width: 100%" />
+          <el-form-item
+            label="CPU Threads"
+            prop="cpu_threads"
+          >
+            <el-input-number
+              v-model="formData.cpu_threads"
+              :min="1"
+              :max="256"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="RAM Capacity (GB)" prop="ram_capacity">
-            <el-input-number v-model="formData.ram_capacity" :min="1" :max="1024" style="width: 100%" />
+          <el-form-item
+            label="RAM Capacity (GB)"
+            prop="ram_capacity"
+          >
+            <el-input-number
+              v-model="formData.ram_capacity"
+              :min="1"
+              :max="1024"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="RAM Type" prop="ram_type">
-            <el-select v-model="formData.ram_type" placeholder="Select type" style="width: 100%">
-              <el-option label="DDR3" value="DDR3" />
-              <el-option label="DDR4" value="DDR4" />
-              <el-option label="DDR5" value="DDR5" />
-              <el-option label="LPDDR3" value="LPDDR3" />
-              <el-option label="LPDDR4" value="LPDDR4" />
-              <el-option label="LPDDR5" value="LPDDR5" />
+          <el-form-item
+            label="RAM Type"
+            prop="ram_type"
+          >
+            <el-select
+              v-model="formData.ram_type"
+              placeholder="Select type"
+              style="width: 100%"
+            >
+              <el-option
+                label="DDR3"
+                value="DDR3"
+              />
+              <el-option
+                label="DDR4"
+                value="DDR4"
+              />
+              <el-option
+                label="DDR5"
+                value="DDR5"
+              />
+              <el-option
+                label="LPDDR3"
+                value="LPDDR3"
+              />
+              <el-option
+                label="LPDDR4"
+                value="LPDDR4"
+              />
+              <el-option
+                label="LPDDR5"
+                value="LPDDR5"
+              />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="RAM Slots" prop="ram_slots">
-            <el-input-number v-model="formData.ram_slots" :min="1" :max="16" style="width: 100%" />
+          <el-form-item
+            label="RAM Slots"
+            prop="ram_slots"
+          >
+            <el-input-number
+              v-model="formData.ram_slots"
+              :min="1"
+              :max="16"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="20">
         <el-col :span="8">
-          <el-form-item label="Disk Type" prop="disk_type">
-            <el-select v-model="formData.disk_type" placeholder="Select type" style="width: 100%">
-              <el-option label="HDD" value="HDD" />
-              <el-option label="SSD" value="SSD" />
-              <el-option label="NVMe" value="NVMe" />
-              <el-option label="SATA" value="SATA" />
+          <el-form-item
+            label="Disk Type"
+            prop="disk_type"
+          >
+            <el-select
+              v-model="formData.disk_type"
+              placeholder="Select type"
+              style="width: 100%"
+            >
+              <el-option
+                label="HDD"
+                value="HDD"
+              />
+              <el-option
+                label="SSD"
+                value="SSD"
+              />
+              <el-option
+                label="NVMe"
+                value="NVMe"
+              />
+              <el-option
+                label="SATA"
+                value="SATA"
+              />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="Disk Capacity (GB)" prop="disk_capacity">
-            <el-input-number v-model="formData.disk_capacity" :min="1" :max="10240" style="width: 100%" />
+          <el-form-item
+            label="Disk Capacity (GB)"
+            prop="disk_capacity"
+          >
+            <el-input-number
+              v-model="formData.disk_capacity"
+              :min="1"
+              :max="10240"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="Disk Count" prop="disk_count">
-            <el-input-number v-model="formData.disk_count" :min="1" :max="10" style="width: 100%" />
+          <el-form-item
+            label="Disk Count"
+            prop="disk_count"
+          >
+            <el-input-number
+              v-model="formData.disk_count"
+              :min="1"
+              :max="10"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="20">
         <el-col :span="16">
-          <el-form-item label="GPU Model" prop="gpu_model">
-            <el-input v-model="formData.gpu_model" placeholder="e.g., NVIDIA GeForce RTX 3080" />
+          <el-form-item
+            label="GPU Model"
+            prop="gpu_model"
+          >
+            <el-input
+              v-model="formData.gpu_model"
+              placeholder="e.g., NVIDIA GeForce RTX 3080"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="8">
-          <el-form-item label="GPU Memory (MB)" prop="gpu_memory">
-            <el-input-number v-model="formData.gpu_memory" :min="1" :max="48144" style="width: 100%" />
+          <el-form-item
+            label="GPU Memory (MB)"
+            prop="gpu_memory"
+          >
+            <el-input-number
+              v-model="formData.gpu_memory"
+              :min="1"
+              :max="48144"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
       </el-row>
 
-      <el-divider content-position="left">Network Information</el-divider>
+      <el-divider content-position="left">
+        Network Information
+      </el-divider>
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="MAC Address" prop="mac_address">
-            <el-input v-model="formData.mac_address" placeholder="XX:XX:XX:XX:XX:XX" />
+          <el-form-item
+            label="MAC Address"
+            prop="mac_address"
+          >
+            <el-input
+              v-model="formData.mac_address"
+              placeholder="XX:XX:XX:XX:XX:XX"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="IP Address" prop="ip_address">
-            <el-input v-model="formData.ip_address" placeholder="192.168.1.1" />
+          <el-form-item
+            label="IP Address"
+            prop="ip_address"
+          >
+            <el-input
+              v-model="formData.ip_address"
+              placeholder="192.168.1.1"
+            />
           </el-form-item>
         </el-col>
       </el-row>
 
-      <el-form-item label="Hostname" prop="hostname">
-        <el-input v-model="formData.hostname" placeholder="e.g., PC-DESKTOP-001" />
+      <el-form-item
+        label="Hostname"
+        prop="hostname"
+      >
+        <el-input
+          v-model="formData.hostname"
+          placeholder="e.g., PC-DESKTOP-001"
+        />
       </el-form-item>
 
-      <el-divider content-position="left">Operating System</el-divider>
+      <el-divider content-position="left">
+        Operating System
+      </el-divider>
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="OS Name" prop="os_name">
-            <el-select v-model="formData.os_name" placeholder="Select OS" allow-create filterable style="width: 100%">
-              <el-option label="Windows" value="Windows" />
-              <el-option label="macOS" value="macOS" />
-              <el-option label="Linux" value="Linux" />
-              <el-option label="Ubuntu" value="Ubuntu" />
-              <el-option label="CentOS" value="CentOS" />
-              <el-option label="Debian" value="Debian" />
-              <el-option label="Red Hat" value="Red Hat" />
+          <el-form-item
+            label="OS Name"
+            prop="os_name"
+          >
+            <el-select
+              v-model="formData.os_name"
+              placeholder="Select OS"
+              allow-create
+              filterable
+              style="width: 100%"
+            >
+              <el-option
+                label="Windows"
+                value="Windows"
+              />
+              <el-option
+                label="macOS"
+                value="macOS"
+              />
+              <el-option
+                label="Linux"
+                value="Linux"
+              />
+              <el-option
+                label="Ubuntu"
+                value="Ubuntu"
+              />
+              <el-option
+                label="CentOS"
+                value="CentOS"
+              />
+              <el-option
+                label="Debian"
+                value="Debian"
+              />
+              <el-option
+                label="Red Hat"
+                value="Red Hat"
+              />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="OS Version" prop="os_version">
-            <el-input v-model="formData.os_version" placeholder="e.g., 11, 22.04, 10.0.19043" />
+          <el-form-item
+            label="OS Version"
+            prop="os_version"
+          >
+            <el-input
+              v-model="formData.os_version"
+              placeholder="e.g., 11, 22.04, 10.0.19043"
+            />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="OS Architecture" prop="os_architecture">
-            <el-select v-model="formData.os_architecture" placeholder="Select architecture" style="width: 100%">
-              <el-option label="x64" value="x64" />
-              <el-option label="x86" value="x86" />
-              <el-option label="ARM64" value="ARM64" />
+          <el-form-item
+            label="OS Architecture"
+            prop="os_architecture"
+          >
+            <el-select
+              v-model="formData.os_architecture"
+              placeholder="Select architecture"
+              style="width: 100%"
+            >
+              <el-option
+                label="x64"
+                value="x64"
+              />
+              <el-option
+                label="x86"
+                value="x86"
+              />
+              <el-option
+                label="ARM64"
+                value="ARM64"
+              />
             </el-select>
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="OS License Key" prop="os_license_key">
-            <el-input v-model="formData.os_license_key" placeholder="XXXXX-XXXXX-XXXXX-XXXXX" />
+          <el-form-item
+            label="OS License Key"
+            prop="os_license_key"
+          >
+            <el-input
+              v-model="formData.os_license_key"
+              placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
+            />
           </el-form-item>
         </el-col>
       </el-row>
 
-      <el-divider content-position="left">Security</el-divider>
+      <el-divider content-position="left">
+        Security
+      </el-divider>
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="Disk Encrypted" prop="disk_encrypted">
+          <el-form-item
+            label="Disk Encrypted"
+            prop="disk_encrypted"
+          >
             <el-switch
               v-model="formData.disk_encrypted"
               active-text="Yes"
@@ -183,7 +385,10 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="Antivirus Enabled" prop="antivirus_enabled">
+          <el-form-item
+            label="Antivirus Enabled"
+            prop="antivirus_enabled"
+          >
             <el-switch
               v-model="formData.antivirus_enabled"
               active-text="Yes"
@@ -193,29 +398,55 @@
         </el-col>
       </el-row>
 
-      <el-form-item label="Antivirus Software" prop="antivirus_software">
-        <el-input v-model="formData.antivirus_software" placeholder="e.g., Windows Defender, McAfee, Norton" />
+      <el-form-item
+        label="Antivirus Software"
+        prop="antivirus_software"
+      >
+        <el-input
+          v-model="formData.antivirus_software"
+          placeholder="e.g., Windows Defender, McAfee, Norton"
+        />
       </el-form-item>
 
-      <el-divider content-position="left">Active Directory</el-divider>
+      <el-divider content-position="left">
+        Active Directory
+      </el-divider>
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="AD Domain" prop="ad_domain">
-            <el-input v-model="formData.ad_domain" placeholder="e.g., corp.local" />
+          <el-form-item
+            label="AD Domain"
+            prop="ad_domain"
+          >
+            <el-input
+              v-model="formData.ad_domain"
+              placeholder="e.g., corp.local"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="AD Computer Name" prop="ad_computer_name">
-            <el-input v-model="formData.ad_computer_name" placeholder="e.g., DESKTOP-001" />
+          <el-form-item
+            label="AD Computer Name"
+            prop="ad_computer_name"
+          >
+            <el-input
+              v-model="formData.ad_computer_name"
+              placeholder="e.g., DESKTOP-001"
+            />
           </el-form-item>
         </el-col>
       </el-row>
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">Cancel</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">
+      <el-button @click="handleClose">
+        Cancel
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
+        @click="handleSubmit"
+      >
         {{ isEdit ? 'Save' : 'Add' }}
       </el-button>
     </template>

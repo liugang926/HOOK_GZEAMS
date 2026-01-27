@@ -275,6 +275,7 @@
       width="95%"
       top="5vh"
       destroy-on-close
+      append-to-body
     >
       <LayoutDesigner
         v-if="designerVisible && currentLayout"
@@ -282,7 +283,7 @@
         :layout-type="currentLayout.layoutType"
         :layout-name="currentLayout.layoutName"
         :object-code="objectCode"
-        :business-object-id="currentLayout.businessObject || ''"
+        :business-object-id="currentLayout.business_object || currentLayout.businessObject || ''"
         @cancel="designerVisible = false"
         @save="handleLayoutSaved"
         @published="handleLayoutSaved"
@@ -662,7 +663,7 @@ const handleCreateSubmit = async () => {
     // The request interceptor unwraps { success: true, data: ... } automatically
     const newLayout = await pageLayoutApi.create({
       ...createForm.value,
-      businessObject: objectCode.value,
+      business_object: objectCode.value,
       status: 'draft',
       version: '0.1.0',
       layoutConfig: getDefaultLayoutConfig(createForm.value.layoutType)
@@ -742,7 +743,7 @@ const handleCustomize = async (row: PageLayout) => {
       layoutCode: `${row.layoutCode}_custom_${Date.now()}`,
       layoutName: row.layoutName.replace(' (系统默认)', ' (自定义)'),
       layoutType: row.layoutType,
-      businessObject: objectCode.value,
+      business_object: objectCode.value,
       description: `基于系统默认布局"${row.layoutName}"创建的自定义布局`,
       status: 'draft',
       version: '0.1.0',

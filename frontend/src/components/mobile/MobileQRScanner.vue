@@ -12,7 +12,10 @@
 
 <template>
   <div class="mobile-qr-scanner">
-    <div class="scanner-container" ref="containerRef">
+    <div
+      ref="containerRef"
+      class="scanner-container"
+    >
       <video
         ref="videoRef"
         class="scanner-video"
@@ -24,13 +27,15 @@
       <!-- Scan Overlay -->
       <div class="scan-overlay">
         <div class="scan-frame">
-          <div class="scan-line"></div>
-          <div class="scan-corner top-left"></div>
-          <div class="scan-corner top-right"></div>
-          <div class="scan-corner bottom-left"></div>
-          <div class="scan-corner bottom-right"></div>
+          <div class="scan-line" />
+          <div class="scan-corner top-left" />
+          <div class="scan-corner top-right" />
+          <div class="scan-corner bottom-left" />
+          <div class="scan-corner bottom-right" />
         </div>
-        <p class="scan-hint">将二维码放入框内自动扫描</p>
+        <p class="scan-hint">
+          将二维码放入框内自动扫描
+        </p>
       </div>
 
       <!-- Top Controls -->
@@ -65,7 +70,11 @@
 
     <!-- Scan Status Overlay -->
     <transition name="fade">
-      <div v-if="lastScanStatus" class="scan-status-overlay" :class="`status-${lastScanStatus}`">
+      <div
+        v-if="lastScanStatus"
+        class="scan-status-overlay"
+        :class="`status-${lastScanStatus}`"
+      >
         <van-icon
           :name="lastScanStatus === 'success' ? 'checked' : 'close'"
           :size="48"

@@ -22,42 +22,42 @@ export const userApi = {
     departmentId?: string
     isActive?: boolean
   }): Promise<PaginatedResponse<User>> {
-    return request.get('/users/', { params })
+    return request.get('/auth/users/', { params })
   },
 
   /**
    * Get single user by ID
    */
   get(id: string): Promise<User> {
-    return request.get(`/users/${id}/`)
+    return request.get(`/auth/users/${id}/`)
   },
 
   /**
    * Get current logged in user
    */
   getMe(): Promise<User> {
-    return request.get('/users/me/')
+    return request.get('/auth/users/me/')
   },
 
   /**
    * Create new user
    */
   create(data: Partial<User>): Promise<User> {
-    return request.post('/users/', data)
+    return request.post('/auth/users/', data)
   },
 
   /**
    * Update user
    */
   update(id: string, data: Partial<User>): Promise<User> {
-    return request.put(`/users/${id}/`, data)
+    return request.put(`/auth/users/${id}/`, data)
   },
 
   /**
    * Delete user
    */
   delete(id: string): Promise<void> {
-    return request.delete(`/users/${id}/`)
+    return request.delete(`/auth/users/${id}/`)
   },
 
   /**
@@ -70,7 +70,7 @@ export const userApi = {
     phone?: string
     avatar?: string
   }): Promise<User> {
-    return request.put('/users/me/profile/', data)
+    return request.put('/auth/users/me/profile/', data)
   },
 
   /**
@@ -80,6 +80,6 @@ export const userApi = {
     oldPassword: string
     newPassword: string
   }): Promise<void> {
-    return request.post('/users/me/change-password/', data)
+    return request.post('/auth/users/me/change-password/', data)
   }
 }

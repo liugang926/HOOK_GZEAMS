@@ -2,34 +2,56 @@
   <div class="my-approvals">
     <div class="page-header">
       <h2>我的审批</h2>
-      <div class="summary-cards" v-if="taskSummary">
+      <div
+        v-if="taskSummary"
+        class="summary-cards"
+      >
         <el-card class="summary-card pending">
           <div class="card-content">
-            <div class="card-value">{{ taskSummary.pending_count || 0 }}</div>
-            <div class="card-label">待审批</div>
+            <div class="card-value">
+              {{ taskSummary.pending_count || 0 }}
+            </div>
+            <div class="card-label">
+              待审批
+            </div>
           </div>
         </el-card>
         <el-card class="summary-card overdue">
           <div class="card-content">
-            <div class="card-value">{{ taskSummary.overdue_count || 0 }}</div>
-            <div class="card-label">已逾期</div>
+            <div class="card-value">
+              {{ taskSummary.overdue_count || 0 }}
+            </div>
+            <div class="card-label">
+              已逾期
+            </div>
           </div>
         </el-card>
         <el-card class="summary-card completed">
           <div class="card-content">
-            <div class="card-value">{{ taskSummary.completed_today_count || 0 }}</div>
-            <div class="card-label">今日已处理</div>
+            <div class="card-value">
+              {{ taskSummary.completed_today_count || 0 }}
+            </div>
+            <div class="card-label">
+              今日已处理
+            </div>
           </div>
         </el-card>
       </div>
     </div>
 
-    <el-tabs v-model="activeTab" class="approval-tabs" @tab-click="handleTabClick">
+    <el-tabs
+      v-model="activeTab"
+      class="approval-tabs"
+      @tab-click="handleTabClick"
+    >
       <el-tab-pane name="pending">
         <template #label>
           <span class="tab-label">
             待审批
-            <el-badge v-if="taskSummary?.pending_count" :value="taskSummary.pending_count" />
+            <el-badge
+              v-if="taskSummary?.pending_count"
+              :value="taskSummary.pending_count"
+            />
           </span>
         </template>
         <ApprovalList
@@ -46,7 +68,11 @@
         <template #label>
           <span class="tab-label">
             已逾期
-            <el-badge v-if="taskSummary?.overdue_count" :value="taskSummary.overdue_count" type="danger" />
+            <el-badge
+              v-if="taskSummary?.overdue_count"
+              :value="taskSummary.overdue_count"
+              type="danger"
+            />
           </span>
         </template>
         <ApprovalList
@@ -63,7 +89,11 @@
         <template #label>
           <span class="tab-label">
             今日已处理
-            <el-badge v-if="taskSummary?.completed_today_count" :value="taskSummary.completed_today_count" type="success" />
+            <el-badge
+              v-if="taskSummary?.completed_today_count"
+              :value="taskSummary.completed_today_count"
+              type="success"
+            />
           </span>
         </template>
         <ApprovalList

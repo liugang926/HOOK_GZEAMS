@@ -1,24 +1,63 @@
 <template>
   <div class="field-permission-tab">
     <!-- Filters -->
-    <el-form :model="filterForm" inline class="filter-form">
+    <el-form
+      :model="filterForm"
+      inline
+      class="filter-form"
+    >
       <el-form-item label="角色">
-        <el-select v-model="filterForm.role" clearable placeholder="选择角色" @change="handleSearch">
-          <el-option label="管理员" value="admin" />
-          <el-option label="普通用户" value="user" />
-          <el-option label="访客" value="guest" />
+        <el-select
+          v-model="filterForm.role"
+          clearable
+          placeholder="选择角色"
+          @change="handleSearch"
+        >
+          <el-option
+            label="管理员"
+            value="admin"
+          />
+          <el-option
+            label="普通用户"
+            value="user"
+          />
+          <el-option
+            label="访客"
+            value="guest"
+          />
         </el-select>
       </el-form-item>
       <el-form-item label="业务对象">
-        <el-select v-model="filterForm.businessObject" clearable placeholder="选择业务对象" @change="handleSearch">
-          <el-option label="固定资产" value="Asset" />
-          <el-option label="员工信息" value="Employee" />
-          <el-option label="部门" value="Department" />
+        <el-select
+          v-model="filterForm.businessObject"
+          clearable
+          placeholder="选择业务对象"
+          @change="handleSearch"
+        >
+          <el-option
+            label="固定资产"
+            value="Asset"
+          />
+          <el-option
+            label="员工信息"
+            value="Employee"
+          />
+          <el-option
+            label="部门"
+            value="Department"
+          />
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">查询</el-button>
-        <el-button @click="handleReset">重置</el-button>
+        <el-button
+          type="primary"
+          @click="handleSearch"
+        >
+          查询
+        </el-button>
+        <el-button @click="handleReset">
+          重置
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -30,34 +69,83 @@
       stripe
       style="width: 100%"
     >
-      <el-table-column prop="roleName" label="角色" width="120" fixed="left" />
-      <el-table-column prop="businessObjectName" label="业务对象" width="150" />
-      <el-table-column prop="fieldName" label="字段名称" width="150" />
-      <el-table-column label="读取权限" width="100" align="center">
+      <el-table-column
+        prop="roleName"
+        label="角色"
+        width="120"
+        fixed="left"
+      />
+      <el-table-column
+        prop="businessObjectName"
+        label="业务对象"
+        width="150"
+      />
+      <el-table-column
+        prop="fieldName"
+        label="字段名称"
+        width="150"
+      />
+      <el-table-column
+        label="读取权限"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.canRead ? 'success' : 'info'" size="small">
+          <el-tag
+            :type="row.canRead ? 'success' : 'info'"
+            size="small"
+          >
             {{ row.canRead ? '允许' : '禁止' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="写入权限" width="100" align="center">
+      <el-table-column
+        label="写入权限"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.canWrite ? 'success' : 'info'" size="small">
+          <el-tag
+            :type="row.canWrite ? 'success' : 'info'"
+            size="small"
+          >
             {{ row.canWrite ? '允许' : '禁止' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="可见性" width="100" align="center">
+      <el-table-column
+        label="可见性"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.isVisible ? 'success' : 'warning'" size="small">
+          <el-tag
+            :type="row.isVisible ? 'success' : 'warning'"
+            size="small"
+          >
             {{ row.isVisible ? '显示' : '隐藏' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="description" label="说明" min-width="200" show-overflow-tooltip />
-      <el-table-column label="操作" width="120" fixed="right">
+      <el-table-column
+        prop="description"
+        label="说明"
+        min-width="200"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="操作"
+        width="120"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleEdit(row)"
+          >
+            编辑
+          </el-button>
         </template>
       </el-table-column>
     </el-table>

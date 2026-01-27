@@ -2,20 +2,47 @@
   <div class="dictionary-type-list">
     <div class="page-header">
       <h3>数据字典管理</h3>
-      <el-button type="primary" @click="handleCreate">新建字典类型</el-button>
+      <el-button
+        type="primary"
+        @click="handleCreate"
+      >
+        新建字典类型
+      </el-button>
     </div>
 
     <!-- Filters -->
-    <el-form :model="filterForm" inline class="filter-form">
+    <el-form
+      :model="filterForm"
+      inline
+      class="filter-form"
+    >
       <el-form-item label="状态">
-        <el-select v-model="filterForm.is_active" clearable placeholder="全部" @change="handleSearch">
-          <el-option label="启用" :value="true" />
-          <el-option label="禁用" :value="false" />
+        <el-select
+          v-model="filterForm.is_active"
+          clearable
+          placeholder="全部"
+          @change="handleSearch"
+        >
+          <el-option
+            label="启用"
+            :value="true"
+          />
+          <el-option
+            label="禁用"
+            :value="false"
+          />
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">查询</el-button>
-        <el-button @click="handleReset">重置</el-button>
+        <el-button
+          type="primary"
+          @click="handleSearch"
+        >
+          查询
+        </el-button>
+        <el-button @click="handleReset">
+          重置
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -27,35 +54,91 @@
       stripe
       style="width: 100%"
     >
-      <el-table-column prop="code" label="字典编码" width="180" />
-      <el-table-column prop="name" label="字典名称" width="180" />
-      <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
-      <el-table-column label="系统字典" width="100" align="center">
+      <el-table-column
+        prop="code"
+        label="字典编码"
+        width="180"
+      />
+      <el-table-column
+        prop="name"
+        label="字典名称"
+        width="180"
+      />
+      <el-table-column
+        prop="description"
+        label="描述"
+        min-width="200"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="系统字典"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.is_system ? 'danger' : 'success'" size="small">
+          <el-tag
+            :type="row.is_system ? 'danger' : 'success'"
+            size="small"
+          >
             {{ row.is_system ? '是' : '否' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="状态" width="80" align="center">
+      <el-table-column
+        label="状态"
+        width="80"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.is_active ? 'success' : 'info'" size="small">
+          <el-tag
+            :type="row.is_active ? 'success' : 'info'"
+            size="small"
+          >
             {{ row.is_active ? '启用' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="item_count" label="字典项数量" width="110" align="center">
+      <el-table-column
+        prop="item_count"
+        label="字典项数量"
+        width="110"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-link type="primary" @click="handleViewItems(row)">
+          <el-link
+            type="primary"
+            @click="handleViewItems(row)"
+          >
             {{ row.item_count || 0 }} 项
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column prop="sort_order" label="排序" width="80" align="center" />
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column
+        prop="sort_order"
+        label="排序"
+        width="80"
+        align="center"
+      />
+      <el-table-column
+        label="操作"
+        width="200"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleViewItems(row)">字典项</el-button>
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleViewItems(row)"
+          >
+            字典项
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleEdit(row)"
+          >
+            编辑
+          </el-button>
           <el-button
             v-if="!row.is_system"
             link

@@ -11,7 +11,10 @@
       :rules="rules"
       label-width="120px"
     >
-      <el-form-item label="字典项编码" prop="code">
+      <el-form-item
+        label="字典项编码"
+        prop="code"
+      >
         <el-input
           v-model="formData.code"
           placeholder="请输入字典项编码（英文）"
@@ -19,27 +22,46 @@
         />
       </el-form-item>
 
-      <el-form-item label="显示名称" prop="name">
+      <el-form-item
+        label="显示名称"
+        prop="name"
+      >
         <el-input
           v-model="formData.name"
           placeholder="请输入显示名称（中文）"
         />
       </el-form-item>
 
-      <el-form-item label="英文名称" prop="name_en">
+      <el-form-item
+        label="英文名称"
+        prop="name_en"
+      >
         <el-input
           v-model="formData.name_en"
           placeholder="请输入英文名称"
         />
       </el-form-item>
 
-      <el-form-item label="排序号" prop="sort_order">
-        <el-input-number v-model="formData.sort_order" :min="0" :max="9999" />
+      <el-form-item
+        label="排序号"
+        prop="sort_order"
+      >
+        <el-input-number
+          v-model="formData.sort_order"
+          :min="0"
+          :max="9999"
+        />
       </el-form-item>
 
-      <el-form-item label="显示颜色" prop="color">
+      <el-form-item
+        label="显示颜色"
+        prop="color"
+      >
         <div class="color-picker-wrapper">
-          <el-color-picker v-model="formData.color" show-alpha />
+          <el-color-picker
+            v-model="formData.color"
+            show-alpha
+          />
           <el-input
             v-model="formData.color"
             placeholder="请输入颜色值（如：#409EFF）"
@@ -48,7 +70,10 @@
         </div>
       </el-form-item>
 
-      <el-form-item label="图标" prop="icon">
+      <el-form-item
+        label="图标"
+        prop="icon"
+      >
         <el-select
           v-model="formData.icon"
           placeholder="选择图标"
@@ -69,16 +94,31 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="设为默认" prop="is_default">
+      <el-form-item
+        label="设为默认"
+        prop="is_default"
+      >
         <el-switch v-model="formData.is_default" />
-        <div class="form-tip">默认选项将自动选中</div>
+        <div class="form-tip">
+          默认选项将自动选中
+        </div>
       </el-form-item>
 
-      <el-form-item label="启用状态" prop="is_active">
-        <el-switch v-model="formData.is_active" active-text="启用" inactive-text="禁用" />
+      <el-form-item
+        label="启用状态"
+        prop="is_active"
+      >
+        <el-switch
+          v-model="formData.is_active"
+          active-text="启用"
+          inactive-text="禁用"
+        />
       </el-form-item>
 
-      <el-form-item label="描述" prop="description">
+      <el-form-item
+        label="描述"
+        prop="description"
+      >
         <el-input
           v-model="formData.description"
           type="textarea"
@@ -89,8 +129,14 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">
+      <el-button @click="handleClose">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
+        @click="handleSubmit"
+      >
         {{ isEdit ? '保存' : '添加' }}
       </el-button>
     </template>

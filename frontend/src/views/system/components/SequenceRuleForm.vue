@@ -11,70 +11,117 @@
       :rules="rules"
       label-width="140px"
     >
-      <el-form-item label="Rule Code" prop="code">
+      <el-form-item
+        label="Rule Code"
+        prop="code"
+      >
         <el-input
           v-model="formData.code"
           placeholder="e.g., ASSET_CODE, ORDER_NO"
           :disabled="isEdit"
         />
-        <div class="form-tip">Unique identifier for the sequence rule (uppercase)</div>
+        <div class="form-tip">
+          Unique identifier for the sequence rule (uppercase)
+        </div>
       </el-form-item>
 
-      <el-form-item label="Rule Name" prop="name">
+      <el-form-item
+        label="Rule Name"
+        prop="name"
+      >
         <el-input
           v-model="formData.name"
           placeholder="e.g., Asset Code, Order Number"
         />
       </el-form-item>
 
-      <el-form-item label="Prefix" prop="prefix">
+      <el-form-item
+        label="Prefix"
+        prop="prefix"
+      >
         <el-input
           v-model="formData.prefix"
           placeholder="e.g., AST, ORD-"
           style="width: 200px"
         />
-        <div class="form-tip">Fixed prefix for generated numbers</div>
+        <div class="form-tip">
+          Fixed prefix for generated numbers
+        </div>
       </el-form-item>
 
-      <el-form-item label="Sequence Length" prop="seq_length">
+      <el-form-item
+        label="Sequence Length"
+        prop="seq_length"
+      >
         <el-input-number
           v-model="formData.seq_length"
           :min="1"
           :max="10"
           style="width: 150px"
         />
-        <div class="form-tip">Number of digits for the sequence part</div>
+        <div class="form-tip">
+          Number of digits for the sequence part
+        </div>
       </el-form-item>
 
-      <el-form-item label="Current Value" prop="current_value">
+      <el-form-item
+        label="Current Value"
+        prop="current_value"
+      >
         <el-input-number
           v-model="formData.current_value"
           :min="0"
           style="width: 150px"
         />
-        <div class="form-tip">Starting value for the sequence</div>
+        <div class="form-tip">
+          Starting value for the sequence
+        </div>
       </el-form-item>
 
-      <el-form-item label="Reset Period" prop="reset_period">
+      <el-form-item
+        label="Reset Period"
+        prop="reset_period"
+      >
         <el-select
           v-model="formData.reset_period"
           placeholder="Select reset period"
           style="width: 200px"
         >
-          <el-option label="Never" value="never" />
-          <el-option label="Yearly" value="yearly" />
-          <el-option label="Monthly" value="monthly" />
-          <el-option label="Daily" value="daily" />
+          <el-option
+            label="Never"
+            value="never"
+          />
+          <el-option
+            label="Yearly"
+            value="yearly"
+          />
+          <el-option
+            label="Monthly"
+            value="monthly"
+          />
+          <el-option
+            label="Daily"
+            value="daily"
+          />
         </el-select>
-        <div class="form-tip">When to reset the counter to 0</div>
+        <div class="form-tip">
+          When to reset the counter to 0
+        </div>
       </el-form-item>
 
       <el-form-item label="Pattern Preview">
-        <el-tag type="info">{{ patternPreview }}</el-tag>
-        <div class="form-tip">Example: {{ patternExample }}</div>
+        <el-tag type="info">
+          {{ patternPreview }}
+        </el-tag>
+        <div class="form-tip">
+          Example: {{ patternExample }}
+        </div>
       </el-form-item>
 
-      <el-form-item label="Description" prop="description">
+      <el-form-item
+        label="Description"
+        prop="description"
+      >
         <el-input
           v-model="formData.description"
           type="textarea"
@@ -83,7 +130,10 @@
         />
       </el-form-item>
 
-      <el-form-item label="Active" prop="is_active">
+      <el-form-item
+        label="Active"
+        prop="is_active"
+      >
         <el-switch
           v-model="formData.is_active"
           active-text="Active"
@@ -93,8 +143,14 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">Cancel</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">
+      <el-button @click="handleClose">
+        Cancel
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
+        @click="handleSubmit"
+      >
         {{ isEdit ? 'Save' : 'Create' }}
       </el-button>
     </template>

@@ -11,7 +11,10 @@
       :rules="rules"
       label-width="140px"
     >
-      <el-form-item label="Asset" prop="asset">
+      <el-form-item
+        label="Asset"
+        prop="asset"
+      >
         <el-select
           v-model="formData.asset"
           placeholder="Select asset"
@@ -30,26 +33,80 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="Field Name" prop="field_name">
-        <el-select v-model="formData.field_name" placeholder="Select field" allow-create filterable style="width: 100%">
-          <el-option label="CPU Model" value="cpu_model" />
-          <el-option label="CPU Cores" value="cpu_cores" />
-          <el-option label="CPU Threads" value="cpu_threads" />
-          <el-option label="RAM Capacity" value="ram_capacity" />
-          <el-option label="RAM Type" value="ram_type" />
-          <el-option label="Disk Type" value="disk_type" />
-          <el-option label="Disk Capacity" value="disk_capacity" />
-          <el-option label="GPU Model" value="gpu_model" />
-          <el-option label="MAC Address" value="mac_address" />
-          <el-option label="IP Address" value="ip_address" />
-          <el-option label="Hostname" value="hostname" />
-          <el-option label="OS Name" value="os_name" />
-          <el-option label="OS Version" value="os_version" />
-          <el-option label="Antivirus Software" value="antivirus_software" />
+      <el-form-item
+        label="Field Name"
+        prop="field_name"
+      >
+        <el-select
+          v-model="formData.field_name"
+          placeholder="Select field"
+          allow-create
+          filterable
+          style="width: 100%"
+        >
+          <el-option
+            label="CPU Model"
+            value="cpu_model"
+          />
+          <el-option
+            label="CPU Cores"
+            value="cpu_cores"
+          />
+          <el-option
+            label="CPU Threads"
+            value="cpu_threads"
+          />
+          <el-option
+            label="RAM Capacity"
+            value="ram_capacity"
+          />
+          <el-option
+            label="RAM Type"
+            value="ram_type"
+          />
+          <el-option
+            label="Disk Type"
+            value="disk_type"
+          />
+          <el-option
+            label="Disk Capacity"
+            value="disk_capacity"
+          />
+          <el-option
+            label="GPU Model"
+            value="gpu_model"
+          />
+          <el-option
+            label="MAC Address"
+            value="mac_address"
+          />
+          <el-option
+            label="IP Address"
+            value="ip_address"
+          />
+          <el-option
+            label="Hostname"
+            value="hostname"
+          />
+          <el-option
+            label="OS Name"
+            value="os_name"
+          />
+          <el-option
+            label="OS Version"
+            value="os_version"
+          />
+          <el-option
+            label="Antivirus Software"
+            value="antivirus_software"
+          />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="Old Value" prop="old_value">
+      <el-form-item
+        label="Old Value"
+        prop="old_value"
+      >
         <el-input
           v-model="formData.old_value"
           type="textarea"
@@ -58,7 +115,10 @@
         />
       </el-form-item>
 
-      <el-form-item label="New Value" prop="new_value">
+      <el-form-item
+        label="New Value"
+        prop="new_value"
+      >
         <el-input
           v-model="formData.new_value"
           type="textarea"
@@ -67,7 +127,10 @@
         />
       </el-form-item>
 
-      <el-form-item label="Change Date" prop="change_date">
+      <el-form-item
+        label="Change Date"
+        prop="change_date"
+      >
         <el-date-picker
           v-model="formData.change_date"
           type="date"
@@ -76,7 +139,10 @@
         />
       </el-form-item>
 
-      <el-form-item label="Reason" prop="change_reason">
+      <el-form-item
+        label="Reason"
+        prop="change_reason"
+      >
         <el-input
           v-model="formData.change_reason"
           type="textarea"
@@ -87,8 +153,14 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">Cancel</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">
+      <el-button @click="handleClose">
+        Cancel
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
+        @click="handleSubmit"
+      >
         {{ isEdit ? 'Save' : 'Add' }}
       </el-button>
     </template>

@@ -2,21 +2,51 @@
   <div class="system-config-list">
     <div class="page-header">
       <h3>System Configuration</h3>
-      <el-button type="primary" @click="handleCreate">Add Config</el-button>
+      <el-button
+        type="primary"
+        @click="handleCreate"
+      >
+        Add Config
+      </el-button>
     </div>
 
     <!-- Category Tabs -->
-    <el-tabs v-model="activeCategory" @tab-change="handleCategoryChange">
-      <el-tab-pane label="All" name="" />
-      <el-tab-pane label="General" name="general" />
-      <el-tab-pane label="QR Code" name="qrcode" />
-      <el-tab-pane label="Notification" name="notification" />
-      <el-tab-pane label="Asset" name="asset" />
-      <el-tab-pane label="Inventory" name="inventory" />
+    <el-tabs
+      v-model="activeCategory"
+      @tab-change="handleCategoryChange"
+    >
+      <el-tab-pane
+        label="All"
+        name=""
+      />
+      <el-tab-pane
+        label="General"
+        name="general"
+      />
+      <el-tab-pane
+        label="QR Code"
+        name="qrcode"
+      />
+      <el-tab-pane
+        label="Notification"
+        name="notification"
+      />
+      <el-tab-pane
+        label="Asset"
+        name="asset"
+      />
+      <el-tab-pane
+        label="Inventory"
+        name="inventory"
+      />
     </el-tabs>
 
     <!-- Filters -->
-    <el-form :model="filterForm" inline class="filter-form">
+    <el-form
+      :model="filterForm"
+      inline
+      class="filter-form"
+    >
       <el-form-item label="Search">
         <el-input
           v-model="filterForm.search"
@@ -27,17 +57,44 @@
         />
       </el-form-item>
       <el-form-item label="Type">
-        <el-select v-model="filterForm.value_type" clearable placeholder="All" @change="handleSearch">
-          <el-option label="String" value="string" />
-          <el-option label="Integer" value="integer" />
-          <el-option label="Float" value="float" />
-          <el-option label="Boolean" value="boolean" />
-          <el-option label="JSON" value="json" />
+        <el-select
+          v-model="filterForm.value_type"
+          clearable
+          placeholder="All"
+          @change="handleSearch"
+        >
+          <el-option
+            label="String"
+            value="string"
+          />
+          <el-option
+            label="Integer"
+            value="integer"
+          />
+          <el-option
+            label="Float"
+            value="float"
+          />
+          <el-option
+            label="Boolean"
+            value="boolean"
+          />
+          <el-option
+            label="JSON"
+            value="json"
+          />
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">Search</el-button>
-        <el-button @click="handleFilterReset">Reset</el-button>
+        <el-button
+          type="primary"
+          @click="handleSearch"
+        >
+          Search
+        </el-button>
+        <el-button @click="handleFilterReset">
+          Reset
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -49,46 +106,108 @@
       stripe
       style="width: 100%"
     >
-      <el-table-column prop="config_key" label="Key" width="200" />
-      <el-table-column prop="name" label="Name" width="180" />
-      <el-table-column prop="config_value" label="Value" min-width="200">
+      <el-table-column
+        prop="config_key"
+        label="Key"
+        width="200"
+      />
+      <el-table-column
+        prop="name"
+        label="Name"
+        width="180"
+      />
+      <el-table-column
+        prop="config_value"
+        label="Value"
+        min-width="200"
+      >
         <template #default="{ row }">
-          <span v-if="row.is_encrypted" type="warning">******</span>
+          <span
+            v-if="row.is_encrypted"
+            type="warning"
+          >******</span>
           <span v-else-if="row.value_type === 'boolean'">
-            <el-tag :type="row.config_value === 'true' ? 'success' : 'info'" size="small">
+            <el-tag
+              :type="row.config_value === 'true' ? 'success' : 'info'"
+              size="small"
+            >
               {{ row.config_value === 'true' ? 'Enabled' : 'Disabled' }}
             </el-tag>
           </span>
-          <span v-else-if="row.value_type === 'json'" class="json-value">
+          <span
+            v-else-if="row.value_type === 'json'"
+            class="json-value"
+          >
             {{ formatJsonDisplay(row.config_value) }}
           </span>
           <span v-else>{{ row.config_value }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="Type" width="100" align="center">
+      <el-table-column
+        label="Type"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag size="small" :type="getValueTypeColor(row.value_type)">
+          <el-tag
+            size="small"
+            :type="getValueTypeColor(row.value_type)"
+          >
             {{ row.value_type }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="category" label="Category" width="120" />
-      <el-table-column label="System" width="80" align="center">
+      <el-table-column
+        prop="category"
+        label="Category"
+        width="120"
+      />
+      <el-table-column
+        label="System"
+        width="80"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag v-if="row.is_system" type="warning" size="small">System</el-tag>
+          <el-tag
+            v-if="row.is_system"
+            type="warning"
+            size="small"
+          >
+            System
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="description" label="Description" min-width="150" show-overflow-tooltip />
-      <el-table-column label="Actions" width="180" fixed="right">
+      <el-table-column
+        prop="description"
+        label="Description"
+        min-width="150"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="Actions"
+        width="180"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleEdit(row)">Edit</el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleEdit(row)"
+          >
+            Edit
+          </el-button>
           <el-popconfirm
             v-if="!row.is_system"
             title="Are you sure to delete this config?"
             @confirm="handleDelete(row)"
           >
             <template #reference>
-              <el-button link type="danger">Delete</el-button>
+              <el-button
+                link
+                type="danger"
+              >
+                Delete
+              </el-button>
             </template>
           </el-popconfirm>
         </template>

@@ -26,26 +26,40 @@
     >
       <!-- Basic Information -->
       <div class="form-section">
-        <div class="section-title">基本信息</div>
+        <div class="section-title">
+          基本信息
+        </div>
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="资产编码" prop="code">
+            <el-form-item
+              label="资产编码"
+              prop="code"
+            >
               <el-input
                 v-model="formData.code"
                 placeholder="请输入资产编码"
                 :disabled="isEdit && !canEditCode"
                 clearable
               >
-                <template #append v-if="!isEdit">
-                  <el-button :icon="Refresh" @click="generateCode" />
+                <template
+                  v-if="!isEdit"
+                  #append
+                >
+                  <el-button
+                    :icon="Refresh"
+                    @click="generateCode"
+                  />
                 </template>
               </el-input>
             </el-form-item>
           </el-col>
 
           <el-col :span="12">
-            <el-form-item label="资产名称" prop="name">
+            <el-form-item
+              label="资产名称"
+              prop="name"
+            >
               <el-input
                 v-model="formData.name"
                 placeholder="请输入资产名称"
@@ -57,7 +71,10 @@
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="资产分类" prop="categoryId">
+            <el-form-item
+              label="资产分类"
+              prop="categoryId"
+            >
               <el-tree-select
                 v-model="formData.categoryId"
                 :data="categoryTree"
@@ -71,7 +88,10 @@
           </el-col>
 
           <el-col :span="12">
-            <el-form-item label="资产状态" prop="status">
+            <el-form-item
+              label="资产状态"
+              prop="status"
+            >
               <el-select
                 v-model="formData.status"
                 placeholder="请选择状态"
@@ -91,11 +111,16 @@
 
       <!-- Purchase Information -->
       <div class="form-section">
-        <div class="section-title">采购信息</div>
+        <div class="section-title">
+          采购信息
+        </div>
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="采购金额" prop="purchasePrice">
+            <el-form-item
+              label="采购金额"
+              prop="purchasePrice"
+            >
               <el-input-number
                 v-model="formData.purchasePrice"
                 :min="0"
@@ -108,7 +133,10 @@
           </el-col>
 
           <el-col :span="12">
-            <el-form-item label="采购日期" prop="purchaseDate">
+            <el-form-item
+              label="采购日期"
+              prop="purchaseDate"
+            >
               <el-date-picker
                 v-model="formData.purchaseDate"
                 type="date"
@@ -132,11 +160,16 @@
 
       <!-- Location & Custodian -->
       <div class="form-section">
-        <div class="section-title">位置与使用人</div>
+        <div class="section-title">
+          位置与使用人
+        </div>
 
         <el-row :gutter="20">
           <el-col :span="12">
-            <el-form-item label="存放位置" prop="locationId">
+            <el-form-item
+              label="存放位置"
+              prop="locationId"
+            >
               <el-tree-select
                 v-model="formData.locationId"
                 :data="locationTree"
@@ -163,7 +196,9 @@
 
       <!-- Additional Information -->
       <div class="form-section">
-        <div class="section-title">其他信息</div>
+        <div class="section-title">
+          其他信息
+        </div>
 
         <el-form-item label="规格型号">
           <el-input
@@ -184,8 +219,13 @@
       </div>
 
       <!-- QR Code Preview (for new assets) -->
-      <div v-if="!isEdit && formData.code" class="form-section">
-        <div class="section-title">二维码预览</div>
+      <div
+        v-if="!isEdit && formData.code"
+        class="form-section"
+      >
+        <div class="section-title">
+          二维码预览
+        </div>
         <div class="qr-preview">
           <div class="qr-placeholder">
             <el-icon><QrCode /></el-icon>
@@ -197,8 +237,14 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="handleCancel">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">
+        <el-button @click="handleCancel">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="submitting"
+          @click="handleSubmit"
+        >
           {{ isEdit ? '保存' : '创建' }}
         </el-button>
       </div>

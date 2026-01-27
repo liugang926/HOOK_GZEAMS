@@ -18,43 +18,87 @@
       @click-left="goBack"
     >
       <template #right>
-        <van-icon name="ellipsis" size="18" @click="showActions = true" />
+        <van-icon
+          name="ellipsis"
+          size="18"
+          @click="showActions = true"
+        />
       </template>
     </van-nav-bar>
 
     <!-- Loading State -->
-    <div v-if="loading" class="loading-container">
-      <van-loading size="24px" color="#409eff">加载中...</van-loading>
+    <div
+      v-if="loading"
+      class="loading-container"
+    >
+      <van-loading
+        size="24px"
+        color="#409eff"
+      >
+        加载中...
+      </van-loading>
     </div>
 
     <!-- Asset Content -->
-    <div v-else-if="asset" class="asset-content">
+    <div
+      v-else-if="asset"
+      class="asset-content"
+    >
       <!-- Asset Header Card -->
-      <van-cell-group inset class="header-card">
+      <van-cell-group
+        inset
+        class="header-card"
+      >
         <div class="asset-header">
-          <div class="asset-code">{{ asset.code }}</div>
+          <div class="asset-code">
+            {{ asset.code }}
+          </div>
           <van-tag :type="getStatusType(asset.status)">
             {{ getStatusLabel(asset.status) }}
           </van-tag>
         </div>
-        <div class="asset-name">{{ asset.name }}</div>
-        <div class="asset-category" v-if="asset.categoryName">
-          <van-tag type="primary" plain size="small">
+        <div class="asset-name">
+          {{ asset.name }}
+        </div>
+        <div
+          v-if="asset.categoryName"
+          class="asset-category"
+        >
+          <van-tag
+            type="primary"
+            plain
+            size="small"
+          >
             {{ asset.categoryName }}
           </van-tag>
         </div>
       </van-cell-group>
 
       <!-- Basic Information -->
-      <van-cell-group inset title="基本信息">
-        <van-cell title="资产编码" :value="asset.code" />
-        <van-cell title="资产名称" :value="asset.name" />
-        <van-cell title="资产分类" :value="asset.categoryName || '-'" />
+      <van-cell-group
+        inset
+        title="基本信息"
+      >
+        <van-cell
+          title="资产编码"
+          :value="asset.code"
+        />
+        <van-cell
+          title="资产名称"
+          :value="asset.name"
+        />
+        <van-cell
+          title="资产分类"
+          :value="asset.categoryName || '-'"
+        />
         <van-cell
           title="采购金额"
           :value="`¥${formatMoney(asset.purchasePrice)}`"
         />
-        <van-cell title="采购日期" :value="asset.purchaseDate" />
+        <van-cell
+          title="采购日期"
+          :value="asset.purchaseDate"
+        />
         <van-cell
           title="规格型号"
           :value="asset.specification || '-'"
@@ -62,7 +106,10 @@
       </van-cell-group>
 
       <!-- Location & Custodian -->
-      <van-cell-group inset title="位置与使用人">
+      <van-cell-group
+        inset
+        title="位置与使用人"
+      >
         <van-cell
           title="存放位置"
           :value="asset.locationName || '-'"
@@ -80,9 +127,9 @@
 
       <!-- Custom Fields -->
       <van-cell-group
+        v-if="hasCustomFields"
         inset
         title="扩展信息"
-        v-if="hasCustomFields"
       >
         <van-cell
           v-for="(value, key) in asset.customFields"
@@ -93,26 +140,51 @@
       </van-cell-group>
 
       <!-- Purchase Info -->
-      <van-cell-group inset title="采购信息" v-if="asset.supplierName">
-        <van-cell title="供应商" :value="asset.supplierName" />
-        <van-cell title="供应商联系方式" value="-" />
+      <van-cell-group
+        v-if="asset.supplierName"
+        inset
+        title="采购信息"
+      >
+        <van-cell
+          title="供应商"
+          :value="asset.supplierName"
+        />
+        <van-cell
+          title="供应商联系方式"
+          value="-"
+        />
       </van-cell-group>
 
       <!-- Notes -->
-      <van-cell-group inset title="备注" v-if="asset.description">
+      <van-cell-group
+        v-if="asset.description"
+        inset
+        title="备注"
+      >
         <van-cell>
           <template #title>
-            <div class="description-text">{{ asset.description }}</div>
+            <div class="description-text">
+              {{ asset.description }}
+            </div>
           </template>
         </van-cell>
       </van-cell-group>
 
       <!-- QR Code Card -->
-      <van-cell-group inset title="二维码">
+      <van-cell-group
+        inset
+        title="二维码"
+      >
         <div class="qr-code-card">
           <div class="qr-code-placeholder">
-            <van-icon name="qr-code" size="64" color="#409eff" />
-            <p class="qr-hint">{{ asset.code }}</p>
+            <van-icon
+              name="qr-code"
+              size="64"
+              color="#409eff"
+            />
+            <p class="qr-hint">
+              {{ asset.code }}
+            </p>
           </div>
           <van-button
             type="primary"
@@ -126,15 +198,24 @@
       </van-cell-group>
 
       <!-- Operation Timeline -->
-      <van-cell-group inset title="操作记录">
+      <van-cell-group
+        inset
+        title="操作记录"
+      >
         <div class="timeline-container">
-          <van-empty v-if="!timeline || timeline.length === 0" description="暂无操作记录" />
+          <van-empty
+            v-if="!timeline || timeline.length === 0"
+            description="暂无操作记录"
+          />
           <van-steps
             v-else
             direction="vertical"
             :active="timeline.length"
           >
-            <van-step v-for="(item, index) in timeline" :key="index">
+            <van-step
+              v-for="(item, index) in timeline"
+              :key="index"
+            >
               <template #icon>
                 <van-icon :name="getStepIcon(item.type)" />
               </template>
@@ -143,8 +224,13 @@
                 <span class="step-time">{{ formatTime(item.createdAt) }}</span>
               </template>
               <template #default>
-                <p class="step-desc">{{ item.description }}</p>
-                <p v-if="item.operator" class="step-operator">
+                <p class="step-desc">
+                  {{ item.description }}
+                </p>
+                <p
+                  v-if="item.operator"
+                  class="step-operator"
+                >
                   操作人: {{ item.operator }}
                 </p>
               </template>
@@ -174,14 +260,17 @@
     </div>
 
     <!-- Error State -->
-    <van-empty v-else description="资产不存在" />
+    <van-empty
+      v-else
+      description="资产不存在"
+    />
 
     <!-- Action Sheet -->
     <van-action-sheet
       v-model:show="showActions"
       :actions="actionItems"
-      @select="handleAction"
       cancel-text="取消"
+      @select="handleAction"
     />
 
     <!-- QR Code Dialog -->
@@ -192,14 +281,29 @@
     >
       <div class="qr-dialog-content">
         <div class="qr-large-placeholder">
-          <van-icon name="qr-code" size="160" color="#000" />
-          <p class="qr-code-text">{{ asset?.code }}</p>
+          <van-icon
+            name="qr-code"
+            size="160"
+            color="#000"
+          />
+          <p class="qr-code-text">
+            {{ asset?.code }}
+          </p>
         </div>
-        <p class="qr-hint-text">扫描二维码查看资产详情</p>
+        <p class="qr-hint-text">
+          扫描二维码查看资产详情
+        </p>
       </div>
       <template #footer>
-        <van-button @click="qrCodeVisible = false">关闭</van-button>
-        <van-button type="primary" @click="handleDownloadQR">保存图片</van-button>
+        <van-button @click="qrCodeVisible = false">
+          关闭
+        </van-button>
+        <van-button
+          type="primary"
+          @click="handleDownloadQR"
+        >
+          保存图片
+        </van-button>
       </template>
     </van-dialog>
   </div>

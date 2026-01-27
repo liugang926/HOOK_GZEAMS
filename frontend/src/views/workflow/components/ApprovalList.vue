@@ -1,69 +1,107 @@
 <template>
   <div class="approval-list">
     <el-table
+      v-loading="loading"
       :data="tasks"
       :loading="loading"
-      v-loading="loading"
       stripe
       border
       empty-text="暂无审批任务"
     >
-      <el-table-column prop="instance.business_no" label="单号" width="160" />
-      <el-table-column prop="node_name" label="当前节点" width="140" />
-      <el-table-column label="业务类型" width="110">
+      <el-table-column
+        prop="instance.business_no"
+        label="单号"
+        width="160"
+      />
+      <el-table-column
+        prop="node_name"
+        label="当前节点"
+        width="140"
+      />
+      <el-table-column
+        label="业务类型"
+        width="110"
+      >
         <template #default="{ row }">
-          <el-tag :type="getBusinessTypeTag(row.instance?.business_object_code)" size="small">
+          <el-tag
+            :type="getBusinessTypeTag(row.instance?.business_object_code)"
+            size="small"
+          >
             {{ getBusinessType(row.instance?.business_object_code) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="发起人" width="110">
+      <el-table-column
+        label="发起人"
+        width="110"
+      >
         <template #default="{ row }">
           {{ row.instance?.initiator?.username || '-' }}
         </template>
       </el-table-column>
-      <el-table-column label="发起时间" width="170">
+      <el-table-column
+        label="发起时间"
+        width="170"
+      >
         <template #default="{ row }">
           {{ formatDate(row.created_at) }}
         </template>
       </el-table-column>
-      <el-table-column label="优先级" width="90">
+      <el-table-column
+        label="优先级"
+        width="90"
+      >
         <template #default="{ row }">
-          <el-tag :type="getPriorityTagType(row.priority)" size="small">
+          <el-tag
+            :type="getPriorityTagType(row.priority)"
+            size="small"
+          >
             {{ getPriorityLabel(row.priority) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right" v-if="!readOnly">
+      <el-table-column
+        v-if="!readOnly"
+        label="操作"
+        width="200"
+        fixed="right"
+      >
         <template #default="{ row }">
           <el-button
             type="primary"
             link
-            @click="$emit('approve', row.id, '')"
             :loading="actionLoading === row.id"
+            @click="$emit('approve', row.id, '')"
           >
             同意
           </el-button>
           <el-button
             type="danger"
             link
-            @click="$emit('reject', row.id)"
             :loading="actionLoading === row.id"
+            @click="$emit('reject', row.id)"
           >
             拒绝
           </el-button>
           <el-button
             link
-            @click="$emit('return', row.id)"
             :loading="actionLoading === row.id"
+            @click="$emit('return', row.id)"
           >
             退回
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column label="处理结果" width="100" v-if="readOnly">
+      <el-table-column
+        v-if="readOnly"
+        label="处理结果"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-tag :type="getStatusTagType(row.status)" size="small">
+          <el-tag
+            :type="getStatusTagType(row.status)"
+            size="small"
+          >
             {{ getStatusLabel(row.status) }}
           </el-tag>
         </template>
@@ -77,7 +115,10 @@
       width="500px"
       @close="handleDialogClose"
     >
-      <el-form :model="dialogForm" label-width="80px">
+      <el-form
+        :model="dialogForm"
+        label-width="80px"
+      >
         <el-form-item label="审批意见">
           <el-input
             v-model="dialogForm.comment"
@@ -90,8 +131,14 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleConfirm" :loading="confirmLoading">
+        <el-button @click="dialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="confirmLoading"
+          @click="handleConfirm"
+        >
           确定
         </el-button>
       </template>

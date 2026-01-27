@@ -297,8 +297,13 @@ defineExpose({
 <template>
   <div class="base-form-page">
     <!-- Form Header -->
-    <div v-if="title" class="form-header">
-      <h3 class="form-title">{{ title }}</h3>
+    <div
+      v-if="title"
+      class="form-header"
+    >
+      <h3 class="form-title">
+        {{ title }}
+      </h3>
     </div>
 
     <!-- Form Container -->
@@ -313,8 +318,14 @@ defineExpose({
         class="base-form"
       >
         <el-row :gutter="20">
-          <template v-for="field in visibleFields" :key="field.prop">
-            <el-col :span="field.span || 12" :class="fieldClass">
+          <template
+            v-for="field in visibleFields"
+            :key="field.prop"
+          >
+            <el-col
+              :span="field.span || 12"
+              :class="fieldClass"
+            >
               <!-- Input Field -->
               <el-form-item
                 v-if="field.type === 'input'"
@@ -327,7 +338,10 @@ defineExpose({
                   :disabled="readonly || field.disabled"
                   clearable
                 />
-                <div v-if="field.description" class="field-description">
+                <div
+                  v-if="field.description"
+                  class="field-description"
+                >
                   {{ field.description }}
                 </div>
               </el-form-item>
@@ -345,7 +359,10 @@ defineExpose({
                   :placeholder="field.placeholder || `请输入${field.label}`"
                   :disabled="readonly || field.disabled"
                 />
-                <div v-if="field.description" class="field-description">
+                <div
+                  v-if="field.description"
+                  class="field-description"
+                >
                   {{ field.description }}
                 </div>
               </el-form-item>
@@ -366,7 +383,10 @@ defineExpose({
                   controls-position="right"
                   class="full-width"
                 />
-                <div v-if="field.description" class="field-description">
+                <div
+                  v-if="field.description"
+                  class="field-description"
+                >
                   {{ field.description }}
                 </div>
               </el-form-item>
@@ -393,7 +413,10 @@ defineExpose({
                     :disabled="option.disabled"
                   />
                 </el-select>
-                <div v-if="field.description" class="field-description">
+                <div
+                  v-if="field.description"
+                  class="field-description"
+                >
                   {{ field.description }}
                 </div>
               </el-form-item>
@@ -443,7 +466,10 @@ defineExpose({
                   v-model="formData[field.prop]"
                   :disabled="readonly || field.disabled"
                 />
-                <div v-if="field.description" class="field-description">
+                <div
+                  v-if="field.description"
+                  class="field-description"
+                >
                   {{ field.description }}
                 </div>
               </el-form-item>
@@ -467,7 +493,10 @@ defineExpose({
                     {{ option.label }}
                   </el-radio>
                 </el-radio-group>
-                <div v-if="field.description" class="field-description">
+                <div
+                  v-if="field.description"
+                  class="field-description"
+                >
                   {{ field.description }}
                 </div>
               </el-form-item>
@@ -491,7 +520,10 @@ defineExpose({
                     {{ option.label }}
                   </el-checkbox>
                 </el-checkbox-group>
-                <div v-if="field.description" class="field-description">
+                <div
+                  v-if="field.description"
+                  class="field-description"
+                >
                   {{ field.description }}
                 </div>
               </el-form-item>
@@ -511,11 +543,17 @@ defineExpose({
                   :on-exceed="handleExceed"
                   list-type="text"
                 >
-                  <el-button type="primary" :disabled="readonly || field.disabled">
+                  <el-button
+                    type="primary"
+                    :disabled="readonly || field.disabled"
+                  >
                     点击上传
                   </el-button>
                 </el-upload>
-                <div v-if="field.description" class="field-description">
+                <div
+                  v-if="field.description"
+                  class="field-description"
+                >
                   {{ field.description }}
                 </div>
               </el-form-item>
@@ -532,7 +570,10 @@ defineExpose({
                   :form="formData"
                   :readonly="readonly"
                 />
-                <div v-if="field.description" class="field-description">
+                <div
+                  v-if="field.description"
+                  class="field-description"
+                >
                   {{ field.description }}
                 </div>
               </el-form-item>
@@ -543,7 +584,10 @@ defineExpose({
     </div>
 
     <!-- Form Actions -->
-    <div v-if="showSubmit || showCancel" class="form-actions">
+    <div
+      v-if="showSubmit || showCancel"
+      class="form-actions"
+    >
       <el-button
         v-if="showSubmit"
         type="primary"
@@ -559,7 +603,11 @@ defineExpose({
       >
         {{ cancelText }}
       </el-button>
-      <slot name="extra-actions" :form="formData" :loading="loading" />
+      <slot
+        name="extra-actions"
+        :form="formData"
+        :loading="loading"
+      />
     </div>
   </div>
 </template>

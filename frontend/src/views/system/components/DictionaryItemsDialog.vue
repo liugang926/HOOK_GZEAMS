@@ -7,8 +7,19 @@
   >
     <!-- Toolbar -->
     <div class="toolbar">
-      <el-button type="primary" size="small" @click="handleCreate">添加字典项</el-button>
-      <el-button size="small" @click="handleBatchSort">批量排序</el-button>
+      <el-button
+        type="primary"
+        size="small"
+        @click="handleCreate"
+      >
+        添加字典项
+      </el-button>
+      <el-button
+        size="small"
+        @click="handleBatchSort"
+      >
+        批量排序
+      </el-button>
     </div>
 
     <!-- Dictionary Items Table -->
@@ -20,22 +31,55 @@
       style="width: 100%"
       :row-class-name="getRowClassName"
     >
-      <el-table-column prop="code" label="字典项编码" width="150" />
-      <el-table-column label="显示名称" width="200">
+      <el-table-column
+        prop="code"
+        label="字典项编码"
+        width="150"
+      />
+      <el-table-column
+        label="显示名称"
+        width="200"
+      >
         <template #default="{ row }">
           <div class="item-name">
-            <span v-if="row.color" class="color-dot" :style="{ backgroundColor: row.color }"></span>
-            <span v-if="row.icon" class="item-icon">
+            <span
+              v-if="row.color"
+              class="color-dot"
+              :style="{ backgroundColor: row.color }"
+            />
+            <span
+              v-if="row.icon"
+              class="item-icon"
+            >
               <el-icon><component :is="row.icon" /></el-icon>
             </span>
             {{ row.name }}
-            <el-tag v-if="row.is_default" type="info" size="small">默认</el-tag>
+            <el-tag
+              v-if="row.is_default"
+              type="info"
+              size="small"
+            >
+              默认
+            </el-tag>
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="name_en" label="英文名称" width="150" />
-      <el-table-column prop="description" label="描述" min-width="150" show-overflow-tooltip />
-      <el-table-column label="状态" width="80" align="center">
+      <el-table-column
+        prop="name_en"
+        label="英文名称"
+        width="150"
+      />
+      <el-table-column
+        prop="description"
+        label="描述"
+        min-width="150"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="状态"
+        width="80"
+        align="center"
+      >
         <template #default="{ row }">
           <el-switch
             v-model="row.is_active"
@@ -43,7 +87,12 @@
           />
         </template>
       </el-table-column>
-      <el-table-column prop="sort_order" label="排序" width="100" align="center">
+      <el-table-column
+        prop="sort_order"
+        label="排序"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
           <el-input-number
             v-model="row.sort_order"
@@ -55,16 +104,34 @@
           />
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column
+        label="操作"
+        width="150"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-          <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleEdit(row)"
+          >
+            编辑
+          </el-button>
+          <el-button
+            link
+            type="danger"
+            @click="handleDelete(row)"
+          >
+            删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <template #footer>
-      <el-button @click="handleClose">关闭</el-button>
+      <el-button @click="handleClose">
+        关闭
+      </el-button>
     </template>
 
     <!-- Dictionary Item Form Dialog -->

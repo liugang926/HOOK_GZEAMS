@@ -299,7 +299,10 @@ defineExpose({
 </script>
 
 <template>
-  <div v-if="isVisible" class="dynamic-field-renderer">
+  <div
+    v-if="isVisible"
+    class="dynamic-field-renderer"
+  >
     <!-- Text Input -->
     <template v-if="field.type === 'text' || field.type === 'string'">
       <el-input
@@ -501,7 +504,10 @@ defineExpose({
           :show-tooltip="field.showTooltip !== false"
           @update:model-value="handleChange"
         />
-        <span v-if="field.showValue !== false" class="slider-value">
+        <span
+          v-if="field.showValue !== false"
+          class="slider-value"
+        >
           {{ modelValue }}
         </span>
       </div>
@@ -619,11 +625,20 @@ defineExpose({
     <template v-else-if="field.type === 'formula'">
       <div class="formula-display">
         <template v-if="field.formulaExpression">
-          <span v-if="field.prefix" class="formula-prefix">{{ field.prefix }}</span>
+          <span
+            v-if="field.prefix"
+            class="formula-prefix"
+          >{{ field.prefix }}</span>
           <span class="formula-value">{{ formatDisplayValue }}</span>
-          <span v-if="field.suffix" class="formula-suffix">{{ field.suffix }}</span>
+          <span
+            v-if="field.suffix"
+            class="formula-suffix"
+          >{{ field.suffix }}</span>
         </template>
-        <span v-else class="formula-placeholder">-</span>
+        <span
+          v-else
+          class="formula-placeholder"
+        >-</span>
       </div>
     </template>
 
@@ -663,7 +678,10 @@ defineExpose({
     </template>
 
     <!-- Field Description -->
-    <div v-if="field.description" class="field-description">
+    <div
+      v-if="field.description"
+      class="field-description"
+    >
       {{ field.description }}
     </div>
   </div>

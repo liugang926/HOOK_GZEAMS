@@ -1,0 +1,43 @@
+// Theme Colors (Premium Blue Palette)
+$primary-color: #2563eb;       // Richer blue than standard Element
+$primary-light: #eff6ff;
+$primary-dark: #1e40af;
+
+// Status Colors
+$success-color: #10b981;
+$warning-color: #f59e0b;
+$danger-color: #ef4444;
+$info-color: #64748b;
+
+// Typography Colors
+$text-main: #1f2937;           // Slate-900
+$text-regular: #4b5563;        // Slate-600
+$text-secondary: #9ca3af;      // Slate-400
+$text-placeholder: #d1d5db;    // Slate-300
+
+// Backgrounds
+$bg-body: #f8fafc;             // Pale slate background
+$bg-card: #ffffff;
+$bg-hover: #f1f5f9;
+
+// Bordes
+$border-color: #e2e8f0;
+$border-light: #f1f5f9;
+
+// Radius
+$radius-base: 8px;
+$radius-large: 12px;
+$radius-round: 999px;
+
+// Shadows (Soft, layered shadows)
+$shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+$shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+$shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+$shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+
+// Spacing
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;

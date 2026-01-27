@@ -12,13 +12,29 @@
       :rules="rules"
       label-width="100px"
     >
-      <el-form-item label="部门名称" prop="name">
-        <el-input v-model="formData.name" placeholder="请输入部门名称" />
+      <el-form-item
+        label="部门名称"
+        prop="name"
+      >
+        <el-input
+          v-model="formData.name"
+          placeholder="请输入部门名称"
+        />
       </el-form-item>
-      <el-form-item label="部门编码" prop="code">
-        <el-input v-model="formData.code" placeholder="请输入部门编码" />
+      <el-form-item
+        label="部门编码"
+        prop="code"
+      >
+        <el-input
+          v-model="formData.code"
+          placeholder="请输入部门编码"
+        />
       </el-form-item>
-      <el-form-item label="上级部门" prop="parentId" v-if="!isSub">
+      <el-form-item
+        v-if="!isSub"
+        label="上级部门"
+        prop="parentId"
+      >
         <el-tree-select
           v-model="formData.parentId"
           :data="departmentTree"
@@ -28,7 +44,10 @@
           check-strictly
         />
       </el-form-item>
-      <el-form-item label="负责人" prop="managerId">
+      <el-form-item
+        label="负责人"
+        prop="managerId"
+      >
         <el-select
           v-model="formData.managerId"
           placeholder="请选择负责人"
@@ -43,16 +62,35 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="联系电话" prop="phone">
-        <el-input v-model="formData.phone" placeholder="请输入联系电话" />
+      <el-form-item
+        label="联系电话"
+        prop="phone"
+      >
+        <el-input
+          v-model="formData.phone"
+          placeholder="请输入联系电话"
+        />
       </el-form-item>
-      <el-form-item label="排序" prop="sortOrder">
-        <el-input-number v-model="formData.sortOrder" :min="0" :max="9999" />
+      <el-form-item
+        label="排序"
+        prop="sortOrder"
+      >
+        <el-input-number
+          v-model="formData.sortOrder"
+          :min="0"
+          :max="9999"
+        />
       </el-form-item>
-      <el-form-item label="状态" prop="isActive">
+      <el-form-item
+        label="状态"
+        prop="isActive"
+      >
         <el-switch v-model="formData.isActive" />
       </el-form-item>
-      <el-form-item label="描述" prop="description">
+      <el-form-item
+        label="描述"
+        prop="description"
+      >
         <el-input
           v-model="formData.description"
           type="textarea"
@@ -62,8 +100,16 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="saving" @click="handleSubmit">确定</el-button>
+      <el-button @click="handleClose">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="saving"
+        @click="handleSubmit"
+      >
+        确定
+      </el-button>
     </template>
   </el-dialog>
 </template>

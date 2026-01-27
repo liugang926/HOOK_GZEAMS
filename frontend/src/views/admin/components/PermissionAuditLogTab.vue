@@ -1,12 +1,30 @@
 <template>
   <div class="permission-audit-log-tab">
     <!-- Filters -->
-    <el-form :model="filterForm" inline class="filter-form">
+    <el-form
+      :model="filterForm"
+      inline
+      class="filter-form"
+    >
       <el-form-item label="操作类型">
-        <el-select v-model="filterForm.action" clearable placeholder="全部" @change="handleSearch">
-          <el-option label="授权" value="grant" />
-          <el-option label="撤销" value="revoke" />
-          <el-option label="修改" value="update" />
+        <el-select
+          v-model="filterForm.action"
+          clearable
+          placeholder="全部"
+          @change="handleSearch"
+        >
+          <el-option
+            label="授权"
+            value="grant"
+          />
+          <el-option
+            label="撤销"
+            value="revoke"
+          />
+          <el-option
+            label="修改"
+            value="update"
+          />
         </el-select>
       </el-form-item>
       <el-form-item label="时间范围">
@@ -20,42 +38,68 @@
         />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">查询</el-button>
-        <el-button @click="handleReset">重置</el-button>
+        <el-button
+          type="primary"
+          @click="handleSearch"
+        >
+          查询
+        </el-button>
+        <el-button @click="handleReset">
+          重置
+        </el-button>
       </el-form-item>
     </el-form>
 
     <!-- Statistics Cards -->
-    <el-row :gutter="20" class="stats-row">
+    <el-row
+      :gutter="20"
+      class="stats-row"
+    >
       <el-col :span="6">
         <el-card shadow="hover">
           <div class="stat-item">
-            <div class="stat-label">今日授权</div>
-            <div class="stat-value">{{ stats.todayGrants }}</div>
+            <div class="stat-label">
+              今日授权
+            </div>
+            <div class="stat-value">
+              {{ stats.todayGrants }}
+            </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card shadow="hover">
           <div class="stat-item">
-            <div class="stat-label">今日撤销</div>
-            <div class="stat-value">{{ stats.todayRevokes }}</div>
+            <div class="stat-label">
+              今日撤销
+            </div>
+            <div class="stat-value">
+              {{ stats.todayRevokes }}
+            </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card shadow="hover">
           <div class="stat-item">
-            <div class="stat-label">本周操作</div>
-            <div class="stat-value">{{ stats.weekTotal }}</div>
+            <div class="stat-label">
+              本周操作
+            </div>
+            <div class="stat-value">
+              {{ stats.weekTotal }}
+            </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card shadow="hover">
           <div class="stat-item">
-            <div class="stat-label">活跃用户</div>
-            <div class="stat-value">{{ stats.activeUsers }}</div>
+            <div class="stat-label">
+              活跃用户
+            </div>
+            <div class="stat-value">
+              {{ stats.activeUsers }}
+            </div>
           </div>
         </el-card>
       </el-col>
@@ -69,28 +113,73 @@
       stripe
       style="width: 100%; margin-top: 20px"
     >
-      <el-table-column prop="createdAt" label="操作时间" width="180" />
-      <el-table-column prop="operatorName" label="操作人" width="120" />
-      <el-table-column label="操作类型" width="100" align="center">
+      <el-table-column
+        prop="createdAt"
+        label="操作时间"
+        width="180"
+      />
+      <el-table-column
+        prop="operatorName"
+        label="操作人"
+        width="120"
+      />
+      <el-table-column
+        label="操作类型"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag :type="getActionTag(row.action)" size="small">
+          <el-tag
+            :type="getActionTag(row.action)"
+            size="small"
+          >
             {{ getActionLabel(row.action) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="permissionType" label="权限类型" width="100">
+      <el-table-column
+        prop="permissionType"
+        label="权限类型"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.permissionType === 'field' ? 'primary' : 'success'" size="small">
+          <el-tag
+            :type="row.permissionType === 'field' ? 'primary' : 'success'"
+            size="small"
+          >
             {{ row.permissionType === 'field' ? '字段权限' : '数据权限' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="targetName" label="目标对象" width="120" />
-      <el-table-column prop="details" label="操作详情" min-width="250" show-overflow-tooltip />
-      <el-table-column prop="ipAddress" label="IP地址" width="140" />
-      <el-table-column label="操作" width="100" fixed="right">
+      <el-table-column
+        prop="targetName"
+        label="目标对象"
+        width="120"
+      />
+      <el-table-column
+        prop="details"
+        label="操作详情"
+        min-width="250"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="ipAddress"
+        label="IP地址"
+        width="140"
+      />
+      <el-table-column
+        label="操作"
+        width="100"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleViewDetail(row)">详情</el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleViewDetail(row)"
+          >
+            详情
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -114,9 +203,16 @@
       title="日志详情"
       width="600px"
     >
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="操作时间">{{ currentLog?.createdAt }}</el-descriptions-item>
-        <el-descriptions-item label="操作人">{{ currentLog?.operatorName }}</el-descriptions-item>
+      <el-descriptions
+        :column="2"
+        border
+      >
+        <el-descriptions-item label="操作时间">
+          {{ currentLog?.createdAt }}
+        </el-descriptions-item>
+        <el-descriptions-item label="操作人">
+          {{ currentLog?.operatorName }}
+        </el-descriptions-item>
         <el-descriptions-item label="操作类型">
           <el-tag :type="getActionTag(currentLog?.action)">
             {{ getActionLabel(currentLog?.action) }}
@@ -127,10 +223,24 @@
             {{ currentLog?.permissionType === 'field' ? '字段权限' : '数据权限' }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="目标对象" :span="2">{{ currentLog?.targetName }}</el-descriptions-item>
-        <el-descriptions-item label="操作详情" :span="2">{{ currentLog?.details }}</el-descriptions-item>
-        <el-descriptions-item label="IP地址">{{ currentLog?.ipAddress }}</el-descriptions-item>
-        <el-descriptions-item label="用户代理">{{ currentLog?.userAgent }}</el-descriptions-item>
+        <el-descriptions-item
+          label="目标对象"
+          :span="2"
+        >
+          {{ currentLog?.targetName }}
+        </el-descriptions-item>
+        <el-descriptions-item
+          label="操作详情"
+          :span="2"
+        >
+          {{ currentLog?.details }}
+        </el-descriptions-item>
+        <el-descriptions-item label="IP地址">
+          {{ currentLog?.ipAddress }}
+        </el-descriptions-item>
+        <el-descriptions-item label="用户代理">
+          {{ currentLog?.userAgent }}
+        </el-descriptions-item>
       </el-descriptions>
     </el-dialog>
   </div>

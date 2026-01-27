@@ -11,34 +11,55 @@
       :rules="rules"
       label-width="120px"
     >
-      <el-form-item label="字典编码" prop="code">
+      <el-form-item
+        label="字典编码"
+        prop="code"
+      >
         <el-input
           v-model="formData.code"
           placeholder="请输入字典编码（英文，如：ASSET_STATUS）"
           :disabled="isEdit"
         />
-        <div class="form-tip">编码必须唯一，建议使用大写字母和下划线</div>
+        <div class="form-tip">
+          编码必须唯一，建议使用大写字母和下划线
+        </div>
       </el-form-item>
 
-      <el-form-item label="字典名称" prop="name">
+      <el-form-item
+        label="字典名称"
+        prop="name"
+      >
         <el-input
           v-model="formData.name"
           placeholder="请输入字典名称（中文）"
         />
       </el-form-item>
 
-      <el-form-item label="英文名称" prop="name_en">
+      <el-form-item
+        label="英文名称"
+        prop="name_en"
+      >
         <el-input
           v-model="formData.name_en"
           placeholder="请输入英文名称"
         />
       </el-form-item>
 
-      <el-form-item label="排序号" prop="sort_order">
-        <el-input-number v-model="formData.sort_order" :min="0" :max="9999" />
+      <el-form-item
+        label="排序号"
+        prop="sort_order"
+      >
+        <el-input-number
+          v-model="formData.sort_order"
+          :min="0"
+          :max="9999"
+        />
       </el-form-item>
 
-      <el-form-item label="描述" prop="description">
+      <el-form-item
+        label="描述"
+        prop="description"
+      >
         <el-input
           v-model="formData.description"
           type="textarea"
@@ -47,14 +68,27 @@
         />
       </el-form-item>
 
-      <el-form-item label="状态" prop="is_active">
-        <el-switch v-model="formData.is_active" active-text="启用" inactive-text="禁用" />
+      <el-form-item
+        label="状态"
+        prop="is_active"
+      >
+        <el-switch
+          v-model="formData.is_active"
+          active-text="启用"
+          inactive-text="禁用"
+        />
       </el-form-item>
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">
+      <el-button @click="handleClose">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
+        @click="handleSubmit"
+      >
         {{ isEdit ? '保存' : '创建' }}
       </el-button>
     </template>

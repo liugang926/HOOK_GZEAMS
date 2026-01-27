@@ -11,44 +11,92 @@
       label-width="120px"
     >
       <el-form-item label="角色">
-        <el-select v-model="formData.roleName" disabled>
-          <el-option label="管理员" value="admin" />
-          <el-option label="普通用户" value="user" />
-          <el-option label="访客" value="guest" />
+        <el-select
+          v-model="formData.roleName"
+          disabled
+        >
+          <el-option
+            label="管理员"
+            value="admin"
+          />
+          <el-option
+            label="普通用户"
+            value="user"
+          />
+          <el-option
+            label="访客"
+            value="guest"
+          />
         </el-select>
       </el-form-item>
 
       <el-form-item label="业务对象">
-        <el-select v-model="formData.businessObjectName" disabled>
-          <el-option label="固定资产" value="Asset" />
-          <el-option label="员工信息" value="Employee" />
+        <el-select
+          v-model="formData.businessObjectName"
+          disabled
+        >
+          <el-option
+            label="固定资产"
+            value="Asset"
+          />
+          <el-option
+            label="员工信息"
+            value="Employee"
+          />
         </el-select>
       </el-form-item>
 
       <el-form-item label="字段名称">
-        <el-input v-model="formData.fieldName" disabled />
+        <el-input
+          v-model="formData.fieldName"
+          disabled
+        />
       </el-form-item>
 
       <el-form-item label="读取权限">
-        <el-switch v-model="formData.canRead" active-text="允许" inactive-text="禁止" />
+        <el-switch
+          v-model="formData.canRead"
+          active-text="允许"
+          inactive-text="禁止"
+        />
       </el-form-item>
 
       <el-form-item label="写入权限">
-        <el-switch v-model="formData.canWrite" active-text="允许" inactive-text="禁止" />
+        <el-switch
+          v-model="formData.canWrite"
+          active-text="允许"
+          inactive-text="禁止"
+        />
       </el-form-item>
 
       <el-form-item label="可见性">
-        <el-switch v-model="formData.isVisible" active-text="显示" inactive-text="隐藏" />
+        <el-switch
+          v-model="formData.isVisible"
+          active-text="显示"
+          inactive-text="隐藏"
+        />
       </el-form-item>
 
       <el-form-item label="说明">
-        <el-input v-model="formData.description" type="textarea" :rows="2" />
+        <el-input
+          v-model="formData.description"
+          type="textarea"
+          :rows="2"
+        />
       </el-form-item>
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">保存</el-button>
+      <el-button @click="handleClose">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
+        @click="handleSubmit"
+      >
+        保存
+      </el-button>
     </template>
   </el-dialog>
 </template>

@@ -11,29 +11,83 @@
       :rules="rules"
       label-width="120px"
     >
-      <el-form-item label="角色" prop="roleName">
-        <el-select v-model="formData.roleName" placeholder="请选择角色" :disabled="isEdit">
-          <el-option label="管理员" value="admin" />
-          <el-option label="部门主管" value="manager" />
-          <el-option label="普通员工" value="employee" />
+      <el-form-item
+        label="角色"
+        prop="roleName"
+      >
+        <el-select
+          v-model="formData.roleName"
+          placeholder="请选择角色"
+          :disabled="isEdit"
+        >
+          <el-option
+            label="管理员"
+            value="admin"
+          />
+          <el-option
+            label="部门主管"
+            value="manager"
+          />
+          <el-option
+            label="普通员工"
+            value="employee"
+          />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="业务对象" prop="businessObjectName">
-        <el-select v-model="formData.businessObjectName" placeholder="请选择业务对象" :disabled="isEdit">
-          <el-option label="固定资产" value="Asset" />
-          <el-option label="员工信息" value="Employee" />
-          <el-option label="部门" value="Department" />
+      <el-form-item
+        label="业务对象"
+        prop="businessObjectName"
+      >
+        <el-select
+          v-model="formData.businessObjectName"
+          placeholder="请选择业务对象"
+          :disabled="isEdit"
+        >
+          <el-option
+            label="固定资产"
+            value="Asset"
+          />
+          <el-option
+            label="员工信息"
+            value="Employee"
+          />
+          <el-option
+            label="部门"
+            value="Department"
+          />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="权限类型" prop="permissionType">
-        <el-select v-model="formData.permissionType" placeholder="请选择权限类型" @change="handlePermissionTypeChange">
-          <el-option label="全部数据" value="all" />
-          <el-option label="本部门" value="department" />
-          <el-option label="本部门及子部门" value="department_and_sub" />
-          <el-option label="仅本人" value="self" />
-          <el-option label="自定义" value="custom" />
+      <el-form-item
+        label="权限类型"
+        prop="permissionType"
+      >
+        <el-select
+          v-model="formData.permissionType"
+          placeholder="请选择权限类型"
+          @change="handlePermissionTypeChange"
+        >
+          <el-option
+            label="全部数据"
+            value="all"
+          />
+          <el-option
+            label="本部门"
+            value="department"
+          />
+          <el-option
+            label="本部门及子部门"
+            value="department_and_sub"
+          />
+          <el-option
+            label="仅本人"
+            value="self"
+          />
+          <el-option
+            label="自定义"
+            value="custom"
+          />
         </el-select>
       </el-form-item>
 
@@ -54,14 +108,27 @@
         v-else
         label="权限范围"
       >
-        <el-input :value="getScopePreview()" disabled />
+        <el-input
+          :value="getScopePreview()"
+          disabled
+        />
       </el-form-item>
 
-      <el-form-item label="状态" prop="isActive">
-        <el-switch v-model="formData.isActive" active-text="启用" inactive-text="禁用" />
+      <el-form-item
+        label="状态"
+        prop="isActive"
+      >
+        <el-switch
+          v-model="formData.isActive"
+          active-text="启用"
+          inactive-text="禁用"
+        />
       </el-form-item>
 
-      <el-form-item label="说明" prop="description">
+      <el-form-item
+        label="说明"
+        prop="description"
+      >
         <el-input
           v-model="formData.description"
           type="textarea"
@@ -72,8 +139,14 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">
+      <el-button @click="handleClose">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
+        @click="handleSubmit"
+      >
         {{ isEdit ? '保存' : '创建' }}
       </el-button>
     </template>

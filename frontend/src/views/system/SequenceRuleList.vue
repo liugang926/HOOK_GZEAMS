@@ -2,20 +2,47 @@
   <div class="sequence-rule-list">
     <div class="page-header">
       <h3>Sequence Rule Management</h3>
-      <el-button type="primary" @click="handleCreate">Create Rule</el-button>
+      <el-button
+        type="primary"
+        @click="handleCreate"
+      >
+        Create Rule
+      </el-button>
     </div>
 
     <!-- Filters -->
-    <el-form :model="filterForm" inline class="filter-form">
+    <el-form
+      :model="filterForm"
+      inline
+      class="filter-form"
+    >
       <el-form-item label="Status">
-        <el-select v-model="filterForm.is_active" clearable placeholder="All" @change="handleSearch">
-          <el-option label="Active" :value="true" />
-          <el-option label="Inactive" :value="false" />
+        <el-select
+          v-model="filterForm.is_active"
+          clearable
+          placeholder="All"
+          @change="handleSearch"
+        >
+          <el-option
+            label="Active"
+            :value="true"
+          />
+          <el-option
+            label="Inactive"
+            :value="false"
+          />
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">Search</el-button>
-        <el-button @click="handleFilterReset">Reset</el-button>
+        <el-button
+          type="primary"
+          @click="handleSearch"
+        >
+          Search
+        </el-button>
+        <el-button @click="handleFilterReset">
+          Reset
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -27,45 +54,128 @@
       stripe
       style="width: 100%"
     >
-      <el-table-column prop="code" label="Rule Code" width="180" />
-      <el-table-column prop="name" label="Rule Name" width="180" />
-      <el-table-column label="Pattern Preview" width="200">
+      <el-table-column
+        prop="code"
+        label="Rule Code"
+        width="180"
+      />
+      <el-table-column
+        prop="name"
+        label="Rule Name"
+        width="180"
+      />
+      <el-table-column
+        label="Pattern Preview"
+        width="200"
+      >
         <template #default="{ row }">
-          <el-tag type="info" size="small">{{ getPatternPreview(row) }}</el-tag>
+          <el-tag
+            type="info"
+            size="small"
+          >
+            {{ getPatternPreview(row) }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="prefix" label="Prefix" width="120" />
-      <el-table-column label="Seq Length" width="100" align="center">
-        <template #default="{ row }">{{ row.seq_length }}</template>
-      </el-table-column>
-      <el-table-column label="Current Value" width="120" align="center">
-        <template #default="{ row }">{{ row.current_value }}</template>
-      </el-table-column>
-      <el-table-column label="Reset Period" width="120" align="center">
+      <el-table-column
+        prop="prefix"
+        label="Prefix"
+        width="120"
+      />
+      <el-table-column
+        label="Seq Length"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag size="small">{{ getResetPeriodLabel(row.reset_period) }}</el-tag>
+          {{ row.seq_length }}
         </template>
       </el-table-column>
-      <el-table-column label="Status" width="80" align="center">
+      <el-table-column
+        label="Current Value"
+        width="120"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.is_active ? 'success' : 'info'" size="small">
+          {{ row.current_value }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        label="Reset Period"
+        width="120"
+        align="center"
+      >
+        <template #default="{ row }">
+          <el-tag size="small">
+            {{ getResetPeriodLabel(row.reset_period) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        label="Status"
+        width="80"
+        align="center"
+      >
+        <template #default="{ row }">
+          <el-tag
+            :type="row.is_active ? 'success' : 'info'"
+            size="small"
+          >
             {{ row.is_active ? 'Active' : 'Inactive' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="description" label="Description" min-width="150" show-overflow-tooltip />
-      <el-table-column label="Actions" width="280" fixed="right">
+      <el-table-column
+        prop="description"
+        label="Description"
+        min-width="150"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="Actions"
+        width="280"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" @click="handlePreview(row)">Preview</el-button>
-          <el-button link type="primary" @click="handleEdit(row)">Edit</el-button>
-          <el-button link type="warning" @click="handleReset(row)">Reset</el-button>
-          <el-button link type="primary" @click="handleGenerate(row)">Generate</el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handlePreview(row)"
+          >
+            Preview
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleEdit(row)"
+          >
+            Edit
+          </el-button>
+          <el-button
+            link
+            type="warning"
+            @click="handleReset(row)"
+          >
+            Reset
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleGenerate(row)"
+          >
+            Generate
+          </el-button>
           <el-popconfirm
             title="Are you sure to delete this rule?"
             @confirm="handleDelete(row)"
           >
             <template #reference>
-              <el-button link type="danger">Delete</el-button>
+              <el-button
+                link
+                type="danger"
+              >
+                Delete
+              </el-button>
             </template>
           </el-popconfirm>
         </template>
@@ -98,7 +208,10 @@
       title="Sequence Preview"
       width="500px"
     >
-      <div v-if="previewData" class="preview-content">
+      <div
+        v-if="previewData"
+        class="preview-content"
+      >
         <div class="preview-item">
           <span class="preview-label">Rule Code:</span>
           <span class="preview-value">{{ previewData.code }}</span>
@@ -117,8 +230,14 @@
         </div>
         <el-divider />
         <div class="preview-samples">
-          <div class="preview-label">Next 5 Numbers:</div>
-          <div v-for="num in previewSamples" :key="num" class="sample-number">
+          <div class="preview-label">
+            Next 5 Numbers:
+          </div>
+          <div
+            v-for="num in previewSamples"
+            :key="num"
+            class="sample-number"
+          >
             <el-tag>{{ num }}</el-tag>
           </div>
         </div>

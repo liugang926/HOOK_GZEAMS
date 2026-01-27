@@ -2,10 +2,12 @@
  * Workflow API Service
  *
  * API methods for BPM workflow management.
+ * Refactored to use BaseApiService.
  * Reference: docs/plans/phase3_1_logicflow/frontend_v2.md
  */
 
 import request from '@/utils/request'
+import { BaseApiService } from '@/api/base'
 import type { PaginatedResponse } from '@/types/api'
 import type { WorkflowDefinition, WorkflowInstance } from '@/types/workflow'
 import type { ApprovalAction } from '@/types/workflow'
@@ -13,101 +15,59 @@ import type { ApprovalAction } from '@/types/workflow'
 /**
  * Workflow Definition API service
  */
-export const workflowApi = {
-  /**
-   * List workflow definitions
-   */
-  listDefinitions(params?: {
-    businessObject?: string
-    isActive?: boolean
-  }): Promise<WorkflowDefinition[]> {
-    return request.get('/workflows/definitions/', { params })
-  },
-
-  /**
-   * Get single definition by ID
-   */
-  getDefinition(id: string): Promise<WorkflowDefinition> {
-    return request.get(`/workflows/definitions/${id}/`)
-  },
-
-  /**
-   * Save workflow definition (create or update)
-   */
-  saveDefinition(data: {
-    name: string
-    code: string
-    businessObject: string
-    graphData: any
-    description?: string
-  }): Promise<WorkflowDefinition> {
-    return request.post('/workflows/definitions/', data)
-  },
-
-  /**
-   * Update workflow definition
-   */
-  updateDefinition(id: string, data: Partial<WorkflowDefinition>): Promise<WorkflowDefinition> {
-    return request.put(`/workflows/definitions/${id}/`, data)
-  },
+class WorkflowDefinitionApiService extends BaseApiService<WorkflowDefinition> {
+  constructor() {
+    super('workflows/definitions')
+  }
 
   /**
    * Activate workflow definition
    */
-  activateDefinition(id: string): Promise<void> {
-    return request.post(`/workflows/definitions/${id}/activate/`)
-  },
+  activate(id: string): Promise<void> {
+    return request.post(`/${this.resource}/${id}/activate/`)
+  }
 
   /**
    * Deactivate workflow definition
    */
-  deactivateDefinition(id: string): Promise<void> {
-    return request.post(`/workflows/definitions/${id}/deactivate/`)
-  },
-
-  /**
-   * Delete workflow definition
-   */
-  deleteDefinition(id: string): Promise<void> {
-    return request.delete(`/workflows/definitions/${id}/`)
-  },
+  deactivate(id: string): Promise<void> {
+    return request.post(`/${this.resource}/${id}/deactivate/`)
+  }
 
   /**
    * Get workflow definition version history
    */
   getVersionHistory(id: string): Promise<any[]> {
-    return request.get(`/workflows/definitions/${id}/versions/`)
+    return request.get(`/${this.resource}/${id}/versions/`)
   }
+
+  // Aliases for compatibility
+  listDefinitions(params?: any) { return this.list(params) }
+  getDefinition(id: string) { return this.get(id) }
+  saveDefinition(data: any) {
+    // Logic might need check if ID exists, or if 'save' means create/update smart handling
+    return this.create(data)
+  }
+  updateDefinition(id: string, data: any) { return this.update(id, data) }
+  deleteDefinition(id: string) { return this.delete(id) }
+  activateDefinition(id: string) { return this.activate(id) }
+  deactivateDefinition(id: string) { return this.deactivate(id) }
 }
+export const workflowApi = new WorkflowDefinitionApiService()
+
 
 /**
  * Workflow Instance API service
  */
-export const workflowInstanceApi = {
-  /**
-   * List workflow instances
-   */
-  listInstances(params?: {
-    businessDataType?: string
-    businessDataId?: string
-    status?: string
-    page?: number
-    pageSize?: number
-  }): Promise<PaginatedResponse<WorkflowInstance>> {
-    return request.get('/workflows/instances/', { params })
-  },
-
-  /**
-   * Get single instance by ID
-   */
-  getInstance(id: string): Promise<WorkflowInstance> {
-    return request.get(`/workflows/instances/${id}/`)
-  },
+class WorkflowInstanceApiService extends BaseApiService<WorkflowInstance> {
+  constructor() {
+    super('workflows/instances')
+  }
 
   /**
    * Start workflow instance
    */
-  startInstance(data: {
+  start(data: {
     definitionId?: string
     definitionKey?: string
     businessDataType?: string
@@ -115,8 +75,8 @@ export const workflowInstanceApi = {
     businessKey?: string
     variables?: Record<string, any>
   }): Promise<WorkflowInstance> {
-    return request.post('/workflows/instances/start/', data)
-  },
+    return request.post(`/${this.resource}/start/`, data)
+  }
 
   /**
    * Start workflow instance by process key (convenience method)
@@ -126,27 +86,34 @@ export const workflowInstanceApi = {
     businessKey: string
     variables?: Record<string, any>
   }): Promise<WorkflowInstance> {
-    return this.startInstance({
+    return this.start({
       definitionKey: data.processKey,
       businessKey: data.businessKey,
       variables: data.variables
     })
-  },
+  }
 
   /**
    * Cancel workflow instance
    */
-  cancelInstance(id: string, reason?: string): Promise<void> {
-    return request.post(`/workflows/instances/${id}/cancel/`, { reason })
-  },
+  cancel(id: string, reason?: string): Promise<void> {
+    return request.post(`/${this.resource}/${id}/cancel/`, { reason })
+  }
 
   /**
    * Get instance timeline/history
    */
   getTimeline(id: string): Promise<any[]> {
-    return request.get(`/workflows/instances/${id}/timeline/`)
+    return request.get(`/${this.resource}/${id}/timeline/`)
   }
+
+  // Aliases
+  listInstances(params?: any) { return this.list(params) }
+  getInstance(id: string) { return this.get(id) }
+  startInstance(data: any) { return this.start(data) }
+  cancelInstance(id: string, reason?: string) { return this.cancel(id, reason) }
 }
+export const workflowInstanceApi = new WorkflowInstanceApiService()
 
 /**
  * Workflow Node API service
@@ -160,7 +127,7 @@ export const workflowNodeApi = {
     pageSize?: number
     status?: string
   }): Promise<PaginatedResponse<any>> {
-    return request.get('/workflows/tasks/my_tasks/', { params })
+    return request.get('/workflows/tasks/my-tasks/', { params })
   },
 
   /**
@@ -234,3 +201,4 @@ export const getTaskFormData = taskApi.getTaskFormData
 export const approveTask = taskApi.approveTask
 export const rejectTask = taskApi.rejectTask
 export const returnTask = taskApi.returnTask
+

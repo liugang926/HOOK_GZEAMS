@@ -18,23 +18,30 @@
       @click-left="goBack"
     >
       <template #right>
-        <van-icon name="ellipsis" size="18" @click="showMore = true" />
+        <van-icon
+          name="ellipsis"
+          size="18"
+          @click="showMore = true"
+        />
       </template>
     </van-nav-bar>
 
     <!-- Scanner Component -->
     <div class="scanner-wrapper">
       <MobileQRScanner
+        ref="scannerRef"
         :task-id="taskId"
+        :show-preview="true"
         @scan="handleScan"
         @error="handleScanError"
-        :show-preview="true"
-        ref="scannerRef"
       />
     </div>
 
     <!-- Recent Scans -->
-    <div class="recent-scans" v-if="recentScans.length > 0">
+    <div
+      v-if="recentScans.length > 0"
+      class="recent-scans"
+    >
       <div class="section-header">
         <span class="section-title">最近扫描</span>
         <van-button
@@ -56,10 +63,16 @@
           @click="handleViewAsset(item.assetId)"
         >
           <template #icon>
-            <van-icon name="checked" color="#52c41a" />
+            <van-icon
+              name="checked"
+              color="#52c41a"
+            />
           </template>
           <template #right-icon>
-            <van-tag :type="item.result === 'success' ? 'success' : 'danger'" size="small">
+            <van-tag
+              :type="item.result === 'success' ? 'success' : 'danger'"
+              size="small"
+            >
               {{ item.result === 'success' ? '成功' : '异常' }}
             </van-tag>
           </template>
@@ -95,7 +108,10 @@
     </van-dialog>
 
     <!-- More Actions Popup -->
-    <van-popup v-model:show="showMore" position="bottom">
+    <van-popup
+      v-model:show="showMore"
+      position="bottom"
+    >
       <van-picker
         :columns="moreActions"
         @confirm="handleMoreAction"
@@ -109,18 +125,43 @@
       :title="previewAsset?.name"
       :show-confirm-button="false"
     >
-      <div class="asset-preview" v-if="previewAsset">
+      <div
+        v-if="previewAsset"
+        class="asset-preview"
+      >
         <van-cell-group inset>
-          <van-cell title="资产编码" :value="previewAsset.code" />
-          <van-cell title="资产分类" :value="previewAsset.categoryName" />
-          <van-cell title="资产状态" :value="getStatusLabel(previewAsset.status)" />
-          <van-cell title="存放位置" :value="previewAsset.locationName" />
-          <van-cell title="使用人" :value="previewAsset.custodianName" />
+          <van-cell
+            title="资产编码"
+            :value="previewAsset.code"
+          />
+          <van-cell
+            title="资产分类"
+            :value="previewAsset.categoryName"
+          />
+          <van-cell
+            title="资产状态"
+            :value="getStatusLabel(previewAsset.status)"
+          />
+          <van-cell
+            title="存放位置"
+            :value="previewAsset.locationName"
+          />
+          <van-cell
+            title="使用人"
+            :value="previewAsset.custodianName"
+          />
         </van-cell-group>
       </div>
       <template #footer>
-        <van-button @click="previewVisible = false">关闭</van-button>
-        <van-button type="primary" @click="handleConfirmPreview">查看详情</van-button>
+        <van-button @click="previewVisible = false">
+          关闭
+        </van-button>
+        <van-button
+          type="primary"
+          @click="handleConfirmPreview"
+        >
+          查看详情
+        </van-button>
       </template>
     </van-dialog>
   </div>

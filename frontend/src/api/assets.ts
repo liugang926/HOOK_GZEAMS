@@ -6,79 +6,27 @@
  */
 
 import request from '@/utils/request'
-import type { PaginatedResponse, BatchResponse } from '@/types/api'
-import type { Asset, AssetCategory } from '@/types/assets'
+import type { PaginatedResponse } from '@/types/api'
+import type { Asset, AssetCategory, AssetLocation, AssetTransfer } from '@/types/assets'
+import { BaseApiService } from '@/api/base'
 
 /**
  * Asset API service object
  */
-export const assetApi = {
-  /**
-   * List assets with pagination and filters
-   */
-  list(params?: {
-    page?: number
-    pageSize?: number
-    categoryId?: string
-    status?: string
-    locationId?: string
-    custodianId?: string
-    search?: string
-  }): Promise<PaginatedResponse<Asset>> {
-    return request.get('/assets/', { params })
-  },
-
-  /**
-   * Get single asset by ID
-   */
-  get(id: string): Promise<Asset> {
-    return request.get(`/assets/${id}/`)
-  },
-
-  /**
-   * Create new asset
-   */
-  create(data: Partial<Asset>): Promise<Asset> {
-    return request.post('/assets/', data)
-  },
-
-  /**
-   * Update asset
-   */
-  update(id: string, data: Partial<Asset>): Promise<Asset> {
-    return request.put(`/assets/${id}/`, data)
-  },
-
-  /**
-   * Delete asset (soft delete)
-   */
-  delete(id: string): Promise<void> {
-    return request.delete(`/assets/${id}/`)
-  },
-
-  /**
-   * Batch delete assets
-   */
-  batchDelete(ids: string[]): Promise<BatchResponse> {
-    return request.post('/assets/batch-delete/', { ids })
-  },
-
-  /**
-   * Export assets to Excel
-   */
-  export(params?: any): Promise<Blob> {
-    return request.get('/assets/export/', {
-      params,
-      responseType: 'blob'
-    })
-  },
+/**
+ * Asset API service object
+ */
+class AssetApiService extends BaseApiService<Asset> {
+  constructor() {
+    super('assets')
+  }
 
   /**
    * Get asset by QR code
    */
   getByQrCode(qrCode: string): Promise<Asset> {
     return request.get('/assets/by-qr-code/', { params: { qr_code: qrCode } })
-  },
+  }
 
   /**
    * Restore deleted asset
@@ -86,7 +34,22 @@ export const assetApi = {
   restore(id: string): Promise<Asset> {
     return request.post(`/assets/${id}/restore/`)
   }
+
+  /**
+   * Get asset statistics
+   */
+  statistics(): Promise<{
+    total: number
+    by_status: Record<string, number>
+    total_value: number
+    total_net_value: number
+    by_category: Record<string, number>
+  }> {
+    return request.get(`/${this.resource}/statistics/`)
+  }
 }
+
+export const assetApi = new AssetApiService()
 
 /**
  * Asset Category API service object
@@ -142,16 +105,30 @@ export const locationApi = {
   /**
    * List all locations (flat)
    */
-  list(): Promise<any[]> {
+  list(): Promise<AssetLocation[]> {
     return request.get('/assets/locations/')
   },
 
   /**
    * Get location tree structure
    */
-  tree(): Promise<any[]> {
+  tree(): Promise<AssetLocation[]> {
     return request.get('/assets/locations/tree/')
   }
+}
+
+/**
+ * Convenience function for getting assets (used by other components)
+ */
+export const getAssets = (params?: any): Promise<any> => {
+  return request.get('/api/assets/', { params })
+}
+
+/**
+ * Convenience function for getting categories (used by other components)
+ */
+export const getCategories = (): Promise<any> => {
+  return request.get('/api/assets/categories/')
 }
 
 /**
@@ -166,7 +143,7 @@ export const transferApi = {
     pageSize?: number
     assetId?: string
     status?: string
-  }): Promise<PaginatedResponse<any>> {
+  }): Promise<PaginatedResponse<AssetTransfer>> {
     return request.get('/assets/transfers/', { params })
   },
 
@@ -178,7 +155,7 @@ export const transferApi = {
     toLocationId?: string
     toUserId?: string
     reason?: string
-  }): Promise<any> {
+  }): Promise<AssetTransfer> {
     return request.post('/assets/transfers/', data)
   },
 

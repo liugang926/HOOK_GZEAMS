@@ -2,61 +2,95 @@
   <div class="business-object-list">
     <div class="page-header">
       <h3>业务对象管理</h3>
-      <el-button type="primary" @click="handleCreate">新建业务对象</el-button>
+      <el-button
+        type="primary"
+        @click="handleCreate"
+      >
+        新建业务对象
+      </el-button>
     </div>
 
     <el-table
+      v-loading="loading"
       :data="tableData"
       border
-      v-loading="loading"
       stripe
     >
-      <el-table-column prop="name" label="对象名称" width="200" />
-      <el-table-column prop="code" label="对象编码" width="150" />
-      <el-table-column prop="description" label="描述" show-overflow-tooltip />
-      <el-table-column label="类型" width="100" align="center">
+      <el-table-column
+        prop="name"
+        label="对象名称"
+        width="200"
+      />
+      <el-table-column
+        prop="code"
+        label="对象编码"
+        width="150"
+      />
+      <el-table-column
+        prop="description"
+        label="描述"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="类型"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.isCustom ? 'warning' : 'success'" size="small">
-            {{ row.isCustom ? '自定义' : '内置' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="工作流" width="80" align="center">
-        <template #default="{ row }">
-          <el-tag :type="row.enableWorkflow ? 'success' : 'info'" size="small">
-            {{ row.enableWorkflow ? '启用' : '禁用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="版本控制" width="90" align="center">
-        <template #default="{ row }">
-          <el-tag :type="row.enableVersion ? 'success' : 'info'" size="small">
-            {{ row.enableVersion ? '启用' : '禁用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="软删除" width="80" align="center">
-        <template #default="{ row }">
-          <el-tag :type="row.enableSoftDelete ? 'success' : 'info'" size="small">
-            {{ row.enableSoftDelete ? '启用' : '禁用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="tableName" label="数据表" width="150" />
-      <el-table-column label="操作" width="240" fixed="right">
-        <template #default="{ row }">
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-          <el-button link type="primary" @click="handleFields(row)">字段管理</el-button>
-          <el-button link type="primary" @click="handleLayouts(row)">布局管理</el-button>
-          <el-popconfirm
-            v-if="row.isCustom"
-            title="确定删除该业务对象吗？"
-            @confirm="handleDelete(row)"
+          <el-tag
+            :type="!row.is_hardcoded ? 'warning' : 'success'"
+            size="small"
           >
-            <template #reference>
-              <el-button link type="danger">删除</el-button>
-            </template>
-          </el-popconfirm>
+            {{ !row.is_hardcoded ? '自定义' : '内置' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        prop="field_count"
+        label="字段数"
+        width="80"
+        align="center"
+      />
+      <el-table-column
+        prop="layout_count"
+        label="布局数"
+        width="80"
+        align="center"
+      />
+      <el-table-column
+        label="工作流"
+        width="80"
+        align="center"
+      >
+        <template #default="{ row }">
+          <el-tag
+            :type="row.enable_workflow ? 'success' : 'info'"
+            size="small"
+          >
+            {{ row.enable_workflow ? '启用' : '禁用' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column
+        label="操作"
+        width="200"
+        fixed="right"
+      >
+        <template #default="{ row }">
+          <el-button
+            link
+            type="primary"
+            @click="handleFields(row)"
+          >
+            字段管理
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleLayouts(row)"
+          >
+            布局管理
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -75,48 +109,67 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import BusinessObjectForm from './components/BusinessObjectForm.vue'
+import { businessObjectApi, type BusinessObject } from '@/api/system'
 
 const router = useRouter()
 const loading = ref(false)
-const tableData = ref<any[]>([])
+const tableData = ref<BusinessObject[]>([])
 const dialogVisible = ref(false)
-const currentRow = ref<any>(null)
+const currentRow = ref<BusinessObject | null>(null)
 
-// Mock API function - replace with actual API call
 const loadBusinessObjects = async () => {
   loading.value = true
   try {
-    // TODO: Replace with actual API call
-    // const res = await businessObjectApi.list()
-    // tableData.value = res.data || res.results || []
+    const response = await businessObjectApi.list() as any
+    // Backend returns {hardcoded: [...], custom: [...]}
+    // We need to merge both arrays
+    const hardcoded = response?.hardcoded || []
+    const custom = response?.custom || []
 
-    // Mock data for now
+    // Transform to table format with required properties
     tableData.value = [
-      {
-        id: '1',
-        code: 'Asset',
-        name: '固定资产',
-        description: '固定资产主数据对象',
-        isCustom: false,
-        enableWorkflow: true,
-        enableVersion: true,
-        enableSoftDelete: true,
-        tableName: 'assets_asset'
-      },
-      {
-        id: '2',
-        code: 'Employee',
-        name: '员工信息',
-        description: '员工基本信息对象',
-        isCustom: true,
+      ...hardcoded.map((obj: any) => ({
+        id: obj.code,
+        code: obj.code,
+        name: obj.name,
+        nameEn: obj.nameEn || obj.name_en,
+        description: obj.nameEn || obj.name_en || '',
+        isHardcoded: true,
+        is_hardcoded: true,
         enableWorkflow: false,
+        enable_workflow: false,
         enableVersion: false,
-        enableSoftDelete: true,
-        tableName: 'dynamic_employee'
-      }
+        enable_version: false,
+        enableSoftDelete: false,
+        enable_soft_delete: false,
+        fieldTypeCount: 0,
+        layoutCount: 0,
+        field_count: 0,
+        layout_count: 0
+      })),
+      ...custom.map((obj: any) => ({
+        id: obj.code,
+        code: obj.code,
+        name: obj.name,
+        nameEn: obj.nameEn || obj.name_en,
+        description: obj.description || '',
+        isHardcoded: false,
+        is_hardcoded: false,
+        enableWorkflow: obj.enableWorkflow || obj.enable_workflow || false,
+        enable_workflow: obj.enable_workflow || false,
+        enableVersion: obj.enableVersion || obj.enable_version || false,
+        enable_version: obj.enable_version || false,
+        enableSoftDelete: obj.enableSoftDelete || obj.enable_soft_delete || false,
+        enable_soft_delete: obj.enable_soft_delete || false,
+        fieldTypeCount: obj.fieldCount || obj.field_count || 0,
+        layoutCount: obj.layoutCount || obj.layout_count || 0,
+        field_count: obj.field_count || 0,
+        layout_count: obj.layout_count || 0
+      }))
     ]
   } catch (error) {
     console.error('Failed to load business objects:', error)
+    ElMessage.error('加载业务对象失败')
   } finally {
     loading.value = false
   }
@@ -131,34 +184,23 @@ const handleCreate = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (row: any) => {
+const handleEdit = (row: BusinessObject) => {
   currentRow.value = row
   dialogVisible.value = true
 }
 
-const handleFields = (row: any) => {
+const handleFields = (row: BusinessObject) => {
   router.push({
     path: '/system/field-definitions',
     query: { objectCode: row.code, objectName: row.name }
   })
 }
 
-const handleLayouts = (row: any) => {
+const handleLayouts = (row: BusinessObject) => {
   router.push({
     path: '/system/page-layouts',
     query: { objectCode: row.code, objectName: row.name }
   })
-}
-
-const handleDelete = async (row: any) => {
-  try {
-    // TODO: Replace with actual API call
-    // await businessObjectApi.delete(row.id)
-    ElMessage.success('删除成功')
-    await loadData()
-  } catch (error) {
-    ElMessage.error('删除失败')
-  }
 }
 
 onMounted(() => {

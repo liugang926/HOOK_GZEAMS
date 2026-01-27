@@ -11,7 +11,10 @@
       :rules="rules"
       label-width="120px"
     >
-      <el-form-item label="字段编码" prop="code">
+      <el-form-item
+        label="字段编码"
+        prop="code"
+      >
         <el-input
           v-model="formData.code"
           placeholder="请输入字段编码（英文，如：userName）"
@@ -19,39 +22,105 @@
         />
       </el-form-item>
 
-      <el-form-item label="字段名称" prop="name">
+      <el-form-item
+        label="字段名称"
+        prop="name"
+      >
         <el-input
           v-model="formData.name"
           placeholder="请输入字段名称（中文，如：用户名）"
         />
       </el-form-item>
 
-      <el-form-item label="字段类型" prop="fieldType">
+      <el-form-item
+        label="字段类型"
+        prop="fieldType"
+      >
         <el-select
           v-model="formData.fieldType"
           placeholder="请选择字段类型"
           @change="handleFieldTypeChange"
         >
-          <el-option label="单行文本" value="text" />
-          <el-option label="多行文本" value="textarea" />
-          <el-option label="数字" value="number" />
-          <el-option label="货币" value="currency" />
-          <el-option label="日期" value="date" />
-          <el-option label="日期时间" value="datetime" />
-          <el-option label="下拉选择" value="select" />
-          <el-option label="多选" value="multi_select" />
-          <el-option label="单选" value="radio" />
-          <el-option label="复选框" value="checkbox" />
-          <el-option label="开关" value="switch" />
-          <el-option label="用户选择" value="user" />
-          <el-option label="部门选择" value="dept" />
-          <el-option label="资产选择" value="asset" />
-          <el-option label="关联引用" value="reference" />
-          <el-option label="子表" value="subtable" />
-          <el-option label="文件上传" value="file" />
-          <el-option label="图片上传" value="image" />
-          <el-option label="计算公式" value="formula" />
-          <el-option label="自动编号" value="auto_number" />
+          <el-option
+            label="单行文本"
+            value="text"
+          />
+          <el-option
+            label="多行文本"
+            value="textarea"
+          />
+          <el-option
+            label="数字"
+            value="number"
+          />
+          <el-option
+            label="货币"
+            value="currency"
+          />
+          <el-option
+            label="日期"
+            value="date"
+          />
+          <el-option
+            label="日期时间"
+            value="datetime"
+          />
+          <el-option
+            label="下拉选择"
+            value="select"
+          />
+          <el-option
+            label="多选"
+            value="multi_select"
+          />
+          <el-option
+            label="单选"
+            value="radio"
+          />
+          <el-option
+            label="复选框"
+            value="checkbox"
+          />
+          <el-option
+            label="开关"
+            value="switch"
+          />
+          <el-option
+            label="用户选择"
+            value="user"
+          />
+          <el-option
+            label="部门选择"
+            value="dept"
+          />
+          <el-option
+            label="资产选择"
+            value="asset"
+          />
+          <el-option
+            label="关联引用"
+            value="reference"
+          />
+          <el-option
+            label="子表"
+            value="subtable"
+          />
+          <el-option
+            label="文件上传"
+            value="file"
+          />
+          <el-option
+            label="图片上传"
+            value="image"
+          />
+          <el-option
+            label="计算公式"
+            value="formula"
+          />
+          <el-option
+            label="自动编号"
+            value="auto_number"
+          />
         </el-select>
       </el-form-item>
 
@@ -108,7 +177,11 @@
               删除
             </el-button>
           </div>
-          <el-button link type="primary" @click="addOption">
+          <el-button
+            link
+            type="primary"
+            @click="addOption"
+          >
             + 添加选项
           </el-button>
         </div>
@@ -125,11 +198,17 @@
           :rows="2"
           placeholder="如: {quantity} * {price}"
         />
-        <div class="form-tip">使用 {字段编码} 引用其他字段</div>
+        <div class="form-tip">
+          使用 {字段编码} 引用其他字段
+        </div>
       </el-form-item>
 
       <el-form-item label="排序号">
-        <el-input-number v-model="formData.sortOrder" :min="0" :max="9999" />
+        <el-input-number
+          v-model="formData.sortOrder"
+          :min="0"
+          :max="9999"
+        />
       </el-form-item>
 
       <el-form-item label="默认值">
@@ -187,7 +266,11 @@
         v-if="['text', 'textarea'].includes(formData.fieldType)"
         label="最大长度"
       >
-        <el-input-number v-model="formData.maxLength" :min="1" :max="10000" />
+        <el-input-number
+          v-model="formData.maxLength"
+          :min="1"
+          :max="10000"
+        />
       </el-form-item>
 
       <el-form-item
@@ -211,13 +294,23 @@
         v-if="formData.fieldType === 'number'"
         label="小数位数"
       >
-        <el-input-number v-model="formData.decimalPlaces" :min="0" :max="6" />
+        <el-input-number
+          v-model="formData.decimalPlaces"
+          :min="0"
+          :max="6"
+        />
       </el-form-item>
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">
+      <el-button @click="handleClose">
+        取消
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
+        @click="handleSubmit"
+      >
         {{ isEdit ? '保存' : '添加' }}
       </el-button>
     </template>

@@ -1,18 +1,48 @@
 <template>
   <div class="data-permission-tab">
     <!-- Filters -->
-    <el-form :model="filterForm" inline class="filter-form">
+    <el-form
+      :model="filterForm"
+      inline
+      class="filter-form"
+    >
       <el-form-item label="角色">
-        <el-select v-model="filterForm.role" clearable placeholder="选择角色" @change="handleSearch">
-          <el-option label="管理员" value="admin" />
-          <el-option label="部门主管" value="manager" />
-          <el-option label="普通员工" value="employee" />
+        <el-select
+          v-model="filterForm.role"
+          clearable
+          placeholder="选择角色"
+          @change="handleSearch"
+        >
+          <el-option
+            label="管理员"
+            value="admin"
+          />
+          <el-option
+            label="部门主管"
+            value="manager"
+          />
+          <el-option
+            label="普通员工"
+            value="employee"
+          />
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">查询</el-button>
-        <el-button @click="handleReset">重置</el-button>
-        <el-button type="success" @click="handleCreate">新增规则</el-button>
+        <el-button
+          type="primary"
+          @click="handleSearch"
+        >
+          查询
+        </el-button>
+        <el-button @click="handleReset">
+          重置
+        </el-button>
+        <el-button
+          type="success"
+          @click="handleCreate"
+        >
+          新增规则
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -24,27 +54,69 @@
       stripe
       style="width: 100%"
     >
-      <el-table-column prop="roleName" label="角色" width="120" />
-      <el-table-column prop="businessObjectName" label="业务对象" width="150" />
-      <el-table-column label="权限类型" width="100" align="center">
+      <el-table-column
+        prop="roleName"
+        label="角色"
+        width="120"
+      />
+      <el-table-column
+        prop="businessObjectName"
+        label="业务对象"
+        width="150"
+      />
+      <el-table-column
+        label="权限类型"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag :type="getPermissionTypeTag(row.permissionType)" size="small">
+          <el-tag
+            :type="getPermissionTypeTag(row.permissionType)"
+            size="small"
+          >
             {{ getPermissionTypeLabel(row.permissionType) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="scopeExpression" label="权限范围" min-width="250" show-overflow-tooltip />
-      <el-table-column label="状态" width="80" align="center">
+      <el-table-column
+        prop="scopeExpression"
+        label="权限范围"
+        min-width="250"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="状态"
+        width="80"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.isActive ? 'success' : 'info'" size="small">
+          <el-tag
+            :type="row.isActive ? 'success' : 'info'"
+            size="small"
+          >
             {{ row.isActive ? '启用' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="description" label="说明" min-width="200" show-overflow-tooltip />
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column
+        prop="description"
+        label="说明"
+        min-width="200"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="操作"
+        width="150"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleEdit(row)"
+          >
+            编辑
+          </el-button>
           <el-button
             link
             :type="row.isActive ? 'warning' : 'success'"

@@ -1,72 +1,43 @@
 /**
  * Inventory API Service
  *
- * API methods for inventory management.
+ * API methods for inventory management using BaseApiService.
  * Reference: docs/plans/phase4_1_inventory_qr/frontend_v2.md
  */
 
 import request from '@/utils/request'
+import { BaseApiService } from '@/api/base'
 import type { PaginatedResponse } from '@/types/api'
 import type { InventoryTask, InventorySnapshot } from '@/types/inventory'
 
 /**
  * Inventory Task API service
  */
-export const inventoryApi = {
-  /**
-   * List inventory tasks
-   */
-  listTasks(params?: {
-    page?: number
-    pageSize?: number
-    status?: string
-    taskType?: string
-  }): Promise<PaginatedResponse<InventoryTask>> {
-    return request.get('/inventory/tasks/', { params })
-  },
-
-  /**
-   * Get single task by ID
-   */
-  getTask(id: string): Promise<InventoryTask> {
-    return request.get(`/inventory/tasks/${id}/`)
-  },
-
-  /**
-   * Create new inventory task
-   */
-  createTask(data: {
-    taskName: string
-    taskType: string
-    plannedDate: string
-    locationId?: string
-    categoryId?: string
-    assetIds?: string[]
-    note?: string
-  }): Promise<InventoryTask> {
-    return request.post('/inventory/tasks/', data)
-  },
+class InventoryTaskApiService extends BaseApiService<InventoryTask> {
+  constructor() {
+    super('inventory/tasks')
+  }
 
   /**
    * Start inventory task
    */
-  startTask(id: string): Promise<void> {
-    return request.post(`/inventory/tasks/${id}/start/`)
-  },
+  start(id: string): Promise<void> {
+    return request.post(`/${this.resource}/${id}/start/`)
+  }
 
   /**
    * Complete inventory task
    */
-  completeTask(id: string): Promise<void> {
-    return request.post(`/inventory/tasks/${id}/complete/`)
-  },
+  complete(id: string): Promise<void> {
+    return request.post(`/${this.resource}/${id}/complete/`)
+  }
 
   /**
    * Cancel inventory task
    */
-  cancelTask(id: string): Promise<void> {
-    return request.post(`/inventory/tasks/${id}/cancel/`)
-  },
+  cancel(id: string): Promise<void> {
+    return request.post(`/${this.resource}/${id}/cancel/`)
+  }
 
   /**
    * Get task snapshots
@@ -76,8 +47,8 @@ export const inventoryApi = {
     pageSize?: number
     filter?: 'all' | 'scanned' | 'unscanned' | 'abnormal'
   }): Promise<PaginatedResponse<InventorySnapshot>> {
-    return request.get(`/inventory/tasks/${taskId}/snapshots/`, { params })
-  },
+    return request.get(`/${this.resource}/${taskId}/snapshots/`, { params })
+  }
 
   /**
    * Scan asset during inventory
@@ -87,8 +58,8 @@ export const inventoryApi = {
     actualLocation?: string
     actualLocationId?: string
   }): Promise<InventorySnapshot> {
-    return request.post(`/inventory/tasks/${taskId}/scan/`, data)
-  },
+    return request.post(`/${this.resource}/${taskId}/scan/`, data)
+  }
 
   /**
    * Confirm/Update snapshot result
@@ -97,9 +68,10 @@ export const inventoryApi = {
     result: string
     remark?: string
     imageUrl?: string
+    userId?: string
   }): Promise<void> {
-    return request.post(`/inventory/tasks/${taskId}/snapshots/${snapshotId}/confirm/`, data)
-  },
+    return request.post(`/${this.resource}/${taskId}/snapshots/${snapshotId}/confirm/`, data)
+  }
 
   /**
    * Get recent scanned items (for real-time updates)
@@ -108,65 +80,52 @@ export const inventoryApi = {
     items: InventorySnapshot[]
     scannedCount: number
   }> {
-    return request.get(`/inventory/tasks/${taskId}/recent-tags/`)
-  },
+    return request.get(`/${this.resource}/${taskId}/recent-tags/`)
+  }
 
   /**
    * Generate inventory report
    */
   generateReport(taskId: string): Promise<Blob> {
-    return request.get(`/inventory/tasks/${taskId}/report/`, {
+    return request.get(`/${this.resource}/${taskId}/report/`, {
       responseType: 'blob'
     })
   }
 }
 
+export const inventoryApi = new InventoryTaskApiService()
+
 /**
  * Inventory Reconciliation API service
  */
-export const reconciliationApi = {
-  /**
-   * List reconciliations
-   */
-  list(params?: {
-    page?: number
-    pageSize?: number
-    taskId?: string
-    status?: string
-  }): Promise<PaginatedResponse<any>> {
-    return request.get('/inventory/reconciliations/', { params })
-  },
-
-  /**
-   * Get reconciliation by ID
-   */
-  get(id: string): Promise<any> {
-    return request.get(`/inventory/reconciliations/${id}/`)
-  },
+class ReconciliationApiService extends BaseApiService<any> {
+  constructor() {
+    super('inventory/reconciliations')
+  }
 
   /**
    * Submit reconciliation for approval
    */
   submit(id: string): Promise<void> {
-    return request.post(`/inventory/reconciliations/${id}/submit/`)
-  },
+    return request.post(`/${this.resource}/${id}/submit/`)
+  }
 
   /**
    * Approve reconciliation
    */
-  approve(id: string, data?: {
-    comment?: string
-  }): Promise<void> {
-    return request.post(`/inventory/reconciliations/${id}/approve/`, data)
-  },
+  approve(id: string, data?: { comment?: string }): Promise<void> {
+    return request.post(`/${this.resource}/${id}/approve/`, data)
+  }
 
   /**
    * Reject reconciliation
    */
   reject(id: string, reason: string): Promise<void> {
-    return request.post(`/inventory/reconciliations/${id}/reject/`, { reason })
+    return request.post(`/${this.resource}/${id}/reject/`, { reason })
   }
 }
+
+export const reconciliationApi = new ReconciliationApiService()
 
 /**
  * QR Code Scan API service
@@ -198,3 +157,6 @@ export const qrScanApi = {
     return request.post('/assets/verify-qr-code/', { qrCode })
   }
 }
+
+
+

@@ -2,52 +2,112 @@
   <div class="field-definition-list">
     <div class="page-header">
       <div class="header-left">
-        <el-button link @click="handleBack">
+        <el-button
+          link
+          @click="handleBack"
+        >
           <el-icon><ArrowLeft /></el-icon>
         </el-button>
         <h3>{{ objectName }} - 字段管理</h3>
       </div>
-      <el-button type="primary" @click="handleCreate">添加字段</el-button>
+      <el-button
+        type="primary"
+        @click="handleCreate"
+      >
+        添加字段
+      </el-button>
     </div>
 
     <el-table
+      v-loading="loading"
       :data="tableData"
       border
-      v-loading="loading"
       stripe
       row-key="id"
     >
-      <el-table-column prop="sortOrder" label="排序" width="70" align="center" />
-      <el-table-column prop="name" label="字段名称" width="150" />
-      <el-table-column prop="code" label="字段编码" width="150" />
-      <el-table-column label="字段类型" width="120" align="center">
+      <el-table-column
+        prop="sortOrder"
+        label="排序"
+        width="70"
+        align="center"
+      />
+      <el-table-column
+        prop="name"
+        label="字段名称"
+        width="150"
+      />
+      <el-table-column
+        prop="code"
+        label="字段编码"
+        width="150"
+      />
+      <el-table-column
+        label="字段类型"
+        width="120"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag size="small">{{ getFieldTypeLabel(row.fieldType) }}</el-tag>
+          <el-tag size="small">
+            {{ getFieldTypeLabel(row.fieldType) }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="description" label="描述" show-overflow-tooltip />
-      <el-table-column label="必填" width="70" align="center">
+      <el-table-column
+        prop="description"
+        label="描述"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="必填"
+        width="70"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-icon v-if="row.isRequired" color="#f56c6c"><Check /></el-icon>
+          <el-icon
+            v-if="row.isRequired"
+            color="#f56c6c"
+          >
+            <Check />
+          </el-icon>
         </template>
       </el-table-column>
-      <el-table-column label="只读" width="70" align="center">
+      <el-table-column
+        label="只读"
+        width="70"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-icon v-if="row.isReadonly"><Lock /></el-icon>
+          <el-icon v-if="row.isReadonly">
+            <Lock />
+          </el-icon>
         </template>
       </el-table-column>
-      <el-table-column label="系统字段" width="90" align="center">
+      <el-table-column
+        label="系统字段"
+        width="90"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag v-if="row.isSystem" type="info" size="small">系统</el-tag>
+          <el-tag
+            v-if="row.isSystem"
+            type="info"
+            size="small"
+          >
+            系统
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column
+        label="操作"
+        width="150"
+        fixed="right"
+      >
         <template #default="{ row }">
           <el-button
             link
             type="primary"
-            @click="handleEdit(row)"
             :disabled="row.isSystem"
+            @click="handleEdit(row)"
           >
             编辑
           </el-button>
@@ -57,7 +117,12 @@
             @confirm="handleDelete(row)"
           >
             <template #reference>
-              <el-button link type="danger">删除</el-button>
+              <el-button
+                link
+                type="danger"
+              >
+                删除
+              </el-button>
             </template>
           </el-popconfirm>
         </template>

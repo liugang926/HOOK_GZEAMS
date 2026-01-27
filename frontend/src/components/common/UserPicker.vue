@@ -290,7 +290,10 @@ defineExpose({
 
 <template>
   <div class="user-picker">
-    <div v-if="filterDept" class="dept-filter">
+    <div
+      v-if="filterDept"
+      class="dept-filter"
+    >
       <el-select
         v-model="selectedDept"
         placeholder="按部门筛选"
@@ -346,15 +349,27 @@ defineExpose({
           <div class="user-info">
             <div class="user-name">
               {{ option.firstName }} {{ option.lastName }}
-              <span v-if="option.username" class="user-username">@{{ option.username }}</span>
+              <span
+                v-if="option.username"
+                class="user-username"
+              >@{{ option.username }}</span>
             </div>
-            <div v-if="showDept && option.departmentName" class="user-dept">
+            <div
+              v-if="showDept && option.departmentName"
+              class="user-dept"
+            >
               {{ option.departmentName }}
             </div>
           </div>
 
           <!-- Status indicator -->
-          <el-tag v-if="!option.isActive" type="info" size="small">停用</el-tag>
+          <el-tag
+            v-if="!option.isActive"
+            type="info"
+            size="small"
+          >
+            停用
+          </el-tag>
         </div>
       </el-option>
     </el-select>

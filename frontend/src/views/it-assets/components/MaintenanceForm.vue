@@ -11,7 +11,10 @@
       :rules="rules"
       label-width="140px"
     >
-      <el-form-item label="Asset" prop="asset">
+      <el-form-item
+        label="Asset"
+        prop="asset"
+      >
         <el-select
           v-model="formData.asset"
           placeholder="Select asset"
@@ -30,23 +33,60 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="Maintenance Type" prop="maintenance_type">
-        <el-select v-model="formData.maintenance_type" placeholder="Select type" style="width: 100%">
-          <el-option label="Preventive" value="preventive" />
-          <el-option label="Corrective" value="corrective" />
-          <el-option label="Upgrade" value="upgrade" />
-          <el-option label="Replacement" value="replacement" />
-          <el-option label="Inspection" value="inspection" />
-          <el-option label="Cleaning" value="cleaning" />
-          <el-option label="Other" value="other" />
+      <el-form-item
+        label="Maintenance Type"
+        prop="maintenance_type"
+      >
+        <el-select
+          v-model="formData.maintenance_type"
+          placeholder="Select type"
+          style="width: 100%"
+        >
+          <el-option
+            label="Preventive"
+            value="preventive"
+          />
+          <el-option
+            label="Corrective"
+            value="corrective"
+          />
+          <el-option
+            label="Upgrade"
+            value="upgrade"
+          />
+          <el-option
+            label="Replacement"
+            value="replacement"
+          />
+          <el-option
+            label="Inspection"
+            value="inspection"
+          />
+          <el-option
+            label="Cleaning"
+            value="cleaning"
+          />
+          <el-option
+            label="Other"
+            value="other"
+          />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="Title" prop="title">
-        <el-input v-model="formData.title" placeholder="Brief title of the maintenance activity" />
+      <el-form-item
+        label="Title"
+        prop="title"
+      >
+        <el-input
+          v-model="formData.title"
+          placeholder="Brief title of the maintenance activity"
+        />
       </el-form-item>
 
-      <el-form-item label="Description" prop="description">
+      <el-form-item
+        label="Description"
+        prop="description"
+      >
         <el-input
           v-model="formData.description"
           type="textarea"
@@ -57,7 +97,10 @@
 
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="Maintenance Date" prop="maintenance_date">
+          <el-form-item
+            label="Maintenance Date"
+            prop="maintenance_date"
+          >
             <el-date-picker
               v-model="formData.maintenance_date"
               type="date"
@@ -67,17 +110,34 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="Cost" prop="cost">
-            <el-input-number v-model="formData.cost" :min="0" :precision="2" style="width: 100%" />
+          <el-form-item
+            label="Cost"
+            prop="cost"
+          >
+            <el-input-number
+              v-model="formData.cost"
+              :min="0"
+              :precision="2"
+              style="width: 100%"
+            />
           </el-form-item>
         </el-col>
       </el-row>
 
-      <el-form-item label="Vendor" prop="vendor">
-        <el-input v-model="formData.vendor" placeholder="External vendor (if applicable)" />
+      <el-form-item
+        label="Vendor"
+        prop="vendor"
+      >
+        <el-input
+          v-model="formData.vendor"
+          placeholder="External vendor (if applicable)"
+        />
       </el-form-item>
 
-      <el-form-item label="Notes" prop="notes">
+      <el-form-item
+        label="Notes"
+        prop="notes"
+      >
         <el-input
           v-model="formData.notes"
           type="textarea"
@@ -88,8 +148,14 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">Cancel</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">
+      <el-button @click="handleClose">
+        Cancel
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
+        @click="handleSubmit"
+      >
         {{ isEdit ? 'Save' : 'Add' }}
       </el-button>
     </template>

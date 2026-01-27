@@ -2,11 +2,20 @@
   <div class="maintenance-list">
     <div class="page-header">
       <h3>IT Maintenance Records</h3>
-      <el-button type="primary" @click="handleCreate">Add Record</el-button>
+      <el-button
+        type="primary"
+        @click="handleCreate"
+      >
+        Add Record
+      </el-button>
     </div>
 
     <!-- Filters -->
-    <el-form :model="filterForm" inline class="filter-form">
+    <el-form
+      :model="filterForm"
+      inline
+      class="filter-form"
+    >
       <el-form-item label="Search">
         <el-input
           v-model="filterForm.search"
@@ -17,14 +26,40 @@
         />
       </el-form-item>
       <el-form-item label="Type">
-        <el-select v-model="filterForm.maintenance_type" clearable placeholder="All Types" @change="handleSearch">
-          <el-option label="Preventive" value="preventive" />
-          <el-option label="Corrective" value="corrective" />
-          <el-option label="Upgrade" value="upgrade" />
-          <el-option label="Replacement" value="replacement" />
-          <el-option label="Inspection" value="inspection" />
-          <el-option label="Cleaning" value="cleaning" />
-          <el-option label="Other" value="other" />
+        <el-select
+          v-model="filterForm.maintenance_type"
+          clearable
+          placeholder="All Types"
+          @change="handleSearch"
+        >
+          <el-option
+            label="Preventive"
+            value="preventive"
+          />
+          <el-option
+            label="Corrective"
+            value="corrective"
+          />
+          <el-option
+            label="Upgrade"
+            value="upgrade"
+          />
+          <el-option
+            label="Replacement"
+            value="replacement"
+          />
+          <el-option
+            label="Inspection"
+            value="inspection"
+          />
+          <el-option
+            label="Cleaning"
+            value="cleaning"
+          />
+          <el-option
+            label="Other"
+            value="other"
+          />
         </el-select>
       </el-form-item>
       <el-form-item label="Date Range">
@@ -37,8 +72,15 @@
         />
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">Search</el-button>
-        <el-button @click="handleFilterReset">Reset</el-button>
+        <el-button
+          type="primary"
+          @click="handleSearch"
+        >
+          Search
+        </el-button>
+        <el-button @click="handleFilterReset">
+          Reset
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -50,34 +92,86 @@
       stripe
       style="width: 100%"
     >
-      <el-table-column prop="asset_code" label="Asset" width="140" />
-      <el-table-column label="Type" width="120">
+      <el-table-column
+        prop="asset_code"
+        label="Asset"
+        width="140"
+      />
+      <el-table-column
+        label="Type"
+        width="120"
+      >
         <template #default="{ row }">
-          <el-tag :type="getMaintenanceTypeColor(row.maintenance_type)" size="small">
+          <el-tag
+            :type="getMaintenanceTypeColor(row.maintenance_type)"
+            size="small"
+          >
             {{ row.maintenance_type_display }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="title" label="Title" min-width="200" />
-      <el-table-column prop="maintenance_date" label="Date" width="120" />
-      <el-table-column label="Cost" width="100" align="right">
+      <el-table-column
+        prop="title"
+        label="Title"
+        min-width="200"
+      />
+      <el-table-column
+        prop="maintenance_date"
+        label="Date"
+        width="120"
+      />
+      <el-table-column
+        label="Cost"
+        width="100"
+        align="right"
+      >
         <template #default="{ row }">
           <span v-if="row.cost">${{ row.cost }}</span>
           <span v-else>-</span>
         </template>
       </el-table-column>
-      <el-table-column prop="vendor" label="Vendor" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="performed_by_username" label="Performed By" width="120" />
-      <el-table-column label="Actions" width="150" fixed="right">
+      <el-table-column
+        prop="vendor"
+        label="Vendor"
+        min-width="150"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="performed_by_username"
+        label="Performed By"
+        width="120"
+      />
+      <el-table-column
+        label="Actions"
+        width="150"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleView(row)">View</el-button>
-          <el-button link type="primary" @click="handleEdit(row)">Edit</el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleView(row)"
+          >
+            View
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleEdit(row)"
+          >
+            Edit
+          </el-button>
           <el-popconfirm
             title="Are you sure to delete this record?"
             @confirm="handleDelete(row)"
           >
             <template #reference>
-              <el-button link type="danger">Delete</el-button>
+              <el-button
+                link
+                type="danger"
+              >
+                Delete
+              </el-button>
             </template>
           </el-popconfirm>
         </template>
@@ -110,26 +204,67 @@
       title="Maintenance Record Details"
       size="600px"
     >
-      <div v-if="currentRow" class="detail-content">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="Asset">{{ currentRow.asset_code }} - {{ currentRow.asset_name }}</el-descriptions-item>
+      <div
+        v-if="currentRow"
+        class="detail-content"
+      >
+        <el-descriptions
+          :column="2"
+          border
+        >
+          <el-descriptions-item label="Asset">
+            {{ currentRow.asset_code }} - {{ currentRow.asset_name }}
+          </el-descriptions-item>
           <el-descriptions-item label="Type">
             <el-tag :type="getMaintenanceTypeColor(currentRow.maintenance_type)">
               {{ currentRow.maintenance_type_display }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="Title" :span="2">{{ currentRow.title }}</el-descriptions-item>
-          <el-descriptions-item label="Date">{{ currentRow.maintenance_date }}</el-descriptions-item>
-          <el-descriptions-item label="Cost">{{ currentRow.cost ? `$${currentRow.cost}` : '-' }}</el-descriptions-item>
-          <el-descriptions-item label="Vendor">{{ currentRow.vendor || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="Performed By">{{ currentRow.performed_by_username || '-' }}</el-descriptions-item>
+          <el-descriptions-item
+            label="Title"
+            :span="2"
+          >
+            {{ currentRow.title }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Date">
+            {{ currentRow.maintenance_date }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Cost">
+            {{ currentRow.cost ? `$${currentRow.cost}` : '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Vendor">
+            {{ currentRow.vendor || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Performed By">
+            {{ currentRow.performed_by_username || '-' }}
+          </el-descriptions-item>
         </el-descriptions>
 
-        <div v-if="currentRow.description" class="section-title">Description</div>
-        <div v-if="currentRow.description" class="description-text">{{ currentRow.description }}</div>
+        <div
+          v-if="currentRow.description"
+          class="section-title"
+        >
+          Description
+        </div>
+        <div
+          v-if="currentRow.description"
+          class="description-text"
+        >
+          {{ currentRow.description }}
+        </div>
 
-        <div v-if="currentRow.notes" class="section-title">Notes</div>
-        <div v-if="currentRow.notes" class="description-text">{{ currentRow.notes }}</div>
+        <div
+          v-if="currentRow.notes"
+          class="section-title"
+        >
+          Notes
+        </div>
+        <div
+          v-if="currentRow.notes"
+          class="description-text"
+        >
+          {{ currentRow.notes }}
+        </div>
       </div>
     </el-drawer>
   </div>

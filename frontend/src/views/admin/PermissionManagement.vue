@@ -4,19 +4,31 @@
       <h3>权限管理</h3>
     </div>
 
-    <el-tabs v-model="activeTab" class="permission-tabs">
+    <el-tabs
+      v-model="activeTab"
+      class="permission-tabs"
+    >
       <!-- Field Permissions Tab -->
-      <el-tab-pane label="字段权限" name="field">
+      <el-tab-pane
+        label="字段权限"
+        name="field"
+      >
         <FieldPermissionTab />
       </el-tab-pane>
 
       <!-- Data Permissions Tab -->
-      <el-tab-pane label="数据权限" name="data">
+      <el-tab-pane
+        label="数据权限"
+        name="data"
+      >
         <DataPermissionTab />
       </el-tab-pane>
 
       <!-- Audit Log Tab -->
-      <el-tab-pane label="权限日志" name="audit">
+      <el-tab-pane
+        label="权限日志"
+        name="audit"
+      >
         <PermissionAuditLogTab />
       </el-tab-pane>
     </el-tabs>

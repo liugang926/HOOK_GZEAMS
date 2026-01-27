@@ -145,13 +145,21 @@
       </div>
       <div class="preview-content">
         <div class="preview-container">
-          <DynamicForm
-            :business-object="objectCode"
-            :layout-code="layoutType"
-            :layout-config="layoutConfig"
-            :available-fields="availableFields"
-            :model-value="sampleData"
-          />
+          <!-- Page Card Simulation -->
+          <el-card class="page-card" shadow="never">
+            <template #header>
+               <div class="card-header">
+                 <span>{{ layoutName || '表单预览' }}</span>
+               </div>
+            </template>
+            <DynamicForm
+              :business-object="objectCode"
+              :layout-code="layoutType"
+              :layout-config="layoutConfig"
+              :available-fields="availableFields"
+              :model-value="sampleData"
+            />
+          </el-card>
         </div>
       </div>
     </div>
@@ -775,7 +783,7 @@ async function handleSave() {
         layoutCode: `${props.objectCode}_${props.layoutType}_${Date.now()}`,
         layoutName: props.layoutName,
         layoutType: props.layoutType,
-        businessObject: props.businessObjectId
+        business_object: props.businessObjectId
       })
     }
 
@@ -802,7 +810,7 @@ async function handlePublish() {
   try {
     if (props.layoutId) {
       await pageLayoutApi.publish(props.layoutId, {
-        changeSummary: '发布布局'
+        change_summary: '发布布局'
       })
     } else {
       // Save first then publish
@@ -811,13 +819,13 @@ async function handlePublish() {
         layoutCode: `${props.objectCode}_${props.layoutType}_${Date.now()}`,
         layoutName: props.layoutName,
         layoutType: props.layoutType,
-        businessObject: props.businessObjectId,
+        business_object: props.businessObjectId,
         status: 'published'
       })
 
       // The request interceptor unwraps the response, so createResult is already the data
       await pageLayoutApi.publish(createResult.id, {
-        setAsDefault: true
+        set_as_default: true
       })
     }
 

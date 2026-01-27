@@ -10,12 +10,18 @@
         :show-file-list="false"
         :before-upload="beforeUpload"
       >
-        <el-button type="primary">Upload File</el-button>
+        <el-button type="primary">
+          Upload File
+        </el-button>
       </el-upload>
     </div>
 
     <!-- Filters -->
-    <el-form :model="filterForm" inline class="filter-form">
+    <el-form
+      :model="filterForm"
+      inline
+      class="filter-form"
+    >
       <el-form-item label="Search">
         <el-input
           v-model="filterForm.search"
@@ -26,58 +32,118 @@
         />
       </el-form-item>
       <el-form-item label="File Type">
-        <el-select v-model="filterForm.file_type" clearable placeholder="All Types" @change="handleSearch">
-          <el-option label="Images" value="image" />
-          <el-option label="Documents" value="document" />
-          <el-option label="Videos" value="video" />
-          <el-option label="Archives" value="archive" />
+        <el-select
+          v-model="filterForm.file_type"
+          clearable
+          placeholder="All Types"
+          @change="handleSearch"
+        >
+          <el-option
+            label="Images"
+            value="image"
+          />
+          <el-option
+            label="Documents"
+            value="document"
+          />
+          <el-option
+            label="Videos"
+            value="video"
+          />
+          <el-option
+            label="Archives"
+            value="archive"
+          />
         </el-select>
       </el-form-item>
       <el-form-item label="Business Type">
-        <el-select v-model="filterForm.biz_type" clearable placeholder="All" @change="handleSearch">
-          <el-option label="Asset Image" value="asset_image" />
-          <el-option label="Contract" value="contract" />
-          <el-option label="Invoice" value="invoice" />
-          <el-option label="Attachment" value="attachment" />
+        <el-select
+          v-model="filterForm.biz_type"
+          clearable
+          placeholder="All"
+          @change="handleSearch"
+        >
+          <el-option
+            label="Asset Image"
+            value="asset_image"
+          />
+          <el-option
+            label="Contract"
+            value="contract"
+          />
+          <el-option
+            label="Invoice"
+            value="invoice"
+          />
+          <el-option
+            label="Attachment"
+            value="attachment"
+          />
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">Search</el-button>
-        <el-button @click="handleFilterReset">Reset</el-button>
+        <el-button
+          type="primary"
+          @click="handleSearch"
+        >
+          Search
+        </el-button>
+        <el-button @click="handleFilterReset">
+          Reset
+        </el-button>
       </el-form-item>
     </el-form>
 
     <!-- Statistics Cards -->
-    <el-row :gutter="20" class="stats-row">
+    <el-row
+      :gutter="20"
+      class="stats-row"
+    >
       <el-col :span="6">
         <el-card>
           <div class="stat-item">
-            <div class="stat-value">{{ stats.total_files }}</div>
-            <div class="stat-label">Total Files</div>
+            <div class="stat-value">
+              {{ stats.total_files }}
+            </div>
+            <div class="stat-label">
+              Total Files
+            </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card>
           <div class="stat-item">
-            <div class="stat-value">{{ formatFileSize(stats.total_size) }}</div>
-            <div class="stat-label">Total Size</div>
+            <div class="stat-value">
+              {{ formatFileSize(stats.total_size) }}
+            </div>
+            <div class="stat-label">
+              Total Size
+            </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card>
           <div class="stat-item">
-            <div class="stat-value">{{ stats.today_uploads }}</div>
-            <div class="stat-label">Today Uploads</div>
+            <div class="stat-value">
+              {{ stats.today_uploads }}
+            </div>
+            <div class="stat-label">
+              Today Uploads
+            </div>
           </div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card>
           <div class="stat-item">
-            <div class="stat-value">{{ stats.image_count }}</div>
-            <div class="stat-label">Images</div>
+            <div class="stat-value">
+              {{ stats.image_count }}
+            </div>
+            <div class="stat-label">
+              Images
+            </div>
           </div>
         </el-card>
       </el-col>
@@ -92,10 +158,19 @@
       style="width: 100%"
       @selection-change="handleSelectionChange"
     >
-      <el-table-column type="selection" width="55" />
-      <el-table-column label="Preview" width="80">
+      <el-table-column
+        type="selection"
+        width="55"
+      />
+      <el-table-column
+        label="Preview"
+        width="80"
+      >
         <template #default="{ row }">
-          <div v-if="isImage(row)" class="file-preview">
+          <div
+            v-if="isImage(row)"
+            class="file-preview"
+          >
             <el-image
               :src="row.url"
               :preview-src-list="[row.url]"
@@ -109,35 +184,88 @@
               </template>
             </el-image>
           </div>
-          <el-icon v-else class="file-icon"><Document /></el-icon>
+          <el-icon
+            v-else
+            class="file-icon"
+          >
+            <Document />
+          </el-icon>
         </template>
       </el-table-column>
-      <el-table-column prop="file_name" label="File Name" min-width="200" />
-      <el-table-column label="Type" width="100">
+      <el-table-column
+        prop="file_name"
+        label="File Name"
+        min-width="200"
+      />
+      <el-table-column
+        label="Type"
+        width="100"
+      >
         <template #default="{ row }">
-          <el-tag size="small" :type="getFileTagType(row)">
+          <el-tag
+            size="small"
+            :type="getFileTagType(row)"
+          >
             {{ getFileTypeLabel(row) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="file_size" label="Size" width="100">
+      <el-table-column
+        prop="file_size"
+        label="Size"
+        width="100"
+      >
         <template #default="{ row }">
           {{ formatFileSize(row.file_size) }}
         </template>
       </el-table-column>
-      <el-table-column prop="biz_type" label="Business Type" width="130" />
-      <el-table-column prop="description" label="Description" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="created_at" label="Upload Date" width="170" />
-      <el-table-column label="Actions" width="180" fixed="right">
+      <el-table-column
+        prop="biz_type"
+        label="Business Type"
+        width="130"
+      />
+      <el-table-column
+        prop="description"
+        label="Description"
+        min-width="150"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="created_at"
+        label="Upload Date"
+        width="170"
+      />
+      <el-table-column
+        label="Actions"
+        width="180"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleDownload(row)">Download</el-button>
-          <el-button link type="primary" @click="handleEdit(row)">Edit</el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleDownload(row)"
+          >
+            Download
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleEdit(row)"
+          >
+            Edit
+          </el-button>
           <el-popconfirm
             title="Are you sure to delete this file?"
             @confirm="handleDelete(row)"
           >
             <template #reference>
-              <el-button link type="danger">Delete</el-button>
+              <el-button
+                link
+                type="danger"
+              >
+                Delete
+              </el-button>
             </template>
           </el-popconfirm>
         </template>
@@ -145,10 +273,20 @@
     </el-table>
 
     <!-- Batch Actions -->
-    <div v-if="selectedFiles.length > 0" class="batch-actions">
+    <div
+      v-if="selectedFiles.length > 0"
+      class="batch-actions"
+    >
       <span class="selected-count">{{ selectedFiles.length }} files selected</span>
-      <el-button type="danger" @click="handleBatchDelete">Batch Delete</el-button>
-      <el-button @click="clearSelection">Clear Selection</el-button>
+      <el-button
+        type="danger"
+        @click="handleBatchDelete"
+      >
+        Batch Delete
+      </el-button>
+      <el-button @click="clearSelection">
+        Clear Selection
+      </el-button>
     </div>
 
     <!-- Pagination -->
@@ -170,26 +308,61 @@
       title="Edit File"
       width="500px"
     >
-      <el-form :model="editForm" label-width="120px">
+      <el-form
+        :model="editForm"
+        label-width="120px"
+      >
         <el-form-item label="File Name">
-          <el-input v-model="editForm.file_name" disabled />
+          <el-input
+            v-model="editForm.file_name"
+            disabled
+          />
         </el-form-item>
         <el-form-item label="Business Type">
-          <el-select v-model="editForm.biz_type" style="width: 100%">
-            <el-option label="Asset Image" value="asset_image" />
-            <el-option label="Contract" value="contract" />
-            <el-option label="Invoice" value="invoice" />
-            <el-option label="Attachment" value="attachment" />
-            <el-option label="Other" value="other" />
+          <el-select
+            v-model="editForm.biz_type"
+            style="width: 100%"
+          >
+            <el-option
+              label="Asset Image"
+              value="asset_image"
+            />
+            <el-option
+              label="Contract"
+              value="contract"
+            />
+            <el-option
+              label="Invoice"
+              value="invoice"
+            />
+            <el-option
+              label="Attachment"
+              value="attachment"
+            />
+            <el-option
+              label="Other"
+              value="other"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="Description">
-          <el-input v-model="editForm.description" type="textarea" :rows="3" />
+          <el-input
+            v-model="editForm.description"
+            type="textarea"
+            :rows="3"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="editDialogVisible = false">Cancel</el-button>
-        <el-button type="primary" @click="handleSaveEdit">Save</el-button>
+        <el-button @click="editDialogVisible = false">
+          Cancel
+        </el-button>
+        <el-button
+          type="primary"
+          @click="handleSaveEdit"
+        >
+          Save
+        </el-button>
       </template>
     </el-dialog>
   </div>

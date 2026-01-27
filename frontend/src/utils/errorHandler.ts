@@ -84,8 +84,12 @@ export function handleApiError(error: any): Promise<never> {
       } else {
         ElMessage.error(message)
       }
-      return Promise.reject(error)
   }
+  // Mark error as handled so downstream catch blocks don't show it again
+  if (typeof error === 'object' && error !== null) {
+    error.isHandled = true
+  }
+  return Promise.reject(error)
 }
 
 /**

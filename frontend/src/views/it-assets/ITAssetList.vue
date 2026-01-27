@@ -2,11 +2,20 @@
   <div class="it-asset-list">
     <div class="page-header">
       <h3>IT Asset Management</h3>
-      <el-button type="primary" @click="handleCreate">Add IT Asset</el-button>
+      <el-button
+        type="primary"
+        @click="handleCreate"
+      >
+        Add IT Asset
+      </el-button>
     </div>
 
     <!-- Filters -->
-    <el-form :model="filterForm" inline class="filter-form">
+    <el-form
+      :model="filterForm"
+      inline
+      class="filter-form"
+    >
       <el-form-item label="Search">
         <el-input
           v-model="filterForm.search"
@@ -17,15 +26,36 @@
         />
       </el-form-item>
       <el-form-item label="OS">
-        <el-select v-model="filterForm.os" clearable placeholder="All OS" @change="handleSearch">
-          <el-option label="Windows" value="windows" />
-          <el-option label="macOS" value="macos" />
-          <el-option label="Linux" value="linux" />
+        <el-select
+          v-model="filterForm.os"
+          clearable
+          placeholder="All OS"
+          @change="handleSearch"
+        >
+          <el-option
+            label="Windows"
+            value="windows"
+          />
+          <el-option
+            label="macOS"
+            value="macos"
+          />
+          <el-option
+            label="Linux"
+            value="linux"
+          />
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="handleSearch">Search</el-button>
-        <el-button @click="handleFilterReset">Reset</el-button>
+        <el-button
+          type="primary"
+          @click="handleSearch"
+        >
+          Search
+        </el-button>
+        <el-button @click="handleFilterReset">
+          Reset
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -37,49 +67,129 @@
       stripe
       style="width: 100%"
     >
-      <el-table-column prop="asset_code" label="Asset Code" width="140" />
-      <el-table-column prop="asset_name" label="Asset Name" min-width="180" />
-      <el-table-column label="CPU" min-width="150">
+      <el-table-column
+        prop="asset_code"
+        label="Asset Code"
+        width="140"
+      />
+      <el-table-column
+        prop="asset_name"
+        label="Asset Name"
+        min-width="180"
+      />
+      <el-table-column
+        label="CPU"
+        min-width="150"
+      >
         <template #default="{ row }">
           <span v-if="row.cpu_model">{{ row.cpu_model }}</span>
-          <span v-if="row.cpu_cores" class="text-secondary">({{ row.cpu_cores }} cores)</span>
+          <span
+            v-if="row.cpu_cores"
+            class="text-secondary"
+          >({{ row.cpu_cores }} cores)</span>
         </template>
       </el-table-column>
-      <el-table-column label="RAM" width="100" align="center">
+      <el-table-column
+        label="RAM"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
           <span v-if="row.ram_capacity">{{ row.ram_capacity }} GB</span>
         </template>
       </el-table-column>
-      <el-table-column label="Disk" width="120" align="center">
+      <el-table-column
+        label="Disk"
+        width="120"
+        align="center"
+      >
         <template #default="{ row }">
           <span v-if="row.disk_capacity">{{ row.disk_capacity }} GB</span>
-          <el-tag v-if="row.disk_type" size="small" type="info">{{ row.disk_type }}</el-tag>
+          <el-tag
+            v-if="row.disk_type"
+            size="small"
+            type="info"
+          >
+            {{ row.disk_type }}
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="os_name" label="OS" min-width="150">
+      <el-table-column
+        prop="os_name"
+        label="OS"
+        min-width="150"
+      >
         <template #default="{ row }">
           <span v-if="row.os_name">{{ row.os_name }}</span>
-          <span v-if="row.os_version" class="text-secondary"> {{ row.os_version }}</span>
+          <span
+            v-if="row.os_version"
+            class="text-secondary"
+          > {{ row.os_version }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="ip_address" label="IP Address" width="140" />
-      <el-table-column prop="mac_address" label="MAC Address" width="160" />
-      <el-table-column label="Security" width="100" align="center">
+      <el-table-column
+        prop="ip_address"
+        label="IP Address"
+        width="140"
+      />
+      <el-table-column
+        prop="mac_address"
+        label="MAC Address"
+        width="160"
+      />
+      <el-table-column
+        label="Security"
+        width="100"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag v-if="row.disk_encrypted" type="success" size="small">Encrypted</el-tag>
-          <el-tag v-else type="warning" size="small">Not Encrypted</el-tag>
+          <el-tag
+            v-if="row.disk_encrypted"
+            type="success"
+            size="small"
+          >
+            Encrypted
+          </el-tag>
+          <el-tag
+            v-else
+            type="warning"
+            size="small"
+          >
+            Not Encrypted
+          </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="Actions" width="150" fixed="right">
+      <el-table-column
+        label="Actions"
+        width="150"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleView(row)">View</el-button>
-          <el-button link type="primary" @click="handleEdit(row)">Edit</el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleView(row)"
+          >
+            View
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleEdit(row)"
+          >
+            Edit
+          </el-button>
           <el-popconfirm
             title="Are you sure to delete this IT asset?"
             @confirm="handleDelete(row)"
           >
             <template #reference>
-              <el-button link type="danger">Delete</el-button>
+              <el-button
+                link
+                type="danger"
+              >
+                Delete
+              </el-button>
             </template>
           </el-popconfirm>
         </template>
@@ -112,10 +222,20 @@
       title="IT Asset Details"
       size="600px"
     >
-      <div v-if="currentRow" class="asset-detail">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="Asset Code">{{ currentRow.asset_code }}</el-descriptions-item>
-          <el-descriptions-item label="Asset Name">{{ currentRow.asset_name }}</el-descriptions-item>
+      <div
+        v-if="currentRow"
+        class="asset-detail"
+      >
+        <el-descriptions
+          :column="2"
+          border
+        >
+          <el-descriptions-item label="Asset Code">
+            {{ currentRow.asset_code }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Asset Name">
+            {{ currentRow.asset_name }}
+          </el-descriptions-item>
           <el-descriptions-item label="Status">
             <el-tag :type="currentRow.disk_encrypted ? 'success' : 'warning'">
               {{ currentRow.disk_encrypted ? 'Secure' : 'Attention Needed' }}
@@ -123,42 +243,96 @@
           </el-descriptions-item>
         </el-descriptions>
 
-        <div class="section-title">Hardware Configuration</div>
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="CPU">{{ currentRow.cpu_model || '-' }}</el-descriptions-item>
+        <div class="section-title">
+          Hardware Configuration
+        </div>
+        <el-descriptions
+          :column="2"
+          border
+        >
+          <el-descriptions-item label="CPU">
+            {{ currentRow.cpu_model || '-' }}
+          </el-descriptions-item>
           <el-descriptions-item label="Cores/Threads">
             {{ currentRow.cpu_cores || '-' }} / {{ currentRow.cpu_threads || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="RAM">{{ currentRow.ram_capacity ? `${currentRow.ram_capacity} GB` : '-' }}</el-descriptions-item>
-          <el-descriptions-item label="RAM Type">{{ currentRow.ram_type || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="Disk">{{ currentRow.disk_capacity ? `${currentRow.disk_capacity} GB` : '-' }}</el-descriptions-item>
-          <el-descriptions-item label="Disk Type">{{ currentRow.disk_type_display || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="GPU" :span="2">{{ currentRow.gpu_model || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="RAM">
+            {{ currentRow.ram_capacity ? `${currentRow.ram_capacity} GB` : '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="RAM Type">
+            {{ currentRow.ram_type || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Disk">
+            {{ currentRow.disk_capacity ? `${currentRow.disk_capacity} GB` : '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Disk Type">
+            {{ currentRow.disk_type_display || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item
+            label="GPU"
+            :span="2"
+          >
+            {{ currentRow.gpu_model || '-' }}
+          </el-descriptions-item>
         </el-descriptions>
 
-        <div class="section-title">Network Information</div>
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="Hostname">{{ currentRow.hostname || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="IP Address">{{ currentRow.ip_address || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="MAC Address" :span="2">{{ currentRow.mac_address || '-' }}</el-descriptions-item>
+        <div class="section-title">
+          Network Information
+        </div>
+        <el-descriptions
+          :column="2"
+          border
+        >
+          <el-descriptions-item label="Hostname">
+            {{ currentRow.hostname || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="IP Address">
+            {{ currentRow.ip_address || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item
+            label="MAC Address"
+            :span="2"
+          >
+            {{ currentRow.mac_address || '-' }}
+          </el-descriptions-item>
         </el-descriptions>
 
-        <div class="section-title">Operating System</div>
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="OS Name">{{ currentRow.os_name || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="Version">{{ currentRow.os_version || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="Architecture">{{ currentRow.os_architecture || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="License Key">{{ currentRow.os_license_key ? '******' : '-' }}</el-descriptions-item>
+        <div class="section-title">
+          Operating System
+        </div>
+        <el-descriptions
+          :column="2"
+          border
+        >
+          <el-descriptions-item label="OS Name">
+            {{ currentRow.os_name || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Version">
+            {{ currentRow.os_version || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Architecture">
+            {{ currentRow.os_architecture || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="License Key">
+            {{ currentRow.os_license_key ? '******' : '-' }}
+          </el-descriptions-item>
         </el-descriptions>
 
-        <div class="section-title">Security</div>
-        <el-descriptions :column="2" border>
+        <div class="section-title">
+          Security
+        </div>
+        <el-descriptions
+          :column="2"
+          border
+        >
           <el-descriptions-item label="Disk Encrypted">
             <el-tag :type="currentRow.disk_encrypted ? 'success' : 'warning'">
               {{ currentRow.disk_encrypted ? 'Yes' : 'No' }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="Antivirus">{{ currentRow.antivirus_software || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="Antivirus">
+            {{ currentRow.antivirus_software || '-' }}
+          </el-descriptions-item>
           <el-descriptions-item label="Antivirus Enabled">
             <el-tag :type="currentRow.antivirus_enabled ? 'success' : 'danger'">
               {{ currentRow.antivirus_enabled ? 'Yes' : 'No' }}
@@ -166,14 +340,32 @@
           </el-descriptions-item>
         </el-descriptions>
 
-        <div class="section-title">Active Directory</div>
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="Domain">{{ currentRow.ad_domain || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="Computer Name">{{ currentRow.ad_computer_name || '-' }}</el-descriptions-item>
+        <div class="section-title">
+          Active Directory
+        </div>
+        <el-descriptions
+          :column="2"
+          border
+        >
+          <el-descriptions-item label="Domain">
+            {{ currentRow.ad_domain || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="Computer Name">
+            {{ currentRow.ad_computer_name || '-' }}
+          </el-descriptions-item>
         </el-descriptions>
 
-        <div v-if="currentRow.full_config" class="section-title">Configuration Summary</div>
-        <el-alert v-if="currentRow.full_config" type="info" :closable="false">
+        <div
+          v-if="currentRow.full_config"
+          class="section-title"
+        >
+          Configuration Summary
+        </div>
+        <el-alert
+          v-if="currentRow.full_config"
+          type="info"
+          :closable="false"
+        >
           {{ currentRow.full_config }}
         </el-alert>
       </div>

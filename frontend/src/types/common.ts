@@ -32,6 +32,8 @@ export interface User {
   fullName: string
   avatar?: string
   isActive: boolean
+  roles?: string[]
+  permissions?: string[]
 }
 
 /**
@@ -72,11 +74,18 @@ export interface SelectOption {
 export interface TableColumn {
   prop: string
   label: string
+  type?: string // Field type for FieldRenderer (text, user, status, etc.)
   width?: number
+  defaultWidth?: number
   minWidth?: number
   align?: 'left' | 'center' | 'right'
   fixed?: boolean | 'left' | 'right'
-  slot?: boolean
+  slot?: string
+  visible?: boolean
+  sortable?: boolean | 'custom'
+  // Custom render helpers
+  tagType?: (row: any) => string
+  dateFormatter?: string
   format?: (value: any, row: any) => string
 }
 
@@ -84,12 +93,13 @@ export interface TableColumn {
  * Search field configuration
  */
 export interface SearchField {
-  field: string
+  prop: string
   label: string
-  type: 'input' | 'select' | 'daterange' | 'treeselect' | 'cascader'
+  type?: 'text' | 'input' | 'select' | 'date' | 'dateRange' | 'numberRange' | 'boolean' | 'slot'
   placeholder?: string
   options?: SelectOption[]
   multiple?: boolean
+  defaultValue?: any
 }
 
 /**
@@ -99,7 +109,7 @@ export interface FieldConfig {
   field: string
   label: string
   type: 'input' | 'textarea' | 'number' | 'select' | 'date' | 'daterange' |
-        'treeselect' | 'user' | 'dept' | 'asset' | 'switch' | 'radio' | 'checkbox'
+  'treeselect' | 'user' | 'dept' | 'asset' | 'switch' | 'radio' | 'checkbox'
   placeholder?: string
   disabled?: boolean
   required?: boolean

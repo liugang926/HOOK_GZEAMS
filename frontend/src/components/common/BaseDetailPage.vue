@@ -33,7 +33,7 @@
  * Provides section-based layout and action buttons.
  */
 
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import type { ElMessageBox } from 'element-plus'
 import { formatDate } from '@/utils/dateFormat'
 
@@ -328,12 +328,21 @@ defineExpose({
 <template>
   <div class="base-detail-page">
     <!-- Loading State -->
-    <div v-if="loading" class="loading-container">
-      <el-skeleton :rows="10" animated />
+    <div
+      v-if="loading"
+      class="loading-container"
+    >
+      <el-skeleton
+        :rows="10"
+        animated
+      />
     </div>
 
     <!-- Content -->
-    <div v-else class="detail-content">
+    <div
+      v-else
+      class="detail-content"
+    >
       <!-- Page Header -->
       <div class="page-header">
         <div class="header-left">
@@ -345,7 +354,9 @@ defineExpose({
           >
             {{ backText }}
           </el-button>
-          <h1 class="page-title">{{ title }}</h1>
+          <h1 class="page-title">
+            {{ title }}
+          </h1>
         </div>
         <div class="header-actions">
           <el-button
@@ -362,7 +373,10 @@ defineExpose({
 
       <!-- Detail Sections -->
       <div class="detail-sections">
-        <template v-for="section in sections" :key="section.name">
+        <template
+          v-for="section in sections"
+          :key="section.name"
+        >
           <div :class="['detail-section', { 'is-collapsed': isSectionCollapsed(section) }]">
             <!-- Section Header -->
             <div
@@ -371,7 +385,10 @@ defineExpose({
               @click="section.collapsible ? toggleSection(section.name) : null"
             >
               <div class="section-title">
-                <el-icon v-if="section.icon" class="section-icon">
+                <el-icon
+                  v-if="section.icon"
+                  class="section-icon"
+                >
                   <component :is="section.icon" />
                 </el-icon>
                 <span>{{ section.title }}</span>
@@ -385,7 +402,10 @@ defineExpose({
             </div>
 
             <!-- Section Content -->
-            <div v-show="!isSectionCollapsed(section)" class="section-content">
+            <div
+              v-show="!isSectionCollapsed(section)"
+              class="section-content"
+            >
               <!-- Custom slot for this section -->
               <slot
                 v-if="$slots[`section-${section.name}`]"
@@ -403,7 +423,10 @@ defineExpose({
                     class="field-col"
                   >
                     <!-- Slot field -->
-                    <div v-if="field.type === 'slot'" class="field-item">
+                    <div
+                      v-if="field.type === 'slot'"
+                      class="field-item"
+                    >
                       <slot
                         :name="`field-${field.prop}`"
                         :field="field"
@@ -413,7 +436,10 @@ defineExpose({
                     </div>
 
                     <!-- Image field -->
-                    <div v-else-if="field.type === 'image'" class="field-item field-image">
+                    <div
+                      v-else-if="field.type === 'image'"
+                      class="field-item field-image"
+                    >
                       <span class="field-label">{{ field.label }}</span>
                       <div class="field-value">
                         <el-image
@@ -432,7 +458,10 @@ defineExpose({
                     </div>
 
                     <!-- Link field -->
-                    <div v-else-if="field.type === 'link'" class="field-item">
+                    <div
+                      v-else-if="field.type === 'link'"
+                      class="field-item"
+                    >
                       <span class="field-label">{{ field.label }}</span>
                       <div class="field-value">
                         <el-link
@@ -446,7 +475,10 @@ defineExpose({
                     </div>
 
                     <!-- Tag field -->
-                    <div v-else-if="field.type === 'tag'" class="field-item">
+                    <div
+                      v-else-if="field.type === 'tag'"
+                      class="field-item"
+                    >
                       <span class="field-label">{{ field.label }}</span>
                       <div class="field-value">
                         <el-tag :type="getTagType(field)">
@@ -456,7 +488,10 @@ defineExpose({
                     </div>
 
                     <!-- Standard field -->
-                    <div v-else class="field-item">
+                    <div
+                      v-else
+                      class="field-item"
+                    >
                       <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
                       <span :class="['field-value', field.valueClass]">
                         {{ formatFieldValue(field) }}
@@ -471,9 +506,17 @@ defineExpose({
       </div>
 
       <!-- Audit Info -->
-      <div v-if="hasAuditInfo" class="audit-info">
-        <div class="audit-title">审计信息</div>
-        <el-descriptions :column="2" border>
+      <div
+        v-if="hasAuditInfo"
+        class="audit-info"
+      >
+        <div class="audit-title">
+          审计信息
+        </div>
+        <el-descriptions
+          :column="2"
+          border
+        >
           <el-descriptions-item label="创建人">
             {{ auditInfo?.createdBy || '-' }}
           </el-descriptions-item>

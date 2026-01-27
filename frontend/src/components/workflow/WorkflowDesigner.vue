@@ -1,136 +1,186 @@
-<!--
-  WorkflowDesigner Component
-
-  Visual workflow designer using LogicFlow.
-  Features:
-  - Drag-and-drop node creation
-  - Node connection management
-  - Property panel for node configuration
-  - Workflow save/load
-  - Validation and export
--->
-
 <template>
   <div class="workflow-designer">
-    <!-- Toolbar -->
-    <div class="designer-toolbar">
-      <div class="toolbar-section">
-        <span class="toolbar-title">{{ workflowName || '未命名流程' }}</span>
-        <el-tag v-if="!isDirty" type="info" size="small">已保存</el-tag>
-        <el-tag v-else type="warning" size="small">未保存</el-tag>
-      </div>
-
-      <div class="toolbar-section toolbar-actions">
-        <el-button-group>
-          <el-tooltip content="开始节点" placement="bottom">
-            <el-button :icon="VideoPlay" @click="addStartNode" />
-          </el-tooltip>
-          <el-tooltip content="审批节点" placement="bottom">
-            <el-button :icon="User" @click="addApprovalNode" />
-          </el-tooltip>
-          <el-tooltip content="条件分支" placement="bottom">
-            <el-button :icon="Share" @click="addConditionNode" />
-          </el-tooltip>
-          <el-tooltip content="抄送节点" placement="bottom">
-            <el-button :icon="Message" @click="addNotifyNode" />
-          </el-tooltip>
-          <el-tooltip content="结束节点" placement="bottom">
-            <el-button :icon="VideoPause" @click="addEndNode" />
-          </el-tooltip>
-        </el-button-group>
-
-        <el-divider direction="vertical" />
-
-        <el-button-group>
-          <el-tooltip content="撤销" placement="bottom">
-            <el-button :icon="RefreshLeft" @click="undo" />
-          </el-tooltip>
-          <el-tooltip content="重做" placement="bottom">
-            <el-button :icon="RefreshRight" @click="redo" />
-          </el-tooltip>
-        </el-button-group>
-
-        <el-divider direction="vertical" />
-
-        <el-button :icon="ZoomIn" @click="zoomIn" />
-        <el-button :icon="ZoomOut" @click="zoomOut" />
-        <el-button @click="resetView">适配</el-button>
-
-        <el-divider direction="vertical" />
-
-        <el-button type="primary" :icon="Check" @click="handleSave">
-          保存
+    <!-- 工具栏 -->
+    <div class="toolbar">
+      <el-button-group>
+        <el-button
+          :icon="ZoomOut"
+          @click="handleZoomOut"
+        />
+        <el-button @click="handleZoomReset">
+          100%
         </el-button>
-        <el-button :icon="Delete" @click="handleClear">
-          清空
-        </el-button>
-      </div>
+        <el-button
+          :icon="ZoomIn"
+          @click="handleZoomIn"
+        />
+      </el-button-group>
+      <el-divider direction="vertical" />
+      <el-button
+        :icon="Download"
+        @click="handleExport"
+      >
+        导出JSON
+      </el-button>
+      <el-button
+        :icon="Upload"
+        @click="handleImport"
+      >
+        导入JSON
+      </el-button>
+      <el-divider direction="vertical" />
+      <el-button
+        type="primary"
+        @click="handleSave"
+      >
+        保存流程
+      </el-button>
     </div>
 
-    <!-- Canvas -->
-    <div class="designer-container">
-      <div ref="lfContainerRef" class="lf-container"></div>
-
-      <!-- Mini Map -->
-      <div class="mini-map" ref="miniMapRef"></div>
-    </div>
-
-    <!-- Property Panel -->
-    <PropertyPanel
-      v-model:visible="propertyVisible"
-      :node="selectedNode"
-      :users="userOptions"
-      :departments="departmentOptions"
-      @update="handleNodeUpdate"
-    />
-
-    <!-- Validation Dialog -->
-    <el-dialog
-      v-model="validationVisible"
-      title="流程验证"
-      width="500px"
-    >
-      <div class="validation-result">
-        <el-alert
-          v-if="validationResult.isValid"
-          title="验证通过"
-          type="success"
-          :closable="false"
-          show-icon
+    <!-- 节点面板 -->
+    <div class="node-panel">
+      <div class="panel-section">
+        <div class="section-title">
+          基础节点
+        </div>
+        <div
+          class="node-item"
+          data-type="start"
         >
-          <template #default>
-            <p>流程配置正确，可以保存并激活。</p>
-          </template>
-        </el-alert>
-        <div v-else>
-          <el-alert
-            title="验证失败"
-            type="error"
-            :closable="false"
-            show-icon
-          >
-            <template #default>
-              <p>请修正以下问题：</p>
-            </template>
-          </el-alert>
-          <el-scrollbar max-height="300px">
-            <ul class="error-list">
-              <li v-for="(error, index) in validationResult.errors" :key="index">
-                <el-icon class="error-icon"><Warning /></el-icon>
-                {{ error }}
-              </li>
-            </ul>
-          </el-scrollbar>
+          <div class="node-icon start">
+            开始
+          </div>
+        </div>
+        <div
+          class="node-item"
+          data-type="end"
+        >
+          <div class="node-icon end">
+            结束
+          </div>
         </div>
       </div>
-      <template #footer>
-        <el-button @click="validationVisible = false">关闭</el-button>
-        <el-button
-          v-if="validationResult.isValid"
-          type="primary"
-          @click="handleSaveAfterValidation"
+      <div class="panel-section">
+        <div class="section-title">
+          审批节点
+        </div>
+        <div
+          class="node-item"
+          data-type="approval"
         >
-          保存流程
+          <div class="node-icon approval">
+            审批
+          </div>
+        </div>
+        <div
+          class="node-item"
+          data-type="condition"
+        >
+          <div class="node-icon condition">
+            条件
+          </div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="section-title">
+          抄送节点
+        </div>
+        <div
+          class="node-item"
+          data-type="cc"
+        >
+          <div class="node-icon cc">
+            抄送
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 画布区域 -->
+    <div
+      ref="containerRef"
+      class="canvas-container"
+    />
+
+    <!-- 属性面板 -->
+    <div
+      v-if="selectedNode"
+      class="property-panel"
+    >
+      <el-tabs v-model="activeTab">
+        <el-tab-pane
+          label="基础属性"
+          name="basic"
+        >
+          <el-form
+            :model="selectedNode"
+            label-width="80px"
+          >
+            <el-form-item label="节点名称">
+              <el-input
+                v-model="selectedNode.text"
+                @input="updateNodeName"
+              />
+            </el-form-item>
+            <el-form-item label="节点类型">
+              <el-input
+                :value="getNodeTypeLabel(selectedNode.type)"
+                disabled
+              />
+            </el-form-item>
+          </el-form>
+        </el-tab-pane>
+
+        <el-tab-pane
+          v-if="selectedNode.type === 'approval'"
+          label="审批配置"
+          name="approval"
+        >
+          <ApprovalNodeConfig v-model="selectedNode.properties" />
+        </el-tab-pane>
+
+        <el-tab-pane
+          v-if="selectedNode.type === 'condition'"
+          label="条件配置"
+          name="condition"
+        >
+          <ConditionNodeConfig v-model="selectedNode.properties" />
+        </el-tab-pane>
+
+        <el-tab-pane
+          v-if="needPermissionConfig"
+          label="字段权限"
+          name="permission"
+        >
+          <FieldPermissionConfig
+            v-model="selectedNode.properties.fieldPermissions"
+            :business-object="businessObject"
+          />
+        </el-tab-pane>
+      </el-tabs>
+    </div>
+
+    <!-- 导入弹窗 -->
+    <el-dialog
+      v-model="importDialogVisible"
+      title="导入流程"
+      width="600px"
+    >
+      <el-input
+        v-model="importJson"
+        type="textarea"
+        :rows="10"
+        placeholder="请粘贴流程JSON数据"
+      />
+      <template #footer>
+        <el-button @click="importDialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          @click="handleImportConfirm"
+        >
+          导入
         </el-button>
       </template>
     </el-dialog>
@@ -138,574 +188,705 @@
 </template>
 
 <script setup lang="ts">
-/**
- * WorkflowDesigner Component
- *
- * Visual workflow designer using LogicFlow library.
- * Supports drag-and-drop node creation and connection.
- */
-
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import {
-  VideoPlay,
-  VideoPause,
-  User,
-  Share,
-  Message,
-  RefreshLeft,
-  RefreshRight,
-  ZoomIn,
-  ZoomOut,
-  Check,
-  Delete,
-  Warning
-} from '@element-plus/icons-vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import LogicFlow from '@logicflow/core'
+import { DndPanel, Menu } from '@logicflow/extension'
 import '@logicflow/core/dist/style/index.css'
-import PropertyPanel from './PropertyPanel.vue'
-import type { LogicFlowGraphData, LogicFlowNode, WorkflowDefinition } from '@/types/workflow'
-
-// ============================================================================
-// Props & Emits
-// ============================================================================
+import '@logicflow/extension/lib/style/index.css'
+import { ElMessage } from 'element-plus'
+import { ZoomIn, ZoomOut, Download, Upload } from '@element-plus/icons-vue'
+import ApprovalNodeConfig from './ApprovalNodeConfig.vue'
+import ConditionNodeConfig from './ConditionNodeConfig.vue'
+import FieldPermissionConfig from './FieldPermissionConfig.vue'
 
 interface Props {
-  modelValue?: LogicFlowGraphData
-  workflowName?: string
+  modelValue?: any
+  businessObject?: string
   readonly?: boolean
+}
+
+interface Emits {
+  (e: 'update:modelValue', value: any): void
+  (e: 'save', data: any): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   readonly: false
 })
 
-const emit = defineEmits<{
-  'update:modelValue': [data: LogicFlowGraphData]
-  'save': [data: LogicFlowGraphData]
-  'change': [data: LogicFlowGraphData]
-}>()
+const emit = defineEmits<Emits>()
 
-// ============================================================================
-// State
-// ============================================================================
+const containerRef = ref<HTMLElement | null>(null)
+const lf = ref<LogicFlow | null>(null)
+const selectedNode = ref<any>(null)
+const activeTab = ref('basic')
+const importDialogVisible = ref(false)
+const importJson = ref('')
 
-const lfContainerRef = ref<HTMLElement>()
-const miniMapRef = ref<HTMLElement>()
-const propertyVisible = ref(false)
-const selectedNode = ref<LogicFlowNode | null>(null)
-const validationVisible = ref(false)
-const validationResult = ref<{ isValid: boolean; errors: string[] }>({
-  isValid: false,
-  errors: []
+// 流程定义数据
+const flowData = ref(props.modelValue || {
+  nodes: [],
+  edges: []
 })
-
-let lf: LogicFlow | null = null
-const currentZoom = ref(1)
-const isDirty = ref(false)
-
-const userOptions = ref<Array<{ label: string; value: string }>>([])
-const departmentOptions = ref<Array<{ label: string; value: string }>>([])
-
-// ============================================================================
-// LogicFlow Initialization
-// ============================================================================
-
-const initLogicFlow = () => {
-  if (!lfContainerRef.value) return
-
-  lf = new LogicFlow({
-    container: lfContainerRef.value,
-    width: lfContainerRef.value.clientWidth,
-    height: lfContainerRef.value.clientHeight,
-    background: {
-      backgroundImage: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgNDBMMDQwIDBIMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZDVkNWQ1IiBzdHJva2Utd2lkdGg9IjEiLz48cGF0aCBkPSJNNDAgNDBWMHgwIiBmaWxsPSJub25lIiBzdHJva2U9IiNkNWQ1ZDUiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNhKSIvPjwvc3ZnPg==',
-      backgroundRepeat: 'repeat'
-    },
-    grid: {
-      size: 20,
-      visible: true,
-      type: 'dot',
-      config: {
-        color: '#d5d5d5'
-      }
-    },
-    keyboard: {
-      enabled: true
-    },
-    style: {
-      rect: {
-        rx: 8,
-        ry: 8,
-        strokeWidth: 2
-      },
-      circle: {
-        r: 40
-      }
-    }
-  })
-
-  // Register custom node types
-  registerNodeTypes()
-
-  // Register event handlers
-  registerEventHandlers()
-
-  // Load initial data if provided
-  if (props.modelValue) {
-    lf.render(props.modelValue)
-  }
-
-  // Handle window resize
-  window.addEventListener('resize', handleResize)
-}
-
-/**
- * Register custom node types
- */
-const registerNodeTypes = () => {
-  if (!lf) return
-
-  // Start node (circle, green)
-  lf.register('start', ({ properties }: any) => ({
-    type: 'circle',
-    r: 30,
-    fill: '#67c23a',
-    stroke: '#85ce61',
-    strokeWidth: 2,
-    text: {
-      value: properties?.text || '开始',
-      x: 0,
-      y: 0,
-      fill: '#fff'
-    }
-  }))
-
-  // End node (circle, red)
-  lf.register('end', ({ properties }: any) => ({
-    type: 'circle',
-    r: 30,
-    fill: '#f56c6c',
-    stroke: '#f78989',
-    strokeWidth: 2,
-    text: {
-      value: properties?.text || '结束',
-      x: 0,
-      y: 0,
-      fill: '#fff'
-    }
-  }))
-
-  // Approval node (rect, blue)
-  lf.register('approval', ({ properties }: any) => ({
-    type: 'rect',
-    width: 120,
-    height: 60,
-    radius: 8,
-    fill: '#409eff',
-    stroke: '#66b1ff',
-    strokeWidth: 2,
-    text: {
-      value: properties?.text || '审批',
-      x: 0,
-      y: 0,
-      fill: '#fff'
-    }
-  }))
-
-  // Condition node (diamond, orange)
-  lf.register('condition', ({ properties }: any) => ({
-    type: 'diamond',
-    rx: 50,
-    ry: 50,
-    fill: '#e6a23c',
-    stroke: '#ebb563',
-    strokeWidth: 2,
-    text: {
-      value: properties?.text || '条件',
-      x: 0,
-      y: 0,
-      fill: '#fff'
-    }
-  }))
-
-  // Notify node (rect, purple)
-  lf.register('notify', ({ properties }: any) => ({
-    type: 'rect',
-    width: 120,
-    height: 60,
-    radius: 8,
-    fill: '#9c27b0',
-    stroke: '#ab47bc',
-    strokeWidth: 2,
-    text: {
-      value: properties?.text || '抄送',
-      x: 0,
-      y: 0,
-      fill: '#fff'
-    }
-  }))
-}
-
-/**
- * Register event handlers
- */
-const registerEventHandlers = () => {
-  if (!lf) return
-
-  // Node click
-  lf.on('node:click', ({ data }) => {
-    selectedNode.value = data
-    propertyVisible.value = true
-  })
-
-  // Edge click
-  lf.on('edge:click', ({ data }) => {
-    // Handle edge selection
-  })
-
-  // Blank click
-  lf.on('blank:click', () => {
-    selectedNode.value = null
-    propertyVisible.value = false
-  })
-
-  // Node delete
-  lf.on('node:delete', () => {
-    isDirty.value = true
-    emitChange()
-  })
-
-  // Edge delete
-  lf.on('edge:delete', () => {
-    isDirty.value = true
-    emitChange()
-  })
-
-  // History change
-  lf.on('history:change', () => {
-    emitChange()
-  })
-}
-
-/**
- * Emit change event
- */
-const emitChange = () => {
-  const data = lf?.getGraphData()
-  if (data) {
-    emit('update:modelValue', data as LogicFlowGraphData)
-    emit('change', data as LogicFlowGraphData)
-    isDirty.value = true
-  }
-}
-
-// ============================================================================
-// Node Actions
-// ============================================================================
-
-const addStartNode = () => {
-  lf?..addNode({
-    id: `node_${Date.now()}`,
-    type: 'start',
-    x: 100,
-    y: 300,
-    properties: {
-      text: '开始'
-    }
-  })
-  emitChange()
-}
-
-const addEndNode = () => {
-  lf?.addNode({
-    id: `node_${Date.now()}`,
-    type: 'end',
-    x: 700,
-    y: 300,
-    properties: {
-      text: '结束'
-    }
-  })
-  emitChange()
-}
-
-const addApprovalNode = () => {
-  lf?.addNode({
-    id: `node_${Date.now()}`,
-    type: 'approval',
-    x: 300,
-    y: 300,
-    properties: {
-      text: '审批',
-      approvalType: 'or',
-      approvers: []
-    }
-  })
-  emitChange()
-}
-
-const addConditionNode = () => {
-  lf?.addNode({
-    id: `node_${Date.now()}`,
-    type: 'condition',
-    x: 400,
-    y: 300,
-    properties: {
-      text: '条件分支',
-      conditions: []
-    }
-  })
-  emitChange()
-}
-
-const addNotifyNode = () => {
-  lf?.addNode({
-    id: `node_${Date.now()}`,
-    type: 'notify',
-    x: 500,
-    y: 300,
-    properties: {
-      text: '抄送',
-      notifyUsers: []
-    }
-  })
-  emitChange()
-}
-
-// ============================================================================
-// Toolbar Actions
-// ============================================================================
-
-const undo = () => {
-  lf?.undo()
-}
-
-const redo = () => {
-  lf?.redo()
-}
-
-const zoomIn = () => {
-  if (!lf) return
-  currentZoom.value = Math.min(currentZoom.value + 0.1, 2)
-  lf.zoom(currentZoom.value)
-}
-
-const zoomOut = () => {
-  if (!lf) return
-  currentZoom.value = Math.max(currentZoom.value - 0.1, 0.5)
-  lf.zoom(currentZoom.value)
-}
-
-const resetView = () => {
-  lf?.resetZoom()
-  lf?.resetTranslate()
-  currentZoom.value = 1
-}
-
-// ============================================================================
-// Save & Validation
-// ============================================================================
-
-const handleSave = () => {
-  const validation = validateWorkflow()
-  validationResult.value = validation
-  validationVisible.value = true
-}
-
-const handleSaveAfterValidation = () => {
-  const data = lf?.getGraphData()
-  if (data) {
-    emit('save', data as LogicFlowGraphData)
-    isDirty.value = false
-    validationVisible.value = false
-    ElMessage.success('保存成功')
-  }
-}
-
-const validateWorkflow = (): { isValid: boolean; errors: string[] } => {
-  const errors: string[] = []
-  const data = lf?.getGraphData()
-
-  if (!data) {
-    errors.push('流程数据为空')
-    return { isValid: false, errors }
-  }
-
-  // Check for start node
-  const hasStart = data.nodes.some((n: any) => n.type === 'start')
-  if (!hasStart) {
-    errors.push('缺少开始节点')
-  }
-
-  // Check for end node
-  const hasEnd = data.nodes.some((n: any) => n.type === 'end')
-  if (!hasEnd) {
-    errors.push('缺少结束节点')
-  }
-
-  // Check for orphan nodes
-  const connectedNodeIds = new Set<string>()
-  data.edges.forEach((e: any) => {
-    connectedNodeIds.add(e.sourceNodeId)
-    connectedNodeIds.add(e.targetNodeId)
-  })
-  const orphanNodes = data.nodes.filter((n: any) =>
-    n.type !== 'start' && n.type !== 'end' && !connectedNodeIds.has(n.id)
-  )
-  if (orphanNodes.length > 0) {
-    errors.push(`存在 ${orphanNodes.length} 个未连接的节点`)
-  }
-
-  // Check for approval nodes without approvers
-  const approvalNodes = data.nodes.filter((n: any) => n.type === 'approval')
-  approvalNodes.forEach((node: any) => {
-    if (!node.properties?.approvers || node.properties.approvers.length === 0) {
-      errors.push(`审批节点"${node.properties?.text || ''}"未配置审批人`)
-    }
-  })
-
-  return {
-    isValid: errors.length === 0,
-    errors
-  }
-}
-
-const handleClear = () => {
-  lf?.clearData()
-  emitChange()
-}
-
-const handleNodeUpdate = (updates: Partial<LogicFlowNode>) => {
-  if (selectedNode.value && lf) {
-    lf.setNodeData(selectedNode.value.id, {
-      ...selectedNode.value,
-      ...updates,
-      properties: {
-        ...selectedNode.value.properties,
-        ...updates.properties
-      }
-    } as any)
-    emitChange()
-  }
-}
-
-const handleResize = () => {
-  if (lfContainerRef.value && lf) {
-    lf.container.style.width = `${lfContainerRef.value.clientWidth}px`
-    lf.container.style.height = `${lfContainerRef.value.clientHeight}px`
-  }
-}
-
-// ============================================================================
-// Watch
-// ============================================================================
-
-watch(() => props.modelValue, (newValue) => {
-  if (newValue && lf && !isDirty.value) {
-    lf.render(newValue)
-  }
-}, { deep: true })
-
-// ============================================================================
-// Lifecycle
-// ============================================================================
 
 onMounted(() => {
   initLogicFlow()
 })
 
 onUnmounted(() => {
-  lf?.destroy()
-  window.removeEventListener('resize', handleResize)
+  lf.value?.destroy()
 })
 
-// ============================================================================
-// Expose
-// ============================================================================
+const initLogicFlow = () => {
+  if (!containerRef.value) return
 
-defineExpose({
-  validate: validateWorkflow,
-  getGraphData: () => lf?.getGraphData(),
-  setGraphData: (data: LogicFlowGraphData) => lf?.render(data)
+  lf.value = new LogicFlow({
+    container: containerRef.value,
+    width: containerRef.value.clientWidth,
+    height: containerRef.value.clientHeight || 800,
+    plugins: [DndPanel, Menu],
+    grid: {
+      size: 20,
+      type: 'dot',
+      visible: true
+    },
+    background: {
+      backgroundImage: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9IiNjY2MiIGZpbGwtb3BhY2l0eT0iMC4yIi8+PC9zdmc+'
+    },
+    edgeTextDraggable: true,
+    nodeSelectedOutline: true,
+    keyboard: {
+      enabled: true
+    }
+  })
+
+  // 注册自定义节点
+  registerCustomNodes()
+
+  // 设置数据
+  if (flowData.value.nodes.length > 0) {
+    lf.value.render(flowData.value)
+  }
+
+  // 监听事件
+  lf.value.on('node:click', handleNodeClick)
+  lf.value.on('edge:click', handleEdgeClick)
+  lf.value.on('blank:click', handleBlankClick)
+  lf.value.on('node:drop', handleNodeDrop)
+  lf.value.on('node:add', handleNodeAdd)
+  lf.value.on('edge:add', handleEdgeAdd)
+  lf.value.on('history:change', handleHistoryChange)
+
+  // 设置拖拽面板
+  setupDndPanel()
+}
+
+// 注册自定义节点
+const registerCustomNodes = () => {
+  if (!lf.value) return
+
+  const { RectNode, RectNodeModel, h } = lf.value
+
+  // 开始节点
+  lf.value.register('start', ({ RectNode, RectNodeModel, h }) => {
+    class StartNode extends RectNode {
+      getShape() {
+        const { model } = this.props
+        const { x, y, width, height, radius } = model
+        const style = model.getNodeStyle()
+        return h('g', {}, [
+          h('rect', {
+            x: x - width / 2,
+            y: y - height / 2,
+            rx: radius || 20,
+            ry: radius || 20,
+            width,
+            height,
+            fill: '#67C23A',
+            stroke: '#67C23A',
+            strokeWidth: 2,
+            ...style
+          }),
+          h('text', {
+            x: x,
+            y: y,
+            fill: '#fff',
+            fontSize: 14,
+            fontWeight: 'bold',
+            textAnchor: 'middle',
+            dominantBaseline: 'middle'
+          }, model.text.value || '开始')
+        ])
+      }
+    }
+
+    class StartNodeModel extends RectNodeModel {
+      initNodeData(data: any) {
+        super.initNodeData(data)
+        this.width = 100
+        this.height = 40
+        this.radius = 20
+      }
+
+      getDefaultAnchor() {
+        return [
+          { id: 'right', x: this.x + this.width / 2, y: this.y }
+        ]
+      }
+    }
+
+    return {
+      view: StartNode,
+      model: StartNodeModel
+    }
+  })
+
+  // 审批节点
+  lf.value.register('approval', ({ RectNode, RectNodeModel, h }) => {
+    class ApprovalNode extends RectNode {
+      getShape() {
+        const { model } = this.props
+        const { x, y, width, height } = model
+        const properties = model.getProperties() || {}
+        const approveType = properties.approveType || 'or'
+
+        // 审批类型标识
+        const typeLabel = {
+          'or': '或签',
+          'and': '会签',
+          'seq': '依次'
+        }[approveType] || ''
+
+        return h('g', {}, [
+          h('rect', {
+            x: x - width / 2,
+            y: y - height / 2,
+            width,
+            height,
+            fill: '#409EFF',
+            stroke: '#409EFF',
+            strokeWidth: 2,
+            rx: 4
+          }),
+          h('text', {
+            x: x,
+            y: y - 8,
+            fill: '#fff',
+            fontSize: 14,
+            fontWeight: 'bold',
+            textAnchor: 'middle',
+            dominantBaseline: 'middle'
+          }, model.text.value || '审批'),
+          h('text', {
+            x: x,
+            y: y + 12,
+            fill: 'rgba(255,255,255,0.8)',
+            fontSize: 10,
+            textAnchor: 'middle',
+            dominantBaseline: 'middle'
+          }, typeLabel)
+        ])
+      }
+    }
+
+    class ApprovalNodeModel extends RectNodeModel {
+      initNodeData(data: any) {
+        super.initNodeData(data)
+        this.width = 120
+        this.height = 60
+      }
+    }
+
+    return {
+      view: ApprovalNode,
+      model: ApprovalNodeModel
+    }
+  })
+
+  // 条件节点
+  lf.value.register('condition', ({ PolygonNode, PolygonNodeModel, h }) => {
+    class ConditionNode extends PolygonNode {
+      getShape() {
+        const { model } = this.props
+        const { x, y, width, height } = model
+        const points = [
+          [x, y - height / 2],
+          [x + width / 2, y],
+          [x, y + height / 2],
+          [x - width / 2, y]
+        ]
+
+        return h('g', {}, [
+          h('polygon', {
+            points: points.map(p => p.join(',')).join(' '),
+            fill: '#E6A23C',
+            stroke: '#E6A23C',
+            strokeWidth: 2
+          }),
+          h('text', {
+            x: x,
+            y: y,
+            fill: '#fff',
+            fontSize: 14,
+            fontWeight: 'bold',
+            textAnchor: 'middle',
+            dominantBaseline: 'middle'
+          }, model.text.value || '条件')
+        ])
+      }
+    }
+
+    class ConditionNodeModel extends PolygonNodeModel {
+      initNodeData(data: any) {
+        super.initNodeData(data)
+        this.width = 100
+        this.height = 100
+      }
+
+      getPoints() {
+        const { x, y, width, height } = this
+        return [
+          [x, y - height / 2],
+          [x + width / 2, y],
+          [x, y + height / 2],
+          [x - width / 2, y]
+        ]
+      }
+    }
+
+    return {
+      view: ConditionNode,
+      model: ConditionNodeModel
+    }
+  })
+
+  // 抄送节点
+  lf.value.register('cc', ({ RectNode, RectNodeModel, h }) => {
+    class CcNode extends RectNode {
+      getShape() {
+        const { model } = this.props
+        const { x, y, width, height } = model
+        return h('g', {}, [
+          h('rect', {
+            x: x - width / 2,
+            y: y - height / 2,
+            width,
+            height,
+            fill: '#909399',
+            stroke: '#909399',
+            strokeWidth: 2,
+            rx: 4
+          }),
+          h('text', {
+            x: x,
+            y: y,
+            fill: '#fff',
+            fontSize: 14,
+            fontWeight: 'bold',
+            textAnchor: 'middle',
+            dominantBaseline: 'middle'
+          }, model.text.value || '抄送')
+        ])
+      }
+    }
+
+    class CcNodeModel extends RectNodeModel {
+      initNodeData(data: any) {
+        super.initNodeData(data)
+        this.width = 120
+        this.height = 60
+      }
+    }
+
+    return {
+      view: CcNode,
+      model: CcNodeModel
+    }
+  })
+
+  // 结束节点
+  lf.value.register('end', ({ RectNode, RectNodeModel, h }) => {
+    class EndNode extends RectNode {
+      getShape() {
+        const { model } = this.props
+        const { x, y, width, height, radius } = model
+        return h('g', {}, [
+          h('rect', {
+            x: x - width / 2,
+            y: y - height / 2,
+            rx: radius || 20,
+            ry: radius || 20,
+            width,
+            height,
+            fill: '#F56C6C',
+            stroke: '#F56C6C',
+            strokeWidth: 2
+          }),
+          h('text', {
+            x: x,
+            y: y,
+            fill: '#fff',
+            fontSize: 14,
+            fontWeight: 'bold',
+            textAnchor: 'middle',
+            dominantBaseline: 'middle'
+          }, model.text.value || '结束')
+        ])
+      }
+    }
+
+    class EndNodeModel extends RectNodeModel {
+      initNodeData(data: any) {
+        super.initNodeData(data)
+        this.width = 100
+        this.height = 40
+        this.radius = 20
+      }
+
+      getDefaultAnchor() {
+        return [
+          { id: 'left', x: this.x - this.width / 2, y: this.y }
+        ]
+      }
+    }
+
+    return {
+      view: EndNode,
+      model: EndNodeModel
+    }
+  })
+}
+
+// 设置拖拽面板
+const setupDndPanel = () => {
+  if (!lf.value) return
+
+  const nodeItems = document.querySelectorAll('.node-item')
+
+  nodeItems.forEach(item => {
+    lf.value?.dndPanel.setPatternItems([
+      {
+        type: item.getAttribute('data-type'),
+        text: item.querySelector('.node-icon')?.textContent || '',
+      }
+    ])
+  })
+}
+
+// 事件处理
+const handleNodeClick = ({ data }: any) => {
+  selectedNode.value = {
+    id: data.id,
+    type: data.type,
+    text: data.text?.value || data.text,
+    properties: data.properties || {}
+  }
+  activeTab.value = 'basic'
+}
+
+const handleEdgeClick = ({ data }: any) => {
+  // 可以添加连线选择逻辑
+}
+
+const handleBlankClick = () => {
+  selectedNode.value = null
+}
+
+const handleNodeDrop = ({ data }: any) => {
+  // 拖拽节点到画布时自动添加默认属性
+  if (data.type === 'approval') {
+    data.properties = {
+      approvers: [],
+      approveType: 'or',
+      timeout: 72,
+      autoApprove: false,
+      allowTransfer: true,
+      allowAddApprover: false,
+      fieldPermissions: {}
+    }
+  } else if (data.type === 'condition') {
+    data.properties = {
+      conditions: [],
+      defaultFlow: ''
+    }
+  } else if (data.type === 'cc') {
+    data.properties = {
+      ccUsers: [],
+      ccType: 'user'
+    }
+  }
+
+  selectedNode.value = {
+    type: data.type,
+    text: data.text?.value || data.text,
+    properties: data.properties
+  }
+}
+
+const handleNodeAdd = ({ data }: any) => {
+  handleNodeDrop({ data })
+}
+
+const handleEdgeAdd = ({ data }: any) => {
+  // 验证连线规则
+  const sourceNode = lf.value?.getNodeModelById(data.sourceNodeId)
+  const targetNode = lf.value?.getNodeModelById(data.targetNodeId)
+
+  // 不允许开始节点作为目标
+  if (targetNode?.type === 'start') {
+    ElMessage.warning('不允许连接到开始节点')
+    // Remove unsupported edge if needed (LogicFlow usually blocks? Need to implement validation logic properly or use hook)
+    lf.value?.deleteEdge(data.id)
+    return false
+  }
+
+  // 不允许结束节点作为源
+  if (sourceNode?.type === 'end') {
+    ElMessage.warning('结束节点不能作为连线起点')
+    lf.value?.deleteEdge(data.id)
+    return false
+  }
+}
+
+const handleHistoryChange = () => {
+  // 流程变化时同步数据
+  const graphData = lf.value?.getGraphData()
+  if (graphData) {
+    flowData.value = graphData
+    emit('update:modelValue', graphData)
+  }
+}
+
+const updateNodeName = () => {
+  if (!selectedNode.value || !lf.value) return
+
+  const nodeModel = lf.value.getNodeModelById(selectedNode.value.id)
+  if (nodeModel) {
+    nodeModel.updateText(selectedNode.value.text)
+  }
+}
+
+// 缩放控制
+const handleZoomIn = () => {
+  lf.value?.zoom(true)
+}
+
+const handleZoomOut = () => {
+  lf.value?.zoom(false)
+}
+
+const handleZoomReset = () => {
+  lf.value?.resetZoom()
+}
+
+// 导出/导入
+const handleExport = () => {
+  const data = lf.value?.getGraphData()
+  if (!data) return
+
+  const json = JSON.stringify(data, null, 2)
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `workflow_${Date.now()}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+const handleImport = () => {
+  importDialogVisible.value = true
+}
+
+const handleImportConfirm = () => {
+  try {
+    const data = JSON.parse(importJson.value)
+    lf.value?.render(data)
+    importDialogVisible.value = false
+    ElMessage.success('导入成功')
+  } catch (e) {
+    ElMessage.error('JSON格式错误')
+  }
+}
+
+// 保存
+const handleSave = () => {
+  const data = lf.value?.getGraphData()
+  if (!data) {
+    ElMessage.warning('请先设计流程')
+    return
+  }
+
+  // 验证流程
+  if (!validateFlow(data)) {
+    return
+  }
+
+  emit('save', data)
+}
+
+// 验证流程
+const validateFlow = (data: any) => {
+  const nodes = data.nodes || []
+  const edges = data.edges || []
+
+  // 必须有开始和结束节点
+  const hasStart = nodes.some((n: any) => n.type === 'start')
+  const hasEnd = nodes.some((n: any) => n.type === 'end')
+
+  if (!hasStart) {
+    ElMessage.error('流程必须包含开始节点')
+    return false
+  }
+
+  if (!hasEnd) {
+    ElMessage.error('流程必须包含结束节点')
+    return false
+  }
+
+  // 检查所有节点是否连通
+  if (nodes.length > 1 && edges.length === 0) {
+    ElMessage.error('请连接节点')
+    return false
+  }
+
+  return true
+}
+
+const getNodeTypeLabel = (type: string) => {
+  const labels: Record<string, string> = {
+    start: '开始',
+    end: '结束',
+    approval: '审批',
+    condition: '条件',
+    cc: '抄送'
+  }
+  return labels[type] || type
+}
+
+const needPermissionConfig = computed(() => {
+  return ['approval', 'start'].includes(selectedNode.value?.type)
 })
+
+// 监听外部数据变化
+watch(() => props.modelValue, (newVal) => {
+  if (newVal && lf.value && JSON.stringify(newVal) !== JSON.stringify(flowData.value)) {
+    flowData.value = newVal
+    lf.value.render(newVal)
+  }
+}, { deep: true })
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 .workflow-designer {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #f5f7fa;
+  background: #f5f5f5;
+  position: relative; /* Ensure absolute children are relative to this */
 }
 
-.designer-toolbar {
+.toolbar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: white;
-  border-bottom: 1px solid #ebeef5;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-
-  .toolbar-section {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .toolbar-title {
-    font-size: 16px;
-    font-weight: 500;
-    color: #303133;
-  }
-
-  .toolbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+  padding: 10px 15px;
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+  gap: 10px;
 }
 
-.designer-container {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-
-.lf-container {
-  width: 100%;
-  height: 100%;
-}
-
-.mini-map {
+.node-panel {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
-  width: 200px;
-  height: 150px;
-  background: white;
-  border: 1px solid #ebeef5;
+  left: 20px;
+  top: 70px;
+  width: 160px;
+  background: #fff;
   border-radius: 4px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  z-index: 100;
 }
 
-.validation-result {
-  .error-list {
-    margin-top: 16px;
-    padding-left: 20px;
+.section-title {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 10px;
+  padding-left: 5px;
+  font-weight: 500;
+}
 
-    li {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-      color: #f56c6c;
-    }
+.panel-section {
+  margin-bottom: 20px;
+}
 
-    .error-icon {
-      font-size: 16px;
-    }
-  }
+.panel-section:last-child {
+  margin-bottom: 0;
+}
+
+.node-item {
+  margin-bottom: 8px;
+  cursor: move;
+}
+
+.node-icon {
+  padding: 10px 16px;
+  text-align: center;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: grab;
+  user-select: none;
+}
+
+.node-icon:active {
+  cursor: grabbing;
+}
+
+.node-icon.start { background: #67C23A; }
+.node-icon.end { background: #F56C6C; }
+.node-icon.approval { background: #409EFF; }
+.node-icon.condition { background: #E6A23C; }
+.node-icon.cc { background: #909399; }
+
+.canvas-container {
+  flex: 1;
+  /* Adjust margin to accommodate panels */
+  margin: 0;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05); /* inset for canvas feel */
+}
+
+.property-panel {
+  position: absolute;
+  right: 20px;
+  top: 70px;
+  width: 320px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  max-height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+}
+
+.property-panel :deep(.el-tabs__content) {
+  padding: 15px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.property-panel :deep(.el-tabs__header) {
+  margin: 0;
+  padding: 0 15px;
+  background: #f5f5f5;
+}
+
+.property-panel :deep(.el-tabs__item) {
+  padding: 0 15px;
+  height: 40px;
+  line-height: 40px;
 }
 </style>

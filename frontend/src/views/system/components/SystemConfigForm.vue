@@ -11,38 +11,67 @@
       :rules="rules"
       label-width="140px"
     >
-      <el-form-item label="Config Key" prop="config_key">
+      <el-form-item
+        label="Config Key"
+        prop="config_key"
+      >
         <el-input
           v-model="formData.config_key"
           placeholder="e.g., QR_CODE_TEMPLATE, ENABLE_EMAIL"
           :disabled="isEdit"
         />
-        <div class="form-tip">Unique identifier for the configuration (uppercase recommended)</div>
+        <div class="form-tip">
+          Unique identifier for the configuration (uppercase recommended)
+        </div>
       </el-form-item>
 
-      <el-form-item label="Display Name" prop="name">
+      <el-form-item
+        label="Display Name"
+        prop="name"
+      >
         <el-input
           v-model="formData.name"
           placeholder="e.g., QR Code Template, Enable Email Notifications"
         />
       </el-form-item>
 
-      <el-form-item label="Value Type" prop="value_type">
+      <el-form-item
+        label="Value Type"
+        prop="value_type"
+      >
         <el-select
           v-model="formData.value_type"
           placeholder="Select value type"
           :disabled="isEdit"
           @change="handleValueTypeChange"
         >
-          <el-option label="String" value="string" />
-          <el-option label="Integer" value="integer" />
-          <el-option label="Float" value="float" />
-          <el-option label="Boolean" value="boolean" />
-          <el-option label="JSON" value="json" />
+          <el-option
+            label="String"
+            value="string"
+          />
+          <el-option
+            label="Integer"
+            value="integer"
+          />
+          <el-option
+            label="Float"
+            value="float"
+          />
+          <el-option
+            label="Boolean"
+            value="boolean"
+          />
+          <el-option
+            label="JSON"
+            value="json"
+          />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="Value" prop="config_value">
+      <el-form-item
+        label="Value"
+        prop="config_value"
+      >
         <!-- Boolean: switch -->
         <el-switch
           v-if="formData.value_type === 'boolean'"
@@ -63,31 +92,66 @@
           v-model="formData.config_value"
           type="textarea"
           :rows="4"
-          placeholder='e.g., {"key": "value"}'
+          placeholder="e.g., {&quot;key&quot;: &quot;value&quot;}"
           @blur="validateJson"
         />
-        <div v-if="jsonError" class="form-tip error">{{ jsonError }}</div>
+        <div
+          v-if="jsonError"
+          class="form-tip error"
+        >
+          {{ jsonError }}
+        </div>
       </el-form-item>
 
-      <el-form-item label="Category" prop="category">
+      <el-form-item
+        label="Category"
+        prop="category"
+      >
         <el-select
           v-model="formData.category"
           placeholder="Select category"
           allow-create
           filterable
         >
-          <el-option label="General" value="general" />
-          <el-option label="QR Code" value="qrcode" />
-          <el-option label="Notification" value="notification" />
-          <el-option label="Asset" value="asset" />
-          <el-option label="Inventory" value="inventory" />
-          <el-option label="Finance" value="finance" />
-          <el-option label="Workflow" value="workflow" />
-          <el-option label="Integration" value="integration" />
+          <el-option
+            label="General"
+            value="general"
+          />
+          <el-option
+            label="QR Code"
+            value="qrcode"
+          />
+          <el-option
+            label="Notification"
+            value="notification"
+          />
+          <el-option
+            label="Asset"
+            value="asset"
+          />
+          <el-option
+            label="Inventory"
+            value="inventory"
+          />
+          <el-option
+            label="Finance"
+            value="finance"
+          />
+          <el-option
+            label="Workflow"
+            value="workflow"
+          />
+          <el-option
+            label="Integration"
+            value="integration"
+          />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="Description" prop="description">
+      <el-form-item
+        label="Description"
+        prop="description"
+      >
         <el-input
           v-model="formData.description"
           type="textarea"
@@ -96,28 +160,44 @@
         />
       </el-form-item>
 
-      <el-form-item label="Is System" prop="is_system">
+      <el-form-item
+        label="Is System"
+        prop="is_system"
+      >
         <el-switch
           v-model="formData.is_system"
           active-text="System Config"
           inactive-text="User Config"
         />
-        <div class="form-tip">System configs cannot be deleted by users</div>
+        <div class="form-tip">
+          System configs cannot be deleted by users
+        </div>
       </el-form-item>
 
-      <el-form-item label="Is Encrypted" prop="is_encrypted">
+      <el-form-item
+        label="Is Encrypted"
+        prop="is_encrypted"
+      >
         <el-switch
           v-model="formData.is_encrypted"
           active-text="Encrypted"
           inactive-text="Plain Text"
         />
-        <div class="form-tip">Encrypt value for sensitive data (passwords, API keys)</div>
+        <div class="form-tip">
+          Encrypt value for sensitive data (passwords, API keys)
+        </div>
       </el-form-item>
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">Cancel</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">
+      <el-button @click="handleClose">
+        Cancel
+      </el-button>
+      <el-button
+        type="primary"
+        :loading="submitting"
+        @click="handleSubmit"
+      >
         {{ isEdit ? 'Save' : 'Add' }}
       </el-button>
     </template>

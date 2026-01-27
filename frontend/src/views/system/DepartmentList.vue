@@ -2,45 +2,100 @@
   <div class="department-list">
     <div class="page-header">
       <h3>部门管理</h3>
-      <el-button type="primary" @click="handleCreate">新建部门</el-button>
+      <el-button
+        type="primary"
+        @click="handleCreate"
+      >
+        新建部门
+      </el-button>
     </div>
 
     <el-table
+      v-loading="loading"
       :data="tableData"
       border
       row-key="id"
       default-expand-all
       :tree-props="{ children: 'children' }"
-      v-loading="loading"
     >
-      <el-table-column prop="name" label="部门名称" width="200" />
-      <el-table-column prop="code" label="编码" width="120" />
-      <el-table-column prop="manager.realName" label="负责人" width="120">
+      <el-table-column
+        prop="name"
+        label="部门名称"
+        width="200"
+      />
+      <el-table-column
+        prop="code"
+        label="编码"
+        width="120"
+      />
+      <el-table-column
+        prop="manager.realName"
+        label="负责人"
+        width="120"
+      >
         <template #default="{ row }">
           {{ row.manager?.realName || row.managerName || '-' }}
         </template>
       </el-table-column>
-      <el-table-column prop="phone" label="联系电话" width="140" />
-      <el-table-column label="排序" width="80" align="center">
-        <template #default="{ row }">{{ row.sortOrder }}</template>
-      </el-table-column>
-      <el-table-column label="状态" width="80" align="center">
+      <el-table-column
+        prop="phone"
+        label="联系电话"
+        width="140"
+      />
+      <el-table-column
+        label="排序"
+        width="80"
+        align="center"
+      >
         <template #default="{ row }">
-          <el-tag :type="row.isActive ? 'success' : 'info'" size="small">
+          {{ row.sortOrder }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        label="状态"
+        width="80"
+        align="center"
+      >
+        <template #default="{ row }">
+          <el-tag
+            :type="row.isActive ? 'success' : 'info'"
+            size="small"
+          >
             {{ row.isActive ? '启用' : '停用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="240" fixed="right">
+      <el-table-column
+        label="操作"
+        width="240"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-          <el-button link type="primary" @click="handleAddSub(row)">添加子部门</el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleEdit(row)"
+          >
+            编辑
+          </el-button>
+          <el-button
+            link
+            type="primary"
+            @click="handleAddSub(row)"
+          >
+            添加子部门
+          </el-button>
           <el-popconfirm
             title="确定删除该部门吗？"
             @confirm="handleDelete(row)"
           >
             <template #reference>
-              <el-button link type="danger">删除</el-button>
+              <el-button
+                link
+                type="danger"
+              >
+                删除
+              </el-button>
             </template>
           </el-popconfirm>
         </template>

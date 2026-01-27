@@ -360,14 +360,23 @@ defineExpose({
     >
       <template #default="{ node, data }">
         <div class="tree-node-content">
-          <el-icon v-if="data.children?.length" class="node-icon">
+          <el-icon
+            v-if="data.children?.length"
+            class="node-icon"
+          >
             <Folder />
           </el-icon>
-          <el-icon v-else class="node-icon">
+          <el-icon
+            v-else
+            class="node-icon"
+          >
             <Document />
           </el-icon>
           <span class="node-label">{{ node.label }}</span>
-          <span v-if="showUserCount && data.userCount" class="node-count">
+          <span
+            v-if="showUserCount && data.userCount"
+            class="node-count"
+          >
             ({{ data.userCount }})
           </span>
         </div>
