@@ -204,14 +204,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Cache node modules
         uses: actions/cache@v4
         with:
           path: frontend/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
@@ -247,14 +245,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Cache node modules
         uses: actions/cache@v4
         with:
           path: frontend/node_modules
-          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
 
@@ -300,8 +296,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Cache node modules
         uses: actions/cache@v4
@@ -315,7 +309,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: frontend/node_modules/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package-lock.json') }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package.json') }}
           restore-keys: |
             ${{ runner.os }}-playwright-
 
@@ -370,8 +364,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Set up Python
         uses: actions/setup-python@v5
