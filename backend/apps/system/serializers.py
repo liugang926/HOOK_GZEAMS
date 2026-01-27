@@ -18,7 +18,9 @@ from apps.system.models import (
     PageLayout,
     LayoutHistory,
     DynamicData,
-    DynamicSubTableData
+    DynamicSubTableData,
+    UserColumnPreference,
+    TabConfig,
 )
 
 
@@ -540,3 +542,193 @@ class DynamicSubTableDataUpdateSerializer(serializers.Serializer):
 
     row_data = serializers.JSONField(required=False)
     row_order = serializers.IntegerField(required=False)
+
+
+# ============================================================================
+# Column Preference and Tab Configuration Serializers
+# ============================================================================
+
+from apps.common.serializers.base import BaseListSerializer
+
+
+class UserColumnPreferenceSerializer(BaseModelSerializer):
+    """
+    Serializer for User Column Preference.
+
+    Handles user-specific column display configurations for list views.
+    """
+
+    username = serializers.CharField(
+        source='user.username',
+        read_only=True
+    )
+
+    class Meta(BaseModelSerializer.Meta):
+        model = UserColumnPreference
+        fields = BaseModelSerializer.Meta.fields + [
+            'user',
+            'username',
+            'object_code',
+            'column_config',
+            'config_name',
+            'is_default',
+        ]
+
+    def validate_column_config(self, value):
+        """Validate column_config is a valid JSON object."""
+        if not isinstance(value, dict):
+            raise serializers.ValidationError('column_config must be a JSON object')
+
+        # Validate structure
+        if 'columns' in value and not isinstance(value['columns'], list):
+            raise serializers.ValidationError('columns must be a list')
+
+        if 'columnOrder' in value and not isinstance(value['columnOrder'], list):
+            raise serializers.ValidationError('columnOrder must be a list')
+
+        return value
+
+
+class UserColumnPreferenceListSerializer(BaseListSerializer):
+    """
+    Optimized serializer for column preference list views.
+    """
+
+    username = serializers.CharField(
+        source='user.username',
+        read_only=True
+    )
+
+    class Meta(BaseListSerializer.Meta):
+        model = UserColumnPreference
+        fields = BaseListSerializer.Meta.fields + [
+            'user',
+            'username',
+            'object_code',
+            'config_name',
+            'is_default',
+        ]
+
+
+class UserColumnPreferenceUpsertSerializer(serializers.Serializer):
+    """
+    Serializer for upserting column preferences.
+
+    Used by the API endpoint that saves/updates user preferences.
+    """
+
+    column_config = serializers.JSONField(
+        required=True,
+        help_text='Column configuration with columns and columnOrder'
+    )
+
+    def validate_column_config(self, value):
+        """Validate column_config structure."""
+        if not isinstance(value, dict):
+            raise serializers.ValidationError('column_config must be a JSON object')
+
+        # Ensure columns is a list
+        if 'columns' in value and not isinstance(value['columns'], list):
+            raise serializers.ValidationError('columns must be a list')
+
+        # Ensure columnOrder is a list
+        if 'columnOrder' in value and not isinstance(value['columnOrder'], list):
+            raise serializers.ValidationError('columnOrder must be a list')
+
+        # Validate each column has field_code
+        if 'columns' in value:
+            for col in value['columns']:
+                if not isinstance(col, dict):
+                    raise serializers.ValidationError('Each column must be an object')
+                if 'field_code' not in col and 'prop' not in col:
+                    raise serializers.ValidationError('Each column must have field_code or prop')
+
+        return value
+
+
+class TabConfigSerializer(BaseModelSerializer):
+    """
+    Serializer for Tab Configuration.
+
+    Handles tab layout settings for forms and detail pages.
+    """
+
+    business_object_code = serializers.CharField(
+        source='business_object.code',
+        read_only=True
+    )
+    business_object_name = serializers.CharField(
+        source='business_object.name',
+        read_only=True
+    )
+    position_display = serializers.CharField(
+        source='get_position_display',
+        read_only=True
+    )
+    type_style_display = serializers.CharField(
+        source='get_type_style_display',
+        read_only=True
+    )
+
+    class Meta(BaseModelSerializer.Meta):
+        model = TabConfig
+        fields = BaseModelSerializer.Meta.fields + [
+            'business_object',
+            'business_object_code',
+            'business_object_name',
+            'name',
+            'position',
+            'position_display',
+            'type_style',
+            'type_style_display',
+            'stretch',
+            'lazy',
+            'animated',
+            'addable',
+            'draggable',
+            'tabs_config',
+            'is_active',
+        ]
+
+    def validate_tabs_config(self, value):
+        """Validate tabs_config is a valid JSON array."""
+        if not isinstance(value, list):
+            raise serializers.ValidationError('tabs_config must be a JSON array')
+
+        # Validate each tab has required fields
+        for tab in value:
+            if not isinstance(tab, dict):
+                raise serializers.ValidationError('Each tab must be an object')
+            if 'id' not in tab:
+                raise serializers.ValidationError('Each tab must have an id')
+            if 'title' not in tab:
+                raise serializers.ValidationError('Each tab must have a title')
+
+        return value
+
+
+class TabConfigListSerializer(BaseListSerializer):
+    """
+    Optimized serializer for tab configuration list views.
+    """
+
+    business_object_code = serializers.CharField(
+        source='business_object.code',
+        read_only=True
+    )
+    position_display = serializers.CharField(
+        source='get_position_display',
+        read_only=True
+    )
+
+    class Meta(BaseListSerializer.Meta):
+        model = TabConfig
+        fields = BaseListSerializer.Meta.fields + [
+            'business_object',
+            'business_object_code',
+            'name',
+            'position',
+            'position_display',
+            'type_style',
+            'is_active',
+        ]
