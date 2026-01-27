@@ -9,6 +9,8 @@ from apps.system.viewsets import (
     PageLayoutViewSet,
     DynamicDataViewSet,
     DynamicSubTableDataViewSet,
+    UserColumnPreferenceViewSet,
+    TabConfigViewSet,
 )
 
 router = DefaultRouter()
@@ -17,6 +19,8 @@ router.register(r'field-definitions', FieldDefinitionViewSet, basename='field-de
 router.register(r'page-layouts', PageLayoutViewSet, basename='page-layout')
 router.register(r'dynamic-data', DynamicDataViewSet, basename='dynamic-data')
 router.register(r'sub-table-data', DynamicSubTableDataViewSet, basename='sub-table-data')
+router.register(r'column-preferences', UserColumnPreferenceViewSet, basename='columnpreference')
+router.register(r'tab-configs', TabConfigViewSet, basename='tabconfig')
 
 app_name = 'system'
 

@@ -716,3 +716,204 @@ export const pageLayoutApi = {
         })
     }
 }
+
+// =============================================================================
+// Column Configuration API
+// =============================================================================
+
+export interface ColumnItem {
+    field_code: string
+    prop?: string  // Legacy support
+    label: string
+    label_override?: string
+    width?: number
+    defaultWidth?: number
+    fixed?: 'left' | 'right' | '' | null
+    sortable?: boolean
+    visible?: boolean
+    defaultVisible?: boolean
+    required_in_list?: boolean
+    field_type?: string
+}
+
+export interface ColumnConfig {
+    columns: ColumnItem[]
+    columnOrder?: string[]
+    source?: 'user' | 'default'
+}
+
+export const columnConfigApi = {
+    /**
+     * Get merged column configuration for object
+     * GET /api/system/column-preferences/for-object/{objectCode}/
+     */
+    get: (objectCode: string) => {
+        return request({
+            url: `/system/column-preferences/for-object/${objectCode}/`,
+            method: 'get'
+        })
+    },
+
+    /**
+     * Save user column configuration
+     * POST /api/system/column-preferences/upsert/
+     */
+    save: (objectCode: string, config: ColumnConfig) => {
+        return request({
+            url: '/system/column-preferences/upsert/',
+            method: 'post',
+            data: {
+                object_code: objectCode,
+                column_config: config
+            }
+        })
+    },
+
+    /**
+     * Reset column configuration to default
+     * POST /api/system/column-preferences/reset/
+     */
+    reset: (objectCode: string) => {
+        return request({
+            url: '/system/column-preferences/reset/',
+            method: 'post',
+            data: {
+                object_code: objectCode
+            }
+        })
+    },
+
+    /**
+     * List user preferences
+     * GET /api/system/column-preferences/
+     */
+    list: (params?: any) => {
+        return request({
+            url: '/system/column-preferences/',
+            method: 'get',
+            params
+        })
+    }
+}
+
+// =============================================================================
+// Tab Configuration API
+// =============================================================================
+
+export interface TabItem {
+    id: string
+    title: string
+    icon?: string
+    closable?: boolean
+    disabled?: boolean
+    badge?: string | number
+    permission?: string
+    visible?: boolean
+    lazy?: boolean
+    content?: any
+    component?: any
+    props?: Record<string, any>
+    slots?: Record<string, any>
+}
+
+export interface TabConfig {
+    id?: string
+    business_object?: string
+    business_object_code?: string
+    business_object_name?: string
+    name: string
+    position?: 'top' | 'left' | 'right' | 'bottom'
+    position_display?: string
+    type_style?: '' | 'card' | 'border-card'
+    type_style_display?: string
+    stretch?: boolean
+    lazy?: boolean
+    animated?: boolean
+    addable?: boolean
+    draggable?: boolean
+    tabs_config: TabItem[]
+    is_active?: boolean
+}
+
+export const tabConfigApi = {
+    /**
+     * Get tab configuration for business object
+     * GET /api/system/tab-configs/by-object/{businessObject}/
+     */
+    getByObject: (businessObject: string) => {
+        return request({
+            url: `/system/tab-configs/by-object/${businessObject}/`,
+            method: 'get'
+        })
+    },
+
+    /**
+     * Get single tab configuration
+     * GET /api/system/tab-configs/{id}/
+     */
+    get: (id: string) => {
+        return request({
+            url: `/system/tab-configs/${id}/`,
+            method: 'get'
+        })
+    },
+
+    /**
+     * List tab configurations
+     * GET /api/system/tab-configs/
+     */
+    list: (params?: any) => {
+        return request({
+            url: '/system/tab-configs/',
+            method: 'get',
+            params
+        })
+    },
+
+    /**
+     * Create tab configuration
+     * POST /api/system/tab-configs/
+     */
+    create: (config: Partial<TabConfig>) => {
+        return request({
+            url: '/system/tab-configs/',
+            method: 'post',
+            data: config
+        })
+    },
+
+    /**
+     * Update tab configuration
+     * PUT /api/system/tab-configs/{id}/
+     */
+    update: (id: string, config: Partial<TabConfig>) => {
+        return request({
+            url: `/system/tab-configs/${id}/`,
+            method: 'put',
+            data: config
+        })
+    },
+
+    /**
+     * Partial update tab configuration
+     * PATCH /api/system/tab-configs/{id}/
+     */
+    partialUpdate: (id: string, config: Partial<TabConfig>) => {
+        return request({
+            url: `/system/tab-configs/${id}/`,
+            method: 'patch',
+            data: config
+        })
+    },
+
+    /**
+     * Delete tab configuration
+     * DELETE /api/system/tab-configs/{id}/
+     */
+    delete: (id: string) => {
+        return request({
+            url: `/system/tab-configs/${id}/`,
+            method: 'delete'
+        })
+    }
+}
