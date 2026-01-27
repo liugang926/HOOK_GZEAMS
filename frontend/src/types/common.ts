@@ -120,3 +120,74 @@ export interface FieldConfig {
   precision?: number
   rows?: number
 }
+
+/**
+ * Tab item for DynamicTabs component
+ * Reference: docs/plans/common_base_features/tab_configuration.md
+ */
+export interface TabItem {
+  id?: string
+  name?: string
+  title: string
+  icon?: string
+  closable?: boolean
+  disabled?: boolean
+  badge?: string | number
+  permission?: string
+  visible?: boolean
+  lazy?: boolean
+  content?: any
+  component?: any
+  props?: Record<string, any>
+  slots?: Record<string, any>
+}
+
+/**
+ * Tab configuration for DynamicTabs component
+ */
+export interface TabConfig {
+  id?: string
+  business_object?: string
+  business_object_code?: string
+  business_object_name?: string
+  name: string
+  position?: 'top' | 'left' | 'right' | 'bottom'
+  position_display?: string
+  type_style?: '' | 'card' | 'border-card'
+  type_style_display?: string
+  stretch?: boolean
+  lazy?: boolean
+  animated?: boolean
+  addable?: boolean
+  draggable?: boolean
+  tabs_config: TabItem[]
+  is_active?: boolean
+}
+
+/**
+ * Column item for list table configuration
+ * Reference: docs/plans/common_base_features/list_column_configuration.md
+ */
+export interface ColumnItem {
+  field_code: string
+  prop?: string  // Legacy support
+  label: string
+  label_override?: string
+  width?: number
+  defaultWidth?: number
+  fixed?: 'left' | 'right' | '' | null
+  sortable?: boolean
+  visible?: boolean
+  defaultVisible?: boolean
+  required_in_list?: boolean
+  field_type?: string
+}
+
+/**
+ * Column configuration storage
+ */
+export interface ColumnConfig {
+  columns: ColumnItem[]
+  columnOrder?: string[]
+  source?: 'user' | 'default'
+}

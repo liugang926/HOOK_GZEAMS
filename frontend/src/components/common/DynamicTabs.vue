@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import type { TabItem } from '@/api/system'
+import type { TabItem } from '@/types/common'
 
 /**
  * DynamicTabs Component
