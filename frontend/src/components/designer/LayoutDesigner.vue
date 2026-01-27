@@ -815,7 +815,8 @@ async function handlePublish() {
         status: 'published'
       })
 
-      await pageLayoutApi.publish(createResult.data.id, {
+      // The request interceptor unwraps the response, so createResult is already the data
+      await pageLayoutApi.publish(createResult.id, {
         setAsDefault: true
       })
     }
@@ -866,17 +867,18 @@ async function loadLayout() {
   if (!props.layoutId) return
 
   try {
-    const response = await pageLayoutApi.detail(props.layoutId)
-    const layout = response.data
+    // The request interceptor unwraps { success: true, data: ... } automatically
+    // So the response is already the layout data
+    const layout = await pageLayoutApi.detail(props.layoutId)
 
     layoutConfig.value = layout.layoutConfig || getDefaultLayoutConfig(props.layoutType)
     isDefault.value = layout.isDefault
     isPublished.value = layout.status === 'published'
     layoutVersion.value = layout.version
 
-    // Load history
-    const historyResponse = await pageLayoutApi.history(props.layoutId)
-    layoutHistory.value = historyResponse.data || []
+    // Load history - also unwrapped by interceptor
+    const history = await pageLayoutApi.history(props.layoutId)
+    layoutHistory.value = history || []
   } catch (error) {
     console.error('Failed to load layout:', error)
   }

@@ -282,7 +282,7 @@
         :layout-type="currentLayout.layoutType"
         :layout-name="currentLayout.layoutName"
         :object-code="objectCode"
-        :business-object-id="currentLayout.business_object || ''"
+        :business-object-id="currentLayout.businessObject || ''"
         @cancel="designerVisible = false"
         @save="handleLayoutSaved"
         @published="handleLayoutSaved"
@@ -737,6 +737,7 @@ const handleLayoutSaved = async () => {
 const handleCustomize = async (row: PageLayout) => {
   try {
     // Create a custom layout from the system default
+    // The request interceptor unwraps the response, so customLayout is already the data
     const customLayout = await pageLayoutApi.create({
       layoutCode: `${row.layoutCode}_custom_${Date.now()}`,
       layoutName: row.layoutName.replace(' (系统默认)', ' (自定义)'),
@@ -750,7 +751,7 @@ const handleCustomize = async (row: PageLayout) => {
     })
     ElMessage.success('已创建自定义布局')
     // Open designer with the new custom layout
-    currentLayout.value = customLayout.data
+    currentLayout.value = customLayout
     designerVisible.value = true
     await loadData()
   } catch (error: any) {
