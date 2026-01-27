@@ -11,6 +11,7 @@ All ViewSets inherit from BaseModelViewSetWithBatch which provides:
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.request import Request
 from django.utils import timezone
 from django.db.models import Q
 from apps.common.viewsets.base import BaseModelViewSetWithBatch
@@ -21,7 +22,9 @@ from apps.system.models import (
     PageLayout,
     LayoutHistory,
     DynamicData,
-    DynamicSubTableData
+    DynamicSubTableData,
+    UserColumnPreference,
+    TabConfig,
 )
 from apps.system.serializers import (
     BusinessObjectSerializer,
@@ -38,6 +41,11 @@ from apps.system.serializers import (
     DynamicSubTableDataSerializer,
     DynamicSubTableDataCreateSerializer,
     DynamicSubTableDataUpdateSerializer,
+    UserColumnPreferenceSerializer,
+    UserColumnPreferenceListSerializer,
+    UserColumnPreferenceUpsertSerializer,
+    TabConfigSerializer,
+    TabConfigListSerializer,
 )
 from apps.system.filters import (
     BusinessObjectFilter,
@@ -1065,5 +1073,245 @@ class DynamicSubTableDataViewSet(BaseModelViewSetWithBatch):
             return BaseResponse.error(
                 code='NOT_FOUND',
                 message=f'Sub-table field "{field_code}" not found.',
+                http_status=status.HTTP_404_NOT_FOUND
+            )
+
+
+# ============================================================================
+# Column Preference and Tab Configuration ViewSets
+# ============================================================================
+
+from apps.system.services.column_config_service import ColumnConfigService
+
+
+class UserColumnPreferenceViewSet(BaseModelViewSetWithBatch):
+    """
+    ViewSet for User Column Preferences.
+
+    Provides endpoints for managing user-specific column display configurations.
+    Automatically filters to show only the current user's preferences.
+    """
+
+    queryset = UserColumnPreference.objects.filter(is_deleted=False)
+    serializer_class = UserColumnPreferenceSerializer
+    search_fields = ['object_code', 'config_name']
+    ordering_fields = ['object_code', 'created_at']
+    ordering = ['object_code']
+
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action."""
+        if self.action == 'list':
+            return UserColumnPreferenceListSerializer
+        return UserColumnPreferenceSerializer
+
+    def get_queryset(self):
+        """
+        Filter to show only current user's preferences.
+
+        Users can only see and manage their own column preferences.
+        """
+        queryset = super().get_queryset()
+        # Handle both DRF Request and plain WSGIRequest (for tests)
+        if hasattr(self.request, 'user'):
+            user = self.request.user
+            if user and user.is_authenticated:
+                queryset = queryset.filter(user=user)
+        return queryset
+
+    def perform_create(self, serializer):
+        """Set user from request when creating preference."""
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['post'], url_path='upsert')
+    def upsert(self, request):
+        """
+        Upsert column configuration for the current user.
+
+        Request body:
+        {
+            "object_code": "asset",
+            "column_config": {
+                "columns": [...],
+                "columnOrder": [...]
+            }
+        }
+
+        Creates a new preference or updates existing one.
+        Clears cache after saving.
+        """
+        # Ensure request is a DRF Request (for direct calls in tests)
+        if not isinstance(request, Request):
+            request = Request(request)
+
+        from apps.system.serializers import UserColumnPreferenceUpsertSerializer
+
+        serializer = UserColumnPreferenceUpsertSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        object_code = request.data.get('object_code')
+        column_config = serializer.validated_data['column_config']
+
+        # Use service to save
+        pref = ColumnConfigService.save_user_config(
+            request.user,
+            object_code,
+            column_config
+        )
+
+        return Response({
+            'success': True,
+            'data': UserColumnPreferenceSerializer(pref).data,
+            'message': 'Column configuration saved successfully.'
+        })
+
+    @action(detail=False, methods=['post'], url_path='reset')
+    def reset(self, request):
+        """
+        Reset column configuration to default.
+
+        Request body:
+        {
+            "object_code": "asset"
+        }
+
+        Deletes the user's preference, causing the system to
+        fall back to the default layout configuration.
+        """
+        # Ensure request is a DRF Request (for direct calls in tests)
+        if not isinstance(request, Request):
+            request = Request(request)
+
+        object_code = request.data.get('object_code')
+
+        if not object_code:
+            return Response({
+                'success': False,
+                'error': {
+                    'code': 'VALIDATION_ERROR',
+                    'message': 'object_code is required'
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        result = ColumnConfigService.reset_user_config(
+            request.user,
+            object_code
+        )
+
+        if result:
+            return Response({
+                'success': True,
+                'message': f'Column configuration reset to default for "{object_code}".'
+            })
+        else:
+            return Response({
+                'success': False,
+                'error': {
+                    'code': 'SERVER_ERROR',
+                    'message': 'Failed to reset configuration'
+                }
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'], url_path='for-object/(?P<object_code>[^/]+)')
+    def for_object(self, request, object_code=None):
+        """
+        Get merged column configuration for a business object.
+
+        Returns the merged configuration (user + default) for the
+        specified business object. This is the primary endpoint
+        that the frontend should use to get column configurations.
+
+        Response format:
+        {
+            "success": true,
+            "data": {
+                "columns": [...],
+                "columnOrder": [...],
+                "source": "user" | "default"
+            }
+        }
+        """
+        config = ColumnConfigService.get_column_config(request.user, object_code)
+
+        return Response({
+            'success': True,
+            'data': config
+        })
+
+
+class TabConfigViewSet(BaseModelViewSetWithBatch):
+    """
+    ViewSet for Tab Configurations.
+
+    Handles tab layout settings for forms and detail pages.
+    """
+
+    queryset = TabConfig.objects.filter(is_deleted=False, is_active=True)
+    serializer_class = TabConfigSerializer
+    search_fields = ['name']
+    ordering_fields = ['name', 'created_at']
+    ordering = ['name']
+
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action."""
+        if self.action == 'list':
+            return TabConfigListSerializer
+        return TabConfigSerializer
+
+    @action(detail=False, methods=['get'], url_path='by-object/(?P<object_code>[^/]+)')
+    def by_object(self, request, object_code=None):
+        """
+        Get tab configurations for a specific business object.
+
+        Returns all active tab configurations for the specified
+        business object, filtered by organization.
+
+        Response format:
+        {
+            "success": true,
+            "data": [
+                {
+                    "id": "...",
+                    "name": "form_tabs",
+                    "position": "top",
+                    "tabs_config": [...]
+                }
+            ]
+        }
+        """
+        try:
+            # Get business object - use all_objects to include global
+            business_object = BusinessObject.all_objects.get(
+                code=object_code,
+                is_deleted=False
+            )
+
+            # Get org_id from request context
+            org_id = getattr(request, 'organization_id', None)
+
+            # Query tab configs
+            configs_qs = TabConfig.objects.filter(
+                business_object=business_object,
+                is_active=True,
+                is_deleted=False
+            )
+
+            if org_id:
+                # Filter by organization
+                configs_qs = configs_qs.filter(
+                    Q(organization_id=org_id) | Q(organization__isnull=True)
+                )
+
+            configs = configs_qs.order_by('name')
+            serializer = TabConfigSerializer(configs, many=True)
+
+            return Response({
+                'success': True,
+                'data': serializer.data
+            })
+
+        except BusinessObject.DoesNotExist:
+            return BaseResponse.error(
+                code='NOT_FOUND',
+                message=f'Business object "{object_code}" not found.',
                 http_status=status.HTTP_404_NOT_FOUND
             )
