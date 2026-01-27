@@ -14,7 +14,7 @@ User = get_user_model()
 class TestUserService:
     """Test UserService class."""
 
-    def test_create_user(self, db, organization):
+    def test_create_user(self, db, organization, admin_user):
         """Test creating a user via service."""
         service = UserService()
         user_data = {
@@ -23,7 +23,7 @@ class TestUserService:
             'first_name': 'New',
             'last_name': 'User',
         }
-        user = service.create(user_data, organization)
+        user = service.create(user_data, user=admin_user)
         user.set_password('newpass123')
         user.save()
 
@@ -85,10 +85,12 @@ class TestUserService:
 
     def test_get_accessible_users_with_filters(self, user, organization):
         """Test filtering accessible users."""
+        import uuid
+        unique_suffix = uuid.uuid4().hex[:8]
         # Create another inactive user
         inactive = User.objects.create_user(
-            username='inactive',
-            email='inactive@example.com',
+            username=f'inactive_{unique_suffix}',
+            email=f'inactive{unique_suffix}@example.com',
             password='pass123',
             is_active=False
         )
@@ -173,11 +175,13 @@ class TestUserService:
 
     def test_batch_delete_users(self, db, organization):
         """Test batch deleting users."""
+        import uuid
+        unique_suffix = uuid.uuid4().hex[:8]
         users = []
         for i in range(3):
             test_user = User.objects.create_user(
-                username=f'user{i}',
-                email=f'user{i}@example.com',
+                username=f'user{unique_suffix}_{i}',
+                email=f'user{unique_suffix}_{i}@example.com',
                 password='pass123'
             )
             UserOrganization.objects.create(

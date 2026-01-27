@@ -574,7 +574,7 @@ class ITMaintenanceRecord(BaseModel):
     asset = models.ForeignKey(
         'assets.Asset',
         on_delete=models.CASCADE,
-        related_name='maintenance_records',
+        related_name='it_maintenance_records',
         help_text='Asset that was maintained'
     )
 

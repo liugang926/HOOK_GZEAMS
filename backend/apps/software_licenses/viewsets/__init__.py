@@ -169,19 +169,18 @@ class LicenseAllocationViewSet(BaseModelViewSetWithBatch):
 
     def perform_create(self, serializer):
         """Validate license availability before allocation."""
-        license_obj = serializer.validated_data['license']
+        license_id = serializer.validated_data['license'].id
+        # Fetch fresh license from DB to get accurate used_units
+        from apps.software_licenses.models import SoftwareLicense
+        from rest_framework.exceptions import ValidationError
+
+        license_obj = SoftwareLicense.objects.get(id=license_id)
 
         if license_obj.available_units() <= 0:
-            return Response(
-                {
-                    'success': False,
-                    'error': {
-                        'code': 'NO_AVAILABLE_LICENSES',
-                        'message': 'No available licenses for this software'
-                    }
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise ValidationError({
+                'detail': 'No available licenses for this software',
+                'code': 'NO_AVAILABLE_LICENSES'
+            })
 
         from django.utils import timezone
         serializer.save(

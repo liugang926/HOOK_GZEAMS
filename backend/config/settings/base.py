@@ -14,6 +14,10 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'dev-secret-key-change-in-production
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# Trust proxy headers when behind Vite proxy
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
+
 # Application definition
 DJANGO_APPS = [
     'django.contrib.admin',
@@ -51,6 +55,8 @@ LOCAL_APPS = [
     'apps.system',
     'apps.sso',
     'apps.integration',
+    'apps.finance',
+    'apps.depreciation',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -167,9 +173,16 @@ SIMPLE_JWT = {
 # CORS Settings
 CORS_ALLOWED_ORIGINS = os.getenv(
     'CORS_ALLOWED_ORIGINS',
-    'http://localhost:5173,http://127.0.0.1:5173'
+    'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174'
 ).split(',')
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for development
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+    'x-organization-id',
+    'x-csrftoken',
+]
 
 # Frontend URL for QR code generation and other features
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')

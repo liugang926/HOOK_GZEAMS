@@ -37,12 +37,17 @@ urlpatterns = [
     path('api/it-assets/', include('apps.it_assets.urls')),
     path('api/leasing/', include('apps.leasing.urls')),
     path('api/insurance/', include('apps.insurance.urls')),
+    path('api/finance/', include('apps.finance.urls')),
+    path('api/depreciation/', include('apps.depreciation.urls')),
 ]
 
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    # Django debug toolbar URLs
+    import debug_toolbar
+    urlpatterns += [path('__debug__/', include(debug_toolbar.urls)),]
 
 # Custom admin site config
 admin.site.site_header = 'GZEAMS Administration'

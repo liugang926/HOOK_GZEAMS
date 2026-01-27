@@ -105,6 +105,10 @@ class LicenseAllocationSerializer(BaseModelSerializer):
             'deallocated_date', 'deallocated_by', 'deallocated_by_name',
             'allocation_key', 'is_active', 'notes',
         ]
+        extra_kwargs = {
+            'allocated_date': {'required': False, 'read_only': True},
+            'allocated_by': {'required': False, 'read_only': True},
+        }
 
 
 class LicenseAllocationListSerializer(BaseModelSerializer):
