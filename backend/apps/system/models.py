@@ -3,10 +3,13 @@ Core metadata models for the low-code business object engine.
 
 This module contains the core models that enable dynamic business object
 configuration without code changes.
+
+Note: BusinessRule and RuleExecution models are in apps.system.models.business_rule
 """
 from django.db import models
 from django.core.exceptions import ValidationError
 from apps.common.models import BaseModel
+from apps.common.managers import GlobalMetadataManager
 
 
 class BusinessObject(BaseModel):
@@ -16,12 +19,21 @@ class BusinessObject(BaseModel):
     Examples: Asset, AssetPickup, AssetTransfer, InventoryTask, etc.
 
     Inherits from BaseModel:
-    - organization: Multi-tenant data isolation
+    - organization: Multi-tenant data isolation (FIELD KEPT for future use)
     - is_deleted: Soft delete support
     - created_at, updated_at: Audit timestamps
     - created_by: User who created this record
     - custom_fields: Additional metadata storage
+
+    Note: Uses GlobalMetadataManager instead of TenantManager because
+    BusinessObject definitions are shared across all organizations.
+    Individual organizations can customize layouts via PageLayout.
     """
+
+    # Use GlobalMetadataManager - metadata is NOT organization-filtered
+    objects = GlobalMetadataManager()
+    # Keep all_objects for admin access to all records including deleted
+    all_objects = models.Manager()
 
     # === Basic Information ===
     code = models.CharField(
@@ -101,6 +113,13 @@ class BusinessObject(BaseModel):
         db_comment='Custom action definitions (e.g., buttons, triggers)'
     )
 
+    # === Menu Configuration ===
+    menu_config = models.JSONField(
+        default=dict,
+        blank=True,
+        db_comment='Menu configuration (icon, group, order, show_in_menu)'
+    )
+
     class Meta:
         db_table = 'business_objects'
         verbose_name = 'Business Object'
@@ -147,8 +166,18 @@ class FieldDefinition(BaseModel):
     Supports 20+ field types including text, number, select, user reference,
     formula calculation, and sub-table (master-detail).
 
-    Inherits from BaseModel for organization isolation and audit trails.
+    Inherits from BaseModel for audit trails.
+    Uses GlobalMetadataManager because field definitions are shared
+    across all organizations for each BusinessObject.
+
+    Note: Individual organizations can customize field display via
+    PageLayout configuration, not by modifying FieldDefinition.
     """
+
+    # Use GlobalMetadataManager - field definitions are NOT organization-filtered
+    objects = GlobalMetadataManager()
+    # Keep all_objects for admin access
+    all_objects = models.Manager()
 
     # Field Type Choices
     FIELD_TYPE_CHOICES = [
@@ -593,16 +622,23 @@ class ModelFieldDefinition(BaseModel):
 
 class PageLayout(BaseModel):
     """
-    Page Layout - defines the layout configuration for forms, lists, etc.
+    Page Layout - defines UI layout for forms and lists.
 
-    The layout_config is a JSON structure defining:
-    - Sections with column layout
-    - Field grouping and ordering
-    - Conditional visibility rules
-    - Field permissions (read-only, hidden)
+    Supports tabbed sections, column configurations, and field
+    visibility rules.
 
-    Inherits from BaseModel for organization isolation and audit trails.
+    Inherits from BaseModel for audit trails.
+    Uses GlobalMetadataManager because while organizations CAN
+    have custom layouts, the base layout definitions are global.
+
+    Organization-specific customization is handled via the
+    organization ForeignKey on this model.
     """
+
+    # Use GlobalMetadataManager - layouts are NOT organization-filtered by default
+    # The organization field allows filtering for org-specific layouts
+    objects = GlobalMetadataManager()
+    all_objects = models.Manager()
 
     # Layout Type Choices
     LAYOUT_TYPE_CHOICES = [
@@ -1671,3 +1707,331 @@ class TabConfig(BaseModel):
 
     def __str__(self):
         return f"{self.business_object.code}.{self.name}"
+
+
+# =============================================================================
+# Business Rule Models
+# =============================================================================
+
+class RuleType(models.TextChoices):
+    """Business rule type choices."""
+    VALIDATION = 'validation', '校验规则'
+    VISIBILITY = 'visibility', '显示规则'
+    COMPUTED = 'computed', '计算规则'
+    TRIGGER = 'trigger', '触发规则'
+    LINKAGE = 'linkage', '联动规则'
+
+
+class TriggerEvent(models.TextChoices):
+    """Rule trigger event choices."""
+    CREATE = 'create', '创建时'
+    UPDATE = 'update', '更新时'
+    DELETE = 'delete', '删除时'
+    STATUS_CHANGE = 'status_change', '状态变更时'
+    FIELD_CHANGE = 'field_change', '字段变更时'
+    SUBMIT = 'submit', '提交时'
+    APPROVE = 'approve', '审批时'
+
+
+class BusinessRule(BaseModel):
+    """
+    Business Rule - defines configurable business logic.
+
+    Rules can control:
+    - Field visibility based on conditions
+    - Field validation beyond basic type checks
+    - Computed field values
+    - Automatic field updates on value changes
+    - Event-triggered actions
+
+    Uses JSON Logic (https://jsonlogic.com/) for condition expressions.
+    """
+
+    business_object = models.ForeignKey(
+        BusinessObject,
+        on_delete=models.CASCADE,
+        related_name='business_rules',
+        db_comment='Business object this rule belongs to'
+    )
+    rule_code = models.CharField(max_length=50, db_comment='Rule code')
+    rule_name = models.CharField(max_length=100, db_comment='Rule display name')
+    description = models.TextField(blank=True, db_comment='Rule description')
+    rule_type = models.CharField(
+        max_length=20,
+        choices=RuleType.choices,
+        default=RuleType.VALIDATION,
+        db_comment='Type of rule'
+    )
+    priority = models.IntegerField(default=0, db_comment='Execution priority (higher=first)')
+    is_active = models.BooleanField(default=True, db_comment='Is rule currently active')
+    condition = models.JSONField(default=dict, blank=True, db_comment='JSON Logic condition')
+    action = models.JSONField(default=dict, db_comment='Action to perform')
+    target_field = models.CharField(max_length=50, blank=True, db_comment='Target field code')
+    trigger_events = models.JSONField(default=list, blank=True, db_comment='Trigger events')
+    error_message = models.CharField(max_length=500, blank=True, db_comment='Error message')
+    error_message_en = models.CharField(max_length=500, blank=True, db_comment='English error message')
+
+    class Meta:
+        db_table = 'business_rules'
+        verbose_name = 'Business Rule'
+        verbose_name_plural = 'Business Rules'
+        unique_together = [['organization', 'business_object', 'rule_code']]
+        ordering = ['-priority', 'rule_type', 'rule_code']
+        indexes = [
+            models.Index(fields=['organization', 'business_object', 'rule_type']),
+            models.Index(fields=['organization', 'business_object', 'is_active']),
+        ]
+
+    def __str__(self):
+        return f"{self.business_object.code}.{self.rule_code} ({self.rule_name})"
+
+
+class RuleExecution(BaseModel):
+    """Rule Execution Log - tracks rule evaluation history."""
+
+    rule = models.ForeignKey(
+        BusinessRule,
+        on_delete=models.CASCADE,
+        related_name='executions',
+        db_comment='The rule that was executed'
+    )
+    target_record_id = models.UUIDField(db_comment='ID of the record being evaluated')
+    target_record_type = models.CharField(max_length=50, db_comment='Business object code')
+    trigger_event = models.CharField(max_length=50, db_comment='Event that triggered execution')
+    input_data = models.JSONField(default=dict, db_comment='Input data for evaluation')
+    condition_result = models.BooleanField(db_comment='Whether condition was true')
+    action_executed = models.BooleanField(default=False, db_comment='Whether action executed')
+    execution_result = models.JSONField(default=dict, db_comment='Execution result')
+    executed_at = models.DateTimeField(auto_now_add=True, db_comment='Execution timestamp')
+    execution_time_ms = models.IntegerField(null=True, db_comment='Execution time in ms')
+    has_error = models.BooleanField(default=False, db_comment='Whether an error occurred')
+    error_message = models.TextField(blank=True, db_comment='Error message if failed')
+
+    class Meta:
+        db_table = 'rule_executions'
+        verbose_name = 'Rule Execution'
+        verbose_name_plural = 'Rule Executions'
+        ordering = ['-executed_at']
+        indexes = [
+            models.Index(fields=['rule', '-executed_at']),
+            models.Index(fields=['target_record_id']),
+        ]
+
+    def __str__(self):
+        status = "✓" if self.condition_result else "✗"
+        return f"{self.rule.rule_code} {status} @ {self.executed_at}"
+
+
+# =============================================================================
+# Configuration Lifecycle Management Models
+# =============================================================================
+
+class PackageType(models.TextChoices):
+    """Package type choices."""
+    FULL = 'full', '完整导出'
+    PARTIAL = 'partial', '部分导出'
+    DIFF = 'diff', '差异导出'
+
+
+class ImportStrategy(models.TextChoices):
+    """Import strategy choices."""
+    MERGE = 'merge', '合并'
+    REPLACE = 'replace', '替换'
+    SKIP = 'skip', '跳过已存在'
+
+
+class ImportStatus(models.TextChoices):
+    """Import status choices."""
+    PENDING = 'pending', '待处理'
+    IN_PROGRESS = 'in_progress', '进行中'
+    SUCCESS = 'success', '成功'
+    PARTIAL = 'partial', '部分成功'
+    FAILED = 'failed', '失败'
+    ROLLED_BACK = 'rolled_back', '已回滚'
+
+
+class ConfigPackage(BaseModel):
+    """
+    Configuration Package - for exporting/importing business object configurations.
+    
+    Enables configuration versioning, environment deployment, and backup/restore.
+    """
+
+    name = models.CharField(
+        max_length=100,
+        db_comment='Package name'
+    )
+    version = models.CharField(
+        max_length=20,
+        db_comment='Semantic version (e.g., 1.0.0)'
+    )
+    description = models.TextField(
+        blank=True,
+        db_comment='Package description'
+    )
+    package_type = models.CharField(
+        max_length=20,
+        choices=PackageType.choices,
+        default=PackageType.FULL,
+        db_comment='Type of package'
+    )
+
+    # Included objects
+    included_objects = models.JSONField(
+        default=list,
+        db_comment='List of business object codes included'
+    )
+
+    # Configuration content
+    config_data = models.JSONField(
+        default=dict,
+        db_comment='Serialized configuration data'
+    )
+
+    # Export metadata
+    exported_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='exported_packages',
+        db_comment='User who exported this package'
+    )
+    exported_at = models.DateTimeField(
+        auto_now_add=True,
+        db_comment='Export timestamp'
+    )
+    source_environment = models.CharField(
+        max_length=50,
+        blank=True,
+        db_comment='Source environment name (dev/staging/prod)'
+    )
+
+    # Validation
+    checksum = models.CharField(
+        max_length=64,
+        blank=True,
+        db_comment='SHA256 checksum of config_data for integrity'
+    )
+    is_valid = models.BooleanField(
+        default=True,
+        db_comment='Whether package passed validation'
+    )
+    validation_errors = models.JSONField(
+        default=list,
+        blank=True,
+        db_comment='Validation error messages if any'
+    )
+
+    class Meta:
+        db_table = 'config_packages'
+        verbose_name = 'Configuration Package'
+        verbose_name_plural = 'Configuration Packages'
+        ordering = ['-exported_at']
+        indexes = [
+            models.Index(fields=['organization', 'name']),
+            models.Index(fields=['organization', '-exported_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.name} v{self.version}"
+
+
+class ConfigImportLog(BaseModel):
+    """
+    Configuration Import Log - tracks import history and enables rollback.
+    """
+
+    package = models.ForeignKey(
+        ConfigPackage,
+        on_delete=models.CASCADE,
+        related_name='import_logs',
+        db_comment='The package that was imported'
+    )
+    imported_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='config_imports',
+        db_comment='User who performed the import'
+    )
+    imported_at = models.DateTimeField(
+        auto_now_add=True,
+        db_comment='Import timestamp'
+    )
+    target_environment = models.CharField(
+        max_length=50,
+        blank=True,
+        db_comment='Target environment name'
+    )
+    import_strategy = models.CharField(
+        max_length=20,
+        choices=ImportStrategy.choices,
+        default=ImportStrategy.MERGE,
+        db_comment='Import strategy used'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=ImportStatus.choices,
+        default=ImportStatus.PENDING,
+        db_comment='Import status'
+    )
+
+    # Import results
+    import_result = models.JSONField(
+        default=dict,
+        db_comment='Import result details'
+    )
+    objects_created = models.IntegerField(
+        default=0,
+        db_comment='Number of objects created'
+    )
+    objects_updated = models.IntegerField(
+        default=0,
+        db_comment='Number of objects updated'
+    )
+    objects_skipped = models.IntegerField(
+        default=0,
+        db_comment='Number of objects skipped'
+    )
+    objects_failed = models.IntegerField(
+        default=0,
+        db_comment='Number of objects failed'
+    )
+
+    # Rollback data
+    rollback_data = models.JSONField(
+        default=dict,
+        blank=True,
+        null=True,
+        db_comment='Data snapshot for rollback'
+    )
+    can_rollback = models.BooleanField(
+        default=True,
+        db_comment='Whether this import can be rolled back'
+    )
+    rolled_back_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_comment='When rollback was performed'
+    )
+
+    # Error tracking
+    error_message = models.TextField(
+        blank=True,
+        db_comment='Error message if import failed'
+    )
+
+    class Meta:
+        db_table = 'config_import_logs'
+        verbose_name = 'Configuration Import Log'
+        verbose_name_plural = 'Configuration Import Logs'
+        ordering = ['-imported_at']
+        indexes = [
+            models.Index(fields=['package', '-imported_at']),
+            models.Index(fields=['organization', '-imported_at']),
+            models.Index(fields=['status']),
+        ]
+
+    def __str__(self):
+        return f"Import {self.package.name} v{self.package.version} @ {self.imported_at}"
+
