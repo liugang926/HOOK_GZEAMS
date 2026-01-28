@@ -78,6 +78,7 @@ npm run lint
 All backend business logic follows fixed modularization, no cross-module reference chaos is allowed:
 - `common`: **公共基类层 (Base Class Layer)** - Base abstract models, unified serializers/viewsets/services/filters, global shared utilities
   - `models.py`: BaseModel abstract base class (data isolation + soft delete + audit fields)
+  - `managers.py`: Custom Django managers (TenantManager, GlobalMetadataManager)
   - `serializers/base.py`: BaseModelSerializer (auto-serialize common fields + custom_fields)
   - `viewsets/base.py`: BaseModelViewSet (auto org filtering + soft delete + batch operations)
   - `services/base_crud.py`: BaseCRUDService (unified CRUD methods)
@@ -100,6 +101,42 @@ All backend business logic follows fixed modularization, no cross-module referen
 - ✅ Soft Delete: Contains `is_deleted`(bool) + `deleted_at`(datetime) fields + `soft_delete()` built-in method (physical delete forbidden)
 - ✅ Full Audit Log: Standard fields - `created_at`, `updated_at`, `created_by` (track all data operation sources)
 - ✅ Dynamic Extension: `custom_fields` (PostgreSQL JSONB type) for storing low-code defined dynamic field data
+
+##### Manager Types: When to Use Which
+
+GZEAMS provides two built-in managers for different data access patterns:
+
+| Manager Type | Location | Behavior | Use Case |
+|-------------|----------|----------|----------|
+| `TenantManager` | `apps.common.managers.TenantManager` | Filters by `organization_id` + `is_deleted=False` | Business data (Asset, Department, User, etc.) |
+| `GlobalMetadataManager` | `apps.common.managers.GlobalMetadataManager` | Filters ONLY by `is_deleted=False` (NO org filter) | System metadata (BusinessObject, FieldDefinition, etc.) |
+
+**Models using GlobalMetadataManager** (metadata is shared across all organizations):
+- `BusinessObject` - Defines business entities
+- `FieldDefinition` - Field metadata for business objects
+- `PageLayout` - Form/list layout configurations
+- `DictionaryType`, `DictionaryItem` - Dictionary metadata
+- `SequenceRule` - Sequence generation rules
+- `SystemConfig` - System configuration
+
+**How to declare the correct manager:**
+
+```python
+# For business data (organization-scoped)
+class Asset(BaseModel):
+    code = models.CharField(max_length=50)
+    name = models.CharField(max_length=200)
+    # Inherits TenantManager from BaseModel by default
+
+# For metadata (global, NOT organization-scoped)
+class BusinessObject(BaseModel):
+    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=200)
+
+    # Override default manager with GlobalMetadataManager
+    objects = GlobalMetadataManager()  # Filters is_deleted only, NOT organization
+    all_objects = models.Manager()    # Unfiltered, for admin access
+```
 
 ##### B. BaseModelSerializer (Serializers) - `apps/common/serializers/base.py`
 ✅ **All DRF Serializers MUST inherit from `BaseModelSerializer`** (non-negotiable)
@@ -207,6 +244,79 @@ class AssetService(BaseCRUDService):
 - Snapshot Design Pattern: Generate an immutable asset snapshot at inventory initiation, ensure business changes during inventory do not affect reconciliation results
 - Mobile First Adaptation: Optimized for mobile QR-code scanning operations, support offline scanning staging + batch online submission
 - Reconciliation Logic: Standardized discrepancy marking, approval for discrepancy settlement, and post-reconciliation asset state synchronization
+
+#### 4. Dynamic Object Routing System (New Architecture)
+
+GZEAMS adopts a unified dynamic object routing architecture where all business objects are accessed via `/api/objects/{code}/`.
+
+##### Core Principles
+
+**PROHIBITED: Creating independent URL configurations for new business objects**. All objects are accessed through a unified entry point, achieving true low-code extensibility.
+
+##### API Routing Specifications
+
+| Method | Endpoint | Description |
+|------|------|------|
+| GET | `/api/objects/{code}/` | List query (pagination, filtering, search) |
+| POST | `/api/objects/{code}/` | Create record |
+| GET | `/api/objects/{code}/{id}/` | Get detail |
+| PUT | `/api/objects/{code}/{id}/` | Full update |
+| PATCH | `/api/objects/{code}/{id}/` | Partial update |
+| DELETE | `/api/objects/{code}/{id}/` | Soft delete |
+| GET | `/api/objects/{code}/metadata/` | Get object metadata |
+
+##### Frontend API Call Specification
+
+```javascript
+import { createObjectClient } from '@/api/dynamic'
+
+// Create object client
+const api = createObjectClient('YourObjectCode')
+
+// Use standard CRUD methods
+await api.list({ page: 1, page_size: 20 })
+await api.create({ field1: 'value1' })
+await api.update(id, { field1: 'new_value' })
+await api.delete(id)
+await api.getMetadata()  // Get metadata for dynamic rendering
+```
+
+##### Complete Steps for Adding New Business Objects
+
+1. **Create Data Model** (inherit BaseModel)
+```python
+from apps.common.models import BaseModel
+
+class MyBusinessObject(BaseModel):
+    code = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=200)
+    # Automatically inherits: organization, is_deleted, created_at, updated_at, created_by, custom_fields
+```
+
+2. **Register Standard Object** (optional, for auto-creating BusinessObject records)
+```python
+# Add in ObjectRegistry.auto_register_standard_objects()
+{'code': 'MyObject', 'name': '我的对象', 'model': 'apps.my_module.models.MyBusinessObject'}
+```
+
+3. **No URL Configuration Needed** - Auto-effective
+
+4. **Frontend Call**
+```javascript
+const api = createObjectClient('MyObject')
+const data = await api.list()
+```
+
+##### Reserved Static Routes (System-Level)
+
+The following routes retain independent configuration and are not part of dynamic object routing:
+
+- `/api/auth/` - User authentication
+- `/api/organizations/` - Organization structure
+- `/api/system/business-objects/` - Metadata management
+- `/api/system/field-definitions/` - Field definitions
+- `/api/system/page-layouts/` - Page layouts
+- `/api/workflows/` - Workflow engine
 
 ##### E. Public Base Class Layer (Common Infrastructure)
 - **Eliminate Code Duplication**: All common logic (serialization, filtering, soft delete, org isolation) extracted to reusable base classes
