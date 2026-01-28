@@ -1079,7 +1079,14 @@ class DictionaryType(BaseModel):
     - Audit trail for all changes
 
     Inherits from BaseModel for organization isolation and audit trails.
+    Uses GlobalMetadataManager because dictionary types are global metadata
+    that can be shared across organizations.
     """
+
+    # Use GlobalMetadataManager - metadata is NOT organization-filtered
+    objects = GlobalMetadataManager()
+    # Keep all_objects for admin access
+    all_objects = models.Manager()
 
     code = models.CharField(
         max_length=50,
@@ -1135,7 +1142,14 @@ class DictionaryItem(BaseModel):
     Examples: For ASSET_STATUS: in_use, idle, maintenance, scrapped
 
     Inherits from BaseModel for organization isolation and audit trails.
+    Uses GlobalMetadataManager because dictionary items are global metadata
+    that can be shared across organizations.
     """
+
+    # Use GlobalMetadataManager - metadata is NOT organization-filtered
+    objects = GlobalMetadataManager()
+    # Keep all_objects for admin access
+    all_objects = models.Manager()
 
     dictionary_type = models.ForeignKey(
         DictionaryType,
@@ -1221,7 +1235,14 @@ class SequenceRule(BaseModel):
     Example pattern: "ZC{YYYY}{MM}{SEQ}" -> "ZC2026010001"
 
     Inherits from BaseModel for organization isolation and audit trails.
+    Uses GlobalMetadataManager because sequence rules are global metadata
+    that can be shared across organizations.
     """
+
+    # Use GlobalMetadataManager - metadata is NOT organization-filtered
+    objects = GlobalMetadataManager()
+    # Keep all_objects for admin access
+    all_objects = models.Manager()
 
     code = models.CharField(
         max_length=50,
@@ -1299,7 +1320,14 @@ class SystemConfig(BaseModel):
     - ENABLE_EMAIL_NOTIFICATIONS: true
 
     Inherits from BaseModel for organization isolation and audit trails.
+    Uses GlobalMetadataManager because system configs are global metadata
+    that can be shared across organizations.
     """
+
+    # Use GlobalMetadataManager - metadata is NOT organization-filtered
+    objects = GlobalMetadataManager()
+    # Keep all_objects for admin access
+    all_objects = models.Manager()
 
     config_key = models.CharField(
         max_length=100,

@@ -42,42 +42,37 @@ class DictionaryService(BaseCRUDService):
 
         try:
             # Look for organization-specific or global dictionary
-            q_filter = Q(code=type_code, is_deleted=False)
+            # DictionaryType uses GlobalMetadataManager (is_deleted filter handled automatically)
+            q_filter = Q(code=type_code)
             if organization_id:
                 q_filter &= (Q(organization_id=organization_id) | Q(organization_id__isnull=True))
             else:
                 q_filter &= Q(organization_id__isnull=True)
 
-            # Order by organization_id (not null first) to prioritize org-specific override
-            # But in Django, nulls sort order depends on DB. safer to sort by -created_at or manual check?
-            # Actually, if we have both, we want the org specific one.
-            # If we simply filter, we might get two.
-            # Let's simple check:
-            
-            candidates = DictionaryType.all_objects.filter(q_filter)
-            
+            candidates = DictionaryType.objects.filter(q_filter)
+
             # Prioritize organization specific match
             dict_type = None
             for dt in candidates:
                 if dt.organization_id == organization_id:
                     dict_type = dt
                     break
-            
+
             if not dict_type:
                 # Fallback to global
                 for dt in candidates:
                     if dt.organization_id is None:
                         dict_type = dt
                         break
-            
+
             if not dict_type:
                 return []
 
-            item_filters = {'dictionary_type': dict_type, 'is_deleted': False}
+            item_filters = {'dictionary_type': dict_type}
             if active_only:
                 item_filters['is_active'] = True
 
-            items = DictionaryItem.all_objects.filter(**item_filters).order_by('sort_order', 'code')
+            items = DictionaryItem.objects.filter(**item_filters).order_by('sort_order', 'code')
 
             return [
                 {
@@ -203,11 +198,12 @@ class SequenceService(BaseCRUDService):
 
         with transaction.atomic():
             # Lock the row for update
-            filters = {'code': rule_code, 'is_deleted': False, 'is_active': True}
+            # SequenceRule uses GlobalMetadataManager (is_deleted filter handled automatically)
+            filters = {'code': rule_code, 'is_active': True}
             if organization_id:
                 filters['organization_id'] = organization_id
 
-            rule = SequenceRule.all_objects.select_for_update().filter(**filters).first()
+            rule = SequenceRule.objects.select_for_update().filter(**filters).first()
 
             if not rule:
                 raise ValueError(f"Sequence rule '{rule_code}' not found")
@@ -283,11 +279,12 @@ class SequenceService(BaseCRUDService):
         """
         from apps.system.models import SequenceRule
 
-        filters = {'code': rule_code, 'is_deleted': False, 'is_active': True}
+        # SequenceRule uses GlobalMetadataManager (is_deleted filter handled automatically)
+        filters = {'code': rule_code, 'is_active': True}
         if organization_id:
             filters['organization_id'] = organization_id
 
-        rule = SequenceRule.all_objects.filter(**filters).first()
+        rule = SequenceRule.objects.filter(**filters).first()
 
         if not rule:
             raise ValueError(f"Sequence rule '{rule_code}' not found")
@@ -356,11 +353,12 @@ class SystemConfigService(BaseCRUDService):
         """
         from apps.system.models import SystemConfig
 
-        filters = {'config_key': key, 'is_deleted': False}
+        # SystemConfig uses GlobalMetadataManager (is_deleted filter handled automatically)
+        filters = {'config_key': key}
         if organization_id:
             filters['organization_id'] = organization_id
 
-        config = SystemConfig.all_objects.filter(**filters).first()
+        config = SystemConfig.objects.filter(**filters).first()
 
         if config:
             return config.get_typed_value()
@@ -395,11 +393,12 @@ class SystemConfigService(BaseCRUDService):
         else:
             str_value = str(value)
 
-        filters = {'config_key': key, 'is_deleted': False}
+        # SystemConfig uses GlobalMetadataManager (is_deleted filter handled automatically)
+        filters = {'config_key': key}
         if organization_id:
             filters['organization_id'] = organization_id
 
-        config = SystemConfig.all_objects.filter(**filters).first()
+        config = SystemConfig.objects.filter(**filters).first()
 
         if config:
             config.config_value = str_value
@@ -432,11 +431,12 @@ class SystemConfigService(BaseCRUDService):
         """
         from apps.system.models import SystemConfig
 
-        filters = {'category': category, 'is_deleted': False}
+        # SystemConfig uses GlobalMetadataManager (is_deleted filter handled automatically)
+        filters = {'category': category}
         if organization_id:
             filters['organization_id'] = organization_id
 
-        configs = SystemConfig.all_objects.filter(**filters)
+        configs = SystemConfig.objects.filter(**filters)
 
         return {
             config.config_key: config.get_typed_value()

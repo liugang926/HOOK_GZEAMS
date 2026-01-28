@@ -7,6 +7,10 @@ All ViewSets inherit from BaseModelViewSetWithBatch which provides:
 - Audit field auto-setting (created_by, updated_at)
 - Batch operations: /batch-delete/, /batch-restore/, /batch-update/
 - Deleted records management: /deleted/, /{id}/restore/
+
+Dynamic Object Routing:
+- ObjectRouterViewSet provides unified entry point for all business objects
+- URL: /api/system/objects/{code}/ routes to appropriate ViewSets
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -26,6 +30,9 @@ from apps.system.models import (
     UserColumnPreference,
     TabConfig,
 )
+
+# Import ObjectRouterViewSet for dynamic object routing
+from apps.system.viewsets.object_router import ObjectRouterViewSet
 from apps.system.serializers import (
     BusinessObjectSerializer,
     BusinessObjectDetailSerializer,
@@ -437,24 +444,18 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
         Also respects organization isolation.
         """
         try:
-            # Get business object - use all_objects to bypass org filtering
-            # This allows looking up global business objects (organization=None)
-            business_object = BusinessObject.all_objects.get(
-                code=object_code,
-                is_deleted=False
-            )
+            # BusinessObject uses GlobalMetadataManager (no org filtering)
+            business_object = BusinessObject.objects.get(code=object_code)
 
             # Get org_id from request context
             org_id = getattr(request, 'organization_id', None)
 
-            # Query layouts directly with organization filtering
-            # Use all_objects to bypass org filtering, then manually apply org filter
+            # Query layouts - PageLayout uses GlobalMetadataManager
             # Custom layouts (non-default) have priority
-            custom_layouts_qs = PageLayout.all_objects.filter(
+            custom_layouts_qs = PageLayout.objects.filter(
                 business_object=business_object,
                 is_active=True,
-                is_default=False,
-                is_deleted=False
+                is_default=False
             ).order_by('-created_at')
 
             # Apply organization filter if org_id is available
@@ -465,12 +466,10 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
 
             # Default layouts (as fallback)
             # Include both org-specific (organization_id=org_id) AND global defaults (organization__isnull=True)
-            # Use all_objects to bypass org filtering, then manually apply org filter
-            default_layouts_qs = PageLayout.all_objects.filter(
+            default_layouts_qs = PageLayout.objects.filter(
                 business_object=business_object,
                 is_active=True,
-                is_default=True,
-                is_deleted=False
+                is_default=True
             )
 
             if org_id:
@@ -505,12 +504,8 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
         Also respects organization isolation.
         """
         try:
-            # Get business object - use all_objects to bypass org filtering
-            # This allows looking up global business objects (organization=None)
-            business_object = BusinessObject.all_objects.get(
-                code=object_code,
-                is_deleted=False
-            )
+            # BusinessObject uses GlobalMetadataManager (no org filtering)
+            business_object = BusinessObject.objects.get(code=object_code)
 
             # Get org_id from request context
             org_id = getattr(request, 'organization_id', None)
@@ -519,8 +514,7 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
             base_filters = {
                 'business_object': business_object,
                 'layout_type': layout_type,
-                'is_active': True,
-                'is_deleted': False
+                'is_active': True
             }
 
             # Try custom layout first (priority)
@@ -1279,11 +1273,8 @@ class TabConfigViewSet(BaseModelViewSetWithBatch):
         }
         """
         try:
-            # Get business object - use all_objects to include global
-            business_object = BusinessObject.all_objects.get(
-                code=object_code,
-                is_deleted=False
-            )
+            # BusinessObject uses GlobalMetadataManager (no org filtering)
+            business_object = BusinessObject.objects.get(code=object_code)
 
             # Get org_id from request context
             org_id = getattr(request, 'organization_id', None)
@@ -1291,8 +1282,7 @@ class TabConfigViewSet(BaseModelViewSetWithBatch):
             # Query tab configs
             configs_qs = TabConfig.objects.filter(
                 business_object=business_object,
-                is_active=True,
-                is_deleted=False
+                is_active=True
             )
 
             if org_id:

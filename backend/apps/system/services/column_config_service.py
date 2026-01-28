@@ -69,19 +69,15 @@ class ColumnConfigService:
     def _get_default_config(cls, object_code: str) -> Dict[str, Any]:
         """Get default configuration from PageLayout."""
         try:
-            # Get business object (use all_objects to include global)
-            business_object = BusinessObject.all_objects.get(
-                code=object_code,
-                is_deleted=False
-            )
+            # BusinessObject uses GlobalMetadataManager (no org filtering)
+            business_object = BusinessObject.objects.get(code=object_code)
 
             # Get default list layout
             layout = PageLayout.objects.filter(
                 business_object=business_object,
                 layout_type='list',
                 is_default=True,
-                is_active=True,
-                is_deleted=False
+                is_active=True
             ).first()
 
             if layout:
