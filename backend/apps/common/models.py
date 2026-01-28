@@ -3,35 +3,8 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 import uuid
 
-
-class TenantManager(models.Manager):
-    """
-    Tenant-aware manager that automatically filters by organization.
-
-    Uses thread-local storage to get current organization context.
-    Automatically filters out soft-deleted records.
-    """
-
-    def get_queryset(self):
-        """
-        Get queryset with automatic organization and soft-delete filtering.
-
-        Returns:
-            QuerySet: Filtered queryset
-        """
-        queryset = super().get_queryset()
-
-        # Auto-filter by current organization from thread-local context
-        from apps.common.middleware import get_current_organization
-        org_id = get_current_organization()
-
-        if org_id:
-            queryset = queryset.filter(organization_id=org_id)
-
-        # Auto-filter out soft-deleted records
-        queryset = queryset.filter(is_deleted=False)
-
-        return queryset
+# Import managers from the dedicated managers module
+from apps.common.managers import TenantManager, GlobalMetadataManager
 
 
 class BaseModel(models.Model):
