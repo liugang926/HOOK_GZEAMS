@@ -1,172 +1,87 @@
 <template>
   <div class="return-list">
-    <!-- Header -->
-    <div class="page-header">
-      <div class="header-title">
-        <span class="title-text">资产退库单</span>
-      </div>
-      <div class="header-actions">
+    <BaseListPage
+      ref="listRef"
+      :title="$t('assets.return.listTitle')"
+      object-code="AssetReturn"
+      :search-fields="searchFields"
+      :table-columns="columns"
+      :api="fetchReturnList"
+    >
+      <template #toolbar>
         <el-button
           type="primary"
           :icon="Plus"
           @click="handleCreate"
         >
-          新建退库单
+          {{ $t('assets.return.createButton') }}
         </el-button>
-      </div>
-    </div>
+      </template>
 
-    <!-- Filters -->
-    <el-card
-      class="filter-card"
-      shadow="never"
-    >
-      <el-form
-        :model="filterForm"
-        inline
-      >
-        <el-form-item label="状态">
-          <el-select
-            v-model="filterForm.status"
-            clearable
-            placeholder="全部状态"
-            @change="handleSearch"
+      <template #actions="{ row }">
+        <div v-if="row.status === 'pending'">
+          <el-button
+            link
+            type="success"
+            @click="handleApprove(row)"
           >
-            <el-option
-              label="待审批"
-              value="pending"
-            />
-            <el-option
-              label="已批准"
-              value="approved"
-            />
-            <el-option
-              label="已拒绝"
-              value="rejected"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="搜索">
-          <el-input
-            v-model="filterForm.search"
-            placeholder="资产名称/单号"
-            clearable
-            @keyup.enter="handleSearch"
+            {{ $t('common.actions.approve') }}
+          </el-button>
+          <el-button
+            link
+            type="danger"
+            @click="handleReject(row)"
           >
-            <template #append>
-              <el-button
-                :icon="Search"
-                @click="handleSearch"
-              />
-            </template>
-          </el-input>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- Table -->
-    <el-card shadow="never">
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        style="width: 100%"
-      >
-        <el-table-column
-          prop="return_no"
-          label="退库单号"
-          width="150"
-        />
-        <el-table-column
-          prop="asset.name"
-          label="资产名称"
-          width="120"
-        />
-        <el-table-column
-          prop="return_date"
-          label="退库日期"
-          width="110"
-        />
-        <el-table-column
-          prop="applicant.real_name"
-          label="退库人"
-          width="100"
-        />
-        <el-table-column
-          prop="created_at"
-          label="申请时间"
-          width="160"
-        />
-        <el-table-column
-          label="状态"
-          width="100"
-        >
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ getStatusLabel(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="操作"
-          width="200"
-          fixed="right"
-        >
-          <template #default="{ row }">
-            <div v-if="row.status === 'pending'">
-              <el-button
-                link
-                type="success"
-                @click="handleApprove(row)"
-              >
-                批准
-              </el-button>
-              <el-button
-                link
-                type="danger"
-                @click="handleReject(row)"
-              >
-                拒绝
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- Pagination -->
-      <div class="pagination-footer">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.pageSize"
-          :total="pagination.total"
-          layout="total, prev, pager, next"
-          @current-change="fetchData"
-        />
-      </div>
-    </el-card>
+            {{ $t('common.actions.reject') }}
+          </el-button>
+        </div>
+      </template>
+    </BaseListPage>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, Search } from '@element-plus/icons-vue'
+import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+import BaseListPage from '@/components/common/BaseListPage.vue'
+import type { TableColumn, SearchField } from '@/types/common'
 import { returnApi } from '@/api/assets/return'
 
 const router = useRouter()
-const loading = ref(false)
-const tableData = ref([])
+const { t } = useI18n()
+const listRef = ref()
 
-const filterForm = reactive({
-  status: '',
-  search: ''
-})
+const searchFields = computed<SearchField[]>(() => [
+  {
+    prop: 'status',
+    label: t('assets.search.status'),
+    type: 'select',
+    options: [
+      { label: t('assets.status.pending'), value: 'pending' },
+      { label: t('assets.status.approved'), value: 'approved' },
+      { label: t('assets.status.rejected'), value: 'rejected' }
+    ]
+  },
+  {
+    prop: 'search',
+    label: t('common.actions.search'),
+    type: 'text',
+    placeholder: t('assets.search.keywordPlaceholder')
+  }
+])
 
-const pagination = reactive({
-  page: 1,
-  pageSize: 20,
-  total: 0
-})
+const columns = computed<TableColumn[]>(() => [
+  { prop: 'returnNo', label: t('assets.return.columns.returnNo'), width: 150 },
+  { prop: 'asset.name', label: t('assets.return.columns.assetName'), width: 120 },
+  { prop: 'returnDate', label: t('assets.return.columns.returnDate'), width: 110, dateFormatter: 'YYYY-MM-DD' },
+  { prop: 'applicant.realName', label: t('assets.return.columns.applicant'), width: 100 },
+  { prop: 'createdAt', label: t('assets.return.columns.applyTime'), width: 160, dateFormatter: 'YYYY-MM-DD HH:mm:ss' },
+  { prop: 'status', label: t('assets.return.columns.status'), width: 100, tagType: (row: any) => getStatusType(row.status), format: (value: any, row: any) => row?.statusLabel || getStatusLabel(value) },
+  { prop: 'actions', label: t('common.labels.operation'), width: 200, slot: true, fixed: 'right' }
+])
 
 const getStatusType = (status: string) => {
   const map: any = { pending: 'warning', approved: 'success', rejected: 'danger' }
@@ -174,63 +89,59 @@ const getStatusType = (status: string) => {
 }
 
 const getStatusLabel = (status: string) => {
-  const map: any = { pending: '待审批', approved: '已批准', rejected: '已拒绝' }
+  const map: any = {
+    pending: t('assets.status.pending'),
+    approved: t('assets.status.approved'),
+    rejected: t('assets.status.rejected')
+  }
   return map[status] || status
 }
 
-const fetchData = async () => {
-  loading.value = true
-  try {
-    const res = await returnApi.list({
-      ...filterForm,
-      page: pagination.page,
-      pageSize: pagination.pageSize
-    })
-    tableData.value = res.items || res.results || []
-    pagination.total = res.total || res.count || 0
-  } finally {
-    loading.value = false
+const fetchReturnList = async (params: any) => {
+  const res = await returnApi.list({
+    ...params,
+    page_size: params.pageSize
+  }) as any
+  return {
+    results: res.items || res.results || [],
+    count: res.total || res.count || 0
   }
 }
 
-const handleSearch = () => {
-    pagination.page = 1
-    fetchData()
-}
-
 const handleCreate = () => {
-    router.push('/assets/operations/return/create')
+  router.push('/assets/operations/return/create')
 }
 
 const handleApprove = async (row: any) => {
-    try {
-        await ElMessageBox.confirm('确定批准此退库申请吗？', '提示', { type: 'success' })
-        await returnApi.approve(row.id)
-        ElMessage.success('已批准')
-        fetchData()
-    } catch {}
+  try {
+    await ElMessageBox.confirm(t('assets.return.messages.confirmApprove'), t('common.status.info'), { type: 'success' })
+    await returnApi.approve(row.id)
+    ElMessage.success(t('assets.return.messages.approveSuccess'))
+    listRef.value?.refresh()
+  } catch (error) {
+    if (error && error !== 'cancel') {
+      // ignore non-cancel errors here
+    }
+  }
 }
 
 const handleReject = async (row: any) => {
-    try {
-        const { value } = await ElMessageBox.prompt('请输入拒绝理由', '拒绝申请', {
-            inputPattern: /\S+/,
-            inputErrorMessage: '理由不能为空'
-        })
-        await returnApi.reject(row.id, value)
-        ElMessage.success('已拒绝')
-        fetchData()
-    } catch {}
+  try {
+    const { value } = await ElMessageBox.prompt(t('assets.return.messages.confirmReject'), t('common.actions.reject'), {
+      inputPattern: /\S+/,
+      inputErrorMessage: t('assets.return.messages.rejectReasonRequired')
+    })
+    await returnApi.reject(row.id, value)
+    ElMessage.success(t('assets.return.messages.rejectSuccess'))
+    listRef.value?.refresh()
+  } catch (error) {
+    if (error && error !== 'cancel') {
+      // ignore non-cancel errors here
+    }
+  }
 }
-
-onMounted(() => {
-    fetchData()
-})
 </script>
 
 <style scoped>
 .return-list { padding: 20px; }
-.page-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
-.title-text { font-size: 20px; font-weight: 500; }
-.pagination-footer { margin-top: 20px; display: flex; justify-content: flex-end; }
 </style>

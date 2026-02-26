@@ -1,7 +1,62 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { Refresh, Download } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import BaseListPage from '@/components/common/BaseListPage.vue'
+import DepreciationGenerator from './components/DepreciationGenerator.vue'
+import { depreciationApi } from '@/api/depreciation'
+import { formatMoney } from '@/utils/numberFormat'
+
+const fetchRecords = async (params: any) => {
+  return depreciationApi.listRecords(params)
+}
+
+const { t } = useI18n()
+
+const showGenerator = ref(false)
+
+const searchFields = computed(() => [
+  { prop: 'period', label: t('finance.columns.period'), type: 'month', placeholder: t('common.placeholders.select') },
+  { prop: 'assetId', label: t('common.labels.assetForSearch') || 'Asset', type: 'input', placeholder: t('common.placeholders.input') }
+])
+
+const columns = computed(() => [
+  { prop: 'period', label: t('finance.columns.period'), width: '120' },
+  { prop: 'assetCode', label: t('finance.columns.assetId'), width: '150' },
+  { prop: 'assetName', label: t('common.columns.name') || 'Asset Name', minWidth: '180' },
+  { prop: 'depreciationAmount', label: t('finance.columns.depreciationAmount'), width: '180', align: 'right', format: (v: any) => formatMoney(Number(v || 0)) },
+  { prop: 'netValue', label: t('finance.columns.netValue') || 'Net Value', width: '180', align: 'right', format: (v: any) => formatMoney(Number(v || 0)) },
+  { prop: 'status', label: t('common.columns.status'), width: '120', format: (_v: any, row: any) => row?.statusDisplay || row?.status || '-' },
+  { prop: 'createdAt', label: t('common.columns.createdAt'), width: '180' },
+  { prop: 'actions', label: t('common.columns.actions'), fixed: 'right', width: '100' },
+])
+
+const handleExport = async () => {
+  try {
+    const period = new Date().toISOString().slice(0, 7)
+    const blob = await depreciationApi.exportReport({ period, format: 'csv' })
+    const url = window.URL.createObjectURL(blob as any)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `depreciation_report_${period}.csv`
+    a.click()
+    window.URL.revokeObjectURL(url)
+    ElMessage.success(t('common.messages.operationSuccess'))
+  } catch (e: any) {
+    ElMessage.error(e?.message || t('common.messages.operationFailed'))
+  }
+}
+
+const handleGeneratorSuccess = () => {
+  window.dispatchEvent(new CustomEvent('refresh-base-list'))
+}
+</script>
+
 <template>
   <div class="depreciation-list-page">
     <BaseListPage
-      title="折旧管理"
+      :title="t('finance.depreciationList')"
       :search-fields="searchFields"
       :table-columns="columns"
       :api="fetchRecords"
@@ -10,79 +65,26 @@
       <template #toolbar>
         <el-button
           type="primary"
-          :icon="Calculator"
+          :icon="Refresh"
           @click="showGenerator = true"
         >
-          计提折旧
+          {{ t('finance.actions.calculateDepreciation') }}
         </el-button>
         <el-button
           :icon="Download"
           @click="handleExport"
         >
-          导出报表
+          {{ t('common.actions.export') }}
         </el-button>
-      </template>
-
-      <template #cell-depreciationAmount="{ row }">
-        <span class="money-text">¥{{ formatMoney(row.depreciationAmount) }}</span>
-      </template>
-
-      <template #status="{ row }">
-        <el-tag>{{ row.status }}</el-tag>
       </template>
     </BaseListPage>
 
     <DepreciationGenerator
       v-model="showGenerator"
-      @success="handleGenerateSuccess"
+      @success="handleGeneratorSuccess"
     />
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue'
-import { Download } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
-import BaseListPage from '@/components/common/BaseListPage.vue'
-import DepreciationGenerator from './components/DepreciationGenerator.vue'
-import { depreciationApi } from '@/api/depreciation'
-import { formatMoney } from '@/utils/numberFormat'
-
-// Mock icon for Calculator if not available, or import specific
-import { VideoPlay as Calculator } from '@element-plus/icons-vue' 
-
-const showGenerator = ref(false)
-
-const columns = [
-  { prop: 'assetCode', label: '资产编码', width: 140 },
-  { prop: 'assetName', label: '资产名称', minWidth: 150 },
-  { prop: 'period', label: '期间', width: 100 },
-  { prop: 'depreciationAmount', label: '本期折旧', width: 120, slot: true, align: 'right' },
-  { prop: 'accumulatedDepreciation', label: '累计折旧', width: 120, align: 'right' },
-  { prop: 'netValue', label: '净值', width: 120, align: 'right' },
-  { prop: 'status', label: '状态', width: 100 } // posted, draft
-]
-
-const searchFields = [
-  { field: 'period', label: '期间', type: 'month', placeholder: '选择月份' },
-  { field: 'assetId', label: '资产', type: 'input', placeholder: '输入资产编码/名称' } // Ideally AssetSelector
-]
-
-const fetchRecords = async (params: any) => {
-  return await depreciationApi.listRecords(params)
-}
-
-const handleExport = () => {
-  ElMessage.info('导出功能开发中')
-}
-
-const handleGenerateSuccess = () => {
-  window.dispatchEvent(new CustomEvent('refresh-base-list'))
-}
-</script>
-
 <style scoped>
-.money-text {
-  font-family: monospace;
-}
 </style>

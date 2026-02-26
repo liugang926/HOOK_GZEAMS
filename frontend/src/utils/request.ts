@@ -2,13 +2,17 @@
  * Axios Instance with Interceptors
  *
  * Centralized HTTP client with automatic field transformation and error handling.
+ *
+ * Architecture Note:
+ * - Backend uses djangorestframework-camel-case for automatic camelCase conversion
+ * - Response data is already in camelCase format (no transformation needed)
+ * - Request data is sent as camelCase (backend parser handles conversion to snake_case)
+ *
  * Reference: docs/plans/common_base_features/00_core/frontend_api_standardization_design.md
  */
 
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
-import { ElMessage } from 'element-plus'
 import type { ApiResponse } from '@/types/api'
-import { toCamelCase, toSnakeCase } from '@/utils/transform'
 import { handleApiError } from '@/utils/errorHandler'
 
 /**
@@ -26,31 +30,39 @@ const request: AxiosInstance = axios.create({
  * Request interceptor
  * - Add authorization token
  * - Add organization header
- * - Transform request data from camelCase to snake_case
+ * - Add Accept-Language header
+ * - Data is sent as camelCase (backend parser handles conversion to snake_case)
  */
 request.interceptors.request.use(
   (config) => {
+    // Normalize legacy URLs that accidentally include the API prefix.
+    // Since axios `baseURL` already includes `/api`, passing `/api/...` would become `/api/api/...` and 404.
+    if (typeof config.url === 'string' && config.url.startsWith('/api/')) {
+      config.url = config.url.slice('/api'.length)
+    }
+
+    const noAuth = (config as any).noAuth === true
+
     // Add authorization header
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+    if (!noAuth) {
+      const token = localStorage.getItem('access_token')
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+
+      // Add organization header
+      const orgId = localStorage.getItem('current_org_id')
+      if (orgId) {
+        config.headers['X-Organization-ID'] = orgId
+      }
+
+      // Add Accept-Language header for i18n
+      const locale = localStorage.getItem('locale') || 'zh-CN'
+      config.headers['Accept-Language'] = locale
     }
 
-    // Add organization header
-    const orgId = localStorage.getItem('current_org_id')
-    if (orgId) {
-      config.headers['X-Organization-ID'] = orgId
-    }
-
-    // Transform request data to snake_case
-    if (config.data && typeof config.data === 'object' && !(config.data instanceof FormData)) {
-      config.data = toSnakeCase(config.data)
-    }
-
-    // Transform request params to snake_case
-    if (config.params && typeof config.params === 'object') {
-      config.params = toSnakeCase(config.params)
-    }
+    // Note: Data and params are sent as camelCase
+    // Backend's CamelCaseJSONParser handles conversion to snake_case
 
     return config
   },
@@ -59,37 +71,48 @@ request.interceptors.request.use(
 
 /**
  * Response interceptor
- * - Transform response data from snake_case to camelCase
  * - Handle unified response format
  * - Handle errors consistently
+ * - Note: Response data is already in camelCase from backend renderer
  */
 request.interceptors.response.use(
   (response: AxiosResponse) => {
     const { data } = response
+    const unwrap = (response.config as any)?.unwrap ?? 'auto'
 
     // Handle empty responses (204 No Content)
     if (!data) {
       return response
     }
 
-    // Transform snake_case to camelCase
-    const camelData = toCamelCase(data)
+    if (unwrap === 'none') {
+      return data
+    }
 
+    // Data is already in camelCase from backend's CamelCaseJSONRenderer
     // Unwrap unified response format
-    if (typeof camelData === 'object' && 'success' in camelData) {
-      const apiResponse = camelData as ApiResponse
+    if (typeof data === 'object' && 'success' in data) {
+      const apiResponse = data as ApiResponse
 
       // Handle error responses
       if (!apiResponse.success && apiResponse.error) {
-        return Promise.reject(new ApiErrorWrapper(apiResponse.error))
+        const err = new ApiErrorWrapper(apiResponse.error)
+        ;(err as any).config = response.config
+        return Promise.reject(err)
       }
 
-      // Return data directly for success responses
-      return apiResponse.data
+      if (unwrap === 'data') {
+        return apiResponse.data
+      }
+
+      // `auto`: Only unwrap when the response actually follows the `{ success, data }` contract.
+      // Some endpoints return `{ success, message, summary, results }` (no `data` field).
+      if ('data' in apiResponse || 'error' in apiResponse) return apiResponse.data
+      return data
     }
 
     // Return data as-is for non-unified responses (legacy endpoints, blob, etc.)
-    return camelData
+    return data
   },
   (error) => handleApiError(error)
 )

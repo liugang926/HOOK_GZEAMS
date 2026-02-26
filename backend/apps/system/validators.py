@@ -3,16 +3,189 @@ Layout validators for validating page layout configurations.
 
 This module provides validation functions for layout JSON structures,
 ensuring they conform to the expected schema before saving to database.
+
+Unified Layout System:
+- All layouts (edit/readonly/search) use sections-based structure
+- List layouts are auto-generated from FieldDefinition.show_in_list
+- Legacy layout_type is supported for backward compatibility
 """
 from rest_framework.exceptions import ValidationError
 from typing import Dict, Any, List
 
 
+def _is_dict(v: Any) -> bool:
+    return isinstance(v, dict)
+
+
+def _is_list(v: Any) -> bool:
+    return isinstance(v, list)
+
+
+def _normalize_candidate(value: str) -> str:
+    raw = (value or '').strip()
+    if not raw:
+        return ''
+    raw = raw.replace('-', '_')
+    raw = '_'.join(raw.split())
+    out = []
+    for ch in raw:
+        if ch.isalnum() or ch == '_':
+            out.append(ch)
+        else:
+            out.append('_')
+    s = ''.join(out)
+    while '__' in s:
+        s = s.replace('__', '_')
+    return s.strip('_').lower()
+
+
+def _camel_to_snake(value: str) -> str:
+    s = (value or '').strip()
+    if not s:
+        return ''
+    out = []
+    for ch in s:
+        if ch.isupper():
+            if out:
+                out.append('_')
+            out.append(ch.lower())
+        else:
+            out.append(ch)
+    return _normalize_candidate(''.join(out))
+
+
+def sanitize_layout_config_field_codes(
+    config: Dict[str, Any],
+    allowed_codes: set,
+    *,
+    strict_on_whitespace: bool = True,
+) -> Dict[str, Any]:
+    """
+    Best-effort sanitize `fieldCode` values in sections-based layout configs.
+
+    This prevents a high-impact data-quality issue where `fieldCode` is persisted
+    as a human label (e.g. "asset code") instead of the canonical code (e.g. "asset_code"),
+    which causes readonly/detail pages to render empty values.
+
+    Scope:
+    - Only touches configs that contain `sections` (edit/readonly/search forms).
+    - Leaves list/table configs (`columns`) to their own rules (actions columns etc.).
+    """
+    if not _is_dict(config) or not allowed_codes:
+        return config
+    if not _is_list(config.get('sections')):
+        return config
+
+    def resolve_code(raw: str) -> str:
+        if not raw:
+            return raw
+        if raw in allowed_codes:
+            return raw
+        if any(ch.isupper() for ch in raw):
+            snake = _camel_to_snake(raw)
+            if snake in allowed_codes:
+                return snake
+        normalized = _normalize_candidate(raw)
+        if normalized in allowed_codes:
+            return normalized
+        return raw
+
+    def sanitize_field(field: Any, path: str) -> Any:
+        if not _is_dict(field):
+            return field
+        raw = str(field.get('fieldCode') or field.get('field_code') or field.get('field') or field.get('code') or '').strip()
+        if not raw:
+            return field
+
+        resolved = resolve_code(raw)
+        if resolved == raw and resolved not in allowed_codes:
+            if strict_on_whitespace and (' ' in raw or '\t' in raw or '\n' in raw):
+                raise LayoutValidationError(
+                    "Invalid fieldCode: looks like a label (contains whitespace). Use canonical field code instead.",
+                    field_path=f"{path}.fieldCode"
+                )
+            return field
+
+        if resolved != raw:
+            next_field = dict(field)
+            next_field['fieldCode'] = resolved
+            if 'field_code' in next_field:
+                next_field['field_code'] = resolved
+            if 'field' in next_field:
+                next_field['field'] = resolved
+            if 'code' in next_field:
+                next_field['code'] = resolved
+            return next_field
+
+        return field
+
+    def sanitize_section(section: Any, path: str) -> Any:
+        if not _is_dict(section):
+            return section
+        stype = section.get('type') or 'section'
+        next_section = dict(section)
+
+        if stype == 'tab':
+            tabs = next_section.get('tabs') or []
+            if _is_list(tabs):
+                next_tabs = []
+                for i, tab in enumerate(tabs):
+                    if _is_dict(tab):
+                        nt = dict(tab)
+                        fields = nt.get('fields') or []
+                        if _is_list(fields):
+                            nt['fields'] = [sanitize_field(f, f"{path}.tabs[{i}].fields[{j}]") for j, f in enumerate(fields)]
+                        next_tabs.append(nt)
+                    else:
+                        next_tabs.append(tab)
+                next_section['tabs'] = next_tabs
+            return next_section
+
+        if stype == 'collapse':
+            items = next_section.get('items') or []
+            if _is_list(items):
+                next_items = []
+                for i, item in enumerate(items):
+                    if _is_dict(item):
+                        ni = dict(item)
+                        fields = ni.get('fields') or []
+                        if _is_list(fields):
+                            ni['fields'] = [sanitize_field(f, f"{path}.items[{i}].fields[{j}]") for j, f in enumerate(fields)]
+                        next_items.append(ni)
+                    else:
+                        next_items.append(item)
+                next_section['items'] = next_items
+            return next_section
+
+        fields = next_section.get('fields') or []
+        if _is_list(fields):
+            next_section['fields'] = [sanitize_field(f, f"{path}.fields[{i}]") for i, f in enumerate(fields)]
+        return next_section
+
+    next_config = dict(config)
+    next_config['sections'] = [sanitize_section(s, f"sections[{i}]") for i, s in enumerate(config.get('sections') or [])]
+    return next_config
+
+
 # Supported section types
-VALID_SECTION_TYPES = ['section', 'tab', 'divider', 'collapse', 'column']
+VALID_SECTION_TYPES = ['section', 'tab', 'divider', 'collapse', 'column', 'card', 'default', 'fieldset']
 
 # Valid column span values (1-24, must be divisible by common grid systems)
 VALID_SPANS = [1, 2, 3, 4, 6, 8, 12, 24]
+
+# Layout modes (new unified system)
+LAYOUT_MODES = ['edit', 'readonly', 'search']
+
+# Legacy layout types (for backward compatibility)
+LEGACY_LAYOUT_TYPES = ['form', 'list', 'detail', 'search']
+
+# Legacy type to mode mapping
+LEGACY_TYPE_TO_MODE = {
+    'form': 'edit',
+    'detail': 'readonly',
+    'list': 'edit',  # List layouts are auto-generated
+    'search': 'search',
+}
 
 
 class LayoutValidationError(ValidationError):
@@ -30,7 +203,35 @@ def validate_layout_config(config: Dict[str, Any], layout_type: str = 'form') ->
 
     Args:
         config: Layout configuration dictionary
-        layout_type: Type of layout (form, list, detail, search)
+        layout_type: Type of layout (form, list, detail, search) - legacy, use mode instead
+
+    Raises:
+        LayoutValidationError: If configuration is invalid
+
+    Note:
+        This function supports legacy layout_type for backward compatibility.
+        Internally converts to mode and validates accordingly.
+    """
+    if not isinstance(config, dict):
+        raise LayoutValidationError("Configuration must be a JSON object")
+
+    # Convert legacy layout_type to mode
+    mode = LEGACY_TYPE_TO_MODE.get(layout_type, layout_type)
+
+    # All modes now use sections-based configuration
+    if mode in ['edit', 'readonly']:
+        _validate_sections_layout(config)
+    elif mode == 'search':
+        _validate_search_layout(config)
+
+
+def validate_layout_config_by_mode(config: Dict[str, Any], mode: str = 'edit') -> None:
+    """
+    Validate layout configuration structure using the new mode-based system.
+
+    Args:
+        config: Layout configuration dictionary
+        mode: Layout mode (edit, readonly, search)
 
     Raises:
         LayoutValidationError: If configuration is invalid
@@ -38,16 +239,25 @@ def validate_layout_config(config: Dict[str, Any], layout_type: str = 'form') ->
     if not isinstance(config, dict):
         raise LayoutValidationError("Configuration must be a JSON object")
 
-    if layout_type in ['form', 'detail']:
-        _validate_form_layout(config)
-    elif layout_type == 'list':
-        _validate_list_layout(config)
-    elif layout_type == 'search':
+    if mode not in LAYOUT_MODES:
+        raise LayoutValidationError(
+            f"Invalid mode: {mode}. Valid modes: {', '.join(LAYOUT_MODES)}"
+        )
+
+    # All modes use sections-based configuration
+    if mode in ['edit', 'readonly']:
+        _validate_sections_layout(config)
+    elif mode == 'search':
         _validate_search_layout(config)
 
 
-def _validate_form_layout(config: Dict[str, Any]) -> None:
-    """Validate form/detail layout structure."""
+def _validate_sections_layout(config: Dict[str, Any]) -> None:
+    """
+    Validate sections-based layout structure.
+
+    This is used for both edit and readonly modes since they share
+    the same sections-based structure.
+    """
     if 'sections' not in config:
         raise LayoutValidationError("Missing required field: sections")
 
@@ -275,14 +485,30 @@ def _validate_field(field: Dict[str, Any], path: str) -> None:
     Args:
         field: Field configuration dictionary
         path: Field path for error messages
+    
+    Note:
+        Supports both camelCase (fieldCode) and snake_case (field_code) 
+        for frontend compatibility.
     """
     if not isinstance(field, dict):
         raise LayoutValidationError(f"{path} must be an object")
 
-    required_fields = ['id', 'field_code', 'label', 'span']
-    for required_field in required_fields:
-        if required_field not in field:
-            raise LayoutValidationError(f"{path} missing required field: {required_field}")
+    # Support both camelCase and snake_case for field names (frontend compatibility)
+    # Check for id (required)
+    if 'id' not in field:
+        raise LayoutValidationError(f"{path} missing required field: id")
+    
+    # Check for field_code or fieldCode (required)
+    if 'field_code' not in field and 'fieldCode' not in field:
+        raise LayoutValidationError(f"{path} missing required field: field_code (or fieldCode)")
+    
+    # Check for label (required)
+    if 'label' not in field:
+        raise LayoutValidationError(f"{path} missing required field: label")
+    
+    # Check for span (required)
+    if 'span' not in field:
+        raise LayoutValidationError(f"{path} missing required field: span")
 
     # Validate span
     span = field['span']

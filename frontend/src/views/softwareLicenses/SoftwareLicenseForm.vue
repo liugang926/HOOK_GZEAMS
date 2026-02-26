@@ -4,9 +4,9 @@
   <el-card>
     <template #header>
       <div class="card-header">
-        <span>{{ isEdit ? '编辑许可证' : '新建许可证' }}</span>
+        <span>{{ isEdit ? $t('softwareLicenses.licenses.edit') : $t('softwareLicenses.licenses.add') }}</span>
         <el-button @click="handleBack">
-          返回
+          {{ $t('common.actions.cancel') }}
         </el-button>
       </div>
     </template>
@@ -19,24 +19,24 @@
       @submit.prevent="handleSubmit"
     >
       <el-form-item
-        label="许可证编号"
+        :label="$t('softwareLicenses.licenses.fields.licenseNo')"
         prop="licenseNo"
       >
         <el-input
           v-model="formData.licenseNo"
-          placeholder="如: OFF365-2024-001"
+          :placeholder="$t('softwareLicenses.licenses.placeholders.licenseNo')"
           :disabled="isEdit"
         />
       </el-form-item>
 
       <el-form-item
-        label="软件"
+        :label="$t('softwareLicenses.licenses.fields.software')"
         prop="software"
       >
         <el-select
           v-model="formData.software"
           filterable
-          placeholder="选择软件"
+          :placeholder="$t('common.placeholders.select')"
           style="width: 100%"
         >
           <el-option
@@ -49,21 +49,21 @@
       </el-form-item>
 
       <el-form-item
-        label="许可证密钥"
+        :label="$t('softwareLicenses.licenses.fields.licenseKey')"
         prop="licenseKey"
       >
         <el-input
           v-model="formData.licenseKey"
           type="password"
           show-password
-          placeholder="可选，加密存储"
+          :placeholder="$t('softwareLicenses.licenses.placeholders.key')"
         />
       </el-form-item>
 
-      <el-divider>许可数量</el-divider>
+      <el-divider>{{ $t('softwareLicenses.licenses.fields.totalUnits') }}</el-divider>
 
       <el-form-item
-        label="总许可数"
+        :label="$t('softwareLicenses.licenses.fields.totalUnits')"
         prop="totalUnits"
       >
         <el-input-number
@@ -73,7 +73,7 @@
         />
       </el-form-item>
 
-      <el-form-item label="已使用数">
+      <el-form-item :label="$t('softwareLicenses.licenses.fields.usedUnits')">
         <el-input-number
           v-model="formData.usedUnits"
           :min="0"
@@ -83,99 +83,99 @@
           size="small"
           type="info"
         >
-          系统自动更新
+          {{ $t('softwareLicenses.licenses.systemUpdate') }}
         </el-text>
       </el-form-item>
 
-      <el-divider>许可期限</el-divider>
+      <el-divider>{{ $t('softwareLicenses.licenses.sections.term') }}</el-divider>
 
       <el-form-item
-        label="购买日期"
+        :label="$t('softwareLicenses.licenses.fields.purchaseDate')"
         prop="purchaseDate"
       >
         <el-date-picker
           v-model="formData.purchaseDate"
           type="date"
-          placeholder="选择日期"
+          :placeholder="$t('common.placeholders.select')"
           value-format="YYYY-MM-DD"
         />
       </el-form-item>
 
-      <el-form-item label="到期日期">
+      <el-form-item :label="$t('softwareLicenses.licenses.fields.expiryDate')">
         <el-date-picker
           v-model="formData.expiryDate"
           type="date"
-          placeholder="留空表示永久许可"
+          :placeholder="$t('common.placeholders.select')"
           value-format="YYYY-MM-DD"
         />
       </el-form-item>
 
-      <el-divider>财务信息</el-divider>
+      <el-divider>{{ $t('softwareLicenses.licenses.sections.financial') }}</el-divider>
 
-      <el-form-item label="购买价格">
+      <el-form-item :label="$t('softwareLicenses.licenses.fields.purchasePrice')">
         <el-input-number
           v-model="formData.purchasePrice"
           :min="0"
           :precision="2"
         />
-        <span style="margin-left: 10px">元</span>
+        <span style="margin-left: 10px">{{ $t('common.units.yuan') }}</span>
       </el-form-item>
 
-      <el-form-item label="年维护成本">
+      <el-form-item :label="$t('softwareLicenses.licenses.fields.annualCost')">
         <el-input-number
           v-model="formData.annualCost"
           :min="0"
           :precision="2"
         />
-        <span style="margin-left: 10px">元/年</span>
+        <span style="margin-left: 10px">{{ $t('common.units.yuan') }}/{{ $t('common.units.year') }}</span>
       </el-form-item>
 
-      <el-divider>状态信息</el-divider>
+      <el-divider>{{ $t('softwareLicenses.licenses.sections.status') }}</el-divider>
 
       <el-form-item
-        label="状态"
+        :label="$t('softwareLicenses.licenses.fields.status')"
         prop="status"
       >
         <el-select v-model="formData.status">
           <el-option
-            label="生效中"
+            :label="$t('softwareLicenses.licenses.status.active')"
             value="active"
           />
           <el-option
-            label="已过期"
+            :label="$t('softwareLicenses.licenses.status.expired')"
             value="expired"
           />
           <el-option
-            label="暂停"
+            :label="$t('softwareLicenses.licenses.status.suspended')"
             value="suspended"
           />
           <el-option
-            label="撤销"
+            :label="$t('softwareLicenses.licenses.status.revoked')"
             value="revoked"
           />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="许可类型">
+      <el-form-item :label="$t('softwareLicenses.catalog.fields.licenseType')">
         <el-input
           v-model="formData.licenseType"
-          placeholder="如: perpetual, subscription, OEM, volume"
+          :placeholder="$t('softwareLicenses.licenses.placeholders.type')"
         />
       </el-form-item>
 
-      <el-form-item label="协议编号">
+      <el-form-item :label="$t('softwareLicenses.licenses.fields.agreementNo')">
         <el-input
           v-model="formData.agreementNo"
-          placeholder="企业协议编号"
+          :placeholder="$t('softwareLicenses.licenses.placeholders.agreement')"
         />
       </el-form-item>
 
-      <el-form-item label="备注">
+      <el-form-item :label="$t('softwareLicenses.licenses.fields.notes')">
         <el-input
           v-model="formData.notes"
           type="textarea"
           :rows="3"
-          placeholder="许可证相关备注"
+          :placeholder="$t('softwareLicenses.licenses.placeholders.notes')"
         />
       </el-form-item>
 
@@ -185,10 +185,10 @@
           native-type="submit"
           :loading="submitting"
         >
-          保存
+          {{ $t('common.actions.save') }}
         </el-button>
         <el-button @click="handleBack">
-          取消
+          {{ $t('common.actions.cancel') }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -198,12 +198,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { softwareLicenseApi, softwareApi } from '@/api/softwareLicenses'
 import type { SoftwareLicense, Software } from '@/types/softwareLicenses'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
 
@@ -227,23 +229,23 @@ const formData = ref<Partial<SoftwareLicense>>({
 
 const softwareOptions = ref<Software[]>([])
 
-const rules: FormRules = {
+const rules = computed<FormRules>(() => ({
   licenseNo: [
-    { required: true, message: '请输入许可证编号', trigger: 'blur' }
+    { required: true, message: t('common.validation.required', { field: t('softwareLicenses.licenses.fields.licenseNo') }), trigger: 'blur' }
   ],
   software: [
-    { required: true, message: '请选择软件', trigger: 'change' }
+    { required: true, message: t('common.validation.required', { field: t('softwareLicenses.licenses.fields.software') }), trigger: 'change' }
   ],
   totalUnits: [
-    { required: true, message: '请输入许可数量', trigger: 'blur' }
+    { required: true, message: t('common.validation.required', { field: t('softwareLicenses.licenses.fields.totalUnits') }), trigger: 'blur' }
   ],
   purchaseDate: [
-    { required: true, message: '请选择购买日期', trigger: 'change' }
+    { required: true, message: t('common.validation.required', { field: t('softwareLicenses.licenses.fields.purchaseDate') }), trigger: 'change' }
   ],
   status: [
-    { required: true, message: '请选择状态', trigger: 'change' }
+    { required: true, message: t('common.validation.required', { field: t('softwareLicenses.licenses.fields.status') }), trigger: 'change' }
   ]
-}
+}))
 
 const loadSoftware = async () => {
   try {
@@ -260,7 +262,7 @@ const loadLicense = async () => {
     const data = await softwareLicenseApi.get(id)
     formData.value = data
   } catch (error) {
-    ElMessage.error('加载许可证信息失败')
+    ElMessage.error(t('common.messages.loadFailed'))
   }
 }
 
@@ -274,14 +276,14 @@ const handleSubmit = async () => {
     try {
       if (isEdit.value) {
         await softwareLicenseApi.update(route.params.id as string, formData.value)
-        ElMessage.success('更新成功')
+        ElMessage.success(t('common.messages.operationSuccess'))
       } else {
         await softwareLicenseApi.create(formData.value)
-        ElMessage.success('创建成功')
+        ElMessage.success(t('common.messages.operationSuccess'))
       }
       handleBack()
     } catch (error: any) {
-      ElMessage.error(error.message || '操作失败')
+      ElMessage.error(error.message || t('common.messages.operationFailed'))
     } finally {
       submitting.value = false
     }

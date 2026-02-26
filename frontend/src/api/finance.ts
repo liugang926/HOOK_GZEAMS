@@ -8,6 +8,7 @@
 import request from '@/utils/request'
 import type { PaginatedResponse } from '@/types/api'
 import type { FinanceVoucher, VoucherTemplate, VoucherCreate, VoucherApprovalAction } from '@/types/finance'
+import { normalizeQueryParams, toPaginated } from '@/api/contract'
 
 /**
  * Finance Voucher API service
@@ -25,56 +26,58 @@ export const financeApi = {
     voucherDateFrom?: string
     voucherDateTo?: string
   }): Promise<PaginatedResponse<FinanceVoucher>> {
-    return request.get('/finance/vouchers/', { params })
+    return request
+      .get('/system/objects/FinanceVoucher/', { params: normalizeQueryParams(params) })
+      .then((res) => toPaginated<FinanceVoucher>(res))
   },
 
   /**
    * Get single voucher by ID
    */
   getVoucher(id: string): Promise<FinanceVoucher> {
-    return request.get(`/finance/vouchers/${id}/`)
+    return request.get(`/system/objects/FinanceVoucher/${id}/`)
   },
 
   /**
    * Create new voucher
    */
   createVoucher(data: VoucherCreate): Promise<FinanceVoucher> {
-    return request.post('/finance/vouchers/', data)
+    return request.post('/system/objects/FinanceVoucher/', data)
   },
 
   /**
    * Update voucher
    */
   updateVoucher(id: string, data: Partial<FinanceVoucher>): Promise<FinanceVoucher> {
-    return request.put(`/finance/vouchers/${id}/`, data)
+    return request.put(`/system/objects/FinanceVoucher/${id}/`, data)
   },
 
   /**
    * Delete voucher
    */
   deleteVoucher(id: string): Promise<void> {
-    return request.delete(`/finance/vouchers/${id}/`)
+    return request.delete(`/system/objects/FinanceVoucher/${id}/`)
   },
 
   /**
    * Submit voucher for approval
    */
   submitVoucher(id: string): Promise<void> {
-    return request.post(`/finance/vouchers/${id}/submit/`)
+    return request.post(`/system/objects/FinanceVoucher/${id}/submit/`)
   },
 
   /**
    * Approve or reject voucher
    */
   approveVoucher(id: string, data: VoucherApprovalAction): Promise<void> {
-    return request.post(`/finance/vouchers/${id}/approve/`, data)
+    return request.post(`/system/objects/FinanceVoucher/${id}/approve/`, data)
   },
 
   /**
    * Post voucher to accounting
    */
   postVoucher(id: string): Promise<void> {
-    return request.post(`/finance/vouchers/${id}/post/`)
+    return request.post(`/system/objects/FinanceVoucher/${id}/post/`)
   },
 
   /**
@@ -82,10 +85,13 @@ export const financeApi = {
    */
   pushVoucher(id: string, system?: string): Promise<{
     success: boolean
+    queued?: boolean
+    taskId?: string
+    syncTaskId?: string
     externalVoucherNo?: string
     error?: string
   }> {
-    return request.post(`/finance/vouchers/${id}/push/`, { system })
+    return request.post(`/system/objects/FinanceVoucher/${id}/push/`, { system })
   },
 
   /**
@@ -94,16 +100,37 @@ export const financeApi = {
   batchPushVouchers(ids: string[]): Promise<{
     success: number
     failed: number
-    results: Array<{ id: string; success: boolean; error?: string }>
+    results: Array<{
+      id: string
+      success: boolean
+      error?: string
+      queued?: boolean
+      duplicate?: boolean
+      taskId?: string
+      syncTaskId?: string
+    }>
   }> {
-    return request.post('/finance/vouchers/batch-push/', { ids })
+    return request.post('/system/objects/FinanceVoucher/batch_push/', { ids }).then((res: any) => {
+      const summary = res?.summary || {}
+      return {
+        success: Number(summary.succeeded || 0),
+        failed: Number(summary.failed || 0),
+        results: Array.isArray(res?.results)
+          ? res.results.map((item: any) => ({
+            ...item,
+            taskId: item?.taskId || item?.task_id,
+            syncTaskId: item?.syncTaskId || item?.sync_task_id,
+          }))
+          : [],
+      }
+    })
   },
 
   /**
    * Get voucher entries for editing
    */
   getEntries(id: string): Promise<FinanceVoucher> {
-    return request.get(`/finance/vouchers/${id}/entries/`)
+    return request.get(`/system/objects/FinanceVoucher/${id}/entries/`)
   },
 
   /**
@@ -115,7 +142,7 @@ export const financeApi = {
     credit: number
     description: string
   }>): Promise<FinanceVoucher> {
-    return request.put(`/finance/vouchers/${id}/entries/`, { entries })
+    return request.put(`/system/objects/FinanceVoucher/${id}/entries/`, { entries })
   }
 }
 
@@ -130,49 +157,51 @@ export const voucherTemplateApi = {
     businessType?: string
     isActive?: boolean
   }): Promise<VoucherTemplate[]> {
-    return request.get('/finance/voucher-templates/', { params })
+    return request
+      .get('/system/objects/VoucherTemplate/', { params: normalizeQueryParams(params) })
+      .then((res) => toPaginated<VoucherTemplate>(res).results)
   },
 
   /**
    * Get single template by ID
    */
   getTemplate(id: string): Promise<VoucherTemplate> {
-    return request.get(`/finance/voucher-templates/${id}/`)
+    return request.get(`/system/objects/VoucherTemplate/${id}/`)
   },
 
   /**
    * Create new template
    */
   createTemplate(data: Partial<VoucherTemplate>): Promise<VoucherTemplate> {
-    return request.post('/finance/voucher-templates/', data)
+    return request.post('/system/objects/VoucherTemplate/', data)
   },
 
   /**
    * Update template
    */
   updateTemplate(id: string, data: Partial<VoucherTemplate>): Promise<VoucherTemplate> {
-    return request.put(`/finance/voucher-templates/${id}/`, data)
+    return request.put(`/system/objects/VoucherTemplate/${id}/`, data)
   },
 
   /**
    * Delete template
    */
   deleteTemplate(id: string): Promise<void> {
-    return request.delete(`/finance/voucher-templates/${id}/`)
+    return request.delete(`/system/objects/VoucherTemplate/${id}/`)
   },
 
   /**
    * Activate template
    */
   activateTemplate(id: string): Promise<void> {
-    return request.post(`/finance/voucher-templates/${id}/activate/`)
+    return request.patch(`/system/objects/VoucherTemplate/${id}/`, { isActive: true })
   },
 
   /**
    * Deactivate template
    */
   deactivateTemplate(id: string): Promise<void> {
-    return request.post(`/finance/voucher-templates/${id}/deactivate/`)
+    return request.patch(`/system/objects/VoucherTemplate/${id}/`, { isActive: false })
   }
 }
 
@@ -187,7 +216,7 @@ export const voucherGenerationApi = {
     businessId: string
     assetIds: string[]
   }): Promise<FinanceVoucher> {
-    return request.post('/finance/vouchers/generate/asset-purchase/', data)
+    return request.post('/system/objects/FinanceVoucher/generate/asset-purchase/', data)
   },
 
   /**
@@ -197,7 +226,7 @@ export const voucherGenerationApi = {
     period: string
     categoryIds?: string[]
   }): Promise<FinanceVoucher> {
-    return request.post('/finance/vouchers/generate/depreciation/', data)
+    return request.post('/system/objects/FinanceVoucher/generate/depreciation/', data)
   },
 
   /**
@@ -207,7 +236,7 @@ export const voucherGenerationApi = {
     businessId: string
     assetId: string
   }): Promise<FinanceVoucher> {
-    return request.post('/finance/vouchers/generate/disposal/', data)
+    return request.post('/system/objects/FinanceVoucher/generate/disposal/', data)
   }
 }
 
@@ -219,13 +248,19 @@ export const integrationApi = {
    * Get integration logs for a voucher
    */
   getLogs(voucherId: string): Promise<any[]> {
-    return request.get(`/finance/vouchers/${voucherId}/integration-logs/`)
+    return request.get(`/system/objects/FinanceVoucher/${voucherId}/integration-logs/`)
   },
 
   /**
    * Retry failed integration
    */
-  retry(voucherId: string): Promise<void> {
-    return request.post(`/finance/vouchers/${voucherId}/retry/`)
+  retry(voucherId: string): Promise<{
+    success?: boolean
+    queued?: boolean
+    taskId?: string
+    syncTaskId?: string
+    externalVoucherNo?: string
+  }> {
+    return request.post(`/system/objects/FinanceVoucher/${voucherId}/retry/`)
   }
 }

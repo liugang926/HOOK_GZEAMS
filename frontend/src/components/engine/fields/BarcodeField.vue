@@ -13,7 +13,7 @@
         <template #error>
           <div class="image-error">
             <el-icon><Picture /></el-icon>
-            <span>条形码生成失败</span>
+            <span>{{ $t('fields.barcodeGenerateFailed') }}</span>
           </div>
         </template>
       </el-image>
@@ -23,7 +23,7 @@
     </div>
     <el-empty
       v-else
-      description="暂无条形码"
+      :description="$t('fields.noBarcode')"
       :image-size="60"
     />
   </div>
@@ -31,7 +31,10 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Picture } from '@element-plus/icons-vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   field: Object,

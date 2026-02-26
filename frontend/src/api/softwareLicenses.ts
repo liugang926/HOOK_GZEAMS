@@ -23,42 +23,42 @@ export const softwareApi = {
     isActive?: boolean
     search?: string
   }): Promise<PaginatedResponse<Software>> {
-    return request.get('/software-licenses/software/', { params })
+    return request.get('/system/objects/Software/', { params })
   },
 
   /**
    * Get single software by ID
    */
   get(id: string): Promise<Software> {
-    return request.get(`/software-licenses/software/${id}/`)
+    return request.get(`/system/objects/Software/${id}/`)
   },
 
   /**
    * Create new software entry
    */
   create(data: Partial<Software>): Promise<Software> {
-    return request.post('/software-licenses/software/', data)
+    return request.post('/system/objects/Software/', data)
   },
 
   /**
    * Update software
    */
   update(id: string, data: Partial<Software>): Promise<Software> {
-    return request.put(`/software-licenses/software/${id}/`, data)
+    return request.put(`/system/objects/Software/${id}/`, data)
   },
 
   /**
    * Delete software (soft delete)
    */
   delete(id: string): Promise<void> {
-    return request.delete(`/software-licenses/software/${id}/`)
+    return request.delete(`/system/objects/Software/${id}/`)
   },
 
   /**
    * Batch delete software
    */
   batchDelete(ids: string[]): Promise<BatchResponse> {
-    return request.post('/software-licenses/software/batch-delete/', { ids })
+    return request.post('/system/objects/Software/batch-delete/', { ids })
   }
 }
 
@@ -77,35 +77,35 @@ export const softwareLicenseApi = {
     expiringSoon?: boolean
     search?: string
   }): Promise<PaginatedResponse<SoftwareLicense>> {
-    return request.get('/software-licenses/licenses/', { params })
+    return request.get('/system/objects/SoftwareLicense/', { params })
   },
 
   /**
    * Get single license by ID
    */
   get(id: string): Promise<SoftwareLicense> {
-    return request.get(`/software-licenses/licenses/${id}/`)
+    return request.get(`/system/objects/SoftwareLicense/${id}/`)
   },
 
   /**
    * Create new license
    */
   create(data: Partial<SoftwareLicense>): Promise<SoftwareLicense> {
-    return request.post('/software-licenses/licenses/', data)
+    return request.post('/system/objects/SoftwareLicense/', data)
   },
 
   /**
    * Update license
    */
   update(id: string, data: Partial<SoftwareLicense>): Promise<SoftwareLicense> {
-    return request.put(`/software-licenses/licenses/${id}/`, data)
+    return request.put(`/system/objects/SoftwareLicense/${id}/`, data)
   },
 
   /**
    * Delete license (soft delete)
    */
   delete(id: string): Promise<void> {
-    return request.delete(`/software-licenses/licenses/${id}/`)
+    return request.delete(`/system/objects/SoftwareLicense/${id}/`)
   },
 
   /**
@@ -115,21 +115,21 @@ export const softwareLicenseApi = {
     page?: number
     pageSize?: number
   }): Promise<PaginatedResponse<SoftwareLicense>> {
-    return request.get('/software-licenses/licenses/expiring/', { params })
+    return request.get('/system/objects/SoftwareLicense/expiring/', { params })
   },
 
   /**
    * Get compliance report
    */
   complianceReport(): Promise<{ data: ComplianceReport }> {
-    return request.get('/software-licenses/licenses/compliance-report/')
+    return request.get('/system/objects/SoftwareLicense/compliance_report/')
   },
 
   /**
    * Batch delete licenses
    */
   batchDelete(ids: string[]): Promise<BatchResponse> {
-    return request.post('/software-licenses/licenses/batch-delete/', { ids })
+    return request.post('/system/objects/SoftwareLicense/batch-delete/', { ids })
   }
 }
 
@@ -148,14 +148,14 @@ export const licenseAllocationApi = {
     isActive?: boolean
     search?: string
   }): Promise<PaginatedResponse<LicenseAllocation>> {
-    return request.get('/software-licenses/license-allocations/', { params })
+    return request.get('/system/objects/LicenseAllocation/', { params })
   },
 
   /**
    * Get single allocation by ID
    */
   get(id: string): Promise<LicenseAllocation> {
-    return request.get(`/software-licenses/license-allocations/${id}/`)
+    return request.get(`/system/objects/LicenseAllocation/${id}/`)
   },
 
   /**
@@ -167,35 +167,35 @@ export const licenseAllocationApi = {
     allocationKey?: string
     notes?: string
   }): Promise<LicenseAllocation> {
-    return request.post('/software-licenses/license-allocations/', data)
+    return request.post('/system/objects/LicenseAllocation/', data)
   },
 
   /**
    * Update allocation
    */
   update(id: string, data: Partial<LicenseAllocation>): Promise<LicenseAllocation> {
-    return request.put(`/software-licenses/license-allocations/${id}/`, data)
+    return request.put(`/system/objects/LicenseAllocation/${id}/`, data)
   },
 
   /**
    * Delete allocation
    */
   delete(id: string): Promise<void> {
-    return request.delete(`/software-licenses/license-allocations/${id}/`)
+    return request.delete(`/system/objects/LicenseAllocation/${id}/`)
   },
 
   /**
    * Deallocate license from asset
    */
   deallocate(id: string, data?: { notes?: string }): Promise<{ data: LicenseAllocation }> {
-    return request.post(`/software-licenses/license-allocations/${id}/deallocate/`, data)
+    return request.post(`/system/objects/LicenseAllocation/${id}/deallocate/`, data)
   },
 
   /**
    * Batch delete allocations
    */
   batchDelete(ids: string[]): Promise<BatchResponse> {
-    return request.post('/software-licenses/license-allocations/batch-delete/', { ids })
+    return request.post('/system/objects/LicenseAllocation/batch-delete/', { ids })
   }
 }
 

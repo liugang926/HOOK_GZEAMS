@@ -2,8 +2,8 @@ from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
-from django.db.models import Sum, Q
-from datetime import date, timedelta
+from django.db.models import Sum, Q, Count, F
+from datetime import date
 from decimal import Decimal
 from apps.common.viewsets.base import BaseModelViewSetWithBatch
 from apps.common.permissions.base import IsOrganizationMember
@@ -46,6 +46,192 @@ class DepreciationConfigViewSet(BaseModelViewSetWithBatch):
             return DepreciationConfigDetailSerializer
         return DepreciationConfigSerializer
 
+    @action(detail=False, methods=['get', 'put'], url_path='categories/(?P<category_id>[^/.]+)')
+    def categories(self, request, category_id=None):
+        """
+        Get/update depreciation config by category id.
+
+        Alias endpoint for frontend compatibility:
+        /api/depreciation/config/categories/{category_id}/
+        """
+        from apps.assets.models import AssetCategory
+
+        if request.method.lower() == 'get':
+            config = DepreciationConfig.objects.filter(
+                category_id=category_id,
+                organization_id=request.organization_id,
+                is_deleted=False
+            ).first()
+
+            if config:
+                return Response({
+                    'success': True,
+                    'data': {
+                        'id': str(config.id),
+                        'category_id': str(config.category_id),
+                        'depreciation_method': config.depreciation_method,
+                        'useful_life': config.useful_life,
+                        'residual_rate': config.salvage_value_rate,
+                        'is_active': config.is_active,
+                        'notes': config.notes
+                    }
+                })
+
+            try:
+                category = AssetCategory.objects.get(
+                    id=category_id,
+                    organization_id=request.organization_id,
+                    is_deleted=False
+                )
+            except AssetCategory.DoesNotExist:
+                return Response({
+                    'success': False,
+                    'error': {
+                        'code': 'NOT_FOUND',
+                        'message': 'Category not found'
+                    }
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            return Response({
+                'success': True,
+                'data': {
+                    'id': None,
+                    'category_id': str(category.id),
+                    'depreciation_method': category.depreciation_method or 'straight_line',
+                    'useful_life': category.default_useful_life or 60,
+                    'residual_rate': category.residual_rate or Decimal('5.00'),
+                    'is_active': True,
+                    'notes': ''
+                }
+            })
+
+        payload = request.data
+        depreciation_method = payload.get('depreciation_method') or payload.get('depreciationMethod') or 'straight_line'
+        useful_life = payload.get('useful_life', payload.get('usefulLife', 60))
+        residual_rate = payload.get('salvage_value_rate', payload.get('residual_rate', payload.get('residualRate', 5)))
+        is_active = payload.get('is_active', True)
+        notes = payload.get('notes', '')
+
+        try:
+            category = AssetCategory.objects.get(
+                id=category_id,
+                organization_id=request.organization_id,
+                is_deleted=False
+            )
+        except AssetCategory.DoesNotExist:
+            return Response({
+                'success': False,
+                'error': {
+                    'code': 'NOT_FOUND',
+                    'message': 'Category not found'
+                }
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        config, created = DepreciationConfig.objects.get_or_create(
+            category=category,
+            organization_id=request.organization_id,
+            defaults={
+                'created_by': request.user,
+                'depreciation_method': depreciation_method,
+                'useful_life': int(useful_life),
+                'salvage_value_rate': Decimal(str(residual_rate)),
+                'is_active': bool(is_active),
+                'notes': notes,
+            }
+        )
+        if not created:
+            config.depreciation_method = depreciation_method
+            config.useful_life = int(useful_life)
+            config.salvage_value_rate = Decimal(str(residual_rate))
+            config.is_active = bool(is_active)
+            config.notes = notes
+            config.updated_by = request.user
+            config.save()
+
+        # Keep category defaults aligned to the latest category-level depreciation config.
+        category.depreciation_method = depreciation_method
+        category.default_useful_life = int(useful_life)
+        category.residual_rate = Decimal(str(residual_rate))
+        category.save(update_fields=['depreciation_method', 'default_useful_life', 'residual_rate', 'updated_at'])
+
+        serializer = DepreciationConfigDetailSerializer(config)
+        return Response({
+            'success': True,
+            'message': 'Category depreciation config updated',
+            'data': serializer.data
+        })
+
+    @action(detail=False, methods=['get', 'put'], url_path='global')
+    def global_config(self, request):
+        """
+        Get/update global depreciation defaults.
+
+        Alias endpoint for frontend compatibility:
+        /api/depreciation/config/global/
+        """
+        from apps.assets.models import AssetCategory
+
+        configs = DepreciationConfig.objects.filter(
+            organization_id=request.organization_id,
+            is_deleted=False
+        )
+
+        if request.method.lower() == 'get':
+            latest_config = configs.order_by('-updated_at').first()
+            if latest_config:
+                data = {
+                    'default_method': latest_config.depreciation_method,
+                    'default_useful_life': latest_config.useful_life,
+                    'default_residual_rate': latest_config.salvage_value_rate,
+                    'total_configs': configs.count()
+                }
+            else:
+                category_defaults = AssetCategory.objects.filter(
+                    organization_id=request.organization_id,
+                    is_deleted=False
+                ).order_by('-updated_at').first()
+                data = {
+                    'default_method': getattr(category_defaults, 'depreciation_method', 'straight_line'),
+                    'default_useful_life': getattr(category_defaults, 'default_useful_life', 60),
+                    'default_residual_rate': getattr(category_defaults, 'residual_rate', Decimal('5.00')),
+                    'total_configs': 0
+                }
+            return Response({'success': True, 'data': data})
+
+        payload = request.data
+        default_method = payload.get('default_method') or payload.get('defaultMethod') or 'straight_line'
+        default_useful_life = int(payload.get('default_useful_life', payload.get('defaultUsefulLife', 60)))
+        default_residual_rate = Decimal(str(payload.get('default_residual_rate', payload.get('defaultResidualRate', 5))))
+
+        # Global update semantics: synchronize all existing active configs and category defaults.
+        if configs.exists():
+            configs.update(
+                depreciation_method=default_method,
+                useful_life=default_useful_life,
+                salvage_value_rate=default_residual_rate,
+                updated_by=request.user
+            )
+
+        AssetCategory.objects.filter(
+            organization_id=request.organization_id,
+            is_deleted=False
+        ).update(
+            depreciation_method=default_method,
+            default_useful_life=default_useful_life,
+            residual_rate=default_residual_rate
+        )
+
+        return Response({
+            'success': True,
+            'message': 'Global depreciation config updated',
+            'data': {
+                'default_method': default_method,
+                'default_useful_life': default_useful_life,
+                'default_residual_rate': default_residual_rate,
+                'total_configs': configs.count()
+            }
+        })
+
 
 class DepreciationRecordViewSet(BaseModelViewSetWithBatch):
     """
@@ -74,6 +260,77 @@ class DepreciationRecordViewSet(BaseModelViewSetWithBatch):
         if self.action == 'retrieve':
             return DepreciationRecordDetailSerializer
         return DepreciationRecordSerializer
+
+    @action(detail=True, methods=['post'])
+    def submit(self, request, pk=None):
+        """
+        Submit a depreciation record for approval.
+
+        Compatibility endpoint:
+        POST /api/depreciation/records/{id}/submit/
+        """
+        record = self.get_object()
+        if record.status == 'posted':
+            return Response({
+                'success': False,
+                'error': {
+                    'code': 'VALIDATION_ERROR',
+                    'message': 'Posted record cannot be submitted again'
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Current model has no "submitted" status; keep status unchanged and record intent in notes.
+        submit_note = request.data.get('comment') or request.data.get('notes') or 'Submitted for approval'
+        record.notes = f"{record.notes}\n{submit_note}".strip()
+        record.save(update_fields=['notes', 'updated_at'])
+
+        serializer = self.get_serializer(record)
+        return Response({
+            'success': True,
+            'message': 'Depreciation record submitted successfully',
+            'data': serializer.data
+        })
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """
+        Approve or reject a depreciation record.
+
+        Compatibility endpoint:
+        POST /api/depreciation/records/{id}/approve/
+        """
+        record = self.get_object()
+        action_value = request.data.get('action') or request.data.get('decision') or 'approve'
+        action_value = action_value.lower()
+        comment = request.data.get('comment') or request.data.get('notes') or ''
+
+        if action_value not in ['approve', 'approved', 'reject', 'rejected']:
+            return Response({
+                'success': False,
+                'error': {
+                    'code': 'VALIDATION_ERROR',
+                    'message': 'action must be approve or reject'
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if action_value in ['approve', 'approved']:
+            record.status = 'posted'
+            record.post_date = date.today()
+            msg = 'Depreciation record approved and posted'
+        else:
+            record.status = 'rejected'
+            msg = 'Depreciation record rejected'
+
+        if comment:
+            record.notes = f"{record.notes}\n{comment}".strip()
+        record.save()
+
+        serializer = self.get_serializer(record)
+        return Response({
+            'success': True,
+            'message': msg,
+            'data': serializer.data
+        })
 
     @action(detail=True, methods=['post'])
     def post(self, request, pk=None):
@@ -232,6 +489,173 @@ class DepreciationRecordViewSet(BaseModelViewSetWithBatch):
                 'category_breakdown': list(category_breakdown)
             }
         })
+
+    def export_report(self, request):
+        """
+        Export depreciation report file.
+
+        Compatibility endpoint:
+        GET /api/depreciation/report/export/
+        """
+        from io import BytesIO, StringIO
+        from django.http import HttpResponse
+        import csv
+
+        period = request.query_params.get('period')
+        if not period:
+            return Response({
+                'success': False,
+                'error': {
+                    'code': 'VALIDATION_ERROR',
+                    'message': 'period query parameter is required'
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        requested_format = (
+            request.query_params.get('file_format')
+            or request.query_params.get('fileFormat')
+            or 'xlsx'
+        ).lower()
+        category_ids = request.query_params.getlist('category_ids') or request.query_params.getlist('categoryIds')
+        if not category_ids:
+            raw = request.query_params.get('category_ids') or request.query_params.get('categoryIds')
+            if raw:
+                category_ids = [item for item in str(raw).split(',') if item]
+
+        queryset = self.get_queryset().filter(period=period)
+        if category_ids:
+            queryset = queryset.filter(asset__asset_category_id__in=category_ids)
+
+        if requested_format == 'pdf':
+            return Response({
+                'success': False,
+                'error': {
+                    'code': 'VALIDATION_ERROR',
+                    'message': 'pdf export is not supported yet'
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        rows = queryset.values_list(
+            'asset__asset_code',
+            'asset__asset_name',
+            'period',
+            'depreciation_amount',
+            'accumulated_amount',
+            'net_value',
+            'status'
+        )
+
+        if requested_format == 'xlsx':
+            try:
+                import openpyxl
+                wb = openpyxl.Workbook()
+                ws = wb.active
+                ws.title = 'Depreciation Report'
+                headers = ['Asset Code', 'Asset Name', 'Period', 'Depreciation Amount', 'Accumulated Amount', 'Net Value', 'Status']
+                ws.append(headers)
+                for row in rows:
+                    ws.append(list(row))
+                buffer = BytesIO()
+                wb.save(buffer)
+                buffer.seek(0)
+                response = HttpResponse(
+                    buffer.read(),
+                    content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                )
+                response['Content-Disposition'] = f'attachment; filename="depreciation_report_{period}.xlsx"'
+                return response
+            except ImportError:
+                # Fallback to CSV export when openpyxl is unavailable in runtime image.
+                requested_format = 'csv'
+
+        output = StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['asset_code', 'asset_name', 'period', 'depreciation_amount', 'accumulated_amount', 'net_value', 'status'])
+        for row in rows:
+            writer.writerow(row)
+
+        response = HttpResponse(output.getvalue(), content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = f'attachment; filename="depreciation_report_{period}.csv"'
+        return response
+
+    @action(detail=False, methods=['get'], url_path='report/export')
+    def report_export(self, request):
+        """
+        Unified object router alias.
+
+        GET /api/system/objects/DepreciationRecord/report/export/
+        """
+        return self.export_report(request)
+
+    def asset_detail(self, request, asset_id=None):
+        """
+        Get depreciation detail by asset.
+
+        Compatibility endpoint:
+        GET /api/depreciation/assets/{id}/detail/
+        """
+        from apps.assets.models import Asset
+
+        try:
+            asset = Asset.objects.get(
+                id=asset_id,
+                organization_id=request.organization_id,
+                is_deleted=False
+            )
+        except Asset.DoesNotExist:
+            return Response({
+                'success': False,
+                'error': {
+                    'code': 'NOT_FOUND',
+                    'message': 'Asset not found'
+                }
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        records = DepreciationRecord.objects.filter(
+            organization_id=request.organization_id,
+            asset_id=asset.id,
+            is_deleted=False
+        ).order_by('period')
+
+        record_serializer = DepreciationRecordListSerializer(records, many=True)
+        accumulated = records.aggregate(total=Sum('depreciation_amount'))['total'] or Decimal('0.00')
+        used_months = records.count()
+        useful_life = asset.useful_life or 0
+        progress = int(min(100, round((used_months / useful_life) * 100))) if useful_life > 0 else 0
+        last_record = records.last()
+        net_value = (last_record.net_value if last_record else asset.current_value) or Decimal('0.00')
+
+        return Response({
+            'success': True,
+            'data': {
+                'asset_info': {
+                    'id': str(asset.id),
+                    'asset_code': asset.asset_code,
+                    'asset_name': asset.asset_name,
+                    'purchase_price': asset.purchase_price,
+                    'current_value': asset.current_value,
+                    'accumulated_depreciation': asset.accumulated_depreciation,
+                    'useful_life': asset.useful_life,
+                    'residual_rate': asset.residual_rate
+                },
+                'stat': {
+                    'used_months': used_months,
+                    'accumulated': accumulated,
+                    'net_value': net_value,
+                    'progress': progress
+                },
+                'records': record_serializer.data
+            }
+        })
+
+    @action(detail=False, methods=['get'], url_path='assets/(?P<asset_id>[^/.]+)/detail')
+    def assets_detail(self, request, asset_id=None):
+        """
+        Unified object router alias.
+
+        GET /api/system/objects/DepreciationRecord/assets/{asset_id}/detail/
+        """
+        return self.asset_detail(request, asset_id=asset_id)
 
 
 class DepreciationRunViewSet(BaseModelViewSetWithBatch):
@@ -479,10 +903,6 @@ class DepreciationRunViewSet(BaseModelViewSetWithBatch):
                 'recent_runs': recent_runs_data
             }
         })
-
-
-# Import Count and F for aggregations
-from django.db.models import Count, F
 
 
 __all__ = [

@@ -8,13 +8,13 @@
         >
           <el-icon><ArrowLeft /></el-icon>
         </el-button>
-        <h3>{{ objectName }} - 字段管理</h3>
+        <h3>{{ $t('system.fieldDefinition.title', { name: objectName }) }}</h3>
       </div>
       <el-button
         type="primary"
         @click="handleCreate"
       >
-        添加字段
+        {{ $t('system.fieldDefinition.create') }}
       </el-button>
     </div>
 
@@ -27,22 +27,22 @@
     >
       <el-table-column
         prop="sortOrder"
-        label="排序"
+        :label="$t('system.fieldDefinition.columns.sortOrder')"
         width="70"
         align="center"
       />
       <el-table-column
         prop="name"
-        label="字段名称"
+        :label="$t('system.fieldDefinition.columns.name')"
         width="150"
       />
       <el-table-column
         prop="code"
-        label="字段编码"
+        :label="$t('system.fieldDefinition.columns.code')"
         width="150"
       />
       <el-table-column
-        label="字段类型"
+        :label="$t('system.fieldDefinition.columns.type')"
         width="120"
         align="center"
       >
@@ -54,11 +54,11 @@
       </el-table-column>
       <el-table-column
         prop="description"
-        label="描述"
+        :label="$t('system.fieldDefinition.columns.description')"
         show-overflow-tooltip
       />
       <el-table-column
-        label="必填"
+        :label="$t('system.fieldDefinition.columns.required')"
         width="70"
         align="center"
       >
@@ -72,7 +72,7 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="只读"
+        :label="$t('system.fieldDefinition.columns.readonly')"
         width="70"
         align="center"
       >
@@ -83,7 +83,7 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="系统字段"
+        :label="$t('system.fieldDefinition.columns.system')"
         width="90"
         align="center"
       >
@@ -93,12 +93,12 @@
             type="info"
             size="small"
           >
-            系统
+            {{ $t('system.fieldDefinition.tags.system') }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
-        label="操作"
+        :label="$t('common.labels.operation')"
         width="150"
         fixed="right"
       >
@@ -109,11 +109,11 @@
             :disabled="row.isSystem"
             @click="handleEdit(row)"
           >
-            编辑
+            {{ $t('common.actions.edit') }}
           </el-button>
           <el-popconfirm
             v-if="!row.isSystem"
-            title="确定删除该字段吗？"
+            :title="$t('system.fieldDefinition.messages.confirmDelete')"
             @confirm="handleDelete(row)"
           >
             <template #reference>
@@ -121,7 +121,7 @@
                 link
                 type="danger"
               >
-                删除
+                {{ $t('common.actions.delete') }}
               </el-button>
             </template>
           </el-popconfirm>
@@ -144,103 +144,72 @@ import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Check, Lock } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import FieldDefinitionForm from './components/FieldDefinitionForm.vue'
+import { businessObjectApi } from '@/api/system'
+import { useFieldTypes } from '@/composables/useFieldTypes'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const fieldTypes = useFieldTypes()
 
 const objectCode = computed(() => route.params.objectCode as string || route.query.objectCode as string || '')
-const objectName = ref(route.query.objectName as string || '业务对象')
+const objectName = ref(route.query.objectName as string || t('system.businessObject.title'))
 const loading = ref(false)
 const tableData = ref<any[]>([])
 const dialogVisible = ref(false)
 const currentRow = ref<any>(null)
 
-// Field type mapping
-const fieldTypeOptions: Record<string, string> = {
-  'text': '单行文本',
-  'textarea': '多行文本',
-  'number': '数字',
-  'currency': '货币',
-  'date': '日期',
-  'datetime': '日期时间',
-  'select': '下拉选择',
-  'multi_select': '多选',
-  'radio': '单选',
-  'checkbox': '复选框',
-  'switch': '开关',
-  'user': '用户选择',
-  'dept': '部门选择',
-  'asset': '资产选择',
-  'reference': '关联引用',
-  'subtable': '子表',
-  'file': '文件上传',
-  'image': '图片上传',
-  'formula': '计算公式',
-  'auto_number': '自动编号'
-}
-
+// Field type mapping - use composable or i18n directly
 const getFieldTypeLabel = (type: string) => {
-  return fieldTypeOptions[type] || type
+  // Try to find label in system.fieldDefinition.types
+  const key = `system.fieldDefinition.types.${type}`
+  const label = t(key)
+  return label !== key ? label : type
 }
 
-// Load field definitions
+// Load field definitions from API
+// Backend returns camelCase directly via djangorestframework-camel-case
 const loadFields = async () => {
+  if (!objectCode.value) {
+    ElMessage.warning(t('system.fieldDefinition.messages.noObjectCode'))
+    return
+  }
+
   loading.value = true
   try {
-    // TODO: Replace with actual API call
-    // const res = await fieldDefinitionApi.byObject(objectCode.value)
-    // tableData.value = res.data || res.results || []
+    // The response interceptor unwraps the API response, so we get the data directly
+    const data = await businessObjectApi.getFields(objectCode.value) as any
+    if (data?.fields) {
+      // Transform API response to table format
+      tableData.value = data.fields.map((field: any) => ({
+        id: field.fieldName,
+        code: field.fieldName,
+        name: field.displayName,
+        fieldType: field.fieldType,
+        isRequired: field.isRequired,
+        isReadonly: field.isReadonly || !field.isEditable,
+        isSystem: !field.isEditable || field.fieldName === 'id',
+        sortOrder: field.sortOrder,
+        description: field.displayNameEn || '',
+        showInList: field.showInList,
+        showInForm: field.showInForm,
+        showInDetail: field.showInDetail,
+        referenceModelPath: field.referenceModelPath
+      }))
 
-    // Mock data
-    tableData.value = [
-      {
-        id: '1',
-        code: 'name',
-        name: '资产名称',
-        fieldType: 'text',
-        isRequired: true,
-        isReadonly: false,
-        isSystem: false,
-        sortOrder: 1,
-        description: '资产的名称'
-      },
-      {
-        id: '2',
-        code: 'category',
-        name: '资产分类',
-        fieldType: 'select',
-        isRequired: true,
-        isReadonly: false,
-        isSystem: false,
-        sortOrder: 2,
-        description: '资产所属分类'
-      },
-      {
-        id: '3',
-        code: 'purchaseDate',
-        name: '购置日期',
-        fieldType: 'date',
-        isRequired: false,
-        isReadonly: false,
-        isSystem: false,
-        sortOrder: 3,
-        description: '资产购置日期'
-      },
-      {
-        id: '4',
-        code: 'price',
-        name: '资产原值',
-        fieldType: 'currency',
-        isRequired: false,
-        isReadonly: false,
-        isSystem: false,
-        sortOrder: 4,
-        description: '资产购置原值'
+      // Update object name from response
+      if (data.object_name && objectName.value === t('system.businessObject.title')) {
+        objectName.value = data.object_name
       }
-    ]
-  } catch (error) {
+    } else {
+      ElMessage.warning(t('system.fieldDefinition.messages.noData'))
+    }
+  } catch (error: any) {
     console.error('Failed to load field definitions:', error)
+    const errorMsg = error?.response?.data?.error?.message || error?.message || t('system.fieldDefinition.messages.loadFailed')
+    ElMessage.error(errorMsg)
   } finally {
     loading.value = false
   }
@@ -268,10 +237,10 @@ const handleDelete = async (row: any) => {
   try {
     // TODO: Replace with actual API call
     // await fieldDefinitionApi.delete(row.id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.messages.deleteSuccess'))
     await loadData()
   } catch (error) {
-    ElMessage.error('删除失败')
+    ElMessage.error(t('common.messages.deleteFailed'))
   }
 }
 

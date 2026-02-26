@@ -41,7 +41,7 @@ export interface ITAssetInfo {
 export const itAssetInfoApi = {
     list(params?: any) {
         return request({
-            url: '/it-assets/it-assets/',
+            url: '/system/objects/ITAsset/',
             method: 'get',
             params
         })
@@ -49,14 +49,14 @@ export const itAssetInfoApi = {
 
     detail(id: string) {
         return request({
-            url: `/it-assets/it-assets/${id}/`,
+            url: `/system/objects/ITAsset/${id}/`,
             method: 'get'
         })
     },
 
     create(data: Partial<ITAssetInfo>) {
         return request({
-            url: '/it-assets/it-assets/',
+            url: '/system/objects/ITAsset/',
             method: 'post',
             data
         })
@@ -64,7 +64,7 @@ export const itAssetInfoApi = {
 
     update(id: string, data: Partial<ITAssetInfo>) {
         return request({
-            url: `/it-assets/it-assets/${id}/`,
+            url: `/system/objects/ITAsset/${id}/`,
             method: 'put',
             data
         })
@@ -72,7 +72,7 @@ export const itAssetInfoApi = {
 
     partialUpdate(id: string, data: Partial<ITAssetInfo>) {
         return request({
-            url: `/it-assets/it-assets/${id}/`,
+            url: `/system/objects/ITAsset/${id}/`,
             method: 'patch',
             data
         })
@@ -80,7 +80,7 @@ export const itAssetInfoApi = {
 
     delete(id: string) {
         return request({
-            url: `/it-assets/it-assets/${id}/`,
+            url: `/system/objects/ITAsset/${id}/`,
             method: 'delete'
         })
     }
@@ -108,7 +108,7 @@ export interface Software {
 export const softwareApi = {
     list(params?: any) {
         return request({
-            url: '/it-assets/software/',
+            url: '/system/objects/ITSoftware/',
             method: 'get',
             params
         })
@@ -116,14 +116,14 @@ export const softwareApi = {
 
     detail(id: string) {
         return request({
-            url: `/it-assets/software/${id}/`,
+            url: `/system/objects/ITSoftware/${id}/`,
             method: 'get'
         })
     },
 
     create(data: Partial<Software>) {
         return request({
-            url: '/it-assets/software/',
+            url: '/system/objects/ITSoftware/',
             method: 'post',
             data
         })
@@ -131,7 +131,7 @@ export const softwareApi = {
 
     update(id: string, data: Partial<Software>) {
         return request({
-            url: `/it-assets/software/${id}/`,
+            url: `/system/objects/ITSoftware/${id}/`,
             method: 'put',
             data
         })
@@ -139,7 +139,7 @@ export const softwareApi = {
 
     partialUpdate(id: string, data: Partial<Software>) {
         return request({
-            url: `/it-assets/software/${id}/`,
+            url: `/system/objects/ITSoftware/${id}/`,
             method: 'patch',
             data
         })
@@ -147,7 +147,7 @@ export const softwareApi = {
 
     delete(id: string) {
         return request({
-            url: `/it-assets/software/${id}/`,
+            url: `/system/objects/ITSoftware/${id}/`,
             method: 'delete'
         })
     }
@@ -182,7 +182,7 @@ export interface SoftwareLicense {
 export const softwareLicenseApi = {
     list(params?: any) {
         return request({
-            url: '/it-assets/licenses/',
+            url: '/system/objects/ITSoftwareLicense/',
             method: 'get',
             params
         })
@@ -190,14 +190,14 @@ export const softwareLicenseApi = {
 
     detail(id: string) {
         return request({
-            url: `/it-assets/licenses/${id}/`,
+            url: `/system/objects/ITSoftwareLicense/${id}/`,
             method: 'get'
         })
     },
 
     create(data: Partial<SoftwareLicense>) {
         return request({
-            url: '/it-assets/licenses/',
+            url: '/system/objects/ITSoftwareLicense/',
             method: 'post',
             data
         })
@@ -205,7 +205,7 @@ export const softwareLicenseApi = {
 
     update(id: string, data: Partial<SoftwareLicense>) {
         return request({
-            url: `/it-assets/licenses/${id}/`,
+            url: `/system/objects/ITSoftwareLicense/${id}/`,
             method: 'put',
             data
         })
@@ -213,7 +213,7 @@ export const softwareLicenseApi = {
 
     partialUpdate(id: string, data: Partial<SoftwareLicense>) {
         return request({
-            url: `/it-assets/licenses/${id}/`,
+            url: `/system/objects/ITSoftwareLicense/${id}/`,
             method: 'patch',
             data
         })
@@ -221,14 +221,14 @@ export const softwareLicenseApi = {
 
     delete(id: string) {
         return request({
-            url: `/it-assets/licenses/${id}/`,
+            url: `/system/objects/ITSoftwareLicense/${id}/`,
             method: 'delete'
         })
     },
 
     expiring() {
         return request({
-            url: '/it-assets/licenses/expiring/',
+            url: '/system/objects/ITSoftwareLicense/expiring/',
             method: 'get'
         })
     }
@@ -259,7 +259,7 @@ export interface LicenseAllocation {
 export const licenseAllocationApi = {
     list(params?: any) {
         return request({
-            url: '/it-assets/license-allocations/',
+            url: '/system/objects/ITLicenseAllocation/',
             method: 'get',
             params
         })
@@ -267,14 +267,14 @@ export const licenseAllocationApi = {
 
     detail(id: string) {
         return request({
-            url: `/it-assets/license-allocations/${id}/`,
+            url: `/system/objects/ITLicenseAllocation/${id}/`,
             method: 'get'
         })
     },
 
     create(data: Partial<LicenseAllocation>) {
         return request({
-            url: '/it-assets/license-allocations/',
+            url: '/system/objects/ITLicenseAllocation/',
             method: 'post',
             data
         })
@@ -282,7 +282,7 @@ export const licenseAllocationApi = {
 
     update(id: string, data: Partial<LicenseAllocation>) {
         return request({
-            url: `/it-assets/license-allocations/${id}/`,
+            url: `/system/objects/ITLicenseAllocation/${id}/`,
             method: 'put',
             data
         })
@@ -290,14 +290,14 @@ export const licenseAllocationApi = {
 
     delete(id: string) {
         return request({
-            url: `/it-assets/license-allocations/${id}/`,
+            url: `/system/objects/ITLicenseAllocation/${id}/`,
             method: 'delete'
         })
     },
 
     deallocate(id: string, notes?: string) {
         return request({
-            url: `/it-assets/license-allocations/${id}/deallocate/`,
+            url: `/system/objects/ITLicenseAllocation/${id}/deallocate/`,
             method: 'post',
             data: { notes }
         })
@@ -330,7 +330,7 @@ export interface ITMaintenanceRecord {
 export const itMaintenanceApi = {
     list(params?: any) {
         return request({
-            url: '/it-assets/maintenance/',
+            url: '/system/objects/ITMaintenanceRecord/',
             method: 'get',
             params
         })
@@ -338,14 +338,14 @@ export const itMaintenanceApi = {
 
     detail(id: string) {
         return request({
-            url: `/it-assets/maintenance/${id}/`,
+            url: `/system/objects/ITMaintenanceRecord/${id}/`,
             method: 'get'
         })
     },
 
     create(data: Partial<ITMaintenanceRecord>) {
         return request({
-            url: '/it-assets/maintenance/',
+            url: '/system/objects/ITMaintenanceRecord/',
             method: 'post',
             data
         })
@@ -353,7 +353,7 @@ export const itMaintenanceApi = {
 
     update(id: string, data: Partial<ITMaintenanceRecord>) {
         return request({
-            url: `/it-assets/maintenance/${id}/`,
+            url: `/system/objects/ITMaintenanceRecord/${id}/`,
             method: 'put',
             data
         })
@@ -361,7 +361,7 @@ export const itMaintenanceApi = {
 
     delete(id: string) {
         return request({
-            url: `/it-assets/maintenance/${id}/`,
+            url: `/system/objects/ITMaintenanceRecord/${id}/`,
             method: 'delete'
         })
     }
@@ -389,7 +389,7 @@ export interface ConfigurationChange {
 export const configurationChangeApi = {
     list(params?: any) {
         return request({
-            url: '/it-assets/configuration-changes/',
+            url: '/system/objects/ConfigurationChange/',
             method: 'get',
             params
         })
@@ -397,14 +397,14 @@ export const configurationChangeApi = {
 
     detail(id: string) {
         return request({
-            url: `/it-assets/configuration-changes/${id}/`,
+            url: `/system/objects/ConfigurationChange/${id}/`,
             method: 'get'
         })
     },
 
     create(data: Partial<ConfigurationChange>) {
         return request({
-            url: '/it-assets/configuration-changes/',
+            url: '/system/objects/ConfigurationChange/',
             method: 'post',
             data
         })
@@ -412,7 +412,7 @@ export const configurationChangeApi = {
 
     update(id: string, data: Partial<ConfigurationChange>) {
         return request({
-            url: `/it-assets/configuration-changes/${id}/`,
+            url: `/system/objects/ConfigurationChange/${id}/`,
             method: 'put',
             data
         })
@@ -420,7 +420,7 @@ export const configurationChangeApi = {
 
     delete(id: string) {
         return request({
-            url: `/it-assets/configuration-changes/${id}/`,
+            url: `/system/objects/ConfigurationChange/${id}/`,
             method: 'delete'
         })
     }

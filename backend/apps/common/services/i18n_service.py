@@ -454,6 +454,280 @@ class TranslationService:
             },
         ]
 
+    # =========================================================================
+    # GenericForeignKey Translation Methods
+    # =========================================================================
+
+    @staticmethod
+    def get_object_translation(
+        obj,
+        field_name: str,
+        lang_code: Optional[str] = None,
+        use_cache: bool = True
+    ) -> Optional[str]:
+        """
+        Get translation for a dynamic object field via GenericForeignKey.
+
+        Args:
+            obj: Model instance to translate
+            field_name: Field name being translated (e.g., 'name', 'description')
+            lang_code: Target language code
+            use_cache: Whether to use cache
+
+        Returns:
+            Translated text or None if not found
+        """
+        from django.contrib.contenttypes.models import ContentType
+        from apps.system.models import Translation
+
+        lang_code = lang_code or get_current_language()
+        content_type = ContentType.objects.get_for_model(obj)
+
+        # Check cache
+        if use_cache:
+            cache_key = TranslationCache._make_key(
+                'gfk', content_type.model, obj.pk, field_name, lang_code
+            )
+            cached = cache.get(cache_key)
+            if cached is not None:
+                return cached
+
+        # Query database
+        try:
+            translation = Translation.objects.filter(
+                content_type=content_type,
+                object_id=obj.pk,
+                field_name=field_name,
+                language_code=lang_code,
+                is_deleted=False
+            ).first()
+
+            if translation:
+                text = translation.text
+                if use_cache:
+                    cache.set(cache_key, text, TranslationCache.CACHE_TIMEOUT)
+                return text
+        except Exception:
+            pass
+
+        return None
+
+    @staticmethod
+    def get_localized_value(
+        obj,
+        field_name: str,
+        lang_code: Optional[str] = None,
+        fallback_to_original: bool = True
+    ) -> str:
+        """
+        Get localized value for an object field.
+
+        Priority:
+        1. Translation from Translation table (GenericForeignKey)
+        2. Field-specific translation (e.g., name_en for 'name' field in English)
+        3. Original field value
+
+        Args:
+            obj: Model instance
+            field_name: Field name to translate
+            lang_code: Target language code
+            fallback_to_original: Whether to fallback to original value
+
+        Returns:
+            Localized value or empty string
+        """
+        lang_code = lang_code or get_current_language()
+
+        # Try GenericForeignKey translation first
+        translation = TranslationService.get_object_translation(obj, field_name, lang_code)
+        if translation:
+            return translation
+
+        # Try field-specific translation (e.g., name_en)
+        if lang_code == 'en-US' or lang_code.startswith('en'):
+            en_field = f'{field_name}_en'
+            en_value = getattr(obj, en_field, None)
+            if en_value:
+                return en_value
+
+        # Fallback to original value
+        if fallback_to_original:
+            original_value = getattr(obj, field_name, '')
+            return original_value if original_value else ''
+
+        return ''
+
+    @staticmethod
+    def get_object_translations(
+        obj,
+        lang_code: Optional[str] = None,
+        field_names: Optional[List[str]] = None
+    ) -> Dict[str, str]:
+        """
+        Get all translations for an object.
+
+        Args:
+            obj: Model instance
+            lang_code: Target language code
+            field_names: Specific fields to translate (default: all available)
+
+        Returns:
+            Dict mapping field names to translated values
+        """
+        from django.contrib.contenttypes.models import ContentType
+        from apps.system.models import Translation
+
+        lang_code = lang_code or get_current_language()
+        content_type = ContentType.objects.get_for_model(obj)
+
+        result = {}
+
+        # Query all translations for this object
+        try:
+            qs = Translation.objects.filter(
+                content_type=content_type,
+                object_id=obj.pk,
+                language_code=lang_code,
+                is_deleted=False
+            )
+
+            if field_names:
+                qs = qs.filter(field_name__in=field_names)
+
+            for trans in qs:
+                result[trans.field_name] = trans.text
+        except Exception:
+            pass
+
+        return result
+
+    @staticmethod
+    def set_object_translation(
+        obj,
+        field_name: str,
+        text: str,
+        lang_code: str,
+        context: Optional[str] = None
+    ) -> Any:
+        """
+        Set translation for an object field.
+
+        Args:
+            obj: Model instance
+            field_name: Field name being translated
+            text: Translated text
+            lang_code: Target language code
+            context: Optional context
+
+        Returns:
+            Created or updated Translation instance
+        """
+        from django.contrib.contenttypes.models import ContentType
+        from apps.system.models import Translation
+
+        content_type = ContentType.objects.get_for_model(obj)
+
+        translation, created = Translation.objects.update_or_create(
+            content_type=content_type,
+            object_id=obj.pk,
+            field_name=field_name,
+            language_code=lang_code,
+            defaults={
+                'text': text,
+                'context': context or '',
+                'type': 'object_field',
+            }
+        )
+
+        # Invalidate cache
+        TranslationCache.invalidate_all()
+
+        return translation
+
+    @staticmethod
+    def delete_object_translations(
+        obj,
+        field_names: Optional[List[str]] = None
+    ) -> int:
+        """
+        Delete translations for an object.
+
+        Args:
+            obj: Model instance
+            field_names: Specific fields to delete (default: all)
+
+        Returns:
+            Number of translations deleted
+        """
+        from django.contrib.contenttypes.models import ContentType
+        from apps.system.models import Translation
+
+        content_type = ContentType.objects.get_for_model(obj)
+
+        qs = Translation.objects.filter(
+            content_type=content_type,
+            object_id=obj.pk
+        )
+
+        if field_names:
+            qs = qs.filter(field_name__in=field_names)
+
+        count = qs.count()
+        qs.delete()
+
+        # Invalidate cache
+        TranslationCache.invalidate_all()
+
+        return count
+
+    @staticmethod
+    def bulk_get_object_translations(
+        objects: List,
+        field_name: str,
+        lang_code: Optional[str] = None
+    ) -> Dict[int, str]:
+        """
+        Bulk get translations for multiple objects (N+1 query optimization).
+
+        Args:
+            objects: List of model instances
+            field_name: Field name to translate
+            lang_code: Target language code
+
+        Returns:
+            Dict mapping object IDs to translated values
+        """
+        from django.contrib.contenttypes.models import ContentType
+        from apps.system.models import Translation
+
+        if not objects:
+            return {}
+
+        lang_code = lang_code or get_current_language()
+        first_obj = objects[0]
+        content_type = ContentType.objects.get_for_model(first_obj)
+
+        # Get all object IDs
+        object_ids = [obj.pk for obj in objects]
+
+        # Query all translations in one go
+        result = {}
+        try:
+            qs = Translation.objects.filter(
+                content_type=content_type,
+                object_id__in=object_ids,
+                field_name=field_name,
+                language_code=lang_code,
+                is_deleted=False
+            )
+
+            for trans in qs:
+                result[trans.object_id] = trans.text
+        except Exception:
+            pass
+
+        return result
+
 
 class TranslatedFieldMixin:
     """
@@ -499,3 +773,38 @@ class TranslatedFieldMixin:
         data.update(translations)
 
         return data
+
+    # Delegate GenericForeignKey translation methods to TranslationService
+    @staticmethod
+    def get_object_translation(obj, field_name: str, lang_code: Optional[str] = None, use_cache: bool = True) -> Optional[str]:
+        """Get object field translation (delegates to TranslationService)."""
+        return TranslationService.get_object_translation(obj, field_name, lang_code, use_cache)
+
+    @staticmethod
+    def get_localized_value(obj, field_name: str, lang_code: Optional[str] = None, fallback_to_original: bool = True) -> str:
+        """Get localized value (delegates to TranslationService)."""
+        return TranslationService.get_localized_value(obj, field_name, lang_code, fallback_to_original)
+
+    @staticmethod
+    def get_object_translations(obj, lang_code: Optional[str] = None, field_names: Optional[List[str]] = None) -> Dict[str, str]:
+        """Get all object translations (delegates to TranslationService)."""
+        return TranslationService.get_object_translations(obj, lang_code, field_names)
+
+    @staticmethod
+    def set_object_translation(obj, field_name: str, text: str, lang_code: str, context: Optional[str] = None) -> Any:
+        """Set object translation (delegates to TranslationService)."""
+        return TranslationService.set_object_translation(obj, field_name, text, lang_code, context)
+
+    @staticmethod
+    def delete_object_translations(obj, field_names: Optional[List[str]] = None) -> int:
+        """Delete object translations (delegates to TranslationService)."""
+        return TranslationService.delete_object_translations(obj, field_names)
+
+    @staticmethod
+    def bulk_get_object_translations(objects: List, field_name: str, lang_code: Optional[str] = None) -> Dict[int, str]:
+        """Bulk get object translations (delegates to TranslationService)."""
+        return TranslationService.bulk_get_object_translations(objects, field_name, lang_code)
+
+
+# Alias for backward compatibility
+I18nService = TranslationService

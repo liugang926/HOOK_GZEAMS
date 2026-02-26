@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="isEdit ? '编辑字典类型' : '新建字典类型'"
+    :title="isEdit ? $t('common.actions.edit') + $t('system.dictionary.type') : $t('common.actions.create') + $t('system.dictionary.type')"
     width="600px"
     @update:model-value="handleClose"
   >
@@ -12,41 +12,41 @@
       label-width="120px"
     >
       <el-form-item
-        label="字典编码"
+        :label="$t('system.dictionary.code')"
         prop="code"
       >
         <el-input
           v-model="formData.code"
-          placeholder="请输入字典编码（英文，如：ASSET_STATUS）"
+          :placeholder="$t('system.dictionary.codePlaceholder')"
           :disabled="isEdit"
         />
         <div class="form-tip">
-          编码必须唯一，建议使用大写字母和下划线
+          {{ $t('system.dictionary.codeTip') }}
         </div>
       </el-form-item>
 
       <el-form-item
-        label="字典名称"
+        :label="$t('system.dictionary.name')"
         prop="name"
       >
         <el-input
           v-model="formData.name"
-          placeholder="请输入字典名称（中文）"
+          :placeholder="$t('system.dictionary.namePlaceholder')"
         />
       </el-form-item>
 
       <el-form-item
-        label="英文名称"
+        :label="$t('system.dictionary.englishName')"
         prop="name_en"
       >
         <el-input
           v-model="formData.name_en"
-          placeholder="请输入英文名称"
+          :placeholder="$t('system.dictionary.englishNamePlaceholder')"
         />
       </el-form-item>
 
       <el-form-item
-        label="排序号"
+        :label="$t('system.dictionary.sortOrder')"
         prop="sort_order"
       >
         <el-input-number
@@ -57,39 +57,39 @@
       </el-form-item>
 
       <el-form-item
-        label="描述"
+        :label="$t('common.labels.description')"
         prop="description"
       >
         <el-input
           v-model="formData.description"
           type="textarea"
           :rows="3"
-          placeholder="请输入字典类型描述"
+          :placeholder="$t('system.dictionary.descriptionPlaceholder')"
         />
       </el-form-item>
 
       <el-form-item
-        label="状态"
+        :label="$t('system.department.columns.status')"
         prop="is_active"
       >
         <el-switch
           v-model="formData.is_active"
-          active-text="启用"
-          inactive-text="禁用"
+          :active-text="$t('system.dictionary.status.enabled')"
+          :inactive-text="$t('system.dictionary.status.disabled')"
         />
       </el-form-item>
     </el-form>
 
     <template #footer>
       <el-button @click="handleClose">
-        取消
+        {{ $t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="submitting"
         @click="handleSubmit"
       >
-        {{ isEdit ? '保存' : '创建' }}
+        {{ isEdit ? $t('common.actions.save') : $t('common.actions.create') }}
       </el-button>
     </template>
   </el-dialog>
@@ -99,8 +99,11 @@
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import type { DictionaryType } from '@/api/system'
 import { dictionaryTypeApi } from '@/api/system'
+
+const { t } = useI18n()
 
 interface Props {
   visible: boolean
@@ -131,10 +134,10 @@ const formData = ref({
 
 const rules: FormRules = {
   code: [
-    { required: true, message: '请输入字典编码', trigger: 'blur' },
-    { pattern: /^[A-Z_][A-Z0-9_]*$/, message: '编码只能包含大写字母、数字和下划线，且必须以字母或下划线开头', trigger: 'blur' }
+    { required: true, message: t('system.dictionary.validation.codeRequired'), trigger: 'blur' },
+    { pattern: /^[A-Z_][A-Z0-9_]*$/, message: t('system.dictionary.validation.codePattern'), trigger: 'blur' }
   ],
-  name: [{ required: true, message: '请输入字典名称', trigger: 'blur' }]
+  name: [{ required: true, message: t('system.dictionary.validation.nameRequired'), trigger: 'blur' }]
 }
 
 watch(() => props.visible, (val) => {
@@ -181,11 +184,11 @@ const handleSubmit = async () => {
       } else {
         await dictionaryTypeApi.create(formData.value)
       }
-      ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
+      ElMessage.success(isEdit.value ? t('common.messages.updateSuccess') : t('common.messages.createSuccess'))
       emit('success')
       handleClose()
     } catch (error) {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('common.messages.operationFailed'))
     } finally {
       submitting.value = false
     }

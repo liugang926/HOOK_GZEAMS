@@ -50,6 +50,17 @@ HARDCODED_OBJECT_NAMES = {
     'Role': ('角色', 'Role'),
     'WorkflowDefinition': ('工作流定义', 'Workflow Definition'),
     'WorkflowInstance': ('工作流实例', 'Workflow Instance'),
+    'LeasingContract': ('Lease Contract', 'Lease Contract'),
+    'LeaseItem': ('Lease Item', 'Lease Item'),
+    'RentPayment': ('Rent Payment', 'Rent Payment'),
+    'LeaseReturn': ('Lease Return', 'Lease Return'),
+    'LeaseExtension': ('Lease Extension', 'Lease Extension'),
+    'InsuranceCompany': ('Insurance Company', 'Insurance Company'),
+    'InsurancePolicy': ('Insurance Policy', 'Insurance Policy'),
+    'InsuredAsset': ('Insured Asset', 'Insured Asset'),
+    'PremiumPayment': ('Premium Payment', 'Premium Payment'),
+    'ClaimRecord': ('Claim Record', 'Claim Record'),
+    'PolicyRenewal': ('Policy Renewal', 'Policy Renewal'),
 }
 
 
@@ -97,6 +108,21 @@ CORE_HARDcoded_MODELS = {
     # Workflows Module
     'WorkflowDefinition': 'apps.workflows.models.WorkflowDefinition',
     'WorkflowInstance': 'apps.workflows.models.WorkflowInstance',
+
+    # Leasing Module
+    'LeasingContract': 'apps.leasing.models.LeaseContract',
+    'LeaseItem': 'apps.leasing.models.LeaseItem',
+    'RentPayment': 'apps.leasing.models.RentPayment',
+    'LeaseReturn': 'apps.leasing.models.LeaseReturn',
+    'LeaseExtension': 'apps.leasing.models.LeaseExtension',
+
+    # Insurance Module
+    'InsuranceCompany': 'apps.insurance.models.InsuranceCompany',
+    'InsurancePolicy': 'apps.insurance.models.InsurancePolicy',
+    'InsuredAsset': 'apps.insurance.models.InsuredAsset',
+    'PremiumPayment': 'apps.insurance.models.PremiumPayment',
+    'ClaimRecord': 'apps.insurance.models.ClaimRecord',
+    'PolicyRenewal': 'apps.insurance.models.PolicyRenewal',
 }
 
 
@@ -352,6 +378,15 @@ class BusinessObjectService:
         for field in fields:
             field_def = ModelFieldDefinition.from_django_field(obj, field)
 
+            # Special handling for JSONField-based file/image fields
+            # Fields named 'images' or containing 'image' should use 'image' type
+            # Fields named 'attachments' or containing 'attachment' should use 'file' type
+            field_name_lower = field.name.lower()
+            if field_name_lower in ('images', 'image') or field_name_lower.endswith('_image') or field_name_lower.endswith('_images'):
+                field_def.field_type = 'image'
+            elif field_name_lower in ('attachments', 'attachment') or field_name_lower.endswith('_attachment') or field_name_lower.endswith('_attachments'):
+                field_def.field_type = 'file'
+
             # Get or update
             existing = ModelFieldDefinition.objects.filter(
                 business_object=obj,
@@ -359,9 +394,10 @@ class BusinessObjectService:
             ).first()
 
             if existing:
-                # Update only mutable fields
+                # Update only mutable fields (including field_type for correct mapping)
                 existing.display_name = field_def.display_name
                 existing.display_name_en = field_def.display_name_en
+                existing.field_type = field_def.field_type
                 existing.sort_order = field_def.sort_order
                 existing.save()
             else:
@@ -427,33 +463,53 @@ class BusinessObjectService:
                 'error': f'Business object "{object_code}" not registered'
             }
 
+        # Get the Django model class
+        model_class = self.get_django_model(object_code)
+        if not model_class:
+            return {
+                'error': f'Django model not found for: {object_code}'
+            }
+
+        # Generate field definitions directly from Django model (real-time)
+        # This ensures field type detection fixes are applied immediately
+        fields = []
+        for field in model_class._meta.get_fields():
+            # Skip reverse relations and auto-generated fields
+            if field.auto_created:
+                if not field.one_to_many and not field.many_to_one:
+                    continue
+            if field.is_relation and not field.many_to_one and not field.one_to_many:
+                continue
+
+            # Use ModelFieldDefinition.from_django_field to get correct field type
+            field_def = ModelFieldDefinition.from_django_field(obj, field)
+
+            fields.append({
+                'fieldName': field_def.field_name,
+                'displayName': field_def.display_name,
+                'displayNameEn': field_def.display_name_en or '',
+                'fieldType': field_def.field_type,
+                'djangoFieldType': field_def.django_field_type,
+                'isRequired': field_def.is_required,
+                'isReadonly': field_def.is_readonly,
+                'isEditable': field_def.is_editable,
+                'isUnique': field_def.is_unique,
+                'showInList': field_def.show_in_list,
+                'showInDetail': field_def.show_in_detail,
+                'showInForm': field_def.show_in_form,
+                'sortOrder': field_def.sort_order,
+                'referenceModelPath': field_def.reference_model_path,
+                'maxLength': field_def.max_length,
+                'decimalPlaces': field_def.decimal_places,
+            })
+
         return {
-            'object_code': obj.code,
-            'object_name': obj.name,
-            'object_name_en': obj.name_en or '',
-            'is_hardcoded': True,
-            'model_path': obj.django_model_path,
-            'fields': [
-                {
-                    'field_name': f.field_name,
-                    'display_name': f.display_name,
-                    'display_name_en': f.display_name_en or '',
-                    'field_type': f.field_type,
-                    'django_field_type': f.django_field_type,
-                    'is_required': f.is_required,
-                    'is_readonly': f.is_readonly,
-                    'is_editable': f.is_editable,
-                    'is_unique': f.is_unique,
-                    'show_in_list': f.show_in_list,
-                    'show_in_detail': f.show_in_detail,
-                    'show_in_form': f.show_in_form,
-                    'sort_order': f.sort_order,
-                    'reference_model_path': f.reference_model_path,
-                    'max_length': f.max_length,
-                    'decimal_places': f.decimal_places,
-                }
-                for f in obj.model_fields.filter(is_deleted=False).order_by('sort_order')
-            ]
+            'objectCode': obj.code,
+            'objectName': obj.name,
+            'objectNameEn': obj.name_en or '',
+            'isHardcoded': True,
+            'modelPath': obj.django_model_path,
+            'fields': fields
         }
 
     def _get_custom_object_fields(self, obj: BusinessObject) -> Dict[str, Any]:

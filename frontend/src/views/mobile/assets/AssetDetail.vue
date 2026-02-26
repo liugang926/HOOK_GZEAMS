@@ -7,13 +7,14 @@
   - Touch-optimized interactions
   - Action sheet for additional options
   - Timeline for operation history
+  - Full i18n support
 -->
 
 <template>
   <div class="mobile-asset-detail">
     <van-nav-bar
-      title="资产详情"
-      left-text="返回"
+      :title="$t('mobile.assetDetail.title')"
+      :left-text="$t('common.actions.back')"
       left-arrow
       @click-left="goBack"
     >
@@ -35,7 +36,7 @@
         size="24px"
         color="#409eff"
       >
-        加载中...
+        {{ $t('common.status.loading') }}
       </van-loading>
     </div>
 
@@ -77,30 +78,30 @@
       <!-- Basic Information -->
       <van-cell-group
         inset
-        title="基本信息"
+        :title="$t('mobile.assetDetail.basicInfo')"
       >
         <van-cell
-          title="资产编码"
+          :title="$t('assets.fields.assetCode')"
           :value="asset.code"
         />
         <van-cell
-          title="资产名称"
+          :title="$t('assets.fields.assetName')"
           :value="asset.name"
         />
         <van-cell
-          title="资产分类"
+          :title="$t('assets.fields.category')"
           :value="asset.categoryName || '-'"
         />
         <van-cell
-          title="采购金额"
+          :title="$t('assets.fields.purchasePrice')"
           :value="`¥${formatMoney(asset.purchasePrice)}`"
         />
         <van-cell
-          title="采购日期"
+          :title="$t('assets.fields.purchaseDate')"
           :value="asset.purchaseDate"
         />
         <van-cell
-          title="规格型号"
+          :title="$t('assets.fields.model')"
           :value="asset.specification || '-'"
         />
       </van-cell-group>
@@ -108,19 +109,19 @@
       <!-- Location & Custodian -->
       <van-cell-group
         inset
-        title="位置与使用人"
+        :title="$t('mobile.assetDetail.usageInfo')"
       >
         <van-cell
-          title="存放位置"
+          :title="$t('assets.fields.location')"
           :value="asset.locationName || '-'"
           is-link
         />
         <van-cell
-          title="使用人"
+          :title="$t('assets.fields.user')"
           :value="asset.custodianName || '-'"
         />
         <van-cell
-          title="管理部门"
+          :title="$t('assets.fields.department')"
           :value="asset.departmentName || '-'"
         />
       </van-cell-group>
@@ -129,7 +130,7 @@
       <van-cell-group
         v-if="hasCustomFields"
         inset
-        title="扩展信息"
+        :title="$t('mobile.assetDetail.maintenanceInfo')"
       >
         <van-cell
           v-for="(value, key) in asset.customFields"
@@ -143,14 +144,14 @@
       <van-cell-group
         v-if="asset.supplierName"
         inset
-        title="采购信息"
+        :title="$t('assets.fields.supplier')"
       >
         <van-cell
-          title="供应商"
+          :title="$t('assets.fields.supplier')"
           :value="asset.supplierName"
         />
         <van-cell
-          title="供应商联系方式"
+          :title="$t('assets.fields.supplier') + $t('common.labels.contact')"
           value="-"
         />
       </van-cell-group>
@@ -159,7 +160,7 @@
       <van-cell-group
         v-if="asset.description"
         inset
-        title="备注"
+        :title="$t('common.labels.description')"
       >
         <van-cell>
           <template #title>
@@ -173,7 +174,7 @@
       <!-- QR Code Card -->
       <van-cell-group
         inset
-        title="二维码"
+        :title="$t('mobile.assetDetail.scanQR')"
       >
         <div class="qr-code-card">
           <div class="qr-code-placeholder">
@@ -192,7 +193,7 @@
             icon="photo"
             @click="handleShowQRCode"
           >
-            显示二维码
+            {{ $t('mobile.actions.scanQR') }}
           </van-button>
         </div>
       </van-cell-group>
@@ -200,12 +201,12 @@
       <!-- Operation Timeline -->
       <van-cell-group
         inset
-        title="操作记录"
+        :title="$t('mobile.assetDetail.scanRecord')"
       >
         <div class="timeline-container">
           <van-empty
             v-if="!timeline || timeline.length === 0"
-            description="暂无操作记录"
+            :description="$t('common.table.noData')"
           />
           <van-steps
             v-else
@@ -231,7 +232,7 @@
                   v-if="item.operator"
                   class="step-operator"
                 >
-                  操作人: {{ item.operator }}
+                  {{ $t('common.labels.createdBy') }}: {{ item.operator }}
                 </p>
               </template>
             </van-step>
@@ -247,14 +248,14 @@
           icon="edit"
           @click="handleEdit"
         >
-          编辑
+          {{ $t('common.actions.edit') }}
         </van-button>
         <van-button
           size="large"
           icon="share-o"
           @click="handleTransfer"
         >
-          调拨
+          {{ $t('mobile.actions.transfer') }}
         </van-button>
       </div>
     </div>
@@ -262,21 +263,21 @@
     <!-- Error State -->
     <van-empty
       v-else
-      description="资产不存在"
+      :description="$t('mobile.messages.assetNotFound')"
     />
 
     <!-- Action Sheet -->
     <van-action-sheet
       v-model:show="showActions"
       :actions="actionItems"
-      cancel-text="取消"
+      :cancel-text="$t('common.actions.cancel')"
       @select="handleAction"
     />
 
     <!-- QR Code Dialog -->
     <van-dialog
       v-model:show="qrCodeVisible"
-      title="资产二维码"
+      :title="$t('mobile.assetDetail.scanQR')"
       :show-confirm-button="false"
     >
       <div class="qr-dialog-content">
@@ -291,18 +292,18 @@
           </p>
         </div>
         <p class="qr-hint-text">
-          扫描二维码查看资产详情
+          {{ $t('mobile.messages.scanSuccess') }}
         </p>
       </div>
       <template #footer>
         <van-button @click="qrCodeVisible = false">
-          关闭
+          {{ $t('common.actions.close') }}
         </van-button>
         <van-button
           type="primary"
           @click="handleDownloadQR"
         >
-          保存图片
+          {{ $t('common.actions.download') }}
         </van-button>
       </template>
     </van-dialog>
@@ -313,18 +314,20 @@
 /**
  * Mobile Asset Detail View
  *
- * Mobile-optimized asset detail page using Vant UI components.
+ * Mobile-optimized asset detail page using Vant UI components with full i18n support.
  */
 
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { showToast, showDialog, showImagePreview } from 'vant'
+import { useI18n } from 'vue-i18n'
+import { showToast, showDialog } from 'vant'
 import type { Asset, AssetStatus } from '@/types/assets'
 import { assetApi } from '@/api/assets'
 import { formatMoney } from '@/utils/numberFormat'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 
 // ============================================================================
 // State
@@ -337,16 +340,16 @@ const qrCodeVisible = ref(false)
 const timeline = ref<any[]>([])
 
 // ============================================================================
-// Action Items
+// Action Items (computed to react to language changes)
 // ============================================================================
 
-const actionItems = [
-  { name: '编辑资产', icon: 'edit' },
-  { name: '资产调拨', icon: 'exchange' },
-  { name: '打印二维码', icon: 'qr' },
-  { name: '查看操作记录', icon: 'records' },
-  { name: '删除资产', icon: 'delete-o', color: '#ee0a24' }
-]
+const actionItems = computed(() => [
+  { name: t('common.actions.edit') + ' ' + t('assets.fields.assetName'), icon: 'edit' },
+  { name: t('assets.operations.transfer'), icon: 'exchange' },
+  { name: t('common.actions.print') + ' ' + t('mobile.assetDetail.scanQR'), icon: 'qr' },
+  { name: t('mobile.assetDetail.history'), icon: 'records' },
+  { name: t('common.actions.delete') + ' ' + t('assets.fields.assetName'), icon: 'delete-o', color: '#ee0a24' }
+])
 
 // ============================================================================
 // Computed
@@ -364,14 +367,15 @@ const hasCustomFields = computed(() => {
  * Get status label
  */
 const getStatusLabel = (status: AssetStatus): string => {
-  const labels: Record<AssetStatus, string> = {
-    draft: '草稿',
-    in_use: '使用中',
-    idle: '闲置',
-    maintenance: '维修中',
-    scrapped: '已报废'
+  const keyMap: Record<AssetStatus, string> = {
+    draft: 'assets.status.draft',
+    in_use: 'assets.status.inUse',
+    idle: 'assets.status.idle',
+    maintenance: 'assets.status.maintenance',
+    scrapped: 'assets.status.scrapped'
   }
-  return labels[status] || status
+  const key = keyMap[status]
+  return key ? t(key) : status
 }
 
 /**
@@ -394,10 +398,10 @@ const getStatusType = (status: AssetStatus): any => {
 const getFieldLabel = (key: string): string => {
   // Would fetch from field definition metadata
   const labels: Record<string, string> = {
-    warrantyExpiry: '保修到期日',
-    manufacturer: '制造商',
-    modelNumber: '型号',
-    serialNumber: '序列号'
+    warrantyExpiry: t('assets.fields.warrantyDate'),
+    manufacturer: t('assets.fields.brand'),
+    modelNumber: t('assets.fields.model'),
+    serialNumber: t('assets.fields.serialNumber')
   }
   return labels[key] || key
 }
@@ -407,7 +411,7 @@ const getFieldLabel = (key: string): string => {
  */
 const formatCustomFieldValue = (value: any): string => {
   if (value === null || value === undefined) return '-'
-  if (typeof value === 'boolean') return value ? '是' : '否'
+  if (typeof value === 'boolean') return value ? t('common.units.yes') : t('common.units.no')
   return String(value)
 }
 
@@ -462,7 +466,7 @@ const handleAction = (item: any) => {
       handleShowQRCode()
       break
     case 'records':
-      showToast('查看操作记录')
+      showToast(t('mobile.assetDetail.history'))
       break
     case 'delete-o':
       handleDelete()
@@ -495,7 +499,7 @@ const handleShowQRCode = () => {
  * Handle download QR code
  */
 const handleDownloadQR = () => {
-  showToast('二维码保存功能开发中...')
+  showToast(t('common.status.processing'))
 }
 
 /**
@@ -503,17 +507,19 @@ const handleDownloadQR = () => {
  */
 const handleDelete = async () => {
   showDialog({
-    title: '确认删除',
-    message: '确定要删除此资产吗？',
-    showCancelButton: true
+    title: t('common.dialog.confirmDelete'),
+    message: t('common.dialog.confirmDeleteMessage', { count: 1 }),
+    showCancelButton: true,
+    confirmButtonText: t('common.actions.confirm'),
+    cancelButtonText: t('common.actions.cancel')
   }).then(async (action: string) => {
     if (action === 'confirm') {
       try {
         await assetApi.delete(asset.value!.id)
-        showToast('删除成功')
+        showToast(t('common.messages.deleteSuccess'))
         goBack()
       } catch (error) {
-        showToast('删除失败')
+        showToast(t('common.messages.deleteFailed'))
       }
     }
   })
@@ -537,7 +543,7 @@ const loadAsset = async () => {
     asset.value = await assetApi.get(id)
     await loadTimeline()
   } catch (error) {
-    showToast('加载失败')
+    showToast(t('common.messages.operationFailed'))
     goBack()
   } finally {
     loading.value = false

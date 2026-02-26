@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="`${dictionaryType?.name || ''} - 字典项管理`"
+    :title="`${dictionaryType?.name || ''} - ${$t('system.dictionary.itemManagement')}`"
     width="900px"
     @update:model-value="handleClose"
   >
@@ -12,13 +12,13 @@
         size="small"
         @click="handleCreate"
       >
-        添加字典项
+        {{ $t('system.dictionary.addItem') }}
       </el-button>
       <el-button
         size="small"
         @click="handleBatchSort"
       >
-        批量排序
+        {{ $t('system.dictionary.batchSort') }}
       </el-button>
     </div>
 
@@ -33,11 +33,11 @@
     >
       <el-table-column
         prop="code"
-        label="字典项编码"
+        :label="$t('system.dictionary.itemCode')"
         width="150"
       />
       <el-table-column
-        label="显示名称"
+        :label="$t('system.dictionary.displayName')"
         width="200"
       >
         <template #default="{ row }">
@@ -59,24 +59,24 @@
               type="info"
               size="small"
             >
-              默认
+              {{ $t('system.dictionary.default') }}
             </el-tag>
           </div>
         </template>
       </el-table-column>
       <el-table-column
         prop="name_en"
-        label="英文名称"
+        :label="$t('system.dictionary.englishName')"
         width="150"
       />
       <el-table-column
         prop="description"
-        label="描述"
+        :label="$t('common.labels.description')"
         min-width="150"
         show-overflow-tooltip
       />
       <el-table-column
-        label="状态"
+        :label="$t('system.department.columns.status')"
         width="80"
         align="center"
       >
@@ -89,7 +89,7 @@
       </el-table-column>
       <el-table-column
         prop="sort_order"
-        label="排序"
+        :label="$t('system.dictionary.sortOrder')"
         width="100"
         align="center"
       >
@@ -105,7 +105,7 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="操作"
+        :label="$t('common.labels.operation')"
         width="150"
         fixed="right"
       >
@@ -115,14 +115,14 @@
             type="primary"
             @click="handleEdit(row)"
           >
-            编辑
+            {{ $t('common.actions.edit') }}
           </el-button>
           <el-button
             link
             type="danger"
             @click="handleDelete(row)"
           >
-            删除
+            {{ $t('common.actions.delete') }}
           </el-button>
         </template>
       </el-table-column>
@@ -130,7 +130,7 @@
 
     <template #footer>
       <el-button @click="handleClose">
-        关闭
+        {{ $t('common.actions.close') }}
       </el-button>
     </template>
 
@@ -147,9 +147,12 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import type { DictionaryType, DictionaryItem } from '@/api/system'
 import { dictionaryItemApi } from '@/api/system'
 import DictionaryItemForm from './DictionaryItemForm.vue'
+
+const { t } = useI18n()
 
 interface Props {
   visible: boolean
@@ -185,7 +188,7 @@ const fetchData = async () => {
 
     tableData.value = res.results || []
   } catch (error) {
-    ElMessage.error('加载字典项失败')
+    ElMessage.error(t('system.dictionary.messages.loadItemsFailed'))
   } finally {
     loading.value = false
   }
@@ -204,9 +207,9 @@ const handleEdit = (row: DictionaryItem) => {
 const handleToggleActive = async (row: DictionaryItem) => {
   try {
     await dictionaryItemApi.partialUpdate(row.id, { is_active: row.is_active })
-    ElMessage.success(row.is_active ? '已启用' : '已禁用')
+    ElMessage.success(row.is_active ? t('system.dictionary.messages.enabled') : t('system.dictionary.messages.disabled'))
   } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('common.messages.operationFailed'))
     row.is_active = !row.is_active
   }
 }
@@ -215,13 +218,13 @@ const handleSortOrderChange = async (row: DictionaryItem) => {
   try {
     await dictionaryItemApi.partialUpdate(row.id, { sort_order: row.sort_order })
   } catch (error) {
-    ElMessage.error('更新排序失败')
+    ElMessage.error(t('system.dictionary.messages.updateSortFailed'))
   }
 }
 
 const handleBatchSort = async () => {
   try {
-    await ElMessageBox.confirm('确定要按当前排序号重新排列所有字典项吗？', '确认', {
+    await ElMessageBox.confirm(t('system.dictionary.messages.confirmBatchSort'), t('common.dialog.confirmTitle'), {
       type: 'warning'
     })
 
@@ -233,10 +236,10 @@ const handleBatchSort = async () => {
     }
 
     await fetchData()
-    ElMessage.success('批量排序成功')
+    ElMessage.success(t('system.dictionary.messages.batchSortSuccess'))
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('批量排序失败')
+      ElMessage.error(t('system.dictionary.messages.batchSortFailed'))
     }
   } finally {
     loading.value = false
@@ -246,21 +249,21 @@ const handleBatchSort = async () => {
 const handleDelete = async (row: DictionaryItem) => {
   try {
     await ElMessageBox.confirm(
-      `确定删除字典项"${row.name}"吗？`,
-      '确认删除',
+      t('system.dictionary.messages.confirmDeleteItem', { name: row.name }),
+      t('system.dictionary.messages.confirmDeleteTitle'),
       {
         type: 'warning',
-        confirmButtonText: '确定',
-        cancelButtonText: '取消'
+        confirmButtonText: t('common.actions.confirm'),
+        cancelButtonText: t('common.actions.cancel')
       }
     )
 
     await dictionaryItemApi.delete(row.id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.messages.deleteSuccess'))
     await fetchData()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error(t('common.messages.deleteFailed'))
     }
   }
 }

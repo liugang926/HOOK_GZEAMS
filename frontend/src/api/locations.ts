@@ -19,42 +19,42 @@ export const locationApi = {
     pageSize?: number
     search?: string
   }): Promise<PaginatedResponse<any>> {
-    return request.get('/assets/locations/', { params })
+    return request.get('/system/objects/Location/', { params })
   },
 
   /**
    * Get location tree structure
    */
   tree(): Promise<any[]> {
-    return request.get('/assets/locations/tree/')
+    return request.get('/system/objects/Location/tree/')
   },
 
   /**
    * Get single location by ID
    */
   get(id: string): Promise<any> {
-    return request.get(`/assets/locations/${id}/`)
+    return request.get(`/system/objects/Location/${id}/`)
   },
 
   /**
    * Create new location
    */
   create(data: Partial<any>): Promise<any> {
-    return request.post('/assets/locations/', data)
+    return request.post('/system/objects/Location/', data)
   },
 
   /**
    * Update location
    */
   update(id: string, data: Partial<any>): Promise<any> {
-    return request.put(`/assets/locations/${id}/`, data)
+    return request.put(`/system/objects/Location/${id}/`, data)
   },
 
   /**
    * Delete location
    */
   delete(id: string): Promise<void> {
-    return request.delete(`/assets/locations/${id}/`)
+    return request.delete(`/system/objects/Location/${id}/`)
   }
 }
 
@@ -62,5 +62,5 @@ export const locationApi = {
  * Convenience function for getting locations (used by other components)
  */
 export const getLocations = (params?: any): Promise<any> => {
-  return request.get('/api/assets/locations/', { params })
+  return request.get('/system/objects/Location/', { params })
 }

@@ -3,8 +3,8 @@
     :model-value="modelValue"
     :placeholder="placeholder"
     :disabled="disabled"
-    :multiple="field.field_type === 'multi_select'"
-    :collapse-tags="field.field_type === 'multi_select'"
+    :multiple="isMultiSelect"
+    :collapse-tags="isMultiSelect"
     :max-collapse-tags="3"
     clearable
     filterable
@@ -31,6 +31,12 @@ const props = defineProps({
 })
 
 defineEmits(['update:modelValue'])
+
+// Support both camelCase (fieldType) and snake_case (field_type)
+const isMultiSelect = computed(() => {
+  const fieldType = props.field.fieldType || props.field.field_type
+  return fieldType === 'multi_select' || fieldType === 'multiSelect' || props.field.multiple
+})
 
 const options = computed(() => {
   return props.field.options || []

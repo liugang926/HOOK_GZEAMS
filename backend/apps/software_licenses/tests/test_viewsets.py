@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 from apps.software_licenses.models import Software, SoftwareLicense, LicenseAllocation
 from apps.assets.models import Asset, AssetCategory
 from apps.organizations.models import Organization
-from apps.accounts.models import User
+from apps.accounts.models import User, UserOrganization
 
 
 class SoftwareViewSetTest(TestCase):
@@ -24,11 +24,21 @@ class SoftwareViewSetTest(TestCase):
             email=f'test{self.unique_suffix}@example.com',
             organization=self.org
         )
+        UserOrganization.objects.create(
+            user=self.user,
+            organization=self.org,
+            role='admin',
+            is_active=True,
+            is_primary=True,
+        )
+        self.user.current_organization = self.org
+        self.user.save(update_fields=['current_organization'])
         self.client.force_authenticate(user=self.user)
+        self.client.credentials(HTTP_X_ORGANIZATION_ID=str(self.org.id))
 
     def test_create_software(self):
         """Test creating software via API"""
-        url = '/api/software-licenses/software/'
+        url = '/api/system/objects/Software/'
         data = {
             'code': 'WIN11',
             'name': 'Windows 11',
@@ -38,11 +48,6 @@ class SoftwareViewSetTest(TestCase):
         }
 
         response = self.client.post(url, data, format='json')
-
-        # Debug: print response data if not 201
-        if response.status_code != 201:
-            print(f"Status: {response.status_code}")
-            print(f"Response data: {response.data}")
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['code'], 'WIN11')
@@ -56,7 +61,7 @@ class SoftwareViewSetTest(TestCase):
             created_by=self.user
         )
 
-        url = '/api/software-licenses/software/'
+        url = '/api/system/objects/Software/'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
@@ -80,7 +85,17 @@ class SoftwareLicenseViewSetTest(TestCase):
             email=f'test{self.unique_suffix}@example.com',
             organization=self.org
         )
+        UserOrganization.objects.create(
+            user=self.user,
+            organization=self.org,
+            role='admin',
+            is_active=True,
+            is_primary=True,
+        )
+        self.user.current_organization = self.org
+        self.user.save(update_fields=['current_organization'])
         self.client.force_authenticate(user=self.user)
+        self.client.credentials(HTTP_X_ORGANIZATION_ID=str(self.org.id))
 
         self.software = Software.objects.create(
             organization=self.org,
@@ -92,7 +107,7 @@ class SoftwareLicenseViewSetTest(TestCase):
 
     def test_create_license(self):
         """Test creating software license"""
-        url = '/api/software-licenses/licenses/'
+        url = '/api/system/objects/SoftwareLicense/'
         data = {
             'license_no': 'LIC-001',
             'software': str(self.software.id),
@@ -102,11 +117,6 @@ class SoftwareLicenseViewSetTest(TestCase):
         }
 
         response = self.client.post(url, data, format='json')
-
-        # Debug: print response data if not 201
-        if response.status_code != 201:
-            print(f"Status: {response.status_code}")
-            print(f"Response data: {response.data}")
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['total_units'], 10)
@@ -129,7 +139,7 @@ class SoftwareLicenseViewSetTest(TestCase):
             created_by=self.user
         )
 
-        url = '/api/software-licenses/licenses/expiring/'
+        url = '/api/system/objects/SoftwareLicense/expiring/'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
@@ -149,7 +159,7 @@ class SoftwareLicenseViewSetTest(TestCase):
             created_by=self.user
         )
 
-        url = '/api/software-licenses/licenses/compliance_report/'
+        url = '/api/system/objects/SoftwareLicense/compliance_report/'
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, 200)
@@ -173,7 +183,17 @@ class LicenseAllocationViewSetTest(TestCase):
             email=f'test{self.unique_suffix}@example.com',
             organization=self.org
         )
+        UserOrganization.objects.create(
+            user=self.user,
+            organization=self.org,
+            role='admin',
+            is_active=True,
+            is_primary=True,
+        )
+        self.user.current_organization = self.org
+        self.user.save(update_fields=['current_organization'])
         self.client.force_authenticate(user=self.user)
+        self.client.credentials(HTTP_X_ORGANIZATION_ID=str(self.org.id))
 
         self.software = Software.objects.create(
             organization=self.org,
@@ -209,7 +229,7 @@ class LicenseAllocationViewSetTest(TestCase):
 
     def test_create_allocation(self):
         """Test creating allocation via API"""
-        url = '/api/software-licenses/license-allocations/'
+        url = '/api/system/objects/LicenseAllocation/'
         data = {
             'license': str(self.license.id),
             'asset': str(self.asset.id),
@@ -217,11 +237,6 @@ class LicenseAllocationViewSetTest(TestCase):
         }
 
         response = self.client.post(url, data, format='json')
-
-        # Debug: print response data if not 201
-        if response.status_code != 201:
-            print(f"Status: {response.status_code}")
-            print(f"Response data: {response.data}")
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data['software_name'], 'Office 365')
@@ -243,7 +258,7 @@ class LicenseAllocationViewSetTest(TestCase):
             created_by=self.user
         )
 
-        url = f'/api/software-licenses/license-allocations/{allocation.id}/deallocate/'
+        url = f'/api/system/objects/LicenseAllocation/{allocation.id}/deallocate/'
         response = self.client.post(url, {'notes': 'No longer needed'}, format='json')
 
         self.assertEqual(response.status_code, 200)
@@ -262,10 +277,8 @@ class LicenseAllocationViewSetTest(TestCase):
 
         # Verify the update worked
         self.license.refresh_from_db()
-        print(f"License total_units: {self.license.total_units}, used_units: {self.license.used_units}")
-        print(f"Available units: {self.license.available_units()}")
 
-        url = '/api/software-licenses/license-allocations/'
+        url = '/api/system/objects/LicenseAllocation/'
         data = {
             'license': str(self.license.id),
             'asset': str(self.asset.id)

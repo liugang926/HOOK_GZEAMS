@@ -2,7 +2,7 @@
 
 <template>
   <BaseListPage
-    title="软件目录"
+    :title="$t('softwareLicenses.catalog.title')"
     :api="softwareApi.list"
     :table-columns="columns"
     :search-fields="searchFields"
@@ -15,18 +15,8 @@
         @click="handleCreate"
       >
         <el-icon><Plus /></el-icon>
-        新建软件
+        {{ $t('softwareLicenses.catalog.add') }}
       </el-button>
-    </template>
-    <template #softwareType="{ row }">
-      <el-tag :type="getSoftwareTypeColor(row.softwareType)">
-        {{ getSoftwareTypeLabel(row.softwareType) }}
-      </el-tag>
-    </template>
-    <template #isActive="{ row }">
-      <el-tag :type="row.isActive ? 'success' : 'info'">
-        {{ row.isActive ? '启用' : '停用' }}
-      </el-tag>
     </template>
     <template #actions="{ row }">
       <el-button
@@ -34,79 +24,73 @@
         type="primary"
         @click.stop="handleEdit(row)"
       >
-        编辑
+        {{ $t('common.actions.edit') }}
       </el-button>
       <el-button
         link
         type="primary"
         @click.stop="handleViewLicenses(row)"
       >
-        许可证
+        {{ $t('softwareLicenses.catalog.viewLicenses') }}
       </el-button>
     </template>
   </BaseListPage>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import BaseListPage from '@/components/common/BaseListPage.vue'
 import { softwareApi } from '@/api/softwareLicenses'
 import type { TableColumn, SearchField } from '@/types/common'
 import { Plus } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const { t } = useI18n()
 
-const columns: TableColumn[] = [
-  { prop: 'code', label: '代码', width: 120 },
-  { prop: 'name', label: '软件名称', minWidth: 180 },
-  { prop: 'version', label: '版本', width: 100 },
-  { prop: 'vendor', label: '厂商', width: 150 },
-  { prop: 'softwareType', label: '类型', width: 120, slot: true },
-  { prop: 'isActive', label: '状态', width: 100, slot: true },
-  { prop: 'actions', label: '操作', width: 150, slot: true, fixed: 'right' }
-]
+const columns = computed<TableColumn[]>(() => [
+  { prop: 'code', label: t('softwareLicenses.catalog.fields.code'), width: 120 },
+  { prop: 'name', label: t('softwareLicenses.catalog.fields.name'), minWidth: 180 },
+  { prop: 'version', label: t('softwareLicenses.catalog.fields.version'), width: 100 },
+  { prop: 'vendor', label: t('softwareLicenses.catalog.fields.vendor'), width: 150 },
+  { prop: 'softwareType', label: t('softwareLicenses.catalog.fields.type'), width: 120, tagType: (row: any) => getSoftwareTypeColor(row.softwareType), format: (value: any) => getSoftwareTypeLabel(value) },
+  { prop: 'isActive', label: t('softwareLicenses.catalog.fields.status'), width: 100, tagType: (row: any) => (row.isActive ? 'success' : 'info'), format: (value: any) => (value ? t('common.status.active') : t('common.status.inactive')) },
+  { prop: 'actions', label: t('common.labels.operation', '操作'), width: 150, slot: true, fixed: 'right' }
+])
 
-const searchFields: SearchField[] = [
-  { prop: 'search', label: '搜索', placeholder: '代码/名称/厂商' },
-  { prop: 'softwareType', label: '类型', type: 'select', options: [
-    { label: '操作系统', value: 'os' },
-    { label: '办公软件', value: 'office' },
-    { label: '专业软件', value: 'professional' },
-    { label: '开发工具', value: 'development' },
-    { label: '安全软件', value: 'security' },
-    { label: '数据库', value: 'database' },
-    { label: '其他', value: 'other' }
+const searchFields = computed<SearchField[]>(() => [
+  { prop: 'search', label: t('common.actions.search'), placeholder: t('softwareLicenses.catalog.placeholders.search') },
+  { prop: 'softwareType', label: t('softwareLicenses.catalog.fields.type'), type: 'select', options: [
+    { label: t('softwareLicenses.catalog.types.os'), value: 'os' },
+    { label: t('softwareLicenses.catalog.types.office'), value: 'office' },
+    { label: t('softwareLicenses.catalog.types.professional'), value: 'professional' },
+    { label: t('softwareLicenses.catalog.types.development'), value: 'development' },
+    { label: t('softwareLicenses.catalog.types.security'), value: 'security' },
+    { label: t('softwareLicenses.catalog.types.database'), value: 'database' },
+    { label: t('softwareLicenses.catalog.types.other'), value: 'other' }
   ]},
-  { prop: 'isActive', label: '状态', type: 'select', options: [
-    { label: '启用', value: true },
-    { label: '停用', value: false }
+  { prop: 'isActive', label: t('softwareLicenses.catalog.fields.status'), type: 'select', options: [
+    { label: t('common.status.active'), value: true },
+    { label: t('common.status.inactive'), value: false }
   ]}
-]
+])
 
-const batchActions = [
+const batchActions = computed(() => [
   {
-    label: '批量删除',
+    label: t('common.actions.batchDelete', '批量删除'),
     type: 'danger' as const,
     action: async (selectedRows: any[]) => {
       const ids = selectedRows.map(row => row.id)
       await softwareApi.batchDelete(ids)
     },
     confirm: true,
-    confirmMessage: '确定要删除选中的软件吗？'
+    confirmMessage: t('softwareLicenses.catalog.messages.deleteConfirm')
   }
-]
+])
 
 const getSoftwareTypeLabel = (type: string) => {
-  const labels: Record<string, string> = {
-    os: '操作系统',
-    office: '办公软件',
-    professional: '专业软件',
-    development: '开发工具',
-    security: '安全软件',
-    database: '数据库',
-    other: '其他'
-  }
-  return labels[type] || type
+  return t(`softwareLicenses.catalog.types.${type}`)
 }
 
 const getSoftwareTypeColor = (type: string) => {

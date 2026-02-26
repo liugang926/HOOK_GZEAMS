@@ -3,8 +3,8 @@
     v-if="renderType === 'switch'"
     v-model="internalValue"
     :disabled="disabled"
-    :active-text="field.component_props?.activeText"
-    :inactive-text="field.component_props?.inactiveText"
+    :active-text="switchActiveText"
+    :inactive-text="switchInactiveText"
     @change="handleChange"
   />
   <el-checkbox
@@ -34,9 +34,22 @@ const internalValue = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
+const componentProps = computed(() => ({
+  ...(props.field?.component_props || {}),
+  ...(props.field?.componentProps || {})
+}))
+
 const renderType = computed(() => {
-  return props.field.component_props?.renderType || 'switch'
+  if (componentProps.value.renderType) {
+    return componentProps.value.renderType
+  }
+
+  const fieldType = props.field?.fieldType || props.field?.field_type
+  return fieldType === 'checkbox' ? 'checkbox' : 'switch'
 })
+
+const switchActiveText = computed(() => componentProps.value.activeText || '')
+const switchInactiveText = computed(() => componentProps.value.inactiveText || '')
 
 const handleChange = (val: any) => {
   emit('change', val)

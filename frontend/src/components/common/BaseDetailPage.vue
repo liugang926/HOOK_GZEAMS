@@ -34,8 +34,14 @@
  */
 
 import { ref, computed } from 'vue'
-import type { ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+import { ArrowLeft, ArrowDown } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/dateFormat'
+import { camelToSnake, snakeToCamel } from '@/utils/case'
+import { isPlainObject, isEmptyValue, resolveFieldValue } from '@/utils/fieldKey'
+import RelatedObjectTable from './RelatedObjectTable.vue'
+import FieldDisplay from './FieldDisplay.vue'
+import type { FieldDefinition } from '@/types'
 
 // ============================================================================
 // Types
@@ -46,8 +52,10 @@ export interface DetailField {
   prop: string
   /** Field label */
   label: string
-  /** Field type: text, date, number, currency, percent, tag, slot, link */
-  type?: 'text' | 'date' | 'number' | 'currency' | 'percent' | 'tag' | 'slot' | 'link' | 'image'
+  /** Field type: text, date, datetime, time, number, currency, percent, tag, slot, link */
+  type?: 'text' | 'date' | 'datetime' | 'time' | 'number' | 'currency' | 'percent' | 'tag' | 'slot' | 'link' | 'image'
+  /** Options for select-like fields */
+  options?: { label: string; value: any; color?: string }[]
   /** Date format (for date type) */
   dateFormat?: string
   /** Number of decimal places (for number/percent) */
@@ -96,6 +104,28 @@ export interface AuditInfo {
   updatedAt?: string | Date
 }
 
+/**
+ * Reverse relation field for displaying related objects
+ */
+export interface ReverseRelationField {
+  /** Field code */
+  code: string
+  /** Field display label */
+  label: string
+  /** Display mode */
+  displayMode: 'inline_editable' | 'inline_readonly' | 'tab_readonly' | 'hidden'
+  /** Related object code */
+  relatedObjectCode?: string
+  /** FK field on related model */
+  reverseRelationField?: string
+  /** Path to model (e.g., apps.lifecycle.models.Maintenance) */
+  reverseRelationModel?: string
+  /** Custom title override */
+  title?: string
+  /** Show create button */
+  showCreate?: boolean
+}
+
 interface Props {
   /** Page title */
   title?: string
@@ -130,12 +160,21 @@ interface Props {
   deleteConfirmMessage?: string
   /** Span for all fields (1-24) */
   fieldSpan?: number
+  /** Object code for fetching metadata */
+  objectCode?: string
+  /** Reverse relation fields to display (related objects) */
+  reverseRelations?: ReverseRelationField[]
+  /** Whether to show related objects inline */
+  showRelatedObjects?: boolean
 }
 
 interface Emits {
   (e: 'edit'): void
   (e: 'delete'): void
   (e: 'back'): void
+  (e: 'related-record-click', relationCode: string, record: any): void
+  (e: 'related-record-edit', relationCode: string, record: any): void
+  (e: 'related-refresh', relationCode: string): void
 }
 
 // ============================================================================
@@ -147,12 +186,14 @@ const props = withDefaults(defineProps<Props>(), {
   showEdit: true,
   showDelete: true,
   showBack: true,
-  editText: '编辑',
-  deleteText: '删除',
-  backText: '返回',
-  deleteConfirmMessage: '确定要删除这条记录吗？',
+  editText: undefined,
+  deleteText: undefined,
+  backText: undefined,
+  deleteConfirmMessage: undefined,
   fieldSpan: 12,
-  extraActions: () => []
+  extraActions: () => [],
+  reverseRelations: () => [],
+  showRelatedObjects: true
 })
 
 const emit = defineEmits<Emits>()
@@ -162,6 +203,7 @@ const emit = defineEmits<Emits>()
 // ============================================================================
 
 const collapsedSections = ref<Set<string>>(new Set())
+const { t } = useI18n()
 
 // ============================================================================
 // Computed
@@ -182,7 +224,7 @@ const availableActions = computed(() => {
   const actions: Array<{ label: string; type?: string; icon?: string; action: () => void }> = []
 
   if (props.showEdit) {
-    actions.push({ label: props.editText, type: 'primary', action: () => emit('edit') })
+    actions.push({ label: props.editText || t('common.actions.edit'), type: 'primary', action: () => emit('edit') })
   }
 
   props.extraActions.forEach(action => {
@@ -191,7 +233,7 @@ const availableActions = computed(() => {
 
   if (props.showDelete) {
     actions.push({
-      label: props.deleteText,
+      label: props.deleteText || t('common.actions.delete'),
       type: 'danger',
       action: handleDelete
     })
@@ -200,77 +242,80 @@ const availableActions = computed(() => {
   return actions
 })
 
+/** Visible reverse relations (not hidden) */
+const visibleReverseRelations = computed(() => {
+  if (!props.showRelatedObjects || !props.reverseRelations) {
+    return []
+  }
+  return props.reverseRelations.filter(rel => rel.displayMode !== 'hidden')
+})
+
 // ============================================================================
 // Methods
 // ============================================================================
+
+const resolveFromObjectPath = (obj: any, prop: string): any => {
+  const parts = prop.split('.')
+  let current = obj
+
+  for (const part of parts) {
+    if (!isPlainObject(current)) return undefined
+
+    if (part in current) {
+      current = current[part]
+      continue
+    }
+
+    const camelKey = snakeToCamel(part)
+    if (camelKey in current) {
+      current = current[camelKey]
+      continue
+    }
+
+    const snakeKey = camelToSnake(part)
+    if (snakeKey in current) {
+      current = current[snakeKey]
+      continue
+    }
+
+    return undefined
+  }
+
+  return current
+}
+
+const resolveValue = (data: any, prop?: string, allowWrapped = true): any => {
+  if (!data || !prop) return undefined
+
+  // Use shared field-key contract for flat fields.
+  if (!prop.includes('.')) {
+    return resolveFieldValue(data, {
+      fieldCode: prop,
+      includeWrappedData: allowWrapped,
+      includeCustomBags: true,
+      treatEmptyAsMissing: true,
+      returnEmptyMatch: true
+    })
+  }
+
+  const directValue = resolveFromObjectPath(data, prop)
+  if (!isEmptyValue(directValue)) return directValue
+
+  // Compatibility fallback: some endpoints may still return `{ data: {...} }`.
+  if (allowWrapped && isPlainObject((data as any).data)) {
+    const wrappedValue = resolveFromObjectPath((data as any).data, prop)
+    if (!isEmptyValue(wrappedValue)) return wrappedValue
+  }
+
+  return directValue
+}
 
 /**
  * Get field value from data
  */
 const getFieldValue = (field: DetailField) => {
-  const value = props.data[field.prop]
+  const value = resolveValue(props.data, field.prop)
   return value !== undefined && value !== null ? value : '-'
-}
-
-/**
- * Format field value for display
- */
-const formatFieldValue = (field: DetailField) => {
-  const value = props.data[field.prop]
-
-  if (value === undefined || value === null) {
-    return '-'
-  }
-
-  switch (field.type) {
-    case 'date':
-      return formatDate(value, field.dateFormat)
-
-    case 'number':
-      return field.precision !== undefined
-        ? Number(value).toFixed(field.precision)
-        : value
-
-    case 'currency':
-      const num = Number(value)
-      const formatted = field.precision !== undefined
-        ? num.toFixed(field.precision)
-        : num.toFixed(2)
-      return `${field.currency || '¥'}${formatted}`
-
-    case 'percent':
-      return `${Number(value).toFixed(field.precision || 2)}%`
-
-    case 'tag':
-      return value
-
-    case 'link':
-      return value
-
-    case 'image':
-      return value
-
-    default:
-      return value
-  }
-}
-
-/**
- * Get tag type for value
- */
-const getTagType = (field: DetailField) => {
-  if (field.type !== 'tag') return undefined
-  const value = props.data[field.prop]
-  return field.tagType?.[value] || field.defaultTagType || 'info'
-}
-
-/**
- * Get link href
- */
-const getLinkHref = (field: DetailField) => {
-  if (field.type !== 'link' || !field.href) return undefined
-  const value = props.data[field.prop]
-  return field.href.replace('{value}', value)
 }
 
 /**
@@ -302,7 +347,7 @@ const handleEdit = () => {
  * Handle delete action
  */
 const handleDelete = async () => {
-  const confirmed = confirm(props.deleteConfirmMessage)
+  const confirmed = confirm(props.deleteConfirmMessage || t('common.messages.confirmDelete', { count: 1 }))
   if (confirmed) {
     emit('delete')
   }
@@ -352,7 +397,7 @@ defineExpose({
             link
             @click="handleBack"
           >
-            {{ backText }}
+            {{ backText || $t('common.actions.back') }}
           </el-button>
           <h1 class="page-title">
             {{ title }}
@@ -435,67 +480,17 @@ defineExpose({
                       />
                     </div>
 
-                    <!-- Image field -->
-                    <div
-                      v-else-if="field.type === 'image'"
-                      class="field-item field-image"
-                    >
-                      <span class="field-label">{{ field.label }}</span>
-                      <div class="field-value">
-                        <el-image
-                          :src="data[field.prop]"
-                          fit="cover"
-                          :preview-src-list="[data[field.prop]]"
-                          class="detail-image"
-                        >
-                          <template #error>
-                            <div class="image-error">
-                              <el-icon><Picture /></el-icon>
-                            </div>
-                          </template>
-                        </el-image>
-                      </div>
-                    </div>
-
-                    <!-- Link field -->
-                    <div
-                      v-else-if="field.type === 'link'"
-                      class="field-item"
-                    >
-                      <span class="field-label">{{ field.label }}</span>
-                      <div class="field-value">
-                        <el-link
-                          :href="getLinkHref(field)"
-                          target="_blank"
-                          type="primary"
-                        >
-                          {{ formatFieldValue(field) }}
-                        </el-link>
-                      </div>
-                    </div>
-
-                    <!-- Tag field -->
-                    <div
-                      v-else-if="field.type === 'tag'"
-                      class="field-item"
-                    >
-                      <span class="field-label">{{ field.label }}</span>
-                      <div class="field-value">
-                        <el-tag :type="getTagType(field)">
-                          {{ formatFieldValue(field) }}
-                        </el-tag>
-                      </div>
-                    </div>
-
-                    <!-- Standard field -->
                     <div
                       v-else
-                      class="field-item"
+                      :class="['field-item', { 'field-image': field.type === 'image' }]"
                     >
                       <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
-                      <span :class="['field-value', field.valueClass]">
-                        {{ formatFieldValue(field) }}
-                      </span>
+                      <div :class="['field-value', field.valueClass]">
+                        <FieldDisplay
+                          :field="field"
+                          :value="getFieldValue(field)"
+                        />
+                      </div>
                     </div>
                   </el-col>
                 </el-row>
@@ -511,25 +506,60 @@ defineExpose({
         class="audit-info"
       >
         <div class="audit-title">
-          审计信息
+          {{ $t('common.labels.auditInfo') }}
         </div>
         <el-descriptions
           :column="2"
           border
         >
-          <el-descriptions-item label="创建人">
+          <el-descriptions-item :label="$t('common.labels.createdBy')">
             {{ auditInfo?.createdBy || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="创建时间">
+          <el-descriptions-item :label="$t('common.labels.createdAt')">
             {{ formatDate(auditInfo?.createdAt) }}
           </el-descriptions-item>
-          <el-descriptions-item label="更新人">
+          <el-descriptions-item :label="$t('common.labels.updatedBy')">
             {{ auditInfo?.updatedBy || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="更新时间">
+          <el-descriptions-item :label="$t('common.labels.updatedAt')">
             {{ formatDate(auditInfo?.updatedAt) }}
           </el-descriptions-item>
         </el-descriptions>
+      </div>
+
+      <!-- Related Objects Section -->
+      <div
+        v-if="visibleReverseRelations.length > 0"
+        class="related-objects-section"
+      >
+        <div class="related-objects-header">
+          <h3 class="related-objects-title">
+            {{ $t('common.labels.relatedObjects') }}
+          </h3>
+        </div>
+        <div class="related-objects-list">
+          <RelatedObjectTable
+            v-for="relation in visibleReverseRelations"
+            :key="relation.code"
+            :parent-object-code="objectCode || ''"
+            :parent-id="data.id || data.code"
+            :field="{
+              code: relation.code,
+              label: relation.label,
+              name: relation.label,
+              relationDisplayMode: relation.displayMode,
+              relationDisplayModeDisplay: relation.displayMode,
+              reverseRelationModel: relation.reverseRelationModel,
+              reverseRelationField: relation.reverseRelationField
+            } as FieldDefinition"
+            :mode="relation.displayMode"
+            :title="relation.title"
+            :show-create="relation.showCreate"
+            @record-click="(record) => $emit('related-record-click', relation.code, record)"
+            @record-edit="(record) => $emit('related-record-edit', relation.code, record)"
+            @refresh="$emit('related-refresh', relation.code)"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -713,6 +743,42 @@ defineExpose({
       }
     }
   }
+
+  .related-objects-section {
+    margin-top: 20px;
+    background-color: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+
+    .related-objects-header {
+      padding: 16px 20px;
+      background-color: #f5f7fa;
+      border-bottom: 1px solid #ebeef5;
+
+      .related-objects-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 500;
+        color: #303133;
+      }
+    }
+
+    .related-objects-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+
+      :deep(.related-object-table) {
+        border-radius: 0;
+        box-shadow: none;
+
+        &:not(:last-child) {
+          border-bottom: 1px solid #ebeef5;
+        }
+      }
+    }
+  }
 }
 
 // Mobile responsive
@@ -744,6 +810,40 @@ defineExpose({
 
               .field-label {
                 margin-bottom: 4px;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .related-objects-section {
+      .related-objects-header {
+        padding: 12px 16px;
+      }
+
+      .related-objects-list {
+        :deep(.related-object-table) {
+          .table-header {
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 12px 16px;
+
+            .header-actions {
+              width: 100%;
+              justify-content: flex-start;
+            }
+          }
+
+          .table-pagination {
+            :deep(.el-pagination) {
+              flex-wrap: wrap;
+              justify-content: center;
+
+              .el-pagination__sizes,
+              .el-pagination__jump {
+                display: none;
               }
             }
           }

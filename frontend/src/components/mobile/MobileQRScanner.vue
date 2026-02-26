@@ -34,7 +34,7 @@
           <div class="scan-corner bottom-right" />
         </div>
         <p class="scan-hint">
-          将二维码放入框内自动扫描
+          {{ t('mobile.scanner.scanQR') }}
         </p>
       </div>
 
@@ -86,7 +86,7 @@
     <!-- Camera Selector -->
     <van-action-sheet
       v-model:show="showCameraSelector"
-      title="选择摄像头"
+      :title="t('mobile.scanner.switchCamera')"
       :actions="cameraActions"
       @select="handleCameraSelect"
     />
@@ -94,13 +94,13 @@
     <!-- Manual Input -->
     <van-dialog
       v-model:show="inputVisible"
-      title="手动输入"
+      :title="t('mobile.messages.scanSuccess')"
       show-cancel-button
       @confirm="handleManualSubmit"
     >
       <van-field
         v-model="manualCode"
-        placeholder="请输入资产编码或二维码内容"
+        :placeholder="t('mobile.scanner.noResult')"
         clearable
         autofocus
       />
@@ -117,9 +117,16 @@
  */
 
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { showToast } from 'vant'
 import { BrowserMultiFormatReader } from '@zxing/library'
 import { qrScanApi } from '@/api/inventory'
+
+// ============================================================================
+// I18n
+// ============================================================================
+
+const { t } = useI18n()
 
 // ============================================================================
 // Props & Emits
@@ -193,7 +200,7 @@ const initScanner = async () => {
     }))
 
     if (cameras.value.length === 0) {
-      emit('error', '未检测到摄像头')
+      emit('error', t('mobile.scanner.cameraUnavailable'))
       return
     }
 
@@ -208,7 +215,7 @@ const initScanner = async () => {
     await startScanner()
   } catch (error) {
     console.error('Failed to initialize scanner:', error)
-    emit('error', '摄像头初始化失败，请检查权限设置')
+    emit('error', t('mobile.scanner.permissionDenied'))
   }
 }
 
@@ -253,7 +260,7 @@ const startScanner = async () => {
 
   } catch (error: any) {
     console.error('Failed to start scanner:', error)
-    emit('error', error.message || '无法访问摄像头')
+    emit('error', error.message || t('mobile.scanner.cameraUnavailable'))
   }
 }
 
@@ -284,7 +291,7 @@ const handleScanResult = async (code: string) => {
   }
 
   // Show processing status
-  showScanStatus('success', '扫描成功')
+  showScanStatus('success', t('mobile.messages.scanSuccess'))
 
   try {
     const asset = await qrScanApi.getAssetByQrCode(code)
@@ -301,8 +308,8 @@ const handleScanResult = async (code: string) => {
     // Clear status after delay
     clearStatusAfterDelay()
   } catch (error) {
-    showScanStatus('error', '未找到资产')
-    emit('error', `未找到资产: ${code}`)
+    showScanStatus('error', t('mobile.messages.assetNotFound'))
+    emit('error', `${t('mobile.messages.assetNotFound')}: ${code}`)
     clearStatusAfterDelay()
   }
 }

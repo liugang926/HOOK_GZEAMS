@@ -4,9 +4,9 @@ ViewSets for data mapping template management.
 Provides ViewSets for DataMappingTemplate model following BaseModelViewSet pattern.
 """
 from apps.common.viewsets.base import BaseModelViewSetWithBatch
+from apps.common.filters.base import BaseModelFilter
 from apps.integration.models import DataMappingTemplate
 from apps.integration.serializers import DataMappingTemplateSerializer
-from apps.integration.filters.base import BaseModelFilter
 import django_filters
 
 

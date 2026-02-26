@@ -72,9 +72,12 @@ export interface SelectOption {
  * Table column configuration
  */
 export interface TableColumn {
+  fieldCode?: string
   prop: string
   label: string
-  type?: string // Field type for FieldRenderer (text, user, status, etc.)
+  type?: string // Legacy field type (text, user, status, etc.)
+  fieldType?: string // Preferred field type for rendering
+  options?: SelectOption[]
   width?: number
   defaultWidth?: number
   minWidth?: number
@@ -93,9 +96,10 @@ export interface TableColumn {
  * Search field configuration
  */
 export interface SearchField {
-  prop: string
+  prop?: string
+  field?: string
   label: string
-  type?: 'text' | 'input' | 'select' | 'date' | 'dateRange' | 'numberRange' | 'boolean' | 'slot'
+  type?: 'text' | 'input' | 'select' | 'date' | 'dateRange' | 'daterange' | 'month' | 'year' | 'numberRange' | 'boolean' | 'slot'
   placeholder?: string
   options?: SelectOption[]
   multiple?: boolean
@@ -144,43 +148,45 @@ export interface TabItem {
 
 /**
  * Tab configuration for DynamicTabs component
+ * Note: Backend returns camelCase directly via djangorestframework-camel-case
  */
 export interface TabConfig {
   id?: string
-  business_object?: string
-  business_object_code?: string
-  business_object_name?: string
+  businessObject?: string
+  businessObjectCode?: string
+  businessObjectName?: string
   name: string
   position?: 'top' | 'left' | 'right' | 'bottom'
-  position_display?: string
-  type_style?: '' | 'card' | 'border-card'
-  type_style_display?: string
+  positionDisplay?: string
+  typeStyle?: '' | 'card' | 'border-card'
+  typeStyleDisplay?: string
   stretch?: boolean
   lazy?: boolean
   animated?: boolean
   addable?: boolean
   draggable?: boolean
-  tabs_config: TabItem[]
-  is_active?: boolean
+  tabsConfig: TabItem[]
+  isActive?: boolean
 }
 
 /**
  * Column item for list table configuration
  * Reference: docs/plans/common_base_features/list_column_configuration.md
+ * Note: Backend returns camelCase directly via djangorestframework-camel-case
  */
 export interface ColumnItem {
-  field_code: string
+  fieldCode: string
   prop?: string  // Legacy support
   label: string
-  label_override?: string
+  labelOverride?: string
   width?: number
   defaultWidth?: number
   fixed?: 'left' | 'right' | '' | null
   sortable?: boolean
   visible?: boolean
   defaultVisible?: boolean
-  required_in_list?: boolean
-  field_type?: string
+  requiredInList?: boolean
+  fieldType?: string
 }
 
 /**

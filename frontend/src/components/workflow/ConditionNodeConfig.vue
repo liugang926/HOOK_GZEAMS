@@ -2,10 +2,10 @@
   <div class="condition-config">
     <el-form
       :model="localValue"
-      label-width="80px"
+      :label-width="locale === 'zh-CN' ? '80px' : '120px'"
       size="small"
     >
-      <el-form-item label="条件分支">
+      <el-form-item :label="t('workflow.designer.conditionBranch')">
         <div class="condition-branches">
           <div
             v-for="(branch, index) in localValue.branches"
@@ -13,7 +13,7 @@
             class="condition-branch"
           >
             <div class="branch-header">
-              <span class="branch-label">分支 {{ index + 1 }}</span>
+              <span class="branch-label">{{ t('workflow.designer.branch', { index: index + 1 }) }}</span>
               <el-button
                 v-if="localValue.branches.length > 1"
                 :icon="Delete"
@@ -24,10 +24,10 @@
               />
             </div>
 
-            <el-form-item label="条件">
+            <el-form-item :label="t('workflow.designer.condition')">
               <el-select
                 v-model="branch.field"
-                placeholder="选择字段"
+                :placeholder="t('workflow.designer.selectField')"
                 style="width: 100%"
               >
                 <el-option
@@ -39,50 +39,50 @@
               </el-select>
             </el-form-item>
 
-            <el-form-item label="运算符">
+            <el-form-item :label="t('workflow.designer.operator')">
               <el-select
                 v-model="branch.operator"
                 style="width: 100%"
               >
                 <el-option
-                  label="等于"
+                  :label="t('workflow.operators.eq')"
                   value="eq"
                 />
                 <el-option
-                  label="不等于"
+                  :label="t('workflow.operators.ne')"
                   value="ne"
                 />
                 <el-option
-                  label="大于"
+                  :label="t('workflow.operators.gt')"
                   value="gt"
                 />
                 <el-option
-                  label="大于等于"
+                  :label="t('workflow.operators.gte')"
                   value="gte"
                 />
                 <el-option
-                  label="小于"
+                  :label="t('workflow.operators.lt')"
                   value="lt"
                 />
                 <el-option
-                  label="小于等于"
+                  :label="t('workflow.operators.lte')"
                   value="lte"
                 />
                 <el-option
-                  label="包含"
+                  :label="t('workflow.operators.contains')"
                   value="contains"
                 />
                 <el-option
-                  label="不包含"
+                  :label="t('workflow.operators.notContains')"
                   value="not_contains"
                 />
               </el-select>
             </el-form-item>
 
-            <el-form-item label="值">
+            <el-form-item :label="t('workflow.designer.value')">
               <el-input
                 v-model="branch.value"
-                placeholder="条件值"
+                :placeholder="t('workflow.designer.conditionValue')"
               />
             </el-form-item>
           </div>
@@ -94,22 +94,22 @@
           :icon="Plus"
           @click="addBranch"
         >
-          添加分支
+          {{ t('workflow.designer.addBranch') }}
         </el-button>
       </el-form-item>
 
-      <el-form-item label="默认分支">
+      <el-form-item :label="t('workflow.designer.defaultBranch')">
         <el-select
           v-model="localValue.defaultFlow"
-          placeholder="条件不满足时的去向"
+          :placeholder="t('workflow.designer.defaultBranchHint')"
           style="width: 100%"
         >
           <el-option
-            label="拒绝"
+            :label="t('workflow.actions.reject')"
             value="reject"
           />
           <el-option
-            label="通过"
+            :label="t('workflow.actions.approve')"
             value="approve"
           />
         </el-select>
@@ -120,7 +120,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Plus, Delete } from '@element-plus/icons-vue'
+
+const { t } = useI18n()
+const locale = computed(() => t('locale'))
 
 interface Props {
   modelValue: Record<string, any>
@@ -145,9 +149,9 @@ const localValue = computed({
 
 // 可用字段（从业务对象获取）
 const availableFields = ref([
-  { code: 'amount', name: '金额' },
-  { code: 'department', name: '部门' },
-  { code: 'applicant', name: '申请人' }
+  { code: 'amount', name: t('workflow.fields.amount') },
+  { code: 'department', name: t('workflow.fields.department') },
+  { code: 'applicant', name: t('workflow.fields.applicant') }
 ])
 
 const addBranch = () => {

@@ -6,11 +6,11 @@
       inline
       class="filter-form"
     >
-      <el-form-item label="角色">
+      <el-form-item :label="$t('system.permission.field.toolbar.role')">
         <el-select
           v-model="filterForm.role"
           clearable
-          placeholder="选择角色"
+          :placeholder="$t('system.permission.field.toolbar.rolePlaceholder')"
           @change="handleSearch"
         >
           <el-option
@@ -27,11 +27,11 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="业务对象">
+      <el-form-item :label="$t('system.permission.field.toolbar.object')">
         <el-select
           v-model="filterForm.businessObject"
           clearable
-          placeholder="选择业务对象"
+          :placeholder="$t('system.permission.field.toolbar.objectPlaceholder')"
           @change="handleSearch"
         >
           <el-option
@@ -53,10 +53,10 @@
           type="primary"
           @click="handleSearch"
         >
-          查询
+          {{ $t('common.actions.search') }}
         </el-button>
         <el-button @click="handleReset">
-          重置
+          {{ $t('common.actions.reset') }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -71,22 +71,22 @@
     >
       <el-table-column
         prop="roleName"
-        label="角色"
+        :label="$t('system.permission.field.columns.role')"
         width="120"
         fixed="left"
       />
       <el-table-column
         prop="businessObjectName"
-        label="业务对象"
+        :label="$t('system.permission.field.columns.object')"
         width="150"
       />
       <el-table-column
         prop="fieldName"
-        label="字段名称"
+        :label="$t('system.permission.field.columns.field')"
         width="150"
       />
       <el-table-column
-        label="读取权限"
+        :label="$t('system.permission.field.columns.read')"
         width="100"
         align="center"
       >
@@ -95,12 +95,12 @@
             :type="row.canRead ? 'success' : 'info'"
             size="small"
           >
-            {{ row.canRead ? '允许' : '禁止' }}
+            {{ row.canRead ? $t('system.permission.field.status.allow') : $t('system.permission.field.status.deny') }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
-        label="写入权限"
+        :label="$t('system.permission.field.columns.write')"
         width="100"
         align="center"
       >
@@ -109,12 +109,12 @@
             :type="row.canWrite ? 'success' : 'info'"
             size="small"
           >
-            {{ row.canWrite ? '允许' : '禁止' }}
+            {{ row.canWrite ? $t('system.permission.field.status.allow') : $t('system.permission.field.status.deny') }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
-        label="可见性"
+        :label="$t('system.permission.field.columns.visibility')"
         width="100"
         align="center"
       >
@@ -123,18 +123,18 @@
             :type="row.isVisible ? 'success' : 'warning'"
             size="small"
           >
-            {{ row.isVisible ? '显示' : '隐藏' }}
+            {{ row.isVisible ? $t('system.permission.field.status.show') : $t('system.permission.field.status.hide') }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
         prop="description"
-        label="说明"
+        :label="$t('system.permission.field.columns.description')"
         min-width="200"
         show-overflow-tooltip
       />
       <el-table-column
-        label="操作"
+        :label="$t('system.permission.field.columns.operation')"
         width="120"
         fixed="right"
       >
@@ -144,7 +144,7 @@
             type="primary"
             @click="handleEdit(row)"
           >
-            编辑
+            {{ $t('common.actions.edit') }}
           </el-button>
         </template>
       </el-table-column>
@@ -175,8 +175,11 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { fieldPermissionApi } from '@/api/permissions'
 import FieldPermissionDialog from './FieldPermissionDialog.vue'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const tableData = ref<any[]>([])
@@ -241,7 +244,7 @@ const fetchData = async () => {
     ]
     pagination.total = 3
   } catch (error) {
-    ElMessage.error('加载数据失败')
+    ElMessage.error(t('common.messages.loadFailed'))
   } finally {
     loading.value = false
   }

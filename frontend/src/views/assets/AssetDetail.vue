@@ -1,25 +1,95 @@
 <template>
   <div class="asset-detail-wrapper">
+    <!--
+      AssetDetail.vue - Reference implementation for metadata-driven detail pages
+
+      This component demonstrates two approaches:
+      1. DynamicDetailPage: Fully metadata-driven (recommended for new objects)
+      2. BaseDetailPage: Custom sections with explicit configuration
+
+      For Asset, we use BaseDetailPage with custom sections for backward compatibility.
+      New business objects should use DynamicDetailPage instead.
+    -->
     <BaseDetailPage
-      :title="`资产详情 - ${assetName}`"
+      :title="$t('assets.detail.title') + ' - ' + assetName"
       :sections="detailSections"
       :data="assetData"
       :loading="loading"
       :audit-info="auditInfo"
+      object-code="Asset"
+      :reverse-relations="reverseRelations"
+      :show-related-objects="true"
       @edit="handleEdit"
       @delete="handleDelete"
       @back="goBack"
+      @related-record-click="handleRelatedRecordClick"
+      @related-record-edit="handleRelatedRecordEdit"
     >
-      <!-- Custom slot for QR code in Basic Info if needed, or just use image field type -->
+      <!-- Custom QR Code display slot -->
+      <template #field-qrCode="{ value }">
+        <div class="qr-code-display">
+          <el-image
+            v-if="value && value !== '-'"
+            :src="value"
+            fit="contain"
+            style="width: 80px; height: 80px"
+            :preview-src-list="[value]"
+          />
+          <span v-else>-</span>
+        </div>
+      </template>
+
+      <!-- Custom images field slot -->
+      <template #field-images="{ value }">
+        <div class="images-display">
+          <div
+            v-if="Array.isArray(value) && value.length > 0"
+            class="image-gallery"
+          >
+            <el-image
+              v-for="(img, idx) in value.slice(0, 4)"
+              :key="idx"
+              :src="img"
+              fit="cover"
+              class="gallery-image"
+              :preview-src-list="value"
+              :initial-index="idx"
+            />
+            <div
+              v-if="value.length > 4"
+              class="more-images"
+            >
+              +{{ value.length - 4 }}
+            </div>
+          </div>
+          <span v-else>-</span>
+        </div>
+      </template>
     </BaseDetailPage>
+
+    <!--
+      To use DynamicDetailPage instead (metadata-driven), uncomment below:
+
+      <DynamicDetailPage
+        object-code="Asset"
+        :fetch-record="fetchAssetRecord"
+        edit-route="/assets/edit/:id"
+        back-route="/assets/list"
+        @loaded="handleAssetLoaded"
+        @related-record-click="handleRelatedRecordClick"
+        @related-record-edit="handleRelatedRecordEdit"
+      />
+    -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import BaseDetailPage from '@/components/common/BaseDetailPage.vue'
+import type { ReverseRelationField } from '@/components/common/BaseDetailPage.vue'
 import { assetApi } from '@/api/assets'
 
 const route = useRoute()
@@ -27,69 +97,129 @@ const router = useRouter()
 
 const loading = ref(false)
 const assetData = ref<any>({})
+const { t } = useI18n()
 
-const assetName = computed(() => assetData.value?.assetName || '未知资产')
+const assetName = computed(() => assetData.value?.assetName || t('assets.detail.unknownAsset'))
 
 const auditInfo = computed(() => ({
-  createdBy: assetData.value.createdBy?.username || 'System',
-  createdAt: assetData.value.createdAt,
-  updatedBy: assetData.value.updatedBy?.username || 'System',
-  updatedAt: assetData.value.updatedAt
+  createdBy: assetData.value.createdBy?.username || assetData.value.createdBy || 'System',
+  createdAt: assetData.value.createdAt || assetData.value.created_at,
+  updatedBy: assetData.value.updatedBy?.username || assetData.value.updatedBy || 'System',
+  updatedAt: assetData.value.updatedAt || assetData.value.updated_at
 }))
 
-// Define sections - using camelCase after toCamelCase transformation
-const detailSections = [
+// Define reverse relations for Asset
+// These will be displayed as related objects sections
+const reverseRelations = computed<ReverseRelationField[]>(() => [
+  {
+    code: 'maintenance_records',
+    label: t('assets.relations.maintenanceRecords'),
+    displayMode: 'inline_readonly',
+    relatedObjectCode: 'Maintenance',
+    reverseRelationField: 'asset',
+    reverseRelationModel: 'apps.lifecycle.models.Maintenance',
+    title: t('assets.relations.maintenanceRecords'),
+    showCreate: true
+  },
+  {
+    code: 'loan_records',
+    label: t('assets.relations.loanRecords'),
+    displayMode: 'inline_readonly',
+    relatedObjectCode: 'AssetLoan',
+    reverseRelationField: 'asset',
+    reverseRelationModel: 'apps.assets.models.AssetLoan',
+    title: t('assets.relations.loanRecords'),
+    showCreate: false
+  },
+  {
+    code: 'pickup_records',
+    label: t('assets.relations.pickupRecords'),
+    displayMode: 'inline_readonly',
+    relatedObjectCode: 'AssetPickup',
+    reverseRelationField: 'asset',
+    reverseRelationModel: 'apps.assets.models.AssetPickup',
+    title: t('assets.relations.pickupRecords'),
+    showCreate: false
+  },
+  {
+    code: 'return_records',
+    label: t('assets.relations.returnRecords'),
+    displayMode: 'inline_readonly',
+    relatedObjectCode: 'AssetReturn',
+    reverseRelationField: 'asset',
+    reverseRelationModel: 'apps.assets.models.AssetReturn',
+    title: t('assets.relations.returnRecords'),
+    showCreate: false
+  }
+])
+
+// Define sections - using computed to react to language changes
+const detailSections = computed(() => [
   {
     name: 'basic',
-    title: '基本信息',
+    title: t('assets.form.sections.basicInfo'),
     icon: 'InfoFilled',
     fields: [
-      { prop: 'assetCode', label: '资产编码', span: 8 },
-      { prop: 'assetName', label: '资产名称', span: 8 },
-      { prop: 'assetCategoryName', label: '资产分类', span: 8 },
-      { prop: 'assetStatusDisplay', label: '状态', type: 'tag', span: 8,
-        tagType: { '闲置': 'success', '在用': 'primary', '维修中': 'warning', '报废': 'danger' }
+      { prop: 'assetCode', label: t('assets.fields.assetCode'), span: 8 },
+      { prop: 'assetName', label: t('assets.fields.assetName'), span: 8 },
+      { prop: 'assetCategoryName', label: t('assets.fields.category'), span: 8 },
+      { prop: 'assetStatus', label: t('common.labels.status'), type: 'tag', span: 8,
+        // Map backend status codes to element-plus types
+        // The BaseDetailPage will handle value translation if we provide a formatter or just display the value
+        // Ideally we should translate the status value here or in BaseDetailPage
+        tagType: { 'idle': 'success', 'in_use': 'primary', 'maintenance': 'warning', 'scrapped': 'danger', 'draft': 'info' },
+        formatter: (val: string) => {
+          const keyMap: Record<string, string> = {
+            draft: 'assets.status.draft',
+            in_use: 'assets.status.inUse',
+            idle: 'assets.status.idle',
+            maintenance: 'assets.status.maintenance',
+            scrapped: 'assets.status.scrapped'
+          }
+          return keyMap[val] ? t(keyMap[val]) : val
+        }
       },
-      { prop: 'model', label: '规格型号', span: 8 },
-      { prop: 'brand', label: '品牌', span: 8 },
-      { prop: 'unit', label: '计量单位', span: 8 },
-      { prop: 'serialNumber', label: '序列号', span: 8 },
+      { prop: 'model', label: t('assets.fields.model'), span: 8 },
+      { prop: 'brand', label: t('assets.fields.brand'), span: 8 },
+      { prop: 'unit', label: t('assets.fields.unit'), span: 8 },
+      { prop: 'serialNumber', label: t('assets.fields.serialNumber'), span: 8 },
     ]
   },
   {
     name: 'value',
-    title: '价值信息',
+    title: t('assets.form.sections.valueInfo'),
     icon: 'Money',
     fields: [
-      { prop: 'purchasePrice', label: '原值', type: 'currency', span: 8 },
-      { prop: 'purchaseDate', label: '购置日期', type: 'date', span: 8 },
-      { prop: 'supplierName', label: '供应商', span: 8 },
-      { prop: 'invoiceNo', label: '发票号', span: 8 },
+      { prop: 'purchasePrice', label: t('assets.fields.purchasePrice'), type: 'currency', span: 8 },
+      { prop: 'purchaseDate', label: t('assets.fields.purchaseDate'), type: 'date', span: 8 },
+      { prop: 'supplierName', label: t('assets.fields.supplier'), span: 8 },
+      { prop: 'invoiceNo', label: t('assets.fields.invoiceNo'), span: 8 }
     ]
   },
   {
     name: 'usage',
-    title: '使用信息',
+    title: t('assets.form.sections.useInfo'),
     icon: 'UserFilled',
     fields: [
-      { prop: 'departmentName', label: '使用部门', span: 8 },
-      { prop: 'custodianName', label: '使用人', span: 8 },
-      { prop: 'locationPath', label: '存放地点', span: 8 },
+      { prop: 'departmentName', label: t('assets.fields.department'), span: 8 },
+      { prop: 'custodianName', label: t('assets.fields.user'), span: 8 },
+      { prop: 'locationPath', label: t('assets.fields.location'), span: 8 },
     ]
   },
   {
     name: 'image',
-    title: '图片',
+    title: t('assets.form.sections.image'),
     icon: 'Picture',
     collapsible: true,
+    collapsed: true,
     fields: [
-      { prop: 'image', label: '资产图片', type: 'image', span: 24 }
+      { prop: 'image', label: t('assets.form.sections.image'), type: 'image', span: 24 }
     ]
   }
-]
+])
 
 onMounted(async () => {
-    await fetchDetail()
+  await fetchDetail()
 })
 
 const fetchDetail = async () => {
@@ -102,15 +232,24 @@ const fetchDetail = async () => {
     // Backend returns flat fields (transformed to camelCase by interceptor)
     // Add custodianName if custodian exists
     assetData.value = {
-        ...data,
-        custodianName: data.custodian?.username || data.user?.username || '-'
+      ...data,
+      custodianName: data.custodian?.username || data.user?.username || '-'
     }
   } catch (error) {
     console.error('Failed to load asset:', error)
-    ElMessage.error('加载资产详情失败')
+    ElMessage.error(t('assets.messages.loadFailed'))
   } finally {
     loading.value = false
   }
+}
+
+// Alternative fetch function for DynamicDetailPage
+const fetchAssetRecord = async (id: string) => {
+  return await assetApi.get(id)
+}
+
+const handleAssetLoaded = (record: any) => {
+  assetData.value = record
 }
 
 const handleEdit = () => {
@@ -120,21 +259,83 @@ const handleEdit = () => {
 const handleDelete = async () => {
   try {
     await assetApi.delete(route.params.id as string)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.messages.deleteSuccess'))
     goBack()
   } catch (error) {
     console.error(error)
-    ElMessage.error('删除失败')
+    ElMessage.error(t('common.messages.deleteFailed'))
   }
 }
 
 const goBack = () => {
   router.push('/assets/list')
 }
+
+const handleRelatedRecordClick = (relationCode: string, record: any) => {
+  console.log('Related record clicked:', relationCode, record)
+  // Navigate to related record detail
+  const objectMap: Record<string, string> = {
+    maintenance_records: 'Maintenance',
+    loan_records: 'AssetLoan',
+    pickup_records: 'AssetPickup',
+    return_records: 'AssetReturn'
+  }
+  const objectCode = objectMap[relationCode]
+  if (objectCode && record.id) {
+    router.push(`/${objectCode.toLowerCase()}/detail/${record.id}`)
+  }
+}
+
+const handleRelatedRecordEdit = (relationCode: string, record: any) => {
+  console.log('Related record edit:', relationCode, record)
+  // Navigate to related record edit
+  const objectMap: Record<string, string> = {
+    maintenance_records: 'Maintenance',
+    loan_records: 'AssetLoan',
+    pickup_records: 'AssetPickup',
+    return_records: 'AssetReturn'
+  }
+  const objectCode = objectMap[relationCode]
+  if (objectCode && record.id) {
+    router.push(`/${objectCode.toLowerCase()}/edit/${record.id}`)
+  }
+}
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .asset-detail-wrapper {
   height: 100%;
+}
+
+.qr-code-display {
+  display: flex;
+  align-items: center;
+}
+
+.images-display {
+  .image-gallery {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    .gallery-image {
+      width: 60px;
+      height: 60px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .more-images {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
+      background-color: #f5f7fa;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #909399;
+    }
+  }
 }
 </style>

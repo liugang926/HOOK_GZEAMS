@@ -1,7 +1,7 @@
 <template>
   <div class="task-detail">
     <el-page-header
-      content="任务办理"
+      :content="t('workflow.task.processTask')"
       class="page-header"
       @back="$router.back()"
     />
@@ -11,29 +11,29 @@
       class="mt-20"
     >
       <template #header>
-        <span>任务信息</span>
+        <span>{{ t('workflow.task.taskInfo') }}</span>
       </template>
       <el-descriptions
         v-if="taskData"
         border
         :column="2"
       >
-        <el-descriptions-item label="任务标题">
+        <el-descriptions-item :label="t('workflow.columns.taskTitle')">
           {{ taskData.title }}
         </el-descriptions-item>
-        <el-descriptions-item label="任务类型">
+        <el-descriptions-item :label="t('workflow.columns.processType')">
           {{ taskData.workflowName || taskData.processName }}
         </el-descriptions-item>
-        <el-descriptions-item label="发起人">
+        <el-descriptions-item :label="t('workflow.columns.initiator')">
           {{ taskData.initiator?.realName || taskData.initiatorName || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="发起时间">
+        <el-descriptions-item :label="t('workflow.columns.receiveTime')">
           {{ formatDate(taskData.createdAt || taskData.created_at) }}
         </el-descriptions-item>
-        <el-descriptions-item label="当前节点">
+        <el-descriptions-item :label="t('workflow.task.currentNode')">
           {{ taskData.currentNodeName || taskData.nodeName }}
         </el-descriptions-item>
-        <el-descriptions-item label="任务状态">
+        <el-descriptions-item :label="t('workflow.fields.status')">
           <el-tag :type="getStatusType(taskData.status)">
             {{ getStatusText(taskData.status) }}
           </el-tag>
@@ -46,7 +46,7 @@
       class="mt-20"
     >
       <template #header>
-        <span>表单信息</span>
+        <span>{{ t('workflow.task.formInfo') }}</span>
       </template>
       <DynamicForm
         v-if="formSchema"
@@ -73,18 +73,18 @@
       class="mt-20"
     >
       <template #header>
-        <span>审批处理</span>
+        <span>{{ t('workflow.task.approvalProcess') }}</span>
       </template>
-      <el-form label-width="80px">
+      <el-form :label-width="locale === 'zh-CN' ? '80px' : '120px'">
         <el-form-item
-          label="审批意见"
+          :label="t('workflow.task.approvalComment')"
           required
         >
           <el-input
             v-model="comment"
             type="textarea"
             :rows="4"
-            placeholder="请输入审批意见"
+            :placeholder="t('workflow.myApprovals.enterRejectReason')"
           />
         </el-form-item>
         <el-form-item>
@@ -93,14 +93,14 @@
             :loading="submitting"
             @click="handleApprove"
           >
-            同意
+            {{ t('workflow.actions.approve') }}
           </el-button>
           <el-button
             type="danger"
             :loading="submitting"
             @click="handleReject"
           >
-            拒绝
+            {{ t('workflow.actions.reject') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -111,9 +111,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getTaskDetail, approveTask, rejectTask, getTaskFormData } from '@/api/workflow'
 import DynamicForm from '@/components/engine/DynamicForm.vue'
+
+const { t } = useI18n()
+const locale = computed(() => t('locale'))
 
 const route = useRoute()
 const router = useRouter()
@@ -123,7 +127,7 @@ const submitting = ref(false)
 const taskData = ref<any>(null)
 const formData = ref<any>(null)
 const formSchema = ref<any>(null)
-const comment = ref('同意')
+const comment = ref(t('workflow.actions.agree'))
 
 const taskId = route.params.id as string
 
@@ -158,15 +162,7 @@ const getStatusType = (status: string) => {
 }
 
 const getStatusText = (status: string) => {
-  const map: Record<string, string> = {
-    pending: '待审批',
-    in_progress: '进行中',
-    approved: '已通过',
-    completed: '已完成',
-    rejected: '已拒绝',
-    cancelled: '已取消'
-  }
-  return map[status] || status
+  return t(`workflow.status.${status}`)
 }
 
 const loadTaskDetail = async () => {
@@ -188,18 +184,18 @@ const loadTaskDetail = async () => {
     console.error('Failed to load task detail:', error)
     // Show mock data for development if API fails
     taskData.value = {
-      title: '资产领用申请',
-      workflowName: '资产领用流程',
-      initiator: { realName: '张三' },
+      title: t('workflow.task.mockAssetPickup'),
+      workflowName: t('workflow.task.mockAssetPickupFlow'),
+      initiator: { realName: 'Zhang San' },
       createdAt: new Date().toISOString(),
-      currentNodeName: '部门审批',
+      currentNodeName: t('workflow.task.mockDepartmentApproval'),
       status: 'pending'
     }
     formData.value = {
-      assetName: '笔记本电脑',
+      assetName: t('workflow.task.mockLaptop'),
       assetCode: 'ASSET001',
       quantity: 1,
-      reason: '日常办公使用'
+      reason: t('workflow.task.mockDailyUse')
     }
   } finally {
     loading.value = false
@@ -208,23 +204,23 @@ const loadTaskDetail = async () => {
 
 const handleApprove = async () => {
   if (!comment.value.trim()) {
-    ElMessage.warning('请输入审批意见')
+    ElMessage.warning(t('workflow.myApprovals.reasonRequired'))
     return
   }
 
-  await ElMessageBox.confirm('确认同意该审批吗？', '确认', {
+  await ElMessageBox.confirm(t('workflow.task.confirmApprove'), t('common.actions.confirm'), {
     type: 'warning'
   })
 
   submitting.value = true
   try {
     await approveTask(taskId, { comment: comment.value })
-    ElMessage.success('审批成功')
+    ElMessage.success(t('workflow.messages.approveSuccess'))
     router.back()
   } catch (error: any) {
     console.error('Approve error:', error)
     // For development, simulate success
-    ElMessage.success('审批成功（模拟）')
+    ElMessage.success(t('workflow.messages.approveSuccess'))
     setTimeout(() => router.back(), 500)
   } finally {
     submitting.value = false
@@ -233,23 +229,23 @@ const handleApprove = async () => {
 
 const handleReject = async () => {
   if (!comment.value.trim()) {
-    ElMessage.warning('请输入拒绝理由')
+    ElMessage.warning(t('workflow.myApprovals.reasonRequired'))
     return
   }
 
-  await ElMessageBox.confirm('确认拒绝该审批吗？', '确认', {
+  await ElMessageBox.confirm(t('workflow.task.confirmReject'), t('common.actions.confirm'), {
     type: 'warning'
   })
 
   submitting.value = true
   try {
     await rejectTask(taskId, { comment: comment.value })
-    ElMessage.success('已拒绝')
+    ElMessage.success(t('workflow.messages.rejected'))
     router.back()
   } catch (error: any) {
     console.error('Reject error:', error)
     // For development, simulate success
-    ElMessage.success('已拒绝（模拟）')
+    ElMessage.success(t('workflow.messages.rejected'))
     setTimeout(() => router.back(), 500)
   } finally {
     submitting.value = false

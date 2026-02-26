@@ -20,5 +20,5 @@ router.register(r'logs', IntegrationLogViewSet, basename='integration-log')
 router.register(r'mappings', DataMappingTemplateViewSet, basename='data-mapping-template')
 
 urlpatterns = [
-    path('api/integration/', include(router.urls)),
+    path('', include(router.urls)),
 ]

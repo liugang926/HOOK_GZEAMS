@@ -14,10 +14,11 @@ from apps.integration.serializers import (
     IntegrationConfigDetailSerializer,
     IntegrationConfigCreateSerializer,
     IntegrationConfigUpdateSerializer,
-    TestConnectionSerializer,
+    IntegrationSyncTaskDetailSerializer,
 )
 from apps.integration.filters import IntegrationConfigFilter
-from apps.integration.services import IntegrationConfigService
+from apps.integration.services import IntegrationConfigService, IntegrationSyncService
+from apps.integration.constants import IntegrationModuleType, SyncDirection
 
 
 class IntegrationConfigViewSet(BaseModelViewSetWithBatch):
@@ -53,6 +54,15 @@ class IntegrationConfigViewSet(BaseModelViewSetWithBatch):
             health_status='unhealthy'
         )
 
+    @action(detail=True, methods=['post'], url_path='test')
+    def test(self, request, pk=None):
+        """
+        Backward-compatible alias for test_connection.
+
+        POST /api/integration/configs/{id}/test/
+        """
+        return self.test_connection(request, pk=pk)
+
     @action(detail=True, methods=['post'])
     def test_connection(self, request, pk=None):
         """
@@ -72,7 +82,7 @@ class IntegrationConfigViewSet(BaseModelViewSetWithBatch):
         """
         config = self.get_object()
 
-        service = IntegrationConfigService(config.organization, request.user)
+        service = IntegrationConfigService()
         result = service.test_connection(config)
 
         if result['success']:
@@ -109,7 +119,7 @@ class IntegrationConfigViewSet(BaseModelViewSetWithBatch):
         """
         config = self.get_object()
 
-        service = IntegrationConfigService(config.organization, request.user)
+        service = IntegrationConfigService()
         result = service.health_check(config)
 
         # Refresh config to get updated health status
@@ -122,4 +132,76 @@ class IntegrationConfigViewSet(BaseModelViewSetWithBatch):
                 'response_time_ms': result.get('response_time_ms')
             },
             message=result['message']
+        )
+
+    @action(detail=True, methods=['post'])
+    def sync(self, request, pk=None):
+        """
+        Create a sync task for this integration config.
+
+        POST /api/integration/configs/{id}/sync/
+        """
+        config = self.get_object()
+
+        if not config.is_enabled:
+            return BaseResponse.error(
+                code='CONFIG_DISABLED',
+                message='Integration config is disabled.',
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        valid_modules = set(dict(IntegrationModuleType.CHOICES).keys())
+        valid_directions = set(dict(SyncDirection.CHOICES).keys())
+        default_business_by_module = {
+            IntegrationModuleType.PROCUREMENT: 'purchase_order',
+            IntegrationModuleType.FINANCE: 'voucher',
+            IntegrationModuleType.INVENTORY: 'asset',
+            IntegrationModuleType.HR: 'employee',
+            IntegrationModuleType.CRM: 'customer',
+        }
+
+        enabled_modules = [m for m in (config.enabled_modules or []) if m in valid_modules]
+        module_type = (
+            request.data.get('module_type')
+            or request.data.get('moduleType')
+            or (enabled_modules[0] if enabled_modules else IntegrationModuleType.FINANCE)
+        )
+        direction = request.data.get('direction') or SyncDirection.PULL
+        business_type = (
+            request.data.get('business_type')
+            or request.data.get('businessType')
+            or default_business_by_module.get(module_type, 'generic')
+        )
+        sync_params = request.data.get('sync_params') or request.data.get('syncParams') or {}
+
+        if module_type not in valid_modules:
+            return BaseResponse.error(
+                code='INVALID_MODULE_TYPE',
+                message=f'Unsupported module_type: {module_type}',
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+        if direction not in valid_directions:
+            return BaseResponse.error(
+                code='INVALID_DIRECTION',
+                message=f'Unsupported direction: {direction}',
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        sync_service = IntegrationSyncService()
+        task = sync_service.create_sync_task(
+            config=config,
+            module_type=module_type,
+            direction=direction,
+            business_type=business_type,
+            sync_params=sync_params,
+            user=request.user,
+        )
+
+        if request.data.get('execute') is True:
+            sync_service.execute_sync(task)
+            task.refresh_from_db()
+
+        return BaseResponse.success(
+            data=IntegrationSyncTaskDetailSerializer(task).data,
+            message='Sync task created successfully',
         )

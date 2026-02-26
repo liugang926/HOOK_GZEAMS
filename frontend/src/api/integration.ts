@@ -1,5 +1,13 @@
 import request from '@/utils/request'
 import type { PaginatedResponse } from '@/types/api'
+import {
+  normalizeQueryParams,
+  toActionResult,
+  toCamelDeep,
+  toData,
+  toPaginated,
+  type ApiActionResult,
+} from '@/api/contract'
 
 /**
  * Integration Management API Client
@@ -9,92 +17,212 @@ import type { PaginatedResponse } from '@/types/api'
 // Integration Configs
 export const integrationConfigApi = {
   list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/integration/configs/', { params })
+    return request
+      .get('/integration/configs/', {
+        params: normalizeQueryParams(params, { preserveKeys: ['page', 'page_size'] }),
+      })
+      .then((res) => {
+        const page = toPaginated(res)
+        return {
+          ...page,
+          results: toCamelDeep(page.results),
+        }
+      })
   },
 
   detail(id: string): Promise<any> {
-    return request.get(`/integration/configs/${id}/`)
+    return request.get(`/integration/configs/${id}/`).then((res) => toCamelDeep(toData(res)))
   },
 
-  create(data: any): Promise<any> {
-    return request.post('/integration/configs/', data)
+  create(data: any): Promise<ApiActionResult<any>> {
+    return request
+      .post('/integration/configs/', data, { unwrap: 'none' })
+      .then((res) => {
+        const result = toActionResult(res)
+        return {
+          ...result,
+          data: toCamelDeep(result.data),
+        }
+      })
   },
 
-  update(id: string, data: any): Promise<any> {
-    return request.put(`/integration/configs/${id}/`, data)
+  update(id: string, data: any): Promise<ApiActionResult<any>> {
+    return request
+      .put(`/integration/configs/${id}/`, data, { unwrap: 'none' })
+      .then((res) => {
+        const result = toActionResult(res)
+        return {
+          ...result,
+          data: toCamelDeep(result.data),
+        }
+      })
   },
 
-  delete(id: string): Promise<void> {
-    return request.delete(`/integration/configs/${id}/`)
+  delete(id: string): Promise<ApiActionResult<void>> {
+    return request.delete(`/integration/configs/${id}/`, { unwrap: 'none' }).then((res) => toActionResult(res))
   },
 
-  test(id: string): Promise<any> {
-    return request.post(`/integration/configs/${id}/test/`)
+  test(id: string): Promise<ApiActionResult<any>> {
+    return request
+      .post(`/integration/configs/${id}/test/`, undefined, { unwrap: 'none' })
+      .then((res) => {
+        const result = toActionResult(res)
+        return {
+          ...result,
+          data: toCamelDeep(result.data),
+        }
+      })
   },
 
-  sync(id: string): Promise<any> {
-    return request.post(`/integration/configs/${id}/sync/`)
+  sync(id: string): Promise<ApiActionResult<any>> {
+    return request
+      .post(`/integration/configs/${id}/sync/`, undefined, { unwrap: 'none' })
+      .then((res) => {
+        const result = toActionResult(res)
+        return {
+          ...result,
+          data: toCamelDeep(result.data),
+        }
+      })
   }
 }
 
 // Sync Tasks
 export const syncTaskApi = {
   list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/integration/sync-tasks/', { params })
+    return request
+      .get('/integration/sync-tasks/', {
+        params: normalizeQueryParams(params, { preserveKeys: ['page', 'page_size'] }),
+      })
+      .then((res) => {
+        const page = toPaginated(res)
+        return {
+          ...page,
+          results: toCamelDeep(page.results),
+        }
+      })
   },
 
   detail(id: string): Promise<any> {
-    return request.get(`/integration/sync-tasks/${id}/`)
+    return request.get(`/integration/sync-tasks/${id}/`).then((res) => toCamelDeep(toData(res)))
   },
 
-  execute(id: string): Promise<void> {
-    return request.post(`/integration/sync-tasks/${id}/execute/`)
+  execute(id: string): Promise<ApiActionResult<any>> {
+    return request
+      .post(`/integration/sync-tasks/${id}/execute/`, undefined, { unwrap: 'none' })
+      .then((res) => {
+        const result = toActionResult(res)
+        return {
+          ...result,
+          data: toCamelDeep(result.data),
+        }
+      })
   },
 
-  cancel(id: string): Promise<void> {
-    return request.post(`/integration/sync-tasks/${id}/cancel/`)
+  cancel(id: string): Promise<ApiActionResult<any>> {
+    return request
+      .post(`/integration/sync-tasks/${id}/cancel/`, undefined, { unwrap: 'none' })
+      .then((res) => {
+        const result = toActionResult(res)
+        return {
+          ...result,
+          data: toCamelDeep(result.data),
+        }
+      })
   }
 }
 
 // Integration Logs
 export const integrationLogApi = {
   list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/integration/logs/', { params })
+    return request
+      .get('/integration/logs/', {
+        params: normalizeQueryParams(params, { preserveKeys: ['page', 'page_size'] }),
+      })
+      .then((res) => {
+        const page = toPaginated(res)
+        return {
+          ...page,
+          results: toCamelDeep(page.results),
+        }
+      })
   },
 
   detail(id: string): Promise<any> {
-    return request.get(`/integration/logs/${id}/`)
+    return request.get(`/integration/logs/${id}/`).then((res) => toCamelDeep(toData(res)))
   },
 
-  retry(id: string): Promise<void> {
-    return request.post(`/integration/logs/${id}/retry/`)
+  retry(id: string): Promise<ApiActionResult<any>> {
+    return request
+      .post(`/integration/logs/${id}/retry/`, undefined, { unwrap: 'none' })
+      .then((res) => {
+        const result = toActionResult(res)
+        return {
+          ...result,
+          data: toCamelDeep(result.data),
+        }
+      })
   }
 }
 
 // Data Mapping Templates
 export const dataMappingApi = {
   list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/integration/mappings/', { params })
+    return request
+      .get('/integration/mappings/', {
+        params: normalizeQueryParams(params, { preserveKeys: ['page', 'page_size'] }),
+      })
+      .then((res) => {
+        const page = toPaginated(res)
+        return {
+          ...page,
+          results: toCamelDeep(page.results),
+        }
+      })
   },
 
   detail(id: string): Promise<any> {
-    return request.get(`/integration/mappings/${id}/`)
+    return request.get(`/integration/mappings/${id}/`).then((res) => toCamelDeep(toData(res)))
   },
 
-  create(data: any): Promise<any> {
-    return request.post('/integration/mappings/', data)
+  create(data: any): Promise<ApiActionResult<any>> {
+    return request
+      .post('/integration/mappings/', data, { unwrap: 'none' })
+      .then((res) => {
+        const result = toActionResult(res)
+        return {
+          ...result,
+          data: toCamelDeep(result.data),
+        }
+      })
   },
 
-  update(id: string, data: any): Promise<any> {
-    return request.put(`/integration/mappings/${id}/`, data)
+  update(id: string, data: any): Promise<ApiActionResult<any>> {
+    return request
+      .put(`/integration/mappings/${id}/`, data, { unwrap: 'none' })
+      .then((res) => {
+        const result = toActionResult(res)
+        return {
+          ...result,
+          data: toCamelDeep(result.data),
+        }
+      })
   },
 
-  delete(id: string): Promise<void> {
-    return request.delete(`/integration/mappings/${id}/`)
+  delete(id: string): Promise<ApiActionResult<void>> {
+    return request.delete(`/integration/mappings/${id}/`, { unwrap: 'none' }).then((res) => toActionResult(res))
   },
 
-  test(id: string, data: any): Promise<any> {
-    return request.post(`/integration/mappings/${id}/test/`, data)
+  test(id: string, data: any): Promise<ApiActionResult<any>> {
+    return request
+      .post(`/integration/mappings/${id}/test/`, data, { unwrap: 'none' })
+      .then((res) => {
+        const result = toActionResult(res)
+        return {
+          ...result,
+          data: toCamelDeep(result.data),
+        }
+      })
   }
 }
 

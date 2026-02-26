@@ -2,7 +2,7 @@
 
 <template>
   <BaseListPage
-    title="许可证分配记录"
+    :title="$t('softwareLicenses.allocations.title')"
     :api="licenseAllocationApi.list"
     :table-columns="columns"
     :search-fields="searchFields"
@@ -14,13 +14,8 @@
         @click="handleCreate"
       >
         <el-icon><Plus /></el-icon>
-        新建分配
+        {{ $t('softwareLicenses.allocations.add') }}
       </el-button>
-    </template>
-    <template #isActive="{ row }">
-      <el-tag :type="row.isActive ? 'success' : 'info'">
-        {{ row.isActive ? '已分配' : '已解除' }}
-      </el-tag>
     </template>
     <template #actions="{ row }">
       <el-button
@@ -29,20 +24,22 @@
         type="warning"
         @click.stop="handleDeallocate(row)"
       >
-        解除分配
+        {{ $t('softwareLicenses.allocations.deallocate') }}
       </el-button>
       <el-text
         v-else
         type="info"
       >
-        已解除
+        {{ $t('softwareLicenses.allocations.status.revoked') }}
       </el-text>
     </template>
   </BaseListPage>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import BaseListPage from '@/components/common/BaseListPage.vue'
 import { licenseAllocationApi } from '@/api/softwareLicenses'
@@ -50,25 +47,26 @@ import type { TableColumn, SearchField } from '@/types/common'
 import { Plus } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const { t } = useI18n()
 
-const columns: TableColumn[] = [
-  { prop: 'softwareName', label: '软件', minWidth: 150 },
-  { prop: 'licenseNo', label: '许可证编号', width: 150 },
-  { prop: 'assetCode', label: '资产编码', width: 130 },
-  { prop: 'assetName', label: '资产名称', minWidth: 150 },
-  { prop: 'allocatedDate', label: '分配日期', width: 120 },
-  { prop: 'allocatedByName', label: '分配人', width: 100 },
-  { prop: 'isActive', label: '状态', width: 100, slot: true },
-  { prop: 'actions', label: '操作', width: 120, slot: true, fixed: 'right' }
-]
+const columns = computed<TableColumn[]>(() => [
+  { prop: 'softwareName', label: t('softwareLicenses.allocations.fields.software'), minWidth: 150 },
+  { prop: 'licenseNo', label: t('softwareLicenses.allocations.fields.licenseNo'), width: 150 },
+  { prop: 'assetCode', label: t('softwareLicenses.allocations.fields.assetCode'), width: 130 },
+  { prop: 'assetName', label: t('softwareLicenses.allocations.fields.assetName'), minWidth: 150 },
+  { prop: 'allocatedDate', label: t('softwareLicenses.allocations.fields.allocatedDate'), width: 120 },
+  { prop: 'allocatedByName', label: t('softwareLicenses.allocations.fields.allocatedBy'), width: 100 },
+  { prop: 'isActive', label: t('softwareLicenses.allocations.fields.status'), width: 100, tagType: (row: any) => (row.isActive ? 'success' : 'info'), format: (value: any) => (value ? t('softwareLicenses.allocations.status.allocated') : t('softwareLicenses.allocations.status.revoked')) },
+  { prop: 'actions', label: t('common.labels.operation', '操作'), width: 120, slot: true, fixed: 'right' }
+])
 
-const searchFields: SearchField[] = [
-  { prop: 'search', label: '搜索', placeholder: '软件/资产' },
-  { prop: 'isActive', label: '状态', type: 'select', options: [
-    { label: '已分配', value: true },
-    { label: '已解除', value: false }
+const searchFields = computed<SearchField[]>(() => [
+  { prop: 'search', label: t('common.actions.search'), placeholder: t('softwareLicenses.allocations.fields.software') + '/' + t('softwareLicenses.allocations.fields.assetName') },
+  { prop: 'isActive', label: t('softwareLicenses.allocations.fields.status'), type: 'select', options: [
+    { label: t('softwareLicenses.allocations.status.allocated'), value: true },
+    { label: t('softwareLicenses.allocations.status.revoked'), value: false }
   ]}
-]
+])
 
 const handleRowClick = (row: any) => {
   // Show detail dialog
@@ -81,21 +79,23 @@ const handleCreate = () => {
 const handleDeallocate = async (row: any) => {
   try {
     await ElMessageBox.confirm(
-      `确定要解除 ${row.softwareName} 在 ${row.assetName} 上的分配吗？`,
-      '确认解除',
+      t('softwareLicenses.allocations.messages.deallocateConfirm', { software: row.softwareName, asset: row.assetName }),
+      t('common.messages.confirmTitle', '确认'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.actions.confirm', '确定'),
+        cancelButtonText: t('common.actions.cancel', '取消'),
         type: 'warning'
       }
     )
 
     await licenseAllocationApi.deallocate(row.id)
-    ElMessage.success('解除成功')
+    ElMessage.success(t('common.messages.operationSuccess'))
     // Refresh is handled by BaseListPage
+    // Note: BaseListPage might need a way to trigger refresh manually if not handled via specialized event or ref
+    window.dispatchEvent(new CustomEvent('refresh-base-list'))
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(error.message || '解除失败')
+      ElMessage.error(error.message || t('common.messages.operationFailed'))
     }
   }
 }

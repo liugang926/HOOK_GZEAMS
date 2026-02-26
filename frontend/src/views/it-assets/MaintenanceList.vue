@@ -1,207 +1,65 @@
 <template>
   <div class="maintenance-list">
-    <div class="page-header">
-      <h3>IT Maintenance Records</h3>
-      <el-button
-        type="primary"
-        @click="handleCreate"
-      >
-        Add Record
-      </el-button>
-    </div>
-
-    <!-- Filters -->
-    <el-form
-      :model="filterForm"
-      inline
-      class="filter-form"
+    <BaseListPage
+      ref="listRef"
+      :title="t('itAssets.maintenance.title')"
+      :search-fields="searchFields"
+      :table-columns="columns"
+      :api="fetchList"
+      @row-click="handleView"
     >
-      <el-form-item label="Search">
-        <el-input
-          v-model="filterForm.search"
-          placeholder="Asset code, title, vendor..."
-          clearable
-          @clear="handleSearch"
-          @keyup.enter="handleSearch"
-        />
-      </el-form-item>
-      <el-form-item label="Type">
-        <el-select
-          v-model="filterForm.maintenance_type"
-          clearable
-          placeholder="All Types"
-          @change="handleSearch"
-        >
-          <el-option
-            label="Preventive"
-            value="preventive"
-          />
-          <el-option
-            label="Corrective"
-            value="corrective"
-          />
-          <el-option
-            label="Upgrade"
-            value="upgrade"
-          />
-          <el-option
-            label="Replacement"
-            value="replacement"
-          />
-          <el-option
-            label="Inspection"
-            value="inspection"
-          />
-          <el-option
-            label="Cleaning"
-            value="cleaning"
-          />
-          <el-option
-            label="Other"
-            value="other"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="Date Range">
-        <el-date-picker
-          v-model="filterForm.date_range"
-          type="daterange"
-          placeholder="Select range"
-          clearable
-          @change="handleSearch"
-        />
-      </el-form-item>
-      <el-form-item>
+      <template #toolbar>
         <el-button
           type="primary"
-          @click="handleSearch"
+          @click="handleCreate"
         >
-          Search
+          {{ t('itAssets.common.addRecord') }}
         </el-button>
-        <el-button @click="handleFilterReset">
-          Reset
+      </template>
+
+      <template #actions="{ row }">
+        <el-button
+          link
+          type="primary"
+          @click.stop="handleView(row)"
+        >
+          {{ t('itAssets.actions.view') }}
         </el-button>
-      </el-form-item>
-    </el-form>
-
-    <!-- Records Table -->
-    <el-table
-      v-loading="loading"
-      :data="tableData"
-      border
-      stripe
-      style="width: 100%"
-    >
-      <el-table-column
-        prop="asset_code"
-        label="Asset"
-        width="140"
-      />
-      <el-table-column
-        label="Type"
-        width="120"
-      >
-        <template #default="{ row }">
-          <el-tag
-            :type="getMaintenanceTypeColor(row.maintenance_type)"
-            size="small"
-          >
-            {{ row.maintenance_type_display }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="title"
-        label="Title"
-        min-width="200"
-      />
-      <el-table-column
-        prop="maintenance_date"
-        label="Date"
-        width="120"
-      />
-      <el-table-column
-        label="Cost"
-        width="100"
-        align="right"
-      >
-        <template #default="{ row }">
-          <span v-if="row.cost">${{ row.cost }}</span>
-          <span v-else>-</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="vendor"
-        label="Vendor"
-        min-width="150"
-        show-overflow-tooltip
-      />
-      <el-table-column
-        prop="performed_by_username"
-        label="Performed By"
-        width="120"
-      />
-      <el-table-column
-        label="Actions"
-        width="150"
-        fixed="right"
-      >
-        <template #default="{ row }">
-          <el-button
-            link
-            type="primary"
-            @click="handleView(row)"
-          >
-            View
-          </el-button>
-          <el-button
-            link
-            type="primary"
-            @click="handleEdit(row)"
-          >
-            Edit
-          </el-button>
-          <el-popconfirm
-            title="Are you sure to delete this record?"
-            @confirm="handleDelete(row)"
-          >
-            <template #reference>
-              <el-button
-                link
-                type="danger"
-              >
-                Delete
-              </el-button>
-            </template>
-          </el-popconfirm>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <!-- Pagination -->
-    <div class="pagination-footer">
-      <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.pageSize"
-        :total="pagination.total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="fetchData"
-        @current-change="fetchData"
-      />
-    </div>
+        <el-button
+          link
+          type="primary"
+          @click.stop="handleEdit(row)"
+        >
+          {{ t('itAssets.actions.edit') }}
+        </el-button>
+        <el-popconfirm
+          :title="t('itAssets.messages.deleteRecordConfirm')"
+          @confirm="handleDelete(row)"
+        >
+          <template #reference>
+            <el-button
+              link
+              type="danger"
+              @click.stop
+            >
+              {{ t('itAssets.actions.delete') }}
+            </el-button>
+          </template>
+        </el-popconfirm>
+      </template>
+    </BaseListPage>
 
     <!-- Maintenance Form Dialog -->
     <MaintenanceForm
       v-model:visible="dialogVisible"
       :data="currentRow"
-      @success="fetchData"
+      @success="handleRefresh"
     />
 
     <!-- Detail Drawer -->
     <el-drawer
       v-model="detailDrawerVisible"
-      title="Maintenance Record Details"
+      :title="$t('itAssets.detail.title')"
       size="600px"
     >
       <div
@@ -212,30 +70,30 @@
           :column="2"
           border
         >
-          <el-descriptions-item label="Asset">
+          <el-descriptions-item :label="$t('itAssets.common.asset')">
             {{ currentRow.asset_code }} - {{ currentRow.asset_name }}
           </el-descriptions-item>
-          <el-descriptions-item label="Type">
+          <el-descriptions-item :label="$t('itAssets.maintenance.type')">
             <el-tag :type="getMaintenanceTypeColor(currentRow.maintenance_type)">
-              {{ currentRow.maintenance_type_display }}
+              {{ $t('itAssets.maintenance.types.' + currentRow.maintenance_type) }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item
-            label="Title"
+            :label="$t('itAssets.common.title')"
             :span="2"
           >
             {{ currentRow.title }}
           </el-descriptions-item>
-          <el-descriptions-item label="Date">
+          <el-descriptions-item :label="$t('itAssets.common.date')">
             {{ currentRow.maintenance_date }}
           </el-descriptions-item>
-          <el-descriptions-item label="Cost">
+          <el-descriptions-item :label="$t('itAssets.common.cost')">
             {{ currentRow.cost ? `$${currentRow.cost}` : '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="Vendor">
+          <el-descriptions-item :label="$t('itAssets.common.vendor')">
             {{ currentRow.vendor || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="Performed By">
+          <el-descriptions-item :label="$t('itAssets.common.performedBy')">
             {{ currentRow.performed_by_username || '-' }}
           </el-descriptions-item>
         </el-descriptions>
@@ -244,7 +102,7 @@
           v-if="currentRow.description"
           class="section-title"
         >
-          Description
+          {{ $t('itAssets.common.description') }}
         </div>
         <div
           v-if="currentRow.description"
@@ -257,7 +115,7 @@
           v-if="currentRow.notes"
           class="section-title"
         >
-          Notes
+          {{ $t('itAssets.common.notes') }}
         </div>
         <div
           v-if="currentRow.notes"
@@ -271,29 +129,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import type { ITMaintenanceRecord } from '@/api/itAssets'
 import { itMaintenanceApi } from '@/api/itAssets'
+import BaseListPage from '@/components/common/BaseListPage.vue'
+import type { TableColumn, SearchField } from '@/types/common'
 import MaintenanceForm from './components/MaintenanceForm.vue'
 
-const loading = ref(false)
-const tableData = ref<ITMaintenanceRecord[]>([])
+const { t } = useI18n()
+
+const listRef = ref()
 const dialogVisible = ref(false)
 const detailDrawerVisible = ref(false)
 const currentRow = ref<ITMaintenanceRecord | null>(null)
-
-const filterForm = reactive({
-  search: '',
-  maintenance_type: undefined as unknown as string,
-  date_range: null as any
-})
-
-const pagination = reactive({
-  page: 1,
-  pageSize: 20,
-  total: 0
-})
 
 const getMaintenanceTypeColor = (type: string) => {
   const colorMap: Record<string, string> = {
@@ -308,44 +158,83 @@ const getMaintenanceTypeColor = (type: string) => {
   return colorMap[type] || ''
 }
 
-const fetchData = async () => {
-  loading.value = true
+const searchFields = computed<SearchField[]>(() => [
+  {
+    prop: 'search',
+    label: t('itAssets.filters.search'),
+    type: 'text',
+    placeholder: t('itAssets.common.searchMaintenancePlaceholder')
+  },
+  {
+    prop: 'maintenance_type',
+    label: t('itAssets.maintenance.type'),
+    type: 'select',
+    placeholder: t('itAssets.maintenance.allTypes'),
+    options: [
+      { label: t('itAssets.maintenance.types.preventive'), value: 'preventive' },
+      { label: t('itAssets.maintenance.types.corrective'), value: 'corrective' },
+      { label: t('itAssets.maintenance.types.upgrade'), value: 'upgrade' },
+      { label: t('itAssets.maintenance.types.replacement'), value: 'replacement' },
+      { label: t('itAssets.maintenance.types.inspection'), value: 'inspection' },
+      { label: t('itAssets.maintenance.types.cleaning'), value: 'cleaning' },
+      { label: t('itAssets.maintenance.types.other'), value: 'other' }
+    ]
+  },
+  {
+    prop: 'maintenance_date',
+    label: t('itAssets.filters.dateRange'),
+    type: 'dateRange'
+  }
+])
+
+const columns = computed<TableColumn[]>(() => [
+  { prop: 'asset_code', label: t('itAssets.common.asset'), width: 140 },
+  {
+    prop: 'maintenance_type',
+    label: t('itAssets.maintenance.type'),
+    width: 120,
+    tagType: (row: ITMaintenanceRecord) => getMaintenanceTypeColor(row.maintenance_type),
+    format: (_v: any, row: ITMaintenanceRecord) => t(`itAssets.maintenance.types.${row.maintenance_type}`)
+  },
+  { prop: 'title', label: t('itAssets.common.title'), minWidth: 200 },
+  { prop: 'maintenance_date', label: t('itAssets.common.date'), width: 120 },
+  {
+    prop: 'cost',
+    label: t('itAssets.common.cost'),
+    width: 100,
+    align: 'right',
+    format: (value: any) => (value !== undefined && value !== null && value !== '' ? `$${value}` : '-')
+  },
+  { prop: 'vendor', label: t('itAssets.common.vendor'), minWidth: 150 },
+  { prop: 'performed_by_username', label: t('itAssets.common.performedBy'), width: 120 },
+  { prop: 'actions', label: t('itAssets.columns.actions'), width: 160, fixed: 'right', slot: true }
+])
+
+const fetchList = async (params: any) => {
   try {
-    const params: any = {
-      page: pagination.page,
-      page_size: pagination.pageSize
-    }
-    if (filterForm.search) {
-      params.search = filterForm.search
-    }
-    if (filterForm.maintenance_type) {
-      params.maintenance_type = filterForm.maintenance_type
-    }
-    if (filterForm.date_range && filterForm.date_range.length === 2) {
-      params.maintenance_date_from = filterForm.date_range[0]
-      params.maintenance_date_to = filterForm.date_range[1]
+    const nextParams = { ...params }
+    if (Array.isArray(nextParams.maintenance_date) && nextParams.maintenance_date.length === 2) {
+      nextParams.maintenance_date_from = nextParams.maintenance_date[0]
+      nextParams.maintenance_date_to = nextParams.maintenance_date[1]
+      delete nextParams.maintenance_date
     }
 
-    const res = await itMaintenanceApi.list(params) as any
-    tableData.value = res.results || []
-    pagination.total = res.count || 0
+    const res = await itMaintenanceApi.list({
+      ...nextParams,
+      page_size: nextParams.pageSize
+    }) as any
+    return {
+      results: res.results || res.items || [],
+      count: res.count || res.total || 0
+    }
   } catch (error) {
-    ElMessage.error('Failed to load maintenance records')
-  } finally {
-    loading.value = false
+    ElMessage.error(t('itAssets.messages.loadMaintenanceFailed'))
+    return { results: [], count: 0 }
   }
 }
 
-const handleSearch = () => {
-  pagination.page = 1
-  fetchData()
-}
-
-const handleFilterReset = () => {
-  filterForm.search = ''
-  filterForm.maintenance_type = undefined as unknown as string
-  filterForm.date_range = null
-  handleSearch()
+const handleRefresh = () => {
+  listRef.value?.refresh()
 }
 
 const handleCreate = () => {
@@ -366,45 +255,19 @@ const handleEdit = (row: ITMaintenanceRecord) => {
 const handleDelete = async (row: ITMaintenanceRecord) => {
   try {
     await itMaintenanceApi.delete(row.id)
-    ElMessage.success('Deleted successfully')
-    await fetchData()
+    ElMessage.success(t('itAssets.messages.deleteSuccess'))
+    handleRefresh()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('Failed to delete')
+      ElMessage.error(t('itAssets.messages.deleteFailed'))
     }
   }
 }
-
-onMounted(() => {
-  fetchData()
-})
 </script>
 
 <style scoped>
 .maintenance-list {
   padding: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.page-header h3 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.filter-form {
-  margin-bottom: 20px;
-}
-
-.pagination-footer {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
 }
 
 .detail-content .section-title {

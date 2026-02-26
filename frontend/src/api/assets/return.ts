@@ -1,45 +1,88 @@
+/**
+ * Asset Return API Service
+ *
+ * Now using unified Dynamic Object Routing via /api/objects/AssetReturn/
+ * Custom actions (submit, cancel, approve, reject, complete) use dedicated endpoints
+ */
+
 import request from '@/utils/request'
+import { assetReturnApi } from '@/api/dynamic'
 import type { PaginatedResponse } from '@/types/api'
 
 export const returnApi = {
-    list(params?: any): Promise<PaginatedResponse<any>> {
-        return request.get('/assets/returns/', { params })
+    /**
+     * List returns (delegates to dynamic API)
+     */
+    async list(params?: any): Promise<PaginatedResponse<any>> {
+        const res = await assetReturnApi.list(params)
+        return {
+            items: res.data?.results || [],
+            total: res.data?.count || 0,
+            ...params
+        }
     },
 
-    detail(id: string): Promise<any> {
-        return request.get(`/assets/returns/${id}/`)
+    /**
+     * Get return detail (delegates to dynamic API)
+     */
+    async detail(id: string): Promise<any> {
+        const res = await assetReturnApi.get(id)
+        return res.data
     },
 
-    create(data: {
+    /**
+     * Create return (delegates to dynamic API)
+     */
+    async create(data: {
         assetId: string
         reason?: string
         returnDate: string
     }): Promise<any> {
-        return request.post('/assets/returns/', data)
+        const res = await assetReturnApi.create(data)
+        return res.data
     },
 
-    update(id: string, data: any): Promise<any> {
-        return request.put(`/assets/returns/${id}/`, data)
+    /**
+     * Update return (delegates to dynamic API)
+     */
+    async update(id: string, data: any): Promise<any> {
+        const res = await assetReturnApi.update(id, data)
+        return res.data
     },
 
+    /**
+     * Submit return for approval (custom action endpoint)
+     */
     submit(id: string): Promise<void> {
-        return request.post(`/assets/returns/${id}/submit/`)
+        return request.post(`/system/objects/AssetReturn/${id}/submit/`)
     },
 
+    /**
+     * Cancel return (custom action endpoint)
+     */
     cancel(id: string): Promise<void> {
-        return request.post(`/assets/returns/${id}/cancel/`)
+        return request.post(`/system/objects/AssetReturn/${id}/cancel/`)
     },
 
+    /**
+     * Approve return (custom action endpoint)
+     */
     approve(id: string): Promise<void> {
-        return request.post(`/assets/returns/${id}/approve/`)
+        return request.post(`/system/objects/AssetReturn/${id}/approve/`)
     },
 
+    /**
+     * Reject return (custom action endpoint)
+     */
     reject(id: string, reason: string): Promise<void> {
-        return request.post(`/assets/returns/${id}/reject/`, { reason })
+        return request.post(`/system/objects/AssetReturn/${id}/reject/`, { reason })
     },
 
+    /**
+     * Complete return (custom action endpoint)
+     */
     complete(id: string, data: any): Promise<void> {
-        return request.post(`/assets/returns/${id}/complete/`, data)
+        return request.post(`/system/objects/AssetReturn/${id}/complete/`, data)
     }
 }
 

@@ -11,7 +11,6 @@ import {
   cloneLayoutConfig,
   isLayoutConfigEmpty
 } from './layoutValidation'
-import type { LayoutType } from './layoutValidation'
 
 describe('layoutValidation', () => {
   describe('validateLayoutConfig', () => {
@@ -26,6 +25,29 @@ describe('layoutValidation', () => {
               {
                 id: 'field-1',
                 field_code: 'name',
+                label: 'Name',
+                span: 12
+              }
+            ]
+          }
+        ]
+      }
+
+      const result = validateLayoutConfig(config, 'form')
+      expect(result.valid).toBe(true)
+      expect(result.errors).toHaveLength(0)
+    })
+
+    it('should accept fieldCode for form fields', () => {
+      const config = {
+        sections: [
+          {
+            id: 'section-1',
+            type: 'section',
+            fields: [
+              {
+                id: 'field-1',
+                fieldCode: 'name',
                 label: 'Name',
                 span: 12
               }
@@ -198,6 +220,21 @@ describe('layoutValidation', () => {
         columns: [
           {
             field_code: 'name',
+            label: 'Name',
+            width: 200
+          }
+        ]
+      }
+
+      const result = validateLayoutConfig(config, 'list')
+      expect(result.valid).toBe(true)
+    })
+
+    it('should accept fieldCode for list columns', () => {
+      const config = {
+        columns: [
+          {
+            fieldCode: 'name',
             label: 'Name',
             width: 200
           }

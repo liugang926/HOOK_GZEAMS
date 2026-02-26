@@ -4,7 +4,8 @@ from rest_framework.test import APIRequestFactory, force_authenticate
 from rest_framework.request import Request
 from apps.system.viewsets import (
     UserColumnPreferenceViewSet,
-    TabConfigViewSet
+    TabConfigViewSet,
+    BusinessObjectViewSet
 )
 from apps.accounts.models import User
 from apps.organizations.models import Organization
@@ -158,3 +159,145 @@ class TestTabConfigViewSet:
         assert response.data['success'] is True
         assert len(response.data['data']) == 1
         assert response.data['data'][0]['name'] == 'form_tabs'
+
+
+@pytest.mark.django_db
+class TestBusinessObjectViewSetFieldTypes:
+    """
+    Test cases for the field_types action endpoint.
+
+    Verifies that the frontend can dynamically fetch field type definitions
+    to keep the field type selector in sync with backend capabilities.
+    """
+
+    def test_field_types_returns_success(self):
+        """Test field_types endpoint returns success response"""
+        org = Organization.objects.create(name='Test Org', code='test-org')
+        user = User.objects.create(username='testuser', organization=org)
+
+        factory = APIRequestFactory()
+        wsgi_request = factory.get('/api/system/business-objects/field-types/')
+        force_authenticate(wsgi_request, user=user)
+        request = Request(wsgi_request)
+        request.organization_id = org.id
+
+        viewset = BusinessObjectViewSet()
+        viewset.request = request
+        viewset.format_kwarg = None
+        viewset.action = 'field_types'
+
+        response = viewset.field_types(request)
+        assert response.status_code == 200
+        assert response.data['success'] is True
+
+    def test_field_types_contains_groups(self):
+        """Test field_types returns grouped field types"""
+        org = Organization.objects.create(name='Test Org', code='test-org')
+        user = User.objects.create(username='testuser', organization=org)
+
+        factory = APIRequestFactory()
+        wsgi_request = factory.get('/api/system/business-objects/field-types/')
+        force_authenticate(wsgi_request, user=user)
+        request = Request(wsgi_request)
+        request.organization_id = org.id
+
+        viewset = BusinessObjectViewSet()
+        viewset.request = request
+        viewset.format_kwarg = None
+        viewset.action = 'field_types'
+
+        response = viewset.field_types(request)
+        groups = response.data['data']['groups']
+
+        # Should have at least the 6 defined groups
+        assert len(groups) >= 6
+        group_labels = [g['label'] for g in groups]
+        assert '基础类型' in group_labels
+        assert '日期时间' in group_labels
+        assert '选择类型' in group_labels
+        assert '引用类型' in group_labels
+        assert '媒体文件' in group_labels
+        assert '高级类型' in group_labels
+
+    def test_field_types_contains_all_required_types(self):
+        """Test that all important field types are included"""
+        org = Organization.objects.create(name='Test Org', code='test-org')
+        user = User.objects.create(username='testuser', organization=org)
+
+        factory = APIRequestFactory()
+        wsgi_request = factory.get('/api/system/business-objects/field-types/')
+        force_authenticate(wsgi_request, user=user)
+        request = Request(wsgi_request)
+        request.organization_id = org.id
+
+        viewset = BusinessObjectViewSet()
+        viewset.request = request
+        viewset.format_kwarg = None
+        viewset.action = 'field_types'
+
+        response = viewset.field_types(request)
+        all_types = response.data['data']['all_types']
+
+        # Verify key field types that were missing in the original form
+        assert 'file' in all_types
+        assert 'image' in all_types
+        assert 'qr_code' in all_types
+        assert 'barcode' in all_types
+        assert 'location' in all_types
+        assert 'percent' in all_types
+        assert 'time' in all_types
+        assert 'rich_text' in all_types
+
+    def test_field_types_has_type_config(self):
+        """Test that each field type has component configuration"""
+        org = Organization.objects.create(name='Test Org', code='test-org')
+        user = User.objects.create(username='testuser', organization=org)
+
+        factory = APIRequestFactory()
+        wsgi_request = factory.get('/api/system/business-objects/field-types/')
+        force_authenticate(wsgi_request, user=user)
+        request = Request(wsgi_request)
+        request.organization_id = org.id
+
+        viewset = BusinessObjectViewSet()
+        viewset.request = request
+        viewset.format_kwarg = None
+        viewset.action = 'field_types'
+
+        response = viewset.field_types(request)
+        type_config = response.data['data']['type_config']
+
+        # Check that important types have component mappings
+        assert 'file' in type_config
+        assert type_config['file']['component'] == 'AttachmentUpload'
+        assert 'image' in type_config
+        assert type_config['image']['component'] == 'ImageField'
+        assert 'qr_code' in type_config
+        assert type_config['qr_code']['component'] == 'QRCodeField'
+        assert 'barcode' in type_config
+        assert type_config['barcode']['component'] == 'BarcodeField'
+
+    def test_field_types_matches_model_choices(self):
+        """Test that API types match the model FIELD_TYPE_CHOICES"""
+        from apps.system.models import FieldDefinition
+
+        org = Organization.objects.create(name='Test Org', code='test-org')
+        user = User.objects.create(username='testuser', organization=org)
+
+        factory = APIRequestFactory()
+        wsgi_request = factory.get('/api/system/business-objects/field-types/')
+        force_authenticate(wsgi_request, user=user)
+        request = Request(wsgi_request)
+        request.organization_id = org.id
+
+        viewset = BusinessObjectViewSet()
+        viewset.request = request
+        viewset.format_kwarg = None
+        viewset.action = 'field_types'
+
+        response = viewset.field_types(request)
+        api_types = set(response.data['data']['all_types'])
+        model_types = set(value for value, _ in FieldDefinition.FIELD_TYPE_CHOICES)
+
+        # All model types should be in API response
+        assert model_types.issubset(api_types)

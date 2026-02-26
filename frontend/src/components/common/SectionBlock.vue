@@ -21,19 +21,32 @@
           v-if="collapsible"
           :class="{ 'is-collapsed': isCollapsed }"
           class="collapse-icon"
+          :aria-label="collapseButtonLabel"
         >
           <ArrowDown />
         </el-icon>
-        <el-icon v-else-if="icon" :class="`icon-${icon}`">
+        <el-icon
+          v-else-if="icon"
+          :class="`icon-${icon}`"
+        >
           <component :is="icon" />
         </el-icon>
         <span class="text">{{ title }}</span>
-        <el-tag v-if="tag" :type="tagType" size="small" class="title-tag">
+        <el-tag
+          v-if="tag"
+          :type="tagType"
+          size="small"
+          class="title-tag"
+        >
           {{ tag }}
         </el-tag>
       </div>
       <div class="actions">
-        <slot name="actions" :collapsed="isCollapsed" :toggle="toggle" />
+        <slot
+          name="actions"
+          :collapsed="isCollapsed"
+          :toggle="toggle"
+        />
         <el-tooltip
           v-if="showTooltip"
           :content="tooltip"
@@ -57,7 +70,10 @@
         <slot name="body" />
       </div>
     </el-collapse-transition>
-    <div v-if="$slots.footer" class="section-footer">
+    <div
+      v-if="$slots.footer"
+      class="section-footer"
+    >
       <slot name="footer" />
     </div>
   </div>
@@ -65,6 +81,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ArrowDown, InfoFilled } from '@element-plus/icons-vue'
 
 /**
@@ -79,9 +96,12 @@ import { ArrowDown, InfoFilled } from '@element-plus/icons-vue'
  * - Icon and tag support for title
  * - Optional footer slot
  * - Configurable border and padding
+ * - i18n support for internationalization
  *
  * PRD Reference: docs/plans/common_base_features/section_block_layout.md
  */
+
+const { t } = useI18n()
 
 export interface Props {
   /** Section title */
@@ -136,6 +156,13 @@ const isCollapsed = ref(props.collapsed)
  * Show tooltip if text is provided
  */
 const showTooltip = computed(() => Boolean(props.tooltip))
+
+/**
+ * Get aria-label for collapse button based on state
+ */
+const collapseButtonLabel = computed(() =>
+  isCollapsed.value ? t('actions.expand') : t('actions.collapse')
+)
 
 /**
  * Toggle collapsed state

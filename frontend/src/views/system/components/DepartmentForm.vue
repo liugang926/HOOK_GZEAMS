@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="isEdit ? '编辑部门' : (isSub ? '添加子部门' : '新建部门')"
+    :title="isEdit ? $t('common.actions.edit') + $t('system.department.title') : (isSub ? $t('system.department.addSubDept') : $t('system.department.createButton'))"
     width="500px"
     @update:model-value="$emit('update:visible', $event)"
     @close="handleClose"
@@ -13,44 +13,44 @@
       label-width="100px"
     >
       <el-form-item
-        label="部门名称"
+        :label="$t('system.department.columns.name')"
         prop="name"
       >
         <el-input
           v-model="formData.name"
-          placeholder="请输入部门名称"
+          :placeholder="$t('system.department.namePlaceholder')"
         />
       </el-form-item>
       <el-form-item
-        label="部门编码"
+        :label="$t('system.department.columns.code')"
         prop="code"
       >
         <el-input
           v-model="formData.code"
-          placeholder="请输入部门编码"
+          :placeholder="$t('system.department.codePlaceholder')"
         />
       </el-form-item>
       <el-form-item
         v-if="!isSub"
-        label="上级部门"
+        :label="$t('system.department.parent')"
         prop="parentId"
       >
         <el-tree-select
           v-model="formData.parentId"
           :data="departmentTree"
           :props="{ label: 'name', value: 'id' }"
-          placeholder="请选择上级部门（不选则为顶级部门）"
+          :placeholder="$t('system.department.parentPlaceholder')"
           clearable
           check-strictly
         />
       </el-form-item>
       <el-form-item
-        label="负责人"
+        :label="$t('system.department.columns.manager')"
         prop="managerId"
       >
         <el-select
           v-model="formData.managerId"
-          placeholder="请选择负责人"
+          :placeholder="$t('system.department.managerPlaceholder')"
           filterable
           clearable
         >
@@ -63,16 +63,16 @@
         </el-select>
       </el-form-item>
       <el-form-item
-        label="联系电话"
+        :label="$t('system.department.columns.phone')"
         prop="phone"
       >
         <el-input
           v-model="formData.phone"
-          placeholder="请输入联系电话"
+          :placeholder="$t('system.department.phonePlaceholder')"
         />
       </el-form-item>
       <el-form-item
-        label="排序"
+        :label="$t('system.department.columns.sortOrder')"
         prop="sortOrder"
       >
         <el-input-number
@@ -82,33 +82,33 @@
         />
       </el-form-item>
       <el-form-item
-        label="状态"
+        :label="$t('system.department.columns.status')"
         prop="isActive"
       >
         <el-switch v-model="formData.isActive" />
       </el-form-item>
       <el-form-item
-        label="描述"
+        :label="$t('common.labels.description')"
         prop="description"
       >
         <el-input
           v-model="formData.description"
           type="textarea"
           :rows="3"
-          placeholder="请输入描述"
+          :placeholder="$t('system.department.descriptionPlaceholder')"
         />
       </el-form-item>
     </el-form>
     <template #footer>
       <el-button @click="handleClose">
-        取消
+        {{ $t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="saving"
         @click="handleSubmit"
       >
-        确定
+        {{ $t('common.actions.confirm') }}
       </el-button>
     </template>
   </el-dialog>
@@ -118,12 +118,15 @@
 import { ref, reactive, watch, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import {
   createDepartment,
   updateDepartment,
   getDepartmentTree,
   getUsers
 } from '@/api/system'
+
+const { t } = useI18n()
 
 interface Props {
   visible: boolean
@@ -154,8 +157,8 @@ const formData = reactive({
 })
 
 const rules = {
-  name: [{ required: true, message: '请输入部门名称', trigger: 'blur' }],
-  code: [{ required: true, message: '请输入部门编码', trigger: 'blur' }]
+  name: [{ required: true, message: t('system.department.validation.nameRequired'), trigger: 'blur' }],
+  code: [{ required: true, message: t('system.department.validation.codeRequired'), trigger: 'blur' }]
 }
 
 const loadManagers = async () => {
@@ -202,10 +205,10 @@ const handleSubmit = async () => {
 
       if (isEdit.value) {
         await updateDepartment(props.data.id, data)
-        ElMessage.success('更新成功')
+        ElMessage.success(t('common.messages.updateSuccess'))
       } else {
         await createDepartment(data)
-        ElMessage.success('创建成功')
+        ElMessage.success(t('common.messages.createSuccess'))
       }
 
       emit('success')
@@ -213,7 +216,7 @@ const handleSubmit = async () => {
     } catch (error: any) {
       console.error('Form submit error:', error)
       // For development, simulate success
-      ElMessage.success(isEdit.value ? '更新成功（模拟）' : '创建成功（模拟）')
+      ElMessage.success(isEdit.value ? t('common.messages.updateSuccess') : t('common.messages.createSuccess'))
       emit('success')
       handleClose()
     } finally {

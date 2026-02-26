@@ -13,10 +13,13 @@ export const useNotificationStore = defineStore('notification', () => {
             // For MVP, we use getMyTasks count as notification count
             // A dedicated /notifications/count endpoint would be better in future
             const res = await workflowNodeApi.getMyTasks({ page: 1, pageSize: 5, status: 'pending' })
-            count.value = res.count
-            recentTasks.value = res.results
+            count.value = res?.count || 0
+            recentTasks.value = res?.results || []
         } catch (error) {
             console.error('Failed to fetch notifications', error)
+            // Set default values on error
+            count.value = 0
+            recentTasks.value = []
         }
     }
 

@@ -2,6 +2,7 @@
  * Asset API Service
  *
  * API methods for asset management.
+ * Now using unified Dynamic Object Routing for all business objects.
  * Reference: docs/plans/2025-01-22-frontend-implementation.md
  */
 
@@ -9,12 +10,21 @@ import request from '@/utils/request'
 import type { PaginatedResponse } from '@/types/api'
 import type { Asset, AssetCategory, AssetLocation, AssetTransfer } from '@/types/assets'
 import { BaseApiService } from '@/api/base'
+import {
+  assetApi as dynamicAssetApi,
+  assetCategoryApi,
+  assetPickupApi,
+  assetTransferApi,
+  assetReturnApi,
+  assetLoanApi,
+  supplierApi,
+  locationApi as dynamicLocationApi
+} from '@/api/dynamic'
 
 /**
  * Asset API service object
- */
-/**
- * Asset API service object
+ *
+ * Extends BaseApiService but uses dynamic routing for core operations
  */
 class AssetApiService extends BaseApiService<Asset> {
   constructor() {
@@ -22,21 +32,22 @@ class AssetApiService extends BaseApiService<Asset> {
   }
 
   /**
-   * Get asset by QR code
+   * Get asset by QR code (custom endpoint, not in dynamic routing)
    */
   getByQrCode(qrCode: string): Promise<Asset> {
-    return request.get('/assets/by-qr-code/', { params: { qr_code: qrCode } })
+    return request.get('/system/objects/Asset/lookup/', { params: { qr_code: qrCode } })
   }
 
   /**
-   * Restore deleted asset
+   * Restore deleted asset (delegates to dynamic API)
    */
-  restore(id: string): Promise<Asset> {
-    return request.post(`/assets/${id}/restore/`)
+  async restore(id: string): Promise<Asset> {
+    const res = await dynamicAssetApi.restore(id)
+    return res.data as Asset
   }
 
   /**
-   * Get asset statistics
+   * Get asset statistics (custom endpoint, not in dynamic routing)
    */
   statistics(): Promise<{
     total: number
@@ -45,7 +56,52 @@ class AssetApiService extends BaseApiService<Asset> {
     total_net_value: number
     by_category: Record<string, number>
   }> {
-    return request.get(`/${this.resource}/statistics/`)
+    return request.get('/system/objects/Asset/statistics/')
+  }
+
+  /**
+   * List assets (delegates to dynamic API)
+   */
+  async list(params?: any): Promise<PaginatedResponse<Asset>> {
+    const res = await dynamicAssetApi.list(params)
+    // Response interceptor already unwraps {success: true, data: {...}}
+    // So res is the data object directly with results and count
+    return {
+      results: (res as any)?.results || [],
+      count: (res as any)?.count || 0,
+      ...params
+    }
+  }
+
+  /**
+   * Get single asset (delegates to dynamic API)
+   */
+  async get(id: string, params?: any): Promise<Asset> {
+    const res = await dynamicAssetApi.get(id, params)
+    return res as Asset
+  }
+
+  /**
+   * Create asset (delegates to dynamic API)
+   */
+  async create(data: Partial<Asset>): Promise<Asset> {
+    const res = await dynamicAssetApi.create(data)
+    return res as Asset
+  }
+
+  /**
+   * Update asset (delegates to dynamic API)
+   */
+  async update(id: string, data: Partial<Asset>): Promise<Asset> {
+    const res = await dynamicAssetApi.update(id, data)
+    return res as Asset
+  }
+
+  /**
+   * Delete asset (delegates to dynamic API)
+   */
+  async delete(id: string): Promise<void> {
+    await dynamicAssetApi.delete(id)
   }
 }
 
@@ -59,42 +115,42 @@ export const categoryApi = {
    * List all categories (flat)
    */
   list(): Promise<AssetCategory[]> {
-    return request.get('/assets/categories/')
+    return request.get('/system/objects/AssetCategory/')
   },
 
   /**
    * Get category tree structure
    */
   tree(): Promise<AssetCategory[]> {
-    return request.get('/assets/categories/tree/')
+    return request.get('/system/objects/AssetCategory/tree/')
   },
 
   /**
    * Get single category by ID
    */
   get(id: string): Promise<AssetCategory> {
-    return request.get(`/assets/categories/${id}/`)
+    return request.get(`/system/objects/AssetCategory/${id}/`)
   },
 
   /**
    * Create new category
    */
   create(data: Partial<AssetCategory>): Promise<AssetCategory> {
-    return request.post('/assets/categories/', data)
+    return request.post('/system/objects/AssetCategory/', data)
   },
 
   /**
    * Update category
    */
   update(id: string, data: Partial<AssetCategory>): Promise<AssetCategory> {
-    return request.put(`/assets/categories/${id}/`, data)
+    return request.put(`/system/objects/AssetCategory/${id}/`, data)
   },
 
   /**
    * Delete category
    */
   delete(id: string): Promise<void> {
-    return request.delete(`/assets/categories/${id}/`)
+    return request.delete(`/system/objects/AssetCategory/${id}/`)
   }
 }
 
@@ -106,14 +162,14 @@ export const locationApi = {
    * List all locations (flat)
    */
   list(): Promise<AssetLocation[]> {
-    return request.get('/assets/locations/')
+    return request.get('/system/objects/Location/')
   },
 
   /**
    * Get location tree structure
    */
   tree(): Promise<AssetLocation[]> {
-    return request.get('/assets/locations/tree/')
+    return request.get('/system/objects/Location/tree/')
   }
 }
 
@@ -121,55 +177,87 @@ export const locationApi = {
  * Convenience function for getting assets (used by other components)
  */
 export const getAssets = (params?: any): Promise<any> => {
-  return request.get('/api/assets/', { params })
+  return request.get('/system/objects/Asset/', { params })
 }
 
 /**
  * Convenience function for getting categories (used by other components)
  */
 export const getCategories = (): Promise<any> => {
-  return request.get('/api/assets/categories/')
+  return request.get('/system/objects/AssetCategory/')
 }
 
 /**
  * Asset Transfer API service object
+ *
+ * Now using unified Dynamic Object Routing via /api/objects/AssetTransfer/
+ * Custom actions (approve/reject) still use dedicated endpoints
  */
 export const transferApi = {
   /**
-   * List transfers
+   * List transfers (delegates to dynamic API)
    */
-  list(params?: {
+  async list(params?: {
     page?: number
     pageSize?: number
     assetId?: string
     status?: string
   }): Promise<PaginatedResponse<AssetTransfer>> {
-    return request.get('/assets/transfers/', { params })
+    const res = await assetTransferApi.list(params)
+    return {
+      items: res.data?.results || [],
+      total: res.data?.count || 0,
+      ...params
+    }
   },
 
   /**
-   * Create transfer request
+   * Create transfer request (delegates to dynamic API)
    */
-  create(data: {
+  async create(data: {
     assetId: string
     toLocationId?: string
     toUserId?: string
     reason?: string
   }): Promise<AssetTransfer> {
-    return request.post('/assets/transfers/', data)
+    const res = await assetTransferApi.create(data)
+    return res.data as AssetTransfer
   },
 
   /**
-   * Approve transfer
+   * Get single transfer (delegates to dynamic API)
+   */
+  async get(id: string): Promise<AssetTransfer> {
+    const res = await assetTransferApi.get(id)
+    return res.data as AssetTransfer
+  },
+
+  /**
+   * Update transfer (delegates to dynamic API)
+   */
+  async update(id: string, data: Partial<AssetTransfer>): Promise<AssetTransfer> {
+    const res = await assetTransferApi.update(id, data)
+    return res.data as AssetTransfer
+  },
+
+  /**
+   * Delete transfer (delegates to dynamic API)
+   */
+  async delete(id: string): Promise<void> {
+    await assetTransferApi.delete(id)
+  },
+
+  /**
+   * Approve transfer (custom action endpoint)
    */
   approve(id: string): Promise<void> {
-    return request.post(`/assets/transfers/${id}/approve/`)
+    return request.post(`/system/objects/AssetTransfer/${id}/approve/`)
   },
 
   /**
-   * Reject transfer
+   * Reject transfer (custom action endpoint)
    */
   reject(id: string, reason: string): Promise<void> {
-    return request.post(`/assets/transfers/${id}/reject/`, { reason })
+    return request.post(`/system/objects/AssetTransfer/${id}/reject/`, { reason })
   }
 }

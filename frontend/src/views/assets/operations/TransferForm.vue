@@ -2,7 +2,7 @@
   <div class="transfer-form">
     <div class="page-header">
       <el-page-header
-        title="新建调拨单"
+        :title="$t('assets.transfer.createTitle')"
         @back="goBack"
       />
       <div class="header-actions">
@@ -12,14 +12,14 @@
           :loading="submitting"
           @click="handleSubmit"
         >
-          提交申请
+          {{ $t('common.actions.submit') }}
         </el-button>
         <el-button
           type="success"
           :loading="submitting"
           @click="handleSubmitAndApply"
         >
-          提交审批
+          {{ $t('common.actions.submitApprove') }}
         </el-button>
       </div>
     </div>
@@ -35,7 +35,7 @@
         label-width="120px"
       >
         <el-form-item
-          label="选择资产"
+          :label="$t('assets.transfer.form.selectAsset')"
           prop="assetId"
         >
           <div
@@ -48,7 +48,7 @@
               type="primary"
               @click="showAssetSelector"
             >
-              重新选择
+              {{ $t('assets.transfer.form.reselectAsset') }}
             </el-button>
           </div>
           <el-button
@@ -57,33 +57,33 @@
             plain
             @click="showAssetSelector"
           >
-            点击选择资产
+            {{ $t('assets.transfer.form.selectAssetButton') }}
           </el-button>
         </el-form-item>
 
         <el-form-item
-          label="调入位置"
+          :label="$t('assets.transfer.form.toLocation')"
           prop="toLocationId"
         >
           <!-- Placeholder for LocationTree -->
           <el-input
             v-model="form.toLocationId"
-            placeholder="请输入目标位置ID"
+            :placeholder="$t('assets.transfer.form.toLocationPlaceholder')"
           />
         </el-form-item>
 
         <el-form-item
-          label="接收人"
+          :label="$t('assets.transfer.form.receiver')"
           prop="toUserId"
         >
           <UserPicker
             v-model="form.toUserId"
-            placeholder="请选择接收人"
+            :placeholder="$t('assets.transfer.form.receiverPlaceholder')"
           />
         </el-form-item>
 
         <el-form-item
-          label="调拨原因"
+          :label="$t('assets.transfer.form.reason')"
           prop="reason"
         >
           <el-input
@@ -104,8 +104,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import AssetSelector from './components/AssetSelector.vue'
 import UserPicker from '@/components/common/UserPicker.vue'
@@ -113,6 +114,7 @@ import { transferApi } from '@/api/assets'
 import { workflowInstanceApi } from '@/api/workflow'
 
 const router = useRouter()
+const { t } = useI18n()
 const formRef = ref()
 const assetSelectorVisible = ref(false)
 const selectedAsset = ref<any>(null)
@@ -125,11 +127,11 @@ const form = reactive({
     reason: ''
 })
 
-const rules = {
-    assetId: [{ required: true, message: '请选择资产', trigger: 'change' }],
-    toLocationId: [{ required: true, message: '请选择目标位置', trigger: 'change' }],
-    reason: [{ required: true, message: '请填写原因', trigger: 'blur' }]
-}
+const rules = computed(() => ({
+    assetId: [{ required: true, message: t('assets.transfer.form.selectAsset'), trigger: 'change' }],
+    toLocationId: [{ required: true, message: t('assets.transfer.form.toLocationPlaceholder'), trigger: 'change' }],
+    reason: [{ required: true, message: t('assets.transfer.form.reasonPlaceholder'), trigger: 'blur' }]
+}))
 
 const showAssetSelector = () => {
     assetSelectorVisible.value = true
@@ -162,11 +164,11 @@ const handleSubmit = async () => {
         const payload = await validateAndGetPayload()
         submitting.value = true
         await transferApi.create(payload)
-        ElMessage.success('提交成功')
+        ElMessage.success(t('assets.transfer.messages.submitSuccess'))
         goBack()
     } catch (e: any) {
         if (e.message !== 'Validation failed') {
-           ElMessage.error(e.message || '提交失败')
+           ElMessage.error(e.message || t('assets.transfer.messages.submitFailed'))
         }
     } finally {
         submitting.value = false
@@ -180,7 +182,7 @@ const handleSubmitAndApply = async () => {
         
         // Setup usually is create -> then start workflow with returned ID.
         // Assuming transferApi.create returns the transfer record with ID.
-        const res = await transferApi.create(payload)
+        const res = await transferApi.create(payload) as any
         const id = res.id || res // Adjust based on actual API return
 
         // Trigger workflow
@@ -192,11 +194,11 @@ const handleSubmitAndApply = async () => {
             }
         })
 
-        ElMessage.success('提交审批成功')
+        ElMessage.success(t('assets.transfer.messages.submitApproveSuccess'))
         goBack()
     } catch (e: any) {
         if (e.message !== 'Validation failed') {
-            ElMessage.error(e.message || '提交审批失败')
+            ElMessage.error(e.message || t('assets.transfer.messages.submitApproveFailed'))
         }
     } finally {
         submitting.value = false

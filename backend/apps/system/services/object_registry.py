@@ -94,19 +94,41 @@ class ObjectRegistry:
         'InventorySnapshot': 'apps.inventory.viewsets.InventorySnapshotViewSet',
         'InventoryItem': 'apps.inventory.viewsets.InventoryItemViewSet',
         # IT Assets
-        'ITAsset': 'apps.it_assets.viewsets.ITAssetViewSet',
+        'ITAsset': 'apps.it_assets.viewsets.ITAssetInfoViewSet',
+        'ITSoftware': 'apps.it_assets.viewsets.SoftwareViewSet',
+        'ITSoftwareLicense': 'apps.it_assets.viewsets.SoftwareLicenseViewSet',
+        'ITLicenseAllocation': 'apps.it_assets.viewsets.LicenseAllocationViewSet',
+        'ITMaintenanceRecord': 'apps.it_assets.viewsets.ITMaintenanceRecordViewSet',
+        'ConfigurationChange': 'apps.it_assets.viewsets.ConfigurationChangeViewSet',
         # Software Licenses
+        'Software': 'apps.software_licenses.viewsets.SoftwareViewSet',
         'SoftwareLicense': 'apps.software_licenses.viewsets.SoftwareLicenseViewSet',
+        'LicenseAllocation': 'apps.software_licenses.viewsets.LicenseAllocationViewSet',
         # Leasing
-        'LeasingContract': 'apps.leasing.viewsets.LeasingContractViewSet',
+        'LeasingContract': 'apps.leasing.viewsets.LeaseContractViewSet',
+        'LeaseItem': 'apps.leasing.viewsets.LeaseItemViewSet',
+        'RentPayment': 'apps.leasing.viewsets.RentPaymentViewSet',
+        'LeaseReturn': 'apps.leasing.viewsets.LeaseReturnViewSet',
+        'LeaseExtension': 'apps.leasing.viewsets.LeaseExtensionViewSet',
         # Insurance
+        'InsuranceCompany': 'apps.insurance.viewsets.InsuranceCompanyViewSet',
         'InsurancePolicy': 'apps.insurance.viewsets.InsurancePolicyViewSet',
+        'InsuredAsset': 'apps.insurance.viewsets.InsuredAssetViewSet',
+        'PremiumPayment': 'apps.insurance.viewsets.PremiumPaymentViewSet',
+        'ClaimRecord': 'apps.insurance.viewsets.ClaimRecordViewSet',
+        'PolicyRenewal': 'apps.insurance.viewsets.PolicyRenewalViewSet',
         # Finance
+        'DepreciationConfig': 'apps.depreciation.viewsets.DepreciationConfigViewSet',
         'DepreciationRecord': 'apps.depreciation.viewsets.DepreciationRecordViewSet',
+        'DepreciationRun': 'apps.depreciation.viewsets.DepreciationRunViewSet',
         'FinanceVoucher': 'apps.finance.viewsets.FinanceVoucherViewSet',
+        'VoucherTemplate': 'apps.finance.viewsets.VoucherTemplateViewSet',
         # Organizations
         'Department': 'apps.organizations.viewsets.DepartmentViewSet',
         'Organization': 'apps.organizations.viewsets.OrganizationViewSet',
+
+        # Accounts (needed for reference resolution in low-code runtime)
+        'User': 'apps.accounts.viewsets.UserViewSet',
     }
 
     @classmethod
@@ -176,6 +198,23 @@ class ObjectRegistry:
         try:
             cached = cache.get(cache_key)
             if cached:
+                # Hot-fix: viewset mappings evolve over time, but cached ObjectMeta may lag behind.
+                # Refresh critical hardcoded bindings to avoid routing to MetadataDrivenViewSet by mistake.
+                try:
+                    mapped_viewset = cls.get_viewset_class(code)
+                    if mapped_viewset:
+                        # Hardcoded mappings take precedence over stale cache payloads.
+                        # This prevents old cache entries (is_hardcoded=False) from breaking custom actions.
+                        cached.is_hardcoded = True
+                        cached.viewset_class = mapped_viewset
+
+                    if getattr(cached, "is_hardcoded", False):
+                        if getattr(cached, "viewset_class", None) is None:
+                            cached.viewset_class = cls.get_viewset_class(code)
+                        if getattr(cached, "model_class", None) is None and getattr(cached, "django_model_path", None):
+                            cached.model_class = import_string(cached.django_model_path)
+                except Exception:
+                    pass
                 return cached
         except Exception:
             # Redis unavailable, continue to database query
@@ -207,24 +246,25 @@ class ObjectRegistry:
             ObjectMeta instance
         """
         model_class = None
-        viewset_class = None
+        viewset_class = cls.get_viewset_class(bo.code)
 
-        # Import model class if hardcoded
-        if bo.is_hardcoded and bo.django_model_path:
+        # Hardcoded status is derived from DB flag OR hardcoded viewset mapping.
+        # This makes routing resilient when BusinessObject seed data has stale flags.
+        is_hardcoded = bool(bo.is_hardcoded or viewset_class)
+
+        # Import model class when it is a hardcoded object and model path is available.
+        if is_hardcoded and bo.django_model_path:
             try:
                 model_class = import_string(bo.django_model_path)
             except ImportError:
                 pass
-
-        # Get ViewSet class from mapping
-        viewset_class = cls.get_viewset_class(bo.code)
 
         return ObjectMeta(
             code=bo.code,
             name=bo.name,
             model_class=model_class,
             viewset_class=viewset_class,
-            is_hardcoded=bo.is_hardcoded,
+            is_hardcoded=is_hardcoded,
             django_model_path=bo.django_model_path,
         )
 
@@ -268,19 +308,40 @@ class ObjectRegistry:
             {'code': 'InventorySnapshot', 'name': '盘点快照', 'model': 'apps.inventory.models.InventorySnapshot'},
             {'code': 'InventoryItem', 'name': '盘点明细', 'model': 'apps.inventory.models.InventoryItem'},
             # IT Assets
-            {'code': 'ITAsset', 'name': 'IT设备', 'model': 'apps.it_assets.models.ITAsset'},
+            {'code': 'ITAsset', 'name': 'IT设备', 'model': 'apps.it_assets.models.ITAssetInfo'},
+            {'code': 'ITSoftware', 'name': 'IT软件目录', 'model': 'apps.it_assets.models.Software'},
+            {'code': 'ITSoftwareLicense', 'name': 'IT软件许可', 'model': 'apps.it_assets.models.SoftwareLicense'},
+            {'code': 'ITLicenseAllocation', 'name': 'IT许可证分配', 'model': 'apps.it_assets.models.LicenseAllocation'},
+            {'code': 'ITMaintenanceRecord', 'name': 'IT维护记录', 'model': 'apps.it_assets.models.ITMaintenanceRecord'},
+            {'code': 'ConfigurationChange', 'name': '配置变更', 'model': 'apps.it_assets.models.ConfigurationChange'},
             # Software Licenses
+            {'code': 'Software', 'name': '软件目录', 'model': 'apps.software_licenses.models.Software'},
             {'code': 'SoftwareLicense', 'name': '软件许可', 'model': 'apps.software_licenses.models.SoftwareLicense'},
+            {'code': 'LicenseAllocation', 'name': '许可证分配', 'model': 'apps.software_licenses.models.LicenseAllocation'},
             # Leasing
-            {'code': 'LeasingContract', 'name': '租赁合同', 'model': 'apps.leasing.models.LeasingContract'},
+            {'code': 'LeasingContract', 'name': '租赁合同', 'model': 'apps.leasing.models.LeaseContract'},
+            {'code': 'LeaseItem', 'name': '租赁明细', 'model': 'apps.leasing.models.LeaseItem'},
+            {'code': 'RentPayment', 'name': '租金支付', 'model': 'apps.leasing.models.RentPayment'},
+            {'code': 'LeaseReturn', 'name': '租赁归还', 'model': 'apps.leasing.models.LeaseReturn'},
+            {'code': 'LeaseExtension', 'name': '租赁续租', 'model': 'apps.leasing.models.LeaseExtension'},
             # Insurance
             {'code': 'InsurancePolicy', 'name': '保险单', 'model': 'apps.insurance.models.InsurancePolicy'},
+            {'code': 'InsuranceCompany', 'name': '保险公司', 'model': 'apps.insurance.models.InsuranceCompany'},
+            {'code': 'InsuredAsset', 'name': '投保资产', 'model': 'apps.insurance.models.InsuredAsset'},
+            {'code': 'PremiumPayment', 'name': '保费支付', 'model': 'apps.insurance.models.PremiumPayment'},
+            {'code': 'ClaimRecord', 'name': '理赔记录', 'model': 'apps.insurance.models.ClaimRecord'},
+            {'code': 'PolicyRenewal', 'name': '保单续保', 'model': 'apps.insurance.models.PolicyRenewal'},
             # Finance
+            {'code': 'DepreciationConfig', 'name': '折旧配置', 'model': 'apps.depreciation.models.DepreciationConfig'},
             {'code': 'DepreciationRecord', 'name': '折旧记录', 'model': 'apps.depreciation.models.DepreciationRecord'},
+            {'code': 'DepreciationRun', 'name': '折旧运行', 'model': 'apps.depreciation.models.DepreciationRun'},
             {'code': 'FinanceVoucher', 'name': '财务凭证', 'model': 'apps.finance.models.FinanceVoucher'},
+            {'code': 'VoucherTemplate', 'name': '凭证模板', 'model': 'apps.finance.models.VoucherTemplate'},
             # Organizations
             {'code': 'Department', 'name': '部门', 'model': 'apps.organizations.models.Department'},
             {'code': 'Organization', 'name': '组织', 'model': 'apps.organizations.models.Organization'},
+            # Accounts (needed for reference resolution via unified object router)
+            {'code': 'User', 'name': '用户', 'model': 'apps.accounts.models.User'},
         ]
 
         count = 0

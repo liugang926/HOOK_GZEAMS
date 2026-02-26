@@ -3,24 +3,32 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>{{ isEdit ? '编辑资产' : '新增资产' }}</span>
-          <el-button @click="goBack">返回</el-button>
+          <span>{{ isEdit ? $t('assets.form.edit') : $t('assets.form.create') }}</span>
+          <el-button @click="goBack">
+            {{ $t('common.actions.back') }}
+          </el-button>
         </div>
       </template>
 
       <BaseForm
         ref="baseFormRef"
         v-model="form"
+        v-loading="loading"
         :fields="fields"
         :rules="rules"
-        v-loading="loading"
       />
 
       <template #footer>
         <div class="form-footer">
-          <el-button @click="goBack">取消</el-button>
-          <el-button type="primary" :loading="submitting" @click="handleSubmit">
-            {{ isEdit ? '保存' : '创建' }}
+          <el-button @click="goBack">
+            {{ $t('common.actions.cancel') }}
+          </el-button>
+          <el-button
+            type="primary"
+            :loading="submitting"
+            @click="handleSubmit"
+          >
+            {{ isEdit ? $t('common.actions.save') : $t('common.actions.create') }}
           </el-button>
         </div>
       </template>
@@ -31,6 +39,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormRules } from 'element-plus'
 import { assetApi, categoryApi, locationApi } from '@/api/assets'
@@ -43,6 +52,7 @@ const router = useRouter()
 const baseFormRef = ref()
 const loading = ref(false)
 const submitting = ref(false)
+const { t } = useI18n()
 
 const form = ref({
   assetCode: '',
@@ -63,11 +73,11 @@ const form = ref({
   remarks: ''
 })
 
-const rules: FormRules = {
-  assetCode: [{ required: true, message: '请输入资产编码', trigger: 'blur' }],
-  assetName: [{ required: true, message: '请输入资产名称', trigger: 'blur' }],
-  assetCategory: [{ required: true, message: '请选择资产分类', trigger: 'change' }]
-}
+const rules = computed<FormRules>(() => ({
+  assetCode: [{ required: true, message: t('common.validation.required', { field: t('assets.fields.assetCode') }), trigger: 'blur' }],
+  assetName: [{ required: true, message: t('common.validation.required', { field: t('assets.fields.assetName') }), trigger: 'blur' }],
+  assetCategory: [{ required: true, message: t('common.validation.required', { field: t('assets.fields.category') }), trigger: 'change' }]
+}))
 
 // Option data
 const categories = ref<any[]>([])
@@ -80,79 +90,79 @@ const isEdit = computed(() => !!route.params.id)
 
 // Fields Definition
 const fields = computed<FormField[]>(() => [
-  { type: 'divider', prop: 'basic_info', label: '基本信息', span: 24 },
-  { prop: 'assetCode', label: '资产编码', type: 'input', placeholder: '请输入资产编码' },
-  { prop: 'assetName', label: '资产名称', type: 'input', placeholder: '请输入资产名称' },
+  { type: 'divider', prop: 'basic_info', label: t('assets.form.sections.basicInfo'), span: 24 },
+  { prop: 'assetCode', label: t('assets.fields.assetCode'), type: 'input', placeholder: t('common.placeholders.input', { field: t('assets.fields.assetCode') }) },
+  { prop: 'assetName', label: t('assets.fields.assetName'), type: 'input', placeholder: t('common.placeholders.input', { field: t('assets.fields.assetName') }) },
   { 
     prop: 'assetCategory', 
-    label: '资产分类', 
+    label: t('assets.fields.category'), 
     type: 'select', 
-    placeholder: '请选择资产分类',
+    placeholder: t('common.placeholders.select', { field: t('assets.fields.category') }),
     options: categories.value.map(c => ({ label: c.name, value: c.id }))
   },
   { 
     prop: 'assetStatus', 
-    label: '资产状态', 
+    label: t('common.labels.status'), 
     type: 'select', 
-    placeholder: '请选择状态',
+    placeholder: t('common.placeholders.select', { field: t('common.labels.status') }),
     options: [
-      { label: '闲置', value: 'idle' },
-      { label: '在用', value: 'in_use' },
-      { label: '维修中', value: 'maintenance' },
-      { label: '报废', value: 'scrapped' }
+      { label: t('assets.status.idle'), value: 'idle' },
+      { label: t('assets.status.inUse'), value: 'in_use' },
+      { label: t('assets.status.maintenance'), value: 'maintenance' },
+      { label: t('assets.status.scrapped'), value: 'scrapped' }
     ]
   },
-  { prop: 'brand', label: '品牌', type: 'input', placeholder: '请输入品牌' },
-  { prop: 'model', label: '规格型号', type: 'input', placeholder: '请输入规格型号' },
-  { prop: 'unit', label: '计量单位', type: 'input', placeholder: '请输入计量单位' },
-  { prop: 'serialNumber', label: '序列号', type: 'input', placeholder: '请输入序列号' },
+  { prop: 'brand', label: t('assets.fields.brand'), type: 'input', placeholder: t('common.placeholders.input', { field: t('assets.fields.brand') }) },
+  { prop: 'model', label: t('assets.fields.model'), type: 'input', placeholder: t('common.placeholders.input', { field: t('assets.fields.model') }) },
+  { prop: 'unit', label: t('assets.fields.unit'), type: 'input', placeholder: t('common.placeholders.input', { field: t('assets.fields.unit') }) },
+  { prop: 'serialNumber', label: t('assets.fields.serialNumber'), type: 'input', placeholder: t('common.placeholders.input', { field: t('assets.fields.serialNumber') }) },
   
-  { type: 'divider', prop: 'value_info', label: '价值信息', span: 24 },
+  { type: 'divider', prop: 'value_info', label: t('assets.form.sections.valueInfo'), span: 24 },
   { 
     prop: 'purchasePrice', 
-    label: '原值', 
+    label: t('assets.fields.purchasePrice'), 
     type: 'number', 
-    placeholder: '请输入原值',
+    placeholder: t('common.placeholders.input', { field: t('assets.fields.purchasePrice') }),
     props: { min: 0, precision: 2 }
   },
-  { prop: 'purchaseDate', label: '购置日期', type: 'date', placeholder: '请选择购置日期' },
+  { prop: 'purchaseDate', label: t('assets.fields.purchaseDate'), type: 'date', placeholder: t('common.placeholders.select', { field: t('assets.fields.purchaseDate') }) },
   { 
     prop: 'supplier', 
-    label: '供应商', 
+    label: t('assets.fields.supplier'), 
     type: 'select', 
-    placeholder: '请选择供应商', 
+    placeholder: t('common.placeholders.select', { field: t('assets.fields.supplier') }), 
     options: suppliers.value,
     props: { filterable: true, clearable: true }
   },
-  { prop: 'invoiceNo', label: '发票号', type: 'input', placeholder: '请输入发票号' },
+  { prop: 'invoiceNo', label: t('assets.fields.invoiceNo'), type: 'input', placeholder: t('common.placeholders.input', { field: t('assets.fields.invoiceNo') }) },
 
-  { type: 'divider', prop: 'use_info', label: '使用信息', span: 24 },
+  { type: 'divider', prop: 'use_info', label: t('assets.form.sections.useInfo'), span: 24 },
   { 
     prop: 'department', 
-    label: '使用部门', 
+    label: t('assets.fields.department'), 
     type: 'select', 
-    placeholder: '请选择部门',
+    placeholder: t('common.placeholders.select', { field: t('assets.fields.department') }),
     options: departments.value,
     props: { filterable: true, clearable: true }
   },
   { 
     prop: 'custodian', 
-    label: '使用人', 
+    label: t('assets.fields.user'), 
     type: 'select', 
-    placeholder: '请选择使用人',
+    placeholder: t('common.placeholders.select', { field: t('assets.fields.user') }),
     options: users.value,
     props: { filterable: true, clearable: true }
   },
   { 
     prop: 'location', 
-    label: '存放位置', 
+    label: t('assets.fields.location'), 
     type: 'tree-select', 
-    placeholder: '请选择存放位置',
+    placeholder: t('common.placeholders.select', { field: t('assets.fields.location') }),
     options: locationTree.value,
     props: { clearable: true, checkStrictly: true, props: { label: 'name', value: 'id', children: 'children' } }
   },
 
-  { prop: 'remarks', label: '备注', type: 'textarea', placeholder: '请输入备注', span: 24 }
+  { prop: 'remarks', label: t('common.labels.remark'), type: 'textarea', placeholder: t('common.placeholders.input', { field: t('common.labels.remark') }), span: 24 }
 ])
 
 onMounted(async () => {
@@ -217,7 +227,7 @@ const fetchAssetDetail = async () => {
     })
   } catch (error) {
     console.error('Failed to load asset:', error)
-    ElMessage.error('加载资产详情失败')
+    ElMessage.error(t('assets.messages.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -233,15 +243,15 @@ const handleSubmit = async () => {
   try {
     if (isEdit.value) {
       await assetApi.update(route.params.id as string, form.value)
-      ElMessage.success('更新成功')
+      ElMessage.success(t('common.messages.updateSuccess'))
     } else {
       await assetApi.create(form.value)
-      ElMessage.success('创建成功')
+      ElMessage.success(t('common.messages.createSuccess'))
     }
     goBack()
   } catch (error) {
     console.error('Submit failed:', error)
-    ElMessage.error(isEdit.value ? '更新失败' : '创建失败')
+    ElMessage.error(isEdit.value ? t('common.messages.updateFailed') : t('common.messages.createFailed'))
   } finally {
     submitting.value = false
   }

@@ -12,60 +12,64 @@
 <template>
   <div class="asset-list-page">
     <BaseListPage
-      title="固定资产"
+      :title="$t('assets.list.title')"
       :search-fields="searchFields"
       :table-columns="columns"
       :api="fetchAssets"
       :batch-actions="batchActions"
       :selectable="true"
-      object-code="ASSET"
+      object-code="Asset"
       @row-click="handleRowClick"
     >
       <template #toolbar>
-        <el-button type="primary" :icon="Plus" @click="handleCreate">
-          新增资产
+        <el-button
+          type="primary"
+          :icon="Plus"
+          @click="handleCreate"
+        >
+          {{ $t('assets.list.createButton') }}
         </el-button>
-        <el-button :icon="Download" @click="handleExport()">
-          导出
+        <el-button
+          :icon="Download"
+          @click="handleExport()"
+        >
+          {{ $t('common.actions.export') }}
         </el-button>
       </template>
 
       <template #batch-actions="{ selectedRows }">
-        <span v-if="selectedRows.length > 0" class="selection-info">
-          已选择 {{ selectedRows.length }} 项
+        <span
+          v-if="selectedRows.length > 0"
+          class="selection-info"
+        >
+          {{ $t('assets.list.selected', { count: selectedRows.length }) }}
         </span>
       </template>
 
-      <template #cell-assetCategoryName="{ row }">
-        <el-tag v-if="row.assetCategoryName" type="info" size="small">
-          {{ row.assetCategoryName }}
-        </el-tag>
-        <span v-else>-</span>
-      </template>
-
-      <template #cell-purchasePrice="{ row }">
-        <span class="money-text">¥{{ formatMoney(row.purchasePrice) }}</span>
-      </template>
-
-      <template #cell-assetStatus="{ row }">
-        <el-tag :type="getStatusType(row.assetStatus)">
-          {{ getStatusLabel(row.assetStatus) }}
-        </el-tag>
-      </template>
-
       <template #actions="{ row }">
-        <el-button link type="primary" @click="handleView(row)">
-          详情
+        <el-button
+          link
+          type="primary"
+          @click="handleView(row)"
+        >
+          {{ $t('common.actions.view') }}
         </el-button>
-        <el-button link type="primary" @click="handleEdit(row)">
-          编辑
+        <el-button
+          link
+          type="primary"
+          @click="handleEdit(row)"
+        >
+          {{ $t('common.actions.edit') }}
         </el-button>
-        <el-button link type="danger" @click="handleDelete(row)">
-          删除
+        <el-button
+          link
+          type="danger"
+          @click="handleDelete(row)"
+        >
+          {{ $t('common.actions.delete') }}
         </el-button>
       </template>
     </BaseListPage>
-
   </div>
 </template>
 
@@ -77,19 +81,19 @@
  * and CRUD operations.
  */
 
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Plus, Download } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
 import BaseListPage from '@/components/common/BaseListPage.vue'
 import { assetApi } from '@/api/assets'
 import { categoryApi } from '@/api/assets'
 import type { Asset, AssetStatus } from '@/types/assets'
 import type { TableColumn, SearchField } from '@/types/common'
-import { formatMoney } from '@/utils/numberFormat'
 import { useCrud } from '@/composables/useCrud'
 
 const router = useRouter()
+const { t } = useI18n()
 
 // ============================================================================
 // State
@@ -113,7 +117,7 @@ const {
   handleExport: crudExport,
   handleBatchExport: crudBatchExport
 } = useCrud({
-  name: '资产',
+  name: t('assets.detail.title'), // Use a generic name or "Asset"
   api: {
     list: assetApi.list,
     delete: assetApi.delete,
@@ -139,76 +143,76 @@ const handleExport = () => crudExport()
 // Table Columns
 // ============================================================================
 
-const columns: TableColumn[] = [
-  { prop: 'assetCode', label: '资产编码', width: 140, fixed: 'left' },
-  { prop: 'assetName', label: '资产名称', minWidth: 180 },
-  { prop: 'assetCategoryName', label: '分类', width: 120, slot: true },
-  { prop: 'purchasePrice', label: '采购金额', width: 120, slot: true, align: 'right' },
-  { prop: 'purchaseDate', label: '采购日期', width: 120 },
-  { prop: 'locationPath', label: '存放位置', width: 140 },
-  { prop: 'custodianName', label: '使用人', width: 100 },
-  { prop: 'assetStatus', label: '状态', width: 100, slot: true, fixed: 'right' },
+const columns = computed<TableColumn[]>(() => [
+  { prop: 'assetCode', label: t('assets.fields.assetCode'), width: 140, fixed: 'left' },
+  { prop: 'assetName', label: t('assets.fields.assetName'), minWidth: 180 },
+  { prop: 'assetCategoryName', label: t('assets.fields.category'), width: 120, tagType: () => 'info', format: (value: any) => value || '-' },
+  { prop: 'purchasePrice', label: t('assets.fields.purchasePrice'), width: 120, align: 'right' },
+  { prop: 'purchaseDate', label: t('assets.fields.purchaseDate'), width: 120 },
+  { prop: 'locationPath', label: t('assets.fields.location'), width: 140 },
+  { prop: 'custodianName', label: t('assets.fields.user'), width: 100 },
+  { prop: 'assetStatus', label: t('common.labels.status'), width: 100, tagType: (row: any) => getStatusType(row.assetStatus), format: (value: any, row: any) => row?.statusLabel || getStatusLabel(value), fixed: 'right' },
   // Hidden columns (available in settings)
-  { prop: 'brand', label: '品牌', width: 120, visible: false },
-  { prop: 'model', label: '规格型号', width: 120, visible: false },
-  { prop: 'serialNumber', label: '序列号', width: 140, visible: false },
-  { prop: 'supplierName', label: '供应商', width: 150, visible: false },
-  { prop: 'departmentName', label: '所属部门', width: 120, visible: false },
-  { prop: 'currentValue', label: '当前净值', width: 120, visible: false, type: 'currency' },
-  { prop: 'usefulLife', label: '使用年限(月)', width: 100, visible: false },
-  { prop: 'remarks', label: '备注', minWidth: 200, visible: false }
-]
+  { prop: 'brand', label: t('assets.fields.brand'), width: 120, visible: false },
+  { prop: 'model', label: t('assets.fields.model'), width: 120, visible: false },
+  { prop: 'serialNumber', label: t('assets.fields.serialNumber'), width: 140, visible: false },
+  { prop: 'supplierName', label: t('assets.fields.supplier'), width: 150, visible: false },
+  { prop: 'departmentName', label: t('assets.fields.department'), width: 120, visible: false },
+  { prop: 'currentValue', label: t('assets.fields.currentValue'), width: 120, visible: false, type: 'currency' },
+  { prop: 'usefulLife', label: t('assets.fields.usefulLife'), width: 100, visible: false },
+  { prop: 'remarks', label: t('common.labels.remark'), minWidth: 200, visible: false }
+])
 
 // ============================================================================
 // Search Fields
 // ============================================================================
 
-const searchFields: SearchField[] = [
+const searchFields = computed<SearchField[]>(() => [
   {
     field: 'search',
-    label: '关键词',
+    label: t('assets.search.keyword'),
     type: 'input',
-    placeholder: '资产编码/名称'
+    placeholder: t('assets.search.keywordPlaceholder')
   },
   {
     field: 'categoryId',
-    label: '资产分类',
+    label: t('assets.fields.category'),
     type: 'select',
     options: categoryOptions.value,
     multiple: true
   },
   {
     field: 'status',
-    label: '状态',
+    label: t('assets.search.status'),
     type: 'select',
     options: [
-      { label: '使用中', value: 'in_use' },
-      { label: '闲置', value: 'idle' },
-      { label: '维修中', value: 'maintenance' },
-      { label: '已报废', value: 'scrapped' },
-      { label: '草稿', value: 'draft' }
+      { label: t('assets.status.inUse'), value: 'in_use' },
+      { label: t('assets.status.idle'), value: 'idle' },
+      { label: t('assets.status.maintenance'), value: 'maintenance' },
+      { label: t('assets.status.scrapped'), value: 'scrapped' },
+      { label: t('assets.status.draft'), value: 'draft' }
     ]
   },
   {
     field: 'locationId',
-    label: '存放位置',
+    label: t('assets.fields.location'),
     type: 'select',
     options: [] // Will be loaded from API
   },
   {
     field: 'purchaseDateRange',
-    label: '采购日期',
+    label: t('assets.search.dateRange'),
     type: 'daterange'
   }
-]
+])
 
 // ============================================================================
 // Batch Actions
 // ============================================================================
 
-const batchActions = [
+const batchActions = computed(() => [
   {
-    label: '批量删除',
+    label: t('assets.list.batchDelete'),
     type: 'danger' as const,
     action: async (rows: Asset[]) => {
       const success = await crudBatchDelete(rows)
@@ -216,11 +220,11 @@ const batchActions = [
     }
   },
   {
-    label: '批量导出',
+    label: t('assets.list.batchExport'),
     type: 'primary' as const,
     action: (rows: Asset[]) => crudBatchExport(rows)
   }
-]
+])
 
 // ============================================================================
 // Methods
@@ -244,14 +248,14 @@ const getStatusType = (status: AssetStatus) => {
  * Get status label
  */
 const getStatusLabel = (status: AssetStatus) => {
-  const labelMap: Record<AssetStatus, string> = {
-    draft: '草稿',
-    in_use: '使用中',
-    idle: '闲置',
-    maintenance: '维修中',
-    scrapped: '已报废'
+  const keyMap: Record<AssetStatus, string> = {
+    draft: 'assets.status.draft',
+    in_use: 'assets.status.inUse',
+    idle: 'assets.status.idle',
+    maintenance: 'assets.status.maintenance',
+    scrapped: 'assets.status.scrapped'
   }
-  return labelMap[status] || status
+  return keyMap[status] ? t(keyMap[status]) : status
 }
 
 /**
@@ -267,11 +271,10 @@ const loadCategories = async () => {
       label: cat.name,
       value: cat.id
     }))
-    // Update search fields
-    const categoryField = searchFields.find(f => f.field === 'categoryId')
-    if (categoryField) {
-      categoryField.options = categoryOptions.value
-    }
+    
+    // Note: Since searchFields is computed, we don't need to manually update it anymore
+    // strict reactivity will handle it, provided searchFields depends on categoryOptions.value using computed
+    // But currently searchFields is a computed that returns a new array, it should be fine.
   } catch (error) {
     console.error('Failed to load categories:', error)
   }
@@ -325,12 +328,6 @@ onMounted(() => {
 <style scoped lang="scss">
 .asset-list-page {
   height: 100%;
-}
-
-.money-text {
-  font-family: 'Monaco', 'Consolas', monospace;
-  font-weight: 500;
-  color: #303133;
 }
 
 .selection-info {

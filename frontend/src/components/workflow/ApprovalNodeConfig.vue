@@ -2,74 +2,74 @@
   <div class="approval-config">
     <el-form
       :model="localValue"
-      label-width="90px"
+      :label-width="locale === 'zh-CN' ? '90px' : '140px'"
       size="small"
     >
-      <el-form-item label="审批方式">
+      <el-form-item :label="t('workflow.fields.approvalType')">
         <el-radio-group v-model="localValue.approveType">
           <el-radio value="or">
-            或签（一人通过）
+            {{ t('workflow.approvalType.or') }}
           </el-radio>
           <el-radio value="and">
-            会签（全部通过）
+            {{ t('workflow.approvalType.and') }}
           </el-radio>
           <el-radio value="seq">
-            依次审批
+            {{ t('workflow.approvalType.sequence') }}
           </el-radio>
         </el-radio-group>
       </el-form-item>
 
-      <el-form-item label="审批人">
+      <el-form-item :label="t('workflow.fields.approver')">
         <ApproverSelector v-model="localValue.approvers" />
       </el-form-item>
 
-      <el-form-item label="超时时间">
+      <el-form-item :label="t('workflow.fields.timeout')">
         <el-input-number
           v-model="localValue.timeout"
           :min="1"
           :max="720"
           controls-position="right"
         />
-        <span class="unit">小时</span>
+        <span class="unit">{{ t('common.units.hours') }}</span>
       </el-form-item>
 
-      <el-form-item label="超时操作">
+      <el-form-item :label="t('workflow.fields.timeoutAction')">
         <el-select v-model="localValue.timeoutAction">
           <el-option
-            label="自动通过"
+            :label="t('workflow.timeoutAction.pass')"
             value="approve"
           />
           <el-option
-            label="自动拒绝"
+            :label="t('workflow.timeoutAction.reject')"
             value="reject"
           />
           <el-option
-            label="转交管理员"
+            :label="t('workflow.timeoutAction.transfer')"
             value="transfer"
           />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="自动通过">
+      <el-form-item :label="t('workflow.designer.autoApprove')">
         <el-switch v-model="localValue.autoApprove" />
-        <span class="tip">审批人与发起人相同时自动通过</span>
+        <span class="tip">{{ t('workflow.designer.autoApproveHint') }}</span>
       </el-form-item>
 
-      <el-form-item label="允许转交">
+      <el-form-item :label="t('workflow.designer.allowTransfer')">
         <el-switch v-model="localValue.allowTransfer" />
       </el-form-item>
 
-      <el-form-item label="允许加签">
+      <el-form-item :label="t('workflow.designer.allowAddApprover')">
         <el-switch v-model="localValue.allowAddApprover" />
       </el-form-item>
 
-      <el-form-item label="退回方式">
+      <el-form-item :label="t('workflow.designer.rejectMethod')">
         <el-radio-group v-model="localValue.rejectType">
           <el-radio value="to_start">
-            退回到发起人
+            {{ t('workflow.designer.rejectToInitiator') }}
           </el-radio>
           <el-radio value="to_prev">
-            退回到上一节点
+            {{ t('workflow.designer.rejectToPrev') }}
           </el-radio>
         </el-radio-group>
       </el-form-item>
@@ -79,7 +79,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import ApproverSelector from './ApproverSelector.vue'
+
+const { t } = useI18n()
+const locale = computed(() => t('locale'))
 
 interface Props {
   modelValue: Record<string, any>

@@ -2,8 +2,8 @@
   <div class="loan-list page-container">
     <BaseListPage
       ref="listRef"
-      title="资产借出单"
-      object-code="asset_loan_list"
+      :title="$t('assets.loan.title')"
+      object-code="AssetLoan"
       :search-fields="searchFields"
       :table-columns="columns"
       :api="fetchLoanList"
@@ -14,18 +14,8 @@
           :icon="Plus"
           @click="handleCreate"
         >
-          新建借出单
+          {{ $t('assets.loan.createButton') }}
         </el-button>
-      </template>
-
-      <template #status="{ row }">
-        <el-tag
-          :type="getStatusType(row.status)"
-          class="status-tag"
-          :class="`status-${row.status}`"
-        >
-          {{ row.statusLabel || getStatusLabel(row.status) }}
-        </el-tag>
       </template>
 
       <template #actions="{ row }">
@@ -34,7 +24,7 @@
           type="primary"
           @click="handleView(row)"
         >
-          查看
+          {{ $t('common.actions.view') }}
         </el-button>
         <el-button
           v-if="['draft', 'pending'].includes(row.status)"
@@ -42,7 +32,7 @@
           type="primary"
           @click="handleEdit(row)"
         >
-          编辑
+          {{ $t('common.actions.edit') }}
         </el-button>
         <el-button
           v-if="['draft', 'pending'].includes(row.status)"
@@ -50,7 +40,7 @@
           type="warning"
           @click="handleCancel(row)"
         >
-          取消
+          {{ $t('common.actions.cancel') }}
         </el-button>
         <el-button
           v-if="row.status === 'loaned'"
@@ -58,7 +48,7 @@
           type="success"
           @click="handleReturn(row)"
         >
-          归还
+          {{ $t('assets.operations.return') }}
         </el-button>
       </template>
     </BaseListPage>
@@ -66,40 +56,41 @@
     <!-- Return Dialog -->
     <el-dialog
       v-model="returnDialogVisible"
-      title="资产归还"
+      :title="$t('assets.loan.dialog.returnTitle')"
       width="600px"
     >
       <el-form
         :model="returnForm"
+        :label="$t('assets.loan.dialog.returnDate')"
         label-width="120px"
       >
-        <el-form-item label="归还日期">
+        <el-form-item :label="$t('assets.loan.dialog.returnDate')">
           <el-date-picker
             v-model="returnForm.returnDate"
             type="date"
             value-format="YYYY-MM-DD"
-            placeholder="请选择归还日期"
+            :placeholder="$t('assets.loan.dialog.returnDatePlaceholder')"
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="归还说明">
+        <el-form-item :label="$t('assets.loan.dialog.returnRemark')">
           <el-input
             v-model="returnForm.remark"
             type="textarea"
             :rows="3"
-            placeholder="请输入归还说明"
+            :placeholder="$t('assets.loan.dialog.returnRemarkPlaceholder')"
           />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="returnDialogVisible = false">
-          取消
+          {{ $t('common.actions.cancel') }}
         </el-button>
         <el-button
           type="primary"
           @click="confirmReturn"
         >
-          确认归还
+          {{ $t('assets.loan.dialog.confirmReturn') }}
         </el-button>
       </template>
     </el-dialog>
@@ -111,11 +102,13 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { getLoanList, cancelLoan, returnLoan } from '@/api/assets/loans'
 import BaseListPage from '@/components/common/BaseListPage.vue'
 import type { TableColumn, SearchField } from '@/types/common'
 
 const router = useRouter()
+const { t } = useI18n()
 const listRef = ref()
 const returnDialogVisible = ref(false)
 const currentLoan = ref<any>(null)
@@ -130,7 +123,7 @@ const fetchLoanList = async (params: any) => {
     ...params,
     page_size: params.pageSize
   }
-  const res = await getLoanList(apiParams)
+  const res = await getLoanList(apiParams) as any
   return {
     results: res.items || res.results || [],
     count: res.total || res.count || 0
@@ -140,35 +133,35 @@ const fetchLoanList = async (params: any) => {
 const searchFields: SearchField[] = [
   {
     prop: 'status',
-    label: '状态',
+    label: t('assets.search.status'),
     type: 'select',
     options: [
-      { label: '草稿', value: 'draft' },
-      { label: '待审批', value: 'pending' },
-      { label: '已批准', value: 'approved' },
-      { label: '借出中', value: 'loaned' },
-      { label: '已归还', value: 'returned' },
-      { label: '已拒绝', value: 'rejected' },
-      { label: '已取消', value: 'cancelled' }
+      { label: t('assets.status.draft'), value: 'draft' },
+      { label: t('assets.status.pending'), value: 'pending' },
+      { label: t('assets.status.approved'), value: 'approved' },
+      { label: t('assets.status.loaned'), value: 'loaned' },
+      { label: t('assets.status.returned'), value: 'returned' },
+      { label: t('assets.status.rejected'), value: 'rejected' },
+      { label: t('assets.status.cancelled'), value: 'cancelled' }
     ]
   },
   {
     prop: 'search',
-    label: '搜索',
+    label: t('common.actions.search'),
     type: 'text',
-    placeholder: '借出单号/借用人'
+    placeholder: t('assets.search.keywordPlaceholder')
   }
 ]
 
 const columns: TableColumn[] = [
-  { prop: 'loanNo', label: '借出单号', width: 150 },
-  { prop: 'borrower.realName', label: '借用人', width: 100 },
-  { prop: 'borrower.department.name', label: '部门', width: 120 },
-  { prop: 'loanDate', label: '借出日期', width: 110 },
-  { prop: 'expectedReturnDate', label: '预计归还日期', width: 120 },
-  { prop: 'actualReturnDate', label: '实际归还日期', width: 120 },
-  { prop: 'status', label: '状态', width: 100, slot: 'status' },
-  { prop: 'itemsCount', label: '资产数量', width: 100, align: 'center' }
+  { prop: 'loanNo', label: t('assets.loan.columns.loanNo'), width: 150 },
+  { prop: 'borrower.realName', label: t('assets.loan.columns.borrower'), width: 100 },
+  { prop: 'borrower.department.name', label: t('assets.loan.columns.department'), width: 120 },
+  { prop: 'loanDate', label: t('assets.loan.columns.loanDate'), width: 110 },
+  { prop: 'expectedReturnDate', label: t('assets.loan.columns.expectedReturnDate'), width: 120 },
+  { prop: 'actualReturnDate', label: t('assets.loan.columns.actualReturnDate'), width: 120 },
+  { prop: 'status', label: t('assets.loan.columns.status'), width: 100, tagType: (row: any) => getStatusType(row.status), format: (value: any, row: any) => row?.statusLabel || getStatusLabel(value) },
+  { prop: 'itemsCount', label: t('assets.loan.columns.assetCount'), width: 100, align: 'center' }
 ]
 
 const getStatusType = (status: string) => {
@@ -186,13 +179,13 @@ const getStatusType = (status: string) => {
 
 const getStatusLabel = (status: string) => {
   const map: any = {
-    draft: '草稿',
-    pending: '待审批',
-    approved: '已批准',
-    loaned: '借出中',
-    returned: '已归还',
-    rejected: '已拒绝',
-    cancelled: '已取消'
+    draft: t('assets.status.draft'),
+    pending: t('assets.status.pending'),
+    approved: t('assets.status.approved'),
+    loaned: t('assets.status.loaned'),
+    returned: t('assets.status.returned'),
+    rejected: t('assets.status.rejected'),
+    cancelled: t('assets.status.cancelled')
   }
   return map[status] || status
 }
@@ -211,9 +204,9 @@ const handleEdit = (row: any) => {
 
 const handleCancel = async (row: any) => {
   try {
-    await ElMessageBox.confirm('确定要取消此借出单吗？', '确认操作', { type: 'warning' })
+    await ElMessageBox.confirm(t('assets.loan.messages.confirmCancel'), t('common.messages.confirmTitle'), { type: 'warning' })
     await cancelLoan(row.id)
-    ElMessage.success('已取消')
+    ElMessage.success(t('common.messages.cancelSuccess'))
     listRef.value?.refresh()
   } catch {
     // cancelled
@@ -233,11 +226,11 @@ const confirmReturn = async () => {
       return_date: returnForm.returnDate,
       remark: returnForm.remark
     })
-    ElMessage.success('归还成功')
+    ElMessage.success(t('assets.loan.messages.returnSuccess'))
     returnDialogVisible.value = false
     listRef.value?.refresh()
   } catch (e: any) {
-    ElMessage.error(e.response?.data?.message || '归还失败')
+    ElMessage.error(e.response?.data?.message || t('assets.loan.messages.returnFailed'))
   }
 }
 </script>

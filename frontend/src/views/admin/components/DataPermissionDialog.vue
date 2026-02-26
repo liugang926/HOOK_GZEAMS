@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="isEdit ? '编辑数据权限规则' : '新增数据权限规则'"
+    :title="isEdit ? $t('system.permission.data.dialog.editTitle') : $t('system.permission.data.dialog.createTitle')"
     width="700px"
     @update:model-value="handleClose"
   >
@@ -12,12 +12,12 @@
       label-width="120px"
     >
       <el-form-item
-        label="角色"
+        :label="$t('system.permission.data.dialog.role')"
         prop="roleName"
       >
         <el-select
           v-model="formData.roleName"
-          placeholder="请选择角色"
+          :placeholder="$t('system.permission.data.dialog.rolePlaceholder')"
           :disabled="isEdit"
         >
           <el-option
@@ -36,12 +36,12 @@
       </el-form-item>
 
       <el-form-item
-        label="业务对象"
+        :label="$t('system.permission.data.dialog.object')"
         prop="businessObjectName"
       >
         <el-select
           v-model="formData.businessObjectName"
-          placeholder="请选择业务对象"
+          :placeholder="$t('system.permission.data.dialog.objectPlaceholder')"
           :disabled="isEdit"
         >
           <el-option
@@ -60,32 +60,32 @@
       </el-form-item>
 
       <el-form-item
-        label="权限类型"
+        :label="$t('system.permission.data.dialog.type')"
         prop="permissionType"
       >
         <el-select
           v-model="formData.permissionType"
-          placeholder="请选择权限类型"
+          :placeholder="$t('system.permission.data.dialog.typePlaceholder')"
           @change="handlePermissionTypeChange"
         >
           <el-option
-            label="全部数据"
+            :label="$t('system.permission.data.types.all')"
             value="all"
           />
           <el-option
-            label="本部门"
+            :label="$t('system.permission.data.types.department')"
             value="department"
           />
           <el-option
-            label="本部门及子部门"
+            :label="$t('system.permission.data.types.department_and_sub')"
             value="department_and_sub"
           />
           <el-option
-            label="仅本人"
+            :label="$t('system.permission.data.types.self')"
             value="self"
           />
           <el-option
-            label="自定义"
+            :label="$t('system.permission.data.types.custom')"
             value="custom"
           />
         </el-select>
@@ -93,20 +93,20 @@
 
       <el-form-item
         v-if="formData.permissionType === 'custom'"
-        label="权限表达式"
+        :label="$t('system.permission.data.dialog.expression')"
         prop="scopeExpression"
       >
         <el-input
           v-model="formData.scopeExpression"
           type="textarea"
           :rows="3"
-          placeholder="自定义权限表达式，如: department_id in (1, 2, 3)"
+          :placeholder="$t('system.permission.data.dialog.expressionPlaceholder')"
         />
       </el-form-item>
 
       <el-form-item
         v-else
-        label="权限范围"
+        :label="$t('system.permission.data.dialog.scope')"
       >
         <el-input
           :value="getScopePreview()"
@@ -115,39 +115,39 @@
       </el-form-item>
 
       <el-form-item
-        label="状态"
+        :label="$t('system.permission.data.dialog.status')"
         prop="isActive"
       >
         <el-switch
           v-model="formData.isActive"
-          active-text="启用"
-          inactive-text="禁用"
+          :active-text="$t('system.permission.data.status.enable')"
+          :inactive-text="$t('system.permission.data.status.disable')"
         />
       </el-form-item>
 
       <el-form-item
-        label="说明"
+        :label="$t('system.permission.data.dialog.description')"
         prop="description"
       >
         <el-input
           v-model="formData.description"
           type="textarea"
           :rows="2"
-          placeholder="请输入权限规则说明"
+          :placeholder="$t('system.permission.data.dialog.descriptionPlaceholder')"
         />
       </el-form-item>
     </el-form>
 
     <template #footer>
       <el-button @click="handleClose">
-        取消
+        {{ $t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="submitting"
         @click="handleSubmit"
       >
-        {{ isEdit ? '保存' : '创建' }}
+        {{ isEdit ? $t('common.actions.save') : $t('common.actions.create') }}
       </el-button>
     </template>
   </el-dialog>
@@ -157,6 +157,9 @@
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   visible: boolean
@@ -186,9 +189,9 @@ const formData = ref({
 })
 
 const rules: FormRules = {
-  roleName: [{ required: true, message: '请选择角色', trigger: 'change' }],
-  businessObjectName: [{ required: true, message: '请选择业务对象', trigger: 'change' }],
-  permissionType: [{ required: true, message: '请选择权限类型', trigger: 'change' }]
+  roleName: [{ required: true, message: t('system.permission.data.dialog.rolePlaceholder'), trigger: 'change' }],
+  businessObjectName: [{ required: true, message: t('system.permission.data.dialog.objectPlaceholder'), trigger: 'change' }],
+  permissionType: [{ required: true, message: t('system.permission.data.dialog.typePlaceholder'), trigger: 'change' }]
 }
 
 watch(() => props.visible, (val) => {
@@ -217,10 +220,10 @@ const handlePermissionTypeChange = () => {
 
 const getScopePreview = () => {
   const previews: Record<string, string> = {
-    'all': '全部数据',
-    'department': '本部门数据',
-    'department_and_sub': '本部门及子部门数据',
-    'self': '仅本人数据'
+    'all': t('system.permission.data.types.all'),
+    'department': t('system.permission.data.types.department'),
+    'department_and_sub': t('system.permission.data.types.department_and_sub'),
+    'self': t('system.permission.data.types.self')
   }
   return previews[formData.value.permissionType] || ''
 }
@@ -243,11 +246,11 @@ const handleSubmit = async () => {
       // } else {
       //   await dataPermissionApi.create(formData.value)
       // }
-      ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
+      ElMessage.success(isEdit.value ? t('system.permission.data.messages.updateSuccess') : t('system.permission.data.messages.createSuccess'))
       emit('success')
       handleClose()
     } catch (error) {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('common.messages.operationFailed'))
     } finally {
       submitting.value = false
     }

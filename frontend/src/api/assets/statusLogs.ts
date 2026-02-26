@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export const getStatusLogList = (params: any) => {
     return request({
-        url: '/assets/status-logs/',
+        url: '/system/objects/AssetStatusLog/',
         method: 'get',
         params
     })
@@ -10,7 +10,7 @@ export const getStatusLogList = (params: any) => {
 
 export const getAssetStatusLogs = (assetId: string, params?: any) => {
     return request({
-        url: `/assets/status-logs/`,
+        url: '/system/objects/AssetStatusLog/',
         method: 'get',
         params: { ...params, asset: assetId }
     })
@@ -18,7 +18,7 @@ export const getAssetStatusLogs = (assetId: string, params?: any) => {
 
 export const getStatusLogDetail = (id: string) => {
     return request({
-        url: `/assets/status-logs/${id}/`,
+        url: `/system/objects/AssetStatusLog/${id}/`,
         method: 'get'
     })
 }

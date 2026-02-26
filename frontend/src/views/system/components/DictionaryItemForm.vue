@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="isEdit ? '编辑字典项' : '添加字典项'"
+    :title="isEdit ? $t('common.actions.edit') + $t('system.dictionary.item') : $t('common.actions.add') + $t('system.dictionary.item')"
     width="600px"
     @update:model-value="handleClose"
   >
@@ -12,38 +12,38 @@
       label-width="120px"
     >
       <el-form-item
-        label="字典项编码"
+        :label="$t('system.dictionary.itemCode')"
         prop="code"
       >
         <el-input
           v-model="formData.code"
-          placeholder="请输入字典项编码（英文）"
+          :placeholder="$t('system.dictionary.itemCodePlaceholder')"
           :disabled="isEdit"
         />
       </el-form-item>
 
       <el-form-item
-        label="显示名称"
+        :label="$t('system.dictionary.displayName')"
         prop="name"
       >
         <el-input
           v-model="formData.name"
-          placeholder="请输入显示名称（中文）"
+          :placeholder="$t('system.dictionary.displayNamePlaceholder')"
         />
       </el-form-item>
 
       <el-form-item
-        label="英文名称"
+        :label="$t('system.dictionary.englishName')"
         prop="name_en"
       >
         <el-input
           v-model="formData.name_en"
-          placeholder="请输入英文名称"
+          :placeholder="$t('system.dictionary.englishNamePlaceholder')"
         />
       </el-form-item>
 
       <el-form-item
-        label="排序号"
+        :label="$t('system.dictionary.sortOrder')"
         prop="sort_order"
       >
         <el-input-number
@@ -54,7 +54,7 @@
       </el-form-item>
 
       <el-form-item
-        label="显示颜色"
+        :label="$t('system.dictionary.color')"
         prop="color"
       >
         <div class="color-picker-wrapper">
@@ -64,19 +64,19 @@
           />
           <el-input
             v-model="formData.color"
-            placeholder="请输入颜色值（如：#409EFF）"
+            :placeholder="$t('system.dictionary.colorPlaceholder')"
             style="width: 200px; margin-left: 10px"
           />
         </div>
       </el-form-item>
 
       <el-form-item
-        label="图标"
+        :label="$t('system.dictionary.icon')"
         prop="icon"
       >
         <el-select
           v-model="formData.icon"
-          placeholder="选择图标"
+          :placeholder="$t('system.dictionary.iconPlaceholder')"
           filterable
           clearable
         >
@@ -95,49 +95,49 @@
       </el-form-item>
 
       <el-form-item
-        label="设为默认"
+        :label="$t('system.dictionary.isDefault')"
         prop="is_default"
       >
         <el-switch v-model="formData.is_default" />
         <div class="form-tip">
-          默认选项将自动选中
+          {{ $t('system.dictionary.isDefaultTip') }}
         </div>
       </el-form-item>
 
       <el-form-item
-        label="启用状态"
+        :label="$t('system.dictionary.enabled')"
         prop="is_active"
       >
         <el-switch
           v-model="formData.is_active"
-          active-text="启用"
-          inactive-text="禁用"
+          :active-text="$t('system.dictionary.status.enabled')"
+          :inactive-text="$t('system.dictionary.status.disabled')"
         />
       </el-form-item>
 
       <el-form-item
-        label="描述"
+        :label="$t('common.labels.description')"
         prop="description"
       >
         <el-input
           v-model="formData.description"
           type="textarea"
           :rows="2"
-          placeholder="请输入描述"
+          :placeholder="$t('system.dictionary.descriptionPlaceholder')"
         />
       </el-form-item>
     </el-form>
 
     <template #footer>
       <el-button @click="handleClose">
-        取消
+        {{ $t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="submitting"
         @click="handleSubmit"
       >
-        {{ isEdit ? '保存' : '添加' }}
+        {{ isEdit ? $t('common.actions.save') : $t('common.actions.add') }}
       </el-button>
     </template>
   </el-dialog>
@@ -147,6 +147,7 @@
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import {
   Check,
   Close,
@@ -200,6 +201,8 @@ import {
 import type { DictionaryItem } from '@/api/system'
 import { dictionaryItemApi } from '@/api/system'
 
+const { t } = useI18n()
+
 interface Props {
   visible: boolean
   dictionaryTypeCode: string
@@ -233,10 +236,10 @@ const formData = ref({
 
 const rules: FormRules = {
   code: [
-    { required: true, message: '请输入字典项编码', trigger: 'blur' },
-    { pattern: /^[A-Za-z_][A-Za-z0-9_]*$/, message: '编码只能包含字母、数字和下划线，且必须以字母或下划线开头', trigger: 'blur' }
+    { required: true, message: t('system.dictionary.validation.itemCodeRequired'), trigger: 'blur' },
+    { pattern: /^[A-Za-z_][A-Za-z0-9_]*$/, message: t('system.dictionary.validation.itemCodePattern'), trigger: 'blur' }
   ],
-  name: [{ required: true, message: '请输入显示名称', trigger: 'blur' }]
+  name: [{ required: true, message: t('system.dictionary.validation.displayNameRequired'), trigger: 'blur' }]
 }
 
 const commonIcons = [
@@ -329,11 +332,11 @@ const handleSubmit = async () => {
           dictionary_type: props.dictionaryTypeCode
         })
       }
-      ElMessage.success(isEdit.value ? '更新成功' : '添加成功')
+      ElMessage.success(isEdit.value ? t('common.messages.updateSuccess') : t('common.messages.createSuccess'))
       emit('success')
       handleClose()
     } catch (error) {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('common.messages.operationFailed'))
     } finally {
       submitting.value = false
     }

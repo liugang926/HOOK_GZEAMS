@@ -7,8 +7,8 @@
           class="data-card"
         >
           <div class="card-header">
-            <span>资产总数</span>
-            <el-tag>个</el-tag>
+            <span>{{ $t('dashboard.metrics.assetCount') }}</span>
+            <el-tag>{{ $t('common.units.piece') }}</el-tag>
           </div>
           <div class="card-value">
             {{ metrics.assetCount }}
@@ -21,9 +21,9 @@
           class="data-card"
         >
           <div class="card-header">
-            <span>资产总值</span>
+            <span>{{ $t('dashboard.metrics.assetValue') }}</span>
             <el-tag type="success">
-              元
+              {{ $t('common.units.yuan') }}
             </el-tag>
           </div>
           <div class="card-value">
@@ -37,9 +37,9 @@
           class="data-card"
         >
           <div class="card-header">
-            <span>库存预警</span>
+            <span>{{ $t('dashboard.metrics.warningCount') }}</span>
             <el-tag type="danger">
-              项
+              {{ $t('common.units.item') }}
             </el-tag>
           </div>
           <div class="card-value text-danger">
@@ -53,9 +53,9 @@
           class="data-card"
         >
           <div class="card-header">
-            <span>待办审批</span>
+            <span>{{ $t('dashboard.metrics.pendingApproval') }}</span>
             <el-tag type="warning">
-              待
+              {{ $t('common.units.pending') }}
             </el-tag>
           </div>
           <div class="card-value">
@@ -75,7 +75,7 @@
             <div 
               class="clearfix"
             >
-              <span>资产状态分布</span>
+              <span>{{ $t('dashboard.charts.statusDistribution') }}</span>
             </div>
           </template>
           <div
@@ -90,7 +90,7 @@
             <div 
               class="clearfix"
             >
-              <span>资产分类统计</span>
+              <span>{{ $t('dashboard.charts.categoryStatistics') }}</span>
             </div>
           </template>
           <div
@@ -105,9 +105,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import * as echarts from 'echarts'
 import { assetApi } from '@/api/assets'
 import { workflowNodeApi } from '@/api/workflow'
+
+const { t } = useI18n()
 
 const metrics = reactive({
     assetCount: 0,
@@ -143,35 +146,39 @@ const fetchData = async () => {
         // Fetch Asset Statistics
         const stats = await assetApi.statistics()
         if (stats) {
-            metrics.assetCount = stats.total
-            metrics.assetValue = stats.total_value.toLocaleString()
-            
+            metrics.assetCount = stats.total || 0
+            metrics.assetValue = (stats.total_value || 0).toLocaleString()
+
             // Update Status Chart
-            updateStatusChart(stats.by_status)
-            
+            updateStatusChart(stats.by_status || {})
+
             // Update Category Chart
-            updateCategoryChart(stats.by_category)
+            updateCategoryChart(stats.by_category || {})
         }
 
         // Fetch Pending Approvals
         const tasks = await workflowNodeApi.getMyTasks({ page: 1, pageSize: 1, status: 'pending' })
-        metrics.pendingApproval = tasks.count
+        metrics.pendingApproval = tasks?.count || 0
     } catch (error) {
         console.error('Failed to fetch dashboard data:', error)
+        // Set default values on error
+        metrics.assetCount = 0
+        metrics.assetValue = '0'
+        metrics.pendingApproval = 0
     }
 }
 
 const updateStatusChart = (data: Record<string, number>) => {
     if (!statusChart) return
-    
-    // Map status to Chinese labels and colors
+
+    // Map status to translated labels and colors
     const statusMap: Record<string, { label: string, color: string }> = {
-        'idle': { label: '闲置', color: '#67C23A' },
-        'in_use': { label: '使用中', color: '#409EFF' },
-        'maintenance': { label: '维修中', color: '#E6A23C' },
-        'scrapped': { label: '报废', color: '#909399' },
-        'borrowed': { label: '借用中', color: '#409EFF' }, // Assuming borrowed is also blue-ish
-        'disposed': { label: '已处置', color: '#909399' }
+        'idle': { label: t('assets.status.idle'), color: '#67C23A' },
+        'in_use': { label: t('assets.status.inUse'), color: '#409EFF' },
+        'maintenance': { label: t('assets.status.maintenance'), color: '#E6A23C' },
+        'scrapped': { label: t('assets.status.scrapped'), color: '#909399' },
+        'borrowed': { label: t('assets.status.borrowed'), color: '#409EFF' },
+        'disposed': { label: t('assets.status.disposed'), color: '#909399' }
     }
 
     const chartData = Object.entries(data).map(([key, value]) => ({
@@ -208,7 +215,7 @@ const initCharts = () => {
             tooltip: { trigger: 'item' },
             legend: { top: '5%', left: 'center' },
             series: [{
-                name: '资产状态',
+                name: t('dashboard.charts.assetStatus'),
                 type: 'pie',
                 radius: ['40%', '70%'],
                 avoidLabelOverlap: false,
@@ -230,7 +237,7 @@ const initCharts = () => {
             xAxis: [{ type: 'category', data: [], axisTick: { alignWithLabel: true } }],
             yAxis: [{ type: 'value' }],
             series: [{
-                name: '数量',
+                name: t('dashboard.charts.quantity'),
                 type: 'bar',
                 barWidth: '60%',
                 data: [],

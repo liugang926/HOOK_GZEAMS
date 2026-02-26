@@ -8,6 +8,7 @@
 import request from '@/utils/request'
 import type { PaginatedResponse } from '@/types/api'
 import type { DepreciationRecord, DepreciationReport } from '@/types/depreciation'
+import { normalizeQueryParams, toData, toPaginated } from '@/api/contract'
 
 /**
  * Depreciation API service
@@ -23,14 +24,23 @@ export const depreciationApi = {
     period?: string
     status?: string
   }): Promise<PaginatedResponse<DepreciationRecord>> {
-    return request.get('/depreciation/records/', { params })
+    const mappedParams = {
+      ...params,
+      // Backend filter key is `asset` (mapped to asset__asset_code), not `asset_id`.
+      asset: params?.assetId || (params as any)?.asset
+    } as any
+    delete mappedParams.assetId
+
+    return request
+      .get('/system/objects/DepreciationRecord/', { params: normalizeQueryParams(mappedParams) })
+      .then((res) => toPaginated<DepreciationRecord>(res))
   },
 
   /**
    * Get single record by ID
    */
   getRecord(id: string): Promise<DepreciationRecord> {
-    return request.get(`/depreciation/records/${id}/`)
+    return request.get(`/system/objects/DepreciationRecord/${id}/`)
   },
 
   /**
@@ -42,7 +52,11 @@ export const depreciationApi = {
     assetIds?: string[]
     categoryIds?: string[]
   }): Promise<{ taskId: string }> {
-    return request.post('/depreciation/calculate/', params)
+    return request.post('/system/objects/DepreciationRun/calculate/', normalizeQueryParams(params)).then((res) => {
+      const payload = toData<any>(res, {})
+      const runId = payload?.id || payload?.taskId
+      return { taskId: runId }
+    })
   },
 
   /**
@@ -56,28 +70,48 @@ export const depreciationApi = {
     processed: number
     error?: string
   }> {
-    return request.get(`/depreciation/calculate/${taskId}/status/`)
+    return request.get(`/system/objects/DepreciationRun/${taskId}/`).then((res) => {
+      const payload = toData<any>(res, {})
+      const backendStatus = payload?.status
+      const mappedStatus =
+        backendStatus === 'completed'
+          ? 'completed'
+          : backendStatus === 'failed'
+            ? 'failed'
+            : backendStatus === 'in_progress'
+              ? 'processing'
+              : 'pending'
+      const total = Number(payload?.totalAssets || 0)
+      const processed = mappedStatus === 'completed' ? total : 0
+      return {
+        status: mappedStatus,
+        progress: mappedStatus === 'completed' ? 100 : 0,
+        total,
+        processed,
+        error: payload?.errorMessage
+      }
+    })
   },
 
   /**
    * Post depreciation record to accounting
    */
   postRecord(id: string): Promise<void> {
-    return request.post(`/depreciation/records/${id}/post/`)
+    return request.post(`/system/objects/DepreciationRecord/${id}/post/`)
   },
 
   /**
    * Batch post depreciation records
    */
   batchPost(ids: string[]): Promise<void> {
-    return request.post('/depreciation/records/batch-post/', { ids })
+    return request.post('/system/objects/DepreciationRecord/batch_post/', { ids })
   },
 
   /**
    * Submit record for approval
    */
   submitRecord(id: string): Promise<void> {
-    return request.post(`/depreciation/records/${id}/submit/`)
+    return request.post(`/system/objects/DepreciationRecord/${id}/submit/`)
   },
 
   /**
@@ -87,7 +121,7 @@ export const depreciationApi = {
     action: 'approve' | 'reject'
     comment?: string
   }): Promise<void> {
-    return request.post(`/depreciation/records/${id}/approve/`, data)
+    return request.post(`/system/objects/DepreciationRecord/${id}/approve/`, data)
   },
 
   /**
@@ -97,7 +131,7 @@ export const depreciationApi = {
     period: string
     categoryIds?: string[]
   }): Promise<DepreciationReport> {
-    return request.get('/depreciation/report/', { params })
+    return request.get('/system/objects/DepreciationRecord/report/', { params: normalizeQueryParams(params) })
   },
 
   /**
@@ -106,10 +140,17 @@ export const depreciationApi = {
   exportReport(params: {
     period: string
     categoryIds?: string[]
-    format?: 'xlsx' | 'pdf'
+    format?: 'xlsx' | 'pdf' | 'csv'
+    fileFormat?: 'xlsx' | 'pdf' | 'csv'
   }): Promise<Blob> {
-    return request.get('/depreciation/report/export/', {
-      params,
+    const mappedParams = {
+      ...params,
+      fileFormat: params.fileFormat || params.format
+    } as any
+    delete mappedParams.format
+
+    return request.get('/system/objects/DepreciationRecord/report/export/', {
+      params: normalizeQueryParams(mappedParams),
       responseType: 'blob'
     })
   },
@@ -127,7 +168,7 @@ export const depreciationApi = {
     }
     records: DepreciationRecord[]
   }> {
-    return request.get(`/depreciation/assets/${assetId}/detail/`)
+    return request.get(`/system/objects/DepreciationRecord/assets/${assetId}/detail/`)
   }
 }
 
@@ -139,7 +180,7 @@ export const depreciationConfigApi = {
    * Get category depreciation configuration
    */
   getCategoryConfig(categoryId: string): Promise<any> {
-    return request.get(`/depreciation/config/categories/${categoryId}/`)
+    return request.get(`/system/objects/DepreciationConfig/categories/${categoryId}/`)
   },
 
   /**
@@ -150,14 +191,14 @@ export const depreciationConfigApi = {
     usefulLife: number
     residualRate: number
   }): Promise<void> {
-    return request.put(`/depreciation/config/categories/${categoryId}/`, config)
+    return request.put(`/system/objects/DepreciationConfig/categories/${categoryId}/`, config)
   },
 
   /**
    * Get global depreciation configuration
    */
   getGlobalConfig(): Promise<any> {
-    return request.get('/depreciation/config/global/')
+    return request.get('/system/objects/DepreciationConfig/global/')
   },
 
   /**
@@ -168,6 +209,6 @@ export const depreciationConfigApi = {
     defaultUsefulLife: number
     defaultResidualRate: number
   }): Promise<void> {
-    return request.put('/depreciation/config/global/', config)
+    return request.put('/system/objects/DepreciationConfig/global/', config)
   }
 }

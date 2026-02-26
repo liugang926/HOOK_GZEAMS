@@ -2,7 +2,7 @@
   <el-date-picker
     v-model="internalValue"
     :type="type"
-    :placeholder="field.name || '请选择日期'"
+    :placeholder="field.name || $t('fields.selectDate')"
     :disabled="disabled"
     :readonly="readonly"
     :format="format"
@@ -29,16 +29,60 @@ const internalValue = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
+const componentProps = computed(() => ({
+  ...(props.field?.component_props || {}),
+  ...(props.field?.componentProps || {})
+}))
+
 const type = computed(() => {
-  return props.field.component_props?.type || 'date'
+  if (componentProps.value.type) {
+    return componentProps.value.type
+  }
+
+  const fieldType = props.field?.fieldType || props.field?.field_type
+  if (['date', 'datetime', 'time', 'daterange', 'year', 'month'].includes(fieldType)) {
+    return fieldType
+  }
+
+  return 'date'
 })
 
 const format = computed(() => {
-  return props.field.component_props?.format || (type.value === 'datetime' ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD')
+  if (componentProps.value.format) {
+    return componentProps.value.format
+  }
+  if (type.value === 'datetime') {
+    return 'YYYY-MM-DD HH:mm:ss'
+  }
+  if (type.value === 'time') {
+    return 'HH:mm:ss'
+  }
+  if (type.value === 'month') {
+    return 'YYYY-MM'
+  }
+  if (type.value === 'year') {
+    return 'YYYY'
+  }
+  return 'YYYY-MM-DD'
 })
 
 const valueFormat = computed(() => {
-  return props.field.component_props?.valueFormat || (type.value === 'datetime' ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD')
+  if (componentProps.value.valueFormat) {
+    return componentProps.value.valueFormat
+  }
+  if (type.value === 'datetime') {
+    return 'YYYY-MM-DD HH:mm:ss'
+  }
+  if (type.value === 'time') {
+    return 'HH:mm:ss'
+  }
+  if (type.value === 'month') {
+    return 'YYYY-MM'
+  }
+  if (type.value === 'year') {
+    return 'YYYY'
+  }
+  return 'YYYY-MM-DD'
 })
 
 const handleChange = (val: any) => {

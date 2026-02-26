@@ -95,9 +95,17 @@ class WorkflowInstanceApiService extends BaseApiService<WorkflowInstance> {
 
   /**
    * Cancel workflow instance
+   * Backend uses `withdraw` as the user-facing cancel action.
    */
   cancel(id: string, reason?: string): Promise<void> {
-    return request.post(`/${this.resource}/${id}/cancel/`, { reason })
+    return request.post(`/${this.resource}/${id}/withdraw/`, reason ? { reason } : {})
+  }
+
+  /**
+   * Force terminate workflow instance (admin action)
+   */
+  terminate(id: string, reason?: string): Promise<void> {
+    return request.post(`/${this.resource}/${id}/terminate/`, reason ? { reason } : {})
   }
 
   /**
@@ -112,6 +120,7 @@ class WorkflowInstanceApiService extends BaseApiService<WorkflowInstance> {
   getInstance(id: string) { return this.get(id) }
   startInstance(data: any) { return this.start(data) }
   cancelInstance(id: string, reason?: string) { return this.cancel(id, reason) }
+  terminateInstance(id: string, reason?: string) { return this.terminate(id, reason) }
 }
 export const workflowInstanceApi = new WorkflowInstanceApiService()
 
@@ -127,28 +136,41 @@ export const workflowNodeApi = {
     pageSize?: number
     status?: string
   }): Promise<PaginatedResponse<any>> {
-    return request.get('/workflows/tasks/my-tasks/', { params })
+    return request.get('/workflows/tasks/my_tasks/', { params })
   },
 
   /**
    * Approve or reject workflow node
+   * Compatibility adapter:
+   * - legacy callers pass (instanceId, nodeId)
+   * - backend action is task-centric: /workflows/tasks/{taskId}/approve|reject/
    */
   approveNode(instanceId: string, nodeId: string, data: ApprovalAction): Promise<void> {
-    return request.post(`/workflows/instances/${instanceId}/nodes/${nodeId}/approve/`, data)
+    const taskId = nodeId || instanceId
+    const action = data?.action || 'approve'
+    const payload = data?.comment ? { comment: data.comment } : {}
+    if (action === 'reject') {
+      return request.post(`/workflows/tasks/${taskId}/reject/`, payload)
+    }
+    return request.post(`/workflows/tasks/${taskId}/approve/`, payload)
   },
 
   /**
    * Get node details
+   * Compatibility adapter to task detail endpoint.
    */
   getNode(instanceId: string, nodeId: string): Promise<any> {
-    return request.get(`/workflows/instances/${instanceId}/nodes/${nodeId}/`)
+    const taskId = nodeId || instanceId
+    return request.get(`/workflows/tasks/${taskId}/`)
   },
 
   /**
    * Delegate node to another user
+   * Compatibility adapter to task delegate endpoint.
    */
   delegateNode(instanceId: string, nodeId: string, userId: string): Promise<void> {
-    return request.post(`/workflows/instances/${instanceId}/nodes/${nodeId}/delegate/`, { userId })
+    const taskId = nodeId || instanceId
+    return request.post(`/workflows/tasks/${taskId}/delegate/`, { toUserId: userId })
   }
 }
 
@@ -166,9 +188,14 @@ export const taskApi = {
 
   /**
    * Get task form data
+   * Backend currently has no dedicated `/form-data/` endpoint.
+   * Fallback to task detail and extract instance variables if present.
    */
-  getTaskFormData(taskId: string): Promise<any> {
-    return request.get(`/workflows/tasks/${taskId}/form-data/`)
+  async getTaskFormData(taskId: string): Promise<any> {
+    const detail = await request.get(`/workflows/tasks/${taskId}/`)
+    const payload = detail?.data || detail
+    const instance = payload?.instance || payload?.task?.instance
+    return instance?.variables || payload?.variables || payload
   },
 
   /**

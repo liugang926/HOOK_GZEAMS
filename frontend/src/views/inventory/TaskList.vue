@@ -11,7 +11,8 @@
 <template>
   <div class="inventory-task-list">
     <BaseListPage
-      title="盘点任务"
+      :title="t('inventory.taskList')"
+      object-code="InventoryTask"
       :search-fields="searchFields"
       :table-columns="columns"
       :api="fetchTasks"
@@ -25,45 +26,31 @@
           :icon="Plus"
           @click="handleCreate"
         >
-          新建任务
+          {{ t('inventory.createTask') }}
         </el-button>
-      </template>
-
-      <template #cell-status="{ row }">
-        <el-tag :type="getStatusType(row.status)">
-          {{ getStatusLabel(row.status) }}
-        </el-tag>
-      </template>
-
-      <template #cell-startDate="{ row }">
-        {{ formatDate(row.startDate) }}
-      </template>
-
-      <template #cell-endDate="{ row }">
-        {{ formatDate(row.endDate) }}
       </template>
 
       <template #actions="{ row }">
         <el-button
           link
           type="primary"
-          @click="handleStart(row)"
+          @click.stop="handleStart(row)"
         >
-          开始盘点
+          {{ t('inventory.actions.start') }}
         </el-button>
         <el-button
           link
           type="info"
-          @click="handleView(row)"
+          @click.stop="handleView(row)"
         >
-          详情
+          {{ t('common.actions.detail') }}
         </el-button>
         <el-button
           link
           type="danger"
-          @click="handleDelete(row)"
+          @click.stop="handleDelete(row)"
         >
-          删除
+          {{ t('common.actions.delete') }}
         </el-button>
       </template>
     </BaseListPage>
@@ -71,15 +58,9 @@
 </template>
 
 <script setup lang="ts">
-/**
- * TaskList View Component
- *
- * List view for inventory tasks using BaseListPage.
- * Provides search, filter, and CRUD operations.
- */
-
-import { ref } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import BaseListPage from '@/components/common/BaseListPage.vue'
@@ -88,91 +69,66 @@ import type { TableColumn, SearchField } from '@/types/common'
 import { formatDate } from '@/utils/dateFormat'
 
 const router = useRouter()
+const { t } = useI18n()
 
-// ============================================================================
-// State
-// ============================================================================
+const columns = computed<TableColumn[]>(() => [
+  { prop: 'taskNo', label: t('inventory.columns.taskNo'), width: 160, fixed: 'left' },
+  { prop: 'name', label: t('inventory.columns.name'), minWidth: 200 },
+  { prop: 'startDate', label: t('common.placeholders.startDate'), width: 140, format: (value: any) => formatDate(value) },
+  { prop: 'endDate', label: t('common.placeholders.endDate'), width: 140, format: (value: any) => formatDate(value) },
+  { prop: 'status', label: t('inventory.columns.status'), width: 100, tagType: (row: any) => getStatusType(row.status), format: (value: any, row: any) => row?.statusLabel || getStatusLabel(value), fixed: 'right' }
+])
 
-// ============================================================================
-// Table Columns
-// ============================================================================
-
-const columns: TableColumn[] = [
-  { prop: 'taskNo', label: '任务编号', width: 160, fixed: 'left' },
-  { prop: 'name', label: '任务名称', minWidth: 200 },
-  { prop: 'startDate', label: '开始时间', width: 140, slot: true },
-  { prop: 'endDate', label: '结束时间', width: 140, slot: true },
-  { prop: 'status', label: '状态', width: 100, slot: true, fixed: 'right' }
-]
-
-// ============================================================================
-// Search Fields
-// ============================================================================
-
-const searchFields: SearchField[] = [
+const searchFields = computed<SearchField[]>(() => [
   {
     field: 'search',
-    label: '关键词',
+    label: t('common.actions.search'),
     type: 'text',
-    placeholder: '任务编号/名称'
+    placeholder: `${t('inventory.columns.taskNo')}/${t('inventory.columns.name')}`
   },
   {
     field: 'status',
-    label: '状态',
+    label: t('inventory.columns.status'),
     type: 'select',
     options: [
-      { label: '待开始', value: 'pending' },
-      { label: '进行中', value: 'in_progress' },
-      { label: '已完成', value: 'completed' },
-      { label: '已取消', value: 'cancelled' }
+      { label: t('inventory.status.pending'), value: 'pending' },
+      { label: t('inventory.status.in_progress'), value: 'in_progress' },
+      { label: t('inventory.status.completed'), value: 'completed' },
+      { label: t('inventory.status.canceled'), value: 'cancelled' }
     ]
   },
   {
     field: 'dateRange',
-    label: '日期范围',
+    label: t('common.placeholders.startDate'),
     type: 'dateRange'
   }
-]
+])
 
-// ============================================================================
-// Batch Actions
-// ============================================================================
-
-const batchActions = [
+const batchActions = computed(() => [
   {
-    label: '批量删除',
+    label: t('common.actions.delete'),
     type: 'danger' as const,
     action: (rows: any[]) => handleBatchDelete(rows),
     confirm: true,
-    confirmMessage: '确认删除选中的盘点任务？'
+    confirmMessage: t('common.messages.confirmDelete', { count: '{count}' })
   },
   {
-    label: '批量导出',
+    label: t('common.actions.export'),
     type: 'primary' as const,
     action: (rows: any[]) => handleBatchExport(rows)
   }
-]
+])
 
-// ============================================================================
-// Methods
-// ============================================================================
-
-/**
- * Fetch tasks from API
- */
 const fetchTasks = async (params: any) => {
-  // Map date range if needed
-  if (params.dateRange) {
-    params.startDateFrom = params.dateRange[0]
-    params.startDateTo = params.dateRange[1]
-    delete params.dateRange
+  const next = { ...(params || {}) }
+  if (next.dateRange) {
+    next.startDateFrom = next.dateRange[0]
+    next.startDateTo = next.dateRange[1]
+    delete next.dateRange
   }
-  return await inventoryApi.listTasks(params)
+  return inventoryApi.listTasks(next)
 }
 
-/**
- * Get status tag type
- */
 const getStatusType = (status: string) => {
   const typeMap: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'> = {
     pending: 'info',
@@ -183,102 +139,66 @@ const getStatusType = (status: string) => {
   return typeMap[status] || 'info'
 }
 
-/**
- * Get status label
- */
 const getStatusLabel = (status: string) => {
   const labelMap: Record<string, string> = {
-    pending: '待开始',
-    in_progress: '进行中',
-    completed: '已完成',
-    cancelled: '已取消'
+    pending: t('inventory.status.pending'),
+    in_progress: t('inventory.status.in_progress'),
+    completed: t('inventory.status.completed'),
+    cancelled: t('inventory.status.canceled')
   }
   return labelMap[status] || status
 }
 
-/**
- * Handle row click
- */
-const handleRowClick = (row: any) => {
-  handleView(row)
-}
+const handleRowClick = (row: any) => handleView(row)
 
-/**
- * Handle create button click
- */
 const handleCreate = () => {
   router.push('/inventory/create')
 }
 
-/**
- * Handle view button click
- */
 const handleView = (row: any) => {
   router.push(`/inventory/task/${row.id}`)
 }
 
-/**
- * Handle start inventory
- */
 const handleStart = (row: any) => {
   router.push({ name: 'TaskExecute', params: { id: row.id } })
 }
 
-/**
- * Handle delete button click
- */
 const handleDelete = async (row: any) => {
   try {
     await ElMessageBox.confirm(
-      `确认删除盘点任务"${row.name}"？此操作可恢复。`,
-      '删除确认',
+      t('common.messages.confirmDelete', { count: 1 }),
+      t('common.messages.confirmTitle'),
       {
         type: 'warning',
-        confirmButtonText: '确认删除',
-        cancelButtonText: '取消'
+        confirmButtonText: t('common.actions.confirm'),
+        cancelButtonText: t('common.actions.cancel')
       }
     )
     await inventoryApi.deleteTask(row.id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.messages.operationSuccess'))
     refreshList()
-  } catch (error) {
-    // User cancelled or error occurred
-    if (error !== 'cancel') {
-      console.error('Delete failed:', error)
-    }
+  } catch (error: any) {
+    if (error !== 'cancel') console.error('Delete failed:', error)
   }
 }
 
-/**
- * Handle batch delete
- */
 const handleBatchDelete = async (selectedRows: any[]) => {
   try {
-    const ids = selectedRows.map(r => r.id)
+    const ids = (selectedRows || []).map((r) => r.id).filter(Boolean)
+    if (ids.length === 0) return
     await inventoryApi.batchDeleteTasks(ids)
-    ElMessage.success(`成功删除 ${ids.length} 项盘点任务`)
+    ElMessage.success(t('common.messages.operationSuccess'))
     refreshList()
   } catch (error) {
     console.error('Batch delete failed:', error)
   }
 }
 
-/**
- * Handle batch export
- */
 const handleBatchExport = async (selectedRows: any[]) => {
-  try {
-    const ids = selectedRows.map(r => r.id)
-    // TODO: Implement export API
-    ElMessage.info(`导出 ${ids.length} 项盘点任务 - 功能开发中`)
-  } catch (error) {
-    console.error('Batch export failed:', error)
-  }
+  const ids = (selectedRows || []).map((r) => r.id).filter(Boolean)
+  ElMessage.info(t('inventory.messages.exportDeveloping', { count: ids.length }))
 }
 
-/**
- * Refresh list
- */
 const refreshList = () => {
   window.dispatchEvent(new CustomEvent('refresh-base-list'))
 }

@@ -14,7 +14,7 @@
           v-if="activity.comment"
           class="comment"
         >
-          意见: {{ activity.comment }}
+          {{ t('workflow.approvalChain.comment') }}: {{ activity.comment }}
         </p>
       </el-timeline-item>
     </el-timeline>
@@ -23,6 +23,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   history: any[]
@@ -30,7 +33,7 @@ const props = defineProps<{
 
 const activities = computed(() => {
   return props.history.map(item => ({
-    title: item.user_name + ' ' + item.action, // e.g., "Zhang San Approved"
+    title: item.user_name + ' ' + getActionText(item.action),
     content: item.node_name,
     timestamp: item.time,
     type: item.action === 'reject' ? 'danger' : 'success',
@@ -38,6 +41,10 @@ const activities = computed(() => {
     comment: item.comment
   }))
 })
+
+const getActionText = (action: string) => {
+  return t(`workflow.actions.${action}`)
+}
 </script>
 
 <style scoped>

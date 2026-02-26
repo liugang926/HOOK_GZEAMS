@@ -13,7 +13,6 @@ from apps.integration.serializers import (
     IntegrationSyncTaskListSerializer,
     IntegrationSyncTaskDetailSerializer,
     CreateSyncTaskSerializer,
-    CancelTaskSerializer,
 )
 from apps.integration.filters import IntegrationSyncTaskFilter
 from apps.integration.services import IntegrationSyncService
@@ -50,6 +49,40 @@ class IntegrationSyncTaskViewSet(BaseModelViewSetWithBatch):
             organization_id=organization_id
         )
 
+    def create(self, request, *args, **kwargs):
+        """
+        Create sync task using service layer.
+
+        POST /api/integration/sync-tasks/
+        """
+        serializer = CreateSyncTaskSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        config = serializer.validated_data['config_id']
+        module_type = serializer.validated_data['module_type']
+        direction = serializer.validated_data['direction']
+        business_type = serializer.validated_data['business_type']
+        sync_params = serializer.validated_data.get('sync_params') or {}
+
+        service = IntegrationSyncService()
+        task = service.create_sync_task(
+            config=config,
+            module_type=module_type,
+            direction=direction,
+            business_type=business_type,
+            sync_params=sync_params,
+            user=request.user
+        )
+
+        if request.data.get('execute') is True:
+            service.execute_sync(task)
+            task.refresh_from_db()
+
+        return BaseResponse.success(
+            data=IntegrationSyncTaskDetailSerializer(task).data,
+            message='Sync task created successfully'
+        )
+
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         """
@@ -65,7 +98,7 @@ class IntegrationSyncTaskViewSet(BaseModelViewSetWithBatch):
         """
         task = self.get_object()
 
-        service = IntegrationSyncService(task.organization, request.user)
+        service = IntegrationSyncService()
         result = service.cancel_task(task)
 
         if result['success']:
@@ -102,7 +135,7 @@ class IntegrationSyncTaskViewSet(BaseModelViewSetWithBatch):
                 http_status=status.HTTP_400_BAD_REQUEST
             )
 
-        service = IntegrationSyncService(task.organization, request.user)
+        service = IntegrationSyncService()
         new_task = service.retry_task(task)
 
         return BaseResponse.success(
@@ -126,10 +159,7 @@ class IntegrationSyncTaskViewSet(BaseModelViewSetWithBatch):
             }
         }
         """
-        service = IntegrationSyncService(
-            organization=getattr(request, 'organization', None),
-            user=request.user
-        )
+        service = IntegrationSyncService()
         running_tasks = service.get_running_tasks()
 
         serializer = IntegrationSyncTaskListSerializer(running_tasks, many=True)
@@ -157,10 +187,7 @@ class IntegrationSyncTaskViewSet(BaseModelViewSetWithBatch):
         """
         limit = min(int(request.query_params.get('limit', 10)), 100)
 
-        service = IntegrationSyncService(
-            organization=getattr(request, 'organization', None),
-            user=request.user
-        )
+        service = IntegrationSyncService()
         failed_tasks = service.get_failed_tasks(limit=limit)
 
         serializer = IntegrationSyncTaskListSerializer(failed_tasks, many=True)
@@ -169,3 +196,35 @@ class IntegrationSyncTaskViewSet(BaseModelViewSetWithBatch):
             'count': len(failed_tasks),
             'results': serializer.data
         })
+
+    @action(detail=True, methods=['post'])
+    def execute(self, request, pk=None):
+        """
+        Execute a sync task immediately.
+
+        POST /api/integration/sync-tasks/{id}/execute/
+        """
+        task = self.get_object()
+
+        if task.status not in [
+            SyncStatus.PENDING,
+            SyncStatus.FAILED,
+            SyncStatus.PARTIAL_SUCCESS,
+        ]:
+            return BaseResponse.error(
+                code='INVALID_STATUS',
+                message=f'Cannot execute task in status: {task.status}',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+
+        service = IntegrationSyncService()
+        result = service.execute_sync(task)
+        task.refresh_from_db()
+
+        return BaseResponse.success(
+            data={
+                'task': IntegrationSyncTaskDetailSerializer(task).data,
+                'result': result,
+            },
+            message='Sync task executed'
+        )

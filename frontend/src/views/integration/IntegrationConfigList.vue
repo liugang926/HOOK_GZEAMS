@@ -73,7 +73,7 @@
     >
       <el-form-item label="System Type">
         <el-select
-          v-model="filterForm.system_type"
+          v-model="filterForm.systemType"
           clearable
           placeholder="All Systems"
           @change="fetchData"
@@ -106,7 +106,7 @@
       </el-form-item>
       <el-form-item label="Status">
         <el-select
-          v-model="filterForm.is_enabled"
+          v-model="filterForm.isEnabled"
           clearable
           placeholder="All"
           @change="fetchData"
@@ -123,7 +123,7 @@
       </el-form-item>
       <el-form-item label="Health">
         <el-select
-          v-model="filterForm.health_status"
+          v-model="filterForm.healthStatus"
           clearable
           placeholder="All"
           @change="fetchData"
@@ -164,7 +164,7 @@
       style="width: 100%"
     >
       <el-table-column
-        prop="system_name"
+        prop="systemName"
         label="Name"
         min-width="150"
       />
@@ -173,8 +173,8 @@
         width="120"
       >
         <template #default="{ row }">
-          <el-tag :type="getSystemTypeTagType(row.system_type)">
-            {{ getSystemTypeLabel(row.system_type) }}
+          <el-tag :type="getSystemTypeTagType(row.systemType)">
+            {{ getSystemTypeLabel(row.systemType) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -183,8 +183,8 @@
         width="100"
       >
         <template #default="{ row }">
-          <el-tag :type="getHealthStatusTagType(row.health_status)">
-            {{ getHealthStatusLabel(row.health_status) }}
+          <el-tag :type="getHealthStatusTagType(row.healthStatus)">
+            {{ getHealthStatusLabel(row.healthStatus) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -193,8 +193,8 @@
         width="100"
       >
         <template #default="{ row }">
-          <el-tag :type="row.is_enabled ? 'success' : 'info'">
-            {{ row.is_enabled ? 'Enabled' : 'Disabled' }}
+          <el-tag :type="row.isEnabled ? 'success' : 'info'">
+            {{ row.isEnabled ? 'Enabled' : 'Disabled' }}
           </el-tag>
         </template>
       </el-table-column>
@@ -204,7 +204,7 @@
       >
         <template #default="{ row }">
           <el-tag
-            v-for="module in row.enabled_modules"
+            v-for="module in row.enabledModules"
             :key="module"
             size="small"
             style="margin-right: 5px; margin-bottom: 3px"
@@ -214,12 +214,12 @@
         </template>
       </el-table-column>
       <el-table-column
-        prop="last_sync_at"
+        prop="lastSyncAt"
         label="Last Sync"
         width="170"
       >
         <template #default="{ row }">
-          {{ row.last_sync_at ? formatDate(row.last_sync_at) : '-' }}
+          {{ row.lastSyncAt ? formatDate(row.lastSyncAt) : '-' }}
         </template>
       </el-table-column>
       <el-table-column
@@ -228,11 +228,11 @@
       >
         <template #default="{ row }">
           <el-tag
-            v-if="row.last_sync_status"
-            :type="getSyncStatusTagType(row.last_sync_status)"
+            v-if="row.lastSyncStatus"
+            :type="getSyncStatusTagType(row.lastSyncStatus)"
             size="small"
           >
-            {{ getSyncStatusLabel(row.last_sync_status) }}
+            {{ getSyncStatusLabel(row.lastSyncStatus) }}
           </el-tag>
           <span v-else>-</span>
         </template>
@@ -322,10 +322,10 @@
 
         <el-form-item
           label="System Type"
-          prop="system_type"
+          prop="systemType"
         >
           <el-select
-            v-model="formData.system_type"
+            v-model="formData.systemType"
             placeholder="Select system type"
             style="width: 100%"
             :disabled="isEdit"
@@ -359,16 +359,16 @@
 
         <el-form-item
           label="System Name"
-          prop="system_name"
+          prop="systemName"
         >
           <el-input
-            v-model="formData.system_name"
+            v-model="formData.systemName"
             placeholder="e.g., Production M18"
           />
         </el-form-item>
 
         <el-form-item label="Enabled">
-          <el-switch v-model="formData.is_enabled" />
+          <el-switch v-model="formData.isEnabled" />
         </el-form-item>
 
         <el-divider content-position="left">
@@ -377,14 +377,14 @@
 
         <el-form-item label="API Endpoint">
           <el-input
-            v-model="formData.connection_config.api_url"
+            v-model="formData.connectionConfig.apiUrl"
             placeholder="https://api.example.com"
           />
         </el-form-item>
 
         <el-form-item label="API Key">
           <el-input
-            v-model="formData.connection_config.api_key"
+            v-model="formData.connectionConfig.apiKey"
             type="password"
             show-password
             placeholder="Enter API key"
@@ -393,7 +393,7 @@
 
         <el-form-item label="API Secret">
           <el-input
-            v-model="formData.connection_config.api_secret"
+            v-model="formData.connectionConfig.apiSecret"
             type="password"
             show-password
             placeholder="Enter API secret"
@@ -402,7 +402,7 @@
 
         <el-form-item label="Timeout (seconds)">
           <el-input-number
-            v-model="formData.connection_config.timeout"
+            v-model="formData.connectionConfig.timeout"
             :min="1"
             :max="300"
             style="width: 100%"
@@ -414,7 +414,7 @@
         </el-divider>
 
         <el-form-item label="Enabled Modules">
-          <el-checkbox-group v-model="formData.enabled_modules">
+          <el-checkbox-group v-model="formData.enabledModules">
             <el-checkbox label="procurement">
               Procurement
             </el-checkbox>
@@ -438,15 +438,15 @@
         </el-divider>
 
         <el-form-item label="Auto Sync">
-          <el-switch v-model="formData.sync_config.auto_sync" />
+          <el-switch v-model="formData.syncConfig.autoSync" />
         </el-form-item>
 
         <el-form-item
-          v-if="formData.sync_config.auto_sync"
+          v-if="formData.syncConfig.autoSync"
           label="Sync Interval (minutes)"
         >
           <el-input-number
-            v-model="formData.sync_config.interval"
+            v-model="formData.syncConfig.interval"
             :min="1"
             :max="1440"
             style="width: 100%"
@@ -479,7 +479,7 @@
         class="logs-content"
       >
         <div class="logs-header">
-          <h4>{{ currentConfig.system_name }} - Logs</h4>
+          <h4>{{ currentConfig.systemName }} - Logs</h4>
           <el-button
             type="primary"
             size="small"
@@ -498,12 +498,12 @@
           style="width: 100%"
         >
           <el-table-column
-            prop="created_at"
+            prop="createdAt"
             label="Time"
             width="160"
           />
           <el-table-column
-            prop="integration_type"
+            prop="integrationType"
             label="Type"
             width="120"
           />
@@ -522,22 +522,22 @@
             </template>
           </el-table-column>
           <el-table-column
-            prop="request_method"
+            prop="requestMethod"
             label="Method"
             width="80"
           />
           <el-table-column
-            prop="status_code"
+            prop="statusCode"
             label="Status"
             width="80"
           >
             <template #default="{ row }">
               <el-tag
-                v-if="row.status_code"
+                v-if="row.statusCode"
                 size="small"
-                :type="row.status_code < 300 ? 'success' : 'danger'"
+                :type="row.statusCode < 300 ? 'success' : 'danger'"
               >
-                {{ row.status_code }}
+                {{ row.statusCode }}
               </el-tag>
             </template>
           </el-table-column>
@@ -555,12 +555,12 @@
             </template>
           </el-table-column>
           <el-table-column
-            prop="duration_ms"
+            prop="durationMs"
             label="Duration"
             width="90"
           >
             <template #default="{ row }">
-              {{ row.duration_ms ? `${row.duration_ms}ms` : '-' }}
+              {{ row.durationMs ? `${row.durationMs}ms` : '-' }}
             </template>
           </el-table-column>
           <el-table-column
@@ -606,10 +606,10 @@
         border
       >
         <el-descriptions-item label="Time">
-          {{ currentLog.created_at }}
+          {{ currentLog.createdAt }}
         </el-descriptions-item>
         <el-descriptions-item label="Integration Type">
-          {{ currentLog.integration_type }}
+          {{ currentLog.integrationType }}
         </el-descriptions-item>
         <el-descriptions-item label="Action">
           <el-tag :type="currentLog.action === 'push' ? 'success' : 'warning'">
@@ -617,11 +617,11 @@
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="Method">
-          {{ currentLog.request_method }}
+          {{ currentLog.requestMethod }}
         </el-descriptions-item>
         <el-descriptions-item label="Status Code">
-          <el-tag :type="currentLog.status_code < 300 ? 'success' : 'danger'">
-            {{ currentLog.status_code }}
+          <el-tag :type="currentLog.statusCode < 300 ? 'success' : 'danger'">
+            {{ currentLog.statusCode }}
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="Success">
@@ -630,29 +630,29 @@
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="Duration">
-          {{ currentLog.duration_ms }}ms
+          {{ currentLog.durationMs }}ms
         </el-descriptions-item>
         <el-descriptions-item label="Business Type">
-          {{ currentLog.business_type || '-' }}
+          {{ currentLog.businessType || '-' }}
         </el-descriptions-item>
       </el-descriptions>
 
       <el-divider>Request</el-divider>
       <div class="code-block">
-        <pre><code>{{ JSON.stringify(currentLog?.request_body || {}, null, 2) }}</code></pre>
+        <pre><code>{{ JSON.stringify(currentLog?.requestBody || {}, null, 2) }}</code></pre>
       </div>
 
       <el-divider>Response</el-divider>
       <div class="code-block">
-        <pre><code>{{ JSON.stringify(currentLog?.response_body || {}, null, 2) }}</code></pre>
+        <pre><code>{{ JSON.stringify(currentLog?.responseBody || {}, null, 2) }}</code></pre>
       </div>
 
       <div
-        v-if="currentLog?.error_message"
+        v-if="currentLog?.errorMessage"
         class="error-message"
       >
         <el-divider>Error</el-divider>
-        <pre>{{ currentLog.error_message }}</pre>
+        <pre>{{ currentLog.errorMessage }}</pre>
       </div>
     </el-dialog>
   </div>
@@ -666,30 +666,30 @@ import { integrationConfigApi, integrationLogApi } from '@/api/integration'
 
 interface IntegrationConfig {
   id: string
-  system_type: string
-  system_name: string
-  is_enabled: boolean
-  enabled_modules: string[]
-  connection_config: Record<string, any>
-  sync_config: Record<string, any>
-  health_status: string
-  last_sync_at: string | null
-  last_sync_status: string
+  systemType: string
+  systemName: string
+  isEnabled: boolean
+  enabledModules: string[]
+  connectionConfig: Record<string, any>
+  syncConfig: Record<string, any>
+  healthStatus: string
+  lastSyncAt: string | null
+  lastSyncStatus: string
 }
 
 interface IntegrationLog {
   id: string
-  created_at: string
-  integration_type: string
+  createdAt: string
+  integrationType: string
   action: string
-  request_method: string
-  status_code: number
+  requestMethod: string
+  statusCode: number
   success: boolean
-  duration_ms: number
-  request_body: any
-  response_body: any
-  error_message: string
-  business_type: string
+  durationMs: number
+  requestBody: any
+  responseBody: any
+  errorMessage: string
+  businessType: string
 }
 
 const loading = ref(false)
@@ -707,9 +707,9 @@ const currentLog = ref<IntegrationLog | null>(null)
 const logs = ref<IntegrationLog[]>([])
 
 const filterForm = reactive({
-  system_type: undefined as unknown as string,
-  is_enabled: undefined as unknown as boolean,
-  health_status: undefined as unknown as string
+  systemType: undefined as unknown as string,
+  isEnabled: undefined as unknown as boolean,
+  healthStatus: undefined as unknown as string
 })
 
 const pagination = reactive({
@@ -735,27 +735,27 @@ const formRef = ref<FormInstance>()
 const isEdit = ref(false)
 
 const formData = ref({
-  system_type: '',
-  system_name: '',
-  is_enabled: true,
-  enabled_modules: [] as string[],
-  connection_config: {
-    api_url: '',
-    api_key: '',
-    api_secret: '',
+  systemType: '',
+  systemName: '',
+  isEnabled: true,
+  enabledModules: [] as string[],
+  connectionConfig: {
+    apiUrl: '',
+    apiKey: '',
+    apiSecret: '',
     timeout: 30
   },
-  sync_config: {
-    auto_sync: false,
+  syncConfig: {
+    autoSync: false,
     interval: 60
   }
 })
 
 const rules: FormRules = {
-  system_type: [
+  systemType: [
     { required: true, message: 'Please select system type', trigger: 'change' }
   ],
-  system_name: [
+  systemName: [
     { required: true, message: 'Please enter system name', trigger: 'blur' }
   ]
 }
@@ -849,26 +849,26 @@ const fetchData = async () => {
       page: pagination.page,
       page_size: pagination.pageSize
     }
-    if (filterForm.system_type) {
-      params.system_type = filterForm.system_type
+    if (filterForm.systemType) {
+      params.systemType = filterForm.systemType
     }
-    if (filterForm.is_enabled !== undefined) {
-      params.is_enabled = filterForm.is_enabled
+    if (filterForm.isEnabled !== undefined) {
+      params.isEnabled = filterForm.isEnabled
     }
-    if (filterForm.health_status) {
-      params.health_status = filterForm.health_status
+    if (filterForm.healthStatus) {
+      params.healthStatus = filterForm.healthStatus
     }
 
     const res = await integrationConfigApi.list(params)
-    tableData.value = res.data.results || []
-    pagination.total = res.data.count || 0
+    tableData.value = res.results || []
+    pagination.total = res.count || 0
 
     // Update stats
     stats.value = {
-      total: res.data.count || 0,
-      healthy: (res.data.results || []).filter((r: IntegrationConfig) => r.health_status === 'healthy').length,
-      degraded: (res.data.results || []).filter((r: IntegrationConfig) => r.health_status === 'degraded').length,
-      unhealthy: (res.data.results || []).filter((r: IntegrationConfig) => r.health_status === 'unhealthy').length
+      total: res.count || 0,
+      healthy: (res.results || []).filter((r: IntegrationConfig) => r.healthStatus === 'healthy').length,
+      degraded: (res.results || []).filter((r: IntegrationConfig) => r.healthStatus === 'degraded').length,
+      unhealthy: (res.results || []).filter((r: IntegrationConfig) => r.healthStatus === 'unhealthy').length
     }
   } catch (error) {
     ElMessage.error('Failed to load integration configs')
@@ -878,27 +878,27 @@ const fetchData = async () => {
 }
 
 const handleFilterReset = () => {
-  filterForm.system_type = undefined as unknown as string
-  filterForm.is_enabled = undefined as unknown as boolean
-  filterForm.health_status = undefined as unknown as string
+  filterForm.systemType = undefined as unknown as string
+  filterForm.isEnabled = undefined as unknown as boolean
+  filterForm.healthStatus = undefined as unknown as string
   fetchData()
 }
 
 const handleCreate = () => {
   isEdit.value = false
   formData.value = {
-    system_type: '',
-    system_name: '',
-    is_enabled: true,
-    enabled_modules: [] as string[],
-    connection_config: {
-      api_url: '',
-      api_key: '',
-      api_secret: '',
+    systemType: '',
+    systemName: '',
+    isEnabled: true,
+    enabledModules: [] as string[],
+    connectionConfig: {
+      apiUrl: '',
+      apiKey: '',
+      apiSecret: '',
       timeout: 30
     },
-    sync_config: {
-      auto_sync: false,
+    syncConfig: {
+      autoSync: false,
       interval: 60
     }
   }
@@ -908,12 +908,12 @@ const handleCreate = () => {
 const handleEdit = (row: IntegrationConfig) => {
   isEdit.value = true
   formData.value = {
-    system_type: row.system_type,
-    system_name: row.system_name,
-    is_enabled: row.is_enabled,
-    enabled_modules: row.enabled_modules || [],
-    connection_config: row.connection_config || { api_url: '', api_key: '', api_secret: '', timeout: 30 },
-    sync_config: row.sync_config || { auto_sync: false, interval: 60 }
+    systemType: row.systemType,
+    systemName: row.systemName,
+    isEnabled: row.isEnabled,
+    enabledModules: row.enabledModules || [],
+    connectionConfig: row.connectionConfig || { apiUrl: '', apiKey: '', apiSecret: '', timeout: 30 },
+    syncConfig: row.syncConfig || { autoSync: false, interval: 60 }
   }
   currentConfig.value = row
   dialogVisible.value = true
@@ -962,11 +962,8 @@ const handleTest = async (row: IntegrationConfig) => {
   testing.value[row.id] = true
   try {
     const res = await integrationConfigApi.test(row.id)
-    if (res.data?.success || res.success) {
-      ElMessage.success('Connection test successful')
-    } else {
-      ElMessage.warning(res.data?.message || 'Connection test failed')
-    }
+    if (res.success) ElMessage.success(res.message || 'Connection test successful')
+    else ElMessage.warning(res.message || 'Connection test failed')
     fetchData()
   } catch (error) {
     ElMessage.error('Connection test failed')
@@ -979,7 +976,8 @@ const handleSync = async (row: IntegrationConfig) => {
   syncing.value[row.id] = true
   try {
     const res = await integrationConfigApi.sync(row.id)
-    ElMessage.success('Sync task created successfully')
+    if (res.success) ElMessage.success(res.message || 'Sync task created successfully')
+    else ElMessage.warning(res.message || 'Sync failed')
     fetchData()
   } catch (error) {
     ElMessage.error('Sync failed')
@@ -1003,11 +1001,11 @@ const fetchLogs = async () => {
     const params: any = {
       page: logsPagination.page,
       page_size: logsPagination.pageSize,
-      system_type: currentConfig.value.system_type
+      systemType: currentConfig.value.systemType
     }
     const res = await integrationLogApi.list(params)
-    logs.value = res.data.results || []
-    logsPagination.total = res.data.count || 0
+    logs.value = res.results || []
+    logsPagination.total = res.count || 0
   } catch (error) {
     ElMessage.error('Failed to load logs')
   } finally {
@@ -1126,3 +1124,4 @@ onMounted(() => {
   font-size: 12px;
 }
 </style>
+

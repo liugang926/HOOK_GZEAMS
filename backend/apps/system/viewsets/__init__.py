@@ -54,6 +54,12 @@ from apps.system.serializers import (
     TabConfigSerializer,
     TabConfigListSerializer,
 )
+
+# Import i18n ViewSets
+from apps.system.viewsets.translation import (
+    LanguageViewSet,
+    TranslationViewSet,
+)
 from apps.system.filters import (
     BusinessObjectFilter,
     FieldDefinitionFilter,
@@ -315,6 +321,153 @@ class BusinessObjectViewSet(BaseModelViewSetWithBatch):
             'data': data
         })
 
+    @action(detail=False, methods=['get'], url_path='field-types')
+    def field_types(self, request):
+        """
+        Get all available field types with their configurations.
+
+        Frontend uses this to dynamically render the field type selector
+        in the field definition form, ensuring frontend-backend consistency.
+
+        This endpoint provides a single source of truth for field types,
+        eliminating the need to hardcode type lists in the frontend.
+
+        Response format:
+        {
+            "success": true,
+            "data": {
+                "groups": [
+                    {
+                        "label": "基础类型",
+                        "icon": "Document",
+                        "types": [
+                            {"value": "text", "label": "单行文本"},
+                            {"value": "textarea", "label": "多行文本"}
+                        ]
+                    }
+                ],
+                "all_types": ["text", "textarea", ...],
+                "type_config": {
+                    "text": {"component": "TextField", "defaultProps": {}},
+                    "file": {"component": "AttachmentUpload", "defaultProps": {"multiple": false}}
+                }
+            }
+        }
+        """
+        from apps.system.models import FieldDefinition
+
+        # Get field type choices from the model (single source of truth)
+        field_type_choices = FieldDefinition.FIELD_TYPE_CHOICES
+
+        # Field type configuration for frontend components
+        TYPE_CONFIG = {
+            # Basic types
+            'text': {'component': 'TextField', 'defaultProps': {}},
+            'textarea': {'component': 'TextField', 'defaultProps': {'type': 'textarea'}},
+            'number': {'component': 'NumberField', 'defaultProps': {}},
+            'currency': {'component': 'NumberField', 'defaultProps': {'prefix': '¥'}},
+            'percent': {'component': 'NumberField', 'defaultProps': {'suffix': '%'}},
+            # Date/Time types
+            'date': {'component': 'DateField', 'defaultProps': {'type': 'date'}},
+            'datetime': {'component': 'DateField', 'defaultProps': {'type': 'datetime'}},
+            'time': {'component': 'DateField', 'defaultProps': {'type': 'time'}},
+            # Selection types
+            'select': {'component': 'SelectField', 'defaultProps': {'multiple': False}},
+            'multi_select': {'component': 'SelectField', 'defaultProps': {'multiple': True}},
+            'radio': {'component': 'SelectField', 'defaultProps': {'mode': 'radio'}},
+            'checkbox': {'component': 'BooleanField', 'defaultProps': {}},
+            'boolean': {'component': 'SwitchField', 'defaultProps': {}},
+            # Reference types
+            'user': {'component': 'UserSelectField', 'defaultProps': {}},
+            'department': {'component': 'DepartmentSelectField', 'defaultProps': {}},
+            'reference': {'component': 'ReferenceField', 'defaultProps': {}},
+            'asset': {'component': 'AssetSelector', 'defaultProps': {}},
+            'location': {'component': 'LocationSelectField', 'defaultProps': {}},
+            # Media types
+            'file': {'component': 'AttachmentUpload', 'defaultProps': {'multiple': False}},
+            'image': {'component': 'ImageField', 'defaultProps': {'multiple': False}},
+            'qr_code': {'component': 'QRCodeField', 'defaultProps': {}},
+            'barcode': {'component': 'BarcodeField', 'defaultProps': {}},
+            # Advanced types
+            'formula': {'component': 'FormulaField', 'defaultProps': {'readonly': True}},
+            'sub_table': {'component': 'SubTableField', 'defaultProps': {}},
+            'rich_text': {'component': 'RichTextField', 'defaultProps': {}},
+        }
+
+        # Group field types by category for better UX
+        FIELD_TYPE_GROUPS = [
+            {
+                'label': '基础类型',
+                'icon': 'Document',
+                'types': [
+                    {'value': 'text', 'label': '单行文本'},
+                    {'value': 'textarea', 'label': '多行文本'},
+                    {'value': 'number', 'label': '数字'},
+                    {'value': 'currency', 'label': '货币'},
+                    {'value': 'percent', 'label': '百分比'},
+                ]
+            },
+            {
+                'label': '日期时间',
+                'icon': 'Timer',
+                'types': [
+                    {'value': 'date', 'label': '日期'},
+                    {'value': 'datetime', 'label': '日期时间'},
+                    {'value': 'time', 'label': '时间'},
+                ]
+            },
+            {
+                'label': '选择类型',
+                'icon': 'Checked',
+                'types': [
+                    {'value': 'select', 'label': '下拉选择'},
+                    {'value': 'multi_select', 'label': '多选'},
+                    {'value': 'radio', 'label': '单选'},
+                    {'value': 'checkbox', 'label': '复选框'},
+                    {'value': 'boolean', 'label': '开关'},
+                ]
+            },
+            {
+                'label': '引用类型',
+                'icon': 'Link',
+                'types': [
+                    {'value': 'user', 'label': '用户选择'},
+                    {'value': 'department', 'label': '部门选择'},
+                    {'value': 'reference', 'label': '关联引用'},
+                    {'value': 'asset', 'label': '资产选择'},
+                    {'value': 'location', 'label': '位置选择'},
+                ]
+            },
+            {
+                'label': '媒体文件',
+                'icon': 'Picture',
+                'types': [
+                    {'value': 'file', 'label': '文件上传'},
+                    {'value': 'image', 'label': '图片上传'},
+                    {'value': 'qr_code', 'label': '二维码'},
+                    {'value': 'barcode', 'label': '条形码'},
+                ]
+            },
+            {
+                'label': '高级类型',
+                'icon': 'Tools',
+                'types': [
+                    {'value': 'formula', 'label': '计算公式'},
+                    {'value': 'sub_table', 'label': '子表'},
+                    {'value': 'rich_text', 'label': '富文本'},
+                ]
+            },
+        ]
+
+        return Response({
+            'success': True,
+            'data': {
+                'groups': FIELD_TYPE_GROUPS,
+                'all_types': [value for value, _ in field_type_choices],
+                'type_config': TYPE_CONFIG
+            }
+        })
+
     @action(detail=True, methods=['get'], url_path='sync-fields')
     def sync_fields(self, request, pk=None):
         """
@@ -426,6 +579,61 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
             return PageLayoutDetailSerializer
         return PageLayoutSerializer
 
+    @staticmethod
+    def _normalize_layout_type(raw_type: str) -> str:
+        """
+        Normalize mixed mode/type inputs to legacy layout_type values.
+        """
+        value = (raw_type or 'form').lower()
+        if value in ['edit', 'form']:
+            return 'form'
+        if value in ['readonly', 'detail']:
+            return 'detail'
+        if value in ['list', 'search']:
+            return value
+        return 'form'
+
+    @staticmethod
+    def _resolve_active_layout(business_object, normalized_type: str, org_id=None):
+        """
+        Resolve active layout with deterministic priority:
+        1) custom published
+        2) default published
+        3) custom (any status)
+        4) default (any status)
+        """
+        base_qs = PageLayout.objects.filter(
+            business_object=business_object,
+            layout_type=normalized_type,
+            is_active=True,
+            is_deleted=False
+        )
+
+        def scope_custom(qs):
+            if org_id:
+                return qs.filter(organization_id=org_id)
+            return qs
+
+        def scope_default(qs):
+            if org_id:
+                return qs.filter(Q(organization_id=org_id) | Q(organization__isnull=True))
+            return qs
+
+        return (
+            scope_custom(base_qs.filter(is_default=False, status='published'))
+            .order_by('-updated_at', '-created_at')
+            .first()
+            or scope_default(base_qs.filter(is_default=True, status='published'))
+            .order_by('-updated_at', '-created_at')
+            .first()
+            or scope_custom(base_qs.filter(is_default=False))
+            .order_by('-updated_at', '-created_at')
+            .first()
+            or scope_default(base_qs.filter(is_default=True))
+            .order_by('-updated_at', '-created_at')
+            .first()
+        )
+
     def retrieve(self, request, *args, **kwargs):
         """Get single layout with full details."""
         instance = self.get_object()
@@ -440,8 +648,11 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
         """
         Get page layouts for a specific business object.
 
-        Returns active custom layouts first (priority), then default layouts.
-        Also respects organization isolation.
+        Single-layout management view (form/edit only):
+        - return custom form layouts first
+        - return at most one default/active fallback form layout
+        - hide legacy list/detail/search rows from this endpoint
+        - hide stale demoted defaults (e.g. *_default_form with is_default=false)
         """
         try:
             # BusinessObject uses GlobalMetadataManager (no org filtering)
@@ -450,13 +661,22 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
             # Get org_id from request context
             org_id = getattr(request, 'organization_id', None)
 
-            # Query layouts - PageLayout uses GlobalMetadataManager
-            # Custom layouts (non-default) have priority
-            custom_layouts_qs = PageLayout.objects.filter(
+            # Only form/edit layouts belong to the unified designer management list.
+            base_qs = PageLayout.objects.filter(
                 business_object=business_object,
                 is_active=True,
-                is_default=False
-            ).order_by('-created_at')
+                is_deleted=False,
+                layout_type='form',
+            )
+
+            # Custom layouts (non-default) first.
+            # Exclude demoted historical generated defaults to avoid duplicated rows.
+            custom_layouts_qs = (
+                base_qs
+                .filter(is_default=False)
+                .exclude(layout_code__iendswith='_default_form')
+                .order_by('-updated_at', '-created_at')
+            )
 
             # Apply organization filter if org_id is available
             if org_id:
@@ -464,24 +684,28 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
 
             custom_layouts = list(custom_layouts_qs)
 
-            # Default layouts (as fallback)
-            # Include both org-specific (organization_id=org_id) AND global defaults (organization__isnull=True)
-            default_layouts_qs = PageLayout.objects.filter(
-                business_object=business_object,
-                is_active=True,
-                is_default=True
-            )
-
+            layouts = list(custom_layouts)
+            # Keep exactly one default row in this view (if any).
+            default_qs = base_qs.filter(is_default=True)
             if org_id:
-                # For org context: show org-specific defaults OR global defaults (organization=None)
-                # This allows global default layouts to be available to all organizations
-                default_layouts_qs = default_layouts_qs.filter(
+                default_qs = default_qs.filter(
                     Q(organization_id=org_id) | Q(organization__isnull=True)
                 )
 
-            default_layouts = list(default_layouts_qs)
+            default_layout = (
+                default_qs.filter(status='published').order_by('-updated_at', '-created_at').first()
+                or default_qs.order_by('-updated_at', '-created_at').first()
+            )
 
-            layouts = custom_layouts + default_layouts
+            if default_layout and all(layout.id != default_layout.id for layout in layouts):
+                layouts.append(default_layout)
+            elif not layouts:
+                # Defensive fallback: if there is neither custom nor default form layout,
+                # still expose the latest active form row for recoverability.
+                fallback_layout = base_qs.order_by('-updated_at', '-created_at').first()
+                if fallback_layout:
+                    layouts.append(fallback_layout)
+
             serializer = PageLayoutSerializer(layouts, many=True)
 
             return Response({
@@ -504,50 +728,23 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
         Also respects organization isolation.
         """
         try:
+            normalized_type = self._normalize_layout_type(layout_type)
             # BusinessObject uses GlobalMetadataManager (no org filtering)
             business_object = BusinessObject.objects.get(code=object_code)
 
             # Get org_id from request context
             org_id = getattr(request, 'organization_id', None)
 
-            # Build base query for layouts
-            base_filters = {
-                'business_object': business_object,
-                'layout_type': layout_type,
-                'is_active': True
-            }
-
-            # Try custom layout first (priority)
-            custom_layouts_qs = PageLayout.objects.filter(
-                **base_filters,
-                is_default=False
+            layout = self._resolve_active_layout(
+                business_object=business_object,
+                normalized_type=normalized_type,
+                org_id=org_id
             )
-
-            if org_id:
-                custom_layouts_qs = custom_layouts_qs.filter(organization_id=org_id)
-
-            layout = custom_layouts_qs.first()
-
-            # Fall back to default layout
-            if not layout:
-                default_layouts_qs = PageLayout.objects.filter(
-                    **base_filters,
-                    is_default=True
-                )
-
-                if org_id:
-                    # For org context: show org-specific defaults OR global defaults (organization=None)
-                    # This allows global default layouts to be available to all organizations
-                    default_layouts_qs = default_layouts_qs.filter(
-                        Q(organization_id=org_id) | Q(organization__isnull=True)
-                    )
-
-                layout = default_layouts_qs.first()
 
             if not layout:
                 return BaseResponse.error(
                     code='NOT_FOUND',
-                    message=f'No {layout_type} layout found for "{object_code}".',
+                    message=f'No {normalized_type} layout found for "{object_code}".',
                     http_status=status.HTTP_404_NOT_FOUND
                 )
 
@@ -556,6 +753,76 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
                 'success': True,
                 'data': serializer.data,
                 'is_default': layout.is_default
+            })
+        except BusinessObject.DoesNotExist:
+            return BaseResponse.error(
+                code='NOT_FOUND',
+                message=f'Business object "{object_code}" not found.',
+                http_status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=False, methods=['get'], url_path='get_active_layout')
+    def get_active_layout(self, request):
+        """
+        Resolve the active layout for a business object and mode.
+
+        Priority: custom published layout > default published layout > generated config.
+        Query params:
+          - object_code
+          - mode (edit|readonly|detail|list|search)
+        """
+        object_code = request.query_params.get('object_code') or request.query_params.get('objectCode')
+        mode = request.query_params.get('mode', 'edit')
+
+        if not object_code:
+            return BaseResponse.error(
+                code='VALIDATION_ERROR',
+                message='Missing required parameter: object_code',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Normalize mode to layout_type
+        layout_type = mode
+        if mode in ['edit', 'form']:
+            layout_type = 'form'
+        elif mode in ['readonly', 'detail']:
+            layout_type = 'detail'
+
+        try:
+            business_object = BusinessObject.objects.get(code=object_code)
+
+            org_id = getattr(request, 'organization_id', None)
+            layout = self._resolve_active_layout(
+                business_object=business_object,
+                normalized_type=layout_type,
+                org_id=org_id
+            )
+
+            if layout:
+                serializer = PageLayoutSerializer(layout)
+                return Response({
+                    'success': True,
+                    'data': serializer.data,
+                    'is_default': layout.is_default
+                })
+
+            # Fallback: generate config if no layout exists
+            from apps.system.services.layout_generator import LayoutGenerator
+            from apps.system.validators import get_default_layout_config
+
+            if layout_type in ['form', 'list', 'detail']:
+                layout_config = LayoutGenerator.get_or_generate_layout(business_object, layout_type)
+            else:
+                layout_config = get_default_layout_config(layout_type)
+
+            return Response({
+                'success': True,
+                'data': {
+                    'layout_type': layout_type,
+                    'layout_config': layout_config,
+                    'is_template': True
+                },
+                'message': 'No layout found, using generated config.'
             })
         except BusinessObject.DoesNotExist:
             return BaseResponse.error(
@@ -741,6 +1008,7 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
         Used as fallback when no custom layout exists.
         """
         try:
+            normalized_type = self._normalize_layout_type(layout_type)
             business_object = BusinessObject.objects.get(
                 code=object_code,
                 is_deleted=False
@@ -752,7 +1020,7 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
             # Query for default layouts, include both org-specific and global defaults
             layout_qs = PageLayout.objects.filter(
                 business_object=business_object,
-                layout_type=layout_type,
+                layout_type=normalized_type,
                 is_active=True,
                 is_default=True,
                 is_deleted=False
@@ -767,16 +1035,26 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
             layout = layout_qs.first()
 
             if not layout:
-                # Return default template config
+                # Generate a default layout from field definitions if possible
+                from apps.system.services.layout_generator import LayoutGenerator
                 from apps.system.validators import get_default_layout_config
+
+                if normalized_type in ['form', 'list', 'detail']:
+                    layout_config = LayoutGenerator.get_or_generate_layout(
+                        business_object,
+                        normalized_type
+                    )
+                else:
+                    layout_config = get_default_layout_config(normalized_type)
+
                 return Response({
                     'success': True,
                     'data': {
-                        'is_template': True,
-                        'layout_type': layout_type,
-                        'layout_config': get_default_layout_config(layout_type)
+                        'is_template': False,
+                        'layout_type': normalized_type,
+                        'layout_config': layout_config
                     },
-                    'message': 'No default layout found, using template.'
+                    'message': 'No default layout found, using generated config.'
                 })
 
             serializer = PageLayoutSerializer(layout)
@@ -790,6 +1068,318 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
                 message=f'Business object "{object_code}" not found.',
                 http_status=status.HTTP_404_NOT_FOUND
             )
+
+    @action(detail=False, methods=['post'], url_path='save-diff-config')
+    def save_diff_config(self, request):
+        """
+        Save differential layout configuration.
+
+        This endpoint saves only the changes from the default layout,
+        implementing the differential configuration pattern.
+
+        Request body:
+        {
+            "object_code": "Asset",
+            "layout_type": "form",
+            "context_type": "form_create",  // Optional: form_create, form_edit, detail, list, search
+            "priority": "user",  // Optional: user, role, org, global, default
+            "diff_config": {
+                "fieldOrder": ["code", "name", "category"],
+                "sections": [
+                    {
+                        "id": "section_basic",
+                        "fields": [
+                            {
+                                "fieldCode": "code",
+                                "span": 24,
+                                "readonly": true,
+                                "visible": false,
+                                "required": true
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+
+        The differential config stores only changes from default layout:
+        - Custom field order
+        - Field visibility overrides
+        - Field required/readonly overrides
+        - Custom column spans
+
+        Response format:
+        {
+            "success": true,
+            "data": {
+                "id": "...",
+                "layout_code": "...",
+                "diff_config": {...}
+            }
+        }
+        """
+        object_code = request.data.get('object_code')
+        layout_type = request.data.get('layout_type')
+        context_type = request.data.get('context_type')
+        priority = request.data.get('priority', 'user')
+        diff_config = request.data.get('diff_config')
+
+        # Validate required fields
+        if not object_code:
+            return BaseResponse.error(
+                code='VALIDATION_ERROR',
+                message='object_code is required',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not layout_type:
+            return BaseResponse.error(
+                code='VALIDATION_ERROR',
+                message='layout_type is required',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not diff_config:
+            return BaseResponse.error(
+                code='VALIDATION_ERROR',
+                message='diff_config is required',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate priority
+        valid_priorities = ['user', 'role', 'org', 'global', 'default']
+        if priority not in valid_priorities:
+            return BaseResponse.error(
+                code='VALIDATION_ERROR',
+                message=f'priority must be one of: {", ".join(valid_priorities)}',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get business object
+        try:
+            business_object = BusinessObject.objects.get(
+                code=object_code,
+                is_deleted=False
+            )
+        except BusinessObject.DoesNotExist:
+            return BaseResponse.error(
+                code='NOT_FOUND',
+                message=f'Business object "{object_code}" not found.',
+                http_status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Get org_id from request context
+        org_id = getattr(request, 'organization_id', None)
+
+        # Generate layout code
+        import time
+        timestamp = int(timezone.now().timestamp())
+        layout_code = f'{object_code}_{layout_type}_{priority}_{timestamp}'
+
+        # Create or update layout with diff config
+        # First check if there's an existing layout for this object/type/context/priority
+        existing_layout = PageLayout.objects.filter(
+            business_object=business_object,
+            layout_type=layout_type,
+            priority=priority,
+            is_deleted=False
+        ).first()
+
+        if existing_layout and context_type == existing_layout.context_type:
+            # Update existing layout
+            existing_layout.diff_config = diff_config
+            existing_layout.updated_at = timezone.now()
+            existing_layout.updated_by = request.user
+            existing_layout.save()
+
+            serializer = PageLayoutDetailSerializer(existing_layout)
+            return Response({
+                'success': True,
+                'data': serializer.data,
+                'message': 'Differential configuration updated successfully.'
+            })
+        else:
+            # Create new layout with differential config
+            layout = PageLayout.objects.create(
+                business_object=business_object,
+                layout_code=layout_code,
+                layout_name=f'{object_code} {layout_type} {priority} layout',
+                layout_type=layout_type,
+                context_type=context_type,
+                priority=priority,
+                diff_config=diff_config,
+                layout_config={},  # Empty for diff-based layouts
+                status='published',
+                version='1.0.0',
+                is_default=False,
+                is_active=True,
+                organization_id=org_id,
+                created_by=request.user
+            )
+
+            serializer = PageLayoutDetailSerializer(layout)
+            return Response({
+                'success': True,
+                'data': serializer.data,
+                'message': 'Differential configuration saved successfully.'
+            }, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], url_path='get-merged-layout')
+    def get_merged_layout(self, request):
+        """
+        Get merged layout configuration (default + diff_config).
+
+        This endpoint applies the differential configuration on top of
+        the default layout and returns the merged result for frontend rendering.
+
+        Request body:
+        {
+            "object_code": "Asset",
+            "layout_type": "form",
+            "context_type": "form_create"  // Optional
+        }
+
+        The merged layout follows this priority order:
+        1. User-level diff_config (highest)
+        2. Role-level diff_config
+        3. Organization-level diff_config
+        4. Global-level diff_config
+        5. Default layout (fallback)
+
+        Response format:
+        {
+            "success": true,
+            "data": {
+                "layout_config": {...},  // Merged configuration
+                "source": "user" | "role" | "org" | "global" | "default"
+            }
+        }
+        """
+        from apps.system.services.layout_generator import LayoutGenerator
+
+        object_code = request.data.get('object_code')
+        layout_type = request.data.get('layout_type')
+        context_type = request.data.get('context_type')
+
+        if not object_code or not layout_type:
+            return BaseResponse.error(
+                code='VALIDATION_ERROR',
+                message='object_code and layout_type are required',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            business_object = BusinessObject.objects.get(
+                code=object_code,
+                is_deleted=False
+            )
+        except BusinessObject.DoesNotExist:
+            return BaseResponse.error(
+                code='NOT_FOUND',
+                message=f'Business object "{object_code}" not found.',
+                http_status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Get org_id and user from request context
+        org_id = getattr(request, 'organization_id', None)
+        user = getattr(request, 'user', None)
+
+        # Get base layout (default or generated)
+        base_layout = LayoutGenerator.get_or_generate_layout(business_object, layout_type)
+
+        # Find applicable diff_config by priority
+        # Priority: user > role > org > global > default
+        priority_order = ['user', 'role', 'org', 'global', 'default']
+        applied_diff = None
+        source = 'default'
+
+        for priority_level in priority_order:
+            filters = {
+                'business_object': business_object,
+                'layout_type': layout_type,
+                'priority': priority_level,
+                'is_deleted': False
+            }
+
+            if context_type:
+                filters['context_type'] = context_type
+
+            diff_layout = PageLayout.objects.filter(**filters).first()
+
+            if diff_layout and diff_layout.diff_config:
+                applied_diff = diff_layout.diff_config
+                source = priority_level
+                break
+
+        # Merge diff_config with base layout
+        merged_layout = self._merge_layout_config(base_layout, applied_diff)
+
+        return Response({
+            'success': True,
+            'data': {
+                'layout_config': merged_layout,
+                'source': source,
+                'has_diff_config': applied_diff is not None
+            }
+        })
+
+    def _merge_layout_config(self, base_layout: dict, diff_config: dict) -> dict:
+        """
+        Merge differential configuration with base layout.
+
+        Args:
+            base_layout: Default or generated layout configuration
+            diff_config: Differential configuration to apply
+
+        Returns:
+            Merged layout configuration
+        """
+        if not diff_config:
+            return base_layout
+
+        # Deep merge the configurations
+        import copy
+        merged = copy.deepcopy(base_layout)
+
+        # Apply field order if specified
+        if 'fieldOrder' in diff_config:
+            merged['fieldOrder'] = diff_config['fieldOrder']
+
+        # Apply section overrides
+        if 'sections' in diff_config:
+            if 'sections' not in merged:
+                merged['sections'] = []
+
+            # Create a map of existing sections by id
+            existing_sections = {s.get('id'): s for s in merged.get('sections', [])}
+
+            # Apply diff section overrides
+            for diff_section in diff_config['sections']:
+                section_id = diff_section.get('id')
+                if section_id in existing_sections:
+                    # Merge fields in existing section
+                    existing_section = existing_sections[section_id]
+                    if 'fields' in diff_section:
+                        # Create map of existing fields
+                        existing_fields = {
+                            f.get('fieldCode', f.get('code')): f
+                            for f in existing_section.get('fields', [])
+                        }
+
+                        # Apply diff field overrides
+                        for diff_field in diff_section['fields']:
+                            field_code = diff_field.get('fieldCode', diff_field.get('code'))
+                            if field_code in existing_fields:
+                                # Merge field properties
+                                existing_fields[field_code].update(diff_field)
+                            else:
+                                # Add new field
+                                existing_section.setdefault('fields', []).append(diff_field)
+                else:
+                    # Add new section
+                    merged.setdefault('sections', []).append(diff_section)
+
+        return merged
 
 
 class DynamicDataViewSet(BaseModelViewSetWithBatch):

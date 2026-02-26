@@ -1,7 +1,7 @@
 <template>
   <div class="permission-management">
     <div class="page-header">
-      <h3>权限管理</h3>
+      <h3>{{ $t('system.permission.title') }}</h3>
     </div>
 
     <el-tabs
@@ -10,7 +10,7 @@
     >
       <!-- Field Permissions Tab -->
       <el-tab-pane
-        label="字段权限"
+        :label="$t('system.permission.tabs.field')"
         name="field"
       >
         <FieldPermissionTab />
@@ -18,7 +18,7 @@
 
       <!-- Data Permissions Tab -->
       <el-tab-pane
-        label="数据权限"
+        :label="$t('system.permission.tabs.data')"
         name="data"
       >
         <DataPermissionTab />
@@ -26,7 +26,7 @@
 
       <!-- Audit Log Tab -->
       <el-tab-pane
-        label="权限日志"
+        :label="$t('system.permission.tabs.audit')"
         name="audit"
       >
         <PermissionAuditLogTab />

@@ -1,12 +1,12 @@
 <template>
   <div class="system-config-list">
     <div class="page-header">
-      <h3>System Configuration</h3>
+      <h3>{{ $t('system.config.title') }}</h3>
       <el-button
         type="primary"
         @click="handleCreate"
       >
-        Add Config
+        {{ $t('system.config.addConfig') }}
       </el-button>
     </div>
 
@@ -20,23 +20,23 @@
         name=""
       />
       <el-tab-pane
-        label="General"
+        :label="$t('system.config.tabs.general')"
         name="general"
       />
       <el-tab-pane
-        label="QR Code"
+        :label="$t('system.config.tabs.qrcode')"
         name="qrcode"
       />
       <el-tab-pane
-        label="Notification"
+        :label="$t('system.config.tabs.notification')"
         name="notification"
       />
       <el-tab-pane
-        label="Asset"
+        :label="$t('system.config.tabs.asset')"
         name="asset"
       />
       <el-tab-pane
-        label="Inventory"
+        :label="$t('system.config.tabs.inventory')"
         name="inventory"
       />
     </el-tabs>
@@ -47,20 +47,20 @@
       inline
       class="filter-form"
     >
-      <el-form-item label="Search">
+      <el-form-item :label="$t('common.actions.search')">
         <el-input
           v-model="filterForm.search"
-          placeholder="Search by key or name"
+          :placeholder="$t('system.config.searchPlaceholder')"
           clearable
           @clear="handleSearch"
           @keyup.enter="handleSearch"
         />
       </el-form-item>
-      <el-form-item label="Type">
+      <el-form-item :label="$t('system.config.columns.type')">
         <el-select
           v-model="filterForm.value_type"
           clearable
-          placeholder="All"
+          :placeholder="$t('system.common.all')"
           @change="handleSearch"
         >
           <el-option
@@ -90,10 +90,10 @@
           type="primary"
           @click="handleSearch"
         >
-          Search
+          {{ $t('common.actions.search') }}
         </el-button>
         <el-button @click="handleFilterReset">
-          Reset
+          {{ $t('common.actions.reset') }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -108,17 +108,17 @@
     >
       <el-table-column
         prop="config_key"
-        label="Key"
+        :label="$t('system.config.columns.key')"
         width="200"
       />
       <el-table-column
         prop="name"
-        label="Name"
+        :label="$t('system.config.columns.name')"
         width="180"
       />
       <el-table-column
         prop="config_value"
-        label="Value"
+        :label="$t('system.config.columns.value')"
         min-width="200"
       >
         <template #default="{ row }">
@@ -144,7 +144,7 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="Type"
+        :label="$t('system.config.columns.type')"
         width="100"
         align="center"
       >
@@ -159,11 +159,11 @@
       </el-table-column>
       <el-table-column
         prop="category"
-        label="Category"
+        :label="$t('system.config.columns.category')"
         width="120"
       />
       <el-table-column
-        label="System"
+        :label="$t('system.config.columns.isSystem')"
         width="80"
         align="center"
       >
@@ -179,12 +179,12 @@
       </el-table-column>
       <el-table-column
         prop="description"
-        label="Description"
+        :label="$t('system.config.columns.description')"
         min-width="150"
         show-overflow-tooltip
       />
       <el-table-column
-        label="Actions"
+        :label="$t('common.labels.operation')"
         width="180"
         fixed="right"
       >
@@ -194,11 +194,11 @@
             type="primary"
             @click="handleEdit(row)"
           >
-            Edit
+            {{ $t('common.actions.edit') }}
           </el-button>
           <el-popconfirm
             v-if="!row.is_system"
-            title="Are you sure to delete this config?"
+            :title="$t('system.config.messages.confirmDelete')"
             @confirm="handleDelete(row)"
           >
             <template #reference>
@@ -206,7 +206,7 @@
                 link
                 type="danger"
               >
-                Delete
+                {{ $t('common.actions.delete') }}
               </el-button>
             </template>
           </el-popconfirm>
@@ -238,6 +238,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { SystemConfig } from '@/api/system'
 import { systemConfigApi } from '@/api/system'
@@ -248,6 +249,7 @@ const tableData = ref<SystemConfig[]>([])
 const dialogVisible = ref(false)
 const activeCategory = ref('')
 const currentRow = ref<SystemConfig | null>(null)
+const { t } = useI18n()
 
 const filterForm = reactive({
   search: '',
@@ -304,7 +306,7 @@ const fetchData = async () => {
     tableData.value = res.results || []
     pagination.total = res.count || 0
   } catch (error) {
-    ElMessage.error('Failed to load system configs')
+    ElMessage.error(t('system.config.messages.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -339,11 +341,11 @@ const handleEdit = (row: SystemConfig) => {
 const handleDelete = async (row: SystemConfig) => {
   try {
     await systemConfigApi.delete(row.id)
-    ElMessage.success('Deleted successfully')
+    ElMessage.success(t('common.messages.deleteSuccess'))
     await fetchData()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('Failed to delete')
+      ElMessage.error(t('common.messages.deleteFailed'))
     }
   }
 }

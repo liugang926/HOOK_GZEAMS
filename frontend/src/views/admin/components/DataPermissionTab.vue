@@ -6,11 +6,11 @@
       inline
       class="filter-form"
     >
-      <el-form-item label="角色">
+      <el-form-item :label="$t('system.permission.data.toolbar.role')">
         <el-select
           v-model="filterForm.role"
           clearable
-          placeholder="选择角色"
+          :placeholder="$t('system.permission.data.toolbar.rolePlaceholder')"
           @change="handleSearch"
         >
           <el-option
@@ -32,16 +32,16 @@
           type="primary"
           @click="handleSearch"
         >
-          查询
+          {{ $t('common.actions.search') }}
         </el-button>
         <el-button @click="handleReset">
-          重置
+          {{ $t('common.actions.reset') }}
         </el-button>
         <el-button
           type="success"
           @click="handleCreate"
         >
-          新增规则
+          {{ $t('system.permission.data.toolbar.createRule') }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -56,17 +56,17 @@
     >
       <el-table-column
         prop="roleName"
-        label="角色"
+        :label="$t('system.permission.data.columns.role')"
         width="120"
       />
       <el-table-column
         prop="businessObjectName"
-        label="业务对象"
+        :label="$t('system.permission.data.columns.object')"
         width="150"
       />
       <el-table-column
-        label="权限类型"
-        width="100"
+        :label="$t('system.permission.data.columns.type')"
+        width="120"
         align="center"
       >
         <template #default="{ row }">
@@ -80,12 +80,12 @@
       </el-table-column>
       <el-table-column
         prop="scopeExpression"
-        label="权限范围"
+        :label="$t('system.permission.data.columns.scope')"
         min-width="250"
         show-overflow-tooltip
       />
       <el-table-column
-        label="状态"
+        :label="$t('system.permission.data.columns.status')"
         width="80"
         align="center"
       >
@@ -94,18 +94,18 @@
             :type="row.isActive ? 'success' : 'info'"
             size="small"
           >
-            {{ row.isActive ? '启用' : '禁用' }}
+            {{ row.isActive ? $t('system.permission.data.status.active') : $t('system.permission.data.status.inactive') }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
         prop="description"
-        label="说明"
+        :label="$t('system.permission.data.columns.description')"
         min-width="200"
         show-overflow-tooltip
       />
       <el-table-column
-        label="操作"
+        :label="$t('system.permission.data.columns.operation')"
         width="150"
         fixed="right"
       >
@@ -115,14 +115,14 @@
             type="primary"
             @click="handleEdit(row)"
           >
-            编辑
+            {{ $t('common.actions.edit') }}
           </el-button>
           <el-button
             link
             :type="row.isActive ? 'warning' : 'success'"
             @click="handleToggleActive(row)"
           >
-            {{ row.isActive ? '禁用' : '启用' }}
+            {{ row.isActive ? $t('system.permission.data.status.disable') : $t('system.permission.data.status.enable') }}
           </el-button>
         </template>
       </el-table-column>
@@ -153,8 +153,11 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { dataPermissionApi } from '@/api/permissions'
 import DataPermissionDialog from './DataPermissionDialog.vue'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const tableData = ref<any[]>([])
@@ -173,11 +176,11 @@ const pagination = reactive({
 
 const getPermissionTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
-    'all': '全部数据',
-    'department': '本部门',
-    'department_and_sub': '本部门及子部门',
-    'self': '仅本人',
-    'custom': '自定义'
+    'all': t('system.permission.data.types.all'),
+    'department': t('system.permission.data.types.department'),
+    'department_and_sub': t('system.permission.data.types.department_and_sub'),
+    'self': t('system.permission.data.types.self'),
+    'custom': t('system.permission.data.types.custom')
   }
   return labels[type] || type
 }
@@ -212,7 +215,7 @@ const fetchData = async () => {
         roleName: '管理员',
         businessObjectName: '固定资产',
         permissionType: 'all',
-        scopeExpression: '全部数据',
+        scopeExpression: t('system.permission.data.types.all'),
         isActive: true,
         description: '管理员可查看所有资产'
       },
@@ -237,7 +240,7 @@ const fetchData = async () => {
     ]
     pagination.total = 3
   } catch (error) {
-    ElMessage.error('加载数据失败')
+    ElMessage.error(t('common.messages.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -267,9 +270,9 @@ const handleToggleActive = async (row: any) => {
   try {
     // TODO: Replace with actual API call
     row.isActive = !row.isActive
-    ElMessage.success(row.isActive ? '已启用' : '已禁用')
+    ElMessage.success(row.isActive ? t('system.permission.data.messages.enabled') : t('system.permission.data.messages.disabled'))
   } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('common.messages.operationFailed'))
   }
 }
 
@@ -285,9 +288,9 @@ onMounted(() => {
 .filter-form {
   margin-bottom: 20px;
 }
-.pagination-footer {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
+  .pagination-footer {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+  }
 </style>

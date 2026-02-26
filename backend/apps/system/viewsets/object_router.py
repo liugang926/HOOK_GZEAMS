@@ -10,10 +10,16 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 from typing import Optional
+import inspect
+import re
+import logging
+from django.db.models import Q
 
 from apps.system.services.object_registry import ObjectRegistry
 from apps.common.viewsets.metadata_driven import MetadataDrivenViewSet
 from apps.common.responses.base import BaseResponse
+
+logger = logging.getLogger(__name__)
 
 
 class ObjectRouterViewSet(viewsets.ViewSet):
@@ -105,15 +111,77 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         # Instantiate and configure the ViewSet
         viewset = viewset_class()
+        # Rebuild queryset per request to avoid stale tenant-scoped filters that can
+        # be baked into class-level queryset during module import.
+        template_queryset = getattr(viewset_class, 'queryset', None)
+        viewset.queryset = self._build_request_scoped_queryset(template_queryset, request)
         viewset.request = request
         viewset.format_kwarg = None
         viewset.action = getattr(self, 'action', None)
+        # Set kwargs for DRF's get_object() method to access URL parameters
+        viewset.kwargs = self.kwargs
+        viewset.args = self.args
 
         # Initialize the ViewSet
         if hasattr(viewset, 'initial'):
             viewset.initial(request, *self.args, **self.kwargs)
 
         return viewset
+
+    def _build_request_scoped_queryset(self, template_queryset, request):
+        """
+        Build a deterministic queryset for delegated hardcoded ViewSets.
+
+        Class-level querysets can accidentally capture stale organization filters.
+        This rebuilds from `all_objects`/default manager and applies request-scoped
+        organization + soft-delete constraints explicitly.
+        """
+        if template_queryset is None:
+            return None
+
+        model_class = getattr(template_queryset, 'model', None)
+        if model_class is None:
+            return template_queryset
+
+        manager = getattr(model_class, 'all_objects', None) or model_class._default_manager
+        queryset = manager.all()
+
+        field_names = {f.name for f in model_class._meta.fields}
+        request_org_id = getattr(request, 'organization_id', None)
+
+        if 'organization' in field_names and request_org_id:
+            queryset = queryset.filter(organization_id=request_org_id)
+        elif 'organization' in field_names and not request_org_id:
+            # Avoid accidental cross-organization leakage when org context is absent.
+            queryset = queryset.none()
+
+        if 'is_deleted' in field_names:
+            queryset = queryset.filter(is_deleted=False)
+
+        try:
+            select_related = getattr(template_queryset.query, 'select_related', None)
+            if select_related is True:
+                queryset = queryset.select_related()
+            elif isinstance(select_related, dict) and select_related:
+                queryset = queryset.select_related(*select_related.keys())
+        except Exception:
+            pass
+
+        try:
+            prefetch_related = tuple(getattr(template_queryset, '_prefetch_related_lookups', ()) or ())
+            if prefetch_related:
+                queryset = queryset.prefetch_related(*prefetch_related)
+        except Exception:
+            pass
+
+        try:
+            order_by = tuple(getattr(template_queryset.query, 'order_by', ()) or ())
+            if order_by:
+                queryset = queryset.order_by(*order_by)
+        except Exception:
+            pass
+
+        return queryset
 
     def _get_dynamic_viewset(self, meta, request):
         """
@@ -131,6 +199,9 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         viewset.request = request
         viewset.format_kwarg = None
         viewset.action = getattr(self, 'action', None)
+        # Set kwargs for DRF's get_object() method to access URL parameters
+        viewset.kwargs = self.kwargs
+        viewset.args = self.args
         viewset.initial(request, *self.args, **self.kwargs)
         return viewset
 
@@ -142,7 +213,55 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         GET /api/objects/{code}/
         """
-        return self._delegate_viewset.list(request, *args, **kwargs)
+        resp = self._delegate_viewset.list(request, *args, **kwargs)
+
+        # Normalize list response shapes:
+        # - The low-code frontend expects the standard paginated DTO (wrapped by BaseResponse):
+        #   `{ success: true, data: { count, next, previous, results } }`
+        # - Some legacy viewsets return `{ success: true, data: [] }`
+        # - Some DRF viewsets may return plain list or plain paginated dict.
+        try:
+            if isinstance(resp, Response) and isinstance(getattr(resp, "data", None), dict):
+                payload = resp.data
+                if payload.get("success") is True:
+                    # Legacy `{ success, data: [] }` -> paginated DTO
+                    if isinstance(payload.get("data"), list):
+                        items = payload.get("data") or []
+                        resp.data = {
+                            "success": True,
+                            "data": {
+                                "count": len(items),
+                                "next": None,
+                                "previous": None,
+                                "results": items,
+                            },
+                        }
+                    # Plain paginated dict under `data` is already acceptable.
+                    return resp
+
+                # Plain paginated dict -> wrap
+                if "count" in payload and "results" in payload:
+                    resp.data = {"success": True, "data": payload}
+        except Exception:
+            pass
+
+        try:
+            # Plain list -> wrap
+            if isinstance(resp, Response) and isinstance(getattr(resp, "data", None), list):
+                items = resp.data or []
+                resp.data = {
+                    "success": True,
+                    "data": {
+                        "count": len(items),
+                        "next": None,
+                        "previous": None,
+                        "results": items,
+                    },
+                }
+        except Exception:
+            pass
+
+        return resp
 
     def retrieve(self, request, *args, **kwargs):
         """
@@ -150,6 +269,16 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         GET /api/objects/{code}/{id}/
         """
+        # Map 'id' to 'pk' for DRF ViewSet compatibility
+        # URL pattern uses <uuid:id> but ViewSet.retrieve() expects 'pk' parameter
+        # We need to update the delegate's kwargs attribute directly because
+        # DRF's get_object() method accesses self.kwargs, not the function kwargs
+        if 'id' in kwargs:
+            # Update delegate's kwargs with mapped value
+            self._delegate_viewset.kwargs = {
+                **self._delegate_viewset.kwargs,
+                'pk': kwargs['id']
+            }
         return self._delegate_viewset.retrieve(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
@@ -166,6 +295,12 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         PUT /api/objects/{code}/{id}/
         """
+        # Map 'id' to 'pk' for DRF ViewSet compatibility
+        if 'id' in kwargs:
+            self._delegate_viewset.kwargs = {
+                **self._delegate_viewset.kwargs,
+                'pk': kwargs['id']
+            }
         return self._delegate_viewset.update(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
@@ -174,6 +309,12 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         PATCH /api/objects/{code}/{id}/
         """
+        # Map 'id' to 'pk' for DRF ViewSet compatibility
+        if 'id' in kwargs:
+            self._delegate_viewset.kwargs = {
+                **self._delegate_viewset.kwargs,
+                'pk': kwargs['id']
+            }
         return self._delegate_viewset.partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
@@ -182,7 +323,268 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         DELETE /api/objects/{code}/{id}/
         """
+        # Map 'id' to 'pk' for DRF ViewSet compatibility
+        if 'id' in kwargs:
+            self._delegate_viewset.kwargs = {
+                **self._delegate_viewset.kwargs,
+                'pk': kwargs['id']
+            }
         return self._delegate_viewset.destroy(request, *args, **kwargs)
+
+    def _resolve_custom_action(self, action_path: str, request_method: str, detail: bool):
+        """
+        Resolve custom action handler on delegated ViewSet.
+
+        Priority:
+        1) Match DRF @action `url_path` (supports regex + nested path segments)
+        2) Fallback to normalized method name (e.g. `batch-post` -> `batch_post`)
+        """
+        normalized_path = (action_path or '').strip('/')
+        if not normalized_path:
+            return None, (), {}
+
+        method_lower = request_method.lower()
+        delegate = self._delegate_viewset
+
+        # 1) Match action-decorated handlers by url_path.
+        for attr_name in dir(delegate):
+            handler = getattr(delegate, attr_name, None)
+            if not callable(handler):
+                continue
+
+            url_path = getattr(handler, 'url_path', None)
+            if not url_path:
+                continue
+
+            handler_detail = getattr(handler, 'detail', None)
+            if handler_detail is not None and bool(handler_detail) != bool(detail):
+                continue
+
+            mapping = getattr(handler, 'mapping', None)
+            if mapping and method_lower not in mapping:
+                continue
+
+            try:
+                match = re.fullmatch(url_path, normalized_path)
+            except re.error:
+                continue
+
+            if match:
+                route_kwargs = {
+                    key: value
+                    for key, value in match.groupdict().items()
+                    if value is not None
+                }
+                return handler, (), route_kwargs
+
+        # 2) Fallback by method name.
+        normalized_full = normalized_path.replace('-', '_').replace('/', '_')
+        segments = [seg for seg in normalized_path.split('/') if seg]
+        normalized_head = segments[0].replace('-', '_') if segments else normalized_full
+
+        for candidate_name, extra_args in (
+            (normalized_full, ()),
+            (normalized_head, tuple(segments[1:])),
+        ):
+            handler = getattr(delegate, candidate_name, None)
+            if not callable(handler):
+                continue
+
+            handler_detail = getattr(handler, 'detail', None)
+            if handler_detail is not None and bool(handler_detail) != bool(detail):
+                continue
+
+            mapping = getattr(handler, 'mapping', None)
+            if mapping and method_lower not in mapping:
+                continue
+
+            return handler, extra_args, {}
+
+        return None, (), {}
+
+    def _invoke_custom_action(self, request, *, action_path: str, detail: bool, object_id=None):
+        """Invoke resolved custom action on delegated ViewSet."""
+        handler, route_args, route_kwargs = self._resolve_custom_action(
+            action_path=action_path,
+            request_method=request.method,
+            detail=detail,
+        )
+        if not handler:
+            try:
+                delegate_name = type(self._delegate_viewset).__name__
+            except Exception:
+                delegate_name = 'unknown'
+            logger.warning(
+                "Object router custom action not resolved. code=%s detail=%s action_path=%s method=%s delegate=%s",
+                getattr(self._object_meta, 'code', None),
+                detail,
+                action_path,
+                request.method,
+                delegate_name,
+            )
+            return BaseResponse.not_found(
+                f"Action '{action_path}' for object '{self._object_meta.code}'"
+            )
+
+        if object_id is not None:
+            self._delegate_viewset.kwargs = {
+                **self._delegate_viewset.kwargs,
+                'pk': object_id
+            }
+
+        old_action = getattr(self._delegate_viewset, 'action', None)
+        self._delegate_viewset.action = getattr(handler, '__name__', old_action)
+        from apps.common.middleware import get_current_organization, set_current_organization, clear_current_organization
+        previous_org_id = get_current_organization()
+        request_org_id = getattr(request, 'organization_id', None)
+
+        try:
+            # Keep tenant context deterministic for delegated custom actions.
+            # Some test/runtime paths may miss middleware-bound thread-local org.
+            if request_org_id:
+                set_current_organization(str(request_org_id))
+
+            params = inspect.signature(handler).parameters
+            accepts_var_kw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values())
+            invoke_kwargs = {}
+
+            if object_id is not None and ('pk' in params or accepts_var_kw):
+                invoke_kwargs['pk'] = object_id
+
+            for key, value in route_kwargs.items():
+                if key in params or accepts_var_kw:
+                    invoke_kwargs[key] = value
+
+            return handler(request, *route_args, **invoke_kwargs)
+        finally:
+            self._delegate_viewset.action = old_action
+            if previous_org_id:
+                set_current_organization(previous_org_id)
+            else:
+                clear_current_organization()
+
+    def collection_action(self, request, *args, **kwargs):
+        """
+        Route collection-level custom actions.
+
+        Examples:
+        - /api/system/objects/FinanceVoucher/batch_push/
+        - /api/system/objects/FinanceVoucher/generate/asset-purchase/
+        - /api/system/objects/DepreciationConfig/categories/{category_id}/
+        """
+        return self._invoke_custom_action(
+            request,
+            action_path=kwargs.get('action_path', ''),
+            detail=False,
+        )
+
+    def detail_action(self, request, *args, **kwargs):
+        """
+        Route detail-level custom actions.
+
+        Examples:
+        - /api/system/objects/FinanceVoucher/{id}/submit/
+        - /api/system/objects/FinanceVoucher/{id}/integration-logs/
+        """
+        return self._invoke_custom_action(
+            request,
+            action_path=kwargs.get('action_path', ''),
+            detail=True,
+            object_id=kwargs.get('id'),
+        )
+
+    @action(detail=False, methods=['post'], url_path='batch-get')
+    def batch_get(self, request, *args, **kwargs):
+        """
+        Batch get objects by ids (for reference field resolution).
+
+        POST /api/system/objects/{code}/batch-get/
+        Body: { "ids": ["uuid1", "uuid2", ...] }
+
+        Returns serialized objects in the input order (when possible).
+        """
+        if not self._object_meta:
+            object_code = kwargs.get('code')
+            if not object_code:
+                return BaseResponse.error('VALIDATION_ERROR', 'object_code is required', http_status=status.HTTP_400_BAD_REQUEST)
+
+            self._object_meta = ObjectRegistry.get_or_create_from_db(object_code)
+            if not self._object_meta:
+                return BaseResponse.not_found(f"Business object '{object_code}' not found")
+
+            self._delegate_viewset = self._create_delegate_viewset(self._object_meta, request)
+
+        ids = request.data.get('ids') if isinstance(request.data, dict) else None
+        if not isinstance(ids, list):
+            return BaseResponse.error('VALIDATION_ERROR', 'ids must be a list', http_status=status.HTTP_400_BAD_REQUEST)
+
+        # Normalize and cap to prevent abuse.
+        normalized_ids = [str(v) for v in ids if v not in (None, '')]
+        if len(normalized_ids) == 0:
+            return BaseResponse.success({'results': [], 'missing_ids': []})
+        if len(normalized_ids) > 200:
+            return BaseResponse.error('VALIDATION_ERROR', 'ids too large (max 200)', http_status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if hasattr(self._delegate_viewset, 'get_queryset'):
+                qs = self._delegate_viewset.get_queryset()
+            else:
+                qs = getattr(self._delegate_viewset, 'queryset', None)
+
+            if qs is None:
+                return BaseResponse.success({'results': [], 'missing_ids': normalized_ids})
+
+            base_qs = qs
+            if hasattr(self._delegate_viewset, 'filter_queryset'):
+                try:
+                    qs = self._delegate_viewset.filter_queryset(qs)
+                except Exception:
+                    qs = base_qs
+
+            qs = qs.filter(pk__in=normalized_ids)
+
+            # Some viewsets override list/retrieve and do not use filter backends.
+            # If filtering removed everything, fall back to the raw queryset.
+            if not qs.exists():
+                qs = base_qs.filter(pk__in=normalized_ids)
+
+            results = []
+            if hasattr(self._delegate_viewset, 'get_serializer'):
+                try:
+                    serializer = self._delegate_viewset.get_serializer(qs, many=True)
+                    results = serializer.data
+                except Exception:
+                    # Some viewsets have a richer retrieve serializer that may be misconfigured.
+                    # Prefer list serializer for reference resolution (id/name/code is enough).
+                    old_action = getattr(self._delegate_viewset, 'action', None)
+                    try:
+                        self._delegate_viewset.action = 'list'
+                        serializer = self._delegate_viewset.get_serializer(qs, many=True)
+                        results = serializer.data
+                    except Exception:
+                        results = [{'id': str(obj.pk), 'name': str(obj)} for obj in qs]
+                    finally:
+                        self._delegate_viewset.action = old_action
+            else:
+                # Fallback: minimal representation
+                results = [{'id': str(obj.pk), 'name': str(obj)} for obj in qs]
+
+            by_id = {}
+            for item in results:
+                if isinstance(item, dict):
+                    item_id = item.get('id') or item.get('pk')
+                    if item_id is not None:
+                        by_id[str(item_id)] = item
+
+            ordered = [by_id[i] for i in normalized_ids if i in by_id]
+            missing = [i for i in normalized_ids if i not in by_id]
+
+            return BaseResponse.success({'results': ordered, 'missing_ids': missing})
+        except Exception as e:
+            # Never fail the entire page rendering because of a label-resolve helper.
+            import logging
+            logging.getLogger(__name__).warning(f"batch_get failed for {self._object_meta.code}: {e}")
+            return BaseResponse.success({'results': [], 'missing_ids': normalized_ids})
 
     @action(detail=False, methods=['get'], url_path='metadata')
     def metadata(self, request, *args, **kwargs):
@@ -294,15 +696,49 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                     'reference_object': fd.reference_object,
                 })
 
-        # Get layouts
-        layouts = {}
-        # PageLayout uses GlobalMetadataManager (no org filtering)
-        layout_records = PageLayout.objects.filter(
-            business_object__code=self._object_meta.code
-        )
+        # Get layouts - auto-generate from field definitions if not exist
+        from apps.system.services.layout_generator import LayoutGenerator
+        from apps.system.validators import get_default_layout_config
+        from apps.system.models import BusinessObject
 
-        for layout in layout_records:
-            layouts[layout.layout_type] = layout.layout_config
+        layouts = {}
+        # Get BusinessObject for layout generation
+        bo = BusinessObject.objects.filter(code=self._object_meta.code).first()
+
+        if bo:
+            # Auto-generate layouts using LayoutGenerator
+            # This will return existing PageLayout configs or generate defaults
+            layout_types = ['list', 'form', 'detail']
+            for layout_type in layout_types:
+                try:
+                    layouts[layout_type] = LayoutGenerator.get_or_generate_layout(bo, layout_type)
+                except Exception as layout_err:
+                    logger.warning(
+                        "metadata layout generation failed. code=%s layout_type=%s error=%s",
+                        self._object_meta.code,
+                        layout_type,
+                        layout_err,
+                    )
+                    layouts[layout_type] = get_default_layout_config(layout_type)
+        else:
+            # Fallback to PageLayout query for backward compatibility
+            try:
+                layout_records = PageLayout.objects.filter(
+                    business_object__code=self._object_meta.code
+                )
+                for layout in layout_records:
+                    layouts[layout.layout_type] = layout.layout_config
+            except Exception as layout_query_err:
+                logger.warning(
+                    "metadata layout query failed. code=%s error=%s",
+                    self._object_meta.code,
+                    layout_query_err,
+                )
+
+        # Ensure core layout keys always exist to avoid frontend null checks exploding.
+        for layout_type in ['list', 'form', 'detail']:
+            if layout_type not in layouts or not layouts.get(layout_type):
+                layouts[layout_type] = get_default_layout_config(layout_type)
 
         # Get permissions for current user
         permissions = self._get_user_permissions(request.user, self._object_meta.code)
@@ -418,7 +854,518 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         POST /api/objects/{code}/{id}/restore/
         """
+        # Map 'id' to 'pk' for DRF ViewSet compatibility
+        if 'id' in kwargs:
+            self._delegate_viewset.kwargs = {
+                **self._delegate_viewset.kwargs,
+                'pk': kwargs['id']
+            }
         return self._delegate_viewset.restore(request, *args, **kwargs)
+
+    @action(detail=False, methods=['get'], url_path='fields')
+    def fields(self, request, *args, **kwargs):
+        """
+        Get field definitions with context-aware filtering.
+
+        GET /api/objects/{code}/fields/?context={context}&include_relations={true|false}
+
+        Query Parameters:
+            context: Rendering context - 'form' | 'detail' | 'list' (default: 'form')
+            include_relations: Include reverse relations - 'true' | 'false' (default: 'true')
+
+        Response structure:
+        {
+            "success": true,
+            "data": {
+                "editable_fields": [...],
+                "reverse_relations": [...]
+            }
+        }
+        """
+        # Initialize object_meta if not already done
+        if not self._object_meta:
+            object_code = kwargs.get('code')
+            if not object_code:
+                return BaseResponse.error('VALIDATION_ERROR', 'object_code is required', http_status=status.HTTP_400_BAD_REQUEST)
+
+            self._object_meta = ObjectRegistry.get_or_create_from_db(object_code)
+            if not self._object_meta:
+                return BaseResponse.not_found(f"Business object '{object_code}' not found")
+
+        # Get query parameters
+        context = request.query_params.get('context', 'form')
+        include_relations = request.query_params.get('include_relations', 'true').lower() == 'true'
+
+        # Validate context parameter
+        valid_contexts = ['form', 'detail', 'list']
+        if context not in valid_contexts:
+            return BaseResponse.error(
+                'VALIDATION_ERROR',
+                f'Invalid context. Must be one of: {", ".join(valid_contexts)}',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+
+        from apps.system.models import FieldDefinition, ModelFieldDefinition, BusinessObject
+
+        editable_fields = []
+        reverse_relations = []
+
+        # Get BusinessObject for context filtering
+        bo = BusinessObject.objects.filter(code=self._object_meta.code).first()
+
+        if self._object_meta.is_hardcoded:
+            # For hardcoded objects, get fields from ModelFieldDefinition
+            model_fields = ModelFieldDefinition.objects.filter(
+                business_object__code=self._object_meta.code
+            ).order_by('sort_order')
+
+            for fd in model_fields:
+                field_data = self._format_model_field(fd, context)
+                # Check if this is a reverse relation (sub_table type)
+                if fd.field_type == 'sub_table':
+                    if include_relations:
+                        reverse_relations.append(field_data)
+                else:
+                    # Apply context filtering
+                    if self._should_show_field(fd, context, is_model_field=True):
+                        editable_fields.append(field_data)
+        else:
+            # For dynamic objects, get fields from FieldDefinition
+            fields_query = FieldDefinition.objects.filter(
+                business_object__code=self._object_meta.code
+            ).order_by('sort_order')
+
+            for fd in fields_query:
+                field_data = self._format_field_definition(fd, context)
+
+                # Check if this is a reverse relation
+                if fd.is_reverse_relation:
+                    if include_relations:
+                        reverse_relations.append(field_data)
+                else:
+                    # Apply context filtering
+                    if self._should_show_field(fd, context, is_model_field=False):
+                        editable_fields.append(field_data)
+
+        # Safety fallback: if detail view ends up with zero fields, show all non-relation fields.
+        # This prevents blank detail pages when show_in_detail is misconfigured across the board.
+        if context == 'detail' and not editable_fields:
+            if self._object_meta.is_hardcoded:
+                for fd in model_fields:
+                    if fd.field_type == 'sub_table':
+                        continue
+                    editable_fields.append(self._format_model_field(fd, context))
+            else:
+                for fd in fields_query:
+                    if fd.is_reverse_relation:
+                        continue
+                    editable_fields.append(self._format_field_definition(fd, context))
+
+        return BaseResponse.success({
+            'editable_fields': editable_fields,
+            'reverse_relations': reverse_relations,
+            'context': context,
+        })
+
+    @action(detail=False, methods=['get'], url_path='runtime')
+    def runtime(self, request, *args, **kwargs):
+        """
+        Get runtime metadata (fields + active layout) for frontend rendering.
+
+        GET /api/system/objects/{code}/runtime/?mode={edit|readonly|list|search}&include_relations={true|false}
+
+        This endpoint is intentionally "frontend-friendly":
+        - One request returns everything needed to render a page (fields + layout).
+        - It mirrors the selection rules used by `page-layouts/get_active_layout`.
+        - It mirrors the context filtering rules used by `objects/{code}/fields`.
+        """
+        if not self._object_meta:
+            object_code = kwargs.get('code')
+            if not object_code:
+                return BaseResponse.error('VALIDATION_ERROR', 'object_code is required', http_status=status.HTTP_400_BAD_REQUEST)
+
+            self._object_meta = ObjectRegistry.get_or_create_from_db(object_code)
+            if not self._object_meta:
+                return BaseResponse.not_found(f"Business object '{object_code}' not found")
+
+        mode = request.query_params.get('mode', 'edit')
+        include_relations = request.query_params.get('include_relations', 'true').lower() == 'true'
+
+        # Fields endpoint supports only (form|detail|list) contexts.
+        if mode in ['readonly', 'detail']:
+            context = 'detail'
+        elif mode in ['list', 'search']:
+            context = 'list'
+        else:
+            context = 'form'
+
+        # Build fields payload (same logic as `fields()`).
+        # Duplicated here to keep `runtime` independent from action dispatch plumbing.
+        from apps.system.models import FieldDefinition, ModelFieldDefinition, BusinessObject, PageLayout
+        from apps.system.serializers import PageLayoutSerializer
+
+        editable_fields = []
+        reverse_relations = []
+
+        if self._object_meta.is_hardcoded:
+            model_fields = ModelFieldDefinition.objects.filter(
+                business_object__code=self._object_meta.code
+            ).order_by('sort_order')
+
+            for fd in model_fields:
+                field_data = self._format_model_field(fd, context)
+                if fd.field_type == 'sub_table':
+                    if include_relations:
+                        reverse_relations.append(field_data)
+                else:
+                    if self._should_show_field(fd, context, is_model_field=True):
+                        editable_fields.append(field_data)
+        else:
+            fields_query = FieldDefinition.objects.filter(
+                business_object__code=self._object_meta.code
+            ).order_by('sort_order')
+
+            for fd in fields_query:
+                field_data = self._format_field_definition(fd, context)
+                if fd.is_reverse_relation:
+                    if include_relations:
+                        reverse_relations.append(field_data)
+                else:
+                    if self._should_show_field(fd, context, is_model_field=False):
+                        editable_fields.append(field_data)
+
+        # Safety fallback: if detail view ends up with zero fields, show all non-relation fields.
+        if context == 'detail' and not editable_fields:
+            if self._object_meta.is_hardcoded:
+                for fd in model_fields:
+                    if fd.field_type == 'sub_table':
+                        continue
+                    editable_fields.append(self._format_model_field(fd, context))
+            else:
+                for fd in fields_query:
+                    if fd.is_reverse_relation:
+                        continue
+                    editable_fields.append(self._format_field_definition(fd, context))
+
+        # Resolve active layout (custom > default > generated config).
+        layout_type = mode
+        if mode in ['edit', 'form']:
+            layout_type = 'form'
+        elif mode in ['readonly', 'detail']:
+            layout_type = 'detail'
+
+        business_object = BusinessObject.objects.filter(code=self._object_meta.code).first()
+        if not business_object:
+            return BaseResponse.not_found(f"Business object '{self._object_meta.code}' not found")
+
+        org_id = getattr(request, 'organization_id', None)
+        base_filters = {
+            'business_object': business_object,
+            'layout_type': layout_type,
+            'is_active': True
+        }
+
+        base_qs = PageLayout.objects.filter(**base_filters, is_deleted=False)
+
+        def _scope_custom(qs):
+            if org_id:
+                return qs.filter(organization_id=org_id)
+            return qs
+
+        def _scope_default(qs):
+            if org_id:
+                return qs.filter(Q(organization_id=org_id) | Q(organization__isnull=True))
+            return qs
+
+        # Runtime pages should prefer published layouts first.
+        # Draft layouts are fallback only when nothing published exists.
+        layout = (
+            _scope_custom(base_qs.filter(is_default=False, status='published'))
+            .order_by('-updated_at', '-created_at')
+            .first()
+            or _scope_default(base_qs.filter(is_default=True, status='published'))
+            .order_by('-updated_at', '-created_at')
+            .first()
+            or _scope_custom(base_qs.filter(is_default=False))
+            .order_by('-updated_at', '-created_at')
+            .first()
+            or _scope_default(base_qs.filter(is_default=True))
+            .order_by('-updated_at', '-created_at')
+            .first()
+        )
+
+        if layout:
+            layout_payload = PageLayoutSerializer(layout).data
+            is_default = bool(layout.is_default)
+        else:
+            from apps.system.services.layout_generator import LayoutGenerator
+            from apps.system.validators import get_default_layout_config
+
+            if layout_type in ['form', 'list', 'detail']:
+                layout_config = LayoutGenerator.get_or_generate_layout(business_object, layout_type)
+            else:
+                layout_config = get_default_layout_config(layout_type)
+
+            layout_payload = {
+                'layout_type': layout_type,
+                'layout_config': layout_config,
+                'is_template': True
+            }
+            is_default = True
+
+        return BaseResponse.success({
+            'runtime_version': 1,
+            'object_code': self._object_meta.code,
+            'mode': mode,
+            'context': context,
+            'permissions': self._get_user_permissions(request.user, self._object_meta.code),
+            'fields': {
+                'editable_fields': editable_fields,
+                'reverse_relations': reverse_relations,
+                'context': context,
+            },
+            'layout': layout_payload,
+            'is_default': is_default,
+        })
+
+    @action(detail=False, methods=['get'], url_path='me')
+    def me(self, request, *args, **kwargs):
+        """
+        Current user endpoint under the unified object router.
+
+        GET /api/system/objects/User/me/
+
+        This exists to eliminate frontend dependencies on legacy `/api/auth/users/me/`.
+        """
+        if not request.user or not request.user.is_authenticated:
+            return BaseResponse.unauthorized()
+
+        object_code = (kwargs.get('code') or '').strip()
+        if not object_code and self._object_meta:
+            object_code = self._object_meta.code
+        if not object_code:
+            return BaseResponse.error('VALIDATION_ERROR', 'object_code is required', http_status=status.HTTP_400_BAD_REQUEST)
+        if object_code != 'User':
+            return BaseResponse.not_found(f"Endpoint only exists for 'User' (got '{object_code}')")
+
+        from apps.accounts.serializers import UserDetailSerializer
+        serializer = UserDetailSerializer(request.user)
+        return BaseResponse.success(serializer.data)
+
+    def me_profile(self, request, *args, **kwargs):
+        """
+        Update current user's profile under the unified object router.
+
+        PUT/PATCH /api/system/objects/User/me/profile/
+        """
+        if not request.user or not request.user.is_authenticated:
+            return BaseResponse.unauthorized()
+
+        object_code = (kwargs.get('code') or '').strip()
+        if not object_code and self._object_meta:
+            object_code = self._object_meta.code
+        if not object_code:
+            return BaseResponse.error('VALIDATION_ERROR', 'object_code is required', http_status=status.HTTP_400_BAD_REQUEST)
+        if object_code != 'User':
+            return BaseResponse.not_found(f"Endpoint only exists for 'User' (got '{object_code}')")
+
+        from apps.accounts.serializers import UserUpdateSerializer, UserDetailSerializer
+
+        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        out = UserDetailSerializer(request.user).data
+        return BaseResponse.success(out, message='Profile updated successfully.')
+
+    @action(detail=False, methods=['post'], url_path='me/change-password')
+    def me_change_password(self, request, *args, **kwargs):
+        """
+        Change current user's password under the unified object router.
+
+        POST /api/system/objects/User/me/change-password/
+        Body: { oldPassword, newPassword } (camelCase accepted by parser)
+        """
+        if not request.user or not request.user.is_authenticated:
+            return BaseResponse.unauthorized()
+
+        object_code = (kwargs.get('code') or '').strip()
+        if not object_code and self._object_meta:
+            object_code = self._object_meta.code
+        if not object_code:
+            return BaseResponse.error('VALIDATION_ERROR', 'object_code is required', http_status=status.HTTP_400_BAD_REQUEST)
+        if object_code != 'User':
+            return BaseResponse.not_found(f"Endpoint only exists for 'User' (got '{object_code}')")
+
+        from django.contrib.auth.hashers import make_password
+        from apps.accounts.serializers import ChangePasswordSerializer
+
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
+        request.user.password = make_password(serializer.validated_data['new_password'])
+        request.user.save()
+        return BaseResponse.success(message='Password changed successfully.')
+
+    def _should_show_field(self, field, context: str, is_model_field: bool = False) -> bool:
+        """
+        Determine if a field should be shown in the given context.
+
+        Args:
+            field: FieldDefinition or ModelFieldDefinition instance
+            context: 'form', 'detail', or 'list'
+            is_model_field: True if field is ModelFieldDefinition
+
+        Returns:
+            True if field should be shown in this context
+        """
+        if is_model_field:
+            # ModelFieldDefinition has show_in_form, show_in_detail, show_in_list
+            if context == 'form':
+                # Check if reverse relation (sub_table) - don't show in editable fields
+                if field.field_type == 'sub_table':
+                    return False
+                return getattr(field, 'show_in_form', True)
+            elif context == 'detail':
+                if field.field_type == 'sub_table':
+                    return False
+                return getattr(field, 'show_in_detail', True)
+            elif context == 'list':
+                if field.field_type == 'sub_table':
+                    return False
+                return getattr(field, 'show_in_list', False)
+        else:
+            # FieldDefinition has show_in_form, show_in_detail, show_in_list
+            if context == 'form':
+                if field.is_reverse_relation:
+                    return False
+                return getattr(field, 'show_in_form', True)
+            elif context == 'detail':
+                if field.is_reverse_relation:
+                    return False
+                return getattr(field, 'show_in_detail', True)
+            elif context == 'list':
+                if field.is_reverse_relation:
+                    return False
+                return getattr(field, 'show_in_list', False)
+
+        return True
+
+    def _format_field_definition(self, fd, context: str) -> dict:
+        """Format FieldDefinition instance for API response."""
+        return {
+            'code': fd.code,
+            'name': fd.name,
+            'field_type': fd.field_type,
+            'is_required': fd.is_required,
+            'is_readonly': fd.is_readonly,
+            'is_system': fd.is_system,
+            'is_searchable': fd.is_searchable,
+            'sortable': fd.sortable,
+            'show_in_filter': fd.show_in_filter,
+            'show_in_list': fd.show_in_list,
+            'show_in_detail': fd.show_in_detail,
+            'show_in_form': getattr(fd, 'show_in_form', True),
+            'sort_order': fd.sort_order,
+            'column_width': fd.column_width,
+            'min_column_width': fd.min_column_width,
+            'fixed': fd.fixed,
+            'options': fd.options,
+            'placeholder': fd.placeholder,
+            'default_value': fd.default_value,
+            'reference_object': fd.reference_object,
+            # Reverse relation fields
+            'is_reverse_relation': getattr(fd, 'is_reverse_relation', False),
+            'reverse_relation_model': getattr(fd, 'reverse_relation_model', ''),
+            'reverse_relation_field': getattr(fd, 'reverse_relation_field', ''),
+            'relation_display_mode': getattr(fd, 'relation_display_mode', 'tab_readonly'),
+        }
+
+    def _format_model_field(self, fd, context: str) -> dict:
+        """Format ModelFieldDefinition instance for API response."""
+        # Try to get field choices from the actual Django model
+        options = self._get_model_field_choices(fd)
+        
+        # Determine field type - if has choices, it should be rendered as select
+        field_type = fd.field_type
+        if options and field_type == 'text':
+            field_type = 'select'
+        
+        return {
+            'code': fd.field_name,
+            'name': fd.display_name or fd.field_name,
+            'field_type': field_type,
+            'is_required': fd.is_required,
+            'is_readonly': fd.is_readonly,
+            'is_system': False,
+            'is_searchable': True,
+            'sortable': True,
+            'show_in_filter': False,
+            'show_in_list': fd.show_in_list,
+            'show_in_detail': fd.show_in_detail,
+            'show_in_form': getattr(fd, 'show_in_form', True),
+            'sort_order': fd.sort_order,
+            'column_width': None,
+            'min_column_width': None,
+            'fixed': False,
+            'options': options,  # Now includes choices from Django model
+            'placeholder': None,
+            'default_value': None,
+            'reference_object': fd.reference_model_path if fd.field_type == 'reference' else None,
+            # Reverse relation fields
+            'is_reverse_relation': fd.field_type == 'sub_table',
+            'reverse_relation_model': '',
+            'reverse_relation_field': '',
+            'relation_display_mode': 'tab_readonly',
+        }
+
+    def _get_model_field_choices(self, fd) -> list:
+        """
+        Extract field choices from Django model for select-type fields.
+        
+        Args:
+            fd: ModelFieldDefinition instance
+            
+        Returns:
+            List of options in format [{'value': 'v', 'label': 'Label'}, ...]
+        """
+        try:
+            # Get the actual Django model class
+            model_class = self._object_meta.get_django_model() if hasattr(self._object_meta, 'get_django_model') else None
+            if not model_class:
+                # Fallback: try to get model from BusinessObject
+                from apps.system.models import BusinessObject
+                bo = BusinessObject.objects.filter(code=self._object_meta.code).first()
+                if bo and bo.django_model_path:
+                    from django.utils.module_loading import import_string
+                    model_class = import_string(bo.django_model_path)
+            
+            if not model_class:
+                return None
+                
+            # Get the field from the model
+            try:
+                field = model_class._meta.get_field(fd.field_name)
+            except Exception:
+                return None
+            
+            # Check if field has choices
+            if hasattr(field, 'choices') and field.choices:
+                choices = field.choices
+                # Handle both tuple and list formats
+                # Format: [(value, label), ...] or [('value', 'Label'), ...]
+                if isinstance(choices, (list, tuple)) and len(choices) > 0:
+                    return [
+                        {'value': choice[0], 'label': str(choice[1])}
+                        for choice in choices
+                    ]
+            
+            return None
+        except Exception as e:
+            # Log error but don't fail the request
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to get choices for field {fd.field_name}: {e}")
+            return None
 
     @action(detail=False, methods=['get'], url_path='schema')
     def schema(self, request, *args, **kwargs):

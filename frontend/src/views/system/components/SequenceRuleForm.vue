@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="isEdit ? 'Edit Sequence Rule' : 'Create Sequence Rule'"
+    :title="isEdit ? $t('system.sequenceRule.editTitle') : $t('system.sequenceRule.createTitle')"
     width="600px"
     @update:model-value="handleClose"
   >
@@ -12,45 +12,45 @@
       label-width="140px"
     >
       <el-form-item
-        label="Rule Code"
+        :label="$t('system.sequenceRule.fields.code')"
         prop="code"
       >
         <el-input
           v-model="formData.code"
-          placeholder="e.g., ASSET_CODE, ORDER_NO"
+          :placeholder="$t('system.sequenceRule.placeholders.code')"
           :disabled="isEdit"
         />
         <div class="form-tip">
-          Unique identifier for the sequence rule (uppercase)
+          {{ $t('system.sequenceRule.tips.code') }}
         </div>
       </el-form-item>
 
       <el-form-item
-        label="Rule Name"
+        :label="$t('system.sequenceRule.fields.name')"
         prop="name"
       >
         <el-input
           v-model="formData.name"
-          placeholder="e.g., Asset Code, Order Number"
+          :placeholder="$t('system.sequenceRule.placeholders.name')"
         />
       </el-form-item>
 
       <el-form-item
-        label="Prefix"
+        :label="$t('system.sequenceRule.fields.prefix')"
         prop="prefix"
       >
         <el-input
           v-model="formData.prefix"
-          placeholder="e.g., AST, ORD-"
+          :placeholder="$t('system.sequenceRule.placeholders.prefix')"
           style="width: 200px"
         />
         <div class="form-tip">
-          Fixed prefix for generated numbers
+          {{ $t('system.sequenceRule.tips.prefix') }}
         </div>
       </el-form-item>
 
       <el-form-item
-        label="Sequence Length"
+        :label="$t('system.sequenceRule.fields.seqLength')"
         prop="seq_length"
       >
         <el-input-number
@@ -60,12 +60,12 @@
           style="width: 150px"
         />
         <div class="form-tip">
-          Number of digits for the sequence part
+          {{ $t('system.sequenceRule.tips.seqLength') }}
         </div>
       </el-form-item>
 
       <el-form-item
-        label="Current Value"
+        :label="$t('system.sequenceRule.fields.currentValue')"
         prop="current_value"
       >
         <el-input-number
@@ -74,12 +74,12 @@
           style="width: 150px"
         />
         <div class="form-tip">
-          Starting value for the sequence
+          {{ $t('system.sequenceRule.tips.currentValue') }}
         </div>
       </el-form-item>
 
       <el-form-item
-        label="Reset Period"
+        :label="$t('system.sequenceRule.fields.resetPeriod')"
         prop="reset_period"
       >
         <el-select
@@ -88,70 +88,60 @@
           style="width: 200px"
         >
           <el-option
-            label="Never"
-            value="never"
-          />
-          <el-option
-            label="Yearly"
-            value="yearly"
-          />
-          <el-option
-            label="Monthly"
-            value="monthly"
-          />
-          <el-option
-            label="Daily"
-            value="daily"
+            v-for="(label, key) in resetPeriodOptions"
+            :key="key"
+            :label="label"
+            :value="key"
           />
         </el-select>
         <div class="form-tip">
-          When to reset the counter to 0
+          {{ $t('system.sequenceRule.tips.resetPeriod') }}
         </div>
       </el-form-item>
 
-      <el-form-item label="Pattern Preview">
+      <el-form-item :label="$t('system.sequenceRule.fields.pattern')">
         <el-tag type="info">
           {{ patternPreview }}
         </el-tag>
         <div class="form-tip">
-          Example: {{ patternExample }}
+          {{ $t('system.sequenceRule.tips.example') }} {{ patternExample }}
         </div>
       </el-form-item>
 
       <el-form-item
-        label="Description"
+        :label="$t('system.sequenceRule.fields.description')"
         prop="description"
       >
         <el-input
           v-model="formData.description"
           type="textarea"
           :rows="3"
-          placeholder="Describe what this sequence is used for"
+          :placeholder="$t('system.sequenceRule.placeholders.description')"
         />
       </el-form-item>
 
       <el-form-item
-        label="Active"
+        :label="$t('system.sequenceRule.fields.active')"
         prop="is_active"
       >
         <el-switch
           v-model="formData.is_active"
-          active-text="Active"
-          inactive-text="Inactive"
+          :active-text="$t('common.status.active')"
+          :inactive-text="$t('common.status.inactive')"
         />
       </el-form-item>
     </el-form>
 
     <template #footer>
       <el-button @click="handleClose">
-        Cancel
+        {{ $t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="submitting"
         @click="handleSubmit"
       >
-        {{ isEdit ? 'Save' : 'Create' }}
+        {{ isEdit ? $t('common.actions.save') : $t('common.actions.create') }}
       </el-button>
     </template>
   </el-dialog>
@@ -161,8 +151,11 @@
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import type { SequenceRule } from '@/api/system'
 import { sequenceRuleApi } from '@/api/system'
+
+const { t } = useI18n()
 
 interface Props {
   visible: boolean
@@ -194,28 +187,35 @@ const formData = ref({
   is_active: true
 })
 
-const rules: FormRules = {
+const rules = computed<FormRules>(() => ({
   code: [
-    { required: true, message: 'Please enter rule code', trigger: 'blur' },
+    { required: true, message: t('system.fieldDefinition.validation.codeRequired'), trigger: 'blur' },
     {
       pattern: /^[A-Z_][A-Z0-9_]*$/,
-      message: 'Code must be uppercase letters, numbers, and underscores only',
+      message: t('system.fieldDefinition.validation.codePattern'),
       trigger: 'blur'
     }
   ],
   name: [
-    { required: true, message: 'Please enter rule name', trigger: 'blur' }
+    { required: true, message: t('system.fieldDefinition.validation.nameRequired'), trigger: 'blur' }
   ],
   seq_length: [
-    { required: true, message: 'Please enter sequence length', trigger: 'blur' }
+    { required: true, message: t('common.validation.required'), trigger: 'blur' }
   ],
   current_value: [
-    { required: true, message: 'Please enter current value', trigger: 'blur' }
+    { required: true, message: t('common.validation.required'), trigger: 'blur' }
   ],
   reset_period: [
-    { required: true, message: 'Please select reset period', trigger: 'change' }
+    { required: true, message: t('common.validation.required'), trigger: 'change' }
   ]
-}
+}))
+
+const resetPeriodOptions = computed(() => ({
+  never: t('system.sequenceRule.periods.never'),
+  yearly: t('system.sequenceRule.periods.yearly'),
+  monthly: t('system.sequenceRule.periods.monthly'),
+  daily: t('system.sequenceRule.periods.daily')
+}))
 
 const patternPreview = computed(() => {
   const prefix = formData.value.prefix || ''
@@ -271,7 +271,7 @@ const handleClose = () => {
 const handleSubmit = async () => {
   if (!formRef.value) return
 
-  await formRef.value.validate(async (valid) => {
+  await formRef.value.validate(async (valid: boolean) => {
     if (!valid) return
 
     submitting.value = true
@@ -287,11 +287,11 @@ const handleSubmit = async () => {
       } else {
         await sequenceRuleApi.create(formDataWithPattern)
       }
-      ElMessage.success(isEdit.value ? 'Updated successfully' : 'Created successfully')
+      ElMessage.success(isEdit.value ? t('common.messages.updateSuccess') : t('common.messages.createSuccess'))
       emit('success')
       handleClose()
     } catch (error) {
-      ElMessage.error('Operation failed')
+      ElMessage.error(t('common.messages.operationFailed'))
     } finally {
       submitting.value = false
     }

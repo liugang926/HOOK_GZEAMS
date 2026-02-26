@@ -1,7 +1,7 @@
 <template>
   <component
     :is="fieldComponent"
-    :field="field"
+    :field="normalizedField"
     :model-value="modelValue"
     :form-data="formData"
     v-bind="fieldProps"
@@ -11,136 +11,75 @@
 
 <script setup>
 import { computed, defineAsyncComponent } from 'vue'
+import {
+  FIELD_COMPONENT_LOADERS,
+  buildNormalizedRuntimeField,
+  resolveEngineFieldType
+} from '@/components/engine/fieldRegistry'
 
 const props = defineProps({
   field: { type: Object, required: true },
   modelValue: { type: [String, Number, Object, Array, Boolean], default: null },
-  formData: { type: Object, default: () => ({}) }, // Pass full form data for formula calculations
+  formData: { type: Object, default: () => ({}) },
   disabled: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['update:modelValue'])
+defineEmits(['update:modelValue'])
 
-/**
- * Field type to component mapping
- * Supports all metadata-driven field types for the low-code platform
- */
-const FIELD_COMPONENTS = {
-  // Text input types
-  text: () => import('./fields/TextField.vue'),
-  textarea: () => import('./fields/TextField.vue'),
-  email: () => import('./fields/TextField.vue'),
-  url: () => import('./fields/TextField.vue'),
-  phone: () => import('./fields/TextField.vue'),
-  password: () => import('./fields/TextField.vue'),
+const ASYNC_FIELD_COMPONENTS = Object.fromEntries(
+  Object.entries(FIELD_COMPONENT_LOADERS).map(([type, loader]) => [type, defineAsyncComponent(loader)])
+)
+const FALLBACK_TEXT_COMPONENT = defineAsyncComponent(FIELD_COMPONENT_LOADERS.text)
 
-  // Number types
-  number: () => import('./fields/NumberField.vue'),
-  currency: () => import('./fields/NumberField.vue'),
-  percent: () => import('./fields/NumberField.vue'),
-
-  // Date/Time types
-  date: () => import('./fields/DateField.vue'),
-  datetime: () => import('./fields/DateField.vue'),
-  time: () => import('./fields/DateField.vue'),
-  daterange: () => import('./fields/DateField.vue'),
-  year: () => import('./fields/DateField.vue'),
-  month: () => import('./fields/DateField.vue'),
-
-  // Selection types
-  select: () => import('./fields/SelectField.vue'),
-  multi_select: () => import('./fields/SelectField.vue'),
-  radio: () => import('./fields/SelectField.vue'),
-  checkbox: () => import('./fields/BooleanField.vue'),
-  boolean: () => import('./fields/BooleanField.vue'),
-
-  // Reference types (relationships to other entities)
-  reference: () => import('./fields/ReferenceField.vue'),
-  user: () => import('./fields/UserSelectField.vue'),
-  department: () => import('./fields/DepartmentSelectField.vue'),
-  location: () => import('./fields/LocationSelectField.vue'),
-  asset: () => import('./fields/AssetSelector.vue'),
-
-  // Dictionary (system config)
-  dictionary: () => import('./fields/DictionarySelect.vue'),
-
-  // Complex types
-  sub_table: () => import('./fields/SubTableField.vue'),
-  formula: () => import('./fields/FormulaField.vue'),
-
-  // File types
-  file: () => import('./fields/AttachmentUpload.vue'),
-  image: () => import('./fields/AttachmentUpload.vue'),
-  attachment: () => import('./fields/AttachmentUpload.vue'),
-
-  // Special types
-  qr_code: () => import('./fields/QRCodeField.vue'),
-  barcode: () => import('./fields/BarcodeField.vue'),
-  rich_text: () => import('./fields/RichTextField.vue'),
-  code: () => import('./fields/CodeField.vue'),
-  color: () => import('./fields/ColorField.vue'),
-  rate: () => import('./fields/RateField.vue'),
-  slider: () => import('./fields/SliderField.vue'),
-  switch: () => import('./fields/SwitchField.vue')
-}
-
-/**
- * Map internal field types to standard components
- * Handles type aliases for backward compatibility
- */
-const getFieldType = (field) => {
-  const type = field.field_type
-
-  // Handle type aliases
-  const typeAliases = {
-    string: 'text',
-    int: 'number',
-    integer: 'number',
-    float: 'number',
-    decimal: 'number',
-    money: 'currency',
-    bool: 'boolean',
-    toggle: 'switch'
-  }
-
-  return typeAliases[type] || type
-}
-
-/**
- * Computed component to render
- * Falls back to TextField for unknown types
- */
-const fieldComponent = computed(() => {
-  const fieldType = getFieldType(props.field)
-  const componentLoader = FIELD_COMPONENTS[fieldType]
-
-  if (!componentLoader) {
-    console.warn(`Unknown field type: ${fieldType}, falling back to TextField`)
-    return defineAsyncComponent(() => import('./fields/TextField.vue'))
-  }
-
-  return defineAsyncComponent(componentLoader)
+const normalizedField = computed(() => {
+  return buildNormalizedRuntimeField(props.field || {})
 })
 
-/**
- * Props to pass to the field component
- * Combines common props with field-specific component_props
- */
-const fieldProps = computed(() => {
-  const fieldType = getFieldType(props.field)
+const getFileUploadContext = (field) => {
+  const componentProps = field.componentProps || field.component_props || {}
+  return {
+    objectCode: componentProps.objectCode || field.objectCode,
+    instanceId: componentProps.instanceId || field.instanceId,
+    fieldCode: field.code || field.fieldCode
+  }
+}
 
-  // Common props for all fields
-  const baseProps = {
-    disabled: props.disabled,
-    placeholder: props.field.placeholder || `请输入${props.field.name}`,
-    ...props.field.component_props
+const fieldComponent = computed(() => {
+  const fieldType = resolveEngineFieldType(normalizedField.value)
+  const component = ASYNC_FIELD_COMPONENTS[fieldType]
+
+  if (!component) {
+    console.warn(`Unknown field type: ${fieldType}, falling back to TextField`)
+    return FALLBACK_TEXT_COMPONENT
   }
 
-  // Type-specific default props
+  return component
+})
+
+const fieldProps = computed(() => {
+  const field = normalizedField.value
+
+  if (!field || Object.keys(field).length <= 2) {
+    return {
+      disabled: props.disabled,
+      placeholder: 'Please enter'
+    }
+  }
+
+  const fieldType = resolveEngineFieldType(field)
+  const fallbackLabel = field.label || field.name || ''
+  const placeholderText = field.placeholder || (fallbackLabel ? `Please enter ${fallbackLabel}` : 'Please enter')
+
+  const baseProps = {
+    disabled: props.disabled,
+    placeholder: placeholderText,
+    ...field.componentProps
+  }
+
   const typeDefaults = {
     textarea: {
       type: 'textarea',
-      rows: props.field.component_props?.rows || 3
+      rows: field.componentProps?.rows || 3
     },
     email: {
       type: 'email'
@@ -158,8 +97,8 @@ const fieldProps = computed(() => {
     },
     currency: {
       precision: 2,
-      currency: '¥',
-      prefix: '¥'
+      currency: 'CNY',
+      prefix: 'CNY '
     },
     percent: {
       precision: 2,
@@ -178,8 +117,8 @@ const fieldProps = computed(() => {
     daterange: {
       type: 'daterange',
       rangeSeparator: '-',
-      startPlaceholder: '开始日期',
-      endPlaceholder: '结束日期',
+      startPlaceholder: 'Start date',
+      endPlaceholder: 'End date',
       valueFormat: 'YYYY-MM-DD'
     },
     year: {
@@ -223,9 +162,18 @@ const fieldProps = computed(() => {
     }
   }
 
-  return {
+  let finalProps = {
     ...baseProps,
     ...(typeDefaults[fieldType] || {})
   }
+
+  if (['file', 'image', 'attachment'].includes(fieldType)) {
+    finalProps = {
+      ...finalProps,
+      ...getFileUploadContext(field)
+    }
+  }
+
+  return finalProps
 })
 </script>

@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-title">
-        <span class="title-text">存放位置管理</span>
+        <span class="title-text">{{ t('assets.location.manage') }}</span>
       </div>
       <div class="header-actions">
         <el-button
@@ -11,7 +11,7 @@
           :icon="Plus"
           @click="handleCreate"
         >
-          新建位置
+          {{ t('assets.location.create') }}
         </el-button>
       </div>
     </div>
@@ -23,13 +23,13 @@
         <el-col :span="6">
           <div class="tree-container">
             <div class="tree-header">
-              <span>位置树</span>
+              <span>{{ t('assets.location.tree') }}</span>
               <el-button
                 link
                 type="primary"
                 @click="handleRefreshTree"
               >
-                刷新
+                {{ t('common.actions.refresh') }}
               </el-button>
             </div>
             <el-tree
@@ -56,7 +56,7 @@
                       size="small"
                       @click="handleEdit(data)"
                     >
-                      编辑
+                      {{ t('common.actions.edit') }}
                     </el-button>
                   </span>
                 </span>
@@ -69,14 +69,14 @@
         <el-col :span="18">
           <div class="table-container">
             <div class="table-header">
-              <span>{{ currentLocation ? `当前位置: ${currentLocation.name}` : '全部位置' }}</span>
+              <span>{{ currentLocation ? `${t('assets.location.current')}: ${currentLocation.name}` : t('assets.location.manage') }}</span>
               <el-button
                 v-if="currentLocation"
                 link
                 type="primary"
                 @click="handleCreateChild"
               >
-                新建子位置
+                {{ t('assets.location.createChild') }}
               </el-button>
             </div>
             <el-table
@@ -87,39 +87,39 @@
             >
               <el-table-column
                 prop="code"
-                label="位置编码"
+                :label="t('assets.location.code')"
                 width="150"
               />
               <el-table-column
                 prop="name"
-                label="位置名称"
+                :label="t('assets.location.name')"
                 width="200"
               />
               <el-table-column
                 prop="fullPath"
-                label="完整路径"
+                :label="t('assets.location.fullPath')"
                 min-width="250"
                 show-overflow-tooltip
               />
               <el-table-column
                 prop="description"
-                label="描述"
+                :label="t('assets.location.description')"
                 min-width="200"
                 show-overflow-tooltip
               />
               <el-table-column
-                label="状态"
+                :label="t('common.labels.status')"
                 width="80"
                 align="center"
               >
                 <template #default="{ row }">
                   <el-tag :type="row.isActive ? 'success' : 'danger'">
-                    {{ row.isActive ? '启用' : '停用' }}
+                    {{ row.isActive ? t('common.status.enabled') : t('common.status.inactive') }}
                   </el-tag>
                 </template>
               </el-table-column>
               <el-table-column
-                label="操作"
+                :label="t('common.table.operations')"
                 width="180"
                 fixed="right"
               >
@@ -130,21 +130,21 @@
                       type="primary"
                       @click="handleView(row)"
                     >
-                      查看
+                      {{ t('common.actions.view') }}
                     </el-button>
                     <el-button
                       link
                       type="primary"
                       @click="handleEdit(row)"
                     >
-                      编辑
+                      {{ t('common.actions.edit') }}
                     </el-button>
                     <el-button
                       link
                       type="danger"
                       @click="handleDelete(row)"
                     >
-                      删除
+                      {{ t('common.actions.delete') }}
                     </el-button>
                   </div>
                 </template>
@@ -175,7 +175,10 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { getLocationList, getLocationTree, deleteLocation } from '@/api/assets/locations'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const treeRef = ref()
@@ -259,9 +262,9 @@ const handleRowClick = (row: any) => {
 
 const handleDelete = async (row: any) => {
   try {
-    await ElMessageBox.confirm(`确定要删除位置"${row.name}"吗？`, '确认操作', { type: 'warning' })
+    await ElMessageBox.confirm(`${t('common.dialog.confirmDeleteMessage').replace('{count}', `"${row.name}"`)}`, t('common.dialog.confirmTitle'), { type: 'warning' })
     await deleteLocation(row.id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.messages.deleteSuccess'))
     fetchTreeData()
     fetchTableData()
   } catch {

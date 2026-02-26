@@ -266,6 +266,7 @@ class NotificationService:
             }
 
         # Prepare message
+        external_id = str(uuid.uuid4())
         message = NotificationMessage(
             recipient=self._get_recipient_address(recipient, channel),
             subject=rendered.get('subject', ''),
@@ -276,7 +277,7 @@ class NotificationService:
                 **variables
             },
             priority=priority,
-            external_id=str(uuid.uuid4()),
+            external_id=external_id,
         )
 
         # Create notification record (for inbox and tracking)
@@ -290,6 +291,7 @@ class NotificationService:
             scheduled_at=scheduled_at,
             sender=sender,
             related_object=related_object,
+            external_id=external_id,
         )
 
         # Send message
@@ -353,6 +355,7 @@ class NotificationService:
         scheduled_at: Optional[timezone.datetime],
         sender: Optional[User],
         related_object: Optional[tuple],
+        external_id: Optional[str] = None,
     ) -> Optional[Notification]:
         """Create notification record for tracking."""
         try:
@@ -365,6 +368,7 @@ class NotificationService:
                 content=rendered.get('content', ''),
                 data={
                     'variables': variables,
+                    'external_id': external_id,
                 },
                 scheduled_at=scheduled_at,
                 sender=sender,

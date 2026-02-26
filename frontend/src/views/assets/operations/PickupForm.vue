@@ -2,7 +2,7 @@
   <div class="pickup-form">
     <div class="page-header">
       <el-page-header
-        :title="isEdit ? '编辑领用单' : '新建领用单'"
+        :title="isEdit ? $t('assets.pickup.editTitle') : $t('assets.pickup.createTitle')"
         @back="goBack"
       />
       <div class="header-actions">
@@ -12,7 +12,7 @@
           :loading="submitting"
           @click="handleSubmit"
         >
-          保存
+          {{ $t('common.actions.save') }}
         </el-button>
         <el-button
           v-if="!isEdit || form.status === 'draft'"
@@ -20,7 +20,7 @@
           :loading="submitting"
           @click="handleSubmitAndApply"
         >
-          提交审批
+          {{ $t('assets.pickup.form.submitForApproval') }}
         </el-button>
       </div>
     </div>
@@ -39,18 +39,18 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item
-              label="领用部门"
+              :label="$t('assets.pickup.form.department')"
               prop="departmentId"
             >
               <DeptPicker
                 v-model="form.departmentId"
-                placeholder="请选择领用部门"
+                :placeholder="$t('assets.pickup.form.departmentPlaceholder')"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item
-              label="领用日期"
+              :label="$t('assets.pickup.form.pickupDate')"
               prop="pickupDate"
             >
               <el-date-picker
@@ -63,7 +63,7 @@
           </el-col>
         </el-row>
         <el-form-item
-          label="领用原因"
+          :label="$t('assets.pickup.form.reason')"
           prop="reason"
         >
           <el-input
@@ -78,7 +78,7 @@
     <el-card
       shadow="never"
       class="mt-4"
-      header="领用资产明细"
+      :header="$t('assets.pickup.form.assetDetails')"
     >
       <div class="mb-4">
         <el-button
@@ -86,7 +86,7 @@
           :icon="Plus"
           @click="showAssetSelector"
         >
-          添加资产
+          {{ $t('assets.pickup.form.addAsset') }}
         </el-button>
       </div>
       <el-table
@@ -95,20 +95,20 @@
       >
         <el-table-column
           prop="asset.code"
-          label="资产编码"
+          :label="$t('assets.fields.assetCode')"
           width="150"
         />
         <el-table-column
           prop="asset.name"
-          label="资产名称"
+          :label="$t('assets.fields.assetName')"
         />
         <el-table-column
           prop="asset.categoryName"
-          label="分类"
+          :label="$t('assets.fields.category')"
           width="120"
         />
         <el-table-column
-          label="数量"
+          :label="$t('assets.pickup.form.quantity')"
           width="150"
         >
           <template #default="{ row }">
@@ -120,13 +120,13 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="备注">
+        <el-table-column :label="$t('assets.pickup.form.remark')">
           <template #default="{ row }">
             <el-input v-model="row.remark" />
           </template>
         </el-table-column>
         <el-table-column
-          label="操作"
+          :label="$t('common.labels.operation')"
           width="80"
           fixed="right"
         >
@@ -152,8 +152,10 @@
 </template>
 
 <script setup lang="ts">
+
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Plus, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AssetSelector from './components/AssetSelector.vue'
@@ -163,6 +165,7 @@ import { workflowInstanceApi } from '@/api/workflow'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const formRef = ref()
 const assetSelectorVisible = ref(false)
@@ -177,11 +180,11 @@ const form = reactive({
     items: [] as any[]
 })
 
-const rules = {
-    departmentId: [{ required: true, message: '请输入部门', trigger: 'blur' }],
-    pickupDate: [{ required: true, message: '请选择日期', trigger: 'change' }],
-    reason: [{ required: true, message: '请填写原因', trigger: 'blur' }]
-}
+const rules = computed(() => ({
+    departmentId: [{ required: true, message: t('assets.pickup.form.departmentPlaceholder'), trigger: 'blur' }],
+    pickupDate: [{ required: true, message: t('common.rules.required'), trigger: 'change' }],
+    reason: [{ required: true, message: t('assets.pickup.form.reasonPlaceholder'), trigger: 'blur' }]
+}))
 
 const isEdit = computed(() => !!route.params.id)
 const selectedAssetIds = computed(() => form.items.map(i => i.asset.id))
@@ -208,7 +211,7 @@ const removeItem = (index: number) => {
 const validateAndGetPayload = async () => {
     await formRef.value.validate()
     if (form.items.length === 0) {
-        ElMessage.warning('请至少添加一项资产')
+        ElMessage.warning(t('assets.pickup.messages.selectAssetWarning'))
         throw new Error('Validation failed')
     }
 
@@ -229,17 +232,17 @@ const handleSubmit = async () => {
         submitting.value = true
         
         if (isEdit.value) {
-            await updatePickup(Number(route.params.id), payload)
-            ElMessage.success('更新成功')
+            await updatePickup(String(route.params.id), payload)
+            ElMessage.success(t('common.messages.updateSuccess'))
         } else {
             await createPickup(payload)
-            ElMessage.success('保存成功')
+            ElMessage.success(t('common.messages.saveSuccess'))
         }
         goBack()
     } catch (e: any) {
         if (e.message !== 'Validation failed') {
             console.error(e)
-            ElMessage.error(e.message || '操作失败')
+            ElMessage.error(e.message || t('common.messages.operationFailed'))
         }
     } finally {
         submitting.value = false
@@ -253,9 +256,9 @@ const handleSubmitAndApply = async () => {
 
         let id = form.id
         if (isEdit.value) {
-            await updatePickup(Number(route.params.id), payload)
+            await updatePickup(String(route.params.id), payload)
         } else {
-            const res = await createPickup(payload)
+            const res = await createPickup(payload) as any
             id = res.id
         }
 
@@ -274,12 +277,12 @@ const handleSubmitAndApply = async () => {
             }
         })
         
-        ElMessage.success('提交审批成功')
+        ElMessage.success(t('assets.pickup.messages.submitApproveSuccess'))
         goBack()
     } catch (e: any) {
         if (e.message !== 'Validation failed') {
             console.error(e)
-            ElMessage.error(e.message || '提交审批失败')
+            ElMessage.error(e.message || t('assets.pickup.messages.submitApproveFailed'))
         }
     } finally {
         submitting.value = false
@@ -294,7 +297,7 @@ onMounted(async () => {
     if (isEdit.value) {
         // Load detail
         try {
-            const data = await getPickupDetail(Number(route.params.id))
+            const data = await getPickupDetail(String(route.params.id)) as any
             form.id = data.id
             form.status = data.status
             form.departmentId = data.department?.id
@@ -308,7 +311,7 @@ onMounted(async () => {
             }))
         } catch (e) {
             console.error(e)
-            ElMessage.error('加载失败')
+            ElMessage.error(t('assets.messages.loadFailed'))
         }
     }
 })

@@ -16,7 +16,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
             'parent', 'parent_name', 'level', 'path',
             'contact_person', 'contact_phone', 'email', 'address',
             'credit_code', 'is_active', 'is_deleted',
-            'invite_code', 'invite_code_expires_at',
+            'invite_code', 'invite_code_expires_at', 'is_invite_code_valid',
             'created_at', 'updated_at', 'created_by',
         ]
         read_only_fields = ['id', 'level', 'path', 'created_at', 'updated_at']

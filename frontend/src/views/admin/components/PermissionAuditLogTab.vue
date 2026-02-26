@@ -1,3 +1,4 @@
+```html
 <template>
   <div class="permission-audit-log-tab">
     <!-- Filters -->
@@ -6,34 +7,34 @@
       inline
       class="filter-form"
     >
-      <el-form-item label="操作类型">
+      <el-form-item :label="$t('system.permission.audit.toolbar.action')">
         <el-select
           v-model="filterForm.action"
           clearable
-          placeholder="全部"
+          :placeholder="$t('system.permission.audit.toolbar.actionPlaceholder')"
           @change="handleSearch"
         >
           <el-option
-            label="授权"
+            :label="$t('system.permission.audit.actions.grant')"
             value="grant"
           />
           <el-option
-            label="撤销"
+            :label="$t('system.permission.audit.actions.revoke')"
             value="revoke"
           />
           <el-option
-            label="修改"
+            :label="$t('system.permission.audit.actions.update')"
             value="update"
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="时间范围">
+      <el-form-item :label="$t('system.permission.audit.toolbar.timeRange')">
         <el-date-picker
           v-model="filterForm.dateRange"
           type="daterange"
-          range-separator="至"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
+          range-separator="-"
+          :start-placeholder="$t('system.permission.audit.toolbar.startDate')"
+          :end-placeholder="$t('system.permission.audit.toolbar.endDate')"
           @change="handleSearch"
         />
       </el-form-item>
@@ -42,10 +43,10 @@
           type="primary"
           @click="handleSearch"
         >
-          查询
+          {{ $t('common.actions.search') }}
         </el-button>
         <el-button @click="handleReset">
-          重置
+          {{ $t('common.actions.reset') }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -59,7 +60,7 @@
         <el-card shadow="hover">
           <div class="stat-item">
             <div class="stat-label">
-              今日授权
+              {{ $t('system.permission.audit.stats.todayGrants') }}
             </div>
             <div class="stat-value">
               {{ stats.todayGrants }}
@@ -71,7 +72,7 @@
         <el-card shadow="hover">
           <div class="stat-item">
             <div class="stat-label">
-              今日撤销
+              {{ $t('system.permission.audit.stats.todayRevokes') }}
             </div>
             <div class="stat-value">
               {{ stats.todayRevokes }}
@@ -83,7 +84,7 @@
         <el-card shadow="hover">
           <div class="stat-item">
             <div class="stat-label">
-              本周操作
+              {{ $t('system.permission.audit.stats.weekTotal') }}
             </div>
             <div class="stat-value">
               {{ stats.weekTotal }}
@@ -95,7 +96,7 @@
         <el-card shadow="hover">
           <div class="stat-item">
             <div class="stat-label">
-              活跃用户
+              {{ $t('system.permission.audit.stats.activeUsers') }}
             </div>
             <div class="stat-value">
               {{ stats.activeUsers }}
@@ -115,16 +116,16 @@
     >
       <el-table-column
         prop="createdAt"
-        label="操作时间"
+        :label="$t('system.permission.audit.columns.time')"
         width="180"
       />
       <el-table-column
         prop="operatorName"
-        label="操作人"
+        :label="$t('system.permission.audit.columns.operator')"
         width="120"
       />
       <el-table-column
-        label="操作类型"
+        :label="$t('system.permission.audit.columns.action')"
         width="100"
         align="center"
       >
@@ -139,7 +140,7 @@
       </el-table-column>
       <el-table-column
         prop="permissionType"
-        label="权限类型"
+        :label="$t('system.permission.audit.columns.type')"
         width="100"
       >
         <template #default="{ row }">
@@ -147,28 +148,28 @@
             :type="row.permissionType === 'field' ? 'primary' : 'success'"
             size="small"
           >
-            {{ row.permissionType === 'field' ? '字段权限' : '数据权限' }}
+            {{ row.permissionType === 'field' ? $t('system.permission.audit.types.field') : $t('system.permission.audit.types.data') }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
         prop="targetName"
-        label="目标对象"
+        :label="$t('system.permission.audit.columns.target')"
         width="120"
       />
       <el-table-column
         prop="details"
-        label="操作详情"
+        :label="$t('system.permission.audit.columns.details')"
         min-width="250"
         show-overflow-tooltip
       />
       <el-table-column
         prop="ipAddress"
-        label="IP地址"
+        :label="$t('system.permission.audit.columns.ip')"
         width="140"
       />
       <el-table-column
-        label="操作"
+        :label="$t('system.permission.audit.columns.operation')"
         width="100"
         fixed="right"
       >
@@ -178,7 +179,7 @@
             type="primary"
             @click="handleViewDetail(row)"
           >
-            详情
+            {{ $t('common.actions.detail') }}
           </el-button>
         </template>
       </el-table-column>
@@ -200,45 +201,45 @@
     <!-- Detail Dialog -->
     <el-dialog
       v-model="detailVisible"
-      title="日志详情"
+      :title="$t('system.permission.audit.dialog.title')"
       width="600px"
     >
       <el-descriptions
         :column="2"
         border
       >
-        <el-descriptions-item label="操作时间">
+        <el-descriptions-item :label="$t('system.permission.audit.dialog.time')">
           {{ currentLog?.createdAt }}
         </el-descriptions-item>
-        <el-descriptions-item label="操作人">
+        <el-descriptions-item :label="$t('system.permission.audit.dialog.operator')">
           {{ currentLog?.operatorName }}
         </el-descriptions-item>
-        <el-descriptions-item label="操作类型">
+        <el-descriptions-item :label="$t('system.permission.audit.dialog.action')">
           <el-tag :type="getActionTag(currentLog?.action)">
             {{ getActionLabel(currentLog?.action) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="权限类型">
+        <el-descriptions-item :label="$t('system.permission.audit.dialog.type')">
           <el-tag :type="currentLog?.permissionType === 'field' ? 'primary' : 'success'">
-            {{ currentLog?.permissionType === 'field' ? '字段权限' : '数据权限' }}
+            {{ currentLog?.permissionType === 'field' ? $t('system.permission.audit.types.field') : $t('system.permission.audit.types.data') }}
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item
-          label="目标对象"
+          :label="$t('system.permission.audit.dialog.target')"
           :span="2"
         >
           {{ currentLog?.targetName }}
         </el-descriptions-item>
         <el-descriptions-item
-          label="操作详情"
+          :label="$t('system.permission.audit.dialog.details')"
           :span="2"
         >
           {{ currentLog?.details }}
         </el-descriptions-item>
-        <el-descriptions-item label="IP地址">
+        <el-descriptions-item :label="$t('system.permission.audit.dialog.ip')">
           {{ currentLog?.ipAddress }}
         </el-descriptions-item>
-        <el-descriptions-item label="用户代理">
+        <el-descriptions-item :label="$t('system.permission.audit.dialog.userAgent')">
           {{ currentLog?.userAgent }}
         </el-descriptions-item>
       </el-descriptions>
@@ -249,7 +250,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { permissionAuditLogApi } from '@/api/permissions'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const tableData = ref<any[]>([])
@@ -276,9 +280,9 @@ const stats = ref({
 
 const getActionLabel = (action: string) => {
   const labels: Record<string, string> = {
-    'grant': '授权',
-    'revoke': '撤销',
-    'update': '修改'
+    'grant': t('system.permission.audit.actions.grant'),
+    'revoke': t('system.permission.audit.actions.revoke'),
+    'update': t('system.permission.audit.actions.update')
   }
   return labels[action] || action
 }
@@ -350,7 +354,7 @@ const fetchData = async () => {
       activeUsers: 8
     }
   } catch (error) {
-    ElMessage.error('加载数据失败')
+    ElMessage.error(t('common.messages.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -406,3 +410,4 @@ onMounted(() => {
   justify-content: flex-end;
 }
 </style>
+```

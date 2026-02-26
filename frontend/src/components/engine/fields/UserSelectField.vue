@@ -1,7 +1,7 @@
 <template>
   <UserPicker
     :model-value="modelValue"
-    :multiple="field.multiple || field.field_type === 'multi_user'"
+    :multiple="isMultiple"
     :disabled="disabled"
     :placeholder="placeholder"
     @update:model-value="$emit('update:modelValue', $event)"
@@ -20,4 +20,10 @@ const props = defineProps({
 })
 
 defineEmits(['update:modelValue'])
+
+// Support both camelCase (fieldType) and snake_case (field_type)
+const isMultiple = computed(() => {
+  const fieldType = props.field.fieldType || props.field.field_type
+  return props.field.multiple || fieldType === 'multi_user' || fieldType === 'multiUser'
+})
 </script>

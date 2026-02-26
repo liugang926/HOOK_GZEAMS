@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from apps.organizations.models import Organization, Department, UserDepartment
+from apps.accounts.models import User, UserOrganization
 from apps.organizations.serializers import (
     OrganizationSerializer,
     OrganizationTreeSerializer,
@@ -153,6 +154,147 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             },
             'message': 'Invite code regenerated'
         })
+
+    @action(detail=True, methods=['get', 'post', 'delete'], url_path='members')
+    def members(self, request, pk=None):
+        """
+        Get/add/remove organization members.
+
+        GET  /api/organizations/organizations/{id}/members/
+        POST /api/organizations/organizations/{id}/members/
+        DELETE /api/organizations/organizations/{id}/members/
+        """
+        organization = self.get_object()
+
+        if request.method.lower() == 'get':
+            memberships = UserOrganization.objects.filter(
+                organization=organization,
+                is_active=True,
+            ).select_related('user')
+            data = [
+                {
+                    'id': str(m.id),
+                    'user_id': str(m.user_id),
+                    'username': m.user.username,
+                    'real_name': m.user.real_name,
+                    'email': m.user.email,
+                    'role': m.role,
+                    'is_primary': m.is_primary,
+                    'is_active': m.is_active,
+                }
+                for m in memberships
+            ]
+            return Response({'success': True, 'data': data})
+
+        if request.method.lower() == 'delete':
+            user_id = (
+                request.data.get('userId')
+                or request.data.get('user_id')
+                or request.query_params.get('userId')
+                or request.query_params.get('user_id')
+            )
+            if not user_id:
+                return Response(
+                    {
+                        'success': False,
+                        'error': {
+                            'code': 'VALIDATION_ERROR',
+                            'message': 'userId is required',
+                        }
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            membership = UserOrganization.objects.filter(
+                organization=organization,
+                user_id=user_id,
+                is_active=True,
+            ).first()
+            if not membership:
+                return Response(
+                    {
+                        'success': False,
+                        'error': {
+                            'code': 'NOT_FOUND',
+                            'message': 'Organization membership not found',
+                        }
+                    },
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+
+            membership.is_active = False
+            membership.save(update_fields=['is_active'])
+            return Response(
+                {
+                    'success': True,
+                    'message': 'Member removed successfully',
+                }
+            )
+
+        user_id = request.data.get('userId') or request.data.get('user_id')
+        role = request.data.get('role') or 'member'
+        if not user_id:
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 'VALIDATION_ERROR',
+                        'message': 'userId is required',
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = User.objects.filter(id=user_id, is_deleted=False).first()
+        if not user:
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 'NOT_FOUND',
+                        'message': 'User not found',
+                    }
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # If this is the first organization membership for the user, mark it primary.
+        should_be_primary = not UserOrganization.objects.filter(
+            user=user,
+            is_active=True,
+        ).exists()
+
+        membership, created = UserOrganization.objects.get_or_create(
+            user=user,
+            organization=organization,
+            defaults={
+                'role': role,
+                'is_active': True,
+                'is_primary': should_be_primary,
+            },
+        )
+        if not created:
+            membership.role = role
+            membership.is_active = True
+            if should_be_primary:
+                membership.is_primary = True
+            membership.save(update_fields=['role', 'is_active', 'is_primary'])
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Member added successfully',
+                'data': {
+                    'id': str(membership.id),
+                    'user_id': str(membership.user_id),
+                    'organization_id': str(membership.organization_id),
+                    'role': membership.role,
+                    'is_primary': membership.is_primary,
+                    'is_active': membership.is_active,
+                },
+            },
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
 
 
 # =============================================================================

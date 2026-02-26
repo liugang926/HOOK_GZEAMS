@@ -1,13 +1,13 @@
 <template>
   <div
     class="field-renderer"
-    :class="[`mode-${mode}`, `type-${field.type}`]"
+    :class="[`mode-${mode}`, `type-${fieldType}`]"
   >
     <!-- WRITE MODE -->
     <template v-if="mode === 'write'">
       <!-- Input -->
       <el-input
-        v-if="['text', 'string', 'email', 'phone'].includes(field.type)"
+        v-if="['text', 'string', 'email', 'phone'].includes(fieldType)"
         :model-value="modelValue"
         :placeholder="placeholder"
         :disabled="disabled"
@@ -17,7 +17,7 @@
 
       <!-- Textarea -->
       <el-input
-        v-else-if="field.type === 'textarea'"
+        v-else-if="fieldType === 'textarea'"
         :model-value="modelValue"
         type="textarea"
         :rows="field.rows || 3"
@@ -28,7 +28,7 @@
 
       <!-- Number -->
       <el-input-number
-        v-else-if="['number', 'integer', 'float'].includes(field.type)"
+        v-else-if="['number', 'integer', 'float'].includes(fieldType)"
         :model-value="modelValue"
         :disabled="disabled"
         class="full-width"
@@ -38,7 +38,7 @@
 
       <!-- Select / Enum -->
       <el-select
-        v-else-if="['select', 'enum', 'status'].includes(field.type)"
+        v-else-if="['select', 'enum', 'status'].includes(fieldType)"
         :model-value="modelValue"
         :placeholder="placeholder"
         :disabled="disabled"
@@ -56,9 +56,9 @@
 
       <!-- Date -->
       <el-date-picker
-        v-else-if="['date', 'datetime'].includes(field.type)"
+        v-else-if="['date', 'datetime'].includes(fieldType)"
         :model-value="modelValue"
-        :type="field.type === 'datetime' ? 'datetime' : 'date'"
+        :type="fieldType === 'datetime' ? 'datetime' : 'date'"
         :placeholder="placeholder"
         :disabled="disabled"
         class="full-width"
@@ -68,7 +68,7 @@
 
       <!-- Progress -->
       <el-input-number
-        v-else-if="field.type === 'progress'"
+        v-else-if="fieldType === 'progress'"
         :model-value="modelValue"
         :min="0"
         :max="100"
@@ -79,7 +79,7 @@
 
       <!-- Reference -->
       <el-input
-        v-else-if="field.type === 'reference'"
+        v-else-if="fieldType === 'reference'"
         :model-value="modelValue?.name || modelValue"
         readonly
         placeholder="Click to select..."
@@ -92,7 +92,7 @@
 
       <!-- Formula (Readonly) -->
       <el-input
-        v-else-if="field.type === 'formula'"
+        v-else-if="fieldType === 'formula'"
         :model-value="modelValue"
         readonly
         disabled
@@ -100,7 +100,7 @@
 
       <!-- File (Simple URL input for now) -->
       <el-input
-        v-else-if="field.type === 'file'"
+        v-else-if="fieldType === 'file'"
         :model-value="modelValue"
         placeholder="File URL"
         :disabled="disabled"
@@ -111,13 +111,13 @@
       <span
         v-else
         class="text-gray-400"
-      >Unsupported type: {{ field.type }}</span>
+      >Unsupported type: {{ fieldType }}</span>
     </template>
 
     <!-- READ / TABLE MODE -->
     <template v-else>
-      <!-- Status / Enum (Tag) -->
-      <template v-if="['status', 'enum'].includes(field.type)">
+      <!-- Status / Enum / Select (Tag) -->
+      <template v-if="['status', 'enum', 'select'].includes(fieldType)">
         <el-tag
           :type="getStatusType(modelValue)"
           size="small"
@@ -128,14 +128,14 @@
       </template>
 
       <!-- Date -->
-      <template v-else-if="['date', 'datetime'].includes(field.type)">
+      <template v-else-if="['date', 'datetime'].includes(fieldType)">
         <span class="text-sm font-mono text-gray-600">
           {{ formatDateDisplay(modelValue) }}
         </span>
       </template>
 
       <!-- User -->
-      <template v-else-if="field.type === 'user'">
+      <template v-else-if="fieldType === 'user'">
         <div class="flex items-center gap-2">
           <el-avatar
             :size="24"
@@ -148,12 +148,12 @@
       </template>
 
       <!-- Currency -->
-      <template v-else-if="field.type === 'currency'">
+      <template v-else-if="fieldType === 'currency'">
         <span class="font-mono">{{ formatCurrency(modelValue) }}</span>
       </template>
 
       <!-- Boolean -->
-      <template v-else-if="field.type === 'boolean'">
+      <template v-else-if="fieldType === 'boolean'">
         <el-icon
           v-if="modelValue"
           color="#67C23A"
@@ -170,13 +170,13 @@
 
       <!-- Progress -->
       <el-progress
-        v-else-if="field.type === 'progress'"
+        v-else-if="fieldType === 'progress'"
         :percentage="Number(modelValue || 0)"
         :status="Number(modelValue) === 100 ? 'success' : ''"
       />
 
       <!-- File -->
-      <template v-else-if="field.type === 'file'">
+      <template v-else-if="fieldType === 'file'">
         <a
           v-if="modelValue"
           :href="modelValue"
@@ -189,21 +189,21 @@
         <span v-else>-</span>
       </template>
 
-      <!-- Reference -->
-      <template v-else-if="field.type === 'reference'">
+      <!-- Reference / Department / Location / Asset -->
+      <template v-else-if="['reference', 'department', 'location', 'asset'].includes(fieldType)">
         <router-link 
           v-if="modelValue && field.referenceRoute" 
           :to="{ name: field.referenceRoute, params: { id: modelValue.id || modelValue } }"
           class="text-blue-500 hover:underline"
         >
-          {{ modelValue.name || modelValue.label || modelValue }}
+          {{ formatDefaultValue(modelValue) }}
         </router-link>
-        <span v-else>{{ modelValue?.name || modelValue || '-' }}</span>
+        <span v-else>{{ formatDefaultValue(modelValue) }}</span>
       </template>
 
       <!-- Formula -->
       <span
-        v-else-if="field.type === 'formula'"
+        v-else-if="fieldType === 'formula'"
         class="font-mono text-gray-600 bg-gray-50 px-1 rounded"
       >
         {{ modelValue || '-' }}
@@ -213,9 +213,9 @@
       <span
         v-else
         class="text-sm truncate block"
-        :title="String(modelValue || '')"
+        :title="formatDefaultValue(modelValue)"
       >
-        {{ modelValue || '-' }}
+        {{ formatDefaultValue(modelValue) }}
       </span>
     </template>
   </div>
@@ -223,6 +223,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { resolveFieldType } from '@/utils/fieldType'
 import { Check, Close, Document, Search } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 
@@ -248,6 +249,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits(['update:modelValue', 'change'])
 
+const fieldType = computed(() => resolveFieldType(props.field))
 const placeholder = computed(() => `Please enter ${props.field.label}`)
 
 const options = computed(() => props.field.options || [])
@@ -259,9 +261,19 @@ const handleChange = (val: any) => {
 
 // --- Helpers ---
 
+const formatDefaultValue = (val: any): string => {
+  if (val === null || val === undefined || val === '') return '-'
+  if (Array.isArray(val)) return val.map(formatDefaultValue).join(', ')
+  if (typeof val === 'object') {
+    return val.name || val.label || val.title || val.code || val.id || '-'
+  }
+  return String(val)
+}
+
 const getStatusLabel = (val: any) => {
+  if (Array.isArray(val)) return val.map(getStatusLabel).join(', ')
   const opt = options.value.find(o => o.value === val)
-  return opt ? opt.label : val
+  return opt ? opt.label : formatDefaultValue(val)
 }
 
 const getStatusType = (val: any) => {

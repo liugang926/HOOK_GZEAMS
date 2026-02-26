@@ -7,6 +7,8 @@ configuration without code changes.
 Note: BusinessRule and RuleExecution models are in apps.system.models.business_rule
 """
 from django.db import models
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from apps.common.models import BaseModel
 from apps.common.managers import GlobalMetadataManager
@@ -272,9 +274,42 @@ class FieldDefinition(BaseModel):
         default=False,
         db_comment='Show as filter option'
     )
+    show_in_form = models.BooleanField(
+        default=True,
+        db_comment='Show in create/edit forms'
+    )
     sort_order = models.IntegerField(
         default=0,
         db_comment='Display order'
+    )
+
+    # === Reverse Relation Handling ===
+    # These fields identify reverse relations (e.g., maintenance_records from Maintenance -> Asset)
+    is_reverse_relation = models.BooleanField(
+        default=False,
+        db_comment='True if this field represents a reverse relation (related_name)'
+    )
+    reverse_relation_model = models.CharField(
+        max_length=200,
+        blank=True,
+        db_comment='Path to model that owns this relation (e.g., apps.lifecycle.models.Maintenance)'
+    )
+    reverse_relation_field = models.CharField(
+        max_length=100,
+        blank=True,
+        db_comment='FK field name on related model (e.g., asset)'
+    )
+    RELATION_DISPLAY_CHOICES = [
+        ('inline_editable', 'Inline Editable Table'),
+        ('inline_readonly', 'Inline Read-Only Table'),
+        ('tab_readonly', 'Tab Read-Only Table'),
+        ('hidden', 'Hidden'),
+    ]
+    relation_display_mode = models.CharField(
+        max_length=20,
+        choices=RELATION_DISPLAY_CHOICES,
+        default='tab_readonly',
+        db_comment='How to display reverse relations'
     )
 
     # === Column Display Configuration (List View) ===
@@ -431,8 +466,12 @@ class ModelFieldDefinition(BaseModel):
     Unlike FieldDefinition (which is for low-code dynamic fields),
     ModelFieldDefinition is read-only and auto-generated from Django model metadata.
 
-    Inherits from BaseModel for organization isolation and audit trails.
+    Uses GlobalMetadataManager for cross-organization metadata access.
     """
+
+    # Use GlobalMetadataManager for cross-organization access
+    objects = GlobalMetadataManager()
+    all_objects = models.Manager()  # For accessing soft-deleted records
 
     # Field Type Mapping (Django to Metadata)
     DJANGO_FIELD_TYPE_MAP = {
@@ -444,17 +483,18 @@ class ModelFieldDefinition(BaseModel):
         'FloatField': 'number',
         'DateField': 'date',
         'DateTimeField': 'datetime',
+        'TimeField': 'time',
         'BooleanField': 'boolean',
         'NullBooleanField': 'boolean',
         'ForeignKey': 'reference',
         'ManyToManyField': 'multi_select',
         'OneToOneField': 'reference',
         'UUIDField': 'text',
-        'EmailField': 'text',
-        'URLField': 'text',
+        'EmailField': 'email',
+        'URLField': 'url',
         'FileField': 'file',
         'ImageField': 'image',
-        'JSONField': 'textarea',
+        'JSONField': 'json',
     }
 
     # === Association ===
@@ -573,6 +613,46 @@ class ModelFieldDefinition(BaseModel):
         return f"{self.business_object.name}.{self.field_name} ({self.display_name})"
 
     @classmethod
+    def get_metadata_field_type(cls, field):
+        """
+        Resolve a Django model field into a metadata field_type.
+
+        Shared helper to keep field type mapping consistent across
+        metadata sync and ModelFieldDefinition creation.
+        """
+        from django.db import models as django_models
+
+        django_type = field.__class__.__name__
+        field_name_lower = field.name.lower()
+
+        # QR code fields: CharField with 'qr' and 'code' in name
+        if isinstance(field, django_models.CharField):
+            if 'qr' in field_name_lower and 'code' in field_name_lower:
+                return 'qr_code'
+
+        # JSONField special handling for image/file storage
+        if isinstance(field, django_models.JSONField):
+            if 'image' in field_name_lower or 'photo' in field_name_lower or 'picture' in field_name_lower:
+                return 'image'
+            if 'attachment' in field_name_lower or 'file' in field_name_lower or 'document' in field_name_lower:
+                return 'file'
+
+        # ForeignKey special handling
+        if isinstance(field, django_models.ForeignKey):
+            related_name = getattr(field.related_model, '__name__', '')
+            if related_name == 'User':
+                return 'user'
+            if related_name == 'Department' or 'Organization' in related_name:
+                return 'department'
+            return 'reference'
+
+        # Choices should be rendered as select
+        if hasattr(field, 'choices') and field.choices:
+            return 'select'
+
+        return cls.DJANGO_FIELD_TYPE_MAP.get(django_type, 'text')
+
+    @classmethod
     def from_django_field(cls, business_object, field):
         """
         Create ModelFieldDefinition from a Django model field.
@@ -590,17 +670,12 @@ class ModelFieldDefinition(BaseModel):
         django_type = field.__class__.__name__
 
         # Map to metadata field type
-        field_type = cls.DJANGO_FIELD_TYPE_MAP.get(django_type, 'text')
+        field_type = cls.get_metadata_field_type(field)
 
         # Handle ForeignKey special case
         reference_path = ''
         if isinstance(field, django_models.ForeignKey):
             reference_path = f"{field.related_model.__module__}.{field.related_model.__name__}"
-            # Determine reference type based on related model
-            if field.related_model.__name__ == 'User':
-                field_type = 'user'
-            elif 'Organization' in field.related_model.__name__:
-                field_type = 'department'
 
         return cls(
             business_object=business_object,
@@ -640,13 +715,33 @@ class PageLayout(BaseModel):
     objects = GlobalMetadataManager()
     all_objects = models.Manager()
 
-    # Layout Type Choices
+    # Layout Mode Choices - New unified system (3 modes)
+    # - edit: Form layout for creating/editing records (includes legacy form + detail)
+    # - readonly: Read-only detail view for viewing records
+    # - search: Search form with horizontal layout
+    LAYOUT_MODE_CHOICES = [
+        ('edit', 'Edit'),
+        ('readonly', 'Readonly'),
+        ('search', 'Search'),
+    ]
+
+    # Legacy Layout Type Choices - Kept for backward compatibility
+    # @deprecated Use LAYOUT_MODE_CHOICES instead
+    # Mapping: form->edit, detail->readonly, list->(auto-generated), search->search
     LAYOUT_TYPE_CHOICES = [
         ('form', 'Form'),
         ('list', 'List'),
         ('detail', 'Detail'),
         ('search', 'Search'),
     ]
+
+    # Legacy type to mode mapping
+    _LEGACY_TYPE_TO_MODE = {
+        'form': 'edit',
+        'detail': 'readonly',
+        'list': 'edit',  # List layouts are auto-generated from FieldDefinition
+        'search': 'search',
+    }
 
     # Status Choices
     STATUS_CHOICES = [
@@ -676,7 +771,15 @@ class PageLayout(BaseModel):
         max_length=20,
         choices=LAYOUT_TYPE_CHOICES,
         default='form',
-        db_comment='Layout type'
+        db_comment='Layout type (deprecated: use mode instead)'
+    )
+    # New mode field - use this instead of layout_type
+    mode = models.CharField(
+        max_length=20,
+        choices=LAYOUT_MODE_CHOICES,
+        default='edit',
+        blank=True,
+        db_comment='Layout display mode (edit/readonly/search)'
     )
     description = models.TextField(
         blank=True,
@@ -687,6 +790,65 @@ class PageLayout(BaseModel):
     layout_config = models.JSONField(
         default=dict,
         db_comment='JSON layout configuration'
+    )
+
+    # === Layout Priority & Context ===
+    # Layout priority determines which layout to apply when multiple exist
+    PRIORITY_CHOICES = [
+        ('user', 'User Level'),      # User personal preference
+        ('role', 'Role Level'),      # Role-based layout
+        ('org', 'Organization Level'),  # Organization-specific
+        ('global', 'Global Level'),   # System-wide custom layout
+        ('default', 'Default Layout'),  # Auto-generated from FieldDefinition
+    ]
+    priority = models.CharField(
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default='global',
+        db_comment='Layout priority level (user > role > org > global > default)'
+    )
+
+    # Context type for more granular layout control
+    CONTEXT_TYPE_CHOICES = [
+        ('form_create', 'Create Form'),
+        ('form_edit', 'Edit Form'),
+        ('detail', 'Detail View'),
+        ('list', 'List View'),
+        ('search', 'Search Form'),
+    ]
+    context_type = models.CharField(
+        max_length=20,
+        choices=CONTEXT_TYPE_CHOICES,
+        blank=True,
+        db_comment='Specific context within layout_type (e.g., form_create vs form_edit)'
+    )
+
+    # === Differential Configuration ===
+    # Stores only changes from default layout (merge pattern)
+    # Default layout is auto-generated from FieldDefinition.sort_order
+    diff_config = models.JSONField(
+        default=dict,
+        db_comment='''
+        Differential configuration storing only changes from default layout.
+        Structure:
+        {
+            "fieldOrder": ["code", "name", "category"],  // Custom sort order
+            "sections": [
+                {
+                    "id": "section_basic",
+                    "fields": [
+                        {
+                            "fieldCode": "code",
+                            "span": 24,           // Custom column span
+                            "readonly": true,     // Override field definition
+                            "visible": false,     // Hide field
+                            "required": true      // Override required
+                        }
+                    ]
+                }
+            ]
+        }
+        '''
     )
 
     # === Status and Version ===
@@ -749,17 +911,41 @@ class PageLayout(BaseModel):
     def __str__(self):
         return f"{self.business_object.name}.{self.layout_code} ({self.layout_name})"
 
+    @property
+    def effective_mode(self) -> str:
+        """
+        Get the effective layout mode.
+        Returns the mode field if set, otherwise derives from legacy layout_type.
+        """
+        if self.mode:
+            return self.mode
+        # Auto-derive mode from legacy layout_type for backward compatibility
+        return self._LEGACY_TYPE_TO_MODE.get(self.layout_type, 'edit')
+
+    def save(self, *args, **kwargs):
+        """
+        Override save to auto-set mode from layout_type for backward compatibility.
+        If mode is not explicitly set, derive it from layout_type.
+        """
+        if not self.mode:
+            self.mode = self._LEGACY_TYPE_TO_MODE.get(self.layout_type, 'edit')
+        super().save(*args, **kwargs)
+
     def clean(self):
         """Validate layout configuration."""
-        if self.layout_type == 'form' and not self.layout_config.get('sections'):
+        # Get effective mode for validation
+        effective_mode = self.effective_mode
+
+        # All modes now use sections-based configuration
+        if effective_mode in ('edit', 'readonly') and not self.layout_config.get('sections'):
             raise ValidationError({
-                'layout_config': 'Form layout must contain sections.'
+                'layout_config': 'Layout must contain sections.'
             })
 
-        if self.layout_type == 'list' and not self.layout_config.get('columns'):
-            raise ValidationError({
-                'layout_config': 'List layout must contain columns.'
-            })
+        # Search mode also uses sections but with horizontal layout
+        if effective_mode == 'search' and not self.layout_config.get('sections'):
+            # Search layouts can be empty (will use default)
+            pass
 
     def publish(self, user):
         """
@@ -1452,12 +1638,57 @@ class SystemFile(BaseModel):
         blank=True,
         db_comment='Thumbnail path (for images)'
     )
+    # Image dimensions (for image files)
+    width = models.IntegerField(
+        null=True,
+        blank=True,
+        db_comment='Image width in pixels'
+    )
+    height = models.IntegerField(
+        null=True,
+        blank=True,
+        db_comment='Image height in pixels'
+    )
+    # Compression tracking
+    is_compressed = models.BooleanField(
+        default=False,
+        db_comment='Whether file has been compressed'
+    )
+    original_file_id = models.UUIDField(
+        null=True,
+        blank=True,
+        db_comment='Original file ID if this is a compressed version'
+    )
+    # Dynamic object reference (for field-based attachments)
+    object_code = models.CharField(
+        max_length=100,
+        blank=True,
+        db_index=True,
+        db_comment='Business object code (e.g., contract, asset)'
+    )
+    instance_id = models.UUIDField(
+        null=True,
+        blank=True,
+        db_index=True,
+        db_comment='Business object instance ID'
+    )
+    field_code = models.CharField(
+        max_length=100,
+        blank=True,
+        db_comment='Field code in the object (e.g., contract_files)'
+    )
     # Hash for deduplication
     file_hash = models.CharField(
         max_length=64,
         blank=True,
         db_index=True,
         db_comment='SHA256 hash for deduplication'
+    )
+    # Watermarked image path (for image files with watermark)
+    watermarked_path = models.CharField(
+        max_length=500,
+        blank=True,
+        db_comment='Watermarked image path (for images)'
     )
 
     class Meta:
@@ -1467,6 +1698,8 @@ class SystemFile(BaseModel):
         indexes = [
             models.Index(fields=['organization', 'biz_type', 'biz_id']),
             models.Index(fields=['organization', 'file_hash']),
+            models.Index(fields=['organization', 'object_code', 'instance_id']),
+            models.Index(fields=['organization', 'object_code', 'instance_id', 'field_code']),
         ]
 
     def __str__(self):
@@ -1477,6 +1710,22 @@ class SystemFile(BaseModel):
         """Get file URL."""
         from django.conf import settings
         return f"{settings.MEDIA_URL}{self.file_path}"
+
+    @property
+    def thumbnail_url(self):
+        """Get thumbnail URL if available."""
+        from django.conf import settings
+        if self.thumbnail_path:
+            return f"{settings.MEDIA_URL}{self.thumbnail_path}"
+        return self.url  # Fallback to original if no thumbnail
+
+    @property
+    def watermarked_url(self):
+        """Get watermarked image URL if available."""
+        from django.conf import settings
+        if self.watermarked_path:
+            return f"{settings.MEDIA_URL}{self.watermarked_path}"
+        return None
 
 
 class Tag(BaseModel):
@@ -2062,4 +2311,187 @@ class ConfigImportLog(BaseModel):
 
     def __str__(self):
         return f"Import {self.package.name} v{self.package.version} @ {self.imported_at}"
+
+
+# =============================================================================
+# Internationalization (i18n) Models
+# =============================================================================
+
+class Language(BaseModel):
+    """
+    Language - system supported language configuration.
+
+    Defines available languages for the internationalization system.
+    Uses GlobalMetadataManager because language configurations are shared
+    across all organizations.
+    """
+
+    # Use GlobalMetadataManager - language configs are NOT organization-filtered
+    objects = GlobalMetadataManager()
+    all_objects = models.Manager()
+
+    code = models.CharField(
+        max_length=10,
+        unique=True,
+        db_index=True,
+        db_comment='Language code (BCP 47 standard, e.g., zh-CN, en-US)'
+    )
+    name = models.CharField(
+        max_length=50,
+        db_comment='Language display name (e.g., Chinese (Simplified))'
+    )
+    native_name = models.CharField(
+        max_length=50,
+        db_comment='Native language name (e.g., 简体中文)'
+    )
+    is_default = models.BooleanField(
+        default=False,
+        db_index=True,
+        db_comment='Is this the default language'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_index=True,
+        db_comment='Is this language active'
+    )
+    sort_order = models.IntegerField(
+        default=0,
+        db_comment='Display order'
+    )
+    flag_emoji = models.CharField(
+        max_length=10,
+        blank=True,
+        db_comment='Flag emoji (e.g., 🇨🇳, 🇺🇸)'
+    )
+    locale = models.CharField(
+        max_length=10,
+        blank=True,
+        db_comment='Locale code for frontend (e.g., zhCN, enUS)'
+    )
+
+    class Meta:
+        db_table = 'languages'
+        verbose_name = 'Language'
+        verbose_name_plural = 'Languages'
+        ordering = ['sort_order', 'code']
+        indexes = [
+            models.Index(fields=['is_default', 'is_active']),
+        ]
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+
+class Translation(BaseModel):
+    """
+    Translation - unified translation storage for i18n system.
+
+    Hybrid design supporting both:
+    1. namespace/key pattern for static content (labels, buttons, messages)
+    2. GenericForeignKey pattern for dynamic object translations
+
+    Uses GlobalMetadataManager because translations are shared metadata.
+    """
+
+    # Use GlobalMetadataManager - translations are NOT organization-filtered
+    objects = GlobalMetadataManager()
+    all_objects = models.Manager()
+
+    # Namespace/Key pattern (for static content)
+    namespace = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        db_index=True,
+        db_comment='Translation namespace (e.g., asset, common, dictionary)'
+    )
+    key = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        db_index=True,
+        db_comment='Translation key (e.g., status.idle, button.save)'
+    )
+
+    # GenericForeignKey pattern (for dynamic object translations)
+    content_type = models.ForeignKey(
+        'contenttypes.ContentType',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        db_comment='Content type for GenericForeignKey'
+    )
+    object_id = models.UUIDField(
+        null=True,
+        blank=True,
+        db_index=True,
+        db_comment='Object ID for GenericForeignKey (UUID to match BaseModel)'
+    )
+    content_object = GenericForeignKey(
+        'content_type',
+        'object_id'
+    )
+    field_name = models.CharField(
+        max_length=50,
+        blank=True,
+        default='',
+        db_comment='Field name being translated (e.g., name, description)'
+    )
+
+    # Translation content
+    language_code = models.CharField(
+        max_length=10,
+        db_index=True,
+        db_comment='Target language code (e.g., en-US, ja-JP)'
+    )
+    text = models.TextField(
+        db_comment='Translated text'
+    )
+
+    # Metadata
+    context = models.CharField(
+        max_length=200,
+        blank=True,
+        db_comment='Context for disambiguation'
+    )
+    type = models.CharField(
+        max_length=20,
+        default='label',
+        db_comment='Translation type: label, message, enum, object_field'
+    )
+    is_system = models.BooleanField(
+        default=False,
+        db_comment='Is this a system translation (not editable by users)'
+    )
+
+    class Meta:
+        db_table = 'translations'
+        verbose_name = 'Translation'
+        verbose_name_plural = 'Translations'
+        # Use conditional unique constraints to avoid NULL issues
+        constraints = [
+            models.UniqueConstraint(
+                fields=['namespace', 'key', 'language_code'],
+                condition=models.Q(namespace__gt='', key__gt=''),
+                name='unique_namespace_key_lang'
+            ),
+            models.UniqueConstraint(
+                fields=['content_type', 'object_id', 'field_name', 'language_code'],
+                condition=models.Q(content_type__isnull=False, object_id__isnull=False),
+                name='unique_gfk_field_lang'
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['namespace', 'key', 'language_code']),
+            models.Index(fields=['content_type', 'object_id', 'language_code']),
+            models.Index(fields=['language_code', 'type']),
+            models.Index(fields=['is_system']),
+        ]
+
+    def __str__(self):
+        if self.namespace and self.key:
+            return f"{self.namespace}:{self.key}[{self.language_code}]"
+        elif self.content_object:
+            return f"{self.content_type}:{self.object_id}.{self.field_name}[{self.language_code}]"
+        return f"Translation[{self.language_code}]"
 

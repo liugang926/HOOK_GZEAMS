@@ -26,8 +26,11 @@
  */
 
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { deptApi, orgApi } from '@/api/organizations'
 import type { TreeNode } from '@/types/common'
+
+const { t } = useI18n()
 
 // ============================================================================
 // Types
@@ -92,7 +95,7 @@ const props = withDefaults(defineProps<Props>(), {
   checkStrictly: false,
   disabled: false,
   clearable: true,
-  placeholder: '请选择部门',
+  placeholder: undefined,
   onlyLeaf: false,
   showUserCount: false,
   size: 'default',
@@ -345,7 +348,7 @@ defineExpose({
       :check-strictly="checkStrictly"
       :disabled="disabled"
       :clearable="clearable"
-      :placeholder="placeholder"
+      :placeholder="placeholder || t('common.selectors.selectDept')"
       :filterable="true"
       :filter-node-method="filterNode"
       :size="size"

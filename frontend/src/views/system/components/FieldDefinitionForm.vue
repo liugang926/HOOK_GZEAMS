@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="isEdit ? '编辑字段' : '添加字段'"
+    :title="isEdit ? $t('system.fieldDefinition.editTitle') : $t('system.fieldDefinition.createTitle')"
     width="700px"
     @update:model-value="handleClose"
   >
@@ -12,127 +12,70 @@
       label-width="120px"
     >
       <el-form-item
-        label="字段编码"
+        :label="$t('system.fieldDefinition.fields.code')"
         prop="code"
       >
         <el-input
           v-model="formData.code"
-          placeholder="请输入字段编码（英文，如：userName）"
+          :placeholder="$t('system.fieldDefinition.placeholders.code')"
           :disabled="isEdit"
         />
       </el-form-item>
 
       <el-form-item
-        label="字段名称"
+        :label="$t('system.fieldDefinition.fields.name')"
         prop="name"
       >
         <el-input
           v-model="formData.name"
-          placeholder="请输入字段名称（中文，如：用户名）"
+          :placeholder="$t('system.fieldDefinition.placeholders.name')"
         />
       </el-form-item>
 
       <el-form-item
-        label="字段类型"
+        :label="$t('system.fieldDefinition.fields.type')"
         prop="fieldType"
       >
+        <!-- Use grouped select with optgroups for better UX -->
         <el-select
           v-model="formData.fieldType"
-          placeholder="请选择字段类型"
+          :placeholder="$t('system.fieldDefinition.placeholders.type')"
+          :loading="fieldTypes.isLoading.value"
           @change="handleFieldTypeChange"
         >
-          <el-option
-            label="单行文本"
-            value="text"
-          />
-          <el-option
-            label="多行文本"
-            value="textarea"
-          />
-          <el-option
-            label="数字"
-            value="number"
-          />
-          <el-option
-            label="货币"
-            value="currency"
-          />
-          <el-option
-            label="日期"
-            value="date"
-          />
-          <el-option
-            label="日期时间"
-            value="datetime"
-          />
-          <el-option
-            label="下拉选择"
-            value="select"
-          />
-          <el-option
-            label="多选"
-            value="multi_select"
-          />
-          <el-option
-            label="单选"
-            value="radio"
-          />
-          <el-option
-            label="复选框"
-            value="checkbox"
-          />
-          <el-option
-            label="开关"
-            value="switch"
-          />
-          <el-option
-            label="用户选择"
-            value="user"
-          />
-          <el-option
-            label="部门选择"
-            value="dept"
-          />
-          <el-option
-            label="资产选择"
-            value="asset"
-          />
-          <el-option
-            label="关联引用"
-            value="reference"
-          />
-          <el-option
-            label="子表"
-            value="subtable"
-          />
-          <el-option
-            label="文件上传"
-            value="file"
-          />
-          <el-option
-            label="图片上传"
-            value="image"
-          />
-          <el-option
-            label="计算公式"
-            value="formula"
-          />
-          <el-option
-            label="自动编号"
-            value="auto_number"
-          />
+          <el-option-group
+            v-for="group in fieldTypes.groups.value"
+            :key="group.label"
+            :label="group.label"
+          >
+            <el-option
+              v-for="type in group.types"
+              :key="type.value"
+              :label="type.label"
+              :value="type.value"
+            />
+          </el-option-group>
         </el-select>
+        <el-button
+          v-if="fieldTypes.error.value"
+          link
+          type="warning"
+          size="small"
+          @click="refreshFieldTypes"
+        >
+          {{ $t('system.fieldDefinition.actions.retry') }}
+        </el-button>
       </el-form-item>
 
       <!-- Reference target for reference type -->
       <el-form-item
-        v-if="formData.fieldType === 'reference' || formData.fieldType === 'subtable'"
-        label="关联对象"
+        v-if="fieldTypes.requiresReference(formData.fieldType)"
+        :label="$t('system.fieldDefinition.fields.referenceObject')"
         prop="referenceObject"
       >
         <el-select
           v-model="formData.referenceObject"
-          placeholder="请选择关联的业务对象"
+          :placeholder="$t('system.fieldDefinition.placeholders.referenceObject')"
         >
           <el-option
             v-for="obj in businessObjects"
@@ -145,8 +88,8 @@
 
       <!-- Options for select/radio/checkbox -->
       <el-form-item
-        v-if="['select', 'multi_select', 'radio', 'checkbox'].includes(formData.fieldType)"
-        label="选项配置"
+        v-if="fieldTypes.supportsOptions(formData.fieldType)"
+        :label="$t('system.fieldDefinition.fields.options')"
       >
         <div class="options-editor">
           <div
@@ -156,12 +99,12 @@
           >
             <el-input
               v-model="option.label"
-              placeholder="选项名称"
+              :placeholder="$t('system.fieldDefinition.placeholders.optionLabel')"
               style="width: 150px"
             />
             <el-input
               v-model="option.value"
-              placeholder="选项值"
+              :placeholder="$t('system.fieldDefinition.placeholders.optionValue')"
               style="width: 100px"
             />
             <el-color-picker
@@ -174,7 +117,7 @@
               type="danger"
               @click="removeOption(index)"
             >
-              删除
+              {{ $t('common.actions.delete') }}
             </el-button>
           </div>
           <el-button
@@ -182,7 +125,7 @@
             type="primary"
             @click="addOption"
           >
-            + 添加选项
+            + {{ $t('system.fieldDefinition.actions.addOption') }}
           </el-button>
         </div>
       </el-form-item>
@@ -190,20 +133,20 @@
       <!-- Formula expression -->
       <el-form-item
         v-if="formData.fieldType === 'formula'"
-        label="公式表达式"
+        :label="$t('system.fieldDefinition.fields.formula')"
       >
         <el-input
           v-model="formData.formulaExpression"
           type="textarea"
           :rows="2"
-          placeholder="如: {quantity} * {price}"
+          :placeholder="$t('system.fieldDefinition.placeholders.formula')"
         />
         <div class="form-tip">
-          使用 {字段编码} 引用其他字段
+          {{ $t('system.fieldDefinition.tips.formula') }}
         </div>
       </el-form-item>
 
-      <el-form-item label="排序号">
+      <el-form-item :label="$t('system.fieldDefinition.fields.sortOrder')">
         <el-input-number
           v-model="formData.sortOrder"
           :min="0"
@@ -211,60 +154,60 @@
         />
       </el-form-item>
 
-      <el-form-item label="默认值">
+      <el-form-item :label="$t('system.fieldDefinition.fields.defaultValue')">
         <el-input
           v-model="formData.defaultValue"
           :placeholder="getDefaultValuePlaceholder()"
         />
       </el-form-item>
 
-      <el-form-item label="占位提示">
+      <el-form-item :label="$t('system.fieldDefinition.fields.placeholder')">
         <el-input
           v-model="formData.placeholder"
-          placeholder="输入框的占位提示文字"
+          :placeholder="$t('system.fieldDefinition.placeholders.placeholder')"
         />
       </el-form-item>
 
-      <el-form-item label="描述">
+      <el-form-item :label="$t('system.fieldDefinition.fields.description')">
         <el-input
           v-model="formData.description"
           type="textarea"
           :rows="2"
-          placeholder="字段描述说明"
+          :placeholder="$t('system.fieldDefinition.placeholders.description')"
         />
       </el-form-item>
 
-      <el-form-item label="是否必填">
+      <el-form-item :label="$t('system.fieldDefinition.fields.required')">
         <el-switch v-model="formData.isRequired" />
       </el-form-item>
 
-      <el-form-item label="是否只读">
+      <el-form-item :label="$t('system.fieldDefinition.fields.readonly')">
         <el-switch v-model="formData.isReadonly" />
       </el-form-item>
 
-      <el-form-item label="是否唯一">
+      <el-form-item :label="$t('system.fieldDefinition.fields.unique')">
         <el-switch v-model="formData.isUnique" />
       </el-form-item>
 
-      <el-form-item label="是否列表显示">
+      <el-form-item :label="$t('system.fieldDefinition.fields.showInList')">
         <el-switch v-model="formData.showInList" />
-        <span class="form-tip">在列表页默认显示</span>
+        <span class="form-tip">{{ $t('system.fieldDefinition.tips.showInList') }}</span>
       </el-form-item>
 
-      <el-form-item label="列表宽度">
+      <el-form-item :label="$t('system.fieldDefinition.fields.listWidth')">
         <el-input-number
           v-model="formData.listWidth"
           :min="50"
           :max="500"
           :step="10"
         />
-        <span class="form-tip">列表页列宽度（像素）</span>
+        <span class="form-tip">{{ $t('system.fieldDefinition.tips.listWidth') }}</span>
       </el-form-item>
 
       <!-- Validation rules -->
       <el-form-item
         v-if="['text', 'textarea'].includes(formData.fieldType)"
-        label="最大长度"
+        :label="$t('system.fieldDefinition.fields.maxLength')"
       >
         <el-input-number
           v-model="formData.maxLength"
@@ -275,24 +218,24 @@
 
       <el-form-item
         v-if="['number', 'currency'].includes(formData.fieldType)"
-        label="数值范围"
+        :label="$t('system.fieldDefinition.fields.numericRange')"
       >
         <el-input-number
           v-model="formData.minValue"
-          placeholder="最小值"
+          :placeholder="$t('system.fieldDefinition.placeholders.minValue')"
           style="width: 120px"
         />
         <span style="margin: 0 10px">-</span>
         <el-input-number
           v-model="formData.maxValue"
-          placeholder="最大值"
+          :placeholder="$t('system.fieldDefinition.placeholders.maxValue')"
           style="width: 120px"
         />
       </el-form-item>
 
       <el-form-item
         v-if="formData.fieldType === 'number'"
-        label="小数位数"
+        :label="$t('system.fieldDefinition.fields.decimalPlaces')"
       >
         <el-input-number
           v-model="formData.decimalPlaces"
@@ -304,23 +247,27 @@
 
     <template #footer>
       <el-button @click="handleClose">
-        取消
+        {{ $t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="submitting"
         @click="handleSubmit"
       >
-        {{ isEdit ? '保存' : '添加' }}
+        {{ isEdit ? $t('common.actions.save') : $t('common.actions.add') }}
       </el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+import { useFieldTypes } from '@/composables/useFieldTypes'
+
+const { t } = useI18n()
 
 interface Props {
   visible: boolean
@@ -341,11 +288,24 @@ const submitting = ref(false)
 
 const isEdit = computed(() => !!props.data?.id)
 
+// Field types composable - loads from API with caching
+const fieldTypes = useFieldTypes()
+
+// Load field types on mount
+onMounted(async () => {
+  await fieldTypes.fetch()
+})
+
+// Refresh field types (for error recovery)
+async function refreshFieldTypes() {
+  await fieldTypes.fetch(true)
+}
+
 // Mock business objects for reference
 const businessObjects = ref([
-  { code: 'Asset', name: '固定资产' },
-  { code: 'Employee', name: '员工信息' },
-  { code: 'Department', name: '部门' }
+  { code: 'Asset', name: t('system.fieldDefinition.types.asset') },
+  { code: 'Employee', name: t('system.fieldDefinition.types.user') },
+  { code: 'Department', name: t('system.fieldDefinition.types.department') }
 ])
 
 const formData = ref({
@@ -370,21 +330,21 @@ const formData = ref({
   decimalPlaces: 2
 })
 
-const rules: FormRules = {
+const rules = computed<FormRules>(() => ({
   code: [
-    { required: true, message: '请输入字段编码', trigger: 'blur' },
-    { pattern: /^[a-z][a-zA-Z0-9]*$/, message: '编码必须以小写字母开头', trigger: 'blur' }
+    { required: true, message: t('system.fieldDefinition.validation.codeRequired'), trigger: 'blur' },
+    { pattern: /^[a-z][a-zA-Z0-9]*$/, message: t('system.fieldDefinition.validation.codePattern'), trigger: 'blur' }
   ],
   name: [
-    { required: true, message: '请输入字段名称', trigger: 'blur' }
+    { required: true, message: t('system.fieldDefinition.validation.nameRequired'), trigger: 'blur' }
   ],
   fieldType: [
-    { required: true, message: '请选择字段类型', trigger: 'change' }
+    { required: true, message: t('system.fieldDefinition.validation.typeRequired'), trigger: 'change' }
   ],
   referenceObject: [
-    { required: true, message: '请选择关联对象', trigger: 'change' }
+    { required: true, message: t('system.fieldDefinition.validation.referenceObjectRequired'), trigger: 'change' }
   ]
-}
+}))
 
 watch(() => props.visible, (val) => {
   if (val && props.data) {
@@ -427,11 +387,11 @@ const resetForm = () => {
 const getDefaultValuePlaceholder = () => {
   const type = formData.value.fieldType
   const placeholders: Record<string, string> = {
-    text: '默认文本值',
-    number: '默认数字值',
-    date: '如: 2024-01-01',
-    switch: 'true/false',
-    select: '选项值'
+    text: t('system.fieldDefinition.placeholders.defaultValue.text'),
+    number: t('system.fieldDefinition.placeholders.defaultValue.number'),
+    date: t('system.fieldDefinition.placeholders.defaultValue.date'),
+    switch: t('system.fieldDefinition.placeholders.defaultValue.switch'),
+    select: t('system.fieldDefinition.placeholders.defaultValue.select')
   }
   return placeholders[type] || ''
 }
@@ -462,7 +422,7 @@ const handleClose = () => {
 const handleSubmit = async () => {
   if (!formRef.value) return
 
-  await formRef.value.validate(async (valid) => {
+  await formRef.value.validate(async (valid: boolean) => {
     if (!valid) return
 
     submitting.value = true
@@ -479,11 +439,11 @@ const handleSubmit = async () => {
         // await fieldDefinitionApi.create(data)
       }
 
-      ElMessage.success(isEdit.value ? '更新成功' : '添加成功')
+      ElMessage.success(isEdit.value ? t('common.messages.updateSuccess') : t('common.messages.addSuccess'))
       emit('success')
       handleClose()
     } catch (error) {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('common.messages.operationFailed'))
     } finally {
       submitting.value = false
     }

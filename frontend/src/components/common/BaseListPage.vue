@@ -30,11 +30,17 @@
  * and now supports user-defined fields and sorting.
  */
 
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, useSlots } from 'vue'
+import { useRoute } from 'vue-router'
 import type { TableColumn, SearchField } from '@/types/common'
 import { formatDate } from '@/utils/dateFormat'
+import { normalizeFieldType } from '@/utils/fieldType'
 import ColumnManager from '@/components/common/ColumnManager.vue'
 import FieldRenderer from '@/components/common/FieldRenderer.vue'
+import { dynamicApi } from '@/api/dynamic'
+import { extractLayoutConfig } from '@/adapters/layoutAdapter'
+import { buildColumnsFromLayout } from '@/adapters/listColumnAdapter'
+import { buildFieldKeyCandidates, resolveFieldValue } from '@/utils/fieldKey'
 // import { useRouter, useRoute } from 'vue-router'
 
 // ============================================================================
@@ -98,6 +104,9 @@ const emit = defineEmits<Emits>()
 // State
 // ============================================================================
 
+// Get current route for watching navigation changes
+const route = useRoute()
+
 /** Table loading state */
 const loading = ref(false)
 
@@ -120,7 +129,7 @@ const sortState = ref<{ prop: string, order: string } | null>(null)
 const activeColumns = ref<TableColumn[]>([])
 
 /** Column Config Hook */
-import { useColumnConfig } from '@/hooks/useColumnConfig'
+import { useColumnConfig } from '@/composables/useColumnConfig'
 import Sortable from 'sortablejs'
 import { nextTick } from 'vue'
 
@@ -146,6 +155,12 @@ const searchExpanded = ref(false)
 /** Table ref */
 const tableRef = ref()
 
+/** Slots */
+const slots = useSlots()
+
+/** Field definitions (for static lists to enrich column types) */
+const fieldDefinitions = ref<any[]>([])
+
 /** Dynamic Actions */
 const objectActions = ref<any[]>([])
 import { getBusinessObject, getFieldDefinitions } from '@/api/system'
@@ -154,7 +169,7 @@ import { useAction } from '@/components/engine/hooks/useAction' // Adjust path i
 const { executeAction } = useAction()
 
 const handleDynamicAction = async (action: any) => {
-    await executeAction(action, { selectedRows: selectedRows.value })
+    await executeAction(action, { formData: { selectedRows: selectedRows.value } })
     // Refresh if needed
     if (action.refresh) {
         fetchData()
@@ -176,23 +191,159 @@ const paginationLayout = computed(() => {
   return 'total, sizes, prev, pager, next, jumper'
 })
 
+const normalizeSearchField = (field: SearchField) => {
+  const prop = field.prop || field.field
+  if (!prop) return null
+
+  const rawType = (field.type || 'text') as string
+  const typeMap: Record<string, SearchField['type']> = {
+    input: 'text',
+    text: 'text',
+    daterange: 'dateRange',
+    date_range: 'dateRange',
+    dateRange: 'dateRange',
+    month: 'month',
+    year: 'year'
+  }
+
+  return {
+    ...field,
+    prop,
+    type: typeMap[rawType] || (rawType as SearchField['type'])
+  } as SearchField
+}
+
+const normalizedSearchFields = computed(() => {
+  return (props.searchFields || [])
+    .map(normalizeSearchField)
+    .filter(Boolean) as SearchField[]
+})
+
+const getSearchFieldKey = (field: SearchField): string => {
+  return field.prop || field.field || ''
+}
+
 /** Visible search fields (non-expanded shows first 4) */
 const visibleSearchFields = computed(() => {
   if (searchExpanded.value) {
-    return props.searchFields
+    return normalizedSearchFields.value
   }
-  return props.searchFields.slice(0, 4)
+  return normalizedSearchFields.value.slice(0, 4)
 })
 
 /** Whether expand button is needed */
 const needExpand = computed(() => {
-  return props.searchFields.length > 4
+  return normalizedSearchFields.value.length > 4
 })
 
 /** Filtered Columns for Table Render */
 const visibleTableColumns = computed(() => {
   return activeColumns.value.filter(col => col.visible !== false)
 })
+
+const resolveRowValue = (row: any, prop?: string) => {
+  if (!row || !prop) return undefined
+  if (!prop.includes('.')) return row[prop]
+  return prop.split('.').reduce((acc, key) => (acc ? acc[key] : undefined), row)
+}
+
+const getColumnValue = (row: any, column: TableColumn) => {
+  const prop = column.prop || column.fieldCode
+  if (!prop) return undefined
+  if (prop.includes('.')) return resolveRowValue(row, prop)
+
+  const resolved = resolveFieldValue(row, {
+    fieldCode: column.fieldCode || prop,
+    dataKey: prop,
+    includeWrappedData: true,
+    includeCustomBags: true,
+    treatEmptyAsMissing: false,
+    returnEmptyMatch: true
+  })
+
+  if (resolved !== undefined) return resolved
+  return resolveRowValue(row, prop)
+}
+
+const getColumnDisplayValue = (row: any, column: TableColumn) => {
+  const value = getColumnValue(row, column)
+  return column.format ? column.format(value, row) : value
+}
+
+const resolveSlotName = (column: TableColumn) => {
+  if (typeof column.slot === 'string') {
+    return slots[column.slot] ? column.slot : null
+  }
+  const prop = column.prop || column.fieldCode
+  if (!prop) return null
+
+  const cellSlot = `cell-${prop}`
+  if (column.slot === true) {
+    if (slots[cellSlot]) return cellSlot
+    if (slots[prop]) return prop
+    return null
+  }
+
+  if (slots[cellSlot]) return cellSlot
+  if (slots[prop]) return prop
+  return null
+}
+
+const isActionColumn = (column: TableColumn) => {
+  const prop = column.prop || column.fieldCode
+  const slotName = resolveSlotName(column)
+  return prop === 'actions' || slotName === 'actions'
+}
+
+const hasActionsColumn = computed(() => {
+  return activeColumns.value.some(isActionColumn)
+})
+
+const visibleDataColumns = computed(() => {
+  return visibleTableColumns.value.filter(col => !isActionColumn(col))
+})
+
+const resolveFieldCode = (entry: any): string => {
+  return entry?.fieldCode || entry?.field_code || entry?.prop || entry?.code || entry?.field || ''
+}
+
+const applyFieldDefinitions = (cols: TableColumn[], defs: any[]): TableColumn[] => {
+  if (!Array.isArray(defs) || defs.length === 0) return cols
+  const fieldMap = new Map<string, any>()
+  defs.forEach((field) => {
+    const code = field.code || field.fieldCode || field.field_code || field.fieldName
+    if (!code) return
+    buildFieldKeyCandidates(String(code)).forEach((key) => fieldMap.set(key, field))
+  })
+
+  return cols.map((col) => {
+    const fieldCode = resolveFieldCode(col)
+    const meta = buildFieldKeyCandidates(fieldCode)
+      .map((key) => fieldMap.get(key))
+      .find(Boolean)
+    if (!meta) return col
+
+    const rawType = col.fieldType || col.type || meta.fieldType || meta.field_type
+    const normalizedType = rawType ? normalizeFieldType(rawType) : undefined
+
+    return {
+      ...col,
+      fieldCode: col.fieldCode || fieldCode,
+      label: col.label || meta.name || meta.label || fieldCode,
+      fieldType: col.fieldType || normalizedType,
+      type: col.type || normalizedType,
+      options: col.options || meta.options || meta.choices
+    }
+  })
+}
+
+const needsFieldDefinitions = (cols: TableColumn[]) => {
+  return cols.some((col) => (!col.fieldType && !col.type) || (!col.options && !col.tagType))
+}
+
+const prepareBaseColumns = (cols: TableColumn[]) => {
+  return prepareColumns(applyFieldDefinitions(cols, fieldDefinitions.value))
+}
 
 // ============================================================================
 // Methods
@@ -261,8 +412,14 @@ const handleSearch = () => {
  * Handle reset
  */
 const handleReset = () => {
-  Object.keys(searchForm.value).forEach(key => {
+  normalizedSearchFields.value.forEach(field => {
+    const key = field.prop || field.field
+    if (!key) return
     searchForm.value[key] = undefined
+    if (field.type === 'numberRange') {
+      searchForm.value[`${key}_min`] = undefined
+      searchForm.value[`${key}_max`] = undefined
+    }
   })
   sortState.value = null
   tableRef.value?.clearSort()
@@ -365,14 +522,14 @@ const clearSelection = () => {
 const handleColumnSave = async (newColumns: TableColumn[]) => {
   activeColumns.value = newColumns
   if (columnConfig) {
-      await columnConfig.saveConfig(newColumns)
+      await columnConfig.saveConfig(newColumns as any)
   }
 }
 
 const handleColumnReset = async () => {
     if (columnConfig) {
         await columnConfig.resetConfig()
-        activeColumns.value = columnConfig.applyConfig(prepareColumns(props.tableColumns))
+        activeColumns.value = columnConfig.applyConfig(prepareColumns(props.tableColumns) as any) as any
     } else {
         activeColumns.value = prepareColumns(props.tableColumns)
     }
@@ -384,12 +541,15 @@ const handleColumnReset = async () => {
 const prepareColumns = (cols: TableColumn[]): TableColumn[] => {
   return cols.map(col => ({
     ...col,
+    fieldCode: col.fieldCode || col.prop,
     // Enable sorting by default if not strictly disabled or already set
     // Note: We use 'custom' for server-side sorting
     sortable: (col.sortable === undefined || col.sortable === true) ? 'custom' : col.sortable,
     visible: col.visible !== false
   }))
 }
+
+ 
 
 /**
  * Initialize Column Drag and Drop
@@ -447,7 +607,7 @@ const columnDrop = () => {
       
       // Save
       if (columnConfig) {
-        columnConfig.saveConfig(activeColumns.value)
+        columnConfig.saveConfig(activeColumns.value as any)
       }
     }
   })
@@ -462,11 +622,15 @@ const handleHeaderDragend = (newWidth: number, _oldWidth: number, column: any, _
    const colIndex = activeColumns.value.findIndex(c => c.prop === prop)
    if (colIndex !== -1) {
      activeColumns.value[colIndex].width = newWidth
-     // Save
-     if (columnConfig) {
-       columnConfig.saveConfig(activeColumns.value)
-     }
+      // Save
+      if (columnConfig) {
+        columnConfig.saveConfig(activeColumns.value as any)
+      }
    }
+}
+
+const handleRefreshEvent = () => {
+  fetchData()
 }
 
 // ============================================================================
@@ -474,74 +638,95 @@ const handleHeaderDragend = (newWidth: number, _oldWidth: number, column: any, _
 // ============================================================================
 
 onMounted(async () => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+  window.addEventListener('refresh-base-list', handleRefreshEvent)
+
   // Initialize search form default values
-  props.searchFields.forEach(field => {
-    if (field.defaultValue !== undefined) {
-      searchForm.value[field.prop] = field.defaultValue
-    }
+  normalizedSearchFields.value.forEach(field => {
+    const key = field.prop || field.field
+    if (!key || field.defaultValue === undefined) return
+    searchForm.value[key] = field.defaultValue
   })
 
   // Initialize columns with persistence
-  const defaultCols = prepareColumns(props.tableColumns)
-  
-  if (props.objectCode) {
+  const defaultCols = props.tableColumns
+
+  if (props.objectCode && defaultCols.length > 0) {
+      // If tableColumns are already provided (from DynamicListPage metadata),
+      // use them directly without fetching additional fields
+      // This avoids duplicate API calls and respects the metadata-driven columns
+      try {
+          // Still fetch dynamic actions (buttons, etc.)
+          const res: any = await getBusinessObject(props.objectCode)
+          objectActions.value = res.data?.actions || res.actions || []
+      } catch (e) {
+          console.warn('Failed to load object actions', e)
+      }
+
+      if (needsFieldDefinitions(defaultCols)) {
+        try {
+          const fieldRes: any = await getFieldDefinitions(props.objectCode)
+          fieldDefinitions.value = fieldRes?.results || fieldRes?.data || fieldRes || []
+        } catch (e) {
+          fieldDefinitions.value = []
+        }
+      }
+
+      // Use the provided columns directly
+      if (columnConfig) {
+          await columnConfig.fetchConfig()
+          activeColumns.value = columnConfig.applyConfig(prepareBaseColumns(defaultCols) as any) as any
+      } else {
+          activeColumns.value = prepareBaseColumns(defaultCols)
+      }
+  } else if (props.objectCode) {
+      // No columns provided, try to fetch from field definitions
+      // This is for pages that don't have pre-defined columns
       try {
           // 1. Fetch dynamic actions
           const res: any = await getBusinessObject(props.objectCode)
           objectActions.value = res.data?.actions || res.actions || []
 
-          // 2. Fetch all available fields for this object
-          const fieldsRes: any = await getFieldDefinitions(props.objectCode)
-          const allFields = fieldsRes.data?.results || fieldsRes.results || []
-          
-          // 3. Merge fields into columns
-          // Filter out fields that are already in defaultCols to avoid duplicates
-          const existingProps = new Set(defaultCols.map(c => c.prop))
-          const newColCandidates = allFields.filter((f: any) => !existingProps.has(f.code) && !existingProps.has(f.name)) // name might be prop in some cases? unlikely, rely on code.
-
-          const newCols: TableColumn[] = newColCandidates.map((f: any) => ({
-              prop: f.code,
-              label: f.name,
-              type: f.field_type?.toLowerCase() || 'text',
-              width: 120,
-              visible: false, // Default to hidden for non-hardcoded fields
-              sortable: true
-          }))
-
-          // Append new columns to default set
-          const fullColSet = [...defaultCols, ...newCols]
-          
-          // Apply user config on top of the FULL set
-          if (columnConfig) {
-              await columnConfig.fetchConfig()
-              activeColumns.value = columnConfig.applyConfig(fullColSet)
-          } else {
-              activeColumns.value = prepareColumns(fullColSet)
+          let columnsFromLayout: TableColumn[] = []
+          try {
+              const runtime = await dynamicApi.getRuntime(props.objectCode, 'list')
+              const fieldsPayload = runtime?.fields || {}
+              const editable = fieldsPayload.editableFields || fieldsPayload.editable_fields || fieldsPayload.fields || []
+              const reverse = fieldsPayload.reverseRelations || fieldsPayload.reverse_relations || []
+              const fieldDefs = [...editable, ...reverse]
+              const layoutConfig = extractLayoutConfig(runtime?.layout)
+              const layoutColumns = layoutConfig?.columns || []
+              if (Array.isArray(layoutColumns) && layoutColumns.length > 0) {
+                  columnsFromLayout = buildColumnsFromLayout(layoutColumns, fieldDefs)
+              }
+          } catch (e) {
+              columnsFromLayout = []
           }
 
+          if (columnsFromLayout.length > 0) {
+              const baseCols = prepareColumns(columnsFromLayout)
+              if (columnConfig) {
+                  await columnConfig.fetchConfig()
+                  activeColumns.value = columnConfig.applyConfig(baseCols as any) as any
+              } else {
+                  activeColumns.value = baseCols
+              }
+          } else {
+              console.warn('List layout columns missing; using default columns only')
+              activeColumns.value = prepareBaseColumns(defaultCols)
+          }
       } catch (e: any) {
-          // Silent fail or warning for 404 (metadata not found)
-          if (e.response && e.response.status === 404) {
-              console.warn('Backend metadata not found for', props.objectCode, '- using default columns.')
-          } else {
-              console.error('Failed to load object metadata', e)
-          }
-          
-          // Fallback to defaults
-          if (columnConfig) {
-              await columnConfig.fetchConfig()
-              activeColumns.value = columnConfig.applyConfig(defaultCols)
-          } else {
-              activeColumns.value = defaultCols
-          }
+          console.warn('Failed to load object metadata', e)
+          activeColumns.value = prepareBaseColumns(defaultCols)
       }
   } else {
       // No object code, just use defaults
       if (columnConfig) {
           await columnConfig.fetchConfig()
-          activeColumns.value = columnConfig.applyConfig(defaultCols)
+          activeColumns.value = columnConfig.applyConfig(prepareBaseColumns(defaultCols) as any) as any
       } else {
-          activeColumns.value = defaultCols
+          activeColumns.value = prepareBaseColumns(defaultCols)
       }
   }
 
@@ -556,14 +741,26 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', checkMobile)
+  window.removeEventListener('refresh-base-list', handleRefreshEvent)
 })
+
+// Watch for route changes to refresh data when navigating back from form pages
+// This handles the case where a user creates/edits a record and returns to the list
+watch(() => route.path, (newPath, oldPath) => {
+  // Only refresh if we're navigating to the same route (component reuse)
+  // This happens when router.push() is called with the same route path
+  if (oldPath && newPath === oldPath) {
+    // Same route path, refresh data
+    fetchData()
+  }
+}, { flush: 'post' })
 
 // Watch for external data changes
 watch(() => props.tableColumns, (newCols) => {
     // Re-apply config to new columns definitions if possible
-    const defaultCols = prepareColumns(newCols)
+    const defaultCols = prepareBaseColumns(newCols)
     if (columnConfig) {
-        activeColumns.value = columnConfig.applyConfig(defaultCols)
+        activeColumns.value = columnConfig.applyConfig(defaultCols as any) as any
     } else {
         activeColumns.value = defaultCols
     }
@@ -625,7 +822,7 @@ defineExpose({
 
     <!-- Search Form -->
     <div
-      v-if="searchFields.length > 0"
+      v-if="normalizedSearchFields.length > 0"
       class="search-form-container"
     >
       <el-form
@@ -635,16 +832,16 @@ defineExpose({
       >
         <template
           v-for="field in visibleSearchFields"
-          :key="field.prop"
+          :key="getSearchFieldKey(field)"
         >
           <!-- Text Input -->
           <el-form-item
-            v-if="field.type === 'text'"
+            v-if="!field.type || field.type === 'text'"
             :label="field.label"
           >
             <el-input
-              v-model="searchForm[field.prop]"
-              :placeholder="field.placeholder || `请输入${field.label}`"
+              v-model="searchForm[getSearchFieldKey(field)]"
+              :placeholder="field.placeholder || $t('common.placeholders.input', { field: field.label })"
               clearable
               @keyup.enter="handleSearch"
             />
@@ -656,8 +853,8 @@ defineExpose({
             :label="field.label"
           >
             <el-select
-              v-model="searchForm[field.prop]"
-              :placeholder="field.placeholder || `请选择${field.label}`"
+              v-model="searchForm[getSearchFieldKey(field)]"
+              :placeholder="field.placeholder || $t('common.placeholders.select', { field: field.label })"
               clearable
               :multiple="field.multiple"
             >
@@ -676,11 +873,11 @@ defineExpose({
             :label="field.label"
           >
             <el-date-picker
-              v-model="searchForm[field.prop]"
+              v-model="searchForm[getSearchFieldKey(field)]"
               type="daterange"
               range-separator="-"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
+              :start-placeholder="$t('common.placeholders.startDate')"
+              :end-placeholder="$t('common.placeholders.endDate')"
               value-format="YYYY-MM-DD"
             />
           </el-form-item>
@@ -691,10 +888,36 @@ defineExpose({
             :label="field.label"
           >
             <el-date-picker
-              v-model="searchForm[field.prop]"
+              v-model="searchForm[getSearchFieldKey(field)]"
               type="date"
-              :placeholder="field.placeholder || `请选择${field.label}`"
+              :placeholder="field.placeholder || $t('common.placeholders.select', { field: field.label })"
               value-format="YYYY-MM-DD"
+            />
+          </el-form-item>
+
+          <!-- Month Picker -->
+          <el-form-item
+            v-else-if="field.type === 'month'"
+            :label="field.label"
+          >
+            <el-date-picker
+              v-model="searchForm[getSearchFieldKey(field)]"
+              type="month"
+              :placeholder="field.placeholder || $t('common.placeholders.select', { field: field.label })"
+              value-format="YYYY-MM"
+            />
+          </el-form-item>
+
+          <!-- Year Picker -->
+          <el-form-item
+            v-else-if="field.type === 'year'"
+            :label="field.label"
+          >
+            <el-date-picker
+              v-model="searchForm[getSearchFieldKey(field)]"
+              type="year"
+              :placeholder="field.placeholder || $t('common.placeholders.select', { field: field.label })"
+              value-format="YYYY"
             />
           </el-form-item>
 
@@ -706,12 +929,12 @@ defineExpose({
             <div class="number-range">
               <el-input
                 v-model="searchForm[`${field.prop}_min`]"
-                placeholder="最小值"
+                :placeholder="$t('common.placeholders.minValue')"
               />
               <span class="separator">-</span>
               <el-input
                 v-model="searchForm[`${field.prop}_max`]"
-                placeholder="最大值"
+                :placeholder="$t('common.placeholders.maxValue')"
               />
             </div>
           </el-form-item>
@@ -735,10 +958,10 @@ defineExpose({
             type="primary"
             @click="handleSearch"
           >
-            搜索
+            {{ $t('common.actions.search') }}
           </el-button>
           <el-button @click="handleReset">
-            重置
+            {{ $t('common.actions.reset') }}
           </el-button>
           <el-button
             v-if="needExpand"
@@ -746,7 +969,7 @@ defineExpose({
             type="primary"
             @click="toggleSearchExpand"
           >
-            {{ searchExpanded ? '收起' : '展开' }}
+            {{ searchExpanded ? $t('common.actions.collapse') : $t('common.actions.expand') }}
             <el-icon>
               <component :is="searchExpanded ? 'arrow-up' : 'arrow-down'" />
             </el-icon>
@@ -760,7 +983,7 @@ defineExpose({
       v-if="hasBatchActions && hasSelection"
       class="batch-toolbar"
     >
-      <span class="selection-info">已选择 {{ selectedRows.length }} 项</span>
+      <span class="selection-info">{{ $t('common.messages.selected', { count: selectedRows.length }) }}</span>
       <el-button
         v-for="action in batchActions"
         :key="action.label"
@@ -807,14 +1030,39 @@ defineExpose({
           </div>
           <div class="card-body">
             <div
-              v-for="col in visibleTableColumns.slice(0, 4)"
+              v-for="col in visibleDataColumns.slice(0, 4)"
               :key="col.prop"
               class="card-item"
             >
               <span class="label">{{ col.label }}:</span>
               <span class="value">
-                <!-- Simple text rendering fallback -->
-                {{ row[col.prop] }}
+                <template v-if="resolveSlotName(col)">
+                  <slot
+                    :name="resolveSlotName(col)"
+                    :row="row"
+                    :column="col"
+                    :index="index"
+                  />
+                </template>
+                <template v-else>
+                  <template v-if="col.format">
+                    {{ getColumnDisplayValue(row, col) }}
+                  </template>
+                  <FieldRenderer 
+                    v-else
+                    :field="{
+                      prop: col.fieldCode || col.prop,
+                      type: col.fieldType || col.type || 'text',
+                      code: col.fieldCode || col.prop,
+                      fieldCode: col.fieldCode || col.prop,
+                      fieldType: col.fieldType || col.type || 'text',
+                      label: col.label,
+                      options: col.options
+                    }" 
+                    :model-value="getColumnValue(row, col)" 
+                    mode="table" 
+                  />
+                </template>
               </span>
             </div>
           </div>
@@ -825,13 +1073,13 @@ defineExpose({
             <slot
               name="actions"
               :row="row"
-              :$index="index"
+              :index="index"
             />
           </div>
         </div>
         <el-empty
           v-if="tableData.length === 0"
-          description="暂无数据"
+          :description="$t('common.messages.noData')"
         />
       </div>
     </div>
@@ -864,7 +1112,7 @@ defineExpose({
           </div>
           <el-empty
             v-else
-            description="暂无数据"
+            :description="$t('common.messages.noData')"
           />
         </template>
         <!-- Selection Column -->
@@ -879,7 +1127,7 @@ defineExpose({
         <el-table-column
           v-if="showIndex"
           type="index"
-          label="序号"
+          :label="$t('common.table.index')"
           width="60"
           fixed="left"
         />
@@ -891,15 +1139,15 @@ defineExpose({
         >
           <!-- Slot Column -->
           <el-table-column
-            v-if="column.slot"
+            v-if="resolveSlotName(column)"
             v-bind="column"
           >
             <template #default="scope">
               <slot
-                :name="column.slot"
+                :name="resolveSlotName(column)"
                 :row="scope.row"
                 :column="column"
-                :$index="scope.$index"
+                :index="scope.$index"
               />
             </template>
           </el-table-column>
@@ -911,7 +1159,7 @@ defineExpose({
           >
             <template #default="scope">
               <el-tag :type="column.tagType(scope.row)">
-                {{ scope.row[column.prop] }}
+                {{ getColumnDisplayValue(scope.row, column) }}
               </el-tag>
             </template>
           </el-table-column>
@@ -922,7 +1170,17 @@ defineExpose({
             v-bind="column"
           >
             <template #default="scope">
-              {{ formatDate(scope.row[column.prop], column.dateFormatter) }}
+              {{ formatDate(getColumnValue(scope.row, column), column.dateFormatter) }}
+            </template>
+          </el-table-column>
+
+          <!-- Custom Format Column -->
+          <el-table-column
+            v-else-if="column.format"
+            v-bind="column"
+          >
+            <template #default="scope">
+              {{ getColumnDisplayValue(scope.row, column) }}
             </template>
           </el-table-column>
 
@@ -933,8 +1191,16 @@ defineExpose({
           >
             <template #default="scope">
               <FieldRenderer 
-                :field="{ ...column, type: column.type || 'text', label: column.label }" 
-                :model-value="scope.row[column.prop]" 
+                :field="{
+                  prop: column.fieldCode || column.prop,
+                  type: column.fieldType || column.type || 'text',
+                  code: column.fieldCode || column.prop,
+                  fieldCode: column.fieldCode || column.prop,
+                  fieldType: column.fieldType || column.type || 'text',
+                  label: column.label,
+                  options: column.options
+                }" 
+                :model-value="getColumnValue(scope.row, column)" 
                 mode="table" 
               />
             </template>
@@ -943,8 +1209,8 @@ defineExpose({
 
         <!-- Actions Column -->
         <el-table-column
-          v-if="$slots.actions"
-          label="操作"
+          v-if="$slots.actions && !hasActionsColumn"
+          :label="$t('common.table.operations')"
           width="180"
           fixed="right"
         >
@@ -952,7 +1218,7 @@ defineExpose({
             <slot
               name="actions"
               :row="scope.row"
-              :$index="scope.$index"
+              :index="scope.$index"
             />
           </template>
         </el-table-column>
@@ -980,7 +1246,7 @@ defineExpose({
       v-if="!loading && tableData.length === 0"
       class="empty-state"
     >
-      <el-empty description="暂无数据" />
+      <el-empty :description="$t('common.messages.noData')" />
     </div>
   </div>
 </template>

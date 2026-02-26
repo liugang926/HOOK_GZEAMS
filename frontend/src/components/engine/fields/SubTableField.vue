@@ -2,17 +2,17 @@
   <div class="sub-table-field">
     <div class="header">
       <span>{{ field.name }}</span>
-      <el-button 
-        v-if="!readonly && !disabled" 
-        type="primary" 
-        size="small" 
-        link 
+      <el-button
+        v-if="!readonly && !disabled"
+        type="primary"
+        size="small"
+        link
         @click="handleAddRow"
       >
-        添加行
+        {{ $t('fields.addRow') }}
       </el-button>
     </div>
-    
+
     <el-table
       :data="internalValue"
       border
@@ -23,17 +23,17 @@
         width="50"
         label="#"
       />
-      
-      <el-table-column 
-        v-for="col in columns" 
-        :key="col.code" 
-        :label="col.name"
+
+      <el-table-column
+        v-for="col in columns"
+        :key="col.code || col.fieldCode"
+        :label="col.name || col.label || col.code || col.fieldCode"
         :min-width="col.width || 120"
       >
-        <template #default="{ row, $index }">
+        <template #default="{ row }">
           <FieldRenderer
-            v-model="row[col.code]"
-            :field="col"
+            v-model="row[getColumnCode(col)]"
+            :field="buildColumnField(col)"
             :disabled="disabled"
             :readonly="readonly"
           />
@@ -42,7 +42,7 @@
 
       <el-table-column
         v-if="!readonly && !disabled"
-        label="操作"
+        :label="$t('fields.operations')"
         width="80"
       >
         <template #default="{ $index }">
@@ -52,7 +52,7 @@
             size="small"
             @click="handleRemoveRow($index)"
           >
-            删除
+            {{ $t('fields.delete') }}
           </el-button>
         </template>
       </el-table-column>
@@ -61,7 +61,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from 'vue'
+import { computed } from 'vue'
+import { normalizeFieldType } from '@/utils/fieldType'
 
 // Avoid circular dependency in recursion if FieldRenderer is used inside SubTable
 // But FieldRenderer uses SubTable, so we need Async, or just importing FieldRenderer is fine if build system handles it.
@@ -84,13 +85,43 @@ const internalValue = computed({
 })
 
 const columns = computed(() => {
-  return props.field.related_fields || []
+  return (
+    props.field.related_fields ||
+    props.field.relatedFields ||
+    props.field.componentProps?.relatedFields ||
+    props.field.component_props?.related_fields ||
+    []
+  )
 })
+
+const getColumnCode = (col: any): string => col.code || col.fieldCode || ''
+
+const buildColumnField = (col: any) => {
+  const componentProps = {
+    ...(col.component_props || {}),
+    ...(col.componentProps || {})
+  }
+
+  return {
+    ...col,
+    code: getColumnCode(col),
+    name: col.name || col.label || getColumnCode(col),
+    label: col.label || col.name || getColumnCode(col),
+    fieldType: normalizeFieldType(col.fieldType || col.field_type || col.type || 'text'),
+    field_type: normalizeFieldType(col.fieldType || col.field_type || col.type || 'text'),
+    componentProps,
+    component_props: componentProps
+  }
+}
 
 const handleAddRow = () => {
   const newRow: any = {}
   columns.value.forEach((col: any) => {
-    newRow[col.code] = col.default_value !== undefined ? col.default_value : null
+    const key = getColumnCode(col)
+    const defaultValue = col.defaultValue !== undefined ? col.defaultValue : col.default_value
+    if (key) {
+      newRow[key] = defaultValue !== undefined ? defaultValue : null
+    }
   })
   const newList = [...internalValue.value, newRow]
   emit('update:modelValue', newList)

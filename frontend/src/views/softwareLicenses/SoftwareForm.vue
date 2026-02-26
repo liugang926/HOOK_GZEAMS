@@ -4,9 +4,9 @@
   <el-card>
     <template #header>
       <div class="card-header">
-        <span>{{ isEdit ? '编辑软件' : '新建软件' }}</span>
+        <span>{{ isEdit ? $t('softwareLicenses.catalog.edit') : $t('softwareLicenses.catalog.add') }}</span>
         <el-button @click="handleBack">
-          返回
+          {{ $t('common.actions.cancel') }}
         </el-button>
       </div>
     </template>
@@ -19,103 +19,103 @@
       @submit.prevent="handleSubmit"
     >
       <el-form-item
-        label="软件代码"
+        :label="$t('softwareLicenses.catalog.fields.code')"
         prop="code"
       >
         <el-input
           v-model="formData.code"
-          placeholder="如: WIN11, OFF365"
+          :placeholder="$t('softwareLicenses.catalog.placeholders.code')"
           :disabled="isEdit"
         />
       </el-form-item>
 
       <el-form-item
-        label="软件名称"
+        :label="$t('softwareLicenses.catalog.fields.name')"
         prop="name"
       >
         <el-input
           v-model="formData.name"
-          placeholder="软件产品名称"
+          :placeholder="$t('softwareLicenses.catalog.placeholders.name')"
         />
       </el-form-item>
 
       <el-form-item
-        label="版本"
+        :label="$t('softwareLicenses.catalog.fields.version')"
         prop="version"
       >
         <el-input
           v-model="formData.version"
-          placeholder="如: 2021, Pro, 22H2"
+          :placeholder="$t('softwareLicenses.catalog.placeholders.version')"
         />
       </el-form-item>
 
       <el-form-item
-        label="厂商"
+        :label="$t('softwareLicenses.catalog.fields.vendor')"
         prop="vendor"
       >
         <el-input
           v-model="formData.vendor"
-          placeholder="软件厂商"
+          :placeholder="$t('softwareLicenses.catalog.placeholders.vendor')"
         />
       </el-form-item>
 
       <el-form-item
-        label="软件类型"
+        :label="$t('softwareLicenses.catalog.fields.type')"
         prop="softwareType"
       >
         <el-select
           v-model="formData.softwareType"
-          placeholder="选择类型"
+          :placeholder="$t('common.placeholders.select')"
         >
           <el-option
-            label="操作系统"
+            :label="$t('softwareLicenses.catalog.types.os')"
             value="os"
           />
           <el-option
-            label="办公软件"
+            :label="$t('softwareLicenses.catalog.types.office')"
             value="office"
           />
           <el-option
-            label="专业软件"
+            :label="$t('softwareLicenses.catalog.types.professional')"
             value="professional"
           />
           <el-option
-            label="开发工具"
+            :label="$t('softwareLicenses.catalog.types.development')"
             value="development"
           />
           <el-option
-            label="安全软件"
+            :label="$t('softwareLicenses.catalog.types.security')"
             value="security"
           />
           <el-option
-            label="数据库"
+            :label="$t('softwareLicenses.catalog.types.database')"
             value="database"
           />
           <el-option
-            label="其他"
+            :label="$t('softwareLicenses.catalog.types.other')"
             value="other"
           />
         </el-select>
       </el-form-item>
 
       <el-form-item
-        label="许可类型"
+        :label="$t('softwareLicenses.catalog.fields.licenseType')"
         prop="licenseType"
       >
         <el-input
           v-model="formData.licenseType"
-          placeholder="如: perpetual, subscription, OEM"
+          :placeholder="$t('softwareLicenses.catalog.placeholders.licenseType')"
         />
       </el-form-item>
 
       <el-form-item
-        label="状态"
+        :label="$t('softwareLicenses.catalog.fields.status')"
         prop="isActive"
       >
         <el-switch
           v-model="formData.isActive"
-          active-text="启用"
-          inactive-text="停用"
+          :active-text="$t('common.status.active')"
+          :inactive-text="$t('common.status.inactive')"
         />
       </el-form-item>
 
@@ -125,10 +125,10 @@
           native-type="submit"
           :loading="submitting"
         >
-          保存
+          {{ $t('common.actions.save') }}
         </el-button>
         <el-button @click="handleBack">
-          取消
+          {{ $t('common.actions.cancel') }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -138,12 +138,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { softwareApi } from '@/api/softwareLicenses'
 import type { Software } from '@/types/softwareLicenses'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
 
@@ -159,18 +161,18 @@ const formData = ref<Partial<Software>>({
   isActive: true
 })
 
-const rules: FormRules = {
+const rules = computed<FormRules>(() => ({
   code: [
-    { required: true, message: '请输入软件代码', trigger: 'blur' },
-    { pattern: /^[A-Z0-9_]+$/, message: '代码只能包含大写字母、数字和下划线', trigger: 'blur' }
+    { required: true, message: t('validation.required'), trigger: 'blur' },
+    { pattern: /^[A-Z0-9_]+$/, message: t('validation.pattern'), trigger: 'blur' }
   ],
   name: [
-    { required: true, message: '请输入软件名称', trigger: 'blur' }
+    { required: true, message: t('validation.required'), trigger: 'blur' }
   ],
   softwareType: [
-    { required: true, message: '请选择软件类型', trigger: 'change' }
+    { required: true, message: t('validation.required'), trigger: 'change' }
   ]
-}
+}))
 
 const loadSoftware = async () => {
   const id = route.params.id as string
@@ -178,7 +180,7 @@ const loadSoftware = async () => {
     const data = await softwareApi.get(id)
     formData.value = data
   } catch (error) {
-    ElMessage.error('加载软件信息失败')
+    ElMessage.error(t('common.messages.loadFailed', '加载失败'))
   }
 }
 
@@ -192,14 +194,14 @@ const handleSubmit = async () => {
     try {
       if (isEdit.value) {
         await softwareApi.update(route.params.id as string, formData.value)
-        ElMessage.success('更新成功')
+        ElMessage.success(t('common.messages.operationSuccess'))
       } else {
         await softwareApi.create(formData.value)
-        ElMessage.success('创建成功')
+        ElMessage.success(t('common.messages.operationSuccess'))
       }
       handleBack()
     } catch (error: any) {
-      ElMessage.error(error.message || '操作失败')
+      ElMessage.error(error.message || t('common.messages.operationFailed'))
     } finally {
       submitting.value = false
     }

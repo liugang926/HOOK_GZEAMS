@@ -13,7 +13,7 @@
         <template #error>
           <div class="image-error">
             <el-icon><Picture /></el-icon>
-            <span>二维码生成失败</span>
+            <span>{{ $t('fields.qrcodeGenerateFailed') }}</span>
           </div>
         </template>
       </el-image>
@@ -27,7 +27,7 @@
     </div>
     <el-empty
       v-else
-      description="暂无二维码"
+      :description="$t('fields.noQrcode')"
       :image-size="60"
     />
   </div>
@@ -35,7 +35,10 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Picture } from '@element-plus/icons-vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   field: Object,

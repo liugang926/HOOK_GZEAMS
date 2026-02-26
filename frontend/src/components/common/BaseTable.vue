@@ -151,7 +151,7 @@
 import { ref, computed, watch } from 'vue'
 import type { ElTable } from 'element-plus'
 import ColumnManager from './ColumnManager.vue'
-import type { ColumnItem } from '@/hooks/useColumnConfig'
+import type { ColumnItem } from '@/composables/useColumnConfig'
 
 /**
  * Column definition

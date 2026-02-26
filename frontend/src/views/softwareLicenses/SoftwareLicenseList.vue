@@ -6,7 +6,7 @@
       <!-- License List -->
       <el-col :span="16">
         <BaseListPage
-          title="软件许可证"
+          :title="$t('softwareLicenses.licenses.title')"
           :api="softwareLicenseApi.list"
           :table-columns="columns"
           :search-fields="searchFields"
@@ -19,50 +19,12 @@
               @click="handleCreate"
             >
               <el-icon><Plus /></el-icon>
-              新建许可证
+              {{ $t('softwareLicenses.licenses.add') }}
             </el-button>
             <el-button @click="loadComplianceReport">
               <el-icon><Refresh /></el-icon>
-              刷新统计
+              {{ $t('softwareLicenses.licenses.refreshStats') }}
             </el-button>
-          </template>
-          <template #utilization="{ row }">
-            <el-progress
-              :percentage="Math.round(row.utilizationRate || 0)"
-              :status="getUtilizationStatus(row.utilizationRate)"
-              :stroke-width="8"
-            />
-          </template>
-          <template #expiry="{ row }">
-            <el-tag
-              v-if="!row.expiryDate"
-              type="success"
-            >
-              永久
-            </el-tag>
-            <el-tag
-              v-else-if="row.isExpired"
-              type="danger"
-            >
-              已过期
-            </el-tag>
-            <el-tag
-              v-else-if="isExpiringSoon(row.expiryDate)"
-              type="warning"
-            >
-              {{ formatDate(row.expiryDate) }}
-            </el-tag>
-            <el-tag
-              v-else
-              type="info"
-            >
-              {{ formatDate(row.expiryDate) }}
-            </el-tag>
-          </template>
-          <template #status="{ row }">
-            <el-tag :type="getStatusColor(row.status)">
-              {{ getStatusLabel(row.status) }}
-            </el-tag>
           </template>
           <template #actions="{ row }">
             <el-button
@@ -70,14 +32,14 @@
               type="primary"
               @click.stop="handleEdit(row)"
             >
-              编辑
+              {{ $t('common.actions.edit') }}
             </el-button>
             <el-button
               link
               type="primary"
               @click.stop="handleAllocate(row)"
             >
-              分配
+              {{ $t('softwareLicenses.licenses.allocate') }}
             </el-button>
           </template>
         </BaseListPage>
@@ -90,16 +52,16 @@
           class="compliance-card"
         >
           <template #header>
-            <span>合规概览</span>
+            <span>{{ $t('softwareLicenses.licenses.compliance.title') }}</span>
           </template>
           <div v-loading="loadingCompliance">
             <el-statistic
-              title="许可证总数"
+              :title="$t('softwareLicenses.licenses.compliance.totalLicenses')"
               :value="complianceData.totalLicenses"
             />
             <el-divider />
             <el-statistic
-              title="即将过期"
+              :title="$t('softwareLicenses.licenses.compliance.expiringLicenses')"
               :value="complianceData.expiringLicenses"
             >
               <template #suffix>
@@ -107,14 +69,14 @@
                   type="warning"
                   size="small"
                 >
-                  30天内
+                  {{ $t('softwareLicenses.licenses.compliance.days30') }}
                 </el-text>
               </template>
             </el-statistic>
             <el-divider />
             <div class="over-utilized-section">
               <div class="section-title">
-                过度分配
+                {{ $t('softwareLicenses.licenses.compliance.overUtilized') }}
               </div>
               <el-tag
                 v-for="item in complianceData.overUtilized"
@@ -130,7 +92,7 @@
                 type="success"
                 size="small"
               >
-                无过度分配
+                {{ $t('softwareLicenses.licenses.compliance.noOverUtilized') }}
               </el-text>
             </div>
           </div>
@@ -148,8 +110,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import BaseListPage from '@/components/common/BaseListPage.vue'
 import AllocationDialog from '@/components/softwareLicenses/AllocationDialog.vue'
 import { softwareLicenseApi } from '@/api/softwareLicenses'
@@ -158,42 +121,55 @@ import type { SoftwareLicense, ComplianceReport } from '@/types/softwareLicenses
 import { Plus, Refresh } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const { t } = useI18n()
 
-const columns: TableColumn[] = [
-  { prop: 'licenseNo', label: '许可证编号', width: 150 },
-  { prop: 'softwareName', label: '软件名称', minWidth: 150 },
-  { prop: 'totalUnits', label: '总数量', width: 100, align: 'right' },
-  { prop: 'usedUnits', label: '已用', width: 80, align: 'right' },
-  { prop: 'availableUnits', label: '可用', width: 80, align: 'right' },
-  { prop: 'utilization', label: '使用率', width: 150, slot: true },
-  { prop: 'expiry', label: '到期日', width: 120, slot: true },
-  { prop: 'status', label: '状态', width: 100, slot: true },
-  { prop: 'actions', label: '操作', width: 150, slot: true, fixed: 'right' }
-]
+const columns = computed<TableColumn[]>(() => [
+  { prop: 'licenseNo', label: t('softwareLicenses.licenses.fields.licenseNo'), width: 150 },
+  { prop: 'softwareName', label: t('softwareLicenses.licenses.fields.software'), minWidth: 150 },
+  { prop: 'totalUnits', label: t('softwareLicenses.licenses.fields.totalUnits'), width: 100, align: 'right' },
+  { prop: 'usedUnits', label: t('softwareLicenses.licenses.fields.usedUnits'), width: 80, align: 'right' },
+  { prop: 'availableUnits', label: t('softwareLicenses.licenses.fields.availableUnits'), width: 80, align: 'right' },
+  { prop: 'utilization', label: t('softwareLicenses.licenses.fields.utilization'), width: 150, format: (_value: any, row: any) => `${Math.round(row?.utilizationRate || 0)}%` },
+  { prop: 'expiry', label: t('softwareLicenses.licenses.fields.expiryDate'), width: 120,
+    tagType: (row: any) => {
+      if (!row?.expiryDate) return 'success'
+      if (row?.isExpired) return 'danger'
+      if (isExpiringSoon(row.expiryDate)) return 'warning'
+      return 'info'
+    },
+    format: (_value: any, row: any) => {
+      if (!row?.expiryDate) return t('softwareLicenses.licenses.tags.perpetual')
+      if (row?.isExpired) return t('softwareLicenses.licenses.tags.expired')
+      return formatDate(row.expiryDate)
+    }
+  },
+  { prop: 'status', label: t('softwareLicenses.licenses.fields.status'), width: 100, tagType: (row: any) => getStatusColor(row.status), format: (value: any) => getStatusLabel(value) },
+  { prop: 'actions', label: t('common.labels.operation', '操作'), width: 150, slot: true, fixed: 'right' }
+])
 
-const searchFields: SearchField[] = [
-  { prop: 'search', label: '搜索', placeholder: '许可证号/软件名称' },
-  { prop: 'status', label: '状态', type: 'select', options: [
-    { label: '生效中', value: 'active' },
-    { label: '已过期', value: 'expired' },
-    { label: '暂停', value: 'suspended' },
-    { label: '撤销', value: 'revoked' }
+const searchFields = computed<SearchField[]>(() => [
+  { prop: 'search', label: t('common.actions.search'), placeholder: t('softwareLicenses.licenses.placeholders.search') },
+  { prop: 'status', label: t('softwareLicenses.licenses.fields.status'), type: 'select', options: [
+    { label: t('softwareLicenses.licenses.status.active'), value: 'active' },
+    { label: t('softwareLicenses.licenses.status.expired'), value: 'expired' },
+    { label: t('softwareLicenses.licenses.status.suspended'), value: 'suspended' },
+    { label: t('softwareLicenses.licenses.status.revoked'), value: 'revoked' }
   ]},
-  { prop: 'expiringSoon', label: '即将过期', type: 'boolean' }
-]
+  { prop: 'expiringSoon', label: t('softwareLicenses.licenses.tags.expiringSoon'), type: 'boolean' }
+])
 
-const batchActions = [
+const batchActions = computed(() => [
   {
-    label: '批量删除',
+    label: t('common.actions.batchDelete', '批量删除'),
     type: 'danger' as const,
     action: async (selectedRows: any[]) => {
       const ids = selectedRows.map(row => row.id)
       await softwareLicenseApi.batchDelete(ids)
     },
     confirm: true,
-    confirmMessage: '确定要删除选中的许可证吗？'
+    confirmMessage: t('softwareLicenses.licenses.messages.deleteConfirm')
   }
-]
+])
 
 const complianceData = ref<ComplianceReport>({
   totalLicenses: 0,
@@ -204,15 +180,8 @@ const loadingCompliance = ref(false)
 const allocationDialogVisible = ref(false)
 const selectedLicense = ref<SoftwareLicense | null>(null)
 
-const getUtilizationStatus = (rate?: number) => {
-  if (!rate) return undefined
-  if (rate > 100) return 'exception'
-  if (rate > 90) return 'warning'
-  return 'success'
-}
-
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('zh-CN')
+  return new Date(date).toLocaleDateString(t('common.locale', 'zh-CN'))
 }
 
 const isExpiringSoon = (date: string) => {
@@ -221,13 +190,7 @@ const isExpiringSoon = (date: string) => {
 }
 
 const getStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    active: '生效中',
-    expired: '已过期',
-    suspended: '暂停',
-    revoked: '撤销'
-  }
-  return labels[status] || status
+  return t(`softwareLicenses.licenses.status.${status}`)
 }
 
 const getStatusColor = (status: string) => {

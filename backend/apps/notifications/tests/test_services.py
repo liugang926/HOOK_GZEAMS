@@ -107,6 +107,37 @@ class TestNotificationService:
         assert 'success' in result
         assert 'results' in result
 
+    def test_send_notification_inbox_does_not_create_duplicate_records(self, user):
+        """Inbox send should keep a single notification record."""
+        NotificationTemplate.objects.create(
+            template_code='test_notification_single',
+            template_name='Test Single',
+            template_type='test',
+            channel='inbox',
+            subject_template='Single Subject',
+            content_template='Single Content',
+            created_by=user,
+        )
+
+        result = notification_service.send(
+            recipient=user,
+            notification_type='test_notification_single',
+            variables={},
+            channels=['inbox'],
+        )
+
+        assert result is not None
+        assert result.get('success') is True
+
+        notifications = Notification.all_objects.filter(
+            recipient=user,
+            notification_type='test_notification_single',
+            channel='inbox',
+            is_deleted=False,
+        )
+        assert notifications.count() == 1
+        assert notifications.first().data.get('external_id')
+
     def test_mark_as_read(self, user):
         """Test marking notification as read."""
         notification = Notification.objects.create(

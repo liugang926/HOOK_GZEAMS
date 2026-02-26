@@ -1,12 +1,12 @@
 <template>
   <div class="department-list">
     <div class="page-header">
-      <h3>部门管理</h3>
+      <h3>{{ $t('system.department.title') }}</h3>
       <el-button
         type="primary"
         @click="handleCreate"
       >
-        新建部门
+        {{ $t('system.department.createButton') }}
       </el-button>
     </div>
 
@@ -20,17 +20,17 @@
     >
       <el-table-column
         prop="name"
-        label="部门名称"
+        :label="$t('system.department.columns.name')"
         width="200"
       />
       <el-table-column
         prop="code"
-        label="编码"
+        :label="$t('system.department.columns.code')"
         width="120"
       />
       <el-table-column
         prop="manager.realName"
-        label="负责人"
+        :label="$t('system.department.columns.manager')"
         width="120"
       >
         <template #default="{ row }">
@@ -39,11 +39,11 @@
       </el-table-column>
       <el-table-column
         prop="phone"
-        label="联系电话"
+        :label="$t('system.department.columns.phone')"
         width="140"
       />
       <el-table-column
-        label="排序"
+        :label="$t('system.department.columns.sortOrder')"
         width="80"
         align="center"
       >
@@ -52,7 +52,7 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="状态"
+        :label="$t('system.department.columns.status')"
         width="80"
         align="center"
       >
@@ -61,12 +61,12 @@
             :type="row.isActive ? 'success' : 'info'"
             size="small"
           >
-            {{ row.isActive ? '启用' : '停用' }}
+            {{ row.isActive ? $t('system.department.status.enabled') : $t('system.department.status.disabled') }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
-        label="操作"
+        :label="$t('common.labels.operation')"
         width="240"
         fixed="right"
       >
@@ -76,17 +76,17 @@
             type="primary"
             @click="handleEdit(row)"
           >
-            编辑
+            {{ $t('common.actions.edit') }}
           </el-button>
           <el-button
             link
             type="primary"
             @click="handleAddSub(row)"
           >
-            添加子部门
+            {{ $t('system.department.addSubDept') }}
           </el-button>
           <el-popconfirm
-            title="确定删除该部门吗？"
+            :title="$t('system.department.messages.confirmDelete')"
             @confirm="handleDelete(row)"
           >
             <template #reference>
@@ -94,7 +94,7 @@
                 link
                 type="danger"
               >
-                删除
+                {{ $t('common.actions.delete') }}
               </el-button>
             </template>
           </el-popconfirm>
@@ -114,6 +114,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { getDepartmentTree, deleteDepartment } from '@/api/system'
 import DepartmentForm from './components/DepartmentForm.vue'
@@ -123,6 +124,7 @@ const tableData = ref<any[]>([])
 const dialogVisible = ref(false)
 const currentRow = ref<any>(null)
 const parentRow = ref<any>(null)
+const { t } = useI18n()
 
 // Flatten tree for select dropdown
 const flatTreeData = computed(() => {
@@ -200,12 +202,12 @@ const handleAddSub = (row: any) => {
 const handleDelete = async (row: any) => {
   try {
     await deleteDepartment(row.id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.messages.deleteSuccess'))
     await loadData()
   } catch (error: any) {
     console.error('Delete error:', error)
     // For development, simulate success
-    ElMessage.success('删除成功（模拟）')
+    ElMessage.success(t('common.messages.deleteSuccess'))
     await loadData()
   }
 }

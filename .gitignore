@@ -43,5 +43,16 @@ logs/
 .coverage
 htmlcov/
 
+# Temporary test/debug scripts (should be in proper test directories)
+/test_*.py
+/test_*.js
+/test_*.ts
+/test_*.spec.ts
+/test_*.bat
+/test_*.ps1
+/tmp_*
+/TEST_*
+
 # Docker
 docker-compose.override.yml
+node_modules

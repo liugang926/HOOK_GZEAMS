@@ -1,7 +1,7 @@
 <template>
   <el-select
     v-model="internalValue"
-    :placeholder="field.name || '请选择'"
+    :placeholder="field.name || $t('fields.select')"
     :disabled="disabled"
     :multiple="isMultiple"
     clearable
@@ -36,12 +36,25 @@ const internalValue = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
+const componentProps = computed(() => ({
+  ...(props.field?.component_props || {}),
+  ...(props.field?.componentProps || {})
+}))
+
 const isMultiple = computed(() => {
-  return props.field.field_type === 'multi_select'
+  // Support both camelCase (fieldType) and snake_case (field_type)
+  const fieldType = props.field.fieldType || props.field.field_type
+  return fieldType === 'multi_select' || fieldType === 'multiSelect' || props.field.multiple
 })
 
 onMounted(async () => {
-  const dictCode = props.field.component_props?.dictionary
+  const presetOptions = props.field.options || componentProps.value.options
+  if (Array.isArray(presetOptions) && presetOptions.length > 0) {
+    options.value = presetOptions
+    return
+  }
+
+  const dictCode = componentProps.value.dictionary || props.field.dictionaryType
   if (dictCode) {
     // TODO: Call API
     // const res = await getDictionaryItems(dictCode)

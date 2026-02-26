@@ -2,8 +2,8 @@
   <el-switch
     :model-value="modelValue"
     :disabled="disabled"
-    :active-text="field.activeText || '是'"
-    :inactive-text="field.inactiveText || '否'"
+    :active-text="field.activeText || $t('fields.yes')"
+    :inactive-text="field.inactiveText || $t('fields.no')"
     :active-value="activeValue"
     :inactive-value="inactiveValue"
     @update:model-value="$emit('update:modelValue', $event)"
@@ -12,6 +12,9 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   field: Object,

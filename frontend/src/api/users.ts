@@ -22,42 +22,55 @@ export const userApi = {
     departmentId?: string
     isActive?: boolean
   }): Promise<PaginatedResponse<User>> {
-    return request.get('/auth/users/', { params })
+    const query: any = { ...(params || {}) }
+    if (query.pageSize !== undefined) {
+      query.page_size = query.pageSize
+      delete query.pageSize
+    }
+    if (query.departmentId !== undefined) {
+      query.department_id = query.departmentId
+      delete query.departmentId
+    }
+    if (query.isActive !== undefined) {
+      query.is_active = query.isActive
+      delete query.isActive
+    }
+    return request.get('/system/objects/User/', { params: query, silent: true })
   },
 
   /**
    * Get single user by ID
    */
   get(id: string): Promise<User> {
-    return request.get(`/auth/users/${id}/`)
+    return request.get(`/system/objects/User/${id}/`, { silent: true })
   },
 
   /**
    * Get current logged in user
    */
   getMe(): Promise<User> {
-    return request.get('/auth/users/me/')
+    return request.get('/system/objects/User/me/', { silent: true })
   },
 
   /**
    * Create new user
    */
   create(data: Partial<User>): Promise<User> {
-    return request.post('/auth/users/', data)
+    return request.post('/system/objects/User/', data)
   },
 
   /**
    * Update user
    */
   update(id: string, data: Partial<User>): Promise<User> {
-    return request.put(`/auth/users/${id}/`, data)
+    return request.put(`/system/objects/User/${id}/`, data)
   },
 
   /**
    * Delete user
    */
   delete(id: string): Promise<void> {
-    return request.delete(`/auth/users/${id}/`)
+    return request.delete(`/system/objects/User/${id}/`)
   },
 
   /**
@@ -70,7 +83,7 @@ export const userApi = {
     phone?: string
     avatar?: string
   }): Promise<User> {
-    return request.put('/auth/users/me/profile/', data)
+    return request.put('/system/objects/User/me/profile/', data)
   },
 
   /**
@@ -80,6 +93,6 @@ export const userApi = {
     oldPassword: string
     newPassword: string
   }): Promise<void> {
-    return request.post('/auth/users/me/change-password/', data)
+    return request.post('/system/objects/User/me/change-password/', data)
   }
 }

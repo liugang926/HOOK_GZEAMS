@@ -8,13 +8,42 @@ const AuthLayout = () => import('@/layouts/AuthLayout.vue')
 // Pages
 const Dashboard = () => import('@/views/Dashboard.vue')
 const Login = () => import('@/views/auth/Login.vue')
-const AssetList = () => import('@/views/assets/AssetList.vue')
 const TaskList = () => import('@/views/inventory/TaskList.vue')
-const ConsumableList = () => import('@/views/consumables/ConsumableList.vue')
 const DepartmentList = () => import('@/views/system/DepartmentList.vue')
 const TaskCenter = () => import('@/views/workflow/TaskCenter.vue')
 const TaskDetail = () => import('@/views/workflow/TaskDetail.vue')
 const MyApprovals = () => import('@/views/workflow/MyApprovals.vue')
+
+// Dynamic Pages (Unified routing for all business objects)
+const DynamicListPage = () => import('@/views/dynamic/DynamicListPage.vue')
+const DynamicFormPage = () => import('@/views/dynamic/DynamicFormPage.vue')
+const DynamicDetailPage = () => import('@/views/dynamic/DynamicDetailPage.vue')
+
+// Business Object Codes mapping for route aliases
+// This maps old route paths to new object codes
+const BUSINESS_OBJECT_ROUTES: Record<string, string> = {
+  // Assets
+  'assets': 'Asset',
+  'assets/operations/pickup': 'AssetPickup',
+  'assets/operations/transfer': 'AssetTransfer',
+  'assets/operations/return': 'AssetReturn',
+  'assets/operations/loans': 'AssetLoan',
+  'assets/settings/categories': 'AssetCategory',
+  'assets/settings/suppliers': 'Supplier',
+  'assets/settings/locations': 'Location',
+  'assets/status-logs': 'AssetStatusLog',
+  // Consumables
+  'consumables': 'Consumable',
+  'consumables/categories': 'ConsumableCategory',
+  'consumables/stock': 'ConsumableStock',
+  // Inventory
+  'inventory': 'InventoryTask',
+  // System
+  'system/departments': 'Department',
+  'system/business-objects': 'BusinessObject',
+  'system/field-definitions': 'FieldDefinition',
+  'system/page-layouts': 'PageLayout',
+}
 
 const routes: RouteRecordRaw[] = [
   {
@@ -38,153 +67,296 @@ const routes: RouteRecordRaw[] = [
         name: 'Dashboard',
         component: Dashboard
       },
+
+      // ============================================================
+      // UNIFIED DYNAMIC OBJECT ROUTES (Primary routing pattern)
+      // ============================================================
+      // All business objects now use /objects/{code} pattern
+      {
+        path: 'objects/:code',
+        name: 'DynamicObjectList',
+        component: DynamicListPage,
+        meta: { title: 'menu.routes.objectList' }
+      },
+      {
+        path: 'objects/:code/create',
+        name: 'DynamicObjectCreate',
+        component: DynamicFormPage,
+        meta: { title: 'menu.routes.objectCreate' }
+      },
+      {
+        path: 'objects/:code/:id',
+        name: 'DynamicObjectDetail',
+        component: DynamicDetailPage,
+        meta: { title: 'menu.routes.objectDetail' }
+      },
+      {
+        path: 'objects/:code/:id/edit',
+        name: 'DynamicObjectEdit',
+        component: DynamicFormPage,
+        meta: { title: 'menu.routes.objectEdit' }
+      },
+
+      // ============================================================
+      // LEGACY ROUTE ALIASES (Backward compatibility)
+      // ============================================================
+      // These routes redirect to the unified /objects/{code} pattern
+      // They are kept for backward compatibility with existing bookmarks/links
+
+      // Asset Routes
       {
         path: 'assets',
-        name: 'AssetList',
-        component: AssetList
+        redirect: '/objects/Asset'
       },
       {
         path: 'assets/create',
-        name: 'AssetCreate',
-        component: () => import('@/views/assets/AssetForm.vue')
+        redirect: '/objects/Asset/create'
       },
       {
-        path: 'assets/edit/:id',
-        name: 'AssetEdit',
-        component: () => import('@/views/assets/AssetForm.vue')
+        path: 'assets/:id/edit',
+        redirect: to => `/objects/Asset/${to.params.id}/edit`
       },
       {
         path: 'assets/:id',
-        name: 'AssetDetail',
-        component: () => import('@/views/assets/AssetDetail.vue')
+        redirect: to => `/objects/Asset/${to.params.id}`
       },
-      // Asset Operations
       {
         path: 'assets/settings/categories',
-        name: 'AssetCategories',
-        component: () => import('@/views/assets/settings/CategoryManagement.vue'),
-        meta: { title: '分类管理' }
+        redirect: '/objects/AssetCategory'
       },
-      // Suppliers
+      {
+        path: 'assets/settings/categories/create',
+        redirect: '/objects/AssetCategory/create'
+      },
       {
         path: 'assets/settings/suppliers',
-        name: 'SupplierList',
-        component: () => import('@/views/assets/settings/SupplierList.vue'),
-        meta: { title: '供应商管理' }
+        redirect: '/objects/Supplier'
       },
       {
         path: 'assets/settings/suppliers/create',
-        name: 'SupplierCreate',
-        component: () => import('@/views/assets/settings/SupplierForm.vue'),
-        meta: { title: '新建供应商' }
+        redirect: '/objects/Supplier/create'
       },
       {
         path: 'assets/settings/suppliers/:id',
-        name: 'SupplierDetail',
-        component: () => import('@/views/assets/settings/SupplierForm.vue'),
-        meta: { title: '供应商详情' }
+        redirect: to => `/objects/Supplier/${to.params.id}`
       },
       {
         path: 'assets/settings/suppliers/:id/edit',
-        name: 'SupplierEdit',
-        component: () => import('@/views/assets/settings/SupplierForm.vue'),
-        meta: { title: '编辑供应商' }
+        redirect: to => `/objects/Supplier/${to.params.id}/edit`
       },
-      // Locations
       {
         path: 'assets/settings/locations',
-        name: 'LocationList',
-        component: () => import('@/views/assets/settings/LocationList.vue'),
-        meta: { title: '存放位置管理' }
+        redirect: '/objects/Location'
       },
       {
         path: 'assets/settings/locations/create',
-        name: 'LocationCreate',
-        component: () => import('@/views/assets/settings/LocationForm.vue'),
-        meta: { title: '新建存放位置' }
+        redirect: '/objects/Location/create'
       },
       {
         path: 'assets/settings/locations/:id',
-        name: 'LocationDetail',
-        component: () => import('@/views/assets/settings/LocationForm.vue'),
-        meta: { title: '位置详情' }
+        redirect: to => `/objects/Location/${to.params.id}`
       },
       {
         path: 'assets/settings/locations/:id/edit',
-        name: 'LocationEdit',
-        component: () => import('@/views/assets/settings/LocationForm.vue'),
-        meta: { title: '编辑存放位置' }
+        redirect: to => `/objects/Location/${to.params.id}/edit`
       },
-      // Status Logs
       {
         path: 'assets/status-logs',
-        name: 'AssetStatusLogs',
-        component: () => import('@/views/assets/StatusLogList.vue'),
-        meta: { title: '资产状态日志' }
+        redirect: '/objects/AssetStatusLog'
       },
       {
         path: 'assets/operations/pickup',
-        name: 'PickupList',
-        component: () => import('@/views/assets/operations/PickupList.vue')
+        redirect: '/objects/AssetPickup'
       },
       {
         path: 'assets/operations/pickup/create',
-        name: 'PickupCreate',
-        component: () => import('@/views/assets/operations/PickupForm.vue')
+        redirect: '/objects/AssetPickup/create'
       },
       {
         path: 'assets/operations/pickup/:id',
-        name: 'PickupDetail', // Re-using form for read-only view logic if needed, or create separate Detail
-        component: () => import('@/views/assets/operations/PickupForm.vue')
+        redirect: to => `/objects/AssetPickup/${to.params.id}`
       },
       {
         path: 'assets/operations/pickup/:id/edit',
-        name: 'PickupEdit',
-        component: () => import('@/views/assets/operations/PickupForm.vue')
+        redirect: to => `/objects/AssetPickup/${to.params.id}/edit`
       },
-      // Transfer Operations
       {
         path: 'assets/operations/transfer',
-        name: 'TransferList',
-        component: () => import('@/views/assets/operations/TransferList.vue')
+        redirect: '/objects/AssetTransfer'
       },
       {
         path: 'assets/operations/transfer/create',
-        name: 'TransferCreate',
-        component: () => import('@/views/assets/operations/TransferForm.vue')
+        redirect: '/objects/AssetTransfer/create'
       },
-      // Return Operations
+      {
+        path: 'assets/operations/transfer/:id',
+        redirect: to => `/objects/AssetTransfer/${to.params.id}`
+      },
+      {
+        path: 'assets/operations/transfer/:id/edit',
+        redirect: to => `/objects/AssetTransfer/${to.params.id}/edit`
+      },
       {
         path: 'assets/operations/return',
-        name: 'ReturnList',
-        component: () => import('@/views/assets/operations/ReturnList.vue')
+        redirect: '/objects/AssetReturn'
       },
       {
         path: 'assets/operations/return/create',
-        name: 'ReturnCreate',
-        component: () => import('@/views/assets/operations/ReturnForm.vue')
+        redirect: '/objects/AssetReturn/create'
       },
-      // Loan Operations
+      {
+        path: 'assets/operations/return/:id',
+        redirect: to => `/objects/AssetReturn/${to.params.id}`
+      },
+      {
+        path: 'assets/operations/return/:id/edit',
+        redirect: to => `/objects/AssetReturn/${to.params.id}/edit`
+      },
       {
         path: 'assets/operations/loans',
-        name: 'LoanList',
-        component: () => import('@/views/assets/operations/LoanList.vue')
+        redirect: '/objects/AssetLoan'
       },
       {
         path: 'assets/operations/loans/create',
-        name: 'LoanCreate',
-        component: () => import('@/views/assets/operations/LoanForm.vue')
+        redirect: '/objects/AssetLoan/create'
       },
       {
         path: 'assets/operations/loans/:id',
-        name: 'LoanDetail',
-        component: () => import('@/views/assets/operations/LoanForm.vue')
+        redirect: to => `/objects/AssetLoan/${to.params.id}`
       },
       {
         path: 'assets/operations/loans/:id/edit',
-        name: 'LoanEdit',
-        component: () => import('@/views/assets/operations/LoanForm.vue')
+        redirect: to => `/objects/AssetLoan/${to.params.id}/edit`
       },
+
+      // Consumable Routes
+      {
+        path: 'consumables',
+        redirect: '/objects/Consumable'
+      },
+      {
+        path: 'consumables/create',
+        redirect: '/objects/Consumable/create'
+      },
+      {
+        path: 'consumables/categories',
+        redirect: '/objects/ConsumableCategory'
+      },
+      {
+        path: 'consumables/stock',
+        redirect: '/objects/ConsumableStock'
+      },
+
+      // Inventory Routes
+      {
+        path: 'inventory',
+        redirect: '/objects/InventoryTask'
+      },
+      {
+        path: 'inventory/task/:id/execute',
+        name: 'TaskExecute',
+        component: () => import('@/views/inventory/TaskExecute.vue'),
+        meta: { title: 'menu.routes.taskExecute', hideMenu: true }
+      },
+
+      // Finance Routes (keep as-is for now, not migrated to dynamic routing)
+      {
+        path: 'finance/vouchers',
+        name: 'VoucherList',
+        component: () => import('@/views/finance/VoucherList.vue'),
+        meta: { title: 'menu.routes.vouchers' }
+      },
+      {
+        path: 'finance/vouchers/:id',
+        name: 'VoucherDetail',
+        component: () => import('@/views/finance/VoucherDetail.vue'),
+        meta: { title: 'menu.routes.vouchers', hideMenu: true }
+      },
+      {
+        path: 'finance/depreciation',
+        name: 'DepreciationList',
+        component: () => import('@/views/finance/DepreciationList.vue'),
+        meta: { title: 'menu.routes.depreciation' }
+      },
+
+      // System Routes (Special system pages that are not business objects)
+      {
+        path: 'system/departments',
+        redirect: '/objects/Department'
+      },
+      {
+        path: 'system/business-objects',
+        name: 'BusinessObjectList',
+        component: () => import('@/views/system/BusinessObjectList.vue'),
+        meta: { title: 'menu.routes.businessObjects' }
+      },
+      {
+        path: 'system/field-definitions',
+        name: 'FieldDefinitionList',
+        component: () => import('@/views/system/FieldDefinitionList.vue'),
+        meta: { title: 'menu.routes.fieldDefinitions' }
+      },
+      {
+        path: 'system/page-layouts',
+        name: 'PageLayoutList',
+        component: () => import('@/views/system/PageLayoutList.vue'),
+        meta: { title: 'menu.routes.pageLayouts' }
+      },
+      {
+        path: 'system/languages',
+        name: 'LanguageList',
+        component: () => import('@/views/system/LanguageList.vue'),
+        meta: { title: 'menu.routes.languages' }
+      },
+      {
+        path: 'system/translations',
+        name: 'TranslationList',
+        component: () => import('@/views/system/TranslationList.vue'),
+        meta: { title: 'menu.routes.translations' }
+      },
+      {
+        path: 'system/page-layouts/designer',
+        name: 'PageLayoutDesigner',
+        component: () => import('@/views/system/PageLayoutDesigner.vue'),
+        meta: { title: 'menu.routes.layoutDesigner', hideMenu: true }
+      },
+      {
+        path: 'system/business-rules/:objectCode?',
+        name: 'BusinessRuleList',
+        component: () => import('@/views/system/BusinessRuleList.vue'),
+        meta: { title: 'menu.routes.businessRules' }
+      },
+      {
+        path: 'system/config-packages',
+        name: 'ConfigPackageList',
+        component: () => import('@/views/system/ConfigPackageList.vue'),
+        meta: { title: 'menu.routes.configPackages' }
+      },
+      {
+        path: 'system/dictionary-types',
+        name: 'DictionaryTypeList',
+        component: () => import('@/views/system/DictionaryTypeList.vue'),
+        meta: { title: 'menu.routes.dictionaryTypes' }
+      },
+      {
+        path: 'system/sequence-rules',
+        name: 'SequenceRuleList',
+        component: () => import('@/views/system/SequenceRuleList.vue'),
+        meta: { title: 'menu.routes.sequenceRules' }
+      },
+      {
+        path: 'system/config',
+        name: 'SystemConfigList',
+        component: () => import('@/views/system/SystemConfigList.vue'),
+        meta: { title: 'menu.routes.systemConfig' }
+      },
+      {
+        path: 'system/files',
+        name: 'SystemFileList',
+        component: () => import('@/views/system/SystemFileList.vue'),
+        meta: { title: 'menu.routes.systemFiles' }
+      },
+
       // Workflow Management
       {
         path: 'admin/workflows',
@@ -201,123 +373,13 @@ const routes: RouteRecordRaw[] = [
         name: 'WorkflowEdit',
         component: () => import('@/views/admin/WorkflowEdit.vue')
       },
-      // Permission Management
       {
         path: 'admin/permissions',
         name: 'PermissionManagement',
         component: () => import('@/views/admin/PermissionManagement.vue'),
-        meta: { title: '权限管理' }
+        meta: { title: 'menu.routes.permissions' }
       },
-      {
-        path: 'inventory',
-        name: 'InventoryTaskList',
-        component: TaskList
-      },
-      {
-        path: 'inventory/task/:id/execute',
-        name: 'TaskExecute',
-        component: () => import('@/views/inventory/TaskExecute.vue'),
-        meta: { title: '执行盘点', hideMenu: true }
-      },
-      {
-        path: 'consumables',
-        name: 'ConsumableList',
-        component: ConsumableList
-      },
-      // Finance
-      {
-        path: 'finance/vouchers',
-        name: 'VoucherList',
-        component: () => import('@/views/finance/VoucherList.vue'),
-        meta: { title: '财务凭证' }
-      },
-      {
-        path: 'finance/depreciation',
-        name: 'DepreciationList',
-        component: () => import('@/views/finance/DepreciationList.vue'),
-        meta: { title: '折旧管理' }
-      },
-      // System
-      {
-        path: 'system/departments',
-        name: 'DepartmentList',
-        component: DepartmentList
-      },
-      // System - Business Objects
-      {
-        path: 'system/business-objects',
-        name: 'BusinessObjectList',
-        component: () => import('@/views/system/BusinessObjectList.vue'),
-        meta: { title: '业务对象管理' }
-      },
-      // System - Field Definitions
-      {
-        path: 'system/field-definitions',
-        name: 'FieldDefinitionList',
-        component: () => import('@/views/system/FieldDefinitionList.vue'),
-        meta: { title: '字段定义管理' }
-      },
-      // System - Page Layouts
-      {
-        path: 'system/page-layouts',
-        name: 'PageLayoutList',
-        component: () => import('@/views/system/PageLayoutList.vue'),
-        meta: { title: '页面布局管理' }
-      },
-      // System - Dictionary Types
-      {
-        path: 'system/dictionary-types',
-        name: 'DictionaryTypeList',
-        component: () => import('@/views/system/DictionaryTypeList.vue'),
-        meta: { title: '数据字典管理' }
-      },
-      // System - Sequence Rules
-      {
-        path: 'system/sequence-rules',
-        name: 'SequenceRuleList',
-        component: () => import('@/views/system/SequenceRuleList.vue'),
-        meta: { title: '编号规则管理' }
-      },
-      // System - Configuration
-      {
-        path: 'system/config',
-        name: 'SystemConfigList',
-        component: () => import('@/views/system/SystemConfigList.vue'),
-        meta: { title: '系统配置管理' }
-      },
-      // System - Files
-      {
-        path: 'system/files',
-        name: 'SystemFileList',
-        component: () => import('@/views/system/SystemFileList.vue'),
-        meta: { title: '系统文件管理' }
-      },
-      // Integration
-      {
-        path: 'integration/configs',
-        name: 'IntegrationConfigList',
-        component: () => import('@/views/integration/IntegrationConfigList.vue'),
-        meta: { title: '集成配置管理' }
-      },
-      // IT Assets
-      {
-        path: 'it-assets',
-        name: 'ITAssetList',
-        component: () => import('@/views/it-assets/ITAssetList.vue'),
-        meta: { title: 'IT资产管理' }
-      },
-      {
-        path: 'it-assets/maintenance',
-        name: 'ITMaintenanceList',
-        component: () => import('@/views/it-assets/MaintenanceList.vue'),
-        meta: { title: 'IT维护记录' }
-      },
-      {
-        path: 'it-assets/configuration-changes',
-        name: 'ConfigurationChangeList',
-        component: () => import('@/views/it-assets/ConfigurationChangeList.vue'),
-        meta: { title: '配置变更记录' }
-      },
+
       // Workflow
       {
         path: 'workflow/tasks',
@@ -333,8 +395,37 @@ const routes: RouteRecordRaw[] = [
         path: 'workflow/my-approvals',
         name: 'MyApprovals',
         component: MyApprovals,
-        meta: { title: '我的审批' }
+        meta: { title: 'menu.routes.myApprovals' }
       },
+
+      // Integration
+      {
+        path: 'integration/configs',
+        name: 'IntegrationConfigList',
+        component: () => import('@/views/integration/IntegrationConfigList.vue'),
+        meta: { title: 'menu.routes.integrationConfigs' }
+      },
+
+      // IT Assets
+      {
+        path: 'it-assets',
+        name: 'ITAssetList',
+        component: () => import('@/views/it-assets/ITAssetList.vue'),
+        meta: { title: 'menu.routes.itAssets' }
+      },
+      {
+        path: 'it-assets/maintenance',
+        name: 'ITMaintenanceList',
+        component: () => import('@/views/it-assets/MaintenanceList.vue'),
+        meta: { title: 'menu.routes.itMaintenance' }
+      },
+      {
+        path: 'it-assets/configuration-changes',
+        name: 'ConfigurationChangeList',
+        component: () => import('@/views/it-assets/ConfigurationChangeList.vue'),
+        meta: { title: 'menu.routes.configChanges' }
+      },
+
       // Software Licenses
       {
         path: 'software-licenses',
@@ -343,43 +434,43 @@ const routes: RouteRecordRaw[] = [
             path: 'software',
             name: 'SoftwareCatalog',
             component: () => import('@/views/softwareLicenses/SoftwareCatalog.vue'),
-            meta: { title: '软件目录' }
+            meta: { title: 'menu.routes.softwareCatalog' }
           },
           {
             path: 'software/create',
             name: 'SoftwareCreate',
             component: () => import('@/views/softwareLicenses/SoftwareForm.vue'),
-            meta: { title: '新建软件' }
+            meta: { title: 'menu.routes.softwareCreate' }
           },
           {
             path: 'software/:id/edit',
             name: 'SoftwareEdit',
             component: () => import('@/views/softwareLicenses/SoftwareForm.vue'),
-            meta: { title: '编辑软件' }
+            meta: { title: 'menu.routes.softwareEdit' }
           },
           {
             path: 'licenses',
             name: 'SoftwareLicenseList',
             component: () => import('@/views/softwareLicenses/SoftwareLicenseList.vue'),
-            meta: { title: '软件许可证' }
+            meta: { title: 'menu.routes.softwareLicenses' }
           },
           {
             path: 'licenses/create',
             name: 'SoftwareLicenseCreate',
             component: () => import('@/views/softwareLicenses/SoftwareLicenseForm.vue'),
-            meta: { title: '新建许可证' }
+            meta: { title: 'menu.routes.softwareLicenseCreate' }
           },
           {
             path: 'licenses/:id/edit',
             name: 'SoftwareLicenseEdit',
             component: () => import('@/views/softwareLicenses/SoftwareLicenseForm.vue'),
-            meta: { title: '编辑许可证' }
+            meta: { title: 'menu.routes.softwareLicenseEdit' }
           },
           {
             path: 'allocations',
             name: 'LicenseAllocations',
             component: () => import('@/views/softwareLicenses/AllocationList.vue'),
-            meta: { title: '分配记录' }
+            meta: { title: 'menu.routes.licenseAllocations' }
           }
         ]
       }
@@ -391,9 +482,7 @@ const routes: RouteRecordRaw[] = [
   }
 ]
 
-const router = createRouter({
+export default createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
-
-export default router

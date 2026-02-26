@@ -93,7 +93,12 @@ class PageLayoutFilter(BaseModelFilter):
     )
     layout_type = filters.ChoiceFilter(
         choices=PageLayout.LAYOUT_TYPE_CHOICES,
-        label='Layout Type'
+        label='Layout Type (legacy, use mode instead)'
+    )
+    # New mode-based filtering
+    mode = filters.ChoiceFilter(
+        choices=PageLayout.LAYOUT_MODE_CHOICES,
+        label='Layout Mode'
     )
     is_active = filters.BooleanFilter(label='Is Active')
     is_default = filters.BooleanFilter(label='Is Default')
@@ -182,4 +187,109 @@ class DynamicSubTableDataFilter(BaseModelFilter):
             'parent_data_no',
             'field_definition_code',
             'row_order',
+        ]
+
+
+# ============================================================================
+# Internationalization (i18n) Filters
+# ============================================================================
+
+class LanguageFilter(BaseModelFilter):
+    """
+    Language filter for i18n system.
+
+    Inherits from BaseModelFilter which provides:
+    - created_at_from, created_at_to (time range)
+    - updated_at_from, updated_at_to (time range)
+    - created_by (user filtering)
+    - is_deleted (soft delete status)
+    """
+
+    code = filters.CharFilter(
+        lookup_expr='iexact',
+        label='Language Code'
+    )
+    name = filters.CharFilter(
+        lookup_expr='icontains',
+        label='Language Name'
+    )
+    is_default = filters.BooleanFilter(label='Is Default')
+    is_active = filters.BooleanFilter(label='Is Active')
+
+    class Meta(BaseModelFilter.Meta):
+        from apps.system.models import Language
+        model = Language
+        fields = [
+            'code',
+            'name',
+            'is_default',
+            'is_active',
+        ]
+
+
+class TranslationFilter(BaseModelFilter):
+    """
+    Translation filter for i18n system.
+
+    Supports filtering by:
+    - namespace/key pattern (for static translations)
+    - content_type/object_id (for dynamic object translations)
+    - language_code, type, is_system
+    """
+
+    namespace = filters.CharFilter(
+        lookup_expr='exact',
+        label='Namespace'
+    )
+    key = filters.CharFilter(
+        lookup_expr='icontains',
+        label='Translation Key'
+    )
+    language_code = filters.CharFilter(
+        lookup_expr='iexact',
+        label='Language Code'
+    )
+    type = filters.ChoiceFilter(
+        choices=(
+            ('label', 'Label'),
+            ('message', 'Message'),
+            ('enum', 'Enum'),
+            ('object_field', 'Object Field'),
+        ),
+        label='Translation Type'
+    )
+    is_system = filters.BooleanFilter(label='Is System Translation')
+    text = filters.CharFilter(
+        lookup_expr='icontains',
+        label='Translation Text'
+    )
+
+    # GenericForeignKey filtering
+    content_type_model = filters.CharFilter(
+        method='filter_content_type_model',
+        label='Content Type Model'
+    )
+    object_id = filters.NumberFilter(label='Object ID')
+    field_name = filters.CharFilter(
+        lookup_expr='iexact',
+        label='Field Name'
+    )
+
+    def filter_content_type_model(self, queryset, name, value):
+        """Filter by content type model name."""
+        if not value:
+            return queryset
+        return queryset.filter(content_type__model=value)
+
+    class Meta(BaseModelFilter.Meta):
+        from apps.system.models import Translation
+        model = Translation
+        fields = [
+            'namespace',
+            'key',
+            'language_code',
+            'type',
+            'is_system',
+            'object_id',
+            'field_name',
         ]

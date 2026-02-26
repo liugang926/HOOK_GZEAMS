@@ -6,6 +6,7 @@ All serializers inherit from BaseModelSerializer to automatically get:
 - custom_fields handling
 - Nested user/organization serialization
 """
+from uuid import UUID
 from rest_framework import serializers
 from apps.common.serializers.base import (
     BaseModelSerializer,
@@ -150,7 +151,6 @@ class ModelFieldDefinitionSerializer(BaseModelSerializer):
             'show_in_list',
             'show_in_detail',
             'show_in_form',
-            'show_in_filter',
         ]
 
 
@@ -160,6 +160,11 @@ class FieldDefinitionSerializer(BaseModelSerializer):
     field_type_display = serializers.CharField(
         source='get_field_type_display',
         read_only=True
+    )
+    relation_display_mode_display = serializers.CharField(
+        source='get_relation_display_mode_display',
+        read_only=True,
+        allow_null=True
     )
 
     class Meta(BaseModelSerializer.Meta):
@@ -178,6 +183,7 @@ class FieldDefinitionSerializer(BaseModelSerializer):
             'show_in_list',
             'show_in_detail',
             'show_in_filter',
+            'show_in_form',
             'sort_order',
             'column_width',
             'min_column_width',
@@ -195,6 +201,12 @@ class FieldDefinitionSerializer(BaseModelSerializer):
             'regex_pattern',
             'formula',
             'sub_table_fields',
+            # Reverse relation handling fields
+            'is_reverse_relation',
+            'reverse_relation_model',
+            'reverse_relation_field',
+            'relation_display_mode',
+            'relation_display_mode_display',
         ]
 
 
@@ -208,6 +220,11 @@ class FieldDefinitionDetailSerializer(BaseModelSerializer):
     business_object_name = serializers.CharField(
         source='business_object.name',
         read_only=True
+    )
+    relation_display_mode_display = serializers.CharField(
+        source='get_relation_display_mode_display',
+        read_only=True,
+        allow_null=True
     )
 
     class Meta(BaseModelSerializer.Meta):
@@ -227,6 +244,7 @@ class FieldDefinitionDetailSerializer(BaseModelSerializer):
             'show_in_list',
             'show_in_detail',
             'show_in_filter',
+            'show_in_form',
             'sort_order',
             'column_width',
             'min_column_width',
@@ -244,19 +262,51 @@ class FieldDefinitionDetailSerializer(BaseModelSerializer):
             'regex_pattern',
             'formula',
             'sub_table_fields',
+            # Reverse relation handling fields
+            'is_reverse_relation',
+            'reverse_relation_model',
+            'reverse_relation_field',
+            'relation_display_mode',
+            'relation_display_mode_display',
         ]
 
 
 class PageLayoutSerializer(BaseModelSerializer):
     """Page Layout serializer."""
 
+    _MODE_TO_LAYOUT_TYPE = {
+        'edit': 'form',
+        'readonly': 'detail',
+        'search': 'search',
+    }
+    _LAYOUT_TYPE_TO_MODE = {
+        'form': 'edit',
+        'detail': 'readonly',
+        'list': 'edit',
+        'search': 'search',
+    }
+
     layout_type_display = serializers.CharField(
         source='get_layout_type_display',
+        read_only=True
+    )
+    # New mode field for unified layout system
+    mode_display = serializers.CharField(
+        source='get_mode_display',
         read_only=True
     )
     status_display = serializers.CharField(
         source='get_status_display',
         read_only=True
+    )
+    priority_display = serializers.CharField(
+        source='get_priority_display',
+        read_only=True
+    )
+    context_type_display = serializers.CharField(
+        source='get_context_type_display',
+        read_only=True,
+        allow_null=True
     )
     published_by_info = serializers.SerializerMethodField()
     business_object_name = serializers.CharField(
@@ -273,6 +323,8 @@ class PageLayoutSerializer(BaseModelSerializer):
             'layout_name',
             'layout_type',
             'layout_type_display',
+            'mode',  # New unified mode field
+            'mode_display',  # Display value for mode
             'description',
             'layout_config',
             'status',
@@ -284,7 +336,89 @@ class PageLayoutSerializer(BaseModelSerializer):
             'published_at',
             'published_by',
             'published_by_info',
+            # Layout priority and context fields
+            'priority',
+            'priority_display',
+            'context_type',
+            'context_type_display',
+            'diff_config',
         ]
+
+    @classmethod
+    def _is_uuid_like(cls, value) -> bool:
+        try:
+            UUID(str(value))
+            return True
+        except Exception:
+            return False
+
+    @classmethod
+    def _normalize_mode(cls, raw_mode):
+        mode = str(raw_mode or '').strip().lower()
+        return mode if mode in cls._MODE_TO_LAYOUT_TYPE else None
+
+    @classmethod
+    def _normalize_layout_type(cls, raw_layout_type):
+        layout_type = str(raw_layout_type or '').strip().lower()
+        return layout_type if layout_type in cls._LAYOUT_TYPE_TO_MODE else None
+
+    def _resolve_business_object_id(self, raw_value):
+        if raw_value in (None, ''):
+            return raw_value
+        if self._is_uuid_like(raw_value):
+            return str(raw_value)
+
+        by_code = BusinessObject.objects.filter(
+            code=str(raw_value).strip(),
+            is_deleted=False
+        ).values_list('id', flat=True).first()
+        if by_code:
+            return str(by_code)
+        return raw_value
+
+    def to_internal_value(self, data):
+        """
+        Backward-compatible payload normalization for page-layout create/update:
+        - layout_mode/layoutMode -> mode
+        - auto-sync mode <-> layout_type
+        - business_object accepts both UUID and object code
+        """
+        if hasattr(data, 'copy'):
+            normalized = data.copy()
+        elif isinstance(data, dict):
+            normalized = dict(data)
+        else:
+            normalized = data
+
+        if isinstance(normalized, dict):
+            legacy_mode = (
+                normalized.get('mode')
+                or normalized.get('layout_mode')
+                or normalized.get('layoutMode')
+            )
+            mode = self._normalize_mode(legacy_mode)
+            if mode:
+                normalized['mode'] = mode
+
+            raw_layout_type = normalized.get('layout_type') or normalized.get('layoutType')
+            layout_type = self._normalize_layout_type(raw_layout_type)
+
+            if mode and not layout_type:
+                normalized['layout_type'] = self._MODE_TO_LAYOUT_TYPE.get(mode, 'form')
+            elif layout_type and not mode:
+                normalized['mode'] = self._LAYOUT_TYPE_TO_MODE.get(layout_type, 'edit')
+            elif mode and layout_type:
+                normalized['layout_type'] = self._MODE_TO_LAYOUT_TYPE.get(mode, layout_type)
+
+            if 'business_object' not in normalized and 'businessObject' in normalized:
+                normalized['business_object'] = normalized.get('businessObject')
+
+            if 'business_object' in normalized:
+                normalized['business_object'] = self._resolve_business_object_id(
+                    normalized.get('business_object')
+                )
+
+        return super().to_internal_value(normalized)
 
     def get_published_by_info(self, obj):
         """Get published_by user info."""
@@ -300,9 +434,48 @@ class PageLayoutSerializer(BaseModelSerializer):
         """Validate layout configuration."""
         from apps.system.validators import validate_layout_config
         try:
-            # Get layout_type from parent data if available
-            layout_type = self.initial_data.get('layout_type', 'form')
-            validate_layout_config(value, layout_type)
+            # Sanitize obvious bad field codes (e.g. "asset code" -> "asset_code") before validation/persistence.
+            # This is the backend safety-net; the frontend designer also normalizes before save.
+            business_object = None
+            try:
+                bo_id = None
+                if isinstance(getattr(self, 'initial_data', None), dict):
+                    bo_id = self.initial_data.get('business_object')
+                if bo_id:
+                    business_object = (
+                        BusinessObject.objects.filter(id=bo_id).first()
+                        or BusinessObject.objects.filter(code=str(bo_id)).first()
+                    )
+                if not business_object and getattr(self, 'instance', None) is not None:
+                    business_object = getattr(self.instance, 'business_object', None)
+            except Exception:
+                business_object = None
+
+            if business_object:
+                from apps.system.validators import sanitize_layout_config_field_codes
+                allowed = set()
+                # Union of hardcoded + custom fields (some deployments allow custom fields on hardcoded objects)
+                try:
+                    allowed.update(ModelFieldDefinition.objects.filter(business_object=business_object).values_list('field_name', flat=True))
+                except Exception:
+                    pass
+                try:
+                    allowed.update(FieldDefinition.objects.filter(business_object=business_object).values_list('code', flat=True))
+                except Exception:
+                    pass
+                if allowed:
+                    value = sanitize_layout_config_field_codes(value, allowed)
+
+            # Prefer mode over layout_type for validation
+            mode = self.initial_data.get('mode')
+            layout_type = self.initial_data.get('layout_type')
+
+            # Use mode if available, otherwise derive from layout_type
+            if mode:
+                from apps.system.validators import validate_layout_config_by_mode
+                validate_layout_config_by_mode(value, mode)
+            else:
+                validate_layout_config(value, layout_type or 'form')
         except Exception as e:
             raise serializers.ValidationError(str(e))
         return value
@@ -315,9 +488,23 @@ class PageLayoutDetailSerializer(BaseModelWithAuditSerializer):
         source='get_layout_type_display',
         read_only=True
     )
+    # New mode field for unified layout system
+    mode_display = serializers.CharField(
+        source='get_mode_display',
+        read_only=True
+    )
     status_display = serializers.CharField(
         source='get_status_display',
         read_only=True
+    )
+    priority_display = serializers.CharField(
+        source='get_priority_display',
+        read_only=True
+    )
+    context_type_display = serializers.CharField(
+        source='get_context_type_display',
+        read_only=True,
+        allow_null=True
     )
     published_by_info = serializers.SerializerMethodField()
     business_object = BusinessObjectSerializer(read_only=True)
@@ -331,6 +518,8 @@ class PageLayoutDetailSerializer(BaseModelWithAuditSerializer):
             'layout_name',
             'layout_type',
             'layout_type_display',
+            'mode',  # New unified mode field
+            'mode_display',  # Display value for mode
             'description',
             'layout_config',
             'status',
@@ -343,6 +532,12 @@ class PageLayoutDetailSerializer(BaseModelWithAuditSerializer):
             'published_by',
             'published_by_info',
             'history_count',
+            # Layout priority and context fields
+            'priority',
+            'priority_display',
+            'context_type',
+            'context_type_display',
+            'diff_config',
         ]
 
     def get_published_by_info(self, obj):
@@ -732,3 +927,600 @@ class TabConfigListSerializer(BaseListSerializer):
             'type_style',
             'is_active',
         ]
+
+
+# ============================================================================
+# Business Rule Serializers
+# ============================================================================
+
+class BusinessRuleSerializer(BaseModelSerializer):
+    """
+    Serializer for Business Rule CRUD operations.
+    """
+
+    business_object_code = serializers.CharField(
+        source='business_object.code',
+        read_only=True
+    )
+    business_object_name = serializers.CharField(
+        source='business_object.name',
+        read_only=True
+    )
+    rule_type_display = serializers.CharField(
+        source='get_rule_type_display',
+        read_only=True
+    )
+
+    class Meta(BaseModelSerializer.Meta):
+        from apps.system.models import BusinessRule
+        model = BusinessRule
+        fields = BaseModelSerializer.Meta.fields + [
+            'business_object',
+            'business_object_code',
+            'business_object_name',
+            'rule_code',
+            'rule_name',
+            'description',
+            'rule_type',
+            'rule_type_display',
+            'priority',
+            'is_active',
+            'condition',
+            'action',
+            'target_field',
+            'trigger_events',
+            'error_message',
+            'error_message_en',
+        ]
+
+
+class BusinessRuleCreateSerializer(BaseModelSerializer):
+    """
+    Serializer for creating Business Rules.
+    Accepts business_object_code instead of business_object ID.
+    """
+
+    business_object_code = serializers.CharField(write_only=True)
+
+    class Meta(BaseModelSerializer.Meta):
+        from apps.system.models import BusinessRule
+        model = BusinessRule
+        fields = BaseModelSerializer.Meta.fields + [
+            'business_object_code',
+            'rule_code',
+            'rule_name',
+            'description',
+            'rule_type',
+            'priority',
+            'is_active',
+            'condition',
+            'action',
+            'target_field',
+            'trigger_events',
+            'error_message',
+            'error_message_en',
+        ]
+
+    def create(self, validated_data):
+        from apps.system.models import BusinessObject
+        
+        bo_code = validated_data.pop('business_object_code', None)
+        if bo_code:
+            try:
+                business_object = BusinessObject.objects.get(code=bo_code, is_deleted=False)
+                validated_data['business_object'] = business_object
+            except BusinessObject.DoesNotExist:
+                raise serializers.ValidationError({
+                    'business_object_code': f"Business object '{bo_code}' not found."
+                })
+        return super().create(validated_data)
+
+
+class RuleExecutionSerializer(BaseModelSerializer):
+    """
+    Read-only serializer for Rule Execution logs.
+    """
+
+    rule_code = serializers.CharField(source='rule.rule_code', read_only=True)
+    rule_name = serializers.CharField(source='rule.rule_name', read_only=True)
+
+    class Meta(BaseModelSerializer.Meta):
+        from apps.system.models import RuleExecution
+        model = RuleExecution
+        fields = BaseModelSerializer.Meta.fields + [
+            'rule',
+            'rule_code',
+            'rule_name',
+            'target_record_id',
+            'target_record_type',
+            'trigger_event',
+            'input_data',
+            'condition_result',
+            'action_executed',
+            'execution_result',
+            'executed_at',
+            'execution_time_ms',
+            'has_error',
+            'error_message',
+        ]
+        read_only_fields = fields
+
+
+class RuleEvaluationRequestSerializer(serializers.Serializer):
+    """
+    Request serializer for rule evaluation endpoints.
+    """
+
+    record = serializers.JSONField(
+        help_text='Record data to evaluate rules against'
+    )
+    event = serializers.ChoiceField(
+        choices=['create', 'update', 'submit', 'approve'],
+        default='update',
+        help_text='Event type for rule evaluation'
+    )
+
+
+# =============================================================================
+# Configuration Package Serializers
+# =============================================================================
+
+class ConfigPackageSerializer(BaseModelSerializer):
+    """
+    Serializer for Configuration Package read operations.
+    """
+
+    exported_by_name = serializers.CharField(
+        source='exported_by.username',
+        read_only=True,
+        allow_null=True
+    )
+    package_type_display = serializers.CharField(
+        source='get_package_type_display',
+        read_only=True
+    )
+    object_count = serializers.SerializerMethodField()
+
+    class Meta(BaseModelSerializer.Meta):
+        from apps.system.models import ConfigPackage
+        model = ConfigPackage
+        fields = BaseModelSerializer.Meta.fields + [
+            'name',
+            'version',
+            'description',
+            'package_type',
+            'package_type_display',
+            'included_objects',
+            'object_count',
+            'exported_by',
+            'exported_by_name',
+            'exported_at',
+            'source_environment',
+            'checksum',
+            'is_valid',
+            'validation_errors',
+        ]
+        read_only_fields = [
+            'exported_at', 'checksum', 'is_valid', 'validation_errors'
+        ]
+
+    def get_object_count(self, obj):
+        return len(obj.included_objects or [])
+
+
+class ConfigPackageExportSerializer(serializers.Serializer):
+    """
+    Request serializer for exporting a configuration package.
+    """
+
+    name = serializers.CharField(max_length=100)
+    version = serializers.CharField(max_length=20)
+    description = serializers.CharField(required=False, allow_blank=True)
+    object_codes = serializers.ListField(
+        child=serializers.CharField(),
+        help_text='List of business object codes to export'
+    )
+    package_type = serializers.ChoiceField(
+        choices=['full', 'partial', 'diff'],
+        default='full'
+    )
+
+
+class ConfigPackageImportSerializer(serializers.Serializer):
+    """
+    Request serializer for importing a configuration package.
+    """
+
+    package_id = serializers.UUIDField(
+        required=False,
+        help_text='ID of existing package to import'
+    )
+    config_data = serializers.JSONField(
+        required=False,
+        help_text='Configuration data if uploading directly'
+    )
+    strategy = serializers.ChoiceField(
+        choices=['merge', 'replace', 'skip'],
+        default='merge',
+        help_text='Import strategy'
+    )
+    target_environment = serializers.CharField(
+        required=False,
+        allow_blank=True
+    )
+
+
+class ConfigImportLogSerializer(BaseModelSerializer):
+    """
+    Serializer for Configuration Import Log.
+    """
+
+    package_name = serializers.CharField(
+        source='package.name',
+        read_only=True
+    )
+    package_version = serializers.CharField(
+        source='package.version',
+        read_only=True
+    )
+    imported_by_name = serializers.CharField(
+        source='imported_by.username',
+        read_only=True,
+        allow_null=True
+    )
+    status_display = serializers.CharField(
+        source='get_status_display',
+        read_only=True
+    )
+    strategy_display = serializers.CharField(
+        source='get_import_strategy_display',
+        read_only=True
+    )
+
+    class Meta(BaseModelSerializer.Meta):
+        from apps.system.models import ConfigImportLog
+        model = ConfigImportLog
+        fields = BaseModelSerializer.Meta.fields + [
+            'package',
+            'package_name',
+            'package_version',
+            'imported_by',
+            'imported_by_name',
+            'imported_at',
+            'target_environment',
+            'import_strategy',
+            'strategy_display',
+            'status',
+            'status_display',
+            'import_result',
+            'objects_created',
+            'objects_updated',
+            'objects_skipped',
+            'objects_failed',
+            'can_rollback',
+            'rolled_back_at',
+            'error_message',
+        ]
+        read_only_fields = fields
+
+
+class ConfigDiffSerializer(serializers.Serializer):
+    """
+    Serializer for configuration diff results.
+    """
+
+    items = serializers.ListField(child=serializers.DictField())
+    summary = serializers.DictField()
+
+
+# ============================================================================
+# System File Serializers
+# ============================================================================
+
+class SystemFileSerializer(BaseModelSerializer):
+    """
+    Full serializer for SystemFile model with thumbnail and watermark URL.
+    """
+
+    url = serializers.CharField(read_only=True)
+    thumbnail_url = serializers.SerializerMethodField()
+    watermarked_url = serializers.SerializerMethodField()
+
+    class Meta(BaseModelSerializer.Meta):
+        from apps.system.models import SystemFile
+        model = SystemFile
+        fields = BaseModelSerializer.Meta.fields + [
+            'file_name',
+            'file_path',
+            'file_size',
+            'file_type',
+            'file_extension',
+            'url',
+            'thumbnail_url',
+            'thumbnail_path',
+            'watermarked_url',
+            'watermarked_path',
+            'width',
+            'height',
+            'is_compressed',
+            'original_file_id',
+            'object_code',
+            'instance_id',
+            'field_code',
+            'biz_type',
+            'biz_id',
+            'description',
+            'file_hash',
+        ]
+
+    def get_thumbnail_url(self, obj):
+        if obj.thumbnail_path:
+            from django.conf import settings
+            return f"{settings.MEDIA_URL}{obj.thumbnail_path}"
+        return None
+
+    def get_watermarked_url(self, obj):
+        if obj.watermarked_path:
+            from django.conf import settings
+            return f"{settings.MEDIA_URL}{obj.watermarked_path}"
+        return None
+
+
+class SystemFileListSerializer(BaseModelSerializer):
+    """
+    Lightweight serializer for file list views.
+    """
+
+    url = serializers.CharField(read_only=True)
+    thumbnail_url = serializers.SerializerMethodField()
+
+    class Meta(BaseModelSerializer.Meta):
+        from apps.system.models import SystemFile
+        model = SystemFile
+        fields = [
+            'id',
+            'file_name',
+            'file_size',
+            'file_type',
+            'file_extension',
+            'url',
+            'thumbnail_url',
+            'width',
+            'height',
+            'object_code',
+            'instance_id',
+            'field_code',
+            'created_at',
+        ]
+
+    def get_thumbnail_url(self, obj):
+        if obj.thumbnail_path:
+            from django.conf import settings
+            return f"{settings.MEDIA_URL}{obj.thumbnail_path}"
+        return None
+
+
+class SystemFileUploadSerializer(serializers.Serializer):
+    """
+    Serializer for file upload requests.
+    """
+
+    file = serializers.FileField(
+        max_length=52428800,
+        help_text="File to upload"
+    )
+    object_code = serializers.CharField(required=False, max_length=100)
+    instance_id = serializers.UUIDField(required=False)
+    field_code = serializers.CharField(required=False, max_length=100)
+    description = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_file(self, value):
+        if value.size == 0:
+            raise serializers.ValidationError("File cannot be empty.")
+        if not value.name:
+            raise serializers.ValidationError("File must have a name.")
+        return value
+
+
+class SystemFileBatchDeleteSerializer(serializers.Serializer):
+    """
+    Serializer for batch delete requests.
+    """
+
+    ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        min_length=1,
+        help_text="List of file IDs to delete"
+    )
+
+    def validate_ids(self, value):
+        if not value:
+            raise serializers.ValidationError("At least one file ID must be provided.")
+        return value
+
+
+# ============================================================================
+# Internationalization (i18n) Serializers
+# ============================================================================
+
+class LanguageSerializer(BaseModelSerializer):
+    """
+    Serializer for Language model.
+
+    Handles language configuration for the i18n system.
+    """
+
+    class Meta(BaseModelSerializer.Meta):
+        from apps.system.models import Language
+        model = Language
+        fields = BaseModelSerializer.Meta.fields + [
+            'code',
+            'name',
+            'native_name',
+            'is_default',
+            'is_active',
+            'sort_order',
+            'flag_emoji',
+            'locale',
+        ]
+
+
+class LanguageListSerializer(BaseModelSerializer):
+    """
+    Lightweight serializer for language list views.
+    """
+
+    class Meta(BaseModelSerializer.Meta):
+        from apps.system.models import Language
+        model = Language
+        fields = [
+            'id',
+            'code',
+            'name',
+            'native_name',
+            'is_default',
+            'is_active',
+            'sort_order',
+            'flag_emoji',
+            'locale',
+        ]
+
+
+class TranslationSerializer(BaseModelSerializer):
+    """
+    Serializer for Translation model.
+
+    Handles both namespace/key translations and GenericForeignKey translations.
+    """
+
+    content_type_model = serializers.CharField(
+        source='content_type.model',
+        read_only=True,
+        allow_null=True
+    )
+
+    class Meta(BaseModelSerializer.Meta):
+        from apps.system.models import Translation
+        model = Translation
+        fields = BaseModelSerializer.Meta.fields + [
+            'namespace',
+            'key',
+            'content_type',
+            'object_id',
+            'content_type_model',
+            'field_name',
+            'language_code',
+            'text',
+            'context',
+            'type',
+            'is_system',
+        ]
+
+
+class TranslationListSerializer(BaseModelSerializer):
+    """
+    Optimized serializer for translation list views.
+    """
+
+    content_type_model = serializers.CharField(
+        source='content_type.model',
+        read_only=True,
+        allow_null=True
+    )
+
+    class Meta(BaseModelSerializer.Meta):
+        from apps.system.models import Translation
+        model = Translation
+        fields = [
+            'id',
+            'namespace',
+            'key',
+            'content_type_model',
+            'object_id',
+            'field_name',
+            'language_code',
+            'text',
+            'context',
+            'type',
+            'is_system',
+            'created_at',
+            'updated_at',
+        ]
+
+
+class TranslationCreateSerializer(serializers.Serializer):
+    """
+    Serializer for creating translations with flexible input.
+    """
+
+    namespace = serializers.CharField(required=False, allow_blank=True, default='')
+    key = serializers.CharField(required=False, allow_blank=True, default='')
+    content_type = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    object_id = serializers.UUIDField(required=False, allow_null=True)
+    field_name = serializers.CharField(required=False, allow_blank=True, default='')
+    language_code = serializers.CharField(max_length=10)
+    text = serializers.CharField()
+    context = serializers.CharField(required=False, allow_blank=True, default='')
+    type = serializers.CharField(required=False, default='label')
+
+    def validate(self, data):
+        """Validate that either namespace/key or content_type/object_id is provided."""
+        namespace = data.get('namespace', '')
+        key = data.get('key', '')
+        content_type = data.get('content_type')
+        object_id = data.get('object_id')
+
+        has_namespace_key = bool(namespace and key)
+        has_gfk = bool(content_type and object_id is not None)
+
+        if not has_namespace_key and not has_gfk:
+            raise serializers.ValidationError(
+                "Either namespace/key or content_type/object_id must be provided."
+            )
+
+        return data
+
+
+class TranslationBulkSerializer(serializers.Serializer):
+    """
+    Serializer for bulk translation operations.
+    """
+
+    translations = serializers.ListField(
+        child=TranslationCreateSerializer(),
+        help_text="List of translations to create/update"
+    )
+
+    def validate_translations(self, value):
+        """Validate translations list."""
+        if not value:
+            raise serializers.ValidationError("At least one translation must be provided.")
+        if len(value) > 1000:
+            raise serializers.ValidationError("Maximum 1000 translations per bulk operation.")
+        return value
+
+
+class ObjectTranslationSerializer(serializers.Serializer):
+    """
+    Serializer for object-scoped translation operations.
+
+    Used for getting/setting all translations for a specific object.
+    """
+
+    translations = serializers.DictField(
+        child=serializers.DictField(child=serializers.CharField()),
+        help_text="Nested dict: {locale: {field: translation}}"
+    )
+
+    def validate_translations(self, value):
+        """Validate translations structure."""
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Translations must be a dictionary.")
+
+        for locale, fields in value.items():
+            if not isinstance(locale, str) or len(locale) < 2:
+                raise serializers.ValidationError(f"Invalid locale code: {locale}")
+            if not isinstance(fields, dict):
+                raise serializers.ValidationError(f"Translations for {locale} must be a dictionary.")
+
+        return value

@@ -2,7 +2,7 @@
   <el-select
     v-model="selectedRoles"
     multiple
-    placeholder="请选择角色"
+    :placeholder="$t('common.selectors.selectRole')"
     style="width: 100%"
   >
     <el-option
@@ -16,6 +16,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   modelValue: {
@@ -33,9 +36,9 @@ const selectedRoles = computed({
 
 // Mock roles
 const roles = ref([
-  { label: '系统管理员', value: 'admin' },
-  { label: '资产管理员', value: 'asset_admin' },
-  { label: '部门主管', value: 'dept_manager' },
-  { label: '普通用户', value: 'user' }
+  { label: t('common.selectors.systemAdmin'), value: 'admin' },
+  { label: t('common.selectors.assetAdmin'), value: 'asset_admin' },
+  { label: t('common.selectors.deptManager'), value: 'dept_manager' },
+  { label: t('common.selectors.normalUser'), value: 'user' }
 ])
 </script>

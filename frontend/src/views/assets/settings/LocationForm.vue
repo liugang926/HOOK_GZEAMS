@@ -2,7 +2,7 @@
   <div class="location-form">
     <div class="page-header">
       <el-page-header
-        :title="isEdit ? '编辑存放位置' : '新建存放位置'"
+        :title="isEdit ? t('assets.location.edit') : t('assets.location.create')"
         @back="goBack"
       />
       <div class="header-actions">
@@ -11,7 +11,7 @@
           :loading="submitting"
           @click="handleSubmit"
         >
-          保存
+          {{ t('common.actions.save') }}
         </el-button>
       </div>
     </div>
@@ -29,23 +29,23 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item
-              label="位置编码"
+              :label="t('assets.location.code')"
               prop="code"
             >
               <el-input
                 v-model="form.code"
-                placeholder="请输入位置编码"
+                :placeholder="t('assets.location.enterCode')"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item
-              label="位置名称"
+              :label="t('assets.location.name')"
               prop="name"
             >
               <el-input
                 v-model="form.name"
-                placeholder="请输入位置名称"
+                :placeholder="t('assets.location.enterName')"
               />
             </el-form-item>
           </el-col>
@@ -53,7 +53,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item
-              label="上级位置"
+              :label="t('assets.location.parent')"
               prop="parentId"
             >
               <el-tree-select
@@ -62,26 +62,26 @@
                 :props="{ label: 'name', value: 'id' }"
                 clearable
                 check-strictly
-                placeholder="请选择上级位置（不选则为根位置）"
+                :placeholder="t('assets.location.selectParent')"
                 style="width: 100%"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item
-              label="状态"
+              :label="t('common.labels.status')"
               prop="isActive"
             >
               <el-switch
                 v-model="form.isActive"
-                active-text="启用"
-                inactive-text="停用"
+                :active-text="t('common.status.enabled')"
+                :inactive-text="t('common.status.inactive')"
               />
             </el-form-item>
           </el-col>
         </el-row>
         <el-form-item
-          label="排序"
+          :label="t('assets.location.sort')"
           prop="sortOrder"
         >
           <el-input-number
@@ -92,25 +92,25 @@
           />
         </el-form-item>
         <el-form-item
-          label="描述"
+          :label="t('common.labels.description')"
           prop="description"
         >
           <el-input
             v-model="form.description"
             type="textarea"
             :rows="3"
-            placeholder="请输入描述"
+            :placeholder="t('common.placeholders.input', { field: t('assets.location.description') })"
           />
         </el-form-item>
         <el-form-item
-          label="备注"
+          :label="t('common.labels.remark')"
           prop="remark"
         >
           <el-input
             v-model="form.remark"
             type="textarea"
             :rows="2"
-            placeholder="请输入备注"
+            :placeholder="t('common.placeholders.input', { field: t('common.labels.remark') })"
           />
         </el-form-item>
       </el-form>
@@ -122,7 +122,10 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { createLocation, updateLocation, getLocationDetail, getLocationTree } from '@/api/assets/locations'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -143,8 +146,8 @@ const form = reactive({
 })
 
 const rules = {
-    code: [{ required: true, message: '请输入位置编码', trigger: 'blur' }],
-    name: [{ required: true, message: '请输入位置名称', trigger: 'blur' }]
+    code: [{ required: true, message: t('assets.location.enterCode'), trigger: 'blur' }],
+    name: [{ required: true, message: t('assets.location.enterName'), trigger: 'blur' }]
 }
 
 const isEdit = computed(() => !!route.params.id)
@@ -178,16 +181,16 @@ const handleSubmit = async () => {
 
         if (isEdit.value) {
             await updateLocation(String(route.params.id), payload)
-            ElMessage.success('更新成功')
+            ElMessage.success(t('common.messages.updateSuccess'))
         } else {
             await createLocation(payload)
-            ElMessage.success('保存成功')
+            ElMessage.success(t('common.messages.saveSuccess'))
         }
         goBack()
     } catch (e: any) {
         if (e !== false) {
             console.error(e)
-            ElMessage.error(e.response?.data?.message || e.message || '操作失败')
+            ElMessage.error(e.response?.data?.message || e.message || t('common.messages.operationFailed'))
         }
     } finally {
         submitting.value = false
@@ -219,7 +222,7 @@ onMounted(async () => {
             form.sortOrder = data.sort_order || 0
         } catch (e) {
             console.error(e)
-            ElMessage.error('加载失败')
+            ElMessage.error(t('common.messages.loadFailed'))
             goBack()
         }
     }

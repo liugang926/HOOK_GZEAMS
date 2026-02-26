@@ -8,16 +8,16 @@
     >
       <el-table-column
         prop="label"
-        label="字段"
+        :label="t('workflow.designer.field')"
         width="140"
       />
       <el-table-column
         prop="code"
-        label="编码"
+        :label="t('workflow.designer.code')"
         width="120"
       />
       <el-table-column
-        label="权限"
+        :label="t('workflow.designer.permission')"
         width="140"
       >
         <template #default="{ row }">
@@ -26,15 +26,15 @@
             size="small"
           >
             <el-option
-              label="可编辑"
+              :label="t('workflow.permissions.editable')"
               value="editable"
             />
             <el-option
-              label="只读"
+              :label="t('workflow.permissions.readOnly')"
               value="read_only"
             />
             <el-option
-              label="隐藏"
+              :label="t('workflow.permissions.hidden')"
               value="hidden"
             />
           </el-select>
@@ -47,19 +47,19 @@
         size="small"
         @click="setAll('editable')"
       >
-        全部可编辑
+        {{ t('workflow.designer.setAllEditable') }}
       </el-button>
       <el-button
         size="small"
         @click="setAll('read_only')"
       >
-        全部只读
+        {{ t('workflow.designer.setAllReadOnly') }}
       </el-button>
       <el-button
         size="small"
         @click="setAll('hidden')"
       >
-        全部隐藏
+        {{ t('workflow.designer.setAllHidden') }}
       </el-button>
     </div>
   </div>
@@ -67,7 +67,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getFieldDefinitions } from '@/api/system'
+
+const { t } = useI18n()
 
 interface Props {
   modelValue: Record<string, string>

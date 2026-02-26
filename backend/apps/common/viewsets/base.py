@@ -50,13 +50,27 @@ class BatchOperationMixin:
             succeeded = 0
             failed = 0
 
+            # Get the model class for exception handling
+            model_class = None
+            queryset_attr = getattr(self, 'queryset', None)
+            if queryset_attr is not None:
+                model_class = queryset_attr.model
+            elif hasattr(self, 'model'):
+                model_class = self.model
+
+            # Use appropriate exception handling
+            if model_class is not None:
+                not_found_exc = model_class.DoesNotExist
+            else:
+                not_found_exc = Exception
+
             for record_id in ids:
                 try:
                     instance = self.get_queryset().get(id=record_id)
                     instance.soft_delete(request.user)
                     results.append({'id': str(record_id), 'success': True})
                     succeeded += 1
-                except self.queryset.model.DoesNotExist:
+                except not_found_exc:
                     results.append({'id': str(record_id), 'success': False, 'error': 'Not found'})
                     failed += 1
                 except Exception as e:
@@ -106,9 +120,24 @@ class BatchOperationMixin:
         succeeded = 0
         failed = 0
 
+        # Get the model class for restore
+        queryset_attr = getattr(self, 'queryset', None)
+        if queryset_attr is not None:
+            model_class = queryset_attr.model
+        elif hasattr(self, 'model'):
+            model_class = self.model
+        else:
+            return Response({
+                'success': False,
+                'error': {
+                    'code': 'SERVER_ERROR',
+                    'message': 'Cannot determine model class for restore'
+                }
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         for record_id in ids:
             try:
-                instance = self.queryset.model.all_objects.get(id=record_id)
+                instance = model_class.all_objects.get(id=record_id)
                 instance.is_deleted = False
                 instance.deleted_at = None
                 if hasattr(instance, 'deleted_by'):
@@ -198,7 +227,12 @@ class BaseModelViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filter out soft-deleted records and apply organization isolation."""
-        return self.queryset.filter(is_deleted=False)
+        # Use getattr to safely get queryset, fall back to get_queryset from parent
+        queryset = getattr(self, 'queryset', None)
+        if queryset is None:
+            # Fallback to parent class implementation
+            return super().get_queryset()
+        return queryset.filter(is_deleted=False)
 
     def perform_create(self, serializer):
         """Set created_by and organization on create."""
@@ -230,7 +264,13 @@ class BaseModelViewSet(viewsets.ModelViewSet):
         Returns paginated list of soft-deleted records in BaseResponse format.
         """
         # Get all deleted records (user must have permission)
-        queryset = self.queryset.model.all_objects.filter(is_deleted=True)
+        queryset_attr = getattr(self, 'queryset', None)
+        if queryset_attr is None:
+            # Fallback: get from get_queryset and add is_deleted filter
+            base_queryset = super().get_queryset()
+            queryset = base_queryset.filter(is_deleted=True)
+        else:
+            queryset = queryset_attr.model.all_objects.filter(is_deleted=True)
 
         # Use DRF's standard pagination for consistency
         page = self.paginate_queryset(queryset)
@@ -257,7 +297,17 @@ class BaseModelViewSet(viewsets.ModelViewSet):
 
         POST /api/{resource}/{id}/restore/
         """
-        instance = self.queryset.model.all_objects.get(id=pk)
+        queryset_attr = getattr(self, 'queryset', None)
+        if queryset_attr is None:
+            # Fallback: try to get the model from serializer
+            serializer_class = self.get_serializer_class()
+            model_class = getattr(serializer_class, 'Meta', None)
+            if model_class and hasattr(model_class, 'model'):
+                instance = model_class.model.all_objects.get(id=pk)
+            else:
+                raise NotImplementedError("Cannot determine model class for restore")
+        else:
+            instance = queryset_attr.model.all_objects.get(id=pk)
         instance.is_deleted = False
         instance.deleted_at = None
         if hasattr(instance, 'deleted_by'):

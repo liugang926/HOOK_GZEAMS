@@ -97,11 +97,13 @@ class MenuViewSet(viewsets.GenericViewSet):
             item_order = menu_config.get('item_order', 999)
             icon = menu_config.get('icon', 'Document')
 
+            # Support custom URL in menu_config (for system pages)
+            custom_url = menu_config.get('url')
             menu_item = {
                 'code': obj.code,
                 'name': obj.name,
                 'name_en': obj.name_en,
-                'url': f"/objects/{obj.code}",
+                'url': custom_url if custom_url else f"/objects/{obj.code}",
                 'icon': icon,
                 'order': item_order,
                 'group': group_name,
@@ -178,37 +180,42 @@ class MenuViewSet(viewsets.GenericViewSet):
                 'show_in_menu': {
                     'type': 'boolean',
                     'default': True,
-                    'description': '是否在菜单中显示'
+                    'description': 'Whether to show in menu'
                 },
                 'group': {
                     'type': 'string',
                     'default': '其他',
-                    'description': '菜单分组名称'
+                    'description': 'Menu group name'
                 },
                 'group_order': {
                     'type': 'integer',
                     'default': 999,
-                    'description': '分组显示顺序'
+                    'description': 'Group display order'
                 },
                 'item_order': {
                     'type': 'integer',
                     'default': 999,
-                    'description': '菜单项显示顺序'
+                    'description': 'Menu item display order'
                 },
                 'icon': {
                     'type': 'string',
                     'default': 'Document',
-                    'description': '图标名称'
+                    'description': 'Icon name (Element Plus)'
                 },
                 'group_icon': {
                     'type': 'string',
                     'default': 'Folder',
-                    'description': '分组图标名称'
+                    'description': 'Group icon name'
+                },
+                'url': {
+                    'type': 'string',
+                    'default': None,
+                    'description': 'Custom URL (default: /objects/{code})'
                 },
                 'badge': {
                     'type': 'object',
                     'default': None,
-                    'description': '徽章配置 (e.g., {"type": "dot", "value": 5})'
+                    'description': 'Badge config (e.g., {"type": "dot", "value": 5})'
                 }
             }
         }

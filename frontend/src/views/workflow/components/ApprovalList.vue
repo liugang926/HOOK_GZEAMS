@@ -6,20 +6,20 @@
       :loading="loading"
       stripe
       border
-      empty-text="暂无审批任务"
+      :empty-text="t('workflow.approvalList.noTasks')"
     >
       <el-table-column
         prop="instance.business_no"
-        label="单号"
+        :label="t('workflow.approvalList.businessNo')"
         width="160"
       />
       <el-table-column
         prop="node_name"
-        label="当前节点"
+        :label="t('workflow.columns.receiveTime')"
         width="140"
       />
       <el-table-column
-        label="业务类型"
+        :label="t('workflow.approvalList.businessType')"
         width="110"
       >
         <template #default="{ row }">
@@ -32,7 +32,7 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="发起人"
+        :label="t('workflow.columns.initiator')"
         width="110"
       >
         <template #default="{ row }">
@@ -40,7 +40,7 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="发起时间"
+        :label="t('workflow.columns.receiveTime')"
         width="170"
       >
         <template #default="{ row }">
@@ -48,7 +48,7 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="优先级"
+        :label="t('workflow.approvalList.priority')"
         width="90"
       >
         <template #default="{ row }">
@@ -62,7 +62,7 @@
       </el-table-column>
       <el-table-column
         v-if="!readOnly"
-        label="操作"
+        :label="t('workflow.columns.operation')"
         width="200"
         fixed="right"
       >
@@ -73,7 +73,7 @@
             :loading="actionLoading === row.id"
             @click="$emit('approve', row.id, '')"
           >
-            同意
+            {{ t('workflow.actions.approve') }}
           </el-button>
           <el-button
             type="danger"
@@ -81,20 +81,20 @@
             :loading="actionLoading === row.id"
             @click="$emit('reject', row.id)"
           >
-            拒绝
+            {{ t('workflow.actions.reject') }}
           </el-button>
           <el-button
             link
             :loading="actionLoading === row.id"
             @click="$emit('return', row.id)"
           >
-            退回
+            {{ t('workflow.actions.return') }}
           </el-button>
         </template>
       </el-table-column>
       <el-table-column
         v-if="readOnly"
-        label="处理结果"
+        :label="t('workflow.approvalList.result')"
         width="100"
       >
         <template #default="{ row }">
@@ -117,14 +117,14 @@
     >
       <el-form
         :model="dialogForm"
-        label-width="80px"
+        :label-width="locale === 'zh-CN' ? '80px' : '120px'"
       >
-        <el-form-item label="审批意见">
+        <el-form-item :label="t('workflow.task.approvalComment')">
           <el-input
             v-model="dialogForm.comment"
             type="textarea"
             :rows="4"
-            placeholder="请输入审批意见（可选）"
+            :placeholder="t('workflow.approvalList.commentPlaceholder')"
             maxlength="500"
             show-word-limit
           />
@@ -132,14 +132,14 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">
-          取消
+          {{ t('common.actions.cancel') }}
         </el-button>
         <el-button
           type="primary"
           :loading="confirmLoading"
           @click="handleConfirm"
         >
-          确定
+          {{ t('common.actions.confirm') }}
         </el-button>
       </template>
     </el-dialog>
@@ -148,6 +148,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface WorkflowTask {
   id: string
@@ -176,6 +179,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits(['approve', 'reject', 'return'])
 
+const locale = computed(() => t('locale'))
+
 // Dialog state
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
@@ -188,13 +193,7 @@ const actionLoading = ref<string | null>(null)
 
 // Business type mapping
 const getBusinessType = (code?: string): string => {
-  const types: Record<string, string> = {
-    'asset_pickup': '资产领用',
-    'asset_transfer': '资产调拨',
-    'asset_loan': '资产借用',
-    'asset_return': '资产退库'
-  }
-  return types[code || ''] || code || '未知'
+  return t(`workflow.businessTypes.${code || 'unknown'}`)
 }
 
 const getBusinessTypeTag = (code?: string): string => {
@@ -209,13 +208,7 @@ const getBusinessTypeTag = (code?: string): string => {
 
 // Priority mapping
 const getPriorityLabel = (priority: string): string => {
-  const labels: Record<string, string> = {
-    'low': '低',
-    'normal': '普通',
-    'high': '高',
-    'urgent': '紧急'
-  }
-  return labels[priority] || '普通'
+  return t(`workflow.priority.${priority}`)
 }
 
 const getPriorityTagType = (priority: string): string => {
@@ -230,13 +223,7 @@ const getPriorityTagType = (priority: string): string => {
 
 // Status mapping for completed tasks
 const getStatusLabel = (status: string): string => {
-  const labels: Record<string, string> = {
-    'approved': '已同意',
-    'rejected': '已拒绝',
-    'returned': '已退回',
-    'pending': '待处理'
-  }
-  return labels[status] || status
+  return t(`workflow.approvalStatus.${status}`)
 }
 
 const getStatusTagType = (status: string): string => {
@@ -264,21 +251,21 @@ const formatDate = (dateStr: string): string => {
 // Handle emit with dialog
 const handleApproveWithDialog = (taskId: string, comment?: string) => {
   dialogAction.value = 'approve'
-  dialogTitle.value = '同意审批'
+  dialogTitle.value = t('workflow.approvalList.approveApproval')
   dialogForm.value.comment = comment || ''
   dialogVisible.value = true
 }
 
 const handleRejectWithDialog = (taskId: string) => {
   dialogAction.value = 'reject'
-  dialogTitle.value = '拒绝审批'
+  dialogTitle.value = t('workflow.myApprovals.rejectApproval')
   dialogForm.value.comment = ''
   dialogVisible.value = true
 }
 
 const handleReturnWithDialog = (taskId: string) => {
   dialogAction.value = 'return'
-  dialogTitle.value = '退回审批'
+  dialogTitle.value = t('workflow.myApprovals.returnApproval')
   dialogForm.value.comment = ''
   dialogVisible.value = true
 }

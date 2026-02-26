@@ -284,12 +284,16 @@ function validateListColumn(column: any, path: string, errors: LayoutValidationE
     return
   }
 
-  const requiredFields = ['field_code', 'label']
-  requiredFields.forEach(field => {
-    if (!column[field]) {
-      errors.push({ path, message: `Missing required field: ${field}` })
-    }
-  })
+  const fieldCode = column.field_code || column.fieldCode || column.prop || column.code || column.field
+  const label = column.label || column.title || column.name
+
+  if (!fieldCode) {
+    errors.push({ path, message: 'Missing required field: fieldCode' })
+  }
+
+  if (!label) {
+    errors.push({ path, message: 'Missing required field: label' })
+  }
 
   if (column.width !== undefined) {
     const width = Number(column.width)
@@ -305,12 +309,23 @@ function validateField(field: any, path: string, errors: LayoutValidationError[]
     return
   }
 
-  const requiredFields = ['id', 'field_code', 'label', 'span']
-  requiredFields.forEach(requiredField => {
-    if (!field[requiredField]) {
-      errors.push({ path, message: `Missing required field: ${requiredField}` })
-    }
-  })
+  if (!field.id) {
+    errors.push({ path, message: 'Missing required field: id' })
+  }
+
+  const fieldCode = field.field_code || field.fieldCode || field.code || field.field || field.prop || field.name
+  if (!fieldCode) {
+    errors.push({ path, message: 'Missing required field: fieldCode' })
+  }
+
+  const label = field.label || field.name || field.title
+  if (!label) {
+    errors.push({ path, message: 'Missing required field: label' })
+  }
+
+  if (field.span === undefined || field.span === null) {
+    errors.push({ path, message: 'Missing required field: span' })
+  }
 
   // Validate span
   if (field.span !== undefined) {
@@ -325,9 +340,15 @@ function validateField(field: any, path: string, errors: LayoutValidationError[]
 
 /**
  * Get default layout configuration for a given layout type
+ * Supports both legacy layout types (form/detail) and new modes (edit/readonly)
  */
-export function getDefaultLayoutConfig(layoutType: LayoutType): Record<string, unknown> {
-  if (layoutType === 'form') {
+export function getDefaultLayoutConfig(layoutType: LayoutType | 'edit' | 'readonly'): Record<string, unknown> {
+  // Map new modes to legacy types for backward compatibility
+  const normalizedType = layoutType === 'edit' ? 'form'
+    : layoutType === 'readonly' ? 'detail'
+      : layoutType
+
+  if (normalizedType === 'form') {
     return {
       sections: [
         {
@@ -349,7 +370,7 @@ export function getDefaultLayoutConfig(layoutType: LayoutType): Record<string, u
     }
   }
 
-  if (layoutType === 'list') {
+  if (normalizedType === 'list') {
     return {
       columns: [],
       actions: [
@@ -361,7 +382,7 @@ export function getDefaultLayoutConfig(layoutType: LayoutType): Record<string, u
     }
   }
 
-  if (layoutType === 'detail') {
+  if (normalizedType === 'detail') {
     return {
       sections: [
         {
@@ -379,7 +400,7 @@ export function getDefaultLayoutConfig(layoutType: LayoutType): Record<string, u
     }
   }
 
-  if (layoutType === 'search') {
+  if (normalizedType === 'search') {
     return {
       fields: [],
       layout: 'horizontal',
@@ -387,7 +408,22 @@ export function getDefaultLayoutConfig(layoutType: LayoutType): Record<string, u
     }
   }
 
-  return {}
+  // Fallback: return a minimal valid form layout instead of empty object
+  console.warn(`Unknown layout type: ${layoutType}, falling back to form layout`)
+  return {
+    sections: [
+      {
+        id: `section-${Date.now()}`,
+        type: 'section',
+        title: '基本信息',
+        collapsible: true,
+        collapsed: false,
+        columns: 2,
+        border: false,
+        fields: []
+      }
+    ]
+  }
 }
 
 /**

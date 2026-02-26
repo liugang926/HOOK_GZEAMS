@@ -2,8 +2,8 @@
   <div class="pickup-list page-container">
     <BaseListPage
       ref="listRef"
-      title="资产领用单"
-      object-code="asset_pickup_list"
+      :title="$t('assets.pickup.listTitle')"
+      object-code="AssetPickup"
       :search-fields="searchFields"
       :table-columns="columns"
       :api="fetchPickupList"
@@ -14,18 +14,8 @@
           :icon="Plus"
           @click="handleCreate"
         >
-          新建领用单
+          {{ $t('assets.pickup.createButton') }}
         </el-button>
-      </template>
-
-      <template #status="{ row }">
-        <el-tag
-          :type="getStatusType(row.status)"
-          class="status-tag"
-          :class="`status-${row.status}`"
-        >
-          {{ row.statusLabel || getStatusLabel(row.status) }}
-        </el-tag>
       </template>
 
       <template #actions="{ row }">
@@ -34,7 +24,7 @@
           type="primary"
           @click="handleView(row)"
         >
-          查看
+          {{ $t('common.actions.view') }}
         </el-button>
         <el-button
           v-if="['draft', 'pending'].includes(row.status)"
@@ -42,7 +32,7 @@
           type="primary"
           @click="handleEdit(row)"
         >
-          编辑
+          {{ $t('common.actions.edit') }}
         </el-button>
         <el-button
           v-if="['draft', 'pending'].includes(row.status)"
@@ -50,7 +40,7 @@
           type="warning"
           @click="handleCancel(row)"
         >
-          取消
+          {{ $t('common.actions.cancel') }}
         </el-button>
       </template>
     </BaseListPage>
@@ -60,6 +50,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getPickupList, cancelPickup } from '@/api/assets/pickup'
@@ -67,6 +58,7 @@ import BaseListPage from '@/components/common/BaseListPage.vue'
 import type { TableColumn, SearchField } from '@/types/common'
 
 const router = useRouter()
+const { t } = useI18n()
 const listRef = ref()
 
 // API Wrapper to adapt to BaseListPage expectation if needed
@@ -77,7 +69,7 @@ const fetchPickupList = async (params: any) => {
     ...params,
     page_size: params.pageSize
   }
-  const res = await getPickupList(apiParams)
+  const res = await getPickupList(apiParams) as any
   return {
     results: res.items || res.results || [],
     count: res.total || res.count || 0
@@ -87,32 +79,32 @@ const fetchPickupList = async (params: any) => {
 const searchFields: SearchField[] = [
   {
     prop: 'status',
-    label: '状态',
+    label: t('assets.search.status'),
     type: 'select',
     options: [
-      { label: '草稿', value: 'draft' },
-      { label: '待审批', value: 'pending' },
-      { label: '已批准', value: 'approved' },
-      { label: '已拒绝', value: 'rejected' },
-      { label: '已完成', value: 'completed' }
+      { label: t('assets.status.draft'), value: 'draft' },
+      { label: t('assets.status.pending'), value: 'pending' },
+      { label: t('assets.status.approved'), value: 'approved' },
+      { label: t('assets.status.rejected'), value: 'rejected' },
+      { label: t('assets.status.completed'), value: 'completed' }
     ]
   },
   {
     prop: 'search',
-    label: '搜索',
+    label: t('common.actions.search'),
     type: 'text',
-    placeholder: '领用单号/申请人'
+    placeholder: t('assets.search.keywordPlaceholder')
   }
 ]
 
 const columns: TableColumn[] = [
-  { prop: 'pickupNo', label: '领用单号', width: 150 },
-  { prop: 'applicant.realName', label: '申请人', width: 100 },
-  { prop: 'department.name', label: '领用部门', width: 120 },
-  { prop: 'pickupDate', label: '领用日期', width: 110 },
-  { prop: 'status', label: '状态', width: 100, slot: 'status' },
-  { prop: 'itemsCount', label: '资产数量', width: 100, align: 'center' },
-  { prop: 'createdAt', label: '创建时间', width: 160 }
+  { prop: 'pickupNo', label: t('assets.pickup.columns.pickupNo'), width: 150 },
+  { prop: 'applicant.realName', label: t('assets.pickup.columns.applicant'), width: 100 },
+  { prop: 'department.name', label: t('assets.pickup.columns.department'), width: 120 },
+  { prop: 'pickupDate', label: t('assets.pickup.columns.pickupDate'), width: 110 },
+  { prop: 'status', label: t('assets.pickup.columns.status'), width: 100, tagType: (row: any) => getStatusType(row.status), format: (value: any, row: any) => row?.statusLabel || getStatusLabel(value) },
+  { prop: 'itemsCount', label: t('assets.pickup.columns.assetCount'), width: 100, align: 'center' },
+  { prop: 'createdAt', label: t('assets.pickup.columns.createdAt'), width: 160 }
 ]
 
 const getStatusType = (status: string) => {
@@ -129,12 +121,12 @@ const getStatusType = (status: string) => {
 
 const getStatusLabel = (status: string) => {
   const map: any = {
-    draft: '草稿',
-    pending: '待审批',
-    approved: '已批准',
-    rejected: '已拒绝',
-    completed: '已完成',
-    cancelled: '已取消'
+    draft: t('assets.status.draft'),
+    pending: t('assets.status.pending'),
+    approved: t('assets.status.approved'),
+    rejected: t('assets.status.rejected'),
+    completed: t('assets.status.completed'),
+    cancelled: t('assets.status.cancelled')
   }
   return map[status] || status
 }
@@ -153,9 +145,9 @@ const handleEdit = (row: any) => {
 
 const handleCancel = async (row: any) => {
   try {
-    await ElMessageBox.confirm('确定要取消此领用单吗？', '确认操作', { type: 'warning' })
+    await ElMessageBox.confirm(t('assets.pickup.messages.confirmCancel'), t('common.messages.confirmTitle'), { type: 'warning' })
     await cancelPickup(row.id)
-    ElMessage.success('已取消')
+    ElMessage.success(t('common.messages.cancelSuccess'))
     listRef.value?.refresh()
   } catch {
     // cancelled

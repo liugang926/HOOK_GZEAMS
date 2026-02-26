@@ -20,20 +20,20 @@
         :icon="Download"
         @click="handleExport"
       >
-        导出JSON
+        {{ t('workflow.designer.exportJson') }}
       </el-button>
       <el-button
         :icon="Upload"
         @click="handleImport"
       >
-        导入JSON
+        {{ t('workflow.designer.importJson') }}
       </el-button>
       <el-divider direction="vertical" />
       <el-button
         type="primary"
         @click="handleSave"
       >
-        保存流程
+        {{ t('workflow.designer.saveProcess') }}
       </el-button>
     </div>
 
@@ -41,14 +41,14 @@
     <div class="node-panel">
       <div class="panel-section">
         <div class="section-title">
-          基础节点
+          {{ t('workflow.designer.basicNodes') }}
         </div>
         <div
           class="node-item"
           data-type="start"
         >
           <div class="node-icon start">
-            开始
+            {{ t('workflow.nodeType.start') }}
           </div>
         </div>
         <div
@@ -56,20 +56,20 @@
           data-type="end"
         >
           <div class="node-icon end">
-            结束
+            {{ t('workflow.nodeType.end') }}
           </div>
         </div>
       </div>
       <div class="panel-section">
         <div class="section-title">
-          审批节点
+          {{ t('workflow.designer.approvalNodes') }}
         </div>
         <div
           class="node-item"
           data-type="approval"
         >
           <div class="node-icon approval">
-            审批
+            {{ t('workflow.nodeType.approval') }}
           </div>
         </div>
         <div
@@ -77,20 +77,20 @@
           data-type="condition"
         >
           <div class="node-icon condition">
-            条件
+            {{ t('workflow.nodeType.condition') }}
           </div>
         </div>
       </div>
       <div class="panel-section">
         <div class="section-title">
-          抄送节点
+          {{ t('workflow.designer.ccNodes') }}
         </div>
         <div
           class="node-item"
           data-type="cc"
         >
           <div class="node-icon cc">
-            抄送
+            {{ t('workflow.nodeType.cc') }}
           </div>
         </div>
       </div>
@@ -109,20 +109,20 @@
     >
       <el-tabs v-model="activeTab">
         <el-tab-pane
-          label="基础属性"
+          :label="t('workflow.designer.basicProperties')"
           name="basic"
         >
           <el-form
             :model="selectedNode"
-            label-width="80px"
+            :label-width="locale === 'zh-CN' ? '80px' : '120px'"
           >
-            <el-form-item label="节点名称">
+            <el-form-item :label="t('workflow.designer.nodeName')">
               <el-input
                 v-model="selectedNode.text"
                 @input="updateNodeName"
               />
             </el-form-item>
-            <el-form-item label="节点类型">
+            <el-form-item :label="t('workflow.fields.nodeType')">
               <el-input
                 :value="getNodeTypeLabel(selectedNode.type)"
                 disabled
@@ -133,7 +133,7 @@
 
         <el-tab-pane
           v-if="selectedNode.type === 'approval'"
-          label="审批配置"
+          :label="t('workflow.designer.approvalConfig')"
           name="approval"
         >
           <ApprovalNodeConfig v-model="selectedNode.properties" />
@@ -141,7 +141,7 @@
 
         <el-tab-pane
           v-if="selectedNode.type === 'condition'"
-          label="条件配置"
+          :label="t('workflow.designer.conditionConfig')"
           name="condition"
         >
           <ConditionNodeConfig v-model="selectedNode.properties" />
@@ -149,7 +149,7 @@
 
         <el-tab-pane
           v-if="needPermissionConfig"
-          label="字段权限"
+          :label="t('workflow.designer.fieldPermissions')"
           name="permission"
         >
           <FieldPermissionConfig
@@ -163,24 +163,24 @@
     <!-- 导入弹窗 -->
     <el-dialog
       v-model="importDialogVisible"
-      title="导入流程"
+      :title="t('workflow.designer.importProcess')"
       width="600px"
     >
       <el-input
         v-model="importJson"
         type="textarea"
         :rows="10"
-        placeholder="请粘贴流程JSON数据"
+        :placeholder="t('workflow.designer.pasteJson')"
       />
       <template #footer>
         <el-button @click="importDialogVisible = false">
-          取消
+          {{ t('common.actions.cancel') }}
         </el-button>
         <el-button
           type="primary"
           @click="handleImportConfirm"
         >
-          导入
+          {{ t('common.actions.confirm') }}
         </el-button>
       </template>
     </el-dialog>
@@ -189,6 +189,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import LogicFlow from '@logicflow/core'
 import { DndPanel, Menu } from '@logicflow/extension'
 import '@logicflow/core/dist/style/index.css'
@@ -198,6 +199,9 @@ import { ZoomIn, ZoomOut, Download, Upload } from '@element-plus/icons-vue'
 import ApprovalNodeConfig from './ApprovalNodeConfig.vue'
 import ConditionNodeConfig from './ConditionNodeConfig.vue'
 import FieldPermissionConfig from './FieldPermissionConfig.vue'
+
+const { t } = useI18n()
+const locale = computed(() => t('locale'))
 
 interface Props {
   modelValue?: any
@@ -315,7 +319,7 @@ const registerCustomNodes = () => {
             fontWeight: 'bold',
             textAnchor: 'middle',
             dominantBaseline: 'middle'
-          }, model.text.value || '开始')
+          }, model.text.value || t('workflow.nodeType.start'))
         ])
       }
     }
@@ -634,7 +638,7 @@ const handleEdgeAdd = ({ data }: any) => {
 
   // 不允许开始节点作为目标
   if (targetNode?.type === 'start') {
-    ElMessage.warning('不允许连接到开始节点')
+    ElMessage.warning(t('workflow.designer.errors.cannotConnectToStart'))
     // Remove unsupported edge if needed (LogicFlow usually blocks? Need to implement validation logic properly or use hook)
     lf.value?.deleteEdge(data.id)
     return false
@@ -642,7 +646,7 @@ const handleEdgeAdd = ({ data }: any) => {
 
   // 不允许结束节点作为源
   if (sourceNode?.type === 'end') {
-    ElMessage.warning('结束节点不能作为连线起点')
+    ElMessage.warning(t('workflow.designer.errors.endNodeCannotBeSource'))
     lf.value?.deleteEdge(data.id)
     return false
   }
@@ -703,9 +707,9 @@ const handleImportConfirm = () => {
     const data = JSON.parse(importJson.value)
     lf.value?.render(data)
     importDialogVisible.value = false
-    ElMessage.success('导入成功')
+    ElMessage.success(t('workflow.messages.importSuccess'))
   } catch (e) {
-    ElMessage.error('JSON格式错误')
+    ElMessage.error(t('workflow.messages.invalidJson'))
   }
 }
 
@@ -713,7 +717,7 @@ const handleImportConfirm = () => {
 const handleSave = () => {
   const data = lf.value?.getGraphData()
   if (!data) {
-    ElMessage.warning('请先设计流程')
+    ElMessage.warning(t('workflow.designer.errors.designFlowFirst'))
     return
   }
 
@@ -735,18 +739,18 @@ const validateFlow = (data: any) => {
   const hasEnd = nodes.some((n: any) => n.type === 'end')
 
   if (!hasStart) {
-    ElMessage.error('流程必须包含开始节点')
+    ElMessage.error(t('workflow.designer.errors.requireStartNode'))
     return false
   }
 
   if (!hasEnd) {
-    ElMessage.error('流程必须包含结束节点')
+    ElMessage.error(t('workflow.designer.errors.requireEndNode'))
     return false
   }
 
   // 检查所有节点是否连通
   if (nodes.length > 1 && edges.length === 0) {
-    ElMessage.error('请连接节点')
+    ElMessage.error(t('workflow.designer.errors.connectNodes'))
     return false
   }
 
@@ -754,14 +758,7 @@ const validateFlow = (data: any) => {
 }
 
 const getNodeTypeLabel = (type: string) => {
-  const labels: Record<string, string> = {
-    start: '开始',
-    end: '结束',
-    approval: '审批',
-    condition: '条件',
-    cc: '抄送'
-  }
-  return labels[type] || type
+  return t(`workflow.nodeType.${type}`)
 }
 
 const needPermissionConfig = computed(() => {

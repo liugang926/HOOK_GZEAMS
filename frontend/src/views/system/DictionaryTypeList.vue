@@ -1,12 +1,12 @@
 <template>
   <div class="dictionary-type-list">
     <div class="page-header">
-      <h3>数据字典管理</h3>
+      <h3>{{ $t('system.dictionary.title') }}</h3>
       <el-button
         type="primary"
         @click="handleCreate"
       >
-        新建字典类型
+        {{ $t('system.dictionary.createTypButton') }}
       </el-button>
     </div>
 
@@ -16,19 +16,19 @@
       inline
       class="filter-form"
     >
-      <el-form-item label="状态">
+      <el-form-item :label="$t('system.department.columns.status')">
         <el-select
           v-model="filterForm.is_active"
           clearable
-          placeholder="全部"
+          :placeholder="$t('system.common.all')"
           @change="handleSearch"
         >
           <el-option
-            label="启用"
+            :label="$t('system.dictionary.status.enabled')"
             :value="true"
           />
           <el-option
-            label="禁用"
+            :label="$t('system.dictionary.status.disabled')"
             :value="false"
           />
         </el-select>
@@ -38,10 +38,10 @@
           type="primary"
           @click="handleSearch"
         >
-          查询
+          {{ $t('common.actions.search') }}
         </el-button>
         <el-button @click="handleReset">
-          重置
+          {{ $t('common.actions.reset') }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -56,22 +56,22 @@
     >
       <el-table-column
         prop="code"
-        label="字典编码"
+        :label="$t('system.dictionary.columns.code')"
         width="180"
       />
       <el-table-column
         prop="name"
-        label="字典名称"
+        :label="$t('system.dictionary.columns.name')"
         width="180"
       />
       <el-table-column
         prop="description"
-        label="描述"
+        :label="$t('system.dictionary.columns.description')"
         min-width="200"
         show-overflow-tooltip
       />
       <el-table-column
-        label="系统字典"
+        :label="$t('system.dictionary.columns.isSystem')"
         width="100"
         align="center"
       >
@@ -80,12 +80,12 @@
             :type="row.is_system ? 'danger' : 'success'"
             size="small"
           >
-            {{ row.is_system ? '是' : '否' }}
+            {{ row.is_system ? $t('system.dictionary.isSystem.yes') : $t('system.dictionary.isSystem.no') }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
-        label="状态"
+        :label="$t('system.dictionary.columns.status')"
         width="80"
         align="center"
       >
@@ -94,13 +94,13 @@
             :type="row.is_active ? 'success' : 'info'"
             size="small"
           >
-            {{ row.is_active ? '启用' : '禁用' }}
+            {{ row.is_active ? $t('system.dictionary.status.enabled') : $t('system.dictionary.status.disabled') }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
         prop="item_count"
-        label="字典项数量"
+        :label="$t('system.dictionary.columns.itemCount')"
         width="110"
         align="center"
       >
@@ -109,18 +109,18 @@
             type="primary"
             @click="handleViewItems(row)"
           >
-            {{ row.item_count || 0 }} 项
+            {{ row.item_count || 0 }} {{ $t('system.common.item') }}
           </el-link>
         </template>
       </el-table-column>
       <el-table-column
         prop="sort_order"
-        label="排序"
+        :label="$t('system.dictionary.columns.sortOrder')"
         width="80"
         align="center"
       />
       <el-table-column
-        label="操作"
+        :label="$t('common.labels.operation')"
         width="200"
         fixed="right"
       >
@@ -130,14 +130,14 @@
             type="primary"
             @click="handleViewItems(row)"
           >
-            字典项
+            {{ $t('system.dictionary.actions.viewItems') }}
           </el-button>
           <el-button
             link
             type="primary"
             @click="handleEdit(row)"
           >
-            编辑
+            {{ $t('common.actions.edit') }}
           </el-button>
           <el-button
             v-if="!row.is_system"
@@ -145,7 +145,7 @@
             type="danger"
             @click="handleDelete(row)"
           >
-            删除
+            {{ $t('common.actions.delete') }}
           </el-button>
         </template>
       </el-table-column>
@@ -182,6 +182,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { DictionaryType } from '@/api/system'
 import { dictionaryTypeApi } from '@/api/system'
@@ -194,6 +195,7 @@ const dialogVisible = ref(false)
 const itemsDialogVisible = ref(false)
 const currentRow = ref<DictionaryType | null>(null)
 const selectedType = ref<DictionaryType | null>(null)
+const { t } = useI18n()
 
 const filterForm = reactive({
   is_active: undefined as unknown as boolean
@@ -217,7 +219,7 @@ const fetchData = async () => {
     tableData.value = res.results || []
     pagination.total = res.count || 0
   } catch (error) {
-    ElMessage.error('加载数据失败')
+    ElMessage.error(t('system.dictionary.messages.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -251,21 +253,21 @@ const handleViewItems = (row: DictionaryType) => {
 const handleDelete = async (row: DictionaryType) => {
   try {
     await ElMessageBox.confirm(
-      `确定删除字典类型"${row.name}"吗？删除后关联的字典项也将被删除。`,
-      '确认删除',
+      t('system.dictionary.messages.confirmDelete', { name: row.name }),
+      t('system.dictionary.messages.confirmDeleteTitle'),
       {
         type: 'warning',
-        confirmButtonText: '确定',
-        cancelButtonText: '取消'
+        confirmButtonText: t('common.actions.confirm'),
+        cancelButtonText: t('common.actions.cancel')
       }
     )
 
     await dictionaryTypeApi.delete(row.id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('common.messages.deleteSuccess'))
     await fetchData()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error(t('common.messages.deleteFailed'))
     }
   }
 }

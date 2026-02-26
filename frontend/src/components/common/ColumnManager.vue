@@ -9,7 +9,7 @@
     <template #reference>
       <span class="column-manager-trigger">
         <el-tooltip
-          content="Column Settings"
+          :content="$t('column.settings')"
           placement="top"
         >
           <el-button
@@ -24,14 +24,14 @@
     <div class="column-manager">
       <!-- Header with actions -->
       <div class="column-manager-header">
-        <span>Column Settings</span>
+        <span>{{ $t('column.settings') }}</span>
         <div class="header-actions">
           <el-button
             link
             size="small"
             @click="handleReset"
           >
-            Reset
+            {{ $t('actions.reset') }}
           </el-button>
           <el-button
             link
@@ -39,7 +39,7 @@
             size="small"
             @click="handleSave"
           >
-            Save
+            {{ $t('actions.save') }}
           </el-button>
         </div>
       </div>
@@ -74,7 +74,7 @@
             <span
               v-if="(col as any).field_type"
               class="field-type-badge"
-              :title="`Type: ${(col as any).field_type}`"
+              :title="`${$t('column.type')}: ${(col as any).field_type}`"
             >
               {{ getFieldTypeLabel((col as any).field_type) }}
             </span>
@@ -92,10 +92,13 @@
               </span>
               <el-tooltip
                 v-if="(col as any).label_override"
-                :content="`Original: ${col.label}`"
+                :content="`${$t('column.originalLabel')}: ${col.label}`"
                 placement="top"
               >
-                <el-icon class="override-icon" :size="12">
+                <el-icon
+                  class="override-icon"
+                  :size="12"
+                >
                   <InfoFilled />
                 </el-icon>
               </el-tooltip>
@@ -109,9 +112,18 @@
                 style="width: 75px"
                 @update:model-value="(val) => handleFixedChange(col, val)"
               >
-                <el-option label="None" value="" />
-                <el-option label="Left" value="left" />
-                <el-option label="Right" value="right" />
+                <el-option
+                  :label="$t('column.fixed.none')"
+                  value=""
+                />
+                <el-option
+                  :label="$t('column.fixed.left')"
+                  value="left"
+                />
+                <el-option
+                  :label="$t('column.fixed.right')"
+                  value="right"
+                />
               </el-select>
 
               <el-input-number
@@ -136,7 +148,7 @@
           :indeterminate="someVisible"
           @update:model-value="handleToggleAll"
         >
-          Select All
+          {{ $t('actions.selectAll') }}
         </el-checkbox>
       </div>
     </div>
@@ -147,7 +159,10 @@
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Setting, DCaret, InfoFilled } from '@element-plus/icons-vue'
-import type { ColumnItem } from '@/hooks/useColumnConfig'
+import { useI18n } from 'vue-i18n'
+import type { ColumnItem } from '@/composables/useColumnConfig'
+
+const { t } = useI18n()
 
 interface Props {
   columns: ColumnItem[]
@@ -171,7 +186,7 @@ const dragOverIndex = ref<number | null>(null)
 
 // Helper to get field_code with backward compatibility for prop
 const getFieldCode = (col: ColumnItem): string => {
-  return (col as any).field_code || col.prop || ''
+  return (col as any).field_code || (col as any).fieldCode || col.prop || ''
 }
 
 // Helper to check if column is required (cannot be hidden)
@@ -261,7 +276,7 @@ const handleDragEnd = () => {
 // Column visibility toggle
 const handleToggleVisibility = (col: ColumnItem, visible: boolean) => {
   if (isRequired(col) && !visible) {
-    ElMessage.warning('This column is required and cannot be hidden')
+    ElMessage.warning(t('column.requiredColumnCannotHide'))
     return
   }
   col.visible = visible
@@ -302,7 +317,7 @@ const handleReset = () => {
   }))
   emit('reset')
   emitChanges()
-  ElMessage.info('Column configuration reset to default')
+  ElMessage.info(t('column.resetSuccess'))
 }
 
 // Save configuration

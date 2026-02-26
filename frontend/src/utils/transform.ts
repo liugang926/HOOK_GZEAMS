@@ -73,3 +73,60 @@ export const FieldMapping: Record<string, string> = {
   // 'backend_field': 'frontendField'
   // Example: 'some_api_field': 'someApiField'
 }
+
+/**
+ * System field codes that should be hidden from list/detail forms.
+ * These are framework-managed fields that users shouldn't edit directly.
+ */
+export const SYSTEM_FIELD_CODES = [
+  'id',              // Primary key
+  'created_at',      // Audit timestamp
+  'updated_at',      // Audit timestamp
+  'created_by',      // Audit user
+  'updated_by',      // Audit user
+  'deleted_at',      // Soft delete timestamp
+  'deleted_by',      // Soft delete user
+  'is_deleted',      // Soft delete flag
+  'organization',    // Org foreign key
+  'organization_id', // Org ID
+  'custom_fields',   // JSONB dynamic fields container
+  'org',             // Org relation shorthand
+]
+
+/**
+ * Check if a field is a system field (framework-managed).
+ * Supports both camelCase and snake_case field codes.
+ *
+ * @param field - Field object with code field
+ * @returns true if the field is a system field
+ */
+export function isSystemField(field: any): boolean {
+  if (!field) return false
+
+  // Check explicit is_system flag (from backend metadata)
+  if (field.isSystem || field.is_system) {
+    return true
+  }
+
+  // Check against known system field codes
+  const fieldCode = field.code || field.fieldCode || field.field_code
+  if (!fieldCode) return false
+
+  // Convert to snake_case for comparison
+  const snakeCode = typeof fieldCode === 'string'
+    ? fieldCode.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+    : fieldCode
+
+  return SYSTEM_FIELD_CODES.includes(snakeCode)
+}
+
+/**
+ * Filter out system fields from an array of fields.
+ *
+ * @param fields - Array of field objects
+ * @returns Filtered array without system fields
+ */
+export function filterSystemFields(fields: any[]): any[] {
+  if (!Array.isArray(fields)) return []
+  return fields.filter(field => !isSystemField(field))
+}

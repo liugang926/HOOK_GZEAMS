@@ -76,7 +76,7 @@ jobs:
       - name: Run flake8
         run: |
           cd backend
-          flake8 . || true
+          flake8 .
 
       - name: Run mypy (non-blocking)
         run: |
@@ -205,7 +205,7 @@ jobs:
       - name: Run ESLint
         run: |
           cd frontend
-          npm run lint -- --max-warnings 0 || true
+          npm run lint -- --max-warnings 0
 
       - name: Run Prettier check
         run: |
@@ -312,12 +312,21 @@ jobs:
           cd frontend
           npm run build
 
+      - name: Run required detail regression smoke test
+        run: |
+          cd frontend
+          npm run test:e2e:smoke
+        env:
+          CI: true
+          PLAYWRIGHT_WEB_SERVER: '1'
+
       - name: Run E2E tests
         run: |
           cd frontend
           npx playwright test --project=chromium
         env:
           CI: true
+          PLAYWRIGHT_WEB_SERVER: '1'
 
       - name: Upload Playwright artifacts
         uses: actions/upload-artifact@v4

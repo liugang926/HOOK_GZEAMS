@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export const getLocationList = (params: any) => {
     return request({
-        url: '/assets/locations/',
+        url: '/system/objects/Location/',
         method: 'get',
         params
     })
@@ -10,21 +10,21 @@ export const getLocationList = (params: any) => {
 
 export const getLocationTree = () => {
     return request({
-        url: '/assets/locations/tree/',
+        url: '/system/objects/Location/tree/',
         method: 'get'
     })
 }
 
 export const getLocationDetail = (id: string) => {
     return request({
-        url: `/assets/locations/${id}/`,
+        url: `/system/objects/Location/${id}/`,
         method: 'get'
     })
 }
 
 export const createLocation = (data: any) => {
     return request({
-        url: '/assets/locations/',
+        url: '/system/objects/Location/',
         method: 'post',
         data
     })
@@ -32,7 +32,7 @@ export const createLocation = (data: any) => {
 
 export const updateLocation = (id: string, data: any) => {
     return request({
-        url: `/assets/locations/${id}/`,
+        url: `/system/objects/Location/${id}/`,
         method: 'put',
         data
     })
@@ -40,7 +40,7 @@ export const updateLocation = (id: string, data: any) => {
 
 export const partialUpdateLocation = (id: string, data: any) => {
     return request({
-        url: `/assets/locations/${id}/`,
+        url: `/system/objects/Location/${id}/`,
         method: 'patch',
         data
     })
@@ -48,7 +48,7 @@ export const partialUpdateLocation = (id: string, data: any) => {
 
 export const deleteLocation = (id: string) => {
     return request({
-        url: `/assets/locations/${id}/`,
+        url: `/system/objects/Location/${id}/`,
         method: 'delete'
     })
 }

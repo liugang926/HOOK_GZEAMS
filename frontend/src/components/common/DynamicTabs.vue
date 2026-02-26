@@ -24,7 +24,10 @@
     >
       <template #label>
         <span class="tab-label">
-          <el-icon v-if="tab.icon" class="tab-icon">
+          <el-icon
+            v-if="tab.icon"
+            class="tab-icon"
+          >
             <component :is="tab.icon" />
           </el-icon>
           <span class="tab-title">{{ tab.title }}</span>
@@ -38,19 +41,24 @@
       </template>
 
       <!-- Slot-based content -->
-      <template v-if="tab.content && typeof tab.content === 'string'" #default>
-        <div v-html="tab.content" />
+      <template #default>
+        <div
+          v-if="tab.content && typeof tab.content === 'string'"
+          v-html="tab.content"
+        />
+        <!-- Component-based content -->
+        <component
+          :is="tab.component"
+          v-else-if="tab.component"
+          v-bind="tab.props"
+        />
+        <!-- Default slot fallback -->
+        <slot
+          v-else
+          :name="`tab-${tab.id || tab.name}`"
+          :tab="tab"
+        />
       </template>
-
-      <!-- Component-based content -->
-      <component
-        v-else-if="tab.component"
-        :is="tab.component"
-        v-bind="tab.props"
-      />
-
-      <!-- Default slot content -->
-      <slot v-else :name="`tab-${tab.id || tab.name}`" :tab="tab" />
     </el-tab-pane>
 
     <!-- Default slot for custom tab panes -->

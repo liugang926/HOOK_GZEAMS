@@ -19,6 +19,7 @@ import { ErrorCodeMessages } from '@/types/error'
 export function handleApiError(error: any): Promise<never> {
   const status = error.response?.status
   const data = error.response?.data
+  const silent = error?.config?.silent === true
 
   // Extract error information
   let errorCode: ErrorCode = 'SERVER_ERROR'
@@ -29,16 +30,39 @@ export function handleApiError(error: any): Promise<never> {
     errorCode = data.error.code
     message = data.error.message || ErrorCodeMessages[errorCode] || message
     details = data.error.details
+  } else if (status) {
+    // Prefer status-based messaging over axios' generic `error.message` (e.g. "Request failed with status code 404").
+    const statusMessages: Record<number, string> = {
+      400: '请求参数错误',
+      401: '登录已过期，请重新登录',
+      403: '权限不足',
+      404: '请求的资源不存在',
+      410: '资源已被删除',
+      429: '请求过于频繁，请稍后再试',
+      500: '服务器错误，请稍后再试'
+    }
+    message = statusMessages[status] || message
   } else if (error.code) {
     errorCode = error.code
     message = error.message || ErrorCodeMessages[errorCode] || message
     details = error.details
   }
 
+  // Normalize the error message so callers that do `ElMessage.error(error.message)`
+  // don't surface axios' generic "Request failed with status code ..." text.
+  if (typeof error === 'object' && error !== null) {
+    try {
+      error.message = message
+    } catch {
+      // ignore read-only properties
+    }
+  }
+
   // Handle specific status codes
   switch (status) {
     case 401:
       // Unauthorized - redirect to login
+      if (silent) return Promise.reject(error)
       ElMessageBox.confirm(
         '登录已过期，是否重新登录？',
         '提示',
@@ -57,26 +81,31 @@ export function handleApiError(error: any): Promise<never> {
 
     case 403:
       // Permission denied
+      if (silent) return Promise.reject(error)
       ElMessage.error(message || '权限不足')
       return Promise.reject(error)
 
     case 404:
       // Not found
+      if (silent) return Promise.reject(error)
       ElMessage.error(message || '请求的资源不存在')
       return Promise.reject(error)
 
     case 410:
       // Soft deleted
+      if (silent) return Promise.reject(error)
       ElMessage.error(message || '资源已被删除')
       return Promise.reject(error)
 
     case 429:
       // Rate limit exceeded
+      if (silent) return Promise.reject(error)
       ElMessage.error(message || '请求过于频繁，请稍后再试')
       return Promise.reject(error)
 
     default:
       // Show error message
+      if (silent) return Promise.reject(error)
       if (details) {
         // Show validation errors - use first error message
         const firstError = Object.values(details)[0]?.[0]

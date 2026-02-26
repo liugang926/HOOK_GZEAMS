@@ -69,10 +69,7 @@ class IntegrationLogViewSet(BaseModelViewSetWithBatch):
         """
         days = min(int(request.query_params.get('days', 30)), 365)
 
-        service = IntegrationLogService(
-            organization=getattr(request, 'organization', None),
-            user=request.user
-        )
+        service = IntegrationLogService()
         stats = service.get_statistics(days=days)
 
         return BaseResponse.success(data=stats)
@@ -95,10 +92,7 @@ class IntegrationLogViewSet(BaseModelViewSetWithBatch):
         """
         limit = min(int(request.query_params.get('limit', 50)), 500)
 
-        service = IntegrationLogService(
-            organization=getattr(request, 'organization', None),
-            user=request.user
-        )
+        service = IntegrationLogService()
         error_logs = service.get_error_logs(limit=limit)
 
         serializer = IntegrationLogListSerializer(error_logs, many=True)
@@ -127,10 +121,7 @@ class IntegrationLogViewSet(BaseModelViewSetWithBatch):
         threshold_ms = int(request.query_params.get('threshold_ms', 5000))
         limit = min(int(request.query_params.get('limit', 50)), 200)
 
-        service = IntegrationLogService(
-            organization=getattr(request, 'organization', None),
-            user=request.user
-        )
+        service = IntegrationLogService()
         slow_logs = service.get_slow_requests(threshold_ms=threshold_ms, limit=limit)
 
         serializer = IntegrationLogListSerializer(slow_logs, many=True)
@@ -155,10 +146,7 @@ class IntegrationLogViewSet(BaseModelViewSetWithBatch):
         """
         days = min(int(request.query_params.get('days', 7)), 90)
 
-        service = IntegrationLogService(
-            organization=getattr(request, 'organization', None),
-            user=request.user
-        )
+        service = IntegrationLogService()
         daily_stats = service.get_daily_stats(days=days)
 
         return BaseResponse.success(data=daily_stats)

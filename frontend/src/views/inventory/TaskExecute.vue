@@ -21,7 +21,7 @@
           link
           @click="refreshData"
         >
-          刷新
+          {{ t('common.actions.refresh') }}
         </el-button>
       </div>
     </div>
@@ -32,7 +32,7 @@
       class="task-progress"
     >
       <div class="progress-stats">
-        <span>进度: {{ task.progress_percent }}%</span>
+        <span>{{ t('inventory.columns.progress') }}: {{ task.progress_percent }}%</span>
         <span>{{ task.scanned_count }} / {{ task.total_count }}</span>
       </div>
       <el-progress
@@ -50,7 +50,7 @@
       <!-- SCAN TAB -->
       <el-tab-pane
         name="scan"
-        label="扫码"
+        :label="t('inventory.actions.scan')"
       >
         <div class="scan-container">
           <div class="scanner-wrapper">
@@ -92,7 +92,7 @@
       <!-- LIST TAB -->
       <el-tab-pane
         name="list"
-        label="清单"
+        :label="t('inventory.execute.scannedList')"
       >
         <div
           v-loading="loadingList"
@@ -105,13 +105,13 @@
               @change="fetchSnapshots"
             >
               <el-radio-button label="all">
-                全部
+                {{ t('common.filters.all') || 'All' }}
               </el-radio-button>
               <el-radio-button label="unscanned">
-                待盘
+                {{ t('inventory.execute.unscannedList') }}
               </el-radio-button>
               <el-radio-button label="scanned">
-                已盘
+                {{ t('inventory.execute.scannedList') }}
               </el-radio-button>
             </el-radio-group>
           </div>
@@ -137,20 +137,20 @@
                   type="success"
                   size="small"
                 >
-                  已盘
+                  {{ t('inventory.status.completed') }}
                 </el-tag>
                 <el-tag
                   v-else
                   type="info"
                   size="small"
                 >
-                  未盘
+                  {{ t('inventory.status.pending') }}
                 </el-tag>
               </div>
             </div>
             <el-empty
               v-if="snapshots.length === 0"
-              description="暂无数据"
+              :description="t('common.messages.noData')"
             />
           </div>
         </div>
@@ -159,7 +159,7 @@
       <!-- DIFF TAB -->
       <el-tab-pane
         name="diff"
-        label="差异"
+        :label="t('inventory.actions.viewDiff')"
       >
         <div
           v-loading="loadingList"
@@ -187,13 +187,13 @@
                   type="warning"
                   size="small"
                 >
-                  异常
+                  {{ t('common.status.abnormal') || 'Abnormal' }}
                 </el-tag>
               </div>
             </div>
             <el-empty
               v-if="diffSnapshots.length === 0"
-              description="无差异记录"
+              :description="t('common.messages.noData')"
             />
           </div>
         </div>
@@ -205,11 +205,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { inventoryApi } from '@/api/inventory'
 import MobileQRScanner from '@/components/mobile/MobileQRScanner.vue'
 import { ElMessage } from 'element-plus'
 import { Check, Warning, ArrowLeft } from '@element-plus/icons-vue'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const taskId = route.params.id as string
@@ -217,31 +219,6 @@ const taskId = route.params.id as string
 const task = ref<any>(null)
 const activeTab = ref('scan')
 const scannerRef = ref()
-
-// Data Lists
-const snapshots = ref<any[]>([])
-const diffSnapshots = ref<any[]>([])
-const loadingList = ref(false)
-const listFilter = ref('all')
-
-// Scan State
-const lastScanned = ref<{
-  status: 'success' | 'warning' | 'error'
-  asset_name?: string
-  asset_code?: string
-  message: string
-} | null>(null)
-
-// Init
-onMounted(() => {
-  if (!taskId) {
-    ElMessage.error('缺少任务ID')
-    return
-  }
-  fetchTask()
-  fetchSnapshots()
-  fetchDiffs()
-})
 
 const fetchTask = async () => {
   try {
@@ -299,14 +276,14 @@ const handleScan = async (code: string) => {
             status: 'success',
             asset_name: res.asset_name,
             asset_code: res.asset_code,
-            message: '盘点成功'
+            message: t('common.messages.operationSuccess')
         }
      } else {
         lastScanned.value = {
             status: 'warning',
             asset_name: res.asset_name,
             asset_code: res.asset_code,
-            message: res.result_display || '异常: ' + resultType
+            message: res.result_display || `${t('common.status.warning')}: ${resultType}`
         }
         // Refresh diff list if abnormal
         fetchDiffs()
@@ -320,7 +297,7 @@ const handleScan = async (code: string) => {
       console.error(e)
       lastScanned.value = {
           status: 'error',
-          message: e.message || '提交失败',
+          message: e.message || t('common.messages.operationFailed'),
           asset_code: code
       }
    }

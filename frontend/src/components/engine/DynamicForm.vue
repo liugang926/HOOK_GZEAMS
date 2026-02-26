@@ -5,483 +5,452 @@
   >
     <el-form
       ref="formRef"
-      :model="formData"
-      :rules="formRules"
-      :label-width="labelWidth"
-      :label-position="labelPosition"
+      :model="activeFormData"
+      :rules="activeFormRules"
+      label-width="120px"
+      label-position="right"
+      class="dynamic-form__form"
     >
-      <!-- Iterate through layout sections -->
-      <template
-        v-for="section in layoutSections"
-        :key="section.id"
-      >
-        <!-- CARD MODE: Renders as el-card if strictly configured -->
-        <el-card
-          v-if="section.visible !== false && (section.render_as_card === true)"
-          class="form-section card-mode"
-          :shadow="section.shadow || 'hover'"
-        >
-          <template
-            v-if="section.title && section.show_title !== false"
-            #header
-          >
-            <div class="section-header">
-              <span>{{ section.title }}</span>
-              <div class="header-actions">
-                <el-button
-                  v-if="section.collapsible"
-                  link
-                  @click="toggleSection(section.id)"
-                >
-                  <el-icon>
-                    <component :is="isSectionCollapsed(section.id) ? 'ArrowDown' : 'ArrowUp'" />
-                  </el-icon>
-                </el-button>
-              </div>
-            </div>
-          </template>
-
-          <!-- Field grid within section -->
-          <el-row
-            v-show="!isSectionCollapsed(section.id)"
-            :gutter="20"
-          >
-            <template
-                v-for="fieldCode in section.fields"
-                :key="fieldCode"
-            >
-                <el-col
-                  v-show="isFieldVisible(getFieldDef(fieldCode))"
-                  :xs="24"
-                  :span="getFieldSpan(fieldCode)"
-                >
-                  <template v-if="getFieldDef(fieldCode)">
-                    <!-- Field permission: read-only -->
-                    <template v-if="isFieldReadonly(getFieldDef(fieldCode))">
-                      <el-form-item
-                        :label="getFieldDef(fieldCode).name"
-                        :prop="fieldCode"
-                      >
-                        <DisplayField
-                          :field="getFieldDef(fieldCode)"
-                          :value="getFormFieldValue(fieldCode)"
-                        />
-                      </el-form-item>
-                    </template>
-    
-                    <!-- Field permission: editable -->
-                    <template v-else>
-                      <el-form-item
-                        :label="getFieldDef(fieldCode).name"
-                        :prop="fieldCode"
-                      >
-                        <FieldRenderer
-                          :field="getFieldDef(fieldCode)"
-                          :model-value="getFormFieldValue(fieldCode)"
-                          :form-data="formData"
-                          @update:model-value="handleFieldValueChange(fieldCode, $event)"
-                        />
-                      </el-form-item>
-                    </template>
-                  </template>
-                </el-col>
-            </template>
-          </el-row>
-        </el-card>
-
-        <!-- CLEAN MODE: Default rendering (Flat DIV) -->
-        <div
-          v-else-if="section.visible !== false"
-          class="form-section clean-mode"
-          :class="{ 'has-border': section.border }"
-        >
-            <div 
-                v-if="section.title && section.show_title !== false"
-                class="section-header clean-header"
-                @click="section.collapsible && toggleSection(section.id)"
-                :class="{ clickable: section.collapsible }"
-            >
-                <div class="header-title">
-                    <span v-if="section.icon" class="section-icon">
-                        <el-icon><component :is="section.icon" /></el-icon>
-                    </span>
-                    <span>{{ section.title }}</span>
-                </div>
-                <div class="header-actions">
-                    <el-icon v-if="section.collapsible" class="collapse-icon">
-                        <component :is="isSectionCollapsed(section.id) ? 'ArrowRight' : 'ArrowDown'" />
-                    </el-icon>
-                </div>
-            </div>
-            
-            <el-divider v-if="section.border && !isSectionCollapsed(section.id)" class="clean-divider" />
-
-            <div v-show="!isSectionCollapsed(section.id)" class="section-body">
-                <el-row :gutter="24">
-                    <template
-                        v-for="fieldCode in section.fields"
-                        :key="fieldCode"
-                    >
-                        <el-col
-                          v-show="isFieldVisible(getFieldDef(fieldCode))"
-                          :xs="24"
-                          :span="getFieldSpan(fieldCode)"
-                        >
-                          <template v-if="getFieldDef(fieldCode)">
-                            <!-- Field permission: read-only -->
-                            <template v-if="isFieldReadonly(getFieldDef(fieldCode))">
-                              <el-form-item
-                                :label="getFieldDef(fieldCode).name"
-                                :prop="fieldCode"
-                              >
-                                <DisplayField
-                                  :field="getFieldDef(fieldCode)"
-                                  :value="getFormFieldValue(fieldCode)"
-                                />
-                              </el-form-item>
-                            </template>
-            
-                            <!-- Field permission: editable -->
-                            <template v-else>
-                              <el-form-item
-                                :label="getFieldDef(fieldCode).name"
-                                :prop="fieldCode"
-                              >
-                                <FieldRenderer
-                                  :field="getFieldDef(fieldCode)"
-                                  :model-value="getFormFieldValue(fieldCode)"
-                                  :form-data="formData"
-                                  @update:model-value="handleFieldValueChange(fieldCode, $event)"
-                                />
-                              </el-form-item>
-                            </template>
-                          </template>
-                        </el-col>
-                    </template>
-                </el-row>
-            </div>
-        </div>
-      </template>
-
-      <!-- Fallback if no sections -->
-      <div v-if="!layoutSections.length && !loading">
-        <el-empty description="暂无表单配置" />
-      </div>
+      <DynamicFormRenderer
+        :layout="activeLayout"
+        :model-value="activeFormData"
+        :readonly="readonly"
+        :field-permissions="fieldPermissions"
+        :business-object="businessObject"
+        :instance-id="instanceId"
+        :use-form-item="true"
+        label-width="120px"
+        label-position="right"
+        @update:model-value="handleModelUpdate"
+      />
     </el-form>
-
-    <!-- Form Actions Footer -->
-    <div
-      v-if="finalActions && finalActions.length > 0"
-      class="form-actions"
-    >
-      <el-button
-        v-for="action in finalActions"
-        :key="action.code"
-        :type="action.type === 'primary' ? 'primary' : 'default'"
-        @click="handleAction(action)"
-      >
-        {{ action.label }}
-      </el-button>
-    </div>
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, watch, computed } from 'vue'
-import { useDynamicForm } from './hooks/useDynamicForm'
-import { useFieldPermissions } from './hooks/useFieldPermissions'
-import { useFormula } from './hooks/useFormula'
-import { useAction } from './hooks/useAction'
-import FieldRenderer from './FieldRenderer.vue'
-import DisplayField from './fields/DisplayField.vue'
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue'
+import DynamicFormRenderer from '@/components/engine/DynamicFormRenderer.vue'
+import { useDynamicForm } from '@/components/engine/hooks'
+import type { RuntimeLayoutConfig, RuntimeField } from '@/types/runtime'
+import { buildSubmitPayload, getFieldValue } from '@/components/engine/valueAccessor'
+import { snakeToCamel } from '@/utils/case'
+import { referenceResolver } from '@/platform/reference/referenceResolver'
+import { normalizeLayoutConfig } from '@/adapters/layoutNormalizer'
+import { mergeRuntimeField } from '@/adapters/fieldAdapter'
+import { normalizeFieldType } from '@/utils/fieldType'
 
-const props = defineProps({
-  businessObject: { type: String, required: true },
-  layoutCode: { type: String, default: 'form' },
-  modelValue: { type: Object, default: () => ({}) },
-  fieldPermissions: { type: Object, default: () => ({}) },
-  labelWidth: { type: String, default: '120px' },
-  labelPosition: { type: String, default: 'right' },
-  enableFormulas: { type: Boolean, default: true },
-  // Optional local config for preview mode
-  layoutConfig: { type: Object, default: null },
-  availableFields: { type: Array, default: null },
-  // Runtime Actions
-  actions: { type: Array, default: () => [] }
+interface Props {
+  businessObject?: string
+  layoutCode?: string
+  modelValue?: Record<string, any>
+  readonly?: boolean
+  showActions?: boolean
+  instanceId?: string | null
+  fieldPermissions?: Record<string, { readonly?: boolean; visible?: boolean; hidden?: boolean }>
+  schema?: Record<string, any> | null
+  data?: Record<string, any> | null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  layoutCode: 'form',
+  readonly: false,
+  showActions: true,
+  instanceId: null,
+  schema: null,
+  data: null
 })
 
-const emit = defineEmits(['update:modelValue', 'change', 'loaded', 'formula-calculated'])
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: Record<string, any>): void
+}>()
 
-// Use dynamic form hook
+const isSchemaMode = computed(() => !!props.schema)
+
+const schemaFormData = ref<Record<string, any>>({})
+const schemaLayout = ref<RuntimeLayoutConfig>({ sections: [] })
+
 const {
   formRef,
   formData,
   formRules,
   fieldDefinitions,
-  layoutSections,
+  runtimeLayout,
   loading,
+  error,
   loadMetadata,
   validate,
   resetFields,
-  businessObjectActions
-} = useDynamicForm(props.businessObject, props.layoutCode, props.layoutConfig, props.availableFields)
+  clearValidation
+} = useDynamicForm(
+  props.businessObject || '',
+  props.layoutCode,
+  null,
+  null
+)
 
-// Ensure fallback for render_as_card if not in config
-watch(layoutSections, (sections) => {
-    if (sections) {
-        sections.forEach(s => {
-            // Apply PRD defaults if missing
-            if (s.render_as_card === undefined) s.render_as_card = false
-            if (s.border === undefined) s.border = false
-        })
-    }
-}, { immediate: true, deep: true })
-
-// Use field permissions hook
-const {
-  getFieldPermission,
-  isFieldReadonly,
-  isFieldVisible
-} = useFieldPermissions(ref(props.fieldPermissions), fieldDefinitions)
-
-// Formula calculation
-const formulaHook = props.enableFormulas
-  ? useFormula(formData, fieldDefinitions)
-  : null
-
-
-
-// Action Handler
-const { executeAction } = useAction()
-
-const finalActions = computed(() => {
-    if (props.actions && props.actions.length > 0) return props.actions
-    return businessObjectActions.value || []
+const activeFormData = computed(() => (isSchemaMode.value ? schemaFormData.value : formData.value))
+const activeFormRules = computed(() => (isSchemaMode.value ? {} : formRules.value))
+const activeLayout = computed<RuntimeLayoutConfig>(() => {
+  return isSchemaMode.value ? schemaLayout.value : (runtimeLayout?.value || { sections: [] })
 })
 
-const handleAction = async (action) => {
-    await executeAction(action, { formData, formRef })
-}
+const fieldPermissions = computed(() => props.fieldPermissions || {})
 
-// Collapsed sections tracking
-const collapsedSections = ref(new Set())
+const flattenLayoutFields = (layout: RuntimeLayoutConfig | null | undefined): RuntimeField[] => {
+  if (!layout?.sections) return []
 
-// Helper to find field definition
-const getFieldDef = (code) => {
-  return fieldDefinitions.value.find(f => f.code === code) || { code, name: code, field_type: 'text' }
-}
-
-// Helper for colspan (default to 12 for 2-column layout)
-const getFieldSpan = (code) => {
-  const field = getFieldDef(code)
-  // Check if field has custom span in layout config
-  if (field.component_props && field.component_props.span) {
-    return field.component_props.span
+  const out: RuntimeField[] = []
+  for (const section of layout.sections) {
+    if (!section) continue
+    if (section.type === 'tab') {
+      for (const tab of section.tabs || []) out.push(...(tab.fields || []))
+      continue
+    }
+    if (section.type === 'collapse') {
+      for (const item of section.items || []) out.push(...(item.fields || []))
+      continue
+    }
+    out.push(...(section.fields || []))
   }
-  // Larger fields get full width
-  if (field.field_type === 'textarea' || field.field_type === 'rich_text' ||
-      field.field_type === 'code' || field.field_type === 'sub_table') {
-    return 24
-  }
-  return 12
+  return out.filter((f) => !!f?.code)
 }
 
-// Toggle section collapse
-const toggleSection = (sectionId) => {
-  if (collapsedSections.value.has(sectionId)) {
-    collapsedSections.value.delete(sectionId)
+const resolveObjectCode = (refValue: any) => {
+  if (!refValue) return ''
+  const raw = String(refValue).trim()
+  if (!raw) return ''
+  const noQuery = raw.split('?')[0].replace(/\/+$/, '')
+  const lastDot = noQuery.split('.').pop() || noQuery
+  const lastPath = lastDot.split('/').filter(Boolean).pop() || lastDot
+  return String(lastPath || '').trim()
+}
+
+let lastPrefetchKey = ''
+const prefetchReadonlyReferences = async (layout: RuntimeLayoutConfig, model: Record<string, any>) => {
+  if (!props.readonly) return
+  if (isSchemaMode.value) return
+  if (!layout?.sections || !model) return
+
+  const refsByObject = new Map<string, string[]>()
+
+  for (const field of flattenLayoutFields(layout)) {
+    if (!field?.code) continue
+
+    const type = field.fieldType
+    const isRel =
+      type === 'reference' ||
+      type === 'user' ||
+      type === 'department' ||
+      type === 'location' ||
+      type === 'organization' ||
+      type === 'asset'
+
+    if (!isRel) continue
+
+    const value = getFieldValue(field, model)
+    if (value === null || value === undefined || value === '') continue
+
+    const ids: string[] = []
+    const pushId = (v: any) => {
+      if (!v) return
+      if (typeof v === 'object' && v.id) ids.push(String(v.id))
+      else if (typeof v === 'string' || typeof v === 'number') ids.push(String(v))
+    }
+
+    if (Array.isArray(value)) value.forEach(pushId)
+    else pushId(value)
+
+    if (ids.length === 0) continue
+
+    let objectCode = ''
+    if (type === 'user') objectCode = 'User'
+    else if (type === 'department') objectCode = 'Department'
+    else if (type === 'location') objectCode = 'Location'
+    else if (type === 'organization') objectCode = 'Organization'
+    else if (type === 'asset') objectCode = 'Asset'
+    else objectCode = resolveObjectCode((field as any).referenceObject)
+
+    if (!objectCode) continue
+
+    const bucket = refsByObject.get(objectCode) || []
+    bucket.push(...ids)
+    refsByObject.set(objectCode, bucket)
+  }
+
+  const key = Array.from(refsByObject.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([obj, ids]) => `${obj}=${Array.from(new Set(ids)).sort().join(',')}`)
+    .join('|')
+
+  if (!key || key === lastPrefetchKey) return
+  lastPrefetchKey = key
+
+  await Promise.all(
+    Array.from(refsByObject.entries()).map(([objectCode, ids]) =>
+      referenceResolver.resolveMany(objectCode, ids, { concurrency: 6 })
+    )
+  )
+}
+
+const ensureCanonicalKeys = (model: Record<string, any>, layout: RuntimeLayoutConfig) => {
+  // Element Plus validation uses `prop=field.code`, so make sure the canonical keys exist.
+  const next = { ...(model || {}) }
+  for (const field of flattenLayoutFields(layout)) {
+    const hasKey = Object.prototype.hasOwnProperty.call(next, field.code)
+    const current = hasKey ? next[field.code] : undefined
+    const isEmpty = current === undefined || current === null || current === ''
+    if (!isEmpty) continue
+
+    const dataKey = field.dataKey || (field.code.includes('_') ? snakeToCamel(field.code) : field.code)
+    if (dataKey && Object.prototype.hasOwnProperty.call(next, dataKey)) {
+      const candidate = next[dataKey]
+      if (candidate !== undefined) next[field.code] = candidate
+      continue
+    }
+
+    // Fallback (covers legacy alias keys and customFields)
+    const value = getFieldValue(field, next)
+    if (value !== undefined) next[field.code] = value
+  }
+  return next
+}
+
+const getSubmitData = () => {
+  if (isSchemaMode.value) return { ...(schemaFormData.value || {}) }
+  return buildSubmitPayload(flattenLayoutFields(activeLayout.value), activeFormData.value || {})
+}
+
+const handleModelUpdate = (value: Record<string, any>) => {
+  if (isSchemaMode.value) {
+    schemaFormData.value = { ...schemaFormData.value, ...value }
   } else {
-    collapsedSections.value.add(sectionId)
+    formData.value = ensureCanonicalKeys({ ...formData.value, ...value }, activeLayout.value)
   }
+  emit('update:modelValue', { ...activeFormData.value })
 }
 
-// Check if section is collapsed
-const isSectionCollapsed = (sectionId) => {
-  const section = layoutSections.value.find(s => s.id === sectionId)
-  return (section && section.collapsed) || collapsedSections.value.has(sectionId)
+const buildFieldsFromSchema = (schema: Record<string, any>): RuntimeField[] => {
+  if (!schema) return []
+
+  if (Array.isArray(schema.fields)) {
+    return schema.fields.map((field: any) => {
+      const code = field.code || field.fieldCode || field.name || field.prop
+      const label = field.name || field.label || field.title || field.code || field.fieldCode || field.prop
+      return {
+        code,
+        label,
+        fieldType: normalizeFieldType(field.fieldType || field.type || field.field_type || 'text'),
+        required: field.isRequired ?? field.required ?? false,
+        readonly: field.isReadonly ?? field.readonly ?? false,
+        hidden: field.isHidden ?? field.hidden ?? false,
+        visible: field.isVisible ?? (field.hidden ? false : true),
+        span: field.span,
+        placeholder: field.placeholder,
+        helpText: field.helpText,
+        defaultValue: field.defaultValue,
+        options: field.options || field.enum || [],
+        referenceObject: field.referenceObject || field.relatedObject,
+        componentProps: field.componentProps || field.component_props || {},
+        metadata: { ...(field || {}) }
+      }
+    })
+  }
+
+  if (schema.properties && typeof schema.properties === 'object') {
+    const required = new Set<string>(schema.required || [])
+    return Object.entries(schema.properties).map(([key, prop]: [string, any]) => {
+      let fieldType = 'text'
+
+      if (prop.enum) {
+        fieldType = 'select'
+      } else if (prop.type === 'boolean') {
+        fieldType = 'boolean'
+      } else if (prop.type === 'number' || prop.type === 'integer') {
+        fieldType = 'number'
+      } else if (prop.type === 'array') {
+        fieldType = prop.items?.enum ? 'multi_select' : 'text'
+      } else if (prop.format === 'date') {
+        fieldType = 'date'
+      } else if (prop.format === 'date-time') {
+        fieldType = 'datetime'
+      } else if (prop.format === 'time') {
+        fieldType = 'time'
+      }
+
+      const options = Array.isArray(prop.enum)
+        ? prop.enum.map((value: any) => ({ label: String(value), value }))
+        : []
+
+      return {
+        code: key,
+        label: prop.title || key,
+        fieldType: normalizeFieldType(fieldType),
+        required: required.has(key),
+        readonly: !!prop.readOnly,
+        hidden: false,
+        visible: true,
+        options,
+        componentProps: {},
+        metadata: { ...(prop || {}) }
+      }
+    })
+  }
+
+  return []
 }
 
-// Get field value from form data or calculated value
-const getFormFieldValue = (fieldCode) => {
-  // Check if this is a formula field with calculated value
-  if (formulaHook && formulaHook.isFormulaField(fieldCode)) {
-    const calculated = formulaHook.getCalculatedValue(fieldCode)
-    if (calculated !== undefined) {
-      return calculated
-    }
-  }
-  return formData[fieldCode]
-}
-
-// Load metadata on mount
-onMounted(async () => {
-  await loadMetadata()
-
-  // Initialize with passed model value
-  if (props.modelValue && Object.keys(props.modelValue).length > 0) {
-    Object.assign(formData, props.modelValue)
-  }
-
-  // Initialize formula calculations
-  if (formulaHook) {
-    formulaHook.initFormulas()
-  }
-
-  emit('loaded', { fieldDefinitions: fieldDefinitions.value })
-})
-
-// Handle field value changes
-const handleFieldValueChange = (fieldCode, value) => {
-  formData[fieldCode] = value
-
-  // Recalculate formulas that depend on this field
-  if (formulaHook) {
-    const dependentFormulas = formulaHook.getDependentFormulas(fieldCode)
-    if (dependentFormulas.size > 0) {
-      formulaHook.calculateFormulas()
-
-      // Update form data with calculated values
-      dependentFormulas.forEach(formulaFieldCode => {
-        const calculatedValue = formulaHook.getCalculatedValue(formulaFieldCode)
-        if (calculatedValue !== undefined) {
-          formData[formulaFieldCode] = calculatedValue
+const buildSectionsFromSchema = (schema: Record<string, any>, fields: RuntimeField[]) => {
+  if (schema?.sections && Array.isArray(schema.sections)) {
+    const fieldMap = new Map(fields.map((field) => [field.code, field]))
+    const normalized = normalizeLayoutConfig(schema)
+    return (normalized.sections || []).map((section: any, index: number) => ({
+      id: section.id || section.name || `section-${index}`,
+      name: section.name || `section-${index}`,
+      title: section.title || '',
+      fields: (section.fields || []).map((entry: any) => {
+        if (typeof entry === 'string') {
+          return fieldMap.get(entry) || { code: entry, label: entry, fieldType: 'text' }
         }
-      })
+        const code = entry.code || entry.fieldCode || entry.field || entry.name
+        if (code && fieldMap.has(code)) {
+          const base = fieldMap.get(code)!
+          const override = {
+            label: entry.label || entry.name || base.label,
+            fieldType: entry.fieldType ? normalizeFieldType(entry.fieldType) : undefined,
+            span: entry.span,
+            required: entry.required,
+            readonly: entry.readonly,
+            hidden: entry.hidden,
+            visible: entry.visible,
+            options: entry.options,
+            referenceObject: entry.referenceObject || entry.relatedObject,
+            componentProps: entry.componentProps || entry.component_props,
+            placeholder: entry.placeholder,
+            helpText: entry.helpText,
+            defaultValue: entry.defaultValue
+          }
+          const merged = mergeRuntimeField(base, override)
+          return {
+            ...merged,
+            metadata: { ...(merged.metadata || {}), ...(entry || {}) }
+          }
+        }
+        return {
+          code: code || entry.name || `field-${index}`,
+          label: entry.label || entry.name || code || `field-${index}`,
+          fieldType: normalizeFieldType(entry.fieldType || entry.type || 'text'),
+          required: entry.required ?? false,
+          readonly: entry.readonly ?? false,
+          hidden: entry.hidden ?? false,
+          visible: entry.visible ?? true,
+          span: entry.span,
+          placeholder: entry.placeholder,
+          helpText: entry.helpText,
+          defaultValue: entry.defaultValue,
+          options: entry.options,
+          referenceObject: entry.referenceObject || entry.relatedObject,
+          componentProps: entry.componentProps || entry.component_props,
+          metadata: { ...(entry || {}) }
+        }
+      }),
+      columns: section.columns || section.columnCount || section.column || 2,
+      visible: section.visible !== false,
+      renderAsCard: section.renderAsCard || false,
+      showTitle: section.showTitle !== false
+    }))
+  }
 
-      // Emit formula calculated event with all calculated values
-      emit('formula-calculated', formulaHook.calculatedValues)
+  if (fields.length === 0) return []
+
+  return [{
+    id: 'default',
+    name: 'default',
+    title: '',
+    fields,
+    columns: 2,
+    visible: true,
+    showTitle: false
+  }]
+}
+
+const applyExternalModel = (value: Record<string, any> | null | undefined) => {
+  if (!value || typeof value !== 'object') return
+  const target = isSchemaMode.value ? schemaFormData : formData
+  const merged = { ...target.value, ...value }
+  target.value = isSchemaMode.value ? merged : ensureCanonicalKeys(merged, activeLayout.value)
+}
+
+watch(
+  () => props.schema,
+  (schema) => {
+    if (!schema) {
+      schemaLayout.value = { sections: [] }
+      return
     }
-  }
 
-  // Convert reactive object to plain object for emit
-  const plainFormData = JSON.parse(JSON.stringify(formData))
-  emit('update:modelValue', plainFormData)
-  emit('change', { fieldCode, value })
-}
-
-// Watch for external model value changes
-watch(() => props.modelValue, (newValue) => {
-  if (newValue && Object.keys(newValue).length > 0) {
-    Object.assign(formData, newValue)
-  }
-}, { deep: true })
-
-// Sync formula values to form data before validation/submit
-const syncFormulas = () => {
-  if (formulaHook) {
-    formulaHook.syncFormulasToFormData()
-  }
-}
-
-// Override validate to sync formulas first
-const validateForm = async () => {
-  syncFormulas()
-  return await validate()
-}
-
-// Expose methods to parent component
-defineExpose({
-  validate: validateForm,
-  resetFields,
-  formData,
-  loading,
-  syncFormulas,
-  calculateFormulas: () => {
-    if (formulaHook) {
-      return formulaHook.calculateFormulas()
+    const fields = buildFieldsFromSchema(schema).filter((field) => !!field.code)
+    const sections = buildSectionsFromSchema(schema, fields)
+    schemaLayout.value = {
+      sections
     }
   },
-  calculatedValues: () => {
-    if (formulaHook) {
-      return formulaHook.calculatedValues.value
+  { immediate: true, deep: true }
+)
+
+watch(
+  () => props.modelValue,
+  (value) => {
+    if (value) applyExternalModel(value)
+  },
+  { immediate: true, deep: true }
+)
+
+watch(
+  () => props.data,
+  (value) => {
+    if (value) applyExternalModel(value)
+  },
+  { immediate: true, deep: true }
+)
+
+// Emit updates only on user-driven changes to avoid recursive update loops.
+
+
+watch(
+  () => [props.businessObject, props.layoutCode],
+  async ([businessObject]) => {
+    if (businessObject && !isSchemaMode.value) {
+      await loadMetadata()
     }
-    return {}
-  }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => [props.readonly, activeLayout.value, activeFormData.value],
+  async ([readonly, layout, model]) => {
+    if (!readonly) return
+    if (!layout || !model) return
+    await prefetchReadonlyReferences(layout as RuntimeLayoutConfig, model as Record<string, any>)
+  },
+  { immediate: true, deep: true }
+)
+
+defineExpose({
+  validate,
+  resetFields,
+  clearValidation,
+  formData: activeFormData,
+  getSubmitData
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .dynamic-form {
   width: 100%;
-}
 
-.form-section {
-  margin-bottom: 24px;
-}
-
-/* Card Mode Styles (Legacy/Specific) */
-.form-section.card-mode {
-  border-radius: 4px;
-}
-
-.form-section.card-mode .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: bold;
-  font-size: 15px;
-}
-
-/* Clean Mode Styles (Default/Modern) */
-.form-section.clean-mode {
-  padding: 0 4px;
-}
-
-.form-section.clean-mode.has-border {
-    border: 1px solid #ebeef5;
-    border-radius: 4px;
-    padding: 16px;
-}
-
-.section-header.clean-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  font-size: 16px; /* Slightly larger for emphasis */
-  font-weight: 600;
-  color: #303133;
-  line-height: 24px;
-}
-
-.section-header.clean-header.clickable {
-    cursor: pointer;
-    user-select: none;
-}
-
-.section-header.clean-header.clickable:hover {
-    color: var(--el-color-primary);
-}
-
-.header-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.clean-divider {
-    margin: 8px 0 20px 0;
-}
-
-.section-icon {
-    display: flex;
-    align-items: center;
-    font-size: 18px;
-    color: var(--el-text-color-secondary);
-}
-
-.collapse-icon {
-    font-size: 14px;
-    color: var(--el-text-color-secondary);
-    transition: transform 0.3s;
-}
-
-.form-actions {
-  margin-top: 24px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 20px;
-  border-top: 1px solid #ebeef5;
+  &__form {
+    width: 100%;
+  }
 }
 </style>

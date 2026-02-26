@@ -27,9 +27,12 @@
  */
 
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { userApi } from '@/api/users'
 import { deptApi } from '@/api/organizations'
 import type { User } from '@/types/common'
+
+const { t } = useI18n()
 
 // ============================================================================
 // Types
@@ -84,7 +87,7 @@ const props = withDefaults(defineProps<Props>(), {
   multiple: false,
   disabled: false,
   clearable: true,
-  placeholder: '请选择用户',
+  placeholder: undefined,
   filterDept: false,
   showDept: true,
   showAvatar: false,
@@ -296,7 +299,7 @@ defineExpose({
     >
       <el-select
         v-model="selectedDept"
-        placeholder="按部门筛选"
+        :placeholder="t('common.selectors.filterByDept')"
         clearable
         :size="size"
         @change="handleDeptChange"
@@ -312,7 +315,7 @@ defineExpose({
 
     <el-select
       :model-value="modelValue"
-      :placeholder="placeholder"
+      :placeholder="placeholder || t('common.selectors.selectUser')"
       :disabled="disabled"
       :clearable="clearable"
       :filterable="true"
@@ -323,7 +326,7 @@ defineExpose({
       :collapse-tags="collapseTags"
       :collapse-tags-tooltip="collapseTags"
       :size="size"
-      :no-match-text="searchKeyword ? '未找到匹配的用户' : '请输入关键字搜索'"
+      :no-match-text="searchKeyword ? t('common.selectors.noMatchUser') : t('common.selectors.searchKeyword')"
       @update:model-value="handleChange"
       @visible-change="handleVisibleChange"
     >
@@ -368,7 +371,7 @@ defineExpose({
             type="info"
             size="small"
           >
-            停用
+            {{ t('common.status.inactive') }}
           </el-tag>
         </div>
       </el-option>

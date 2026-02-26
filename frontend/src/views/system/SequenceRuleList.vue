@@ -1,12 +1,12 @@
 <template>
   <div class="sequence-rule-list">
     <div class="page-header">
-      <h3>Sequence Rule Management</h3>
+      <h3>{{ $t('system.sequenceRule.title') }}</h3>
       <el-button
         type="primary"
         @click="handleCreate"
       >
-        Create Rule
+        {{ $t('system.sequenceRule.create') }}
       </el-button>
     </div>
 
@@ -16,19 +16,19 @@
       inline
       class="filter-form"
     >
-      <el-form-item label="Status">
+      <el-form-item :label="$t('system.sequenceRule.columns.status')">
         <el-select
           v-model="filterForm.is_active"
           clearable
-          placeholder="All"
+          :placeholder="$t('system.sequenceRule.placeholders.statusAll')"
           @change="handleSearch"
         >
           <el-option
-            label="Active"
+            :label="$t('system.businessRule.messages.enabled')"
             :value="true"
           />
           <el-option
-            label="Inactive"
+            :label="$t('system.businessRule.messages.disabled')"
             :value="false"
           />
         </el-select>
@@ -38,10 +38,10 @@
           type="primary"
           @click="handleSearch"
         >
-          Search
+          {{ $t('common.actions.search') }}
         </el-button>
         <el-button @click="handleFilterReset">
-          Reset
+          {{ $t('common.actions.reset') }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -56,16 +56,16 @@
     >
       <el-table-column
         prop="code"
-        label="Rule Code"
+        :label="$t('system.sequenceRule.columns.code')"
         width="180"
       />
       <el-table-column
         prop="name"
-        label="Rule Name"
+        :label="$t('system.sequenceRule.columns.name')"
         width="180"
       />
       <el-table-column
-        label="Pattern Preview"
+        :label="$t('system.sequenceRule.columns.pattern')"
         width="200"
       >
         <template #default="{ row }">
@@ -79,11 +79,11 @@
       </el-table-column>
       <el-table-column
         prop="prefix"
-        label="Prefix"
+        :label="$t('system.sequenceRule.columns.prefix')"
         width="120"
       />
       <el-table-column
-        label="Seq Length"
+        :label="$t('system.sequenceRule.columns.seqLength')"
         width="100"
         align="center"
       >
@@ -92,7 +92,7 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="Current Value"
+        :label="$t('system.sequenceRule.columns.currentValue')"
         width="120"
         align="center"
       >
@@ -101,7 +101,7 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="Reset Period"
+        :label="$t('system.sequenceRule.columns.resetPeriod')"
         width="120"
         align="center"
       >
@@ -112,7 +112,7 @@
         </template>
       </el-table-column>
       <el-table-column
-        label="Status"
+        :label="$t('system.sequenceRule.columns.status')"
         width="80"
         align="center"
       >
@@ -121,18 +121,18 @@
             :type="row.is_active ? 'success' : 'info'"
             size="small"
           >
-            {{ row.is_active ? 'Active' : 'Inactive' }}
+            {{ row.is_active ? $t('common.status.active') : $t('common.status.inactive') }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
         prop="description"
-        label="Description"
+        :label="$t('system.sequenceRule.columns.description')"
         min-width="150"
         show-overflow-tooltip
       />
       <el-table-column
-        label="Actions"
+        :label="$t('common.labels.operation')"
         width="280"
         fixed="right"
       >
@@ -142,31 +142,31 @@
             type="primary"
             @click="handlePreview(row)"
           >
-            Preview
+            {{ $t('system.sequenceRule.actions.preview') }}
           </el-button>
           <el-button
             link
             type="primary"
             @click="handleEdit(row)"
           >
-            Edit
+            {{ $t('common.actions.edit') }}
           </el-button>
           <el-button
             link
             type="warning"
             @click="handleReset(row)"
           >
-            Reset
+            {{ $t('system.sequenceRule.actions.reset') }}
           </el-button>
           <el-button
             link
             type="primary"
             @click="handleGenerate(row)"
           >
-            Generate
+            {{ $t('system.sequenceRule.actions.generate') }}
           </el-button>
           <el-popconfirm
-            title="Are you sure to delete this rule?"
+            :title="$t('system.sequenceRule.messages.confirmDelete')"
             @confirm="handleDelete(row)"
           >
             <template #reference>
@@ -174,7 +174,7 @@
                 link
                 type="danger"
               >
-                Delete
+                {{ $t('common.actions.delete') }}
               </el-button>
             </template>
           </el-popconfirm>
@@ -205,7 +205,7 @@
     <!-- Preview Dialog -->
     <el-dialog
       v-model="previewVisible"
-      title="Sequence Preview"
+      :title="$t('system.sequenceRule.previewTitle')"
       width="500px"
     >
       <div
@@ -213,19 +213,19 @@
         class="preview-content"
       >
         <div class="preview-item">
-          <span class="preview-label">Rule Code:</span>
+          <span class="preview-label">{{ $t('system.sequenceRule.columns.code') }}:</span>
           <span class="preview-value">{{ previewData.code }}</span>
         </div>
         <div class="preview-item">
-          <span class="preview-label">Rule Name:</span>
+          <span class="preview-label">{{ $t('system.sequenceRule.columns.name') }}:</span>
           <span class="preview-value">{{ previewData.name }}</span>
         </div>
         <div class="preview-item">
-          <span class="preview-label">Pattern:</span>
+          <span class="preview-label">{{ $t('system.sequenceRule.columns.pattern') }}:</span>
           <span class="preview-value">{{ previewData.pattern }}</span>
         </div>
         <div class="preview-item">
-          <span class="preview-label">Current Value:</span>
+          <span class="preview-label">{{ $t('system.sequenceRule.columns.currentValue') }}:</span>
           <span class="preview-value">{{ previewData.current_value }}</span>
         </div>
         <el-divider />
@@ -249,9 +249,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import type { SequenceRule } from '@/api/system'
 import { sequenceRuleApi } from '@/api/system'
 import SequenceRuleForm from './components/SequenceRuleForm.vue'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const tableData = ref<SequenceRule[]>([])
@@ -270,15 +273,10 @@ const pagination = reactive({
   total: 0
 })
 
-const resetPeriodMap: Record<string, string> = {
-  'never': 'Never',
-  'yearly': 'Yearly',
-  'monthly': 'Monthly',
-  'daily': 'Daily'
-}
-
 const getResetPeriodLabel = (period: string) => {
-  return resetPeriodMap[period] || period
+  const key = `system.sequenceRule.periods.${period}`
+  const label = t(key)
+  return label !== key ? label : period
 }
 
 const getPatternPreview = (row: SequenceRule) => {
@@ -313,7 +311,7 @@ const fetchData = async () => {
     tableData.value = res.results || []
     pagination.total = res.count || 0
   } catch (error) {
-    ElMessage.error('Failed to load sequence rules')
+    ElMessage.error(t('common.messages.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -345,28 +343,28 @@ const handlePreview = async (row: SequenceRule) => {
     previewData.value = { ...row, ...res }
     previewVisible.value = true
   } catch (error) {
-    ElMessage.error('Failed to get preview')
+    ElMessage.error(t('system.sequenceRule.messages.previewFailed'))
   }
 }
 
 const handleReset = async (row: SequenceRule) => {
   try {
     await ElMessageBox.confirm(
-      `Reset sequence rule "${row.name}" to initial value?`,
-      'Confirm Reset',
+      t('system.sequenceRule.messages.confirmReset', { name: row.name }),
+      t('common.dialog.confirmTitle'),
       {
         type: 'warning',
-        confirmButtonText: 'Reset',
-        cancelButtonText: 'Cancel'
+        confirmButtonText: t('system.sequenceRule.actions.reset'),
+        cancelButtonText: t('common.actions.cancel')
       }
     )
 
     await sequenceRuleApi.reset(row.code)
-    ElMessage.success('Sequence rule reset successfully')
+    ElMessage.success(t('system.sequenceRule.messages.resetSuccess'))
     await fetchData()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('Failed to reset sequence rule')
+      ElMessage.error(t('system.sequenceRule.messages.resetFailed'))
     }
   }
 }
@@ -374,21 +372,21 @@ const handleReset = async (row: SequenceRule) => {
 const handleGenerate = async (row: SequenceRule) => {
   try {
     const res = await sequenceRuleApi.generate(row.code) as any
-    ElMessage.success(`Generated: ${res.number}`)
+    ElMessage.success(t('system.sequenceRule.messages.generateSuccess', { number: res.number }))
     await fetchData()
   } catch (error) {
-    ElMessage.error('Failed to generate number')
+    ElMessage.error(t('system.sequenceRule.messages.generateFailed'))
   }
 }
 
 const handleDelete = async (row: SequenceRule) => {
   try {
     await sequenceRuleApi.delete(row.id)
-    ElMessage.success('Deleted successfully')
+    ElMessage.success(t('common.messages.deleteSuccess'))
     await fetchData()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('Failed to delete')
+      ElMessage.error(t('common.messages.deleteFailed'))
     }
   }
 }

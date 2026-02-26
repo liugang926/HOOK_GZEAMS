@@ -14,15 +14,19 @@ export const test = base.extend<{
     // Navigate to login page
     await page.goto('/login')
 
-    // Fill in login credentials (using test user)
-    await page.fill('input[name="username"]', process.env.E2E_USERNAME || 'admin')
-    await page.fill('input[name="password"]', process.env.E2E_PASSWORD || 'admin123')
+    // Fill in login credentials (Element Plus inputs; no name attributes)
+    const username = process.env.E2E_USERNAME || 'admin'
+    const password = process.env.E2E_PASSWORD || 'admin123'
+
+    const inputs = page.locator('.login-page .el-input__inner')
+    await inputs.nth(0).fill(username)
+    await inputs.nth(1).fill(password)
 
     // Submit login form
-    await page.click('button[type="submit"]')
+    await page.locator('.login-page button.el-button--primary').click()
 
     // Wait for navigation to complete (should redirect to dashboard)
-    await page.waitForURL('/', { timeout: 10000 })
+    await page.waitForURL(/\/(dashboard)?$/, { timeout: 10000 })
 
     // Use the authenticated page
     await use(page)

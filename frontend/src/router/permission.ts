@@ -1,13 +1,23 @@
 import router from '@/router'
 import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
 
 NProgress.configure({ showSpinner: false })
 
 const whiteList = ['/login', '/404']
+const allowUnmountedModules =
+    typeof window !== 'undefined' &&
+    window.localStorage.getItem('VITE_ENABLE_UNMOUNTED_MODULES') === '1'
+const disabledRoutePrefixes: string[] = []
 
-router.beforeEach(async (to, from, next) => {
+const isRouteBlockedByBackendMount = (path: string): boolean => {
+    if (allowUnmountedModules) return false
+    return disabledRoutePrefixes.some(prefix => path.startsWith(prefix))
+}
+
+router.beforeEach(async (to: any, _from: any, next: any) => {
     NProgress.start()
     const userStore = useUserStore()
 
@@ -18,6 +28,13 @@ router.beforeEach(async (to, from, next) => {
             next({ path: '/' })
             NProgress.done()
         } else {
+            if (isRouteBlockedByBackendMount(to.path)) {
+                ElMessage.warning('该模块后端接口尚未启用，已跳转到工作台。')
+                next({ path: '/dashboard' })
+                NProgress.done()
+                return
+            }
+
             if (userStore.roles && userStore.roles.length > 0) {
                 next()
             } else {

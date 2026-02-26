@@ -60,10 +60,10 @@ class MetadataDrivenViewSet(BatchOperationMixin, viewsets.ModelViewSet):
             from apps.system.models import BusinessObject
             self._business_object = BusinessObject.objects.get(
                 code=object_code,
-                is_active=True
+                is_deleted=False
             )
             self._field_definitions = self._business_object.field_definitions.filter(
-                is_active=True
+                is_deleted=False
             ).order_by('sort_order')
 
             # Configure search fields
@@ -80,8 +80,10 @@ class MetadataDrivenViewSet(BatchOperationMixin, viewsets.ModelViewSet):
             ]
 
             # Set default ordering from business object
-            if self._business_object.default_ordering:
-                self.ordering = [self._business_object.default_ordering]
+            # Use getattr with default as BusinessObject may not have this field
+            default_ordering = getattr(self._business_object, 'default_ordering', None)
+            if default_ordering:
+                self.ordering = [default_ordering]
 
         except ObjectDoesNotExist:
             pass

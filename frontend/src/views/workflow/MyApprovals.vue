@@ -1,7 +1,7 @@
 <template>
   <div class="my-approvals">
     <div class="page-header">
-      <h2>我的审批</h2>
+      <h2>{{ $t('workflow.myApprovals.title') }}</h2>
       <div
         v-if="taskSummary"
         class="summary-cards"
@@ -12,7 +12,7 @@
               {{ taskSummary.pending_count || 0 }}
             </div>
             <div class="card-label">
-              待审批
+              {{ $t('workflow.myApprovals.pending') }}
             </div>
           </div>
         </el-card>
@@ -22,7 +22,7 @@
               {{ taskSummary.overdue_count || 0 }}
             </div>
             <div class="card-label">
-              已逾期
+              {{ $t('workflow.myApprovals.overdue') }}
             </div>
           </div>
         </el-card>
@@ -32,7 +32,7 @@
               {{ taskSummary.completed_today_count || 0 }}
             </div>
             <div class="card-label">
-              今日已处理
+              {{ $t('workflow.myApprovals.completedToday') }}
             </div>
           </div>
         </el-card>
@@ -47,7 +47,7 @@
       <el-tab-pane name="pending">
         <template #label>
           <span class="tab-label">
-            待审批
+            {{ $t('workflow.myApprovals.pending') }}
             <el-badge
               v-if="taskSummary?.pending_count"
               :value="taskSummary.pending_count"
@@ -67,7 +67,7 @@
       <el-tab-pane name="overdue">
         <template #label>
           <span class="tab-label">
-            已逾期
+            {{ $t('workflow.myApprovals.overdue') }}
             <el-badge
               v-if="taskSummary?.overdue_count"
               :value="taskSummary.overdue_count"
@@ -88,7 +88,7 @@
       <el-tab-pane name="completed">
         <template #label>
           <span class="tab-label">
-            今日已处理
+            {{ $t('workflow.myApprovals.completedToday') }}
             <el-badge
               v-if="taskSummary?.completed_today_count"
               :value="taskSummary.completed_today_count"
@@ -108,6 +108,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { workflowNodeApi } from '@/api/workflow'
 import ApprovalList from './components/ApprovalList.vue'
@@ -124,6 +125,7 @@ const pendingTasks = ref([])
 const overdueTasks = ref([])
 const completedTasks = ref([])
 const taskSummary = ref<TaskSummary | null>(null)
+const { t } = useI18n()
 
 const pendingListRef = ref()
 const overdueListRef = ref()
@@ -145,7 +147,7 @@ const loadTasks = async () => {
     }
   } catch (e: any) {
     console.error('Failed to load tasks:', e)
-    ElMessage.error(e.message || '加载失败')
+    ElMessage.error(e.message || t('workflow.messages.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -160,11 +162,11 @@ const handleApprove = async (taskId: string, comment: string) => {
   try {
     loading.value = true
     await workflowNodeApi.approveNode(taskId, taskId, { comment })
-    ElMessage.success('审批成功')
+    ElMessage.success(t('workflow.messages.approveSuccess'))
     await loadTasks()
   } catch (e: any) {
     console.error('Approve failed:', e)
-    ElMessage.error(e.message || '审批失败')
+    ElMessage.error(e.message || t('workflow.messages.approveFailed'))
   } finally {
     loading.value = false
   }
@@ -175,23 +177,23 @@ const handleReject = async (taskId: string, comment?: string) => {
   try {
     // Require comment for rejection
     if (!comment) {
-      const result = await ElMessageBox.prompt('请输入拒绝原因', '拒绝审批', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      const result = await ElMessageBox.prompt(t('workflow.myApprovals.enterRejectReason'), t('workflow.myApprovals.rejectApproval'), {
+        confirmButtonText: t('common.actions.confirm'),
+        cancelButtonText: t('common.actions.cancel'),
         inputPattern: /.+/,
-        inputErrorMessage: '请输入拒绝原因'
+        inputErrorMessage: t('workflow.myApprovals.reasonRequired')
       })
       comment = result.value
     }
 
     loading.value = true
     await workflowNodeApi.approveNode(taskId, taskId, { action: 'reject', comment })
-    ElMessage.success('已拒绝')
+    ElMessage.success(t('workflow.messages.rejected'))
     await loadTasks()
   } catch (e: any) {
     if (e !== 'cancel') {
       console.error('Reject failed:', e)
-      ElMessage.error(e.message || '操作失败')
+      ElMessage.error(e.message || t('workflow.messages.rejectFailed'))
     }
   } finally {
     loading.value = false
@@ -203,11 +205,11 @@ const handleReturn = async (taskId: string, comment?: string) => {
   try {
     // Require comment for return
     if (!comment) {
-      const result = await ElMessageBox.prompt('请输入退回原因', '退回审批', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      const result = await ElMessageBox.prompt(t('workflow.myApprovals.enterReturnReason'), t('workflow.myApprovals.returnApproval'), {
+        confirmButtonText: t('common.actions.confirm'),
+        cancelButtonText: t('common.actions.cancel'),
         inputPattern: /.+/,
-        inputErrorMessage: '请输入退回原因'
+        inputErrorMessage: t('workflow.myApprovals.returnReasonRequired')
       })
       comment = result.value
     }
@@ -216,12 +218,12 @@ const handleReturn = async (taskId: string, comment?: string) => {
     // Use taskApi.returnTask or workflowNodeApi with return action
     const { taskApi } = await import('@/api/workflow')
     await taskApi.returnTask(taskId, { comment })
-    ElMessage.success('已退回')
+    ElMessage.success(t('workflow.messages.returned'))
     await loadTasks()
   } catch (e: any) {
     if (e !== 'cancel') {
       console.error('Return failed:', e)
-      ElMessage.error(e.message || '操作失败')
+      ElMessage.error(e.message || t('workflow.messages.rejectFailed'))
     }
   } finally {
     loading.value = false

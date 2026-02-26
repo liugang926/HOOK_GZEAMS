@@ -1,7 +1,7 @@
 <template>
   <div class="task-center">
     <div class="page-header">
-      <h3>我的待办</h3>
+      <h3>{{ $t('workflow.taskCenter.title') }}</h3>
     </div>
 
     <el-tabs
@@ -9,7 +9,7 @@
       @tab-click="handleTabClick"
     >
       <el-tab-pane
-        label="待处理"
+        :label="$t('workflow.taskCenter.tabs.pending')"
         name="pending"
       >
         <el-table
@@ -19,35 +19,35 @@
         >
           <el-table-column
             prop="title"
-            label="任务标题"
+            :label="$t('workflow.columns.taskTitle')"
           />
           <el-table-column
             prop="process_name"
-            label="流程类型"
+            :label="$t('workflow.columns.processType')"
           />
           <el-table-column
             prop="create_time"
-            label="接收时间"
+            :label="$t('workflow.columns.receiveTime')"
           />
           <el-table-column
             prop="initiator"
-            label="发起人"
+            :label="$t('workflow.columns.initiator')"
           />
-          <el-table-column label="操作">
+          <el-table-column :label="$t('workflow.columns.operation')">
             <template #default="{ row }">
               <el-button
                 link
                 type="primary"
                 @click="handleProcess(row)"
               >
-                办理
+                {{ $t('workflow.actions.process') }}
               </el-button>
             </template>
           </el-table-column>
         </el-table>
       </el-tab-pane>
       <el-tab-pane
-        label="已处理"
+        :label="$t('workflow.taskCenter.tabs.processed')"
         name="processed"
       >
         <el-table
@@ -57,28 +57,28 @@
         >
           <el-table-column
             prop="title"
-            label="任务标题"
+            :label="$t('workflow.columns.taskTitle')"
           />
           <el-table-column
             prop="process_name"
-            label="流程类型"
+            :label="$t('workflow.columns.processType')"
           />
           <el-table-column
             prop="process_time"
-            label="处理时间"
+            :label="$t('workflow.columns.processTime')"
           />
           <el-table-column
             prop="result"
-            label="处理结果"
+            :label="$t('workflow.columns.result')"
           />
-          <el-table-column label="操作">
+          <el-table-column :label="$t('workflow.columns.operation')">
             <template #default="{ row }">
               <el-button
                 link
                 type="primary"
                 @click="handleView(row)"
               >
-                查看
+                {{ $t('common.actions.view') }}
               </el-button>
             </template>
           </el-table-column>

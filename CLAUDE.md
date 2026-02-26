@@ -600,3 +600,35 @@ Every implementation/compliance report MUST include:
 ## 四、创建文件清单
 ## 五、后续建议
 ```
+
+---
+
+### Internationalization (i18n) Standards
+#### 1. Configuration & Structure
+- **Locale Files**: Located in `frontend/src/locales/{lang}/{module}.json`
+  - `en-US`: English (Source/Fallback)
+  - `zh-CN`: Simplified Chinese
+- **Module Granularity**: Each functional module/folder has its own JSON file (e.g., `assets.json`, `finance.json`, `itAssets.json`)
+- **Key Structure**: `module.page.section.field` or `module.component.field` relative to the module file.
+  - Example: `itAssets.list.columns.assetCode`
+
+#### 2. Usage Rules
+- **Template**: Use `{{ $t('module.key') }}`
+- **Script (Setup)**:
+  ```typescript
+  import { useI18n } from 'vue-i18n'
+  const { t } = useI18n()
+  const label = computed(() => t('module.key'))
+  ```
+- **Dynamic Text**: Avoid string concatenation. Use named formatting/placeholders.
+  - Resource: `"welcome": "Welcome, {name}"`
+  - Usage: `t('welcome', { name: userName })`
+- **Validation Messages**: Use i18n keys for form validation messages.
+- **Backend Errors**: Backend returns error codes; Frontend maps codes to i18n messages in `common.json` or module-specific files.
+
+#### 3. Standard Keys (common.json)
+Reuse `common.json` for generic actions/labels:
+- `common.actions.add`, `common.actions.edit`, `common.actions.delete`
+- `common.status.active`, `common.status.inactive`
+- `common.messages.success`, `common.messages.failed`
+

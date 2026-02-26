@@ -123,6 +123,13 @@ class User(AbstractUser, BaseModel):
         db_comment='User current selected organization'
     )
 
+    # === i18n Preferences ===
+    preferred_language = models.CharField(
+        max_length=10,
+        default='zh-CN',
+        db_comment='User preferred language code (e.g., zh-CN, en-US)'
+    )
+
     # === SSO Integration Fields ===
     # WeChat Work (企业微信)
     wework_userid = models.CharField(

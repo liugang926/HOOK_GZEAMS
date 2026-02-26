@@ -2,7 +2,7 @@
   <div class="return-form">
     <div class="page-header">
       <el-page-header
-        title="新建退库单"
+        :title="$t('assets.return.createTitle')"
         @back="goBack"
       />
       <div class="header-actions">
@@ -11,14 +11,14 @@
           :loading="submitting"
           @click="handleSubmit"
         >
-          提交申请
+          {{ $t('common.actions.submit') }}
         </el-button>
         <el-button
           type="success"
           :loading="submitting"
           @click="handleSubmitAndApply"
         >
-          提交审批
+          {{ $t('assets.return.messages.submitApproveSuccess') }}
         </el-button>
       </div>
     </div>
@@ -34,7 +34,7 @@
         label-width="120px"
       >
         <el-form-item
-          label="选择资产"
+          :label="$t('assets.return.form.selectAsset')"
           prop="assetId"
         >
           <div
@@ -47,7 +47,7 @@
               type="primary"
               @click="showAssetSelector"
             >
-              重新选择
+              {{ $t('assets.return.form.reselectAsset') }}
             </el-button>
           </div>
           <el-button
@@ -56,12 +56,12 @@
             plain
             @click="showAssetSelector"
           >
-            点击选择资产
+            {{ $t('assets.return.form.selectAssetButton') }}
           </el-button>
         </el-form-item>
 
         <el-form-item
-          label="退库日期"
+          :label="$t('assets.return.form.returnDate')"
           prop="returnDate"
         >
           <el-date-picker
@@ -73,7 +73,7 @@
         </el-form-item>
 
         <el-form-item
-          label="退库原因"
+          :label="$t('assets.return.form.reason')"
           prop="reason"
         >
           <el-input
@@ -94,14 +94,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import AssetSelector from './components/AssetSelector.vue'
 import { returnApi } from '@/api/assets/return'
 import { workflowInstanceApi } from '@/api/workflow'
 
 const router = useRouter()
+const { t } = useI18n()
 const formRef = ref()
 const assetSelectorVisible = ref(false)
 const selectedAsset = ref<any>(null)
@@ -113,11 +115,11 @@ const form = reactive({
     reason: ''
 })
 
-const rules = {
-    assetId: [{ required: true, message: '请选择资产', trigger: 'change' }],
-    returnDate: [{ required: true, message: '请选择日期', trigger: 'change' }],
-    reason: [{ required: true, message: '请填写原因', trigger: 'blur' }]
-}
+const rules = computed(() => ({
+    assetId: [{ required: true, message: t('assets.return.form.selectAsset'), trigger: 'change' }],
+    returnDate: [{ required: true, message: t('form.validation.required'), trigger: 'change' }],
+    reason: [{ required: true, message: t('assets.return.form.reasonPlaceholder'), trigger: 'blur' }]
+}))
 
 const showAssetSelector = () => {
     assetSelectorVisible.value = true
@@ -145,11 +147,11 @@ const handleSubmit = async () => {
         const payload = await validateAndGetPayload()
         submitting.value = true
         await returnApi.create(payload)
-        ElMessage.success('提交成功')
+        ElMessage.success(t('assets.return.messages.submitSuccess'))
         goBack()
     } catch (e: any) {
         if (e.message !== 'Validation failed') {
-            ElMessage.error(e.message || '提交失败')
+            ElMessage.error(e.message || t('assets.return.messages.submitFailed'))
         }
     } finally {
         submitting.value = false
@@ -161,7 +163,7 @@ const handleSubmitAndApply = async () => {
         const payload = await validateAndGetPayload()
         submitting.value = true
 
-        const res = await returnApi.create(payload)
+        const res = await returnApi.create(payload) as any
         const id = res.id || res
 
         await workflowInstanceApi.startProcess({
@@ -172,11 +174,11 @@ const handleSubmitAndApply = async () => {
             }
         })
         
-        ElMessage.success('提交审批成功')
+        ElMessage.success(t('assets.return.messages.submitApproveSuccess'))
         goBack()
     } catch (e: any) {
         if (e.message !== 'Validation failed') {
-            ElMessage.error(e.message || '提交审批失败')
+            ElMessage.error(e.message || t('assets.return.messages.submitApproveFailed'))
         }
     } finally {
         submitting.value = false

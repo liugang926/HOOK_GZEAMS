@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="isEdit ? 'Edit IT Asset Info' : 'Add IT Asset Info'"
+    :title="isEdit ? $t('itAssets.form.editTitle') : $t('itAssets.form.addTitle')"
     width="800px"
     @update:model-value="handleClose"
   >
@@ -12,16 +12,16 @@
       label-width="160px"
     >
       <el-divider content-position="left">
-        Hardware Configuration
+        {{ $t('itAssets.form.sections.hardware') }}
       </el-divider>
 
       <el-form-item
-        label="Asset"
+        :label="$t('itAssets.common.asset')"
         prop="asset"
       >
         <el-select
           v-model="formData.asset"
-          placeholder="Select asset"
+          :placeholder="$t('itAssets.form.placeholders.selectAsset')"
           filterable
           remote
           :remote-method="searchAssets"
@@ -40,18 +40,18 @@
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item
-            label="CPU Model"
+            :label="$t('itAssets.form.fields.cpuModel')"
             prop="cpu_model"
           >
             <el-input
               v-model="formData.cpu_model"
-              placeholder="e.g., Intel Core i7-12700K"
+              :placeholder="$t('itAssets.form.placeholders.cpuModel')"
             />
           </el-form-item>
         </el-col>
         <el-col :span="6">
           <el-form-item
-            label="CPU Cores"
+            :label="$t('itAssets.form.fields.cpuCores')"
             prop="cpu_cores"
           >
             <el-input-number
@@ -64,7 +64,7 @@
         </el-col>
         <el-col :span="6">
           <el-form-item
-            label="CPU Threads"
+            :label="$t('itAssets.form.fields.cpuThreads')"
             prop="cpu_threads"
           >
             <el-input-number
@@ -80,7 +80,7 @@
       <el-row :gutter="20">
         <el-col :span="8">
           <el-form-item
-            label="RAM Capacity (GB)"
+            :label="$t('itAssets.form.fields.ramCapacity')"
             prop="ram_capacity"
           >
             <el-input-number
@@ -93,12 +93,12 @@
         </el-col>
         <el-col :span="8">
           <el-form-item
-            label="RAM Type"
+            :label="$t('itAssets.form.fields.ramType')"
             prop="ram_type"
           >
             <el-select
               v-model="formData.ram_type"
-              placeholder="Select type"
+              :placeholder="$t('itAssets.form.placeholders.selectType')"
               style="width: 100%"
             >
               <el-option
@@ -130,7 +130,7 @@
         </el-col>
         <el-col :span="8">
           <el-form-item
-            label="RAM Slots"
+            :label="$t('itAssets.form.fields.ramSlots')"
             prop="ram_slots"
           >
             <el-input-number
@@ -146,12 +146,12 @@
       <el-row :gutter="20">
         <el-col :span="8">
           <el-form-item
-            label="Disk Type"
+            :label="$t('itAssets.form.fields.diskType')"
             prop="disk_type"
           >
             <el-select
               v-model="formData.disk_type"
-              placeholder="Select type"
+              :placeholder="$t('itAssets.form.placeholders.selectType')"
               style="width: 100%"
             >
               <el-option
@@ -175,7 +175,7 @@
         </el-col>
         <el-col :span="8">
           <el-form-item
-            label="Disk Capacity (GB)"
+            :label="$t('itAssets.form.fields.diskCapacity')"
             prop="disk_capacity"
           >
             <el-input-number
@@ -188,7 +188,7 @@
         </el-col>
         <el-col :span="8">
           <el-form-item
-            label="Disk Count"
+            :label="$t('itAssets.form.fields.diskCount')"
             prop="disk_count"
           >
             <el-input-number
@@ -204,18 +204,18 @@
       <el-row :gutter="20">
         <el-col :span="16">
           <el-form-item
-            label="GPU Model"
+            :label="$t('itAssets.form.fields.gpuModel')"
             prop="gpu_model"
           >
             <el-input
               v-model="formData.gpu_model"
-              placeholder="e.g., NVIDIA GeForce RTX 3080"
+              :placeholder="$t('itAssets.form.placeholders.gpuModel')"
             />
           </el-form-item>
         </el-col>
         <el-col :span="8">
           <el-form-item
-            label="GPU Memory (MB)"
+            :label="$t('itAssets.form.fields.gpuMemory')"
             prop="gpu_memory"
           >
             <el-input-number
@@ -229,57 +229,57 @@
       </el-row>
 
       <el-divider content-position="left">
-        Network Information
+        {{ $t('itAssets.form.sections.network') }}
       </el-divider>
 
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item
-            label="MAC Address"
+            :label="$t('itAssets.form.fields.macAddress')"
             prop="mac_address"
           >
             <el-input
               v-model="formData.mac_address"
-              placeholder="XX:XX:XX:XX:XX:XX"
+              :placeholder="$t('itAssets.form.placeholders.macAddress')"
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item
-            label="IP Address"
+            :label="$t('itAssets.form.fields.ipAddress')"
             prop="ip_address"
           >
             <el-input
               v-model="formData.ip_address"
-              placeholder="192.168.1.1"
+              :placeholder="$t('itAssets.form.placeholders.ipAddress')"
             />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-form-item
-        label="Hostname"
+        :label="$t('itAssets.form.fields.hostname')"
         prop="hostname"
       >
         <el-input
           v-model="formData.hostname"
-          placeholder="e.g., PC-DESKTOP-001"
+          :placeholder="$t('itAssets.form.placeholders.hostname')"
         />
       </el-form-item>
 
       <el-divider content-position="left">
-        Operating System
+        {{ $t('itAssets.form.sections.os') }}
       </el-divider>
 
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item
-            label="OS Name"
+            :label="$t('itAssets.form.fields.osName')"
             prop="os_name"
           >
             <el-select
               v-model="formData.os_name"
-              placeholder="Select OS"
+              :placeholder="$t('itAssets.form.placeholders.selectOs')"
               allow-create
               filterable
               style="width: 100%"
@@ -317,12 +317,12 @@
         </el-col>
         <el-col :span="12">
           <el-form-item
-            label="OS Version"
+            :label="$t('itAssets.form.fields.osVersion')"
             prop="os_version"
           >
             <el-input
               v-model="formData.os_version"
-              placeholder="e.g., 11, 22.04, 10.0.19043"
+              :placeholder="$t('itAssets.form.placeholders.osVersion')"
             />
           </el-form-item>
         </el-col>
@@ -331,12 +331,12 @@
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item
-            label="OS Architecture"
+            :label="$t('itAssets.form.fields.osArch')"
             prop="os_architecture"
           >
             <el-select
               v-model="formData.os_architecture"
-              placeholder="Select architecture"
+              :placeholder="$t('itAssets.form.placeholders.selectArch')"
               style="width: 100%"
             >
               <el-option
@@ -356,82 +356,82 @@
         </el-col>
         <el-col :span="12">
           <el-form-item
-            label="OS License Key"
+            :label="$t('itAssets.form.fields.osLicense')"
             prop="os_license_key"
           >
             <el-input
               v-model="formData.os_license_key"
-              placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
+              :placeholder="$t('itAssets.form.placeholders.licenseKey')"
             />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-divider content-position="left">
-        Security
+        {{ $t('itAssets.form.sections.security') }}
       </el-divider>
 
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item
-            label="Disk Encrypted"
+            :label="$t('itAssets.form.fields.diskEncrypted')"
             prop="disk_encrypted"
           >
             <el-switch
               v-model="formData.disk_encrypted"
-              active-text="Yes"
-              inactive-text="No"
+              :active-text="$t('itAssets.status.yes')"
+              :inactive-text="$t('itAssets.status.no')"
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item
-            label="Antivirus Enabled"
+            :label="$t('itAssets.form.fields.antivirus')"
             prop="antivirus_enabled"
           >
             <el-switch
               v-model="formData.antivirus_enabled"
-              active-text="Yes"
-              inactive-text="No"
+              :active-text="$t('itAssets.status.yes')"
+              :inactive-text="$t('itAssets.status.no')"
             />
           </el-form-item>
         </el-col>
       </el-row>
 
       <el-form-item
-        label="Antivirus Software"
+        :label="$t('itAssets.form.fields.antivirusSoftware')"
         prop="antivirus_software"
       >
         <el-input
           v-model="formData.antivirus_software"
-          placeholder="e.g., Windows Defender, McAfee, Norton"
+          :placeholder="$t('itAssets.form.placeholders.antivirusSoftware')"
         />
       </el-form-item>
 
       <el-divider content-position="left">
-        Active Directory
+        {{ $t('itAssets.form.sections.activeDirectory') }}
       </el-divider>
 
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item
-            label="AD Domain"
+            :label="$t('itAssets.form.fields.adDomain')"
             prop="ad_domain"
           >
             <el-input
               v-model="formData.ad_domain"
-              placeholder="e.g., corp.local"
+              :placeholder="$t('itAssets.form.placeholders.domain')"
             />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item
-            label="AD Computer Name"
+            :label="$t('itAssets.form.fields.adComputer')"
             prop="ad_computer_name"
           >
             <el-input
               v-model="formData.ad_computer_name"
-              placeholder="e.g., DESKTOP-001"
+              :placeholder="$t('itAssets.form.placeholders.computerName')"
             />
           </el-form-item>
         </el-col>
@@ -440,33 +440,45 @@
 
     <template #footer>
       <el-button @click="handleClose">
-        Cancel
+        {{ $t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="submitting"
         @click="handleSubmit"
       >
-        {{ isEdit ? 'Save' : 'Add' }}
+        {{ isEdit ? $t('common.actions.save') : $t('common.actions.add') }}
       </el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { ITAssetInfo } from '@/api/itAssets'
 import { itAssetInfoApi } from '@/api/itAssets'
+import request from '@/utils/request'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // Asset search - using the assets API
 const searchAssets = async (query: string) => {
   if (!query) return
   assetLoading.value = true
   try {
-    const res = await fetch(`/api/assets/?search=${query}&page_size=20`).then(r => r.json())
-    assetOptions.value = res.results || []
+    const res: any = await request.get('/assets/', {
+      params: { search: query, page_size: 20 },
+      silent: true
+    })
+    const results = res?.results || []
+    assetOptions.value = results.map((item: any) => ({
+      ...item,
+      asset_code: item.asset_code || item.assetCode || item.code || '',
+      asset_name: item.asset_name || item.assetName || item.name || ''
+    }))
   } catch (error) {
     assetOptions.value = []
   } finally {
@@ -521,25 +533,25 @@ const formData = ref({
   ad_computer_name: ''
 })
 
-const rules: FormRules = {
+const rules = computed<FormRules>(() => ({
   asset: [
-    { required: true, message: 'Please select asset', trigger: 'change' }
+    { required: true, message: t('itAssets.form.validation.selectAsset'), trigger: 'change' }
   ],
   mac_address: [
     {
       pattern: /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})|$/,
-      message: 'Invalid MAC address format',
+      message: t('itAssets.form.validation.invalidMac'),
       trigger: 'blur'
     }
   ],
   ip_address: [
     {
       pattern: /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|$/,
-      message: 'Invalid IP address format',
+      message: t('itAssets.form.validation.invalidIp'),
       trigger: 'blur'
     }
   ]
-}
+}))
 
 watch(() => props.visible, (val) => {
   if (val && props.data) {
@@ -616,21 +628,21 @@ const handleClose = () => {
 const handleSubmit = async () => {
   if (!formRef.value) return
 
-  await formRef.value.validate(async (valid) => {
+  await formRef.value.validate(async (valid: boolean) => {
     if (!valid) return
 
     submitting.value = true
     try {
       if (isEdit.value) {
-        await itAssetInfoApi.update(props.data!.id, formData.value)
+        await itAssetInfoApi.update(props.data!.id, formData.value as unknown as ITAssetInfo)
       } else {
-        await itAssetInfoApi.create(formData.value)
+        await itAssetInfoApi.create(formData.value as unknown as ITAssetInfo)
       }
-      ElMessage.success(isEdit.value ? 'Updated successfully' : 'Added successfully')
+      ElMessage.success(isEdit.value ? t('itAssets.messages.updateSuccess') : t('itAssets.messages.addSuccess'))
       emit('success')
       handleClose()
     } catch (error) {
-      ElMessage.error('Operation failed')
+      ElMessage.error(t('itAssets.messages.operationFailed'))
     } finally {
       submitting.value = false
     }

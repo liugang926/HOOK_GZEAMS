@@ -2,11 +2,16 @@ from .base import *
 
 DEBUG = True
 
-# Use in-memory database for tests
+# Use PostgreSQL for tests (same as development but with test database name)
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'gzeams_test',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'db',
+        'PORT': '5432',
+        'ATOMIC_REQUESTS': True,
     }
 }
 

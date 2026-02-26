@@ -1,182 +1,170 @@
 <template>
   <div class="business-object-list">
-    <div class="page-header">
-      <h3>业务对象管理</h3>
-      <el-button
-        type="primary"
-        @click="handleCreate"
-      >
-        新建业务对象
-      </el-button>
-    </div>
-
-    <el-table
-      v-loading="loading"
-      :data="tableData"
-      border
-      stripe
+    <BaseListPage
+      ref="listRef"
+      :title="t('system.businessObject.title')"
+      :table-columns="columns"
+      :api="fetchList"
     >
-      <el-table-column
-        prop="name"
-        label="对象名称"
-        width="200"
-      />
-      <el-table-column
-        prop="code"
-        label="对象编码"
-        width="150"
-      />
-      <el-table-column
-        prop="description"
-        label="描述"
-        show-overflow-tooltip
-      />
-      <el-table-column
-        label="类型"
-        width="100"
-        align="center"
-      >
-        <template #default="{ row }">
-          <el-tag
-            :type="!row.is_hardcoded ? 'warning' : 'success'"
-            size="small"
-          >
-            {{ !row.is_hardcoded ? '自定义' : '内置' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="field_count"
-        label="字段数"
-        width="80"
-        align="center"
-      />
-      <el-table-column
-        prop="layout_count"
-        label="布局数"
-        width="80"
-        align="center"
-      />
-      <el-table-column
-        label="工作流"
-        width="80"
-        align="center"
-      >
-        <template #default="{ row }">
-          <el-tag
-            :type="row.enable_workflow ? 'success' : 'info'"
-            size="small"
-          >
-            {{ row.enable_workflow ? '启用' : '禁用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="操作"
-        width="200"
-        fixed="right"
-      >
-        <template #default="{ row }">
-          <el-button
-            link
-            type="primary"
-            @click="handleFields(row)"
-          >
-            字段管理
-          </el-button>
-          <el-button
-            link
-            type="primary"
-            @click="handleLayouts(row)"
-          >
-            布局管理
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      <template #toolbar>
+        <el-button
+          type="primary"
+          @click="handleCreate"
+        >
+          {{ t('system.businessObject.create') }}
+        </el-button>
+      </template>
 
-    <!-- Business Object Form Dialog -->
+      <template #actions="{ row }">
+        <el-button
+          link
+          type="primary"
+          @click.stop="handleFields(row)"
+        >
+          {{ t('system.businessObject.actions.fields') }}
+        </el-button>
+        <el-button
+          link
+          type="primary"
+          @click.stop="handleLayouts(row)"
+        >
+          {{ t('system.businessObject.actions.layouts') }}
+        </el-button>
+        <el-button
+          link
+          type="primary"
+          @click.stop="handleEdit(row)"
+        >
+          {{ t('common.actions.edit') }}
+        </el-button>
+      </template>
+    </BaseListPage>
+
     <BusinessObjectForm
       v-model:visible="dialogVisible"
       :data="currentRow"
-      @success="loadData"
+      @success="handleRefresh"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import BaseListPage from '@/components/common/BaseListPage.vue'
+import type { TableColumn } from '@/types/common'
+import { businessObjectApi } from '@/api/system'
+import type { BusinessObject } from '@/types/businessObject'
 import BusinessObjectForm from './components/BusinessObjectForm.vue'
-import { businessObjectApi, type BusinessObject } from '@/api/system'
 
 const router = useRouter()
-const loading = ref(false)
-const tableData = ref<BusinessObject[]>([])
+const { t } = useI18n()
+
+const listRef = ref()
 const dialogVisible = ref(false)
 const currentRow = ref<BusinessObject | null>(null)
 
-const loadBusinessObjects = async () => {
-  loading.value = true
-  try {
-    const response = await businessObjectApi.list() as any
-    // Backend returns {hardcoded: [...], custom: [...]}
-    // We need to merge both arrays
-    const hardcoded = response?.hardcoded || []
-    const custom = response?.custom || []
+const normalizeBusinessObject = (raw: any, kind?: 'hardcoded' | 'custom'): BusinessObject => {
+  const inferredKind: 'hardcoded' | 'custom' =
+    kind || (raw?.type === 'hardcoded' ? 'hardcoded' : raw?.type === 'custom' ? 'custom' : 'custom')
 
-    // Transform to table format with required properties
-    tableData.value = [
-      ...hardcoded.map((obj: any) => ({
-        id: obj.code,
-        code: obj.code,
-        name: obj.name,
-        nameEn: obj.nameEn || obj.name_en,
-        description: obj.nameEn || obj.name_en || '',
-        isHardcoded: true,
-        is_hardcoded: true,
-        enableWorkflow: false,
-        enable_workflow: false,
-        enableVersion: false,
-        enable_version: false,
-        enableSoftDelete: false,
-        enable_soft_delete: false,
-        fieldTypeCount: 0,
-        layoutCount: 0,
-        field_count: 0,
-        layout_count: 0
-      })),
-      ...custom.map((obj: any) => ({
-        id: obj.code,
-        code: obj.code,
-        name: obj.name,
-        nameEn: obj.nameEn || obj.name_en,
-        description: obj.description || '',
-        isHardcoded: false,
-        is_hardcoded: false,
-        enableWorkflow: obj.enableWorkflow || obj.enable_workflow || false,
-        enable_workflow: obj.enable_workflow || false,
-        enableVersion: obj.enableVersion || obj.enable_version || false,
-        enable_version: obj.enable_version || false,
-        enableSoftDelete: obj.enableSoftDelete || obj.enable_soft_delete || false,
-        enable_soft_delete: obj.enable_soft_delete || false,
-        fieldTypeCount: obj.fieldCount || obj.field_count || 0,
-        layoutCount: obj.layoutCount || obj.layout_count || 0,
-        field_count: obj.field_count || 0,
-        layout_count: obj.layout_count || 0
-      }))
-    ]
+  const isHardcoded = raw?.isHardcoded ?? raw?.is_hardcoded ?? inferredKind === 'hardcoded'
+
+  return {
+    id: raw?.id || '',
+    code: raw?.code || '',
+    name: raw?.name || '',
+    nameEn: raw?.nameEn ?? raw?.name_en ?? '',
+    description: raw?.description ?? '',
+    enableWorkflow: raw?.enableWorkflow ?? raw?.enable_workflow ?? false,
+    enableVersion: raw?.enableVersion ?? raw?.enable_version ?? false,
+    enableSoftDelete: raw?.enableSoftDelete ?? raw?.enable_soft_delete ?? false,
+    isHardcoded,
+    djangoModelPath: raw?.djangoModelPath ?? raw?.django_model_path ?? raw?.modelPath ?? raw?.model_path ?? '',
+    tableName: raw?.tableName ?? raw?.table_name ?? '',
+    fieldCount: raw?.fieldCount ?? raw?.field_count,
+    layoutCount: raw?.layoutCount ?? raw?.layout_count
+  } as BusinessObject
+}
+
+const resolveListPayload = (payload: any) => {
+  if (Array.isArray(payload)) {
+    const results = payload.map((row) => normalizeBusinessObject(row))
+    return { results, count: results.length }
+  }
+
+  if (payload?.results && Array.isArray(payload.results)) {
+    const results = payload.results.map((row: any) => normalizeBusinessObject(row))
+    const count = payload.count || payload.total || results.length
+    return { results, count }
+  }
+
+  if (payload?.hardcoded || payload?.custom) {
+    const hardcoded = Array.isArray(payload.hardcoded) ? payload.hardcoded : []
+    const custom = Array.isArray(payload.custom) ? payload.custom : []
+    const results = [
+      ...hardcoded.map((row: any) => normalizeBusinessObject(row, 'hardcoded')),
+      ...custom.map((row: any) => normalizeBusinessObject(row, 'custom'))
+    ].filter((row) => !!row.code)
+    return { results, count: results.length }
+  }
+
+  if (payload?.data && Array.isArray(payload.data)) {
+    const results = payload.data.map((row: any) => normalizeBusinessObject(row))
+    return { results, count: results.length }
+  }
+
+  return { results: [], count: 0 }
+}
+
+const columns = computed<TableColumn[]>(() => [
+  { prop: 'name', label: t('system.businessObject.columns.name'), minWidth: 180 },
+  { prop: 'code', label: t('system.businessObject.columns.code'), width: 160 },
+  { prop: 'description', label: t('system.businessObject.columns.description'), minWidth: 220 },
+  {
+    prop: 'type',
+    label: t('system.businessObject.columns.type'),
+    width: 110,
+    align: 'center',
+    tagType: (row: BusinessObject) => (!row.isHardcoded ? 'warning' : 'success'),
+    format: (_v: any, row: BusinessObject) =>
+      (!row.isHardcoded ? t('system.businessObject.type.custom') : t('system.businessObject.type.system'))
+  },
+  { prop: 'fieldCount', label: t('system.businessObject.columns.fieldCount'), width: 110, align: 'center' },
+  { prop: 'layoutCount', label: t('system.businessObject.columns.layoutCount'), width: 110, align: 'center' },
+  {
+    prop: 'enableWorkflow',
+    label: t('system.businessObject.columns.workflow'),
+    width: 110,
+    align: 'center',
+    tagType: (row: BusinessObject) => (row.enableWorkflow ? 'success' : 'info'),
+    format: (_v: any, row: BusinessObject) => (row.enableWorkflow ? t('system.status.enabled') : t('system.status.disabled'))
+  },
+  { prop: 'actions', label: t('common.table.operations'), width: 220, fixed: 'right', slot: true }
+])
+
+const fetchList = async (params: any) => {
+  try {
+    const res: any = await businessObjectApi.list({
+      ...params,
+      page_size: params.pageSize
+    })
+
+    // request.ts unwraps `{ success, data }` to `data` by default (unwrap=auto).
+    // For `/system/business-objects/`, backend returns grouped registry: `{ hardcoded: [], custom: [] }`.
+    const payload = res?.data && (res.data.hardcoded || res.data.custom) ? res.data : res
+
+    return resolveListPayload(payload)
   } catch (error) {
-    console.error('Failed to load business objects:', error)
-    ElMessage.error('加载业务对象失败')
-  } finally {
-    loading.value = false
+    ElMessage.error(t('system.businessObject.messages.loadFailed'))
+    return { results: [], count: 0 }
   }
 }
 
-const loadData = () => {
-  loadBusinessObjects()
+const handleRefresh = () => {
+  listRef.value?.refresh()
 }
 
 const handleCreate = () => {
@@ -202,24 +190,10 @@ const handleLayouts = (row: BusinessObject) => {
     query: { objectCode: row.code, objectName: row.name }
   })
 }
-
-onMounted(() => {
-  loadData()
-})
 </script>
 
 <style scoped>
 .business-object-list {
   padding: 20px;
-}
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-.page-header h3 {
-  margin: 0;
-  font-size: 18px;
 }
 </style>

@@ -6,7 +6,7 @@
       size="small"
     >
       <el-tab-pane
-        label="指定成员"
+        :label="t('workflow.approverSelector.specifiedMember')"
         name="user"
       >
         <UserSelector
@@ -16,26 +16,26 @@
       </el-tab-pane>
 
       <el-tab-pane
-        label="指定角色"
+        :label="t('workflow.approverSelector.specifiedRole')"
         name="role"
       >
         <RoleSelector v-model="approvers" />
       </el-tab-pane>
 
       <el-tab-pane
-        label="发起人领导"
+        :label="t('workflow.approverSelector.initiatorLeader')"
         name="leader"
       >
         <div class="leader-config">
           <el-radio-group v-model="leaderConfig.type">
             <el-radio value="direct">
-              直属领导
+              {{ t('workflow.approverSelector.directLeader') }}
             </el-radio>
             <el-radio value="department">
-              部门负责人
+              {{ t('workflow.approverSelector.departmentManager') }}
             </el-radio>
             <el-radio value="top">
-              第N上级
+              {{ t('workflow.approverSelector.nthLevel') }}
             </el-radio>
           </el-radio-group>
 
@@ -50,39 +50,39 @@
           <span
             v-if="leaderConfig.type === 'top'"
             style="margin-left: 5px"
-          >级</span>
+          >{{ t('common.units.level') }}</span>
         </div>
       </el-tab-pane>
 
       <el-tab-pane
-        label="动态选择"
+        :label="t('workflow.approverSelector.dynamic')"
         name="dynamic"
       >
         <el-form size="small">
-          <el-form-item label="来源字段">
+          <el-form-item :label="t('workflow.approverSelector.sourceField')">
             <el-select v-model="dynamicConfig.field">
               <el-option
-                label="申请人"
+                :label="t('workflow.fields.applicant')"
                 value="applicant"
               />
               <el-option
-                label="部门"
+                :label="t('workflow.fields.department')"
                 value="department"
               />
               <el-option
-                label="领用部门"
+                :label="t('workflow.fields.pickupDepartment')"
                 value="pickup_department"
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="关系">
+          <el-form-item :label="t('workflow.approverSelector.relationship')">
             <el-select v-model="dynamicConfig.relation">
               <el-option
-                label="的直属领导"
+                :label="t('workflow.approverSelector.directLeaderOf')"
                 value="leader"
               />
               <el-option
-                label="的部门负责人"
+                :label="t('workflow.approverSelector.departmentManagerOf')"
                 value="manager"
               />
             </el-select>
@@ -91,31 +91,31 @@
       </el-tab-pane>
 
       <el-tab-pane
-        label="自选"
+        :label="t('workflow.approverSelector.selfSelect')"
         name="self_select"
       >
         <el-form size="small">
-          <el-form-item label="可选范围">
+          <el-form-item :label="t('workflow.approverSelector.selectableRange')">
             <el-radio-group v-model="selfSelectConfig.range">
               <el-radio value="all">
-                全员
+                {{ t('workflow.approverSelector.allMembers') }}
               </el-radio>
               <el-radio value="department">
-                本部门
+                {{ t('workflow.approverSelector.currentDepartment') }}
               </el-radio>
               <el-radio value="custom">
-                自定义
+                {{ t('workflow.approverSelector.custom') }}
               </el-radio>
             </el-radio-group>
           </el-form-item>
-          <el-form-item label="选择人数">
+          <el-form-item :label="t('workflow.approverSelector.selectCount')">
             <el-input-number
               v-model="selfSelectConfig.count"
               :min="1"
               :max="10"
               size="small"
             />
-            <span style="margin-left: 5px">人</span>
+            <span style="margin-left: 5px">{{ t('common.units.people') }}</span>
           </el-form-item>
         </el-form>
       </el-tab-pane>
@@ -125,8 +125,11 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import UserSelector from '@/components/common/UserSelector.vue'
 import RoleSelector from '@/components/common/RoleSelector.vue'
+
+const { t } = useI18n()
 
 interface Props {
   modelValue: any[]

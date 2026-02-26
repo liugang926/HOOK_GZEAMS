@@ -3,7 +3,7 @@
     <div class="tree-toolbar">
       <el-input
         v-model="filterText"
-        placeholder="搜索分类"
+        :placeholder="t('assets.category.search')"
         prefix-icon="Search"
         clearable
       />
@@ -17,7 +17,7 @@
           style="flex: 1"
           @click="$emit('add-root')"
         >
-          新增根分类
+          {{ t('assets.category.addRoot') }}
         </el-button>
         <el-button
           :icon="Refresh"
@@ -52,13 +52,13 @@
                 type="primary"
                 :icon="Plus"
                 @click.stop="$emit('add-child', data)"
-              >新增子级</el-button>
+              >{{ t('assets.category.addChild') }}</el-button>
               <el-button
                 link
                 type="danger"
                 :icon="Delete"
                 @click.stop="handleDelete(data)"
-              >删除</el-button>
+              >{{ t('common.actions.delete') }}</el-button>
             </span>
           </span>
         </template>
@@ -71,7 +71,10 @@
 import { ref, watch, onMounted } from 'vue'
 import { Search, Plus, Refresh, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { categoryApi } from '@/api/assets'
+
+const { t } = useI18n()
 
 const emit = defineEmits(['select', 'add-root', 'add-child', 'delete'])
 
@@ -102,7 +105,7 @@ const fetchTree = async () => {
     treeData.value = data
   } catch (error) {
     console.error(error)
-    ElMessage.error('加载分类树失败')
+    ElMessage.error(t('common.messages.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -115,22 +118,22 @@ const handleNodeClick = (data: any) => {
 
 const handleDelete = (data: any) => {
   if (data.children && data.children.length > 0) {
-    ElMessage.warning('请先删除子分类')
+    ElMessage.warning(t('assets.category.deleteChildrenFirst'))
     return
   }
-  
-  ElMessageBox.confirm(`确定要删除分类 "${data.name}" 吗？`, '提示', {
+
+  ElMessageBox.confirm(`${t('common.dialog.confirmDeleteMessage').replace('{count}', `"${data.name}"`)}`, t('common.status.warning'), {
     type: 'warning',
-    confirmButtonText: '删除',
-    cancelButtonText: '取消'
+    confirmButtonText: t('common.actions.delete'),
+    cancelButtonText: t('common.actions.cancel')
   }).then(async () => {
     try {
       await categoryApi.delete(data.id)
-      ElMessage.success('删除成功')
+      ElMessage.success(t('common.messages.deleteSuccess'))
       emit('delete', data)
       fetchTree() // Refresh tree
     } catch (error: any) {
-      ElMessage.error(error.message || '删除失败')
+      ElMessage.error(error.message || t('common.messages.deleteFailed'))
     }
   }).catch(() => {})
 }

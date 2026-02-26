@@ -1,225 +1,65 @@
 <template>
   <div class="it-asset-list">
-    <div class="page-header">
-      <h3>IT Asset Management</h3>
-      <el-button
-        type="primary"
-        @click="handleCreate"
-      >
-        Add IT Asset
-      </el-button>
-    </div>
-
-    <!-- Filters -->
-    <el-form
-      :model="filterForm"
-      inline
-      class="filter-form"
+    <BaseListPage
+      ref="listRef"
+      :title="t('itAssets.title')"
+      :search-fields="searchFields"
+      :table-columns="columns"
+      :api="fetchList"
+      @row-click="handleView"
     >
-      <el-form-item label="Search">
-        <el-input
-          v-model="filterForm.search"
-          placeholder="Asset code, name, CPU, OS..."
-          clearable
-          @clear="handleSearch"
-          @keyup.enter="handleSearch"
-        />
-      </el-form-item>
-      <el-form-item label="OS">
-        <el-select
-          v-model="filterForm.os"
-          clearable
-          placeholder="All OS"
-          @change="handleSearch"
-        >
-          <el-option
-            label="Windows"
-            value="windows"
-          />
-          <el-option
-            label="macOS"
-            value="macos"
-          />
-          <el-option
-            label="Linux"
-            value="linux"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
+      <template #toolbar>
         <el-button
           type="primary"
-          @click="handleSearch"
+          @click="handleCreate"
         >
-          Search
+          {{ t('itAssets.actions.add') }}
         </el-button>
-        <el-button @click="handleFilterReset">
-          Reset
+      </template>
+
+      <template #actions="{ row }">
+        <el-button
+          link
+          type="primary"
+          @click.stop="handleView(row)"
+        >
+          {{ t('itAssets.actions.view') }}
         </el-button>
-      </el-form-item>
-    </el-form>
-
-    <!-- Asset Table -->
-    <el-table
-      v-loading="loading"
-      :data="tableData"
-      border
-      stripe
-      style="width: 100%"
-    >
-      <el-table-column
-        prop="asset_code"
-        label="Asset Code"
-        width="140"
-      />
-      <el-table-column
-        prop="asset_name"
-        label="Asset Name"
-        min-width="180"
-      />
-      <el-table-column
-        label="CPU"
-        min-width="150"
-      >
-        <template #default="{ row }">
-          <span v-if="row.cpu_model">{{ row.cpu_model }}</span>
-          <span
-            v-if="row.cpu_cores"
-            class="text-secondary"
-          >({{ row.cpu_cores }} cores)</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="RAM"
-        width="100"
-        align="center"
-      >
-        <template #default="{ row }">
-          <span v-if="row.ram_capacity">{{ row.ram_capacity }} GB</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="Disk"
-        width="120"
-        align="center"
-      >
-        <template #default="{ row }">
-          <span v-if="row.disk_capacity">{{ row.disk_capacity }} GB</span>
-          <el-tag
-            v-if="row.disk_type"
-            size="small"
-            type="info"
-          >
-            {{ row.disk_type }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="os_name"
-        label="OS"
-        min-width="150"
-      >
-        <template #default="{ row }">
-          <span v-if="row.os_name">{{ row.os_name }}</span>
-          <span
-            v-if="row.os_version"
-            class="text-secondary"
-          > {{ row.os_version }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column
-        prop="ip_address"
-        label="IP Address"
-        width="140"
-      />
-      <el-table-column
-        prop="mac_address"
-        label="MAC Address"
-        width="160"
-      />
-      <el-table-column
-        label="Security"
-        width="100"
-        align="center"
-      >
-        <template #default="{ row }">
-          <el-tag
-            v-if="row.disk_encrypted"
-            type="success"
-            size="small"
-          >
-            Encrypted
-          </el-tag>
-          <el-tag
-            v-else
-            type="warning"
-            size="small"
-          >
-            Not Encrypted
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        label="Actions"
-        width="150"
-        fixed="right"
-      >
-        <template #default="{ row }">
-          <el-button
-            link
-            type="primary"
-            @click="handleView(row)"
-          >
-            View
-          </el-button>
-          <el-button
-            link
-            type="primary"
-            @click="handleEdit(row)"
-          >
-            Edit
-          </el-button>
-          <el-popconfirm
-            title="Are you sure to delete this IT asset?"
-            @confirm="handleDelete(row)"
-          >
-            <template #reference>
-              <el-button
-                link
-                type="danger"
-              >
-                Delete
-              </el-button>
-            </template>
-          </el-popconfirm>
-        </template>
-      </el-table-column>
-    </el-table>
-
-    <!-- Pagination -->
-    <div class="pagination-footer">
-      <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.pageSize"
-        :total="pagination.total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="fetchData"
-        @current-change="fetchData"
-      />
-    </div>
+        <el-button
+          link
+          type="primary"
+          @click.stop="handleEdit(row)"
+        >
+          {{ t('itAssets.actions.edit') }}
+        </el-button>
+        <el-popconfirm
+          :title="t('itAssets.messages.deleteConfirm')"
+          @confirm="handleDelete(row)"
+        >
+          <template #reference>
+            <el-button
+              link
+              type="danger"
+              @click.stop
+            >
+              {{ t('itAssets.actions.delete') }}
+            </el-button>
+          </template>
+        </el-popconfirm>
+      </template>
+    </BaseListPage>
 
     <!-- Asset Form Dialog -->
     <ITAssetForm
       v-model:visible="dialogVisible"
       :data="currentRow"
-      @success="fetchData"
+      @success="handleRefresh"
     />
 
     <!-- Asset Detail Drawer -->
     <el-drawer
       v-model="detailDrawerVisible"
-      title="IT Asset Details"
+      :title="$t('itAssets.detail.title')"
       size="600px"
     >
       <div
@@ -230,46 +70,46 @@
           :column="2"
           border
         >
-          <el-descriptions-item label="Asset Code">
+          <el-descriptions-item :label="$t('itAssets.columns.assetCode')">
             {{ currentRow.asset_code }}
           </el-descriptions-item>
-          <el-descriptions-item label="Asset Name">
+          <el-descriptions-item :label="$t('itAssets.columns.assetName')">
             {{ currentRow.asset_name }}
           </el-descriptions-item>
-          <el-descriptions-item label="Status">
+          <el-descriptions-item :label="$t('itAssets.detail.status')">
             <el-tag :type="currentRow.disk_encrypted ? 'success' : 'warning'">
-              {{ currentRow.disk_encrypted ? 'Secure' : 'Attention Needed' }}
+              {{ currentRow.disk_encrypted ? $t('itAssets.status.secure') : $t('itAssets.status.attentionNeeded') }}
             </el-tag>
           </el-descriptions-item>
         </el-descriptions>
 
         <div class="section-title">
-          Hardware Configuration
+          {{ $t('itAssets.detail.hardwareConfig') }}
         </div>
         <el-descriptions
           :column="2"
           border
         >
-          <el-descriptions-item label="CPU">
+          <el-descriptions-item :label="$t('itAssets.columns.cpu')">
             {{ currentRow.cpu_model || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="Cores/Threads">
+          <el-descriptions-item :label="$t('itAssets.detail.coresThreads')">
             {{ currentRow.cpu_cores || '-' }} / {{ currentRow.cpu_threads || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="RAM">
+          <el-descriptions-item :label="$t('itAssets.columns.ram')">
             {{ currentRow.ram_capacity ? `${currentRow.ram_capacity} GB` : '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="RAM Type">
+          <el-descriptions-item :label="$t('itAssets.detail.ramType')">
             {{ currentRow.ram_type || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="Disk">
+          <el-descriptions-item :label="$t('itAssets.columns.disk')">
             {{ currentRow.disk_capacity ? `${currentRow.disk_capacity} GB` : '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="Disk Type">
+          <el-descriptions-item :label="$t('itAssets.detail.diskType')">
             {{ currentRow.disk_type_display || '-' }}
           </el-descriptions-item>
           <el-descriptions-item
-            label="GPU"
+            :label="$t('itAssets.detail.gpu')"
             :span="2"
           >
             {{ currentRow.gpu_model || '-' }}
@@ -277,20 +117,20 @@
         </el-descriptions>
 
         <div class="section-title">
-          Network Information
+          {{ $t('itAssets.detail.networkInfo') }}
         </div>
         <el-descriptions
           :column="2"
           border
         >
-          <el-descriptions-item label="Hostname">
+          <el-descriptions-item :label="$t('itAssets.detail.hostname')">
             {{ currentRow.hostname || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="IP Address">
+          <el-descriptions-item :label="$t('itAssets.columns.ipAddress')">
             {{ currentRow.ip_address || '-' }}
           </el-descriptions-item>
           <el-descriptions-item
-            label="MAC Address"
+            :label="$t('itAssets.columns.macAddress')"
             :span="2"
           >
             {{ currentRow.mac_address || '-' }}
@@ -298,59 +138,59 @@
         </el-descriptions>
 
         <div class="section-title">
-          Operating System
+          {{ $t('itAssets.detail.operatingSystem') }}
         </div>
         <el-descriptions
           :column="2"
           border
         >
-          <el-descriptions-item label="OS Name">
+          <el-descriptions-item :label="$t('itAssets.detail.osName')">
             {{ currentRow.os_name || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="Version">
+          <el-descriptions-item :label="$t('itAssets.detail.version')">
             {{ currentRow.os_version || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="Architecture">
+          <el-descriptions-item :label="$t('itAssets.detail.architecture')">
             {{ currentRow.os_architecture || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="License Key">
+          <el-descriptions-item :label="$t('itAssets.detail.licenseKey')">
             {{ currentRow.os_license_key ? '******' : '-' }}
           </el-descriptions-item>
         </el-descriptions>
 
         <div class="section-title">
-          Security
+          {{ $t('itAssets.columns.security') }}
         </div>
         <el-descriptions
           :column="2"
           border
         >
-          <el-descriptions-item label="Disk Encrypted">
+          <el-descriptions-item :label="$t('itAssets.detail.diskEncrypted')">
             <el-tag :type="currentRow.disk_encrypted ? 'success' : 'warning'">
-              {{ currentRow.disk_encrypted ? 'Yes' : 'No' }}
+              {{ currentRow.disk_encrypted ? $t('itAssets.status.yes') : $t('itAssets.status.no') }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="Antivirus">
+          <el-descriptions-item :label="$t('itAssets.detail.antivirus')">
             {{ currentRow.antivirus_software || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="Antivirus Enabled">
+          <el-descriptions-item :label="$t('itAssets.detail.antivirusEnabled')">
             <el-tag :type="currentRow.antivirus_enabled ? 'success' : 'danger'">
-              {{ currentRow.antivirus_enabled ? 'Yes' : 'No' }}
+              {{ currentRow.antivirus_enabled ? $t('itAssets.status.yes') : $t('itAssets.status.no') }}
             </el-tag>
           </el-descriptions-item>
         </el-descriptions>
 
         <div class="section-title">
-          Active Directory
+          {{ $t('itAssets.detail.activeDirectory') }}
         </div>
         <el-descriptions
           :column="2"
           border
         >
-          <el-descriptions-item label="Domain">
+          <el-descriptions-item :label="$t('itAssets.detail.domain')">
             {{ currentRow.ad_domain || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item label="Computer Name">
+          <el-descriptions-item :label="$t('itAssets.detail.computerName')">
             {{ currentRow.ad_computer_name || '-' }}
           </el-descriptions-item>
         </el-descriptions>
@@ -359,7 +199,7 @@
           v-if="currentRow.full_config"
           class="section-title"
         >
-          Configuration Summary
+          {{ $t('itAssets.detail.configSummary') }}
         </div>
         <el-alert
           v-if="currentRow.full_config"
@@ -374,62 +214,108 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import type { ITAssetInfo } from '@/api/itAssets'
 import { itAssetInfoApi } from '@/api/itAssets'
+import BaseListPage from '@/components/common/BaseListPage.vue'
+import type { TableColumn, SearchField } from '@/types/common'
 import ITAssetForm from './components/ITAssetForm.vue'
 
-const loading = ref(false)
-const tableData = ref<ITAssetInfo[]>([])
+const { t } = useI18n()
+
+const listRef = ref()
 const dialogVisible = ref(false)
 const detailDrawerVisible = ref(false)
 const currentRow = ref<ITAssetInfo | null>(null)
 
-const filterForm = reactive({
-  search: '',
-  os: undefined as unknown as string
-})
+const searchFields = computed<SearchField[]>(() => [
+  {
+    prop: 'search',
+    label: t('itAssets.filters.search'),
+    type: 'text',
+    placeholder: t('itAssets.filters.searchPlaceholder')
+  },
+  {
+    prop: 'os_name__icontains',
+    label: t('itAssets.filters.os'),
+    type: 'select',
+    placeholder: t('itAssets.filters.allOs'),
+    options: [
+      { label: t('itAssets.filters.options.windows'), value: 'windows' },
+      { label: t('itAssets.filters.options.macos'), value: 'macos' },
+      { label: t('itAssets.filters.options.linux'), value: 'linux' }
+    ]
+  }
+])
 
-const pagination = reactive({
-  page: 1,
-  pageSize: 20,
-  total: 0
-})
+const formatCpu = (row: ITAssetInfo) => {
+  const model = row.cpu_model
+  const cores = row.cpu_cores
+  if (model && cores) return `${model} (${cores} cores)`
+  if (model) return model
+  if (cores) return `${cores} cores`
+  return '-'
+}
 
-const fetchData = async () => {
-  loading.value = true
+const formatCapacity = (value?: number, unit = 'GB') => {
+  if (value === null || value === undefined || value === '') return '-'
+  return `${value} ${unit}`
+}
+
+const formatDisk = (row: ITAssetInfo) => {
+  const capacity = row.disk_capacity ? `${row.disk_capacity} GB` : ''
+  const type = row.disk_type ? String(row.disk_type) : ''
+  if (capacity && type) return `${capacity} (${type})`
+  return capacity || type || '-'
+}
+
+const formatOs = (row: ITAssetInfo) => {
+  const name = row.os_name || ''
+  const version = row.os_version || ''
+  if (!name && !version) return '-'
+  return `${name}${version ? ' ' + version : ''}`.trim()
+}
+
+const columns = computed<TableColumn[]>(() => [
+  { prop: 'asset_code', label: t('itAssets.columns.assetCode'), width: 140 },
+  { prop: 'asset_name', label: t('itAssets.columns.assetName'), minWidth: 180 },
+  { prop: 'cpu_model', label: t('itAssets.columns.cpu'), minWidth: 150, format: (_v: any, row: ITAssetInfo) => formatCpu(row) },
+  { prop: 'ram_capacity', label: t('itAssets.columns.ram'), width: 100, align: 'center', format: (value: any) => formatCapacity(value) },
+  { prop: 'disk_capacity', label: t('itAssets.columns.disk'), width: 120, align: 'center', format: (_v: any, row: ITAssetInfo) => formatDisk(row) },
+  { prop: 'os_name', label: t('itAssets.columns.os'), minWidth: 150, format: (_v: any, row: ITAssetInfo) => formatOs(row) },
+  { prop: 'ip_address', label: t('itAssets.columns.ipAddress'), width: 140 },
+  { prop: 'mac_address', label: t('itAssets.columns.macAddress'), width: 160 },
+  {
+    prop: 'disk_encrypted',
+    label: t('itAssets.columns.security'),
+    width: 100,
+    align: 'center',
+    tagType: (row: ITAssetInfo) => (row.disk_encrypted ? 'success' : 'warning'),
+    format: (_v: any, row: ITAssetInfo) => (row.disk_encrypted ? t('itAssets.status.encrypted') : t('itAssets.status.notEncrypted'))
+  },
+  { prop: 'actions', label: t('itAssets.columns.actions'), width: 160, fixed: 'right', slot: true }
+])
+
+const fetchList = async (params: any) => {
   try {
-    const params: any = {
-      page: pagination.page,
-      page_size: pagination.pageSize
+    const res = await itAssetInfoApi.list({
+      ...params,
+      page_size: params.pageSize
+    }) as any
+    return {
+      results: res.results || res.items || [],
+      count: res.count || res.total || 0
     }
-    if (filterForm.search) {
-      params.search = filterForm.search
-    }
-    if (filterForm.os) {
-      params.os_name__icontains = filterForm.os
-    }
-
-    const res = await itAssetInfoApi.list(params) as any
-    tableData.value = res.results || []
-    pagination.total = res.count || 0
   } catch (error) {
-    ElMessage.error('Failed to load IT assets')
-  } finally {
-    loading.value = false
+    ElMessage.error(t('itAssets.messages.loadFailed'))
+    return { results: [], count: 0 }
   }
 }
 
-const handleSearch = () => {
-  pagination.page = 1
-  fetchData()
-}
-
-const handleFilterReset = () => {
-  filterForm.search = ''
-  filterForm.os = undefined as unknown as string
-  handleSearch()
+const handleRefresh = () => {
+  listRef.value?.refresh()
 }
 
 const handleCreate = () => {
@@ -450,50 +336,19 @@ const handleEdit = (row: ITAssetInfo) => {
 const handleDelete = async (row: ITAssetInfo) => {
   try {
     await itAssetInfoApi.delete(row.id)
-    ElMessage.success('Deleted successfully')
-    await fetchData()
+    ElMessage.success(t('itAssets.messages.deleteSuccess'))
+    handleRefresh()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('Failed to delete')
+      ElMessage.error(t('itAssets.messages.deleteFailed'))
     }
   }
 }
-
-onMounted(() => {
-  fetchData()
-})
 </script>
 
 <style scoped>
 .it-asset-list {
   padding: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.page-header h3 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.filter-form {
-  margin-bottom: 20px;
-}
-
-.pagination-footer {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.text-secondary {
-  color: #909399;
-  font-size: 12px;
 }
 
 .asset-detail .section-title {

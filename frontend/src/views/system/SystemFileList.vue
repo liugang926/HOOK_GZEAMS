@@ -1,7 +1,7 @@
 <template>
   <div class="system-file-list">
     <div class="page-header">
-      <h3>System File Management</h3>
+      <h3>{{ $t('system.file.title') }}</h3>
       <el-upload
         :action="uploadUrl"
         :headers="uploadHeaders"
@@ -11,7 +11,7 @@
         :before-upload="beforeUpload"
       >
         <el-button type="primary">
-          Upload File
+          {{ $t('system.file.actions.upload') }}
         </el-button>
       </el-upload>
     </div>
@@ -22,61 +22,61 @@
       inline
       class="filter-form"
     >
-      <el-form-item label="Search">
+      <el-form-item :label="$t('system.file.filter.search')">
         <el-input
           v-model="filterForm.search"
-          placeholder="File name"
+          :placeholder="$t('system.file.filter.searchPlaceholder')"
           clearable
           @clear="handleSearch"
           @keyup.enter="handleSearch"
         />
       </el-form-item>
-      <el-form-item label="File Type">
+      <el-form-item :label="$t('system.file.filter.fileType')">
         <el-select
           v-model="filterForm.file_type"
           clearable
-          placeholder="All Types"
+          :placeholder="$t('system.file.filter.allTypes')"
           @change="handleSearch"
         >
           <el-option
-            label="Images"
+            :label="$t('system.file.types.image')"
             value="image"
           />
           <el-option
-            label="Documents"
+            :label="$t('system.file.types.document')"
             value="document"
           />
           <el-option
-            label="Videos"
+            :label="$t('system.file.types.video')"
             value="video"
           />
           <el-option
-            label="Archives"
+            :label="$t('system.file.types.archive')"
             value="archive"
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="Business Type">
+      <el-form-item :label="$t('system.file.filter.bizType')">
         <el-select
           v-model="filterForm.biz_type"
           clearable
-          placeholder="All"
+          :placeholder="$t('system.file.filter.allBizTypes')"
           @change="handleSearch"
         >
           <el-option
-            label="Asset Image"
+            :label="$t('system.file.types.asset_image')"
             value="asset_image"
           />
           <el-option
-            label="Contract"
+            :label="$t('system.file.types.contract')"
             value="contract"
           />
           <el-option
-            label="Invoice"
+            :label="$t('system.file.types.invoice')"
             value="invoice"
           />
           <el-option
-            label="Attachment"
+            :label="$t('system.file.types.attachment')"
             value="attachment"
           />
         </el-select>
@@ -86,10 +86,10 @@
           type="primary"
           @click="handleSearch"
         >
-          Search
+          {{ $t('common.actions.search') }}
         </el-button>
         <el-button @click="handleFilterReset">
-          Reset
+          {{ $t('common.actions.reset') }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -106,7 +106,7 @@
               {{ stats.total_files }}
             </div>
             <div class="stat-label">
-              Total Files
+              {{ $t('system.file.stats.totalFiles') }}
             </div>
           </div>
         </el-card>
@@ -118,7 +118,7 @@
               {{ formatFileSize(stats.total_size) }}
             </div>
             <div class="stat-label">
-              Total Size
+              {{ $t('system.file.stats.totalSize') }}
             </div>
           </div>
         </el-card>
@@ -130,7 +130,7 @@
               {{ stats.today_uploads }}
             </div>
             <div class="stat-label">
-              Today Uploads
+              {{ $t('system.file.stats.todayUploads') }}
             </div>
           </div>
         </el-card>
@@ -142,7 +142,7 @@
               {{ stats.image_count }}
             </div>
             <div class="stat-label">
-              Images
+              {{ $t('system.file.stats.images') }}
             </div>
           </div>
         </el-card>
@@ -163,7 +163,7 @@
         width="55"
       />
       <el-table-column
-        label="Preview"
+        :label="$t('system.file.columns.preview')"
         width="80"
       >
         <template #default="{ row }">
@@ -193,12 +193,12 @@
         </template>
       </el-table-column>
       <el-table-column
-        prop="file_name"
-        label="File Name"
+        prop="fileName"
+        :label="$t('system.file.columns.fileName')"
         min-width="200"
       />
       <el-table-column
-        label="Type"
+        :label="$t('system.file.columns.type')"
         width="100"
       >
         <template #default="{ row }">
@@ -211,32 +211,36 @@
         </template>
       </el-table-column>
       <el-table-column
-        prop="file_size"
-        label="Size"
+        prop="fileSize"
+        :label="$t('system.file.columns.size')"
         width="100"
       >
         <template #default="{ row }">
-          {{ formatFileSize(row.file_size) }}
+          {{ formatFileSize(row.fileSize) }}
         </template>
       </el-table-column>
       <el-table-column
-        prop="biz_type"
-        label="Business Type"
+        prop="bizType"
+        :label="$t('system.file.columns.bizType')"
         width="130"
-      />
+      >
+        <template #default="{ row }">
+          {{ row.bizType ? $t(`system.file.types.${row.bizType}`) : row.bizType }}
+        </template>
+      </el-table-column>
       <el-table-column
         prop="description"
-        label="Description"
+        :label="$t('system.file.columns.description')"
         min-width="150"
         show-overflow-tooltip
       />
       <el-table-column
-        prop="created_at"
-        label="Upload Date"
+        prop="createdAt"
+        :label="$t('system.file.columns.uploadDate')"
         width="170"
       />
       <el-table-column
-        label="Actions"
+        :label="$t('common.actions.detail')"
         width="180"
         fixed="right"
       >
@@ -246,17 +250,17 @@
             type="primary"
             @click="handleDownload(row)"
           >
-            Download
+            {{ $t('system.file.actions.download') }}
           </el-button>
           <el-button
             link
             type="primary"
             @click="handleEdit(row)"
           >
-            Edit
+            {{ $t('common.actions.edit') }}
           </el-button>
           <el-popconfirm
-            title="Are you sure to delete this file?"
+            :title="$t('system.file.messages.confirmDelete')"
             @confirm="handleDelete(row)"
           >
             <template #reference>
@@ -264,7 +268,7 @@
                 link
                 type="danger"
               >
-                Delete
+                {{ $t('common.actions.delete') }}
               </el-button>
             </template>
           </el-popconfirm>
@@ -277,15 +281,15 @@
       v-if="selectedFiles.length > 0"
       class="batch-actions"
     >
-      <span class="selected-count">{{ selectedFiles.length }} files selected</span>
+      <span class="selected-count">{{ $t('system.file.actions.selection', { count: selectedFiles.length }) }}</span>
       <el-button
         type="danger"
         @click="handleBatchDelete"
       >
-        Batch Delete
+        {{ $t('system.file.actions.batchDelete') }}
       </el-button>
       <el-button @click="clearSelection">
-        Clear Selection
+        {{ $t('system.file.actions.clearSelection') }}
       </el-button>
     </div>
 
@@ -305,47 +309,47 @@
     <!-- Edit File Dialog -->
     <el-dialog
       v-model="editDialogVisible"
-      title="Edit File"
+      :title="$t('system.file.dialog.editTitle')"
       width="500px"
     >
       <el-form
         :model="editForm"
         label-width="120px"
       >
-        <el-form-item label="File Name">
+        <el-form-item :label="$t('system.file.dialog.fileName')">
           <el-input
             v-model="editForm.file_name"
             disabled
           />
         </el-form-item>
-        <el-form-item label="Business Type">
+        <el-form-item :label="$t('system.file.dialog.bizType')">
           <el-select
             v-model="editForm.biz_type"
             style="width: 100%"
           >
             <el-option
-              label="Asset Image"
+              :label="$t('system.file.types.asset_image')"
               value="asset_image"
             />
             <el-option
-              label="Contract"
+              :label="$t('system.file.types.contract')"
               value="contract"
             />
             <el-option
-              label="Invoice"
+              :label="$t('system.file.types.invoice')"
               value="invoice"
             />
             <el-option
-              label="Attachment"
+              :label="$t('system.file.types.attachment')"
               value="attachment"
             />
             <el-option
-              label="Other"
+              :label="$t('system.file.types.other')"
               value="other"
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="Description">
+        <el-form-item :label="$t('system.file.dialog.description')">
           <el-input
             v-model="editForm.description"
             type="textarea"
@@ -355,13 +359,13 @@
       </el-form>
       <template #footer>
         <el-button @click="editDialogVisible = false">
-          Cancel
+          {{ $t('common.actions.cancel') }}
         </el-button>
         <el-button
           type="primary"
           @click="handleSaveEdit"
         >
-          Save
+          {{ $t('common.actions.save') }}
         </el-button>
       </template>
     </el-dialog>
@@ -372,22 +376,12 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Picture, Document } from '@element-plus/icons-vue'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
+import request from '@/utils/request'
+import type { SystemFile } from '@/api/systemFile'
 
-interface SystemFile {
-  id: string
-  file_name: string
-  file_path: string
-  file_size: number
-  file_type: string
-  file_extension: string
-  biz_type?: string
-  biz_id?: string
-  description?: string
-  url?: string
-  created_at: string
-}
-
+const { t } = useI18n()
 const userStore = useUserStore()
 const loading = ref(false)
 const tableData = ref<SystemFile[]>([])
@@ -421,7 +415,7 @@ const editForm = ref({
 })
 
 const uploadUrl = computed(() => {
-  return '/api/system/files/upload/'
+  return '/api/system/system-files/upload/'
 })
 
 const uploadHeaders = computed(() => {
@@ -431,23 +425,23 @@ const uploadHeaders = computed(() => {
 })
 
 const isImage = (file: SystemFile) => {
-  return file.file_type?.startsWith('image/') ||
-    ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(file.file_extension?.toLowerCase() || '')
+  return file.fileType?.startsWith('image/') ||
+    ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(file.fileExtension?.toLowerCase() || '')
 }
 
 const getFileTagType = (file: SystemFile) => {
-  if (file.file_type?.startsWith('image/')) return 'success'
-  if (file.file_type?.startsWith('video/')) return 'warning'
-  if (file.file_type?.includes('pdf')) return 'danger'
+  if (file.fileType?.startsWith('image/')) return 'success'
+  if (file.fileType?.startsWith('video/')) return 'warning'
+  if (file.fileType?.includes('pdf')) return 'danger'
   return ''
 }
 
 const getFileTypeLabel = (file: SystemFile) => {
-  if (file.file_type?.startsWith('image/')) return 'Image'
-  if (file.file_type?.startsWith('video/')) return 'Video'
-  if (file.file_type?.includes('pdf')) return 'PDF'
-  if (file.file_extension) return file.file_extension.toUpperCase()
-  return 'File'
+  if (file.fileType?.startsWith('image/')) return t('system.file.types.image')
+  if (file.fileType?.startsWith('video/')) return t('system.file.types.video')
+  if (file.fileType?.includes('pdf')) return t('system.file.types.pdf')
+  if (file.fileExtension) return file.fileExtension.toUpperCase()
+  return t('system.file.types.file')
 }
 
 const formatFileSize = (bytes: number) => {
@@ -466,7 +460,7 @@ const fetchData = async () => {
       page_size: pagination.pageSize
     }
     if (filterForm.search) {
-      params.file_name__icontains = filterForm.search
+      params.search = filterForm.search
     }
     if (filterForm.file_type) {
       params.file_type__startswith = filterForm.file_type
@@ -475,30 +469,14 @@ const fetchData = async () => {
       params.biz_type = filterForm.biz_type
     }
 
-    const res = await fetch('/api/system/files/', {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`
-      }
-    }).then(r => r.json())
-    tableData.value = res.results || []
-    pagination.total = res.count || 0
+    const res = await request.get('/system/system-files/', { params })
+    tableData.value = res?.results || []
+    pagination.total = res?.count || 0
+    stats.value.total_files = pagination.total
   } catch (error) {
-    ElMessage.error('Failed to load files')
+    ElMessage.error(t('system.file.messages.loadFailed'))
   } finally {
     loading.value = false
-  }
-}
-
-const fetchStats = async () => {
-  try {
-    const res = await fetch('/api/system/files/stats/', {
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`
-      }
-    }).then(r => r.json())
-    stats.value = res.data || stats.value
-  } catch (error) {
-    // Ignore stats error
   }
 }
 
@@ -517,31 +495,30 @@ const handleFilterReset = () => {
 const beforeUpload = (file: File) => {
   const maxSize = 100 * 1024 * 1024 // 100MB
   if (file.size > maxSize) {
-    ElMessage.error('File size cannot exceed 100MB')
+    ElMessage.error(t('system.file.messages.sizeLimit', { size: '100MB' }))
     return false
   }
   return true
 }
 
 const handleUploadSuccess = (response: any) => {
-  ElMessage.success('File uploaded successfully')
+  ElMessage.success(t('system.file.messages.uploadSuccess'))
   fetchData()
-  fetchStats()
 }
 
 const handleUploadError = () => {
-  ElMessage.error('Upload failed')
+  ElMessage.error(t('system.file.messages.uploadFailed'))
 }
 
 const handleDownload = (file: SystemFile) => {
-  window.open(file.url || `/media/${file.file_path}`, '_blank')
+  window.open(file.url || `/media/${file.filePath}`, '_blank')
 }
 
 const handleEdit = (file: SystemFile) => {
   editForm.value = {
     id: file.id,
-    file_name: file.file_name,
-    biz_type: file.biz_type || '',
+    file_name: file.fileName,
+    biz_type: file.bizType || '',
     description: file.description || ''
   }
   editDialogVisible.value = true
@@ -549,38 +526,25 @@ const handleEdit = (file: SystemFile) => {
 
 const handleSaveEdit = async () => {
   try {
-    await fetch(`/api/system/files/${editForm.value.id}/`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        biz_type: editForm.value.biz_type,
-        description: editForm.value.description
-      })
+    await request.patch(`/system/system-files/${editForm.value.id}/`, {
+      bizType: editForm.value.biz_type,
+      description: editForm.value.description
     })
-    ElMessage.success('Updated successfully')
+    ElMessage.success(t('system.file.messages.updateSuccess'))
     editDialogVisible.value = false
     fetchData()
   } catch (error) {
-    ElMessage.error('Update failed')
+    ElMessage.error(t('system.file.messages.updateFailed'))
   }
 }
 
 const handleDelete = async (file: SystemFile) => {
   try {
-    await fetch(`/api/system/files/${file.id}/`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`
-      }
-    })
-    ElMessage.success('Deleted successfully')
+    await request.delete(`/system/system-files/${file.id}/`)
+    ElMessage.success(t('system.file.messages.deleteSuccess'))
     fetchData()
-    fetchStats()
   } catch (error) {
-    ElMessage.error('Delete failed')
+    ElMessage.error(t('system.file.messages.deleteFailed'))
   }
 }
 
@@ -595,26 +559,17 @@ const clearSelection = () => {
 const handleBatchDelete = async () => {
   try {
     const ids = selectedFiles.value.map(f => f.id)
-    await fetch('/api/system/files/batch-delete/', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${userStore.token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ ids })
-    })
-    ElMessage.success(`Deleted ${ids.length} files`)
+    await request.post('/system/system-files/batch_delete/', { ids })
+    ElMessage.success(t('system.file.messages.batchDeleteSuccess', { count: ids.length }))
     clearSelection()
     fetchData()
-    fetchStats()
   } catch (error) {
-    ElMessage.error('Batch delete failed')
+    ElMessage.error(t('system.file.messages.batchDeleteFailed'))
   }
 }
 
 onMounted(() => {
   fetchData()
-  fetchStats()
 })
 </script>
 

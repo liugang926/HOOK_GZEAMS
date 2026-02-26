@@ -5,7 +5,7 @@
         GZEAMS
       </h2>
       <p class="login-subtitle">
-        钩子固定资产管理系统
+        {{ $t('login.subtitle') }}
       </p>
       <el-form
         :model="form"
@@ -14,7 +14,7 @@
         <el-form-item>
           <el-input
             v-model="form.username"
-            placeholder="用户名"
+            :placeholder="$t('login.username')"
             prefix-icon="User"
             size="large"
           />
@@ -23,7 +23,7 @@
           <el-input
             v-model="form.password"
             type="password"
-            placeholder="密码"
+            :placeholder="$t('login.password')"
             prefix-icon="Lock"
             size="large"
             show-password
@@ -37,7 +37,7 @@
             :loading="loading"
             @click="handleLogin"
           >
-            登录
+            {{ $t('login.loginButton') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -48,13 +48,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { User, Lock } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
+const { t } = useI18n()
 
 const form = ref({
   username: '',
@@ -63,19 +64,19 @@ const form = ref({
 
 const handleLogin = async () => {
   if (!form.value.username || !form.value.password) {
-    ElMessage.warning('请输入用户名和密码')
+    ElMessage.warning(t('login.validation.required'))
     return
   }
   
   loading.value = true
   try {
     await userStore.login(form.value)
-    ElMessage.success('登录成功')
+    ElMessage.success(t('login.success'))
     router.push('/dashboard')
   } catch (error: any) {
     if (error.isHandled) return
     console.error(error)
-    ElMessage.error(error.message || '登录失败')
+    ElMessage.error(error.message || t('login.failed'))
   } finally {
     loading.value = false
   }

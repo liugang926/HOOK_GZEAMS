@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="isEdit ? 'Edit Maintenance Record' : 'Add Maintenance Record'"
+    :title="isEdit ? $t('itAssets.form.maintenance.editTitle') : $t('itAssets.form.maintenance.addTitle')"
     width="700px"
     @update:model-value="handleClose"
   >
@@ -12,7 +12,7 @@
       label-width="140px"
     >
       <el-form-item
-        label="Asset"
+        :label="$t('itAssets.common.asset')"
         prop="asset"
       >
         <el-select
@@ -34,47 +34,47 @@
       </el-form-item>
 
       <el-form-item
-        label="Maintenance Type"
+        :label="$t('itAssets.maintenance.type')"
         prop="maintenance_type"
       >
         <el-select
           v-model="formData.maintenance_type"
-          placeholder="Select type"
+          :placeholder="$t('itAssets.maintenance.allTypes')"
           style="width: 100%"
         >
           <el-option
-            label="Preventive"
+            :label="$t('itAssets.maintenance.types.preventive')"
             value="preventive"
           />
           <el-option
-            label="Corrective"
+            :label="$t('itAssets.maintenance.types.corrective')"
             value="corrective"
           />
           <el-option
-            label="Upgrade"
+            :label="$t('itAssets.maintenance.types.upgrade')"
             value="upgrade"
           />
           <el-option
-            label="Replacement"
+            :label="$t('itAssets.maintenance.types.replacement')"
             value="replacement"
           />
           <el-option
-            label="Inspection"
+            :label="$t('itAssets.maintenance.types.inspection')"
             value="inspection"
           />
           <el-option
-            label="Cleaning"
+            :label="$t('itAssets.maintenance.types.cleaning')"
             value="cleaning"
           />
           <el-option
-            label="Other"
+            :label="$t('itAssets.maintenance.types.other')"
             value="other"
           />
         </el-select>
       </el-form-item>
 
       <el-form-item
-        label="Title"
+        :label="$t('itAssets.common.title')"
         prop="title"
       >
         <el-input
@@ -84,7 +84,7 @@
       </el-form-item>
 
       <el-form-item
-        label="Description"
+        :label="$t('itAssets.common.description')"
         prop="description"
       >
         <el-input
@@ -98,7 +98,7 @@
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item
-            label="Maintenance Date"
+            :label="$t('itAssets.common.date')"
             prop="maintenance_date"
           >
             <el-date-picker
@@ -111,7 +111,7 @@
         </el-col>
         <el-col :span="12">
           <el-form-item
-            label="Cost"
+            :label="$t('itAssets.common.cost')"
             prop="cost"
           >
             <el-input-number
@@ -125,7 +125,7 @@
       </el-row>
 
       <el-form-item
-        label="Vendor"
+        :label="$t('itAssets.common.vendor')"
         prop="vendor"
       >
         <el-input
@@ -135,7 +135,7 @@
       </el-form-item>
 
       <el-form-item
-        label="Notes"
+        :label="$t('itAssets.common.notes')"
         prop="notes"
       >
         <el-input
@@ -149,25 +149,29 @@
 
     <template #footer>
       <el-button @click="handleClose">
-        Cancel
+        {{ $t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="submitting"
         @click="handleSubmit"
       >
-        {{ isEdit ? 'Save' : 'Add' }}
+        {{ isEdit ? $t('common.actions.save') : $t('common.actions.add') }}
       </el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { ITMaintenanceRecord } from '@/api/itAssets'
 import { itMaintenanceApi } from '@/api/itAssets'
+import request from '@/utils/request'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   visible: boolean
@@ -219,8 +223,16 @@ const searchAssets = async (query: string) => {
   if (!query) return
   assetLoading.value = true
   try {
-    const res = await fetch(`/api/assets/?search=${query}&page_size=20`).then(r => r.json())
-    assetOptions.value = res.results || []
+    const res: any = await request.get('/assets/', {
+      params: { search: query, page_size: 20 },
+      silent: true
+    })
+    const results = res?.results || []
+    assetOptions.value = results.map((item: any) => ({
+      ...item,
+      asset_code: item.asset_code || item.assetCode || item.code || '',
+      asset_name: item.asset_name || item.assetName || item.name || ''
+    }))
   } catch (error) {
     assetOptions.value = []
   } finally {
@@ -270,7 +282,7 @@ const handleClose = () => {
 const handleSubmit = async () => {
   if (!formRef.value) return
 
-  await formRef.value.validate(async (valid) => {
+  await formRef.value.validate(async (valid: boolean) => {
     if (!valid) return
 
     submitting.value = true
@@ -280,11 +292,11 @@ const handleSubmit = async () => {
       } else {
         await itMaintenanceApi.create(formData.value)
       }
-      ElMessage.success(isEdit.value ? 'Updated successfully' : 'Added successfully')
+      ElMessage.success(isEdit.value ? t('itAssets.messages.updateSuccess') : t('itAssets.messages.addSuccess'))
       emit('success')
       handleClose()
     } catch (error) {
-      ElMessage.error('Operation failed')
+      ElMessage.error(t('itAssets.messages.operationFailed'))
     } finally {
       submitting.value = false
     }

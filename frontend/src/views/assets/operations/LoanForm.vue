@@ -2,7 +2,7 @@
   <div class="loan-form">
     <div class="page-header">
       <el-page-header
-        :title="isEdit ? '编辑借出单' : '新建借出单'"
+        :title="isEdit ? $t('assets.loan.editTitle') : $t('assets.loan.createTitle')"
         @back="goBack"
       />
       <div class="header-actions">
@@ -12,7 +12,7 @@
           :loading="submitting"
           @click="handleSubmit"
         >
-          保存
+          {{ $t('common.actions.save') }}
         </el-button>
         <el-button
           v-if="!isEdit || form.status === 'draft'"
@@ -20,7 +20,7 @@
           :loading="submitting"
           @click="handleSubmitAndApprove"
         >
-          提交审批
+          {{ $t('common.actions.submit') }}
         </el-button>
       </div>
     </div>
@@ -39,18 +39,18 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item
-              label="借用人"
+              :label="$t('assets.loan.form.borrower')"
               prop="borrowerId"
             >
               <UserPicker
                 v-model="form.borrowerId"
-                placeholder="请选择借用人"
+                :placeholder="$t('assets.loan.form.borrowerPlaceholder')"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item
-              label="借出日期"
+              :label="$t('assets.loan.form.loanDate')"
               prop="loanDate"
             >
               <el-date-picker
@@ -65,7 +65,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item
-              label="预计归还日期"
+              :label="$t('assets.loan.form.expectedReturnDate')"
               prop="expectedReturnDate"
             >
               <el-date-picker
@@ -77,7 +77,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="是否需要押金">
+            <el-form-item :label="$t('assets.loan.form.requiresDeposit')">
               <el-switch v-model="form.requiresDeposit" />
             </el-form-item>
           </el-col>
@@ -88,7 +88,7 @@
         >
           <el-col :span="12">
             <el-form-item
-              label="押金金额"
+              :label="$t('assets.loan.form.depositAmount')"
               prop="depositAmount"
             >
               <el-input-number
@@ -101,14 +101,14 @@
           </el-col>
         </el-row>
         <el-form-item
-          label="借出原因"
+          :label="$t('assets.loan.form.reason')"
           prop="reason"
         >
           <el-input
             v-model="form.reason"
             type="textarea"
             :rows="3"
-            placeholder="请输入借出原因"
+            :placeholder="$t('assets.loan.form.reasonPlaceholder')"
           />
         </el-form-item>
       </el-form>
@@ -117,7 +117,7 @@
     <el-card
       shadow="never"
       class="mt-4"
-      header="借出资产明细"
+      header="$t('assets.loan.form.assetDetails')"
     >
       <div class="mb-4">
         <el-button
@@ -125,7 +125,7 @@
           :icon="Plus"
           @click="showAssetSelector"
         >
-          添加资产
+          {{ $t('assets.loan.form.addAsset') }}
         </el-button>
       </div>
       <el-table
@@ -134,20 +134,20 @@
       >
         <el-table-column
           prop="asset.code"
-          label="资产编码"
+          :label="$t('assets.fields.assetCode')"
           width="150"
         />
         <el-table-column
           prop="asset.name"
-          label="资产名称"
+          :label="$t('assets.fields.assetName')"
         />
         <el-table-column
           prop="asset.categoryName"
-          label="分类"
+          :label="$t('assets.fields.category')"
           width="120"
         />
         <el-table-column
-          label="数量"
+          :label="$t('assets.loan.form.quantity')"
           width="150"
         >
           <template #default="{ row }">
@@ -159,13 +159,13 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="备注">
+        <el-table-column :label="$t('assets.loan.form.remark')">
           <template #default="{ row }">
             <el-input v-model="row.remark" />
           </template>
         </el-table-column>
         <el-table-column
-          label="操作"
+          :label="$t('common.labels.operation')"
           width="80"
           fixed="right"
         >
@@ -193,6 +193,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { Plus, Delete } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import AssetSelector from './components/AssetSelector.vue'
@@ -202,13 +203,14 @@ import { workflowInstanceApi } from '@/api/workflow'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 const formRef = ref()
 const assetSelectorVisible = ref(false)
 const submitting = ref(false)
 
 const form = reactive({
-    id: null,
+    id: null as string | null,
     status: 'draft',
     borrowerId: '',
     loanDate: new Date().toISOString().split('T')[0],
@@ -219,12 +221,12 @@ const form = reactive({
     items: [] as any[]
 })
 
-const rules = {
-    borrowerId: [{ required: true, message: '请选择借用人', trigger: 'change' }],
-    loanDate: [{ required: true, message: '请选择借出日期', trigger: 'change' }],
-    expectedReturnDate: [{ required: true, message: '请选择预计归还日期', trigger: 'change' }],
-    reason: [{ required: true, message: '请填写借出原因', trigger: 'blur' }]
-}
+const rules = computed(() => ({
+    borrowerId: [{ required: true, message: t('assets.loan.form.borrowerPlaceholder'), trigger: 'change' }],
+    loanDate: [{ required: true, message: t('common.rules.required'), trigger: 'change' }],
+    expectedReturnDate: [{ required: true, message: t('common.rules.required'), trigger: 'change' }],
+    reason: [{ required: true, message: t('assets.loan.form.reasonPlaceholder'), trigger: 'blur' }]
+}))
 
 const isEdit = computed(() => !!route.params.id)
 const selectedAssetIds = computed(() => form.items.map(i => i.asset.id))
@@ -251,7 +253,7 @@ const removeItem = (index: number) => {
 const validateAndGetPayload = async () => {
     await formRef.value.validate()
     if (form.items.length === 0) {
-        ElMessage.warning('请至少添加一项资产')
+        ElMessage.warning(t('assets.loan.messages.selectAssetWarning'))
         throw new Error('Validation failed')
     }
 
@@ -280,16 +282,16 @@ const handleSubmit = async () => {
 
         if (isEdit.value) {
             await updateLoan(String(route.params.id), payload)
-            ElMessage.success('更新成功')
+            ElMessage.success(t('common.messages.updateSuccess'))
         } else {
             await createLoan(payload)
-            ElMessage.success('保存成功')
+            ElMessage.success(t('common.messages.saveSuccess'))
         }
         goBack()
     } catch (e: any) {
         if (e.message !== 'Validation failed') {
             console.error(e)
-            ElMessage.error(e.message || '操作失败')
+            ElMessage.error(e.message || t('common.messages.operationFailed'))
         }
     } finally {
         submitting.value = false
@@ -305,7 +307,7 @@ const handleSubmitAndApprove = async () => {
         if (isEdit.value) {
             await updateLoan(String(route.params.id), payload)
         } else {
-            const res = await createLoan(payload)
+            const res = await createLoan(payload) as any
             id = res.id
         }
 
@@ -315,16 +317,16 @@ const handleSubmitAndApprove = async () => {
             businessKey: id,
             variables: {
                 initiator: 'current_user',
-                borrowerId: form.borrowerId
+                borrowerId: form.borrowerId || ''
             }
         })
 
-        ElMessage.success('提交审批成功')
+        ElMessage.success(t('assets.loan.messages.submitApproveSuccess'))
         goBack()
     } catch (e: any) {
         if (e.message !== 'Validation failed') {
             console.error(e)
-            ElMessage.error(e.message || '提交审批失败')
+            ElMessage.error(e.message || t('assets.loan.messages.submitApproveFailed'))
         }
     } finally {
         submitting.value = false
@@ -338,7 +340,7 @@ const goBack = () => {
 onMounted(async () => {
     if (isEdit.value) {
         try {
-            const data = await getLoanDetail(String(route.params.id))
+            const data = await getLoanDetail(String(route.params.id)) as any
             form.id = data.id
             form.status = data.status
             form.borrowerId = data.borrower?.id
@@ -355,7 +357,7 @@ onMounted(async () => {
             }))
         } catch (e) {
             console.error(e)
-            ElMessage.error('加载失败')
+            ElMessage.error(t('assets.messages.loadFailed'))
         }
     }
 })

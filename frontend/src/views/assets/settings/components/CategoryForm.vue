@@ -1,12 +1,12 @@
 <template>
   <div class="category-form">
     <div class="form-header">
-      <h3>{{ isEdit ? '编辑分类' : '新建分类' }}</h3>
+      <h3>{{ isEdit ? t('assets.category.edit') : t('assets.category.create') }}</h3>
       <div
         v-if="parentCategory"
         class="parent-info"
       >
-        上级分类: {{ parentCategory.name }}
+        {{ t('assets.category.parent') }}: {{ parentCategory.name }}
       </div>
     </div>
 
@@ -18,59 +18,59 @@
       label-width="120px"
     >
       <el-form-item
-        label="分类编码"
+        :label="t('assets.category.code')"
         prop="code"
       >
         <el-input
           v-model="form.code"
-          placeholder="请输入唯一编码"
+          :placeholder="t('assets.category.enterCode')"
         />
       </el-form-item>
 
       <el-form-item
-        label="分类名称"
+        :label="t('assets.category.name')"
         prop="name"
       >
         <el-input
           v-model="form.name"
-          placeholder="请输入分类名称"
+          :placeholder="t('assets.category.enterName')"
         />
       </el-form-item>
-      
+
       <el-divider content-position="left">
-        折旧设置
+        {{ t('assets.category.depreciation') }}
       </el-divider>
 
       <el-form-item
-        label="折旧方法"
+        :label="t('assets.category.method')"
         prop="depreciation_method"
       >
         <el-select
           v-model="form.depreciation_method"
-          placeholder="请选择折旧方法"
+          :placeholder="t('assets.category.selectMethod')"
           style="width: 100%"
         >
           <el-option
-            label="年限平均法"
+            :label="t('assets.depreciation.straightLine')"
             value="straight_line"
           />
           <el-option
-            label="双倍余额递减法"
+            :label="t('assets.depreciation.doubleDeclining')"
             value="double_declining"
           />
           <el-option
-            label="年数总和法"
+            :label="t('assets.depreciation.sumOfYears')"
             value="sum_of_years"
           />
           <el-option
-            label="不计提折旧"
+            :label="t('assets.depreciation.noDepreciation')"
             value="none"
           />
         </el-select>
       </el-form-item>
 
       <el-form-item
-        label="预计使用年限"
+        :label="t('assets.category.usefulLife')"
         prop="useful_life"
       >
         <el-input-number
@@ -80,16 +80,16 @@
           style="width: 100%"
         >
           <template #append>
-            月
+            {{ t('assets.category.months') }}
           </template>
         </el-input-number>
         <div class="form-tip">
-          请输入月数 (例如: 5年 = 60月)
+          {{ t('assets.category.usefulLifeHint') }}
         </div>
       </el-form-item>
 
       <el-form-item
-        label="残值率"
+        :label="t('assets.category.salvageRate')"
         prop="salvage_rate"
       >
         <el-input-number
@@ -99,7 +99,7 @@
           :precision="2"
           :step="0.1"
           style="width: 100%"
-        /> 
+        />
         <div class="form-tip">
           % (例如: 5 表示 5%)
         </div>
@@ -111,10 +111,10 @@
           :loading="submitting"
           @click="handleSubmit"
         >
-          保存
+          {{ t('common.actions.save') }}
         </el-button>
         <el-button @click="$emit('cancel')">
-          取消
+          {{ t('common.actions.cancel') }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -124,7 +124,10 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { categoryApi } from '@/api/assets'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue?: any // Current category data for edit
@@ -149,9 +152,9 @@ const form = reactive({
 })
 
 const rules = {
-  code: [{ required: true, message: '请输入编码', trigger: 'blur' }],
-  name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
-  depreciation_method: [{ required: true, message: '请选择折旧方法', trigger: 'change' }]
+  code: [{ required: true, message: t('assets.category.enterCode'), trigger: 'blur' }],
+  name: [{ required: true, message: t('assets.category.enterName'), trigger: 'blur' }],
+  depreciation_method: [{ required: true, message: t('assets.category.selectMethod'), trigger: 'change' }]
 }
 
 const isEdit = computed(() => !!form.id)
@@ -207,14 +210,14 @@ const handleSubmit = async () => {
     const payload = { ...form }
     if (isEdit.value) {
       await categoryApi.update(form.id, payload)
-      ElMessage.success('更新成功')
+      ElMessage.success(t('common.messages.updateSuccess'))
     } else {
       await categoryApi.create(payload)
-      ElMessage.success('创建成功')
+      ElMessage.success(t('common.messages.createSuccess'))
     }
     emit('success')
   } catch (error: any) {
-    ElMessage.error(error.message || '操作失败')
+    ElMessage.error(error.message || t('common.messages.operationFailed'))
   } finally {
     submitting.value = false
   }

@@ -2,7 +2,7 @@
   <div class="supplier-form">
     <div class="page-header">
       <el-page-header
-        :title="isEdit ? '编辑供应商' : '新建供应商'"
+        :title="isEdit ? t('assets.supplier.edit') : t('assets.supplier.create')"
         @back="goBack"
       />
       <div class="header-actions">
@@ -11,7 +11,7 @@
           :loading="submitting"
           @click="handleSubmit"
         >
-          保存
+          {{ t('common.actions.save') }}
         </el-button>
       </div>
     </div>
@@ -29,23 +29,23 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item
-              label="供应商编码"
+              :label="t('assets.supplier.code')"
               prop="code"
             >
               <el-input
                 v-model="form.code"
-                placeholder="请输入供应商编码"
+                :placeholder="t('assets.supplier.enterCode')"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item
-              label="供应商名称"
+              :label="t('assets.supplier.name')"
               prop="name"
             >
               <el-input
                 v-model="form.name"
-                placeholder="请输入供应商名称"
+                :placeholder="t('assets.supplier.enterName')"
               />
             </el-form-item>
           </el-col>
@@ -53,23 +53,23 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item
-              label="联系人"
+              :label="t('assets.supplier.contact')"
               prop="contact_person"
             >
               <el-input
                 v-model="form.contactPerson"
-                placeholder="请输入联系人"
+                :placeholder="t('assets.supplier.enterContact')"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item
-              label="联系电话"
+              :label="t('assets.supplier.phone')"
               prop="contact_phone"
             >
               <el-input
                 v-model="form.contactPhone"
-                placeholder="请输入联系电话"
+                :placeholder="t('assets.supplier.enterPhone')"
               />
             </el-form-item>
           </el-col>
@@ -77,46 +77,46 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item
-              label="邮箱"
+              :label="t('assets.supplier.email')"
               prop="email"
             >
               <el-input
                 v-model="form.email"
-                placeholder="请输入邮箱"
+                :placeholder="t('common.placeholders.input', { field: t('assets.supplier.email') })"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item
-              label="状态"
+              :label="t('common.labels.status')"
               prop="isActive"
             >
               <el-switch
                 v-model="form.isActive"
-                active-text="启用"
-                inactive-text="停用"
+                :active-text="t('common.status.enabled')"
+                :inactive-text="t('common.status.inactive')"
               />
             </el-form-item>
           </el-col>
         </el-row>
         <el-form-item
-          label="地址"
+          :label="t('assets.supplier.address')"
           prop="address"
         >
           <el-input
             v-model="form.address"
-            placeholder="请输入地址"
+            :placeholder="t('common.placeholders.input', { field: t('assets.supplier.address') })"
           />
         </el-form-item>
         <el-form-item
-          label="备注"
+          :label="t('common.labels.remark')"
           prop="remark"
         >
           <el-input
             v-model="form.remark"
             type="textarea"
             :rows="3"
-            placeholder="请输入备注"
+            :placeholder="t('common.placeholders.input', { field: t('common.labels.remark') })"
           />
         </el-form-item>
       </el-form>
@@ -128,7 +128,10 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { createSupplier, updateSupplier, getSupplierDetail } from '@/api/assets/suppliers'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -149,12 +152,12 @@ const form = reactive({
 })
 
 const rules = {
-    code: [{ required: true, message: '请输入供应商编码', trigger: 'blur' }],
-    name: [{ required: true, message: '请输入供应商名称', trigger: 'blur' }],
-    contactPerson: [{ required: true, message: '请输入联系人', trigger: 'blur' }],
+    code: [{ required: true, message: t('assets.supplier.enterCode'), trigger: 'blur' }],
+    name: [{ required: true, message: t('assets.supplier.enterName'), trigger: 'blur' }],
+    contactPerson: [{ required: true, message: t('assets.supplier.enterContact'), trigger: 'blur' }],
     contactPhone: [
-        { required: true, message: '请输入联系电话', trigger: 'blur' },
-        { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+        { required: true, message: t('assets.supplier.enterPhone'), trigger: 'blur' },
+        { pattern: /^1[3-9]\d{9}$/, message: t('common.validation.phone'), trigger: 'blur' }
     ]
 }
 
@@ -178,16 +181,16 @@ const handleSubmit = async () => {
 
         if (isEdit.value) {
             await updateSupplier(String(route.params.id), payload)
-            ElMessage.success('更新成功')
+            ElMessage.success(t('common.messages.updateSuccess'))
         } else {
             await createSupplier(payload)
-            ElMessage.success('保存成功')
+            ElMessage.success(t('common.messages.saveSuccess'))
         }
         goBack()
     } catch (e: any) {
         if (e !== false) {
             console.error(e)
-            ElMessage.error(e.response?.data?.message || e.message || '操作失败')
+            ElMessage.error(e.response?.data?.message || e.message || t('common.messages.operationFailed'))
         }
     } finally {
         submitting.value = false
@@ -213,7 +216,7 @@ onMounted(async () => {
             form.isActive = data.is_active
         } catch (e) {
             console.error(e)
-            ElMessage.error('加载失败')
+            ElMessage.error(t('common.messages.loadFailed'))
             goBack()
         }
     }

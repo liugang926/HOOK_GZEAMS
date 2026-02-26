@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="visible"
-    title="编辑字段权限"
+    :title="$t('system.permission.field.dialog.title')"
     width="600px"
     @update:model-value="handleClose"
   >
@@ -10,7 +10,7 @@
       :model="formData"
       label-width="120px"
     >
-      <el-form-item label="角色">
+      <el-form-item :label="$t('system.permission.field.dialog.role')">
         <el-select
           v-model="formData.roleName"
           disabled
@@ -30,7 +30,7 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="业务对象">
+      <el-form-item :label="$t('system.permission.field.dialog.object')">
         <el-select
           v-model="formData.businessObjectName"
           disabled
@@ -46,38 +46,38 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="字段名称">
+      <el-form-item :label="$t('system.permission.field.dialog.field')">
         <el-input
           v-model="formData.fieldName"
           disabled
         />
       </el-form-item>
 
-      <el-form-item label="读取权限">
+      <el-form-item :label="$t('system.permission.field.dialog.read')">
         <el-switch
           v-model="formData.canRead"
-          active-text="允许"
-          inactive-text="禁止"
+          :active-text="$t('system.permission.field.status.allow')"
+          :inactive-text="$t('system.permission.field.status.deny')"
         />
       </el-form-item>
 
-      <el-form-item label="写入权限">
+      <el-form-item :label="$t('system.permission.field.dialog.write')">
         <el-switch
           v-model="formData.canWrite"
-          active-text="允许"
-          inactive-text="禁止"
+          :active-text="$t('system.permission.field.status.allow')"
+          :inactive-text="$t('system.permission.field.status.deny')"
         />
       </el-form-item>
 
-      <el-form-item label="可见性">
+      <el-form-item :label="$t('system.permission.field.dialog.visibility')">
         <el-switch
           v-model="formData.isVisible"
-          active-text="显示"
-          inactive-text="隐藏"
+          :active-text="$t('system.permission.field.status.show')"
+          :inactive-text="$t('system.permission.field.status.hide')"
         />
       </el-form-item>
 
-      <el-form-item label="说明">
+      <el-form-item :label="$t('system.permission.field.dialog.description')">
         <el-input
           v-model="formData.description"
           type="textarea"
@@ -88,14 +88,14 @@
 
     <template #footer>
       <el-button @click="handleClose">
-        取消
+        {{ $t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="submitting"
         @click="handleSubmit"
       >
-        保存
+        {{ $t('common.actions.save') }}
       </el-button>
     </template>
   </el-dialog>
@@ -105,6 +105,9 @@
 import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
   visible: boolean
@@ -147,11 +150,11 @@ const handleSubmit = async () => {
   try {
     // TODO: Replace with actual API call
     // await fieldPermissionApi.update(props.data.id, formData.value)
-    ElMessage.success('保存成功')
+    ElMessage.success(t('system.permission.field.messages.saveSuccess'))
     emit('success')
     handleClose()
   } catch (error) {
-    ElMessage.error('保存失败')
+    ElMessage.error(t('system.permission.field.messages.saveFailed'))
   } finally {
     submitting.value = false
   }

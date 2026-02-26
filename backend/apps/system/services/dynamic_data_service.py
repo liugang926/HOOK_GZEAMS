@@ -81,8 +81,10 @@ class DynamicDataService(BaseCRUDService):
         if not self.business_object:
             raise ValueError(f"Business object '{self.bo_code}' does not exist.")
 
-        # Build base queryset
-        qs = DynamicData.objects.filter(
+        # Build base queryset with optimizations
+        qs = DynamicData.objects.select_related(
+            'business_object', 'created_by'
+        ).filter(
             business_object=self.business_object,
             is_deleted=False
         )
@@ -126,9 +128,12 @@ class DynamicDataService(BaseCRUDService):
         # Get total count before pagination
         total = qs.count()
 
-        # Apply pagination
+        # Apply pagination with optimized field selection
         start = (page - 1) * page_size
-        items = qs[start:start + page_size]
+        items = qs.only(
+            'id', 'data_no', 'status', 'dynamic_fields', 
+            'created_at', 'updated_at', 'business_object_id', 'created_by_id'
+        )[start:start + page_size]
 
         # Serialize results
         return {

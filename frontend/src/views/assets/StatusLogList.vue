@@ -1,219 +1,46 @@
 <template>
   <div class="status-log-list">
-    <!-- Header -->
-    <div class="page-header">
-      <div class="header-title">
-        <span class="title-text">资产状态日志</span>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <el-card
-      class="filter-card"
-      shadow="never"
+    <BaseListPage
+      ref="listRef"
+      :title="t('assets.statusLog.title')"
+      :search-fields="searchFields"
+      :table-columns="columns"
+      :api="fetchList"
     >
-      <el-form
-        :model="filterForm"
-        inline
-      >
-        <el-form-item label="资产">
-          <el-select
-            v-model="filterForm.assetId"
-            filterable
-            remote
-            clearable
-            placeholder="请选择资产"
-            :remote-method="searchAssets"
-            :loading="assetSearchLoading"
-            @change="handleSearch"
-          >
-            <el-option
-              v-for="asset in assetOptions"
-              :key="asset.id"
-              :label="`${asset.code} - ${asset.name}`"
-              :value="asset.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态变更">
-          <el-select
-            v-model="filterForm.changeType"
-            clearable
-            placeholder="全部类型"
-            @change="handleSearch"
-          >
-            <el-option
-              label="入库"
-              value="inbound"
-            />
-            <el-option
-              label="领用"
-              value="pickup"
-            />
-            <el-option
-              label="调拨"
-              value="transfer"
-            />
-            <el-option
-              label="退库"
-              value="return"
-            />
-            <el-option
-              label="借出"
-              value="loan"
-            />
-            <el-option
-              label="归还"
-              value="loan_return"
-            />
-            <el-option
-              label="报废"
-              value="disposal"
-            />
-            <el-option
-              label="盘点"
-              value="inventory"
-            />
-            <el-option
-              label="维修"
-              value="maintenance"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="日期范围">
-          <el-date-picker
-            v-model="filterForm.dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            value-format="YYYY-MM-DD"
-            @change="handleSearch"
+      <template #search-assetId="{ form }">
+        <el-select
+          v-model="form.assetId"
+          filterable
+          remote
+          clearable
+          :placeholder="t('assets.statusLog.selectAsset')"
+          :remote-method="searchAssets"
+          :loading="assetSearchLoading"
+        >
+          <el-option
+            v-for="asset in assetOptions"
+            :key="asset.id"
+            :label="`${asset.code} - ${asset.name}`"
+            :value="asset.id"
           />
-        </el-form-item>
-        <el-form-item label="搜索">
-          <el-input
-            v-model="filterForm.search"
-            placeholder="资产编码/名称"
-            clearable
-            @keyup.enter="handleSearch"
-          >
-            <template #append>
-              <el-button
-                :icon="Search"
-                @click="handleSearch"
-              />
-            </template>
-          </el-input>
-        </el-form-item>
-      </el-form>
-    </el-card>
+        </el-select>
+      </template>
 
-    <!-- Table -->
-    <el-card shadow="never">
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        style="width: 100%"
-      >
-        <el-table-column
-          prop="asset.code"
-          label="资产编码"
-          width="150"
-        />
-        <el-table-column
-          prop="asset.name"
-          label="资产名称"
-          width="200"
-        />
-        <el-table-column
-          label="状态变更"
-          width="100"
+      <template #actions="{ row }">
+        <el-button
+          link
+          type="primary"
+          @click.stop="handleView(row)"
         >
-          <template #default="{ row }">
-            <el-tag :type="getChangeTypeColor(row.changeType)">
-              {{ getChangeTypeLabel(row.changeType) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="fromStatus"
-          label="变更前状态"
-          width="120"
-        >
-          <template #default="{ row }">
-            {{ row.fromStatus ? getStatusLabel(row.fromStatus) : '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="toStatus"
-          label="变更后状态"
-          width="120"
-        >
-          <template #default="{ row }">
-            {{ row.toStatus ? getStatusLabel(row.toStatus) : '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="operator.realName"
-          label="操作人"
-          width="100"
-        />
-        <el-table-column
-          prop="operationTime"
-          label="操作时间"
-          width="160"
-        />
-        <el-table-column
-          prop="remark"
-          label="备注"
-          min-width="200"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="relatedBusinessType"
-          label="关联业务"
-          width="120"
-        >
-          <template #default="{ row }">
-            {{ row.relatedBusinessType ? getBusinessTypeLabel(row.relatedBusinessType) : '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="操作"
-          width="100"
-          fixed="right"
-        >
-          <template #default="{ row }">
-            <el-button
-              link
-              type="primary"
-              @click="handleView(row)"
-            >
-              详情
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- Pagination -->
-      <div class="pagination-footer">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.page_size"
-          :total="pagination.total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="fetchData"
-          @current-change="fetchData"
-        />
-      </div>
-    </el-card>
+          {{ t('common.actions.detail') }}
+        </el-button>
+      </template>
+    </BaseListPage>
 
     <!-- Detail Dialog -->
     <el-dialog
       v-model="detailDialogVisible"
-      title="状态变更详情"
+      :title="$t('assets.statusLog.detailTitle')"
       width="700px"
     >
       <el-descriptions
@@ -221,46 +48,46 @@
         :column="2"
         border
       >
-        <el-descriptions-item label="资产编码">
+        <el-descriptions-item :label="$t('assets.statusLog.assetCode')">
           {{ currentLog.asset?.code }}
         </el-descriptions-item>
-        <el-descriptions-item label="资产名称">
+        <el-descriptions-item :label="$t('assets.statusLog.assetName')">
           {{ currentLog.asset?.name }}
         </el-descriptions-item>
-        <el-descriptions-item label="变更类型">
+        <el-descriptions-item :label="$t('assets.statusLog.statusChange')">
           <el-tag :type="getChangeTypeColor(currentLog.changeType)">
             {{ getChangeTypeLabel(currentLog.changeType) }}
           </el-tag>
         </el-descriptions-item>
-        <el-descriptions-item label="操作时间">
+        <el-descriptions-item :label="$t('assets.statusLog.operationTime')">
           {{ currentLog.operationTime }}
         </el-descriptions-item>
-        <el-descriptions-item label="变更前状态">
+        <el-descriptions-item :label="$t('assets.statusLog.previousStatus')">
           {{ currentLog.fromStatus ? getStatusLabel(currentLog.fromStatus) : '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="变更后状态">
+        <el-descriptions-item :label="$t('assets.statusLog.newStatus')">
           {{ currentLog.toStatus ? getStatusLabel(currentLog.toStatus) : '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="操作人">
+        <el-descriptions-item :label="$t('assets.statusLog.operator')">
           {{ currentLog.operator?.realName }}
         </el-descriptions-item>
-        <el-descriptions-item label="关联业务">
+        <el-descriptions-item :label="$t('assets.statusLog.relatedBusiness')">
           {{ currentLog.relatedBusinessType ? getBusinessTypeLabel(currentLog.relatedBusinessType) : '-' }}
         </el-descriptions-item>
         <el-descriptions-item
-          label="关联单号"
+          :label="$t('assets.statusLog.relatedNo')"
           :span="2"
         >
           {{ currentLog.relatedBusinessNo || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="IP地址">
+        <el-descriptions-item :label="$t('assets.statusLog.ipAddress')">
           {{ currentLog.ipAddress || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item label="用户代理">
+        <el-descriptions-item :label="$t('assets.statusLog.userAgent')">
           {{ currentLog.userAgent || '-' }}
         </el-descriptions-item>
         <el-descriptions-item
-          label="备注"
+          :label="$t('assets.statusLog.remark')"
           :span="2"
         >
           {{ currentLog.remark || '-' }}
@@ -268,7 +95,7 @@
       </el-descriptions>
       <template #footer>
         <el-button @click="detailDialogVisible = false">
-          关闭
+          {{ $t('common.actions.close') }}
         </el-button>
       </template>
     </el-dialog>
@@ -276,33 +103,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { Search } from '@element-plus/icons-vue'
+import { ref, computed } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+import BaseListPage from '@/components/common/BaseListPage.vue'
+import type { TableColumn, SearchField } from '@/types/common'
 import { getStatusLogList } from '@/api/assets/statusLogs'
 import { getAssets } from '@/api/assets'
 
-const loading = ref(false)
+const { t } = useI18n()
+
+const listRef = ref()
 const assetSearchLoading = ref(false)
-const tableData = ref([])
-const assetOptions = ref([])
+const assetOptions = ref<any[]>([])
 const detailDialogVisible = ref(false)
 const currentLog = ref<any>(null)
 
-const filterForm = reactive({
-  assetId: '',
-  changeType: '',
-  dateRange: null,
-  search: ''
-})
-
-const pagination = reactive({
-  page: 1,
-  page_size: 20,
-  total: 0
-})
-
 const getChangeTypeColor = (type: string) => {
-  const map: any = {
+  const map: Record<string, string> = {
     inbound: 'success',
     pickup: 'warning',
     transfer: 'primary',
@@ -317,122 +135,166 @@ const getChangeTypeColor = (type: string) => {
 }
 
 const getChangeTypeLabel = (type: string) => {
-  const map: any = {
-    inbound: '入库',
-    pickup: '领用',
-    transfer: '调拨',
-    return: '退库',
-    loan: '借出',
-    loan_return: '归还',
-    disposal: '报废',
-    inventory: '盘点',
-    maintenance: '维修'
+  const map: Record<string, string> = {
+    inbound: t('assets.statusLog.changeTypes.inbound'),
+    pickup: t('assets.statusLog.changeTypes.pickup'),
+    transfer: t('assets.statusLog.changeTypes.transfer'),
+    return: t('assets.statusLog.changeTypes.return'),
+    loan: t('assets.statusLog.changeTypes.loan'),
+    loan_return: t('assets.statusLog.changeTypes.loanReturn'),
+    disposal: t('assets.statusLog.changeTypes.disposal'),
+    inventory: t('assets.statusLog.changeTypes.inventory'),
+    maintenance: t('assets.statusLog.changeTypes.maintenance')
   }
   return map[type] || type
 }
 
 const getStatusLabel = (status: string) => {
-  const map: any = {
-    idle: '空闲',
-    in_use: '在用',
-    pickup_pending: '待领用',
-    transfer_pending: '待调拨',
-    return_pending: '待退库',
-    on_loan: '借出',
-    maintenance: '维修中',
-    disposal: '报废',
-    lost: '丢失'
+  const map: Record<string, string> = {
+    idle: t('assets.statusLog.assetStatus.idle'),
+    in_use: t('assets.statusLog.assetStatus.inUse'),
+    pickup_pending: t('assets.statusLog.assetStatus.pickupPending'),
+    transfer_pending: t('assets.statusLog.assetStatus.transferPending'),
+    return_pending: t('assets.statusLog.assetStatus.returnPending'),
+    on_loan: t('assets.statusLog.assetStatus.onLoan'),
+    maintenance: t('assets.statusLog.assetStatus.maintenance'),
+    disposal: t('assets.statusLog.assetStatus.disposal'),
+    lost: t('assets.statusLog.assetStatus.lost')
   }
   return map[status] || status
 }
 
 const getBusinessTypeLabel = (type: string) => {
-  const map: any = {
-    pickup: '领用单',
-    transfer: '调拨单',
-    return: '退库单',
-    loan: '借出单',
-    inventory: '盘点任务',
-    maintenance: '维修单'
+  const map: Record<string, string> = {
+    pickup: t('assets.statusLog.businessTypes.pickup'),
+    transfer: t('assets.statusLog.businessTypes.transfer'),
+    return: t('assets.statusLog.businessTypes.return'),
+    loan: t('assets.statusLog.businessTypes.loan'),
+    inventory: t('assets.statusLog.businessTypes.inventory'),
+    maintenance: t('assets.statusLog.businessTypes.maintenance')
   }
   return map[type] || type
 }
 
 const searchAssets = async (query: string) => {
-  if (!query) return
+  if (!query) {
+    assetOptions.value = []
+    return
+  }
   assetSearchLoading.value = true
   try {
-    const res = await getAssets({ search: query, page_size: 20 })
+    const res = await getAssets({ search: query, page_size: 20 }) as any
     assetOptions.value = res.results || res.items || []
   } finally {
     assetSearchLoading.value = false
   }
 }
 
-const fetchData = async () => {
-  loading.value = true
-  try {
-    const params: any = {
-      page: pagination.page,
-      page_size: pagination.page_size
-    }
-    if (filterForm.assetId) {
-      params.asset = filterForm.assetId
-    }
-    if (filterForm.changeType) {
-      params.changeType = filterForm.changeType
-    }
-    if (filterForm.dateRange && filterForm.dateRange.length === 2) {
-      params.operationTimeFrom = filterForm.dateRange[0]
-      params.operationTimeTo = filterForm.dateRange[1]
-    }
-    if (filterForm.search) {
-      params.search = filterForm.search
-    }
-
-    const res = await getStatusLogList(params)
-    tableData.value = res.results || res.items || []
-    pagination.total = res.count || res.total || 0
-  } finally {
-    loading.value = false
+const searchFields = computed<SearchField[]>(() => [
+  {
+    prop: 'search',
+    label: t('assets.search.keyword'),
+    type: 'text',
+    placeholder: t('assets.search.keywordPlaceholder')
+  },
+  {
+    prop: 'assetId',
+    label: t('assets.fields.assetName'),
+    type: 'slot'
+  },
+  {
+    prop: 'changeType',
+    label: t('assets.statusLog.statusChange'),
+    type: 'select',
+    placeholder: t('assets.statusLog.allTypes'),
+    options: [
+      { label: t('assets.statusLog.changeTypes.inbound'), value: 'inbound' },
+      { label: t('assets.statusLog.changeTypes.pickup'), value: 'pickup' },
+      { label: t('assets.statusLog.changeTypes.transfer'), value: 'transfer' },
+      { label: t('assets.statusLog.changeTypes.return'), value: 'return' },
+      { label: t('assets.statusLog.changeTypes.loan'), value: 'loan' },
+      { label: t('assets.statusLog.changeTypes.loanReturn'), value: 'loan_return' },
+      { label: t('assets.statusLog.changeTypes.disposal'), value: 'disposal' },
+      { label: t('assets.statusLog.changeTypes.inventory'), value: 'inventory' },
+      { label: t('assets.statusLog.changeTypes.maintenance'), value: 'maintenance' }
+    ]
+  },
+  {
+    prop: 'operationTime',
+    label: t('assets.statusLog.dateRange'),
+    type: 'dateRange'
   }
-}
+])
 
-const handleSearch = () => {
-  pagination.page = 1
-  fetchData()
+const columns = computed<TableColumn[]>(() => [
+  { prop: 'asset.code', label: t('assets.statusLog.assetCode'), width: 140 },
+  { prop: 'asset.name', label: t('assets.statusLog.assetName'), minWidth: 160 },
+  {
+    prop: 'changeType',
+    label: t('assets.statusLog.statusChange'),
+    width: 120,
+    align: 'center',
+    tagType: (row: any) => getChangeTypeColor(row.changeType),
+    format: (_v: any, row: any) => getChangeTypeLabel(row.changeType)
+  },
+  {
+    prop: 'fromStatus',
+    label: t('assets.statusLog.previousStatus'),
+    width: 120,
+    format: (_v: any, row: any) => (row.fromStatus ? getStatusLabel(row.fromStatus) : '-')
+  },
+  {
+    prop: 'toStatus',
+    label: t('assets.statusLog.newStatus'),
+    width: 120,
+    format: (_v: any, row: any) => (row.toStatus ? getStatusLabel(row.toStatus) : '-')
+  },
+  { prop: 'operator.realName', label: t('assets.statusLog.operator'), width: 120 },
+  { prop: 'operationTime', label: t('assets.statusLog.operationTime'), width: 160 },
+  {
+    prop: 'relatedBusinessType',
+    label: t('assets.statusLog.relatedBusiness'),
+    width: 160,
+    format: (_v: any, row: any) => (row.relatedBusinessType ? getBusinessTypeLabel(row.relatedBusinessType) : '-')
+  },
+  { prop: 'remark', label: t('assets.statusLog.remark'), minWidth: 200 },
+  { prop: 'actions', label: t('common.table.operations'), width: 120, fixed: 'right', slot: true }
+])
+
+const fetchList = async (params: any) => {
+  try {
+    const nextParams = { ...params, page_size: params.pageSize }
+
+    if (nextParams.assetId) {
+      nextParams.asset = nextParams.assetId
+      delete nextParams.assetId
+    }
+
+    if (Array.isArray(nextParams.operationTime) && nextParams.operationTime.length === 2) {
+      nextParams.operationTimeFrom = nextParams.operationTime[0]
+      nextParams.operationTimeTo = nextParams.operationTime[1]
+      delete nextParams.operationTime
+    }
+
+    const res = await getStatusLogList(nextParams) as any
+    return {
+      results: res.results || res.items || [],
+      count: res.count || res.total || 0
+    }
+  } catch (error) {
+    ElMessage.error(t('common.messages.loadFailed'))
+    return { results: [], count: 0 }
+  }
 }
 
 const handleView = (row: any) => {
   currentLog.value = row
   detailDialogVisible.value = true
 }
-
-onMounted(() => {
-  fetchData()
-})
 </script>
 
 <style scoped>
 .status-log-list {
-    padding: 20px;
-}
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-.title-text {
-    font-size: 20px;
-    font-weight: 500;
-}
-.filter-card {
-    margin-bottom: 20px;
-}
-.pagination-footer {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end;
+  padding: 20px;
 }
 </style>

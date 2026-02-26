@@ -9,111 +9,111 @@ import type { PaginatedResponse } from '@/types/api'
 // Lease Contracts
 export const leaseContractApi = {
   list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/leasing/lease-contracts/', { params })
+    return request.get('/system/objects/LeasingContract/', { params })
   },
 
   detail(id: string): Promise<any> {
-    return request.get(`/leasing/lease-contracts/${id}/`)
+    return request.get(`/system/objects/LeasingContract/${id}/`)
   },
 
   create(data: any): Promise<any> {
-    return request.post('/leasing/lease-contracts/', data)
+    return request.post('/system/objects/LeasingContract/', data)
   },
 
   update(id: string, data: any): Promise<any> {
-    return request.put(`/leasing/lease-contracts/${id}/`, data)
+    return request.put(`/system/objects/LeasingContract/${id}/`, data)
   },
 
   delete(id: string): Promise<void> {
-    return request.delete(`/leasing/lease-contracts/${id}/`)
+    return request.delete(`/system/objects/LeasingContract/${id}/`)
   },
 
   activate(id: string): Promise<void> {
-    return request.post(`/leasing/lease-contracts/${id}/activate/`)
+    return request.post(`/system/objects/LeasingContract/${id}/activate/`)
   },
 
   terminate(id: string, data: any): Promise<void> {
-    return request.post(`/leasing/lease-contracts/${id}/terminate/`, data)
+    return request.post(`/system/objects/LeasingContract/${id}/terminate/`, data)
   }
 }
 
 // Lease Items
 export const leaseItemApi = {
   list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/leasing/lease-items/', { params })
+    return request.get('/system/objects/LeaseItem/', { params })
   },
 
   detail(id: string): Promise<any> {
-    return request.get(`/leasing/lease-items/${id}/`)
+    return request.get(`/system/objects/LeaseItem/${id}/`)
   },
 
   create(data: any): Promise<any> {
-    return request.post('/leasing/lease-items/', data)
+    return request.post('/system/objects/LeaseItem/', data)
   },
 
   update(id: string, data: any): Promise<any> {
-    return request.put(`/leasing/lease-items/${id}/`, data)
+    return request.put(`/system/objects/LeaseItem/${id}/`, data)
   },
 
   delete(id: string): Promise<void> {
-    return request.delete(`/leasing/lease-items/${id}/`)
+    return request.delete(`/system/objects/LeaseItem/${id}/`)
   }
 }
 
 // Rent Payments
 export const rentPaymentApi = {
   list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/leasing/rent-payments/', { params })
+    return request.get('/system/objects/RentPayment/', { params })
   },
 
   detail(id: string): Promise<any> {
-    return request.get(`/leasing/rent-payments/${id}/`)
+    return request.get(`/system/objects/RentPayment/${id}/`)
   },
 
   create(data: any): Promise<any> {
-    return request.post('/leasing/rent-payments/', data)
+    return request.post('/system/objects/RentPayment/', data)
   },
 
   confirm(id: string, data: any): Promise<void> {
-    return request.post(`/leasing/rent-payments/${id}/confirm/`, data)
+    return request.post(`/system/objects/RentPayment/${id}/record_payment/`, data)
   }
 }
 
 // Lease Returns
 export const leaseReturnApi = {
   list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/leasing/lease-returns/', { params })
+    return request.get('/system/objects/LeaseReturn/', { params })
   },
 
   detail(id: string): Promise<any> {
-    return request.get(`/leasing/lease-returns/${id}/`)
+    return request.get(`/system/objects/LeaseReturn/${id}/`)
   },
 
   create(data: any): Promise<any> {
-    return request.post('/leasing/lease-returns/', data)
+    return request.post('/system/objects/LeaseReturn/', data)
   },
 
   confirm(id: string, data: any): Promise<void> {
-    return request.post(`/leasing/lease-returns/${id}/confirm/`, data)
+    return request.patch(`/system/objects/LeaseReturn/${id}/`, data)
   }
 }
 
 // Lease Extensions
 export const leaseExtensionApi = {
   list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/leasing/lease-extensions/', { params })
+    return request.get('/system/objects/LeaseExtension/', { params })
   },
 
   detail(id: string): Promise<any> {
-    return request.get(`/leasing/lease-extensions/${id}/`)
+    return request.get(`/system/objects/LeaseExtension/${id}/`)
   },
 
   create(data: any): Promise<any> {
-    return request.post('/leasing/lease-extensions/', data)
+    return request.post('/system/objects/LeaseExtension/', data)
   },
 
   approve(id: string): Promise<void> {
-    return request.post(`/leasing/lease-extensions/${id}/approve/`)
+    return request.post(`/system/objects/LeaseExtension/${id}/approve/`)
   }
 }
 

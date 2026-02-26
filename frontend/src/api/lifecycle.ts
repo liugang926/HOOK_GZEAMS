@@ -1,154 +1,213 @@
-import request from '@/utils/request'
-import type { PaginatedResponse } from '@/types/api'
-
 /**
  * Lifecycle Management API Client
+ *
+ * Now using unified Dynamic Object Routing for all lifecycle operations.
  * Handles asset lifecycle operations: purchase requests, receipts, maintenance, and disposal
  */
 
-// Purchase Requests
+import request from '@/utils/request'
+import type { PaginatedResponse } from '@/types/api'
+import {
+  purchaseRequestApi,
+  assetReceiptApi,
+  maintenanceApi,
+  maintenancePlanApi,
+  disposalRequestApi
+} from '@/api/dynamic'
+
+// Purchase Requests (using dynamic API)
 export const purchaseRequestApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/lifecycle/purchase-requests/', { params })
+  async list(params?: any): Promise<PaginatedResponse<any>> {
+    const res = await purchaseRequestApi.list(params)
+    return {
+      items: res.data?.results || [],
+      total: res.data?.count || 0,
+      ...params
+    }
   },
 
-  detail(id: string): Promise<any> {
-    return request.get(`/lifecycle/purchase-requests/${id}/`)
+  async detail(id: string): Promise<any> {
+    const res = await purchaseRequestApi.get(id)
+    return res.data
   },
 
-  create(data: any): Promise<any> {
-    return request.post('/lifecycle/purchase-requests/', data)
+  async create(data: any): Promise<any> {
+    const res = await purchaseRequestApi.create(data)
+    return res.data
   },
 
-  update(id: string, data: any): Promise<any> {
-    return request.put(`/lifecycle/purchase-requests/${id}/`, data)
+  async update(id: string, data: any): Promise<any> {
+    const res = await purchaseRequestApi.update(id, data)
+    return res.data
   },
 
+  /**
+   * Submit for approval (custom action endpoint)
+   */
   submit(id: string): Promise<void> {
-    return request.post(`/lifecycle/purchase-requests/${id}/submit/`)
+    return request.post(`/system/objects/PurchaseRequest/${id}/submit/`)
   },
 
+  /**
+   * Approve request (custom action endpoint)
+   */
   approve(id: string, data: any): Promise<void> {
-    return request.post(`/lifecycle/purchase-requests/${id}/approve/`, data)
+    return request.post(`/system/objects/PurchaseRequest/${id}/approve/`, data)
   },
 
+  /**
+   * Reject request (custom action endpoint)
+   */
   reject(id: string, data: any): Promise<void> {
-    return request.post(`/lifecycle/purchase-requests/${id}/reject/`, data)
+    return request.post(`/system/objects/PurchaseRequest/${id}/reject/`, data)
   }
 }
 
-// Asset Receipts
+// Asset Receipts (using dynamic API)
 export const assetReceiptApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/lifecycle/asset-receipts/', { params })
+  async list(params?: any): Promise<PaginatedResponse<any>> {
+    const res = await assetReceiptApi.list(params)
+    return {
+      items: res.data?.results || [],
+      total: res.data?.count || 0
+    }
   },
 
-  detail(id: string): Promise<any> {
-    return request.get(`/lifecycle/asset-receipts/${id}/`)
+  async detail(id: string): Promise<any> {
+    const res = await assetReceiptApi.get(id)
+    return res.data
   },
 
-  create(data: any): Promise<any> {
-    return request.post('/lifecycle/asset-receipts/', data)
+  async create(data: any): Promise<any> {
+    const res = await assetReceiptApi.create(data)
+    return res.data
   },
 
+  /**
+   * Confirm receipt (custom action endpoint)
+   */
   confirm(id: string, data: any): Promise<void> {
-    return request.post(`/lifecycle/asset-receipts/${id}/confirm/`, data)
+    return request.post(`/system/objects/AssetReceipt/${id}/confirm/`, data)
   }
 }
 
-// Maintenance Records
+// Maintenance Records (using dynamic API)
 export const maintenanceApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/lifecycle/maintenance/', { params })
+  async list(params?: any): Promise<PaginatedResponse<any>> {
+    const res = await maintenanceApi.list(params)
+    return {
+      items: res.data?.results || [],
+      total: res.data?.count || 0
+    }
   },
 
-  detail(id: string): Promise<any> {
-    return request.get(`/lifecycle/maintenance/${id}/`)
+  async detail(id: string): Promise<any> {
+    const res = await maintenanceApi.get(id)
+    return res.data
   },
 
-  create(data: any): Promise<any> {
-    return request.post('/lifecycle/maintenance/', data)
+  async create(data: any): Promise<any> {
+    const res = await maintenanceApi.create(data)
+    return res.data
   },
 
-  update(id: string, data: any): Promise<any> {
-    return request.put(`/lifecycle/maintenance/${id}/`, data)
+  async update(id: string, data: any): Promise<any> {
+    const res = await maintenanceApi.update(id, data)
+    return res.data
   },
 
+  /**
+   * Complete maintenance (custom action endpoint)
+   */
   complete(id: string, data: any): Promise<void> {
-    return request.post(`/lifecycle/maintenance/${id}/complete/`, data)
+    return request.post(`/system/objects/Maintenance/${id}/complete/`, data)
   }
 }
 
-// Maintenance Plans
+// Maintenance Plans (using dynamic API)
 export const maintenancePlanApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/lifecycle/maintenance-plans/', { params })
+  async list(params?: any): Promise<PaginatedResponse<any>> {
+    const res = await maintenancePlanApi.list(params)
+    return {
+      items: res.data?.results || [],
+      total: res.data?.count || 0
+    }
   },
 
-  detail(id: string): Promise<any> {
-    return request.get(`/lifecycle/maintenance-plans/${id}/`)
+  async detail(id: string): Promise<any> {
+    const res = await maintenancePlanApi.get(id)
+    return res.data
   },
 
-  create(data: any): Promise<any> {
-    return request.post('/lifecycle/maintenance-plans/', data)
+  async create(data: any): Promise<any> {
+    const res = await maintenancePlanApi.create(data)
+    return res.data
   },
 
-  update(id: string, data: any): Promise<any> {
-    return request.put(`/lifecycle/maintenance-plans/${id}/`, data)
+  async update(id: string, data: any): Promise<any> {
+    const res = await maintenancePlanApi.update(id, data)
+    return res.data
   },
 
+  /**
+   * Activate maintenance plan (custom action endpoint)
+   */
   activate(id: string): Promise<void> {
-    return request.post(`/lifecycle/maintenance-plans/${id}/activate/`)
+    return request.post(`/system/objects/MaintenancePlan/${id}/activate/`)
   },
 
+  /**
+   * Deactivate maintenance plan (custom action endpoint)
+   */
   deactivate(id: string): Promise<void> {
-    return request.post(`/lifecycle/maintenance-plans/${id}/deactivate/`)
+    return request.post(`/system/objects/MaintenancePlan/${id}/deactivate/`)
   }
 }
 
-// Maintenance Tasks
-export const maintenanceTaskApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/lifecycle/maintenance-tasks/', { params })
-  },
-
-  detail(id: string): Promise<any> {
-    return request.get(`/lifecycle/maintenance-tasks/${id}/`)
-  },
-
-  complete(id: string, data: any): Promise<void> {
-    return request.post(`/lifecycle/maintenance-tasks/${id}/complete/`, data)
-  }
-}
-
-// Disposal Requests
+// Disposal Requests (using dynamic API)
 export const disposalRequestApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
-    return request.get('/lifecycle/disposal-requests/', { params })
+  async list(params?: any): Promise<PaginatedResponse<any>> {
+    const res = await disposalRequestApi.list(params)
+    return {
+      items: res.data?.results || [],
+      total: res.data?.count || 0
+    }
   },
 
-  detail(id: string): Promise<any> {
-    return request.get(`/lifecycle/disposal-requests/${id}/`)
+  async detail(id: string): Promise<any> {
+    const res = await disposalRequestApi.get(id)
+    return res.data
   },
 
-  create(data: any): Promise<any> {
-    return request.post('/lifecycle/disposal-requests/', data)
+  async create(data: any): Promise<any> {
+    const res = await disposalRequestApi.create(data)
+    return res.data
   },
 
-  update(id: string, data: any): Promise<any> {
-    return request.put(`/lifecycle/disposal-requests/${id}/`, data)
+  async update(id: string, data: any): Promise<any> {
+    const res = await disposalRequestApi.update(id, data)
+    return res.data
   },
 
+  /**
+   * Submit for approval (custom action endpoint)
+   */
   submit(id: string): Promise<void> {
-    return request.post(`/lifecycle/disposal-requests/${id}/submit/`)
+    return request.post(`/system/objects/DisposalRequest/${id}/submit/`)
   },
 
+  /**
+   * Approve disposal (custom action endpoint)
+   */
   approve(id: string, data: any): Promise<void> {
-    return request.post(`/lifecycle/disposal-requests/${id}/approve/`, data)
+    return request.post(`/system/objects/DisposalRequest/${id}/approve/`, data)
   },
 
+  /**
+   * Confirm disposal (custom action endpoint)
+   */
   confirm(id: string, data: any): Promise<void> {
-    return request.post(`/lifecycle/disposal-requests/${id}/confirm/`, data)
+    return request.post(`/system/objects/DisposalRequest/${id}/confirm/`, data)
   }
 }
 
@@ -177,10 +236,6 @@ export const getMaintenancePlanDetail = maintenancePlanApi.detail
 export const createMaintenancePlan = maintenancePlanApi.create
 export const updateMaintenancePlan = maintenancePlanApi.update
 export const activateMaintenancePlan = maintenancePlanApi.activate
-
-export const getMaintenanceTaskList = maintenanceTaskApi.list
-export const getMaintenanceTaskDetail = maintenanceTaskApi.detail
-export const completeMaintenanceTask = maintenanceTaskApi.complete
 
 export const getDisposalRequestList = disposalRequestApi.list
 export const getDisposalRequestDetail = disposalRequestApi.detail

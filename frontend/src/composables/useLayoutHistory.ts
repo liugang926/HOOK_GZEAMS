@@ -74,10 +74,11 @@ export function useLayoutHistory(
 
     // Enforce max history length
     if (history.value.length > maxHistory) {
-      history.value.shift()
-    } else {
-      currentIndex.value++
+      history.value = history.value.slice(history.value.length - maxHistory)
     }
+
+    // Always point to the latest entry after push.
+    currentIndex.value = Math.max(0, history.value.length - 1)
   }
 
   function undo(): Record<string, unknown> | null {

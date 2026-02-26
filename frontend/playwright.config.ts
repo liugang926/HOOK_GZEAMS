@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const baseUrl = process.env.BASE_URL || 'http://localhost:5173'
+
 /**
  * Playwright E2E Test Configuration for NEWSEAMS
  *
@@ -45,7 +47,11 @@ export default defineConfig({
   // Shared settings for all tests
   use: {
     // Base URL for tests - uses dev server by default
-    baseURL: process.env.BASE_URL || 'http://localhost:5173',
+    baseURL: baseUrl,
+    // API base URL for backend requests
+    extraHTTPHeaders: {
+      'X-API-Base-URL': process.env.API_BASE_URL || 'http://localhost:8000/api'
+    },
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -97,8 +103,9 @@ export default defineConfig({
   // Otherwise assumes server is already running
   ...(process.env.PLAYWRIGHT_WEB_SERVER === '1' ? {
     webServer: {
-      command: 'npm run dev',
-      url: 'http://localhost:5173',
+      // Vite config pins port 5173; use strictPort to fail fast rather than silently switching ports.
+      command: 'npm run dev -- --strictPort',
+      url: baseUrl,
       reuseExistingServer: true,
       timeout: 120 * 1000,
     }

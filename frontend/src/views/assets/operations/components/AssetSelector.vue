@@ -168,7 +168,7 @@ const loadCategories = async () => {
   }
 }
 
-// Reuse buildTree from AssetFormDialog (simpler version here)
+// Build tree for categories (simple version)
 const buildTree = (items: any[], parentId: string | null = null): any[] => {
   return items
     .filter(item => item.parentId === parentId)

@@ -5,13 +5,20 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
-# Override database to use SQLite for local development
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Detect if running in Docker environment
+# Use PostgreSQL if DATABASE_URL is set (Docker), otherwise use SQLite (local dev)
+if os.getenv('DATABASE_URL'):
+    # Running in Docker - use PostgreSQL from DATABASE_URL
+    # Don't override DATABASES from base.py which uses dj_database_url
+    pass
+else:
+    # Local development without Docker - use SQLite
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
 
 # Show emails in console
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

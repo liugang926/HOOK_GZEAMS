@@ -2,7 +2,7 @@
   <div class="workflow-edit">
     <div class="page-header">
       <el-page-header
-        :title="isEdit ? '编辑工作流' : '创建工作流'"
+        :title="isEdit ? $t('system.workflow.editTitle') : $t('system.workflow.createTitle')"
         @back="$router.back()"
       />
     </div>
@@ -12,24 +12,24 @@
         inline
         :model="form"
       >
-        <el-form-item label="名称">
+        <el-form-item :label="$t('system.workflow.form.name')">
           <el-input v-model="form.name" />
         </el-form-item>
-        <el-form-item label="编码">
+        <el-form-item :label="$t('system.workflow.form.code')">
           <el-input v-model="form.code" />
         </el-form-item>
-        <el-form-item label="业务对象">
+        <el-form-item :label="$t('system.workflow.form.businessObject')">
           <el-select v-model="form.business_object">
             <el-option
-              label="资产领用"
+              :label="$t('system.workflow.businessObjects.asset_pickup')"
               value="asset_pickup"
             />
             <el-option
-              label="资产调拨"
+              :label="$t('system.workflow.businessObjects.asset_transfer')"
               value="asset_transfer"
             />
             <el-option
-              label="资产退库"
+              :label="$t('system.workflow.businessObjects.asset_return')"
               value="asset_return"
             />
           </el-select>
@@ -52,9 +52,11 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import WorkflowDesigner from '@/components/workflow/WorkflowDesigner.vue'
 import { createWorkflow, updateWorkflow, getWorkflow } from '@/api/workflows'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const isEdit = computed(() => !!route.params.id)
@@ -81,7 +83,7 @@ onMounted(async () => {
 
 const handleSave = async (graphData: any) => {
     if (!form.name || !form.code) {
-        ElMessage.warning('请填写名称和编码')
+        ElMessage.warning(t('system.workflow.messages.required'))
         return
     }
     form.graph_data = graphData
@@ -89,14 +91,14 @@ const handleSave = async (graphData: any) => {
     try {
         if (isEdit.value) {
             await updateWorkflow(Number(route.params.id), form)
-            ElMessage.success('更新成功')
+            ElMessage.success(t('system.workflow.messages.updateSuccess'))
         } else {
             await createWorkflow(form)
-            ElMessage.success('创建成功')
+            ElMessage.success(t('system.workflow.messages.createSuccess'))
             router.back()
         }
     } catch (e: any) {
-        ElMessage.error(e.message || '保存失败')
+        ElMessage.error(e.message || t('system.workflow.messages.saveFailed'))
     }
 }
 </script>
