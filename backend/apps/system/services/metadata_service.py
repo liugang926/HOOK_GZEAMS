@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Any
 from django.db import transaction
 from django.utils import timezone
 from apps.system.models import BusinessObject, FieldDefinition, PageLayout
+from apps.system.validators import normalize_layout_config_structure
 from apps.common.services.base_crud import BaseCRUDService
 
 
@@ -152,13 +153,15 @@ class MetadataService(BaseCRUDService):
         Returns:
             PageLayout: The created or updated layout
         """
+        normalized_layout_config = normalize_layout_config_structure(data.get('layout_config', {}))
+
         layout, created = PageLayout.objects.get_or_create(
             business_object=obj,
             layout_code=data['layout_code'],
             defaults={
                 'layout_name': data.get('layout_name', data['layout_code']),
                 'layout_type': data.get('layout_type', 'form'),
-                'layout_config': data.get('layout_config', {}),
+                'layout_config': normalized_layout_config,
                 'is_default': data.get('is_default', False),
                 'is_active': data.get('is_active', True),
             }
@@ -168,7 +171,7 @@ class MetadataService(BaseCRUDService):
             # Update existing layout
             layout.layout_name = data.get('layout_name', data['layout_code'])
             layout.layout_type = data.get('layout_type', 'form')
-            layout.layout_config = data.get('layout_config', {})
+            layout.layout_config = normalized_layout_config
             layout.is_active = data.get('is_active', True)
             layout.save()
 

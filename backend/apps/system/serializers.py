@@ -276,14 +276,18 @@ class PageLayoutSerializer(BaseModelSerializer):
 
     _MODE_TO_LAYOUT_TYPE = {
         'edit': 'form',
-        'readonly': 'detail',
-        'search': 'search',
+        # Single-layout model: readonly/search requests also persist to shared form layout.
+        'readonly': 'form',
+        'search': 'form',
+        'detail': 'form',
+        'form': 'form',
     }
     _LAYOUT_TYPE_TO_MODE = {
         'form': 'edit',
-        'detail': 'readonly',
+        # Legacy layout types are normalized to the shared edit mode on write.
+        'detail': 'edit',
         'list': 'edit',
-        'search': 'search',
+        'search': 'edit',
     }
 
     layout_type_display = serializers.CharField(
@@ -355,12 +359,16 @@ class PageLayoutSerializer(BaseModelSerializer):
     @classmethod
     def _normalize_mode(cls, raw_mode):
         mode = str(raw_mode or '').strip().lower()
-        return mode if mode in cls._MODE_TO_LAYOUT_TYPE else None
+        if mode in cls._MODE_TO_LAYOUT_TYPE:
+            return 'edit'
+        return None
 
     @classmethod
     def _normalize_layout_type(cls, raw_layout_type):
         layout_type = str(raw_layout_type or '').strip().lower()
-        return layout_type if layout_type in cls._LAYOUT_TYPE_TO_MODE else None
+        if layout_type in cls._LAYOUT_TYPE_TO_MODE:
+            return 'form'
+        return None
 
     def _resolve_business_object_id(self, raw_value):
         if raw_value in (None, ''):
@@ -432,8 +440,11 @@ class PageLayoutSerializer(BaseModelSerializer):
 
     def validate_layout_config(self, value):
         """Validate layout configuration."""
-        from apps.system.validators import validate_layout_config
+        from apps.system.validators import validate_layout_config, normalize_layout_config_structure
         try:
+            # Fill missing section/field ids for legacy payload compatibility.
+            value = normalize_layout_config_structure(value)
+
             # Sanitize obvious bad field codes (e.g. "asset code" -> "asset_code") before validation/persistence.
             # This is the backend safety-net; the frontend designer also normalizes before save.
             business_object = None
@@ -467,8 +478,8 @@ class PageLayoutSerializer(BaseModelSerializer):
                     value = sanitize_layout_config_field_codes(value, allowed)
 
             # Prefer mode over layout_type for validation
-            mode = self.initial_data.get('mode')
-            layout_type = self.initial_data.get('layout_type')
+            mode = self._normalize_mode(self.initial_data.get('mode'))
+            layout_type = self._normalize_layout_type(self.initial_data.get('layout_type'))
 
             # Use mode if available, otherwise derive from layout_type
             if mode:

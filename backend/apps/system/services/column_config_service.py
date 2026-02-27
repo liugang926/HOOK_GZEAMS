@@ -67,30 +67,36 @@ class ColumnConfigService:
 
     @classmethod
     def _get_default_config(cls, object_code: str) -> Dict[str, Any]:
-        """Get default configuration from PageLayout."""
+        """
+        Get default list configuration from the shared field model.
+
+        Single-layout policy:
+        - List columns should be derived from FieldDefinition/ModelFieldDefinition
+          (`show_in_list` + `sort_order`) instead of dedicated list PageLayout rows.
+        - Legacy list PageLayout is only a last-resort fallback when no fields exist.
+        """
         try:
             # BusinessObject uses GlobalMetadataManager (no org filtering)
             business_object = BusinessObject.objects.get(code=object_code)
 
-            # Get default list layout
+            field_columns = cls._get_columns_from_field_definitions(business_object)
+            if field_columns:
+                return {'columns': field_columns}
+
+            # Compatibility fallback for legacy data sets with missing field metadata.
             layout = PageLayout.objects.filter(
                 business_object=business_object,
                 layout_type='list',
                 is_default=True,
                 is_active=True
             ).first()
-
             if layout:
                 config = layout.layout_config or {}
-                # Ensure columns key exists
-                if 'columns' not in config:
-                    config['columns'] = cls._get_columns_from_field_definitions(business_object)
-                return config
+                if isinstance(config.get('columns'), list):
+                    return config
+                return {'columns': []}
 
-            # Fallback to field definitions
-            return {
-                'columns': cls._get_columns_from_field_definitions(business_object)
-            }
+            return {'columns': []}
 
         except ObjectDoesNotExist:
             # No business object found, return empty config
@@ -138,15 +144,24 @@ class ColumnConfigService:
     @classmethod
     def _get_user_config(cls, user, object_code: str) -> Dict[str, Any]:
         """Get user configuration."""
-        try:
-            pref = UserColumnPreference.objects.get(
+        pref = (
+            UserColumnPreference.objects
+            .filter(
                 user=user,
-                object_code=object_code,
+                object_code__iexact=object_code,
                 is_default=True
             )
-            return pref.column_config
-        except ObjectDoesNotExist:
-            return {}
+            .order_by('-updated_at', '-created_at')
+            .first()
+        )
+        if not pref:
+            pref = (
+                UserColumnPreference.objects
+                .filter(user=user, object_code__iexact=object_code)
+                .order_by('-is_default', '-updated_at', '-created_at')
+                .first()
+            )
+        return pref.column_config if pref else {}
 
     @classmethod
     def _merge_configs(cls, default: Dict, user: Dict) -> Dict[str, Any]:

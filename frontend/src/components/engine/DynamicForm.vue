@@ -13,6 +13,7 @@
     >
       <DynamicFormRenderer
         :layout="activeLayout"
+        :schema="activeRenderSchema"
         :model-value="activeFormData"
         :readonly="readonly"
         :field-permissions="fieldPermissions"
@@ -73,10 +74,9 @@ const {
   formRef,
   formData,
   formRules,
-  fieldDefinitions,
   runtimeLayout,
+  renderSchema,
   loading,
-  error,
   loadMetadata,
   validate,
   resetFields,
@@ -85,13 +85,21 @@ const {
   props.businessObject || '',
   props.layoutCode,
   null,
-  null
+  null,
+  props.instanceId
 )
 
 const activeFormData = computed(() => (isSchemaMode.value ? schemaFormData.value : formData.value))
 const activeFormRules = computed(() => (isSchemaMode.value ? {} : formRules.value))
+
+const activeRenderSchema = computed(() => {
+  if (isSchemaMode.value) return null
+  return renderSchema.value
+})
+
 const activeLayout = computed<RuntimeLayoutConfig>(() => {
-  return isSchemaMode.value ? schemaLayout.value : (runtimeLayout?.value || { sections: [] })
+  if (isSchemaMode.value) return schemaLayout.value
+  return runtimeLayout.value
 })
 
 const fieldPermissions = computed(() => props.fieldPermissions || {})

@@ -11,6 +11,7 @@ Unified Layout System:
 """
 from rest_framework.exceptions import ValidationError
 from typing import Dict, Any, List
+from uuid import uuid4
 
 
 def _is_dict(v: Any) -> bool:
@@ -164,6 +165,110 @@ def sanitize_layout_config_field_codes(
 
     next_config = dict(config)
     next_config['sections'] = [sanitize_section(s, f"sections[{i}]") for i, s in enumerate(config.get('sections') or [])]
+    return next_config
+
+
+def _generate_layout_node_id(prefix: str) -> str:
+    return f"{prefix}-{uuid4().hex}"
+
+
+def _normalize_field_node(field: Any) -> Any:
+    if not _is_dict(field):
+        return field
+
+    next_field = dict(field)
+    next_field.setdefault('id', _generate_layout_node_id('field'))
+
+    raw_code = (
+        next_field.get('fieldCode')
+        or next_field.get('field_code')
+        or next_field.get('field')
+        or next_field.get('code')
+        or next_field.get('prop')
+        or next_field.get('name')
+        or ''
+    )
+    field_code = str(raw_code).strip()
+    if field_code:
+        next_field['fieldCode'] = field_code
+        if not next_field.get('label'):
+            next_field['label'] = field_code
+
+    if 'span' not in next_field:
+        next_field['span'] = 1
+
+    return next_field
+
+
+def _normalize_section_node(section: Any) -> Any:
+    if not _is_dict(section):
+        return section
+
+    next_section = dict(section)
+    next_section.setdefault('id', _generate_layout_node_id('section'))
+
+    section_type = str(next_section.get('type') or 'section').strip() or 'section'
+    next_section['type'] = section_type
+
+    if section_type == 'tab':
+        tabs = next_section.get('tabs')
+        if not _is_list(tabs):
+            tabs = []
+        next_tabs = []
+        for tab in tabs:
+            if not _is_dict(tab):
+                continue
+            next_tab = dict(tab)
+            next_tab.setdefault('id', _generate_layout_node_id('tab'))
+            fields = next_tab.get('fields')
+            if not _is_list(fields):
+                fields = []
+            next_tab['fields'] = [_normalize_field_node(field) for field in fields]
+            next_tabs.append(next_tab)
+        next_section['tabs'] = next_tabs
+        return next_section
+
+    if section_type == 'collapse':
+        items = next_section.get('items')
+        if not _is_list(items):
+            items = []
+        next_items = []
+        for item in items:
+            if not _is_dict(item):
+                continue
+            next_item = dict(item)
+            next_item.setdefault('id', _generate_layout_node_id('collapse'))
+            fields = next_item.get('fields')
+            if not _is_list(fields):
+                fields = []
+            next_item['fields'] = [_normalize_field_node(field) for field in fields]
+            next_items.append(next_item)
+        next_section['items'] = next_items
+        return next_section
+
+    fields = next_section.get('fields')
+    if not _is_list(fields):
+        fields = []
+    next_section['fields'] = [_normalize_field_node(field) for field in fields]
+    return next_section
+
+
+def normalize_layout_config_structure(config: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Best-effort normalization for sections-based layouts.
+
+    Adds missing ids/default keys for sections and fields so legacy payloads
+    can still pass strict validation.
+    """
+    if not _is_dict(config):
+        return config
+
+    next_config = dict(config)
+    sections = next_config.get('sections')
+    if not _is_list(sections):
+        return next_config
+
+    next_config['sections'] = [_normalize_section_node(section) for section in sections]
     return next_config
 
 

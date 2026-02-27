@@ -243,6 +243,11 @@ jobs:
           cd frontend
           npm ci
 
+      - name: Run runtime contract regression suite
+        run: |
+          cd frontend
+          npm run test:contract:runtime
+
       - name: Run unit tests with coverage
         run: |
           cd frontend

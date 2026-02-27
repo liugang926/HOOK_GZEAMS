@@ -16,6 +16,7 @@ import logging
 from django.db.models import Q
 
 from apps.system.services.object_registry import ObjectRegistry
+from apps.system.services.layout_runtime_normalizer import normalize_layout_config_for_runtime
 from apps.common.viewsets.metadata_driven import MetadataDrivenViewSet
 from apps.common.responses.base import BaseResponse
 
@@ -991,10 +992,10 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         mode = request.query_params.get('mode', 'edit')
         include_relations = request.query_params.get('include_relations', 'true').lower() == 'true'
 
-        # Fields endpoint supports only (form|detail|list) contexts.
-        if mode in ['readonly', 'detail']:
-            context = 'detail'
-        elif mode in ['list', 'search']:
+        # Single-layout model:
+        # - readonly/detail/search pages reuse edit/form field model for consistency.
+        # - only list uses list context.
+        if mode in ['list']:
             context = 'list'
         else:
             context = 'form'
@@ -1034,8 +1035,9 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                     if self._should_show_field(fd, context, is_model_field=False):
                         editable_fields.append(field_data)
 
-        # Safety fallback: if detail view ends up with zero fields, show all non-relation fields.
-        if context == 'detail' and not editable_fields:
+        # Safety fallback: if form/detail-equivalent view ends up with zero fields,
+        # show all non-relation fields to avoid blank pages.
+        if context in ['form', 'detail'] and not editable_fields:
             if self._object_meta.is_hardcoded:
                 for fd in model_fields:
                     if fd.field_type == 'sub_table':
@@ -1048,15 +1050,59 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                     editable_fields.append(self._format_field_definition(fd, context))
 
         # Resolve active layout (custom > default > generated config).
+        # Single-layout model: readonly/detail/search reuses shared form layout.
         layout_type = mode
-        if mode in ['edit', 'form']:
+        if mode in ['edit', 'form', 'readonly', 'detail', 'search']:
             layout_type = 'form'
-        elif mode in ['readonly', 'detail']:
-            layout_type = 'detail'
 
         business_object = BusinessObject.objects.filter(code=self._object_meta.code).first()
         if not business_object:
             return BaseResponse.not_found(f"Business object '{self._object_meta.code}' not found")
+
+        # List runtime uses a shared column model derived from field metadata,
+        # with optional user column-preference overrides.
+        if mode == 'list':
+            from apps.system.services.column_config_service import ColumnConfigService
+            from apps.system.services.layout_generator import LayoutGenerator
+
+            generated = LayoutGenerator.generate_list_layout(business_object) or {}
+            user_column_config = {}
+            try:
+                if request.user and request.user.is_authenticated:
+                    user_column_config = ColumnConfigService.get_column_config(request.user, self._object_meta.code) or {}
+            except Exception:
+                user_column_config = {}
+
+            columns = user_column_config.get('columns')
+            if not isinstance(columns, list) or not columns:
+                columns = generated.get('columns') if isinstance(generated.get('columns'), list) else []
+
+            layout_payload = {
+                'layout_type': 'list',
+                'layout_config': {
+                    'columns': columns,
+                    'columnOrder': user_column_config.get('columnOrder') if isinstance(user_column_config.get('columnOrder'), list) else [],
+                    'rowSelection': bool(generated.get('rowSelection', True)),
+                    'pagination': bool(generated.get('pagination', True)),
+                    'pageSize': int(generated.get('pageSize', 20)),
+                },
+                'is_template': True,
+                'source': user_column_config.get('source', 'default'),
+            }
+            return BaseResponse.success({
+                'runtime_version': 1,
+                'object_code': self._object_meta.code,
+                'mode': mode,
+                'context': context,
+                'permissions': self._get_user_permissions(request.user, self._object_meta.code),
+                'fields': {
+                    'editable_fields': editable_fields,
+                    'reverse_relations': reverse_relations,
+                    'context': context,
+                },
+                'layout': layout_payload,
+                'is_default': user_column_config.get('source', 'default') != 'user',
+            })
 
         org_id = getattr(request, 'organization_id', None)
         base_filters = {
@@ -1096,15 +1142,25 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         if layout:
             layout_payload = PageLayoutSerializer(layout).data
+            raw_layout_config = layout_payload.get('layout_config')
+            if isinstance(raw_layout_config, dict):
+                normalized_layout_config = normalize_layout_config_for_runtime(
+                    business_object,
+                    raw_layout_config
+                )
+                layout_payload['layout_config'] = normalized_layout_config
+                if 'layoutConfig' in layout_payload:
+                    layout_payload['layoutConfig'] = normalized_layout_config
             is_default = bool(layout.is_default)
         else:
             from apps.system.services.layout_generator import LayoutGenerator
             from apps.system.validators import get_default_layout_config
 
-            if layout_type in ['form', 'list', 'detail']:
+            if layout_type in ['form', 'list']:
                 layout_config = LayoutGenerator.get_or_generate_layout(business_object, layout_type)
             else:
                 layout_config = get_default_layout_config(layout_type)
+            layout_config = normalize_layout_config_for_runtime(business_object, layout_config)
 
             layout_payload = {
                 'layout_type': layout_type,

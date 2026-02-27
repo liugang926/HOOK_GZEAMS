@@ -12,6 +12,8 @@ Dynamic Object Routing:
 - ObjectRouterViewSet provides unified entry point for all business objects
 - URL: /api/system/objects/{code}/ routes to appropriate ViewSets
 """
+import copy
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -23,6 +25,7 @@ from apps.common.responses.base import BaseResponse
 from apps.system.models import (
     BusinessObject,
     FieldDefinition,
+    ModelFieldDefinition,
     PageLayout,
     LayoutHistory,
     DynamicData,
@@ -66,6 +69,10 @@ from apps.system.filters import (
     PageLayoutFilter,
     DynamicDataFilter,
     DynamicSubTableDataFilter,
+)
+from apps.system.services.layout_runtime_normalizer import (
+    normalize_layout_config_for_runtime,
+    resolve_allowed_layout_field_codes,
 )
 
 
@@ -585,11 +592,10 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
         Normalize mixed mode/type inputs to legacy layout_type values.
         """
         value = (raw_type or 'form').lower()
-        if value in ['edit', 'form']:
+        # Single-layout model: edit/readonly/detail/search all map to shared form layout.
+        if value in ['edit', 'form', 'readonly', 'detail', 'search']:
             return 'form'
-        if value in ['readonly', 'detail']:
-            return 'detail'
-        if value in ['list', 'search']:
+        if value in ['list']:
             return value
         return 'form'
 
@@ -633,6 +639,39 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
             .order_by('-updated_at', '-created_at')
             .first()
         )
+
+    @staticmethod
+    def _resolve_allowed_layout_field_codes(business_object) -> set:
+        return resolve_allowed_layout_field_codes(business_object)
+
+    def _normalize_runtime_layout_config(self, business_object, layout_config: dict) -> dict:
+        return normalize_layout_config_for_runtime(business_object, layout_config)
+
+    @staticmethod
+    def _scope_diff_layout_queryset(qs, priority_level: str, org_id=None, user=None):
+        scoped = qs.filter(priority=priority_level, is_active=True, is_deleted=False)
+
+        if priority_level == 'user':
+            if not user or not getattr(user, 'is_authenticated', False):
+                return scoped.none()
+            if org_id:
+                scoped = scoped.filter(organization_id=org_id)
+            return scoped.filter(created_by_id=getattr(user, 'id', None))
+
+        if priority_level == 'org':
+            if not org_id:
+                return scoped.none()
+            return scoped.filter(organization_id=org_id)
+
+        if priority_level == 'role':
+            if org_id:
+                return scoped.filter(organization_id=org_id)
+            return scoped.filter(organization__isnull=True)
+
+        # global/default
+        if org_id:
+            return scoped.filter(Q(organization_id=org_id) | Q(organization__isnull=True))
+        return scoped
 
     def retrieve(self, request, *args, **kwargs):
         """Get single layout with full details."""
@@ -781,12 +820,10 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
                 http_status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Normalize mode to layout_type
+        # Normalize mode to layout_type (single-layout model).
         layout_type = mode
-        if mode in ['edit', 'form']:
+        if mode in ['edit', 'form', 'readonly', 'detail', 'search']:
             layout_type = 'form'
-        elif mode in ['readonly', 'detail']:
-            layout_type = 'detail'
 
         try:
             business_object = BusinessObject.objects.get(code=object_code)
@@ -810,7 +847,7 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
             from apps.system.services.layout_generator import LayoutGenerator
             from apps.system.validators import get_default_layout_config
 
-            if layout_type in ['form', 'list', 'detail']:
+            if layout_type in ['form', 'list']:
                 layout_config = LayoutGenerator.get_or_generate_layout(business_object, layout_type)
             else:
                 layout_config = get_default_layout_config(layout_type)
@@ -914,17 +951,25 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
                 http_status=status.HTTP_404_NOT_FOUND
             )
 
-        # Rollback by restoring the config
-        old_config = instance.layout_config
-        instance.layout_config = history_entry.config_snapshot
-        instance.status = 'draft'
-        instance.parent_version = version
-        instance.save()
+        # Rollback by restoring the config through serializer so we keep
+        # the same normalization/validation pipeline as regular create/update.
+        rollback_serializer = PageLayoutSerializer(
+            instance,
+            data={
+                'layout_config': history_entry.config_snapshot,
+                'status': 'draft',
+                'parent_version': version,
+            },
+            partial=True
+        )
+        rollback_serializer.is_valid(raise_exception=True)
+        instance = rollback_serializer.save(updated_by=request.user)
 
         # Create rollback history entry
+        rollback_history_version = f"rb-{timezone.now().strftime('%y%m%d%H%M%S%f')}"[:20]
         LayoutHistory.objects.create(
             layout=instance,
-            version=f'{version}-rollback-{timezone.now().strftime("%Y%m%d%H%M%S")}',
+            version=rollback_history_version,
             config_snapshot=instance.layout_config,
             published_by=request.user,
             action='rollback',
@@ -975,22 +1020,38 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
         instance = self.get_object()
 
         # Create new layout code
-        base_code = instance.layout_code.rstrip('_custom').rstrip('_default')
+        base_code = instance.layout_code or 'layout'
+        if base_code.endswith('_default_form'):
+            base_code = base_code[:-len('_default_form')]
+        elif base_code.endswith('_default'):
+            base_code = base_code[:-len('_default')]
+        if '_custom_' in base_code:
+            base_code = base_code.split('_custom_')[0]
+        elif base_code.endswith('_custom'):
+            base_code = base_code[:-len('_custom')]
+        base_code = base_code or 'layout'
         new_code = f'{base_code}_custom_{int(timezone.now().timestamp())}'
 
-        # Create duplicate
-        new_layout = PageLayout.objects.create(
-            business_object=instance.business_object,
-            layout_code=new_code,
-            layout_name=f'{instance.layout_name} (Copy)',
-            layout_type=instance.layout_type,
-            description=f'Copy of {instance.layout_name}',
-            layout_config=instance.layout_config,
-            status='draft',
-            version='1.0.0',
-            is_default=False,
-            is_active=True,
-            created_by=request.user
+        duplicate_serializer = PageLayoutSerializer(data={
+            'business_object': str(instance.business_object_id),
+            'layout_code': new_code,
+            'layout_name': f'{instance.layout_name} (Copy)',
+            'layout_type': instance.layout_type,
+            'mode': instance.mode or 'edit',
+            'description': f'Copy of {instance.layout_name}',
+            'layout_config': copy.deepcopy(instance.layout_config or {}),
+            'status': 'draft',
+            'version': '1.0.0',
+            'is_default': False,
+            'is_active': True,
+            'priority': instance.priority or 'global',
+            'context_type': instance.context_type or '',
+            'diff_config': copy.deepcopy(instance.diff_config or {}),
+        })
+        duplicate_serializer.is_valid(raise_exception=True)
+        new_layout = duplicate_serializer.save(
+            created_by=request.user,
+            organization_id=instance.organization_id
         )
 
         serializer = PageLayoutDetailSerializer(new_layout)
@@ -1118,9 +1179,15 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
             }
         }
         """
+        from apps.system.validators import (
+            normalize_layout_config_structure,
+            sanitize_layout_config_field_codes,
+            LayoutValidationError,
+        )
+
         object_code = request.data.get('object_code')
         layout_type = request.data.get('layout_type')
-        context_type = request.data.get('context_type')
+        context_type = str(request.data.get('context_type') or '').strip()
         priority = request.data.get('priority', 'user')
         diff_config = request.data.get('diff_config')
 
@@ -1155,6 +1222,8 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
                 http_status=status.HTTP_400_BAD_REQUEST
             )
 
+        normalized_layout_type = self._normalize_layout_type(layout_type)
+
         # Get business object
         try:
             business_object = BusinessObject.objects.get(
@@ -1168,22 +1237,65 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
                 http_status=status.HTTP_404_NOT_FOUND
             )
 
+        # Normalize diff sections so legacy payloads without ids/types stay valid.
+        if not isinstance(diff_config, dict):
+            return BaseResponse.error(
+                code='VALIDATION_ERROR',
+                message='diff_config must be an object',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+        if isinstance(diff_config.get('sections'), list):
+            try:
+                diff_config = normalize_layout_config_structure(diff_config)
+
+                allowed_codes = set()
+                try:
+                    allowed_codes.update(
+                        ModelFieldDefinition.objects.filter(
+                            business_object=business_object
+                        ).values_list('field_name', flat=True)
+                    )
+                except Exception:
+                    pass
+                try:
+                    allowed_codes.update(
+                        FieldDefinition.objects.filter(
+                            business_object=business_object
+                        ).values_list('code', flat=True)
+                    )
+                except Exception:
+                    pass
+
+                if allowed_codes:
+                    diff_config = sanitize_layout_config_field_codes(diff_config, allowed_codes)
+            except LayoutValidationError as exc:
+                return BaseResponse.error(
+                    code='VALIDATION_ERROR',
+                    message=str(exc),
+                    http_status=status.HTTP_400_BAD_REQUEST
+                )
+
         # Get org_id from request context
         org_id = getattr(request, 'organization_id', None)
 
         # Generate layout code
         import time
         timestamp = int(timezone.now().timestamp())
-        layout_code = f'{object_code}_{layout_type}_{priority}_{timestamp}'
+        layout_code = f'{object_code}_{normalized_layout_type}_{priority}_{timestamp}'
 
         # Create or update layout with diff config
         # First check if there's an existing layout for this object/type/context/priority
-        existing_layout = PageLayout.objects.filter(
+        existing_layout_qs = PageLayout.objects.filter(
             business_object=business_object,
-            layout_type=layout_type,
+            layout_type=normalized_layout_type,
             priority=priority,
-            is_deleted=False
-        ).first()
+            is_deleted=False,
+        )
+        if org_id:
+            existing_layout_qs = existing_layout_qs.filter(organization_id=org_id)
+        else:
+            existing_layout_qs = existing_layout_qs.filter(organization__isnull=True)
+        existing_layout = existing_layout_qs.first()
 
         if existing_layout and context_type == existing_layout.context_type:
             # Update existing layout
@@ -1203,8 +1315,8 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
             layout = PageLayout.objects.create(
                 business_object=business_object,
                 layout_code=layout_code,
-                layout_name=f'{object_code} {layout_type} {priority} layout',
-                layout_type=layout_type,
+                layout_name=f'{object_code} {normalized_layout_type} {priority} layout',
+                layout_type=normalized_layout_type,
                 context_type=context_type,
                 priority=priority,
                 diff_config=diff_config,
@@ -1259,7 +1371,7 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
 
         object_code = request.data.get('object_code')
         layout_type = request.data.get('layout_type')
-        context_type = request.data.get('context_type')
+        context_type = str(request.data.get('context_type') or '').strip()
 
         if not object_code or not layout_type:
             return BaseResponse.error(
@@ -1284,8 +1396,11 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
         org_id = getattr(request, 'organization_id', None)
         user = getattr(request, 'user', None)
 
+        normalized_layout_type = self._normalize_layout_type(layout_type)
+
         # Get base layout (default or generated)
-        base_layout = LayoutGenerator.get_or_generate_layout(business_object, layout_type)
+        base_layout = LayoutGenerator.get_or_generate_layout(business_object, normalized_layout_type)
+        base_layout = self._normalize_runtime_layout_config(business_object, base_layout)
 
         # Find applicable diff_config by priority
         # Priority: user > role > org > global > default
@@ -1293,21 +1408,32 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
         applied_diff = None
         source = 'default'
 
+        base_diff_qs = PageLayout.objects.filter(
+            business_object=business_object,
+            layout_type=normalized_layout_type,
+            is_deleted=False,
+            is_active=True,
+        )
+        if context_type:
+            base_diff_qs = base_diff_qs.filter(context_type=context_type)
+
         for priority_level in priority_order:
-            filters = {
-                'business_object': business_object,
-                'layout_type': layout_type,
-                'priority': priority_level,
-                'is_deleted': False
-            }
-
-            if context_type:
-                filters['context_type'] = context_type
-
-            diff_layout = PageLayout.objects.filter(**filters).first()
+            scoped_qs = self._scope_diff_layout_queryset(
+                base_diff_qs,
+                priority_level,
+                org_id=org_id,
+                user=user
+            )
+            diff_layout = (
+                scoped_qs.filter(status='published').order_by('-updated_at', '-created_at').first()
+                or scoped_qs.order_by('-updated_at', '-created_at').first()
+            )
 
             if diff_layout and diff_layout.diff_config:
-                applied_diff = diff_layout.diff_config
+                applied_diff = self._normalize_runtime_layout_config(
+                    business_object,
+                    diff_layout.diff_config
+                )
                 source = priority_level
                 break
 
@@ -1345,39 +1471,94 @@ class PageLayoutViewSet(BaseModelViewSetWithBatch):
         if 'fieldOrder' in diff_config:
             merged['fieldOrder'] = diff_config['fieldOrder']
 
-        # Apply section overrides
-        if 'sections' in diff_config:
-            if 'sections' not in merged:
-                merged['sections'] = []
-
-            # Create a map of existing sections by id
-            existing_sections = {s.get('id'): s for s in merged.get('sections', [])}
-
-            # Apply diff section overrides
-            for diff_section in diff_config['sections']:
-                section_id = diff_section.get('id')
-                if section_id in existing_sections:
-                    # Merge fields in existing section
-                    existing_section = existing_sections[section_id]
-                    if 'fields' in diff_section:
-                        # Create map of existing fields
-                        existing_fields = {
-                            f.get('fieldCode', f.get('code')): f
-                            for f in existing_section.get('fields', [])
-                        }
-
-                        # Apply diff field overrides
-                        for diff_field in diff_section['fields']:
-                            field_code = diff_field.get('fieldCode', diff_field.get('code'))
-                            if field_code in existing_fields:
-                                # Merge field properties
-                                existing_fields[field_code].update(diff_field)
-                            else:
-                                # Add new field
-                                existing_section.setdefault('fields', []).append(diff_field)
+        def merge_field_list(base_fields: list, diff_fields: list):
+            field_map = {}
+            for field in base_fields:
+                if isinstance(field, dict):
+                    code = field.get('fieldCode', field.get('code'))
+                    if code:
+                        field_map[code] = field
+            for diff_field in diff_fields:
+                if not isinstance(diff_field, dict):
+                    continue
+                code = diff_field.get('fieldCode', diff_field.get('code'))
+                if code and code in field_map:
+                    field_map[code].update(diff_field)
                 else:
-                    # Add new section
-                    merged.setdefault('sections', []).append(diff_section)
+                    base_fields.append(diff_field)
+
+        def merge_tab_or_item_list(base_nodes: list, diff_nodes: list):
+            base_by_id = {}
+            for idx, node in enumerate(base_nodes):
+                if isinstance(node, dict) and node.get('id'):
+                    base_by_id[node.get('id')] = (idx, node)
+
+            for idx, diff_node in enumerate(diff_nodes):
+                if not isinstance(diff_node, dict):
+                    continue
+                target = None
+                node_id = diff_node.get('id')
+                if node_id and node_id in base_by_id:
+                    target = base_by_id[node_id][1]
+                elif idx < len(base_nodes) and isinstance(base_nodes[idx], dict):
+                    target = base_nodes[idx]
+                if target is None:
+                    base_nodes.append(diff_node)
+                    continue
+
+                for node_key, node_value in diff_node.items():
+                    if node_key == 'fields':
+                        continue
+                    target[node_key] = node_value
+                if isinstance(diff_node.get('fields'), list):
+                    target.setdefault('fields', [])
+                    merge_field_list(target.get('fields', []), diff_node.get('fields', []))
+
+        # Apply section overrides
+        if isinstance(diff_config.get('sections'), list):
+            merged_sections = merged.setdefault('sections', [])
+            existing_by_id = {}
+            for idx, section in enumerate(merged_sections):
+                if isinstance(section, dict) and section.get('id'):
+                    existing_by_id[section.get('id')] = (idx, section)
+
+            for idx, diff_section in enumerate(diff_config.get('sections', [])):
+                if not isinstance(diff_section, dict):
+                    continue
+
+                target_section = None
+                section_id = diff_section.get('id')
+                if section_id and section_id in existing_by_id:
+                    target_section = existing_by_id[section_id][1]
+                elif idx < len(merged_sections) and isinstance(merged_sections[idx], dict):
+                    target_section = merged_sections[idx]
+
+                if target_section is None:
+                    merged_sections.append(diff_section)
+                    continue
+
+                for section_key, section_value in diff_section.items():
+                    if section_key in ('fields', 'tabs', 'items'):
+                        continue
+                    target_section[section_key] = section_value
+
+                if isinstance(diff_section.get('fields'), list):
+                    target_section.setdefault('fields', [])
+                    merge_field_list(target_section.get('fields', []), diff_section.get('fields', []))
+
+                if isinstance(diff_section.get('tabs'), list):
+                    target_section.setdefault('tabs', [])
+                    merge_tab_or_item_list(
+                        target_section.get('tabs', []),
+                        diff_section.get('tabs', [])
+                    )
+
+                if isinstance(diff_section.get('items'), list):
+                    target_section.setdefault('items', [])
+                    merge_tab_or_item_list(
+                        target_section.get('items', []),
+                        diff_section.get('items', [])
+                    )
 
         return merged
 

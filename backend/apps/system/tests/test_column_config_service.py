@@ -1,7 +1,7 @@
-import pytest
+﻿import pytest
 from django.core.cache import cache
 from apps.system.services.column_config_service import ColumnConfigService
-from apps.system.models import UserColumnPreference, PageLayout, BusinessObject
+from apps.system.models import UserColumnPreference, BusinessObject, FieldDefinition
 from apps.accounts.models import User
 from apps.organizations.models import Organization
 
@@ -9,25 +9,28 @@ from apps.organizations.models import Organization
 @pytest.mark.django_db
 class TestColumnConfigService:
     def test_get_column_config_returns_default_when_no_user_pref(self):
-        """Test that default config is returned when user has no preference"""
+        """Test that default config is field-driven when user has no preference."""
         org = Organization.objects.create(name='Test Org', code='test-org')
         user = User.objects.create(username='testuser', organization=org)
         bo = BusinessObject.objects.create(code='asset', name='Asset', organization=org)
 
-        # Create default layout
-        PageLayout.objects.create(
+        FieldDefinition.objects.create(
             business_object=bo,
-            layout_code='asset_list_default',
-            layout_name='Asset List Default',
-            layout_type='list',
-            is_default=True,
-            layout_config={
-                'columns': [
-                    {'field_code': 'code', 'label': '编号', 'width': 120, 'visible': True},
-                    {'field_code': 'name', 'label': '名称', 'width': 200, 'visible': True}
-                ]
-            },
-            organization=org
+            code='code',
+            name='Code',
+            field_type='text',
+            show_in_list=True,
+            sort_order=1,
+            organization=org,
+        )
+        FieldDefinition.objects.create(
+            business_object=bo,
+            code='name',
+            name='Name',
+            field_type='text',
+            show_in_list=True,
+            sort_order=2,
+            organization=org,
         )
 
         config = ColumnConfigService.get_column_config(user, 'asset')
@@ -37,25 +40,28 @@ class TestColumnConfigService:
         assert config['source'] == 'default'
 
     def test_get_column_config_merges_user_preferences(self):
-        """Test that user config overrides default"""
+        """Test that user config overrides field-driven default columns."""
         org = Organization.objects.create(name='Test Org', code='test-org')
         user = User.objects.create(username='testuser', organization=org)
         bo = BusinessObject.objects.create(code='asset', name='Asset', organization=org)
 
-        # Create default layout
-        PageLayout.objects.create(
+        FieldDefinition.objects.create(
             business_object=bo,
-            layout_code='asset_list_default',
-            layout_name='Asset List Default',
-            layout_type='list',
-            is_default=True,
-            layout_config={
-                'columns': [
-                    {'field_code': 'code', 'label': '编号', 'width': 120, 'visible': True},
-                    {'field_code': 'name', 'label': '名称', 'width': 200, 'visible': True}
-                ]
-            },
-            organization=org
+            code='code',
+            name='Code',
+            field_type='text',
+            show_in_list=True,
+            sort_order=1,
+            organization=org,
+        )
+        FieldDefinition.objects.create(
+            business_object=bo,
+            code='name',
+            name='Name',
+            field_type='text',
+            show_in_list=True,
+            sort_order=2,
+            organization=org,
         )
 
         # Create user preference (hide 'code', change 'name' width)
