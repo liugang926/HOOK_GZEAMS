@@ -7,38 +7,118 @@ body {
     -moz-osx-font-smoothing: grayscale;
     background-color: $bg-body;
     color: $text-main;
+    font-size: 13px; // Modern crisp baseline
 }
 
-// Element Plus Overrides (Subtle refinements)
+// Element Plus Overrides
 :root {
     --el-color-primary: #{$primary-color};
     --el-color-success: #{$success-color};
     --el-color-warning: #{$warning-color};
     --el-color-danger: #{$danger-color};
     --el-color-info: #{$info-color};
+
+    // Core structural resets
     --el-border-radius-base: #{$radius-base};
+    --el-border-radius-small: calc(#{$radius-base} - 2px);
+    --el-border-color: #{$border-color};
+    --el-border-color-light: #{$border-color};
+    --el-border-color-lighter: #{$border-light};
+    --el-box-shadow-light: #{$shadow-md};
+
+    // Text overrides
+    --el-text-color-primary: #{$text-main};
+    --el-text-color-regular: #{$text-regular};
+    --el-text-color-secondary: #{$text-secondary};
+    --el-font-size-base: 13px;
 }
 
-// Utility Classes for "Using the Public Model"
-.page-container {
-    padding: $spacing-lg;
-    min-height: 100vh;
-    box-sizing: border-box;
+/* ====================================================================
+   V2: Component Overrides (Premium SaaS Look)
+   ==================================================================== */
+
+// Cards: Flattened, border-driven
+.el-card,
+.list-card,
+.detail-section,
+.audit-info,
+.related-objects-section {
+    border: 1px solid $border-light !important;
+    box-shadow: $shadow-sm !important;
+    background-color: $bg-card !important;
+    border-radius: $radius-large !important;
 }
 
-// Glassmorphic Card Style (to replace standard el-card eventually)
-.glass-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: $shadow-glass;
-    border-radius: $radius-large;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+// Tables: Borderless interior, floating headers
+.el-table {
+    --el-table-border-color: transparent !important;
+    --el-table-header-bg-color: #f8fafc !important;
+    --el-table-header-text-color: #475569 !important;
+    --el-table-row-hover-bg-color: #f8fafc !important;
+    background-color: transparent !important;
+
+    // Remove outer borders
+    &::before,
+    &::after {
+        display: none !important;
+    }
+
+    th.el-table__cell {
+        background-color: var(--el-table-header-bg-color) !important;
+        border-bottom: none !important; // Absolute flat header
+        font-weight: 500 !important;
+        height: 44px;
+    }
+
+    td.el-table__cell {
+        border-bottom: 1px solid #f1f5f9 !important; // Whisper thin row dividers
+        transition: background-color 0.2s;
+    }
+}
+
+// Inputs: Invisible until focused
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+    box-shadow: 0 0 0 1px $border-color inset !important;
+    transition: all 0.2s ease !important;
 
     &:hover {
-        transform: translateY(-2px);
-        box-shadow: $shadow-lg;
+        box-shadow: 0 0 0 1px #cbd5e1 inset !important;
     }
+
+    &.is-focus,
+    &:focus {
+        // Thick semi-transparent ring
+        box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1), 0 0 0 1px $primary-color inset !important;
+    }
+}
+
+// Buttons: Crisp geometry
+.el-button {
+    font-weight: 500;
+
+    // Default (secondary) buttons get an off-white bg
+    &--default {
+        background-color: #ffffff;
+        border-color: $border-color;
+        color: $text-regular;
+
+        &:hover {
+            background-color: $bg-hover;
+            border-color: #cbd5e1;
+            color: $text-main;
+        }
+    }
+}
+
+/* ====================================================================
+   Utility Classes & Tags
+   ==================================================================== */
+
+.page-container {
+    padding: $spacing-lg;
+    box-sizing: border-box;
 }
 
 // Status Tag Styles (Unified Public Model)
@@ -46,6 +126,10 @@ body {
     border-radius: $radius-round;
     padding: 2px 10px;
     font-weight: 500;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 
     &.status-draft {
         background: $bg-hover;
@@ -69,5 +153,49 @@ body {
         background: #fef2f2;
         color: $danger-color;
         border: 1px solid lighten($danger-color, 30%);
+    }
+}
+
+/* ====================================================================
+   Dark Theme Overrides (Sidebar Popups)
+   ==================================================================== */
+// Fix for collapsed sidebar menu popups inheriting the global white background
+.el-menu--popup {
+    background-color: $primary-color !important; // Slate-900 (#0f172a)
+    padding: 0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: $shadow-lg !important;
+    border-radius: $radius-base !important;
+    overflow: hidden;
+
+    .el-menu-item {
+        background-color: transparent !important;
+        color: #cbd5e1 !important; // Slate-300
+        height: 44px;
+        line-height: 44px;
+        margin: 4px;
+        border-radius: $radius-base;
+
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            color: #ffffff !important;
+        }
+
+        &.is-active {
+            background-color: rgba(255, 255, 255, 0.12) !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+    }
+}
+
+// Fix the popper arrow/wrapper if Element Plus generates one for menu popups
+.el-popper.is-light:has(.el-menu--popup) {
+    background-color: $primary-color !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+
+    .el-popper__arrow::before {
+        background-color: $primary-color !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
 }

@@ -241,8 +241,34 @@ defineExpose({
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import '@/styles/variables.scss';
+
 .base-form {
-  padding: 10px;
+  padding: $spacing-md 10px;
+
+  :deep(.el-form-item) {
+    margin-bottom: 22px;
+    
+    .el-form-item__label {
+      font-weight: 500;
+      color: $text-secondary;
+      align-items: center;
+    }
+  }
+
+  /* Custom handling for divider to make it look like a section header */
+  :deep(.el-divider--horizontal) {
+    margin: 32px 0 24px 0;
+    border-top: 1px solid $border-light;
+    
+    .el-divider__text {
+      font-size: 15px;
+      font-weight: 600;
+      color: $primary-color;
+      background-color: $bg-body;
+      padding: 0 16px;
+    }
+  }
 }
 </style>

@@ -37,6 +37,7 @@ import { formatDate } from '@/utils/dateFormat'
 import { normalizeFieldType } from '@/utils/fieldType'
 import ColumnManager from '@/components/common/ColumnManager.vue'
 import FieldRenderer from '@/components/common/FieldRenderer.vue'
+import ObjectAvatar from '@/components/common/ObjectAvatar.vue'
 import { dynamicApi } from '@/api/dynamic'
 import { extractLayoutConfig } from '@/adapters/layoutAdapter'
 import { buildColumnsFromLayout } from '@/adapters/listColumnAdapter'
@@ -73,8 +74,10 @@ interface Props {
   defaultPageSize?: number
   /** Page size options */
   pageSizes?: number[]
-  /** Object Code for column persistence (required for saving settings) */
+  /** The business object code, used to scope user preferences (optional) */
   objectCode?: string
+  /** Associated icon for the object avatar */
+  objectIcon?: string
   /** Whether to show index column */
   showIndex?: boolean
 }
@@ -785,40 +788,54 @@ defineExpose({
 
 <template>
   <div class="base-list-page">
-    <!-- Page Header -->
-    <div
-      v-if="title"
-      class="page-header"
-    >
-      <h2 class="page-title">
-        {{ title }}
-      </h2>
-      <div class="page-toolbar">
-        <slot
-          name="toolbar"
-          :selected-rows="selectedRows"
-          :has-selection="hasSelection"
-        />
-        
-        <!-- Dynamic Actions -->
-        <el-button
-          v-for="action in objectActions"
-          :key="action.code"
-          :type="action.type === 'primary' ? 'primary' : 'default'"
-          @click="handleDynamicAction(action)"
-        >
-          {{ action.label }}
-        </el-button>
-        
-        <!-- Column Manager Integration -->
-        <ColumnManager 
-          :columns="activeColumns" 
-          :object-code="objectCode"
-          @save="handleColumnSave"
-          @reset="handleColumnReset"
-        />
+    <!-- Unified List Card -->
+    <div class="list-card">
+      <!-- Page Header -->
+      <div
+        v-if="title"
+        class="page-header"
+      >
+        <div class="page-title-group">
+          <ObjectAvatar
+            v-if="objectCode"
+            :object-code="objectCode"
+            :icon="objectIcon"
+            size="md"
+            class="list-page-avatar"
+          />
+          <h2 class="page-title">
+            {{ title }}
+          </h2>
+          <span v-if="total > 0" class="record-count">
+            {{ total }} {{ $t('common.messages.records') || '条记录' }}
+          </span>
+        </div>
+        <div class="page-toolbar">
+          <slot
+            name="toolbar"
+            :selected-rows="selectedRows"
+            :has-selection="hasSelection"
+          />
+          
+          <!-- Dynamic Actions -->
+          <el-button
+            v-for="action in objectActions"
+            :key="action.code"
+            :type="action.type === 'primary' ? 'primary' : 'default'"
+            @click="handleDynamicAction(action)"
+          >
+            {{ action.label }}
+          </el-button>
+          
+          <!-- Column Manager Integration -->
+          <ColumnManager 
+            :columns="activeColumns" 
+            :object-code="objectCode"
+            @save="handleColumnSave"
+            @reset="handleColumnReset"
+          />
+        </div>
       </div>
-    </div>
 
     <!-- Search Form -->
     <div
@@ -827,9 +844,11 @@ defineExpose({
     >
       <el-form
         :model="searchForm"
-        inline
         class="search-form"
+        label-width="auto"
+        label-position="right"
       >
+        <div class="search-grid">
         <template
           v-for="field in visibleSearchFields"
           :key="getSearchFieldKey(field)"
@@ -951,9 +970,10 @@ defineExpose({
             />
           </el-form-item>
         </template>
+        </div><!-- end .search-grid -->
 
         <!-- Actions -->
-        <el-form-item>
+        <div class="search-actions">
           <el-button
             type="primary"
             @click="handleSearch"
@@ -974,7 +994,7 @@ defineExpose({
               <component :is="searchExpanded ? 'arrow-up' : 'arrow-down'" />
             </el-icon>
           </el-button>
-        </el-form-item>
+        </div>
       </el-form>
     </div>
 
@@ -1246,52 +1266,100 @@ defineExpose({
       v-if="!loading && tableData.length === 0"
       class="empty-state"
     >
-      <el-empty :description="$t('common.messages.noData')" />
+      <el-empty :description="$t('common.messages.noData')">
+        <template #default>
+          <slot name="empty-action">
+            <p class="empty-hint">{{ $t('common.messages.emptyHint') || '暂无数据，请尝试创建一条新记录' }}</p>
+          </slot>
+        </template>
+      </el-empty>
     </div>
+    </div><!-- end .list-card -->
   </div>
 </template>
 
 <style scoped lang="scss">
+@import '@/styles/variables.scss';
+
 .base-list-page {
-  padding: 20px;
-  background-color: #f5f7fa;
+  padding: $spacing-lg;
+  background-color: $bg-body;
   min-height: 100%;
 }
 
+/* ==== Unified Card ==== */
+.list-card {
+  background-color: $bg-card;
+  border-radius: $radius-large;
+  box-shadow: $shadow-md;
+  overflow: hidden;
+}
+
+/* ==== Page Header ==== */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding: 16px 20px;
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid $border-light;
+
+  .page-title-group {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
 
   .page-title {
     margin: 0;
     font-size: 18px;
-    font-weight: 500;
-    color: #303133;
+    font-weight: 600;
+    color: $text-main;
+  }
+
+  .record-count {
+    font-size: 13px;
+    color: $text-secondary;
+    font-weight: 400;
   }
 
   .page-toolbar {
     display: flex;
     gap: 10px;
-    align-items: center; // Ensure align with ColumnManager
+    align-items: center;
   }
 }
 
+/* ==== Search ==== */
 .search-form-container {
-  margin-bottom: 20px;
-  padding: 16px 20px;
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid $border-light;
 
   .search-form {
+    .search-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0 16px;
+
+      @media (max-width: 1200px) {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      @media (max-width: 900px) {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      @media (max-width: 600px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
     :deep(.el-form-item) {
       margin-bottom: 12px;
+    }
+
+    .search-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 4px;
     }
   }
 }
@@ -1299,94 +1367,133 @@ defineExpose({
 .number-range {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: $spacing-sm;
 
   .el-input {
     width: 120px;
   }
 
   .separator {
-    color: #909399;
+    color: $text-secondary;
   }
 }
 
+/* ==== Batch Toolbar ==== */
 .batch-toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 16px;
-  padding: 12px 20px;
-  background-color: #ecf5ff;
-  border: 1px solid #d9ecff;
-  border-radius: 4px;
+  padding: 10px $spacing-lg;
+  background-color: $primary-light;
+  border-bottom: 1px solid #d9ecff;
 
   .selection-info {
     margin-right: 10px;
     font-size: 14px;
-    color: #409eff;
+    color: $primary-color;
+    font-weight: 500;
   }
 }
 
+/* ==== Table ==== */
 .table-container {
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  overflow: auto;
 
   :deep(.el-table) {
-    th {
-      background-color: #f5f7fa;
-      color: #606266;
-      font-weight: 500;
+    /* Compact rows */
+    .el-table__row {
+      td {
+        padding: 8px 0;
+      }
+    }
+
+    /* Header */
+    th.el-table__cell {
+      background-color: #f8fafc;
+      color: $text-main;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding: 10px 0;
+      border-bottom: 2px solid $border-color;
+    }
+
+    /* Row hover */
+    .el-table__body tr:hover > td {
+      background-color: rgba(37, 99, 235, 0.03) !important;
+    }
+
+    /* Alternating rows */
+    .el-table__body tr.el-table__row--striped td {
+      background-color: #fafbfc;
+    }
+
+    /* Cell text */
+    td .cell {
+      font-size: 14px;
+      color: $text-regular;
     }
   }
 }
 
+/* ==== Pagination ==== */
 .pagination-container {
   display: flex;
   justify-content: flex-end;
-  margin-top: 20px;
-  padding: 16px 20px;
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid $border-light;
 }
 
+/* ==== Empty State ==== */
 .empty-state {
-  margin-top: 60px;
-  padding: 40px 20px;
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 80px $spacing-lg;
+
+  :deep(.el-empty__description) {
+    margin-top: $spacing-md;
+  }
+
+  .empty-hint {
+    margin-top: $spacing-sm;
+    color: $text-secondary;
+    font-size: 14px;
+    
+    .el-button {
+      margin-top: $spacing-md;
+    }
+  }
 }
 
+/* ==== Mobile Cards ==== */
 .mobile-card-container {
+  padding: $spacing-md;
+
   .mobile-card {
-    background: #fff;
+    background: $bg-card;
     margin-bottom: 12px;
     padding: 12px;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: $radius-base;
+    box-shadow: $shadow-sm;
 
     .card-header-row {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 8px;
-      font-weight: bold;
+      margin-bottom: $spacing-sm;
+      font-weight: 600;
     }
     
     .card-item {
       display: flex;
-      margin-bottom: 4px;
+      margin-bottom: $spacing-xs;
       font-size: 14px;
       
       .label {
-        color: #909399;
+        color: $text-secondary;
         width: 80px;
         flex-shrink: 0;
       }
       .value {
-        color: #303133;
+        color: $text-main;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -1396,7 +1503,7 @@ defineExpose({
     .card-actions {
       margin-top: 10px;
       padding-top: 10px;
-      border-top: 1px solid #EBEEF5;
+      border-top: 1px solid $border-color;
       display: flex;
       justify-content: flex-end;
       gap: 10px;

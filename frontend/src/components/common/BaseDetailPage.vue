@@ -7,6 +7,7 @@
   - Edit/Back/Delete actions
   - Slot-based customization
   - Loading and error states
+  - System Audit information
 
   Usage:
   <BaseDetailPage
@@ -41,6 +42,7 @@ import { camelToSnake, snakeToCamel } from '@/utils/case'
 import { isPlainObject, isEmptyValue, resolveFieldValue } from '@/utils/fieldKey'
 import RelatedObjectTable from './RelatedObjectTable.vue'
 import FieldDisplay from './FieldDisplay.vue'
+import ObjectAvatar from './ObjectAvatar.vue'
 import type { FieldDefinition } from '@/types'
 
 // ============================================================================
@@ -78,13 +80,25 @@ export interface DetailField {
   valueClass?: string
 }
 
+export interface DetailTab {
+  id: string
+  title: string
+  fields: DetailField[]
+}
+
 export interface DetailSection {
   /** Section identifier */
   name: string
   /** Section title */
   title: string
+  /** Section type */
+  type?: string
+  /** Section position (main column vs sidebar column) */
+  position?: 'main' | 'sidebar'
   /** Fields in this section */
   fields: DetailField[]
+  /** Tabs in this section (if type is 'tab') */
+  tabs?: DetailTab[]
   /** Section icon */
   icon?: string
   /** Whether section is collapsible */
@@ -162,6 +176,10 @@ interface Props {
   fieldSpan?: number
   /** Object code for fetching metadata */
   objectCode?: string
+  /** Associated icon for the object avatar */
+  objectIcon?: string
+  /** Display name of the business object */
+  objectName?: string
   /** Reverse relation fields to display (related objects) */
   reverseRelations?: ReverseRelationField[]
   /** Whether to show related objects inline */
@@ -203,11 +221,22 @@ const emit = defineEmits<Emits>()
 // ============================================================================
 
 const collapsedSections = ref<Set<string>>(new Set())
+const activeTabs = ref<Record<string, string>>({})
 const { t } = useI18n()
 
 // ============================================================================
 // Computed
 // ============================================================================
+
+/** Available main sections */
+const mainSections = computed(() => {
+  return props.sections.filter(s => s.position !== 'sidebar')
+})
+
+/** Available sidebar sections */
+const sidebarSections = computed(() => {
+  return props.sections.filter(s => s.position === 'sidebar')
+})
 
 /** Whether audit info is available */
 const hasAuditInfo = computed(() => {
@@ -388,45 +417,73 @@ defineExpose({
       v-else
       class="detail-content"
     >
-      <!-- Page Header -->
-      <div class="page-header">
+      <!-- Page Header (Record Profile Header) -->
+      <div class="page-header record-profile-header">
         <div class="header-left">
           <el-button
             v-if="showBack"
             :icon="ArrowLeft"
             link
+            class="back-btn"
             @click="handleBack"
           >
             {{ backText || $t('common.actions.back') }}
           </el-button>
-          <h1 class="page-title">
-            {{ title }}
-          </h1>
+          
+          <div class="profile-identity">
+            <ObjectAvatar
+              v-if="objectCode || title"
+              :object-code="objectCode || title || ''"
+              :icon="objectIcon"
+              size="lg"
+              class="profile-avatar"
+            />
+            <div class="profile-text">
+              <span class="object-type-name">{{ objectName || '记录' }}</span>
+              <h1 class="page-title">{{ title || '...' }}</h1>
+            </div>
+          </div>
         </div>
-        <div class="header-actions">
-          <el-button
-            v-for="action in availableActions"
-            :key="action.label"
-            :type="action.type as any"
-            :icon="action.icon"
-            @click="action.action"
-          >
-            {{ action.label }}
-          </el-button>
+
+        <div class="header-right">
+          <!-- Compact Audit Info inline -->
+          <div v-if="hasAuditInfo" class="header-audit-info">
+            <template v-if="auditInfo?.updatedBy">
+              <div class="audit-item">更新于: <span class="val">{{ formatDate(auditInfo?.updatedAt || '') }}</span></div>
+              <div class="audit-item">更新者: <span class="val">{{ auditInfo?.updatedBy }}</span></div>
+            </template>
+            <template v-else-if="auditInfo?.createdBy">
+              <div class="audit-item">创建者: <span class="val">{{ auditInfo?.createdBy }}</span></div>
+            </template>
+          </div>
+
+          <div class="header-actions">
+            <el-button
+              v-for="action in availableActions"
+              :key="action.label"
+              :type="action.type as any"
+              :icon="action.icon"
+              @click="action.action"
+            >
+              {{ action.label }}
+            </el-button>
+          </div>
         </div>
       </div>
 
-      <!-- Detail Sections -->
-      <div class="detail-sections">
-        <el-empty
-          v-if="sections.length === 0"
-          :description="$t('common.messages.noData')"
-        />
+      <!-- Layout Container for Two Columns -->
+      <div class="detail-layout-container" :class="{ 'has-sidebar': sidebarSections.length > 0 }">
+        <!-- Main Column -->
+        <div class="main-column detail-sections">
+          <el-empty
+            v-if="mainSections.length === 0"
+            :description="$t('common.messages.noData')"
+          />
 
-        <template
-          v-for="section in sections"
-          :key="section.name"
-        >
+          <template
+            v-for="section in mainSections"
+            :key="section.name"
+          >
           <div :class="['detail-section', { 'is-collapsed': isSectionCollapsed(section) }]">
             <!-- Section Header -->
             <div
@@ -465,68 +522,212 @@ defineExpose({
               />
               <!-- Default field rendering -->
               <template v-else>
-                <el-row :gutter="24">
-                  <el-col
-                    v-for="field in section.fields.filter(f => !f.hidden)"
-                    :key="field.prop"
-                    :span="field.span || fieldSpan"
-                    class="field-col"
+                <!-- Render as Tabs if section type is 'tab' -->
+                <template v-if="section.type === 'tab' && section.tabs && section.tabs.length > 0">
+                  <el-tabs 
+                    v-model="activeTabs[section.name]"
+                    type="card"
+                    class="detail-section-tabs"
                   >
-                    <!-- Slot field -->
-                    <div
-                      v-if="field.type === 'slot'"
-                      class="field-item"
+                    <!-- Initialize activeTabs loosely on mount through a quick hack / v-once evaluated default but Vue handles it gracefully if value is undefined -->
+                    <el-tab-pane
+                      v-for="tab in section.tabs"
+                      :key="tab.id"
+                      :label="tab.title"
+                      :name="tab.id"
                     >
-                      <slot
-                        :name="`field-${field.prop}`"
-                        :field="field"
-                        :data="data"
-                        :value="getFieldValue(field)"
-                      />
-                    </div>
+                      <el-row :gutter="24">
+                        <el-col
+                          v-for="field in tab.fields.filter(f => !f.hidden)"
+                          :key="field.prop"
+                          :span="field.span || fieldSpan"
+                          class="field-col"
+                        >
+                          <!-- Slot field -->
+                          <div
+                            v-if="field.type === 'slot'"
+                            class="field-item"
+                          >
+                            <slot
+                              :name="`field-${field.prop}`"
+                              :field="field"
+                              :data="data"
+                              :value="getFieldValue(field)"
+                            />
+                          </div>
 
-                    <div
-                      v-else
-                      :class="['field-item', { 'field-image': field.type === 'image' }]"
+                          <div
+                            v-else
+                            :class="['field-item', { 'field-image': field.type === 'image' }]"
+                          >
+                            <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
+                            <div :class="['field-value', field.valueClass]">
+                              <FieldDisplay
+                                :field="field"
+                                :value="getFieldValue(field)"
+                              />
+                            </div>
+                          </div>
+                        </el-col>
+                      </el-row>
+                    </el-tab-pane>
+                  </el-tabs>
+                </template>
+
+                <!-- Standard Flow Layout -->
+                <template v-else>
+                  <el-row :gutter="24">
+                    <el-col
+                      v-for="field in section.fields.filter(f => !f.hidden)"
+                      :key="field.prop"
+                      :span="field.span || fieldSpan"
+                      class="field-col"
                     >
-                      <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
-                      <div :class="['field-value', field.valueClass]">
-                        <FieldDisplay
+                      <!-- Slot field -->
+                      <div
+                        v-if="field.type === 'slot'"
+                        class="field-item"
+                      >
+                        <slot
+                          :name="`field-${field.prop}`"
                           :field="field"
+                          :data="data"
                           :value="getFieldValue(field)"
                         />
                       </div>
-                    </div>
-                  </el-col>
-                </el-row>
+
+                      <div
+                        v-else
+                        :class="['field-item', { 'field-image': field.type === 'image' }]"
+                      >
+                        <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
+                        <div :class="['field-value', field.valueClass]">
+                          <FieldDisplay
+                            :field="field"
+                            :value="getFieldValue(field)"
+                          />
+                        </div>
+                      </div>
+                    </el-col>
+                  </el-row>
+                </template>
               </template>
             </div>
           </div>
         </template>
-      </div>
+        </div> <!-- End Main Column -->
 
-      <!-- Audit Info -->
+        <!-- Sidebar Column -->
+        <div v-if="sidebarSections.length > 0" class="sidebar-column">
+          <template
+            v-for="section in sidebarSections"
+            :key="section.name"
+          >
+            <div :class="['detail-section sidebar-section-block', { 'is-collapsed': isSectionCollapsed(section) }]">
+              <!-- Sidebar Section Header -->
+              <div
+                v-if="section.title"
+                class="section-header"
+                @click="section.collapsible ? toggleSection(section.name) : null"
+              >
+                <div class="section-title">
+                  <el-icon
+                    v-if="section.icon"
+                    class="section-icon"
+                  >
+                    <component :is="section.icon" />
+                  </el-icon>
+                  <span>{{ section.title }}</span>
+                </div>
+                <el-icon
+                  v-if="section.collapsible"
+                  :class="['collapse-icon', { 'is-collapsed': isSectionCollapsed(section) }]"
+                >
+                  <ArrowDown />
+                </el-icon>
+              </div>
+
+              <!-- Sidebar Section Content -->
+              <div
+                v-show="!isSectionCollapsed(section)"
+                class="section-content"
+              >
+                <!-- Custom slot for this section -->
+                <slot
+                  v-if="$slots[`section-${section.name}`]"
+                  :name="`section-${section.name}`"
+                  :data="data"
+                  :section="section"
+                />
+
+                <template v-else>
+                  <!-- In the sidebar, fields typically stack linearly with full width -->
+                  <el-row :gutter="0">
+                    <el-col
+                      v-for="field in section.fields.filter(f => !f.hidden)"
+                      :key="field.prop"
+                      :span="24"
+                      class="field-col sidebar-field-col"
+                    >
+                      <!-- Slot field -->
+                      <div
+                        v-if="field.type === 'slot'"
+                        class="field-item sidebar-field-item"
+                      >
+                        <slot
+                          :name="`field-${field.prop}`"
+                          :field="field"
+                          :data="data"
+                          :value="getFieldValue(field)"
+                        />
+                      </div>
+
+                      <div
+                        v-else
+                        :class="['field-item sidebar-field-item', { 'field-image': field.type === 'image' }]"
+                      >
+                        <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
+                        <div :class="['field-value', field.valueClass]">
+                          <FieldDisplay
+                            :field="field"
+                            :value="getFieldValue(field)"
+                          />
+                        </div>
+                      </div>
+                    </el-col>
+                  </el-row>
+                </template>
+              </div>
+            </div>
+          </template>
+
+          <!-- System Info in Sidebar (if moved here optionally) -->
+          <!-- We keep system info at bottom by default, but it could be embedded here -->
+        </div> <!-- End Sidebar Column -->
+      </div> <!-- End Layout Container -->
+
+      <!-- Audit Info (System Information) -->
       <div
         v-if="hasAuditInfo"
         class="audit-info"
       >
         <div class="audit-title">
-          {{ $t('common.labels.auditInfo') }}
+          系统信息
         </div>
         <el-descriptions
           :column="2"
           border
         >
-          <el-descriptions-item :label="$t('common.labels.createdBy')">
+          <el-descriptions-item label="创建人">
             {{ auditInfo?.createdBy || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item :label="$t('common.labels.createdAt')">
+          <el-descriptions-item label="创建时间">
             {{ formatDate(auditInfo?.createdAt) }}
           </el-descriptions-item>
-          <el-descriptions-item :label="$t('common.labels.updatedBy')">
+          <el-descriptions-item label="最后更新人">
             {{ auditInfo?.updatedBy || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item :label="$t('common.labels.updatedAt')">
+          <el-descriptions-item label="最后更新时间">
             {{ formatDate(auditInfo?.updatedAt) }}
           </el-descriptions-item>
         </el-descriptions>
@@ -571,17 +772,19 @@ defineExpose({
 </template>
 
 <style scoped lang="scss">
+@import '@/styles/variables.scss';
+
 .base-detail-page {
-  padding: 20px;
-  background-color: #f5f7fa;
+  padding: $spacing-lg;
+  background-color: $bg-body;
   min-height: 100%;
 }
 
 .loading-container {
   padding: 40px;
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background-color: $bg-card;
+  border-radius: $radius-large;
+  box-shadow: $shadow-md;
 }
 
 .detail-content {
@@ -590,41 +793,174 @@ defineExpose({
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-    padding: 16px 20px;
-    background-color: #fff;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: $spacing-md $spacing-lg;
+    background-color: $bg-card;
+    border-radius: $radius-large;
+    box-shadow: $shadow-md;
 
     .header-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: $spacing-md;
+
+      .back-btn {
+        font-size: 14px;
+        margin-right: 8px;
+        color: $text-secondary;
+      }
+
+      .profile-identity {
+        display: flex;
+        align-items: center;
+        gap: $spacing-md;
+      }
+
+      .profile-text {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+
+        .object-type-name {
+          font-size: 12px;
+          color: $text-secondary;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 2px;
+        }
+
+        .page-title {
+          margin: 0;
+          font-size: 20px;
+          font-weight: 700;
+          color: $text-main;
+        }
+      }
     }
 
-    .page-title {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 500;
-      color: #303133;
-    }
-
-    .header-actions {
+    .header-right {
       display: flex;
-      gap: 10px;
+      align-items: center;
+      gap: $spacing-lg;
+
+      .header-audit-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        text-align: right;
+        padding-right: $spacing-md;
+        border-right: 1px solid $border-color;
+
+        .audit-item {
+          font-size: 12px;
+          color: $text-secondary;
+          
+          .val {
+            color: $text-regular;
+            font-weight: 500;
+          }
+        }
+      }
+
+      .header-actions {
+        display: flex;
+        gap: $spacing-sm;
+      }
+    }
+  }
+
+  .detail-layout-container {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-md;
+    width: 100%;
+
+    &.has-sidebar {
+      flex-direction: row;
+      align-items: flex-start;
+
+      .main-column {
+        flex: 1;
+        min-width: 0; // Prevent flex item from blowing out its container
+      }
+
+      .sidebar-column {
+        width: 320px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-md;
+
+        .sidebar-section-block {
+          margin-bottom: 0; // Handled by gap
+          background-color: $bg-card;
+          border-radius: $radius-large;
+          box-shadow: $shadow-sm;
+          overflow: hidden;
+          border: 1px solid $border-light;
+
+          .section-header {
+            padding: 12px 16px;
+            background-color: #f8fafc;
+            border-bottom: 1px solid $border-light;
+            border-left: 3px solid #64748b;
+
+            .section-title {
+              font-size: 14px;
+              font-weight: 600;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            }
+          }
+
+          .section-content {
+            padding: 16px;
+
+            .sidebar-field-col {
+              margin-bottom: 12px;
+
+              &:last-child {
+                margin-bottom: 0;
+              }
+            }
+
+            .sidebar-field-item {
+              display: flex;
+              flex-direction: column;
+              align-items: flex-start;
+
+              .field-label {
+                margin-bottom: 4px;
+                color: $text-secondary;
+                font-size: 13px;
+                font-weight: 500;
+              }
+
+              .field-value {
+                width: 100%;
+                font-size: 14px;
+                color: $text-main;
+                word-break: break-all;
+              }
+            }
+          }
+        }
+      }
     }
   }
 
   .detail-sections {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: $spacing-md;
   }
 
   .detail-section {
-    background-color: #fff;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    background-color: $bg-card;
+    border-radius: $radius-large;
+    box-shadow: $shadow-sm;
     overflow: hidden;
+    border: 1px solid $border-light;
 
     &.is-collapsed {
       .section-content {
@@ -640,32 +976,34 @@ defineExpose({
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 20px;
-      background-color: #f5f7fa;
-      border-bottom: 1px solid #ebeef5;
+      padding: 14px $spacing-lg;
+      background-color: #f8fafc;
+      border-bottom: 1px solid $border-light;
+      border-left: 3px solid $primary-color;
       cursor: default;
+      transition: background-color 0.15s;
 
       &:hover {
-        background-color: #ecf5ff;
+        background-color: #f1f5f9;
       }
 
       .section-title {
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 16px;
-        font-weight: 500;
-        color: #303133;
+        font-size: 15px;
+        font-weight: 600;
+        color: $text-main;
 
         .section-icon {
-          font-size: 18px;
-          color: #409eff;
+          font-size: 16px;
+          color: $primary-color;
         }
       }
 
       .collapse-icon {
         transition: transform 0.3s;
-        color: #909399;
+        color: $text-secondary;
       }
     }
 
@@ -706,16 +1044,17 @@ defineExpose({
         .field-label {
           min-width: 120px;
           padding-right: 16px;
-          font-size: 14px;
-          color: #606266;
+          font-size: 13px;
+          color: $text-secondary;
           line-height: 22px;
           flex-shrink: 0;
+          font-weight: 500;
         }
 
         .field-value {
           flex: 1;
           font-size: 14px;
-          color: #303133;
+          color: $text-main;
           line-height: 22px;
           word-break: break-all;
         }
@@ -724,19 +1063,50 @@ defineExpose({
   }
 
   .audit-info {
-    margin-top: 20px;
-    background-color: #fff;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-top: $spacing-md;
+    background-color: $bg-card;
+    border-radius: $radius-large;
+    box-shadow: $shadow-sm;
     overflow: hidden;
+    border: 1px solid $border-light;
 
     .audit-title {
-      padding: 16px 20px;
-      background-color: #f5f7fa;
-      border-bottom: 1px solid #ebeef5;
-      font-size: 16px;
-      font-weight: 500;
-      color: #303133;
+      padding: 14px $spacing-lg;
+      background-color: #f8fafc;
+      border-bottom: 1px solid $border-light;
+      border-left: 3px solid $text-secondary;
+      font-size: 15px;
+      font-weight: 600;
+      color: $text-main;
+    }
+
+    :deep(.el-descriptions) {
+      padding: 0;
+
+      .el-descriptions__label {
+        width: 120px;
+        background-color: #fafafa;
+      }
+    }
+  }
+
+  .audit-info {
+    margin-top: $spacing-md;
+    padding: $spacing-lg;
+    background-color: $bg-card;
+    border-radius: $radius-large;
+    box-shadow: $shadow-sm;
+    border: 1px solid $border-light;
+
+    .audit-title {
+      margin-bottom: $spacing-md;
+      padding-bottom: $spacing-sm;
+      border-bottom: 1px solid $border-light;
+      border-left: 3px solid #64748b;
+      padding-left: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      color: $text-main;
     }
 
     :deep(.el-descriptions) {
@@ -750,22 +1120,24 @@ defineExpose({
   }
 
   .related-objects-section {
-    margin-top: 20px;
-    background-color: #fff;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-top: $spacing-md;
+    background-color: $bg-card;
+    border-radius: $radius-large;
+    box-shadow: $shadow-sm;
     overflow: hidden;
+    border: 1px solid $border-light;
 
     .related-objects-header {
-      padding: 16px 20px;
-      background-color: #f5f7fa;
-      border-bottom: 1px solid #ebeef5;
+      padding: 14px $spacing-lg;
+      background-color: #f8fafc;
+      border-bottom: 1px solid $border-light;
+      border-left: 3px solid #10b981;
 
       .related-objects-title {
         margin: 0;
-        font-size: 16px;
-        font-weight: 500;
-        color: #303133;
+        font-size: 15px;
+        font-weight: 600;
+        color: $text-main;
       }
     }
 

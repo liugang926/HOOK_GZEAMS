@@ -1,45 +1,52 @@
 <template>
-  <div class="main-layout">
+  <div class="main-layout" :class="{ 'sidebar-collapsed': isCollapsed }">
     <el-container>
-      <el-header>
-        <div class="header-content">
-          <div class="header-logo-row">
-            <el-button
-              v-if="isMobile"
-              :icon="Menu"
-              class="mobile-menu-btn"
-              text
-              @click="drawerVisible = true"
-            />
-            <h1 class="logo">
-              GZEAMS
-            </h1>
-          </div>
+      <!-- Sidebar -->
+      <el-aside
+        v-if="!isMobile"
+        :width="isCollapsed ? '64px' : '220px'"
+        class="sidebar"
+      >
+        <div class="sidebar-header">
+          <h1 class="logo">
+            <span class="logo-icon">📦</span>
+            <transition name="fade">
+              <span v-if="!isCollapsed" class="logo-text">GZEAMS</span>
+            </transition>
+          </h1>
+        </div>
 
-          <!-- Desktop Menu - Dynamic -->
+        <el-scrollbar class="sidebar-menu-scroll">
           <el-menu
-            v-if="!isMobile"
-            mode="horizontal"
             :default-active="activeMenu"
             router
-            class="desktop-menu"
+            :collapse="isCollapsed"
+            :collapse-transition="true"
+            class="sidebar-menu"
+            background-color="transparent"
+            text-color="rgba(255,255,255,0.7)"
+            active-text-color="#ffffff"
           >
-            <el-menu-item index="/dashboard">
-              {{ $t('menu.menu.dashboard') }}
+            <el-menu-item index="/dashboard" class="sidebar-menu-item">
+              <el-icon><Odometer /></el-icon>
+              <template #title>{{ $t('menu.menu.dashboard') }}</template>
             </el-menu-item>
+
             <template
               v-for="group in menuGroups"
               :key="group.name"
             >
+              <!-- Multi-item group → sub-menu -->
               <el-sub-menu
                 v-if="group.items.length > 1"
                 :index="group.name"
+                class="sidebar-sub-menu"
               >
                 <template #title>
                   <el-icon v-if="group.icon">
                     <component :is="resolveIcon(group.icon)" />
                   </el-icon>
-                  {{ getGroupLabel(group) }}
+                  <span>{{ getGroupLabel(group) }}</span>
                 </template>
                 <el-menu-item
                   v-for="item in group.items"
@@ -49,39 +56,49 @@
                   <el-icon v-if="item.icon">
                     <component :is="resolveIcon(item.icon)" />
                   </el-icon>
-                  {{ getItemLabel(item) }}
+                  <template #title>{{ getItemLabel(item) }}</template>
                 </el-menu-item>
               </el-sub-menu>
+
+              <!-- Single-item group → direct menu item -->
               <el-menu-item
                 v-else-if="group.items.length === 1"
                 :key="group.items[0].code"
                 :index="group.items[0].url"
+                class="sidebar-menu-item"
               >
                 <el-icon v-if="group.items[0].icon">
                   <component :is="resolveIcon(group.items[0].icon)" />
                 </el-icon>
-                {{ getItemLabel(group.items[0]) }}
+                <template #title>{{ getItemLabel(group.items[0]) }}</template>
               </el-menu-item>
             </template>
           </el-menu>
+        </el-scrollbar>
 
-          <div style="flex: 1" />
-
-          <LocaleSwitcher />
-          <NotificationBell />
+        <!-- Collapse toggle -->
+        <div class="sidebar-footer" @click="toggleCollapse">
+          <el-icon :size="18">
+            <Fold v-if="!isCollapsed" />
+            <Expand v-else />
+          </el-icon>
+          <transition name="fade">
+            <span v-if="!isCollapsed" class="collapse-label">{{ $t('common.actions.collapse') || '收起菜单' }}</span>
+          </transition>
         </div>
-      </el-header>
+      </el-aside>
 
-      <!-- Mobile Drawer Menu - Dynamic -->
+      <!-- Mobile Drawer -->
       <el-drawer
         v-model="drawerVisible"
         direction="ltr"
         size="240px"
         :with-header="false"
+        class="mobile-drawer"
       >
         <div class="drawer-menu-container">
           <div class="drawer-logo">
-            GZEAMS
+            <span class="logo-icon">📦</span> GZEAMS
           </div>
           <el-menu
             :default-active="activeMenu"
@@ -90,7 +107,8 @@
             @select="drawerVisible = false"
           >
             <el-menu-item index="/dashboard">
-              {{ $t('menu.menu.dashboard') }}
+              <el-icon><Odometer /></el-icon>
+              <span>{{ $t('menu.menu.dashboard') }}</span>
             </el-menu-item>
             <template
               v-for="group in menuGroups"
@@ -122,22 +140,61 @@
         </div>
       </el-drawer>
 
-      <el-main>
-        <router-view />
-      </el-main>
+      <!-- Main content column -->
+      <el-container class="main-container">
+        <!-- Top header bar -->
+        <el-header class="top-header" height="56px">
+          <div class="header-left">
+            <el-button
+              v-if="isMobile"
+              :icon="Menu"
+              class="mobile-menu-btn"
+              text
+              @click="drawerVisible = true"
+            />
+            <!-- Breadcrumb -->
+            <el-breadcrumb separator="/">
+              <el-breadcrumb-item :to="{ path: '/dashboard' }">
+                {{ $t('menu.menu.dashboard') }}
+              </el-breadcrumb-item>
+              <el-breadcrumb-item
+                v-for="crumb in breadcrumbs"
+                :key="crumb.path"
+                :to="crumb.to"
+              >
+                {{ crumb.label }}
+              </el-breadcrumb-item>
+            </el-breadcrumb>
+          </div>
+
+          <div class="header-right">
+            <LocaleSwitcher />
+            <NotificationBell />
+          </div>
+        </el-header>
+
+        <!-- Page content -->
+        <el-main class="page-main">
+          <router-view v-slot="{ Component }">
+            <transition name="page-fade" mode="out-in">
+              <component :is="Component" />
+            </transition>
+          </router-view>
+        </el-main>
+      </el-container>
     </el-container>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, shallowRef } from 'vue'
+import { ref, computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Menu } from '@element-plus/icons-vue'
+import { Menu, Fold, Expand, Odometer } from '@element-plus/icons-vue'
 import NotificationBell from '@/components/layout/NotificationBell.vue'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import { businessObjectApi, menuApi, type BusinessObject, type MenuGroup, type MenuItem } from '@/api/system'
-import { translateObjectCodeLabel } from '@/utils/objectDisplay'
+import { translateObjectCodeLabel, resolveObjectDisplayName } from '@/utils/objectDisplay'
 import * as ElementPlusIcons from '@element-plus/icons-vue'
 
 interface LocalMenuItem extends MenuItem {
@@ -153,7 +210,6 @@ interface LocalMenuGroup extends MenuGroup {
 
 type AnyRecord = Record<string, unknown>
 const AUTO_DYNAMIC_ENTRY_EXCLUDE_CODES = new Set<string>([
-  // Currently maintained through dedicated admin pages instead of object-router pages.
   'Role'
 ])
 
@@ -162,23 +218,86 @@ const { t, te } = useI18n()
 const activeMenu = computed(() => route.path)
 const drawerVisible = ref(false)
 const isMobile = ref(false)
+const isCollapsed = ref(false)
 
 // Dynamic menu state
 const menuGroups = shallowRef<LocalMenuGroup[]>([])
 const isLoading = ref(false)
 
-// Icon name to component mapping
+// ============================================================================
+// Auto-collapse sidebar on designer routes
+// ============================================================================
+watch(() => route.meta?.hideMenu, (hideMenu) => {
+  if (hideMenu && !isMobile.value) {
+    isCollapsed.value = true
+  }
+}, { immediate: true })
+
+const toggleCollapse = () => {
+  isCollapsed.value = !isCollapsed.value
+}
+
+// ============================================================================
+// Breadcrumb generation
+// ============================================================================
+const breadcrumbs = computed(() => {
+  const crumbs: { label: string; path: string; to?: { path: string } }[] = []
+  const path = route.path
+
+  // Dynamic object pages: /objects/:code/...
+  if (path.startsWith('/objects/')) {
+    const objectCode = route.params.code as string
+    if (objectCode) {
+      const objectLabel = resolveObjectDisplayName(
+        objectCode, objectCode,
+        t as (key: string) => string, te
+      ) || objectCode
+
+      // List page
+      crumbs.push({
+        label: objectLabel,
+        path: `/objects/${objectCode}`,
+        to: { path: `/objects/${objectCode}` }
+      })
+
+      // Detail or Edit
+      const id = route.params.id as string
+      if (id) {
+        if (path.endsWith('/edit')) {
+          crumbs.push({ label: t('common.actions.edit') || '编辑', path })
+        } else {
+          crumbs.push({ label: t('common.actions.detail') || '详情', path })
+        }
+      } else if (path.endsWith('/create')) {
+        crumbs.push({ label: t('common.actions.create') || '新建', path })
+      }
+    }
+  } else if (route.meta?.title) {
+    // Static routes with meta.title
+    const titleKey = route.meta.title as string
+    const label = te(titleKey) ? t(titleKey) : titleKey
+    crumbs.push({ label, path })
+  }
+
+  return crumbs
+})
+
+// ============================================================================
+// Icon resolution
+// ============================================================================
 const iconComponents: Record<string, unknown> = ElementPlusIcons
 
 const resolveIcon = (iconName: string) => {
   return iconComponents[iconName] || null
 }
 
+// ============================================================================
+// Menu label translation (reused from previous implementation)
+// ============================================================================
 const getGroupLabel = (group: LocalMenuGroup) => {
   const groupCode = String(group.code || '').trim()
   const groupName = String(group.name || '').trim()
 
-  // Priority 1: Use stable backend group code.
   if (groupCode) {
     const normalizedCode = groupCode.toLowerCase()
     const groupCodeToKeyMap: Record<string, string> = {
@@ -203,13 +322,8 @@ const getGroupLabel = (group: LocalMenuGroup) => {
     }
   }
 
-  // Fallback: try to match name to known translation keys
-  // This handles cases where backend returns localized names without codes
   const normalizedGroupName = groupName.toLowerCase()
-
-  // Map common group names to their translation keys
   const groupNameToKeyMap: Record<string, string> = {
-    // Chinese names
     '资产管理': 'assets',
     '耗材管理': 'consumables',
     '盘点管理': 'inventory',
@@ -223,7 +337,6 @@ const getGroupLabel = (group: LocalMenuGroup) => {
     '财务管理': 'finance',
     '流程管理': 'workflowManagement',
     '其他': 'other',
-    // English names
     'asset management': 'assets',
     'asset operations': 'assetOperations',
     'consumables': 'consumables',
@@ -244,7 +357,6 @@ const getGroupLabel = (group: LocalMenuGroup) => {
     return t(`menu.menu.${mappedKey}`)
   }
 
-  // Final fallback: return the name as-is
   return groupName
 }
 
@@ -252,33 +364,25 @@ const getItemLabel = (item: LocalMenuItem) => {
   const itemCode = String(item.code || '').trim()
   const itemName = String(item.name || '').trim()
 
-  // Priority 1: Use item.code for translation
   if (itemCode) {
     const objectCodeLabel = translateObjectCodeLabel(itemCode, t as (key: string) => string, te)
     if (objectCodeLabel) {
       return objectCodeLabel
     }
 
-    // First try menu.menu namespace (for top-level items)
     const menuKey = `menu.menu.${itemCode}`
     if (te(menuKey)) {
       return t(menuKey)
     }
 
-    // Then try menu.routes namespace (for route items)
     const routeKey = `menu.routes.${itemCode}`
     if (te(routeKey)) {
       return t(routeKey)
     }
   }
 
-  // Priority 2: Fallback to name-based translation
-  // This handles cases where backend returns localized names without codes
   const normalizedName = itemName.toLowerCase()
-
-  // Map common item names to their translation keys
   const itemNameToKeyMap: Record<string, string> = {
-    // Chinese names
     '业务对象': 'businessObjects',
     '用户': 'users',
     '字段定义': 'fieldDefinitions',
@@ -304,7 +408,6 @@ const getItemLabel = (item: LocalMenuItem) => {
     '软件许可证': 'softwareLicenses',
     '分配记录': 'licenseAllocations',
     '集成配置管理': 'integrationConfigs',
-    // English names
     'business objects': 'businessObjects',
     'users': 'users',
     'field definitions': 'fieldDefinitions',
@@ -337,14 +440,19 @@ const getItemLabel = (item: LocalMenuItem) => {
     return t(`menu.routes.${mappedKey}`)
   }
 
-  // Final fallback: return the name as-is
   return itemName
 }
 
+// ============================================================================
+// Responsive
+// ============================================================================
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 768
 }
 
+// ============================================================================
+// Menu data fetching (unchanged logic)
+// ============================================================================
 const normalizeBusinessObjects = (payload: AnyRecord): BusinessObject[] => {
   const source: AnyRecord[] = []
   if (Array.isArray(payload)) source.push(...payload)
@@ -447,12 +555,11 @@ const fetchMenu = async () => {
     ])
 
     const baseGroups = normalizeMenuGroups(menuResponse)
-    const objects = normalizeBusinessObjects((objectsResponse || {}) as AnyRecord)
+    const objects = normalizeBusinessObjects((objectsResponse || {}) as unknown as AnyRecord)
     const missingGroup = buildMissingObjectGroup(objects, baseGroups)
     menuGroups.value = missingGroup ? [...baseGroups, missingGroup] : baseGroups
   } catch (error) {
     console.error('Failed to fetch menu:', error)
-    // Fallback to empty menu on error
     menuGroups.value = []
   } finally {
     isLoading.value = false
@@ -470,62 +577,181 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@import '@/styles/variables.scss';
+/* ====================================================================
+   Layout Shell
+   ==================================================================== */
 .main-layout {
   min-height: 100vh;
+  --sidebar-bg: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  --sidebar-width: 220px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 56px;
 }
 
-.header-content {
+/* ====================================================================
+   Sidebar
+   ==================================================================== */
+.sidebar {
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar-header {
+  height: var(--header-height);
   display: flex;
   align-items: center;
-  height: 100%;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }
 
 .logo {
-  margin: 0 30px 0 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #409eff;
-}
-
-.el-main {
-  background: #f5f7fa;
-  padding: 20px;
-}
-
-.header-logo-row {
+  margin: 0;
   display: flex;
   align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.logo-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #60a5fa, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 1px;
+}
+
+.sidebar-menu-scroll {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar menu overrides */
+.sidebar-menu {
+  border-right: none !important;
+  padding: 8px 0;
+}
+
+.sidebar-menu :deep(.el-menu-item),
+.sidebar-menu :deep(.el-sub-menu__title) {
+  height: 44px;
+  line-height: 44px;
+  margin: 2px 8px;
+  border-radius: 8px;
+  padding-left: 20px !important;
+}
+
+.sidebar-menu :deep(.el-menu-item:hover),
+.sidebar-menu :deep(.el-sub-menu__title:hover) {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.sidebar-menu :deep(.el-menu-item.is-active) {
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.25), rgba(167, 139, 250, 0.15)) !important;
+  color: #ffffff !important;
+  font-weight: 500;
+}
+
+.sidebar-menu :deep(.el-sub-menu .el-menu-item) {
+  padding-left: 52px !important;
+  height: 40px;
+  line-height: 40px;
+  font-size: 13px;
+}
+
+/* Collapsed sidebar */
+.sidebar-collapsed .sidebar-menu :deep(.el-menu-item),
+.sidebar-collapsed .sidebar-menu :deep(.el-sub-menu__title) {
+  margin: 2px 6px;
+  padding-left: 0 !important;
+  justify-content: center;
+}
+
+.sidebar-footer {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-footer:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.collapse-label {
+  font-size: 13px;
+}
+
+/* ====================================================================
+   Top Header Bar
+   ==================================================================== */
+.top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: $bg-card;
+  border-bottom: 1px solid $border-light;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .mobile-menu-btn {
-  margin-right: 10px;
   font-size: 20px;
 }
 
-.desktop-menu {
-  border-bottom: none !important;
+/* ====================================================================
+   Main Content
+   ==================================================================== */
+.main-container {
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.page-main {
+  background: $bg-body;
+  padding: 20px;
   flex: 1;
-  margin-left: 20px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  min-width: 0;
 }
 
-/* Hide scrollbar for cleaner look while maintaining scroll functionality */
-.desktop-menu::-webkit-scrollbar {
-  height: 4px;
-}
-
-.desktop-menu::-webkit-scrollbar-thumb {
-  background: #dcdfe6;
-  border-radius: 2px;
-}
-
-.desktop-menu::-webkit-scrollbar-track {
-  background: transparent;
-}
-
+/* ====================================================================
+   Mobile Drawer
+   ==================================================================== */
 .drawer-menu-container {
   height: 100%;
   display: flex;
@@ -534,10 +760,16 @@ onUnmounted(() => {
 
 .drawer-logo {
   padding: 20px;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
-  color: #409eff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   border-bottom: 1px solid #e6e6e6;
+}
+
+.drawer-logo .logo-icon {
+  font-size: 22px;
 }
 
 .mobile-menu {
@@ -545,12 +777,38 @@ onUnmounted(() => {
   border-right: none !important;
 }
 
+/* ====================================================================
+   Transitions
+   ==================================================================== */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.page-fade-enter-from,
+.page-fade-leave-to {
+  opacity: 0;
+}
+
+/* ====================================================================
+   Responsive
+   ==================================================================== */
 @media (max-width: 768px) {
-  .el-header {
-    padding: 0 10px;
+  .top-header {
+    padding: 0 12px;
   }
-  .el-main {
-    padding: 10px;
+  .page-main {
+    padding: 12px;
   }
 }
 </style>

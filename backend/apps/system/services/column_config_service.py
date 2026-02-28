@@ -218,16 +218,20 @@ class ColumnConfigService:
         Returns:
             UserColumnPreference instance
         """
-        pref, created = UserColumnPreference.objects.get_or_create(
+        # Use all_objects (unscoped manager) to bypass TenantManager's org
+        # filtering. The unique_together constraint is (user, object_code,
+        # config_name) and does not include organization, so the tenant-scoped
+        # manager may miss the existing record and cause IntegrityError.
+        pref, created = UserColumnPreference.all_objects.update_or_create(
             user=user,
             object_code=object_code,
             config_name='default',
-            defaults={'column_config': config, 'organization': user.organization}
+            defaults={
+                'column_config': config,
+                'organization': getattr(user, 'organization', None),
+                'is_deleted': False,
+            }
         )
-
-        if not created:
-            pref.column_config = config
-            pref.save()
 
         # Clear cache
         cache_key = f"column_config:{user.id}:{object_code}"
