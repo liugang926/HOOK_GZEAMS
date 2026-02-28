@@ -92,7 +92,7 @@ class ObjectRegistry:
         # Inventory module
         'InventoryTask': 'apps.inventory.viewsets.InventoryTaskViewSet',
         'InventorySnapshot': 'apps.inventory.viewsets.InventorySnapshotViewSet',
-        'InventoryItem': 'apps.inventory.viewsets.InventoryItemViewSet',
+        'InventoryItem': 'apps.inventory.viewsets.InventoryDifferenceViewSet',
         # IT Assets
         'ITAsset': 'apps.it_assets.viewsets.ITAssetInfoViewSet',
         'ITSoftware': 'apps.it_assets.viewsets.SoftwareViewSet',
@@ -306,7 +306,7 @@ class ObjectRegistry:
             # Inventory module
             {'code': 'InventoryTask', 'name': '盘点任务', 'model': 'apps.inventory.models.InventoryTask'},
             {'code': 'InventorySnapshot', 'name': '盘点快照', 'model': 'apps.inventory.models.InventorySnapshot'},
-            {'code': 'InventoryItem', 'name': '盘点明细', 'model': 'apps.inventory.models.InventoryItem'},
+            {'code': 'InventoryItem', 'name': '盘点明细', 'model': 'apps.inventory.models.InventoryDifference'},
             # IT Assets
             {'code': 'ITAsset', 'name': 'IT设备', 'model': 'apps.it_assets.models.ITAssetInfo'},
             {'code': 'ITSoftware', 'name': 'IT软件目录', 'model': 'apps.it_assets.models.Software'},

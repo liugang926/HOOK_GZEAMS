@@ -37,7 +37,7 @@
               >
                 <template #title>
                   <el-icon v-if="group.icon">
-                    <component :is="group.icon" />
+                    <component :is="resolveIcon(group.icon)" />
                   </el-icon>
                   {{ getGroupLabel(group) }}
                 </template>
@@ -47,7 +47,7 @@
                   :index="item.url"
                 >
                   <el-icon v-if="item.icon">
-                    <component :is="item.icon" />
+                    <component :is="resolveIcon(item.icon)" />
                   </el-icon>
                   {{ getItemLabel(item) }}
                 </el-menu-item>
@@ -58,7 +58,7 @@
                 :index="group.items[0].url"
               >
                 <el-icon v-if="group.items[0].icon">
-                  <component :is="group.items[0].icon" />
+                  <component :is="resolveIcon(group.items[0].icon)" />
                 </el-icon>
                 {{ getItemLabel(group.items[0]) }}
               </el-menu-item>
@@ -136,8 +136,26 @@ import { useI18n } from 'vue-i18n'
 import { Menu } from '@element-plus/icons-vue'
 import NotificationBell from '@/components/layout/NotificationBell.vue'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
-import { menuApi, type MenuGroup } from '@/api/system'
+import { businessObjectApi, menuApi, type BusinessObject, type MenuGroup, type MenuItem } from '@/api/system'
+import { translateObjectCodeLabel } from '@/utils/objectDisplay'
 import * as ElementPlusIcons from '@element-plus/icons-vue'
+
+interface LocalMenuItem extends MenuItem {
+  code: string
+  name: string
+  url: string
+}
+
+interface LocalMenuGroup extends MenuGroup {
+  code?: string
+  items: LocalMenuItem[]
+}
+
+type AnyRecord = Record<string, unknown>
+const AUTO_DYNAMIC_ENTRY_EXCLUDE_CODES = new Set<string>([
+  // Currently maintained through dedicated admin pages instead of object-router pages.
+  'Role'
+])
 
 const route = useRoute()
 const { t, te } = useI18n()
@@ -146,16 +164,40 @@ const drawerVisible = ref(false)
 const isMobile = ref(false)
 
 // Dynamic menu state
-const menuGroups = shallowRef<MenuGroup[]>([])
+const menuGroups = shallowRef<LocalMenuGroup[]>([])
 const isLoading = ref(false)
 
 // Icon name to component mapping
-const iconComponents: Record<string, any> = ElementPlusIcons
+const iconComponents: Record<string, unknown> = ElementPlusIcons
 
-const getGroupLabel = (group: any) => {
-  // If group has a code, use it for translation
-  if (group.code) {
-    const translationKey = `menu.menu.${group.code}`
+const resolveIcon = (iconName: string) => {
+  return iconComponents[iconName] || null
+}
+
+const getGroupLabel = (group: LocalMenuGroup) => {
+  const groupCode = String(group.code || '').trim()
+  const groupName = String(group.name || '').trim()
+
+  // Priority 1: Use stable backend group code.
+  if (groupCode) {
+    const normalizedCode = groupCode.toLowerCase()
+    const groupCodeToKeyMap: Record<string, string> = {
+      dashboard: 'dashboard',
+      asset: 'assets',
+      asset_operation: 'assetOperations',
+      consumable: 'consumables',
+      purchase: 'procurement',
+      maintenance: 'maintenance',
+      inventory: 'inventory',
+      organization: 'organization',
+      finance: 'finance',
+      workflow: 'workflowManagement',
+      system: 'system',
+      other: 'other'
+    }
+
+    const mappedByCode = groupCodeToKeyMap[normalizedCode] || groupCode
+    const translationKey = `menu.menu.${mappedByCode}`
     if (te(translationKey)) {
       return t(translationKey)
     }
@@ -163,7 +205,7 @@ const getGroupLabel = (group: any) => {
 
   // Fallback: try to match name to known translation keys
   // This handles cases where backend returns localized names without codes
-  const normalizedGroupName = group.name?.toLowerCase().trim()
+  const normalizedGroupName = groupName.toLowerCase()
 
   // Map common group names to their translation keys
   const groupNameToKeyMap: Record<string, string> = {
@@ -177,9 +219,13 @@ const getGroupLabel = (group: any) => {
     '采购管理': 'procurement',
     '维保管理': 'maintenance',
     '组织管理': 'organization',
+    '资产作业': 'assetOperations',
+    '财务管理': 'finance',
     '流程管理': 'workflowManagement',
+    '其他': 'other',
     // English names
     'asset management': 'assets',
+    'asset operations': 'assetOperations',
     'consumables': 'consumables',
     'inventory': 'inventory',
     'workflow': 'workflow',
@@ -188,7 +234,9 @@ const getGroupLabel = (group: any) => {
     'procurement': 'procurement',
     'maintenance': 'maintenance',
     'organization': 'organization',
-    'workflow management': 'workflowManagement'
+    'finance': 'finance',
+    'workflow management': 'workflowManagement',
+    'other': 'other'
   }
 
   const mappedKey = groupNameToKeyMap[normalizedGroupName]
@@ -197,20 +245,28 @@ const getGroupLabel = (group: any) => {
   }
 
   // Final fallback: return the name as-is
-  return group.name
+  return groupName
 }
 
-const getItemLabel = (item: any) => {
+const getItemLabel = (item: LocalMenuItem) => {
+  const itemCode = String(item.code || '').trim()
+  const itemName = String(item.name || '').trim()
+
   // Priority 1: Use item.code for translation
-  if (item.code) {
+  if (itemCode) {
+    const objectCodeLabel = translateObjectCodeLabel(itemCode, t as (key: string) => string, te)
+    if (objectCodeLabel) {
+      return objectCodeLabel
+    }
+
     // First try menu.menu namespace (for top-level items)
-    const menuKey = `menu.menu.${item.code}`
+    const menuKey = `menu.menu.${itemCode}`
     if (te(menuKey)) {
       return t(menuKey)
     }
 
     // Then try menu.routes namespace (for route items)
-    const routeKey = `menu.routes.${item.code}`
+    const routeKey = `menu.routes.${itemCode}`
     if (te(routeKey)) {
       return t(routeKey)
     }
@@ -218,7 +274,7 @@ const getItemLabel = (item: any) => {
 
   // Priority 2: Fallback to name-based translation
   // This handles cases where backend returns localized names without codes
-  const normalizedName = item.name?.toLowerCase().trim()
+  const normalizedName = itemName.toLowerCase()
 
   // Map common item names to their translation keys
   const itemNameToKeyMap: Record<string, string> = {
@@ -282,11 +338,102 @@ const getItemLabel = (item: any) => {
   }
 
   // Final fallback: return the name as-is
-  return item.name
+  return itemName
 }
 
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 768
+}
+
+const normalizeBusinessObjects = (payload: AnyRecord): BusinessObject[] => {
+  const source: AnyRecord[] = []
+  if (Array.isArray(payload)) source.push(...payload)
+  if (Array.isArray(payload?.results)) source.push(...payload.results)
+  if (Array.isArray(payload?.hardcoded)) source.push(...payload.hardcoded)
+  if (Array.isArray(payload?.custom)) source.push(...payload.custom)
+
+  const normalized: BusinessObject[] = []
+  const seen = new Set<string>()
+  for (const item of source) {
+    const code = String(item?.code || '').trim()
+    if (!code || seen.has(code)) continue
+    seen.add(code)
+    normalized.push({
+      id: String(item?.id || code),
+      code,
+      name: String(item?.name || code),
+      nameEn: String(item?.nameEn || ''),
+      description: String(item?.description || ''),
+      enableWorkflow: item?.enableWorkflow === true,
+      enableVersion: item?.enableVersion === true,
+      enableSoftDelete: item?.enableSoftDelete !== false,
+      isHardcoded: item?.isHardcoded === true || item?.type === 'hardcoded',
+      djangoModelPath: String(item?.djangoModelPath || item?.modelPath || ''),
+      tableName: String(item?.tableName || ''),
+      fieldCount: Number(item?.fieldCount || 0),
+      layoutCount: Number(item?.layoutCount || 0)
+    })
+  }
+  return normalized
+}
+
+const normalizeMenuGroups = (payload: unknown): LocalMenuGroup[] => {
+  if (Array.isArray(payload)) {
+    return payload as LocalMenuGroup[]
+  }
+  if (payload && typeof payload === 'object') {
+    const data = payload as AnyRecord
+    if (Array.isArray(data.groups)) {
+      return data.groups as LocalMenuGroup[]
+    }
+  }
+  return []
+}
+
+const extractObjectCodeFromUrl = (url: string): string => {
+  const value = String(url || '').trim()
+  const match = value.match(/^\/objects\/([^/?#]+)/)
+  return match ? decodeURIComponent(match[1]) : ''
+}
+
+const collectMenuObjectCodes = (groups: LocalMenuGroup[]): Set<string> => {
+  const codes = new Set<string>()
+  groups.forEach((group) => {
+    group.items.forEach((item) => {
+      const code = String(item?.code || '').trim()
+      if (code) codes.add(code)
+      const urlCode = extractObjectCodeFromUrl(String(item?.url || ''))
+      if (urlCode) codes.add(urlCode)
+    })
+  })
+  return codes
+}
+
+const buildMissingObjectGroup = (objects: BusinessObject[], menuGroupsData: LocalMenuGroup[]): LocalMenuGroup | null => {
+  const existingCodes = collectMenuObjectCodes(menuGroupsData)
+  const missingObjects = objects
+    .filter((obj) => !existingCodes.has(obj.code))
+    .filter((obj) => !AUTO_DYNAMIC_ENTRY_EXCLUDE_CODES.has(obj.code))
+    .sort((a, b) => a.code.localeCompare(b.code))
+
+  if (!missingObjects.length) return null
+
+  return {
+    name: 'Dynamic Objects',
+    code: 'dynamicObjects',
+    icon: 'Grid',
+    order: 999,
+    items: missingObjects.map((obj, index) => ({
+      code: obj.code,
+      name: obj.nameEn || obj.name || obj.code,
+      nameEn: obj.nameEn || '',
+      url: `/objects/${obj.code}`,
+      icon: 'Document',
+      order: index + 1,
+      group: 'Dynamic Objects',
+      badge: null
+    }))
+  }
 }
 
 const fetchMenu = async () => {
@@ -294,16 +441,15 @@ const fetchMenu = async () => {
   isLoading.value = true
 
   try {
-    // Response interceptor automatically unwraps { success, data } -> returns data directly
-    const response = await menuApi.get() as any
-    console.log('Menu API response:', response)
-    // response should be { groups: [...], items: [...] }
-    if (response && response.groups) {
-      menuGroups.value = response.groups
-    } else if (Array.isArray(response)) {
-      // Handle case where response is directly an array
-      menuGroups.value = response
-    }
+    const [menuResponse, objectsResponse] = await Promise.all([
+      menuApi.get(),
+      businessObjectApi.list({ pageSize: 500 })
+    ])
+
+    const baseGroups = normalizeMenuGroups(menuResponse)
+    const objects = normalizeBusinessObjects((objectsResponse || {}) as AnyRecord)
+    const missingGroup = buildMissingObjectGroup(objects, baseGroups)
+    menuGroups.value = missingGroup ? [...baseGroups, missingGroup] : baseGroups
   } catch (error) {
     console.error('Failed to fetch menu:', error)
     // Fallback to empty menu on error

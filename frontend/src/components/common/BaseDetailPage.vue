@@ -418,6 +418,11 @@ defineExpose({
 
       <!-- Detail Sections -->
       <div class="detail-sections">
+        <el-empty
+          v-if="sections.length === 0"
+          :description="$t('common.messages.noData')"
+        />
+
         <template
           v-for="section in sections"
           :key="section.name"

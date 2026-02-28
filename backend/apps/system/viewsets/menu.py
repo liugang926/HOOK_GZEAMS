@@ -4,10 +4,8 @@ Dynamic Menu ViewSet - Generates menu structure from BusinessObject metadata.
 This ViewSet provides a completely dynamic menu system where menu items
 are generated from BusinessObject records with menu_config metadata.
 """
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
-from rest_framework.response import Response
-from django.db.models import Q, Value, F
 
 from apps.common.responses.base import BaseResponse
 from apps.system.models import BusinessObject
@@ -92,7 +90,8 @@ class MenuViewSet(viewsets.GenericViewSet):
                 continue
 
             # Get menu configuration
-            group_name = menu_config.get('group', '其他')
+            group_name = menu_config.get('group', 'Other')
+            group_code = menu_config.get('group_code') or str(group_name).strip().lower().replace(' ', '_')
             group_order = menu_config.get('group_order', 999)
             item_order = menu_config.get('item_order', 999)
             icon = menu_config.get('icon', 'Document')
@@ -107,12 +106,14 @@ class MenuViewSet(viewsets.GenericViewSet):
                 'icon': icon,
                 'order': item_order,
                 'group': group_name,
+                'group_code': group_code,
                 'badge': menu_config.get('badge')
             }
 
             # Add to group
             if group_name not in groups:
                 groups[group_name] = {
+                    'code': group_code,
                     'name': group_name,
                     'order': group_order,
                     'icon': menu_config.get('group_icon', 'Folder'),
@@ -223,13 +224,18 @@ class MenuViewSet(viewsets.GenericViewSet):
         return BaseResponse.success({
             'schema': schema,
             'common_groups': [
-                {'name': '工作台', 'order': 1, 'icon': 'Odometer'},
-                {'name': '资产管理', 'order': 10, 'icon': 'FolderOpened'},
-                {'name': '库存管理', 'order': 20, 'icon': 'Goods'},
-                {'name': '耗材管理', 'order': 30, 'icon': 'Box'},
-                {'name': '财务管理', 'order': 40, 'icon': 'Wallet'},
-                {'name': '系统管理', 'order': 100, 'icon': 'Setting'},
-                {'name': '其他', 'order': 999, 'icon': 'More'}
+                {'code': 'dashboard', 'name': 'Dashboard', 'order': 1, 'icon': 'Odometer'},
+                {'code': 'asset', 'name': 'Asset Management', 'order': 10, 'icon': 'FolderOpened'},
+                {'code': 'asset_operation', 'name': 'Asset Operations', 'order': 20, 'icon': 'Operation'},
+                {'code': 'consumable', 'name': 'Consumables', 'order': 30, 'icon': 'Box'},
+                {'code': 'purchase', 'name': 'Procurement', 'order': 40, 'icon': 'ShoppingCart'},
+                {'code': 'maintenance', 'name': 'Maintenance', 'order': 50, 'icon': 'Tools'},
+                {'code': 'inventory', 'name': 'Inventory', 'order': 60, 'icon': 'Document'},
+                {'code': 'organization', 'name': 'Organization', 'order': 70, 'icon': 'OfficeBuilding'},
+                {'code': 'finance', 'name': 'Finance', 'order': 80, 'icon': 'Wallet'},
+                {'code': 'workflow', 'name': 'Workflow Management', 'order': 90, 'icon': 'Connection'},
+                {'code': 'system', 'name': 'System', 'order': 100, 'icon': 'Setting'},
+                {'code': 'other', 'name': 'Other', 'order': 999, 'icon': 'More'}
             ],
             'common_icons': [
                 'Document', 'Folder', 'FolderOpened', 'Menu', 'Setting',

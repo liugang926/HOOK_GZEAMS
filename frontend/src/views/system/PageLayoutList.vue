@@ -8,7 +8,7 @@
         >
           <el-icon><ArrowLeft /></el-icon>
         </el-button>
-        <h3>{{ $t('system.pageLayout.title', { name: objectName }) }}</h3>
+        <h3>{{ $t('system.pageLayout.title', { name: objectDisplayName }) }}</h3>
       </div>
       <div class="header-actions">
         <el-tag
@@ -287,19 +287,28 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { pageLayoutApi, businessObjectApi, type PageLayout, type AvailableField } from '@/api/system'
+import { resolveObjectDisplayName } from '@/utils/objectDisplay'
 import { legacyTypeToMode } from '@/constants/layoutTemplates'
 import type { LayoutMode } from '@/types/layout'
 import { useLayoutFields } from '@/composables'
 import { normalizeLayoutType } from '@/utils/layoutMode'
 import { preparePersistLayoutConfig, resolveRawLayoutConfig } from '@/platform/layout/layoutPersistGuard'
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 const route = useRoute()
 const router = useRouter()
 
 const objectCode = computed(() => route.params.objectCode as string || route.query.objectCode as string || '')
 const objectName = ref(route.query.objectName as string || t('system.businessObject.title'))
 const businessObjectId = ref(route.query.businessObjectId as string || '')
+const objectDisplayName = computed(() => {
+  return resolveObjectDisplayName(
+    objectCode.value,
+    objectName.value,
+    t as (key: string) => string,
+    te
+  )
+})
 const loading = ref(false)
 const tableData = ref<PageLayout[]>([])
 const createVisible = ref(false)
@@ -490,7 +499,7 @@ const addSystemDefaultLayouts = async () => {
     tableData.value.push({
       id: `system_${mode}`,
       layoutCode: `system_default_${mode}`,
-      layoutName: `${objectName.value || objectCode.value} ${t('system.pageLayout.types.form')} (${t('system.pageLayout.tags.systemDefault')})`,
+      layoutName: `${objectDisplayName.value || objectCode.value} ${t('system.pageLayout.types.form')} (${t('system.pageLayout.tags.systemDefault')})`,
       mode: mode,
       description: t('system.pageLayout.tips.default'),
       layoutConfig: layoutConfig,
@@ -623,7 +632,7 @@ const handleCreateSubmit = async () => {
         layoutName: newLayout.layoutName,
         layoutType: DESIGNER_LAYOUT_TYPE,
         objectCode: objectCode.value,
-        objectName: objectName.value,
+        objectName: objectDisplayName.value || objectName.value,
         businessObjectId: newLayout.businessObject || newLayout.business_object || targetBusinessObjectId
       }
     })
@@ -644,7 +653,7 @@ const handleEdit = (row: PageLayout) => {
       layoutName: row.layoutName,
       layoutType: DESIGNER_LAYOUT_TYPE,
       objectCode: objectCode.value,
-      objectName: objectName.value,
+      objectName: objectDisplayName.value || objectName.value,
       businessObjectId: rowBusinessObjectId
     }
   })
@@ -689,7 +698,7 @@ const handleDuplicate = async (row: PageLayout) => {
         layoutName: duplicatedLayout.layoutName,
         layoutType: DESIGNER_LAYOUT_TYPE,
         objectCode: objectCode.value,
-        objectName: objectName.value,
+        objectName: objectDisplayName.value || objectName.value,
         businessObjectId: duplicatedLayout.businessObject || duplicatedLayout.business_object || targetBusinessObjectId
       }
     })
@@ -855,7 +864,7 @@ const handleCustomize = async (row: PageLayout) => {
     const mode: LayoutMode = DESIGNER_MODE
     const customTimestamp = Date.now()
     const customLayoutCode = `${String(objectCode.value || 'object').toLowerCase()}_form_custom_${customTimestamp}`
-    const customLayoutName = `${objectName.value || objectCode.value} ${t('system.pageLayout.types.form')} - ${t('system.pageLayout.actions.customize')}`
+    const customLayoutName = `${objectDisplayName.value || objectCode.value} ${t('system.pageLayout.types.form')} - ${t('system.pageLayout.actions.customize')}`
     const customLayoutConfig = preparePersistLayoutConfig(row, {
       layoutType: 'form',
       dropFieldCode: isAuditFieldCode
@@ -883,7 +892,7 @@ const handleCustomize = async (row: PageLayout) => {
         layoutName: customLayout.layoutName,
         layoutType: DESIGNER_LAYOUT_TYPE,
         objectCode: objectCode.value,
-        objectName: objectName.value,
+        objectName: objectDisplayName.value || objectName.value,
         businessObjectId: customLayout.business_object || customLayout.businessObject || targetBusinessObjectId
       }
     })
@@ -903,7 +912,7 @@ const handlePreview = (row: PageLayout) => {
       layoutName: row.layoutName,
       layoutType: DESIGNER_LAYOUT_TYPE,
       objectCode: objectCode.value,
-      objectName: objectName.value,
+      objectName: objectDisplayName.value || objectName.value,
       businessObjectId: rowBusinessObjectId,
       previewMode: 'active'
     }

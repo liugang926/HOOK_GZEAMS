@@ -8,8 +8,6 @@ const AuthLayout = () => import('@/layouts/AuthLayout.vue')
 // Pages
 const Dashboard = () => import('@/views/Dashboard.vue')
 const Login = () => import('@/views/auth/Login.vue')
-const TaskList = () => import('@/views/inventory/TaskList.vue')
-const DepartmentList = () => import('@/views/system/DepartmentList.vue')
 const TaskCenter = () => import('@/views/workflow/TaskCenter.vue')
 const TaskDetail = () => import('@/views/workflow/TaskDetail.vue')
 const MyApprovals = () => import('@/views/workflow/MyApprovals.vue')
@@ -19,33 +17,36 @@ const DynamicListPage = () => import('@/views/dynamic/DynamicListPage.vue')
 const DynamicFormPage = () => import('@/views/dynamic/DynamicFormPage.vue')
 const DynamicDetailPage = () => import('@/views/dynamic/DynamicDetailPage.vue')
 
-// Business Object Codes mapping for route aliases
-// This maps old route paths to new object codes
-const BUSINESS_OBJECT_ROUTES: Record<string, string> = {
-  // Assets
-  'assets': 'Asset',
-  'assets/operations/pickup': 'AssetPickup',
-  'assets/operations/transfer': 'AssetTransfer',
-  'assets/operations/return': 'AssetReturn',
-  'assets/operations/loans': 'AssetLoan',
-  'assets/settings/categories': 'AssetCategory',
-  'assets/settings/suppliers': 'Supplier',
-  'assets/settings/locations': 'Location',
-  'assets/status-logs': 'AssetStatusLog',
-  // Consumables
-  'consumables': 'Consumable',
-  'consumables/categories': 'ConsumableCategory',
-  'consumables/stock': 'ConsumableStock',
+// Additional legacy module routes that now resolve through the metadata-driven object engine.
+// These modules exist on backend but may still expose legacy menu URLs or bookmarks.
+export const ADDITIONAL_BUSINESS_OBJECT_ROUTES: Record<string, string> = {
   // Inventory
-  'inventory': 'InventoryTask',
-  // System
-  'system/departments': 'Department',
-  'system/business-objects': 'BusinessObject',
-  'system/field-definitions': 'FieldDefinition',
-  'system/page-layouts': 'PageLayout',
+  'inventory/items': 'InventoryItem',
+  // Insurance
+  'insurance/companies': 'InsuranceCompany',
+  'insurance/policies': 'InsurancePolicy',
+  'insurance/insured-assets': 'InsuredAsset',
+  'insurance/payments': 'PremiumPayment',
+  'insurance/claims': 'ClaimRecord',
+  'insurance/renewals': 'PolicyRenewal',
+  // Leasing
+  'leasing/contracts': 'LeasingContract',
+  'leasing/items': 'LeaseItem',
+  'leasing/rent-payments': 'RentPayment',
+  'leasing/returns': 'LeaseReturn',
+  'leasing/extensions': 'LeaseExtension',
 }
 
-const routes: RouteRecordRaw[] = [
+export const buildLegacyObjectAliasRoutes = (routeMap: Record<string, string>): RouteRecordRaw[] => {
+  return Object.entries(routeMap).flatMap(([legacyPath, objectCode]) => ([
+    { path: legacyPath, redirect: `/objects/${objectCode}` },
+    { path: `${legacyPath}/create`, redirect: `/objects/${objectCode}/create` },
+    { path: `${legacyPath}/:id`, redirect: (to) => `/objects/${objectCode}/${to.params.id}` },
+    { path: `${legacyPath}/:id/edit`, redirect: (to) => `/objects/${objectCode}/${to.params.id}/edit` },
+  ]))
+}
+
+export const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     component: AuthLayout,
@@ -356,6 +357,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/system/SystemFileList.vue'),
         meta: { title: 'menu.routes.systemFiles' }
       },
+      {
+        path: 'system/module-workbench',
+        name: 'ModuleWorkbench',
+        component: () => import('@/views/system/ModuleWorkbench.vue'),
+        meta: { title: 'Module Workbench' }
+      },
 
       // Workflow Management
       {
@@ -473,7 +480,10 @@ const routes: RouteRecordRaw[] = [
             meta: { title: 'menu.routes.licenseAllocations' }
           }
         ]
-      }
+      },
+
+      // Additional legacy routes mapped to unified dynamic object pages.
+      ...buildLegacyObjectAliasRoutes(ADDITIONAL_BUSINESS_OBJECT_ROUTES)
     ]
   },
   {

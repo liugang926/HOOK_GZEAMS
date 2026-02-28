@@ -8,7 +8,7 @@
         >
           <el-icon><ArrowLeft /></el-icon>
         </el-button>
-        <h3>{{ $t('system.fieldDefinition.title', { name: objectName }) }}</h3>
+        <h3>{{ $t('system.fieldDefinition.title', { name: objectDisplayName }) }}</h3>
       </div>
       <el-button
         type="primary"
@@ -148,14 +148,23 @@ import { useI18n } from 'vue-i18n'
 import FieldDefinitionForm from './components/FieldDefinitionForm.vue'
 import { businessObjectApi } from '@/api/system'
 import { useFieldTypes } from '@/composables/useFieldTypes'
+import { resolveObjectDisplayName } from '@/utils/objectDisplay'
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const fieldTypes = useFieldTypes()
 
 const objectCode = computed(() => route.params.objectCode as string || route.query.objectCode as string || '')
 const objectName = ref(route.query.objectName as string || t('system.businessObject.title'))
+const objectDisplayName = computed(() => {
+  return resolveObjectDisplayName(
+    objectCode.value,
+    objectName.value,
+    t as (key: string) => string,
+    te
+  )
+})
 const loading = ref(false)
 const tableData = ref<any[]>([])
 const dialogVisible = ref(false)

@@ -1,4 +1,4 @@
-"""
+﻿"""
 Business Object Service for hybrid architecture.
 
 Provides unified access to both hardcoded Django models and low-code
@@ -40,16 +40,31 @@ HARDCODED_OBJECT_NAMES = {
     'PurchaseRequest': ('采购申请', 'Purchase Request'),
     'AssetReceipt': ('资产入库', 'Asset Receipt'),
     'Maintenance': ('维修记录', 'Maintenance'),
+    'MaintenanceTask': ('维修任务', 'Maintenance Task'),
     'MaintenancePlan': ('维修计划', 'Maintenance Plan'),
     'DisposalRequest': ('报废申请', 'Disposal Request'),
     'InventoryTask': ('盘点任务', 'Inventory Task'),
     'InventorySnapshot': ('资产快照', 'Inventory Snapshot'),
+    'InventoryItem': ('盘点明细', 'Inventory Item'),
     'Organization': ('组织', 'Organization'),
     'Department': ('部门', 'Department'),
     'User': ('用户', 'User'),
-    'Role': ('角色', 'Role'),
     'WorkflowDefinition': ('工作流定义', 'Workflow Definition'),
     'WorkflowInstance': ('工作流实例', 'Workflow Instance'),
+    'FinanceVoucher': ('财务凭证', 'Finance Voucher'),
+    'VoucherTemplate': ('凭证模板', 'Voucher Template'),
+    'DepreciationConfig': ('折旧配置', 'Depreciation Config'),
+    'DepreciationRecord': ('折旧记录', 'Depreciation Record'),
+    'DepreciationRun': ('折旧运行', 'Depreciation Run'),
+    'ITAsset': ('IT资产', 'IT Asset'),
+    'ITMaintenanceRecord': ('IT维护记录', 'IT Maintenance Record'),
+    'ConfigurationChange': ('配置变更', 'Configuration Change'),
+    'ITSoftware': ('IT软件目录', 'IT Software Catalog'),
+    'ITSoftwareLicense': ('IT软件许可', 'IT Software License'),
+    'ITLicenseAllocation': ('IT许可证分配', 'IT License Allocation'),
+    'Software': ('软件目录', 'Software Catalog'),
+    'SoftwareLicense': ('软件许可', 'Software License'),
+    'LicenseAllocation': ('许可证分配', 'License Allocation'),
     'LeasingContract': ('Lease Contract', 'Lease Contract'),
     'LeaseItem': ('Lease Item', 'Lease Item'),
     'RentPayment': ('Rent Payment', 'Rent Payment'),
@@ -89,13 +104,14 @@ CORE_HARDcoded_MODELS = {
     'PurchaseRequest': 'apps.lifecycle.models.PurchaseRequest',
     'AssetReceipt': 'apps.lifecycle.models.AssetReceipt',
     'Maintenance': 'apps.lifecycle.models.Maintenance',
+    'MaintenanceTask': 'apps.lifecycle.models.MaintenanceTask',
     'MaintenancePlan': 'apps.lifecycle.models.MaintenancePlan',
     'DisposalRequest': 'apps.lifecycle.models.DisposalRequest',
 
     # Inventory Module
     'InventoryTask': 'apps.inventory.models.InventoryTask',
     'InventorySnapshot': 'apps.inventory.models.InventorySnapshot',
-    'InventoryItem': 'apps.inventory.models.InventoryItem',
+    'InventoryItem': 'apps.inventory.models.InventoryDifference',
 
     # Organizations Module
     'Organization': 'apps.organizations.models.Organization',
@@ -103,11 +119,30 @@ CORE_HARDcoded_MODELS = {
 
     # Accounts Module
     'User': 'apps.accounts.models.User',
-    'Role': 'apps.accounts.models.Role',
 
     # Workflows Module
     'WorkflowDefinition': 'apps.workflows.models.WorkflowDefinition',
     'WorkflowInstance': 'apps.workflows.models.WorkflowInstance',
+
+    # Finance / Depreciation Module
+    'FinanceVoucher': 'apps.finance.models.FinanceVoucher',
+    'VoucherTemplate': 'apps.finance.models.VoucherTemplate',
+    'DepreciationConfig': 'apps.depreciation.models.DepreciationConfig',
+    'DepreciationRecord': 'apps.depreciation.models.DepreciationRecord',
+    'DepreciationRun': 'apps.depreciation.models.DepreciationRun',
+
+    # IT Assets Module
+    'ITAsset': 'apps.it_assets.models.ITAssetInfo',
+    'ITMaintenanceRecord': 'apps.it_assets.models.ITMaintenanceRecord',
+    'ConfigurationChange': 'apps.it_assets.models.ConfigurationChange',
+    'ITSoftware': 'apps.it_assets.models.Software',
+    'ITSoftwareLicense': 'apps.it_assets.models.SoftwareLicense',
+    'ITLicenseAllocation': 'apps.it_assets.models.LicenseAllocation',
+
+    # Software Licenses Module
+    'Software': 'apps.software_licenses.models.Software',
+    'SoftwareLicense': 'apps.software_licenses.models.SoftwareLicense',
+    'LicenseAllocation': 'apps.software_licenses.models.LicenseAllocation',
 
     # Leasing Module
     'LeasingContract': 'apps.leasing.models.LeaseContract',
@@ -557,6 +592,6 @@ class BusinessObjectService:
             'Organization': 'office-building',
             'Department': 'office-building',
             'User': 'user',
-            'Role': 'key',
         }
         return icon_map.get(code, 'document')
+

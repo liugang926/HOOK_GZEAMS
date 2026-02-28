@@ -13,6 +13,9 @@
         >
           {{ t('system.businessObject.create') }}
         </el-button>
+        <el-button @click="handleWorkbench">
+          Module Workbench
+        </el-button>
       </template>
 
       <template #actions="{ row }">
@@ -57,10 +60,11 @@ import BaseListPage from '@/components/common/BaseListPage.vue'
 import type { TableColumn } from '@/types/common'
 import { businessObjectApi } from '@/api/system'
 import type { BusinessObject } from '@/types/businessObject'
+import { resolveObjectDisplayName } from '@/utils/objectDisplay'
 import BusinessObjectForm from './components/BusinessObjectForm.vue'
 
 const router = useRouter()
-const { t } = useI18n()
+const { t, te } = useI18n()
 
 const listRef = ref()
 const dialogVisible = ref(false)
@@ -172,22 +176,35 @@ const handleCreate = () => {
   dialogVisible.value = true
 }
 
+const handleWorkbench = () => {
+  router.push('/system/module-workbench')
+}
+
 const handleEdit = (row: BusinessObject) => {
   currentRow.value = row
   dialogVisible.value = true
 }
 
+const getObjectDisplayName = (row: BusinessObject): string => {
+  return resolveObjectDisplayName(
+    row.code,
+    row.name || row.nameEn || row.code,
+    t as (key: string) => string,
+    te
+  )
+}
+
 const handleFields = (row: BusinessObject) => {
   router.push({
     path: '/system/field-definitions',
-    query: { objectCode: row.code, objectName: row.name }
+    query: { objectCode: row.code, objectName: getObjectDisplayName(row) }
   })
 }
 
 const handleLayouts = (row: BusinessObject) => {
   router.push({
     path: '/system/page-layouts',
-    query: { objectCode: row.code, objectName: row.name }
+    query: { objectCode: row.code, objectName: getObjectDisplayName(row) }
   })
 }
 </script>
