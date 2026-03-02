@@ -48,7 +48,7 @@ function handleRemove() {
       class="field-item"
       :class="{ 'field-image': displayField.type === 'image', 'sidebar-field-item': sidebar }"
     >
-      <span class="field-label">
+      <span class="field-label el-form-item__label">
         {{ field.label }}
         <span
           v-if="field.required"

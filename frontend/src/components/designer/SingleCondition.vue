@@ -1,11 +1,10 @@
-﻿<!--
+<!--
   SingleCondition.vue - Single condition row
   Field selector, operator, and value input
 -->
 
 <template>
   <div class="single-condition">
-    <!-- Field Selector -->
     <el-select
       :model-value="fieldCode"
       placeholder="选择字段"
@@ -25,12 +24,10 @@
       </el-option>
     </el-select>
 
-    <!-- Operator Selector -->
     <el-select
       :model-value="operator"
-      placeholder="运算�?
-      size="
-      small"
+      placeholder="运算符"
+      size="small"
       class="operator-select"
       @update:model-value="updateOperator"
     >
@@ -42,14 +39,12 @@
       />
     </el-select>
 
-    <!-- Value Input -->
     <template v-if="!isUnaryOperator">
       <el-input
         v-if="fieldType === 'string'"
         :model-value="value"
-        placeholder="�?
-        size="
-        small"
+        placeholder="输入值"
+        size="small"
         class="value-input"
         @update:model-value="updateValue"
       />
@@ -78,28 +73,23 @@
       >
         <el-option
           :value="true"
-          label="�?
+          label="是"
         />
         <el-option
-          :value="
-          false"
-          label="�?
+          :value="false"
+          label="否"
         />
       </el-select>
       <el-input
         v-else
-        :model-value="
-          value"
-          placeholder="�?
-        size="
-          small"
-          class="value-input"
-          @update:model-value="updateValue"
-        />
-      </el-select>
+        :model-value="value"
+        placeholder="输入值"
+        size="small"
+        class="value-input"
+        @update:model-value="updateValue"
+      />
     </template>
 
-    <!-- Remove Button -->
     <el-button
       type="danger"
       text
@@ -129,7 +119,7 @@ interface Operator {
 }
 
 interface Props {
-  condition: Record<string, any>
+  condition: Record<string, unknown>
   fields: FieldOption[]
   operators: Operator[]
 }
@@ -137,18 +127,20 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  update: [value: Record<string, any>]
+  update: [value: Record<string, unknown>]
   remove: []
 }>()
 
-// Parse current condition
 const operator = computed(() => {
   const keys = Object.keys(props.condition || {})
-  return keys.find(k => !['var'].includes(k)) || '=='
+  return keys.find((k) => !['var'].includes(k)) || '=='
 })
 
-const conditionArgs = computed(() => {
-  return props.condition?.[operator.value] || []
+const conditionArgs = computed<unknown[]>(() => {
+  const raw = props.condition?.[operator.value] as unknown
+  if (Array.isArray(raw)) return raw
+  if (raw && typeof raw === 'object' && 'var' in (raw as Record<string, unknown>)) return [raw]
+  return []
 })
 
 const fieldCode = computed(() => {
@@ -159,33 +151,26 @@ const fieldCode = computed(() => {
   return ''
 })
 
-const value = computed(() => {
-  return conditionArgs.value[1]
-})
+const value = computed(() => conditionArgs.value[1])
 
-const selectedField = computed(() => {
-  return props.fields.find(f => f.code === fieldCode.value)
-})
+const selectedField = computed(() => props.fields.find((f) => f.code === fieldCode.value))
 
-const fieldType = computed(() => {
-  return selectedField.value?.type || 'string'
-})
+const fieldType = computed(() => selectedField.value?.type || 'string')
 
-// Check if operator is unary (no value needed)
-const isUnaryOperator = computed(() => {
-  return ['!', '!!'].includes(operator.value)
-})
+const isUnaryOperator = computed(() => ['!', '!!'].includes(operator.value))
 
-// Filter operators based on field type
 const filteredOperators = computed(() => {
   const type = fieldType.value
-  return props.operators.filter(op => {
-    return op.types.includes('all') || op.types.includes(type)
-  })
+  return props.operators.filter((op) => op.types.includes('all') || op.types.includes(type))
 })
 
-// Update functions
 function updateField(code: string) {
+  if (isUnaryOperator.value) {
+    emit('update', {
+      [operator.value]: { var: code }
+    })
+    return
+  }
   emit('update', {
     [operator.value]: [{ var: code }, value.value]
   })
@@ -193,18 +178,18 @@ function updateField(code: string) {
 
 function updateOperator(op: string) {
   if (['!', '!!'].includes(op)) {
-    // Unary operators
     emit('update', {
       [op]: { var: fieldCode.value }
     })
-  } else {
-    emit('update', {
-      [op]: [{ var: fieldCode.value }, value.value ?? '']
-    })
+    return
   }
+
+  emit('update', {
+    [op]: [{ var: fieldCode.value }, value.value ?? '']
+  })
 }
 
-function updateValue(val: any) {
+function updateValue(val: unknown) {
   emit('update', {
     [operator.value]: [{ var: fieldCode.value }, val]
   })

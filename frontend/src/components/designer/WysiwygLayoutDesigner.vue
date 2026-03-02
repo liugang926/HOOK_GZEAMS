@@ -252,7 +252,7 @@
                   #[`section-${section.id}`]
                 >
                   <div
-                    class="designer-section-slot"
+                    class="designer-section-slot layout-section"
                     data-testid="layout-section"
                     :class="{ 'is-selected': selectedId === section.id }"
                     :data-section-id="section.id"
@@ -264,7 +264,7 @@
                       data-testid="layout-section-header"
                       @click.stop="selectSection(section.id)"
                     >
-                      {{ section.title || 'Untitled Section' }}
+                      <span class="title-text">{{ section.title || 'Untitled Section' }}</span>
                     </div>
 
                     <div
