@@ -34,7 +34,7 @@
  * Provides section-based layout and action buttons.
  */
 
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, ArrowDown } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/dateFormat'
@@ -300,6 +300,22 @@ const visibleReverseRelations = computed(() => {
   return props.reverseRelations.filter(rel => rel.displayMode !== 'hidden')
 })
 
+const getSectionDisplayTitle = (section: DetailSection): string => {
+  const baseTitle = section.title || ''
+  if (section.type !== 'tab' || !Array.isArray(section.tabs) || section.tabs.length === 0) {
+    return baseTitle
+  }
+
+  const activeId = activeTabs.value[section.name] || section.tabs[0]?.id
+  const activeTab = section.tabs.find(tab => tab.id === activeId) || section.tabs[0]
+  const tabTitle = activeTab?.title || ''
+
+  if (!baseTitle) return tabTitle
+  if (!tabTitle) return baseTitle
+  if (baseTitle === tabTitle) return baseTitle
+  return `${baseTitle} / ${tabTitle}`
+}
+
 // ============================================================================
 // Methods
 // ============================================================================
@@ -433,6 +449,27 @@ const updateFormData = (prop: string, value: any) => {
   emit('update:formData', newData)
 }
 
+watch(
+  () => props.sections,
+  (sections) => {
+    const nextTabs = { ...activeTabs.value }
+    let changed = false
+
+    for (const section of sections || []) {
+      if (section.type !== 'tab' || !Array.isArray(section.tabs) || section.tabs.length === 0) continue
+      const current = nextTabs[section.name]
+      const exists = section.tabs.some(tab => tab.id === current)
+      if (!exists) {
+        nextTabs[section.name] = section.tabs[0].id
+        changed = true
+      }
+    }
+
+    if (changed) activeTabs.value = nextTabs
+  },
+  { immediate: true }
+)
+
 defineExpose({
   toggleSection,
   isSectionCollapsed,
@@ -559,7 +596,7 @@ defineExpose({
                     >
                       <component :is="section.icon" />
                     </el-icon>
-                    <span>{{ section.title }}</span>
+                    <span>{{ getSectionDisplayTitle(section) }}</span>
                   </div>
                   <el-icon
                     v-if="section.collapsible"
@@ -729,7 +766,7 @@ defineExpose({
                     >
                       <component :is="section.icon" />
                     </el-icon>
-                    <span>{{ section.title }}</span>
+                    <span>{{ getSectionDisplayTitle(section) }}</span>
                   </div>
                   <el-icon
                     v-if="section.collapsible"

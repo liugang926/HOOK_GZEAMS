@@ -7,7 +7,9 @@
       "Bash(npm run test:contract:runtime:*)",
       "Bash(npm run dev:*)",
       "Bash(git add:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

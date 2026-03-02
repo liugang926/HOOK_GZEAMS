@@ -156,7 +156,7 @@
               <div
                 v-for="field in group.fields"
                 :key="field.code"
-                class="field-item"
+                class="palette-field-item"
                 :data-testid="`layout-palette-field-${field.code}`"
                 :draggable="canAddField(field)"
                 :title="getDisabledReason(field) || ''"
@@ -197,8 +197,7 @@
         <div class="canvas-header">
           <div class="canvas-header-left">
             <span v-if="renderMode === 'design'">布局设计画布（点击字段可编辑属性）</span>
-            <span v-else-if="renderMode === 'edit'">编辑态渲染预览（与对象编辑页一致）</span>
-            <span v-else>详情态渲染预览（与对象详情页一致）</span>
+            <span v-else>预览态渲染（与对象详情页一致，可切换编辑）</span>
           </div>
           <div class="canvas-header-right">
             <el-radio-group
@@ -209,11 +208,8 @@
               <el-radio-button label="design">
                 设计态
               </el-radio-button>
-              <el-radio-button label="edit">
-                编辑态
-              </el-radio-button>
-              <el-radio-button label="detail">
-                详情态
+              <el-radio-button label="preview">
+                预览态
               </el-radio-button>
             </el-radio-group>
             <el-button
@@ -235,445 +231,270 @@
             <!-- Render the actual form using real components -->
             <div
               v-if="layoutConfig.sections && layoutConfig.sections.length > 0"
-              class="form-renderer detail-layout-container"
-              :class="{ 'has-sidebar': true }"
+              class="runtime-preview-card detail-mode-preview dynamic-detail-page"
             >
-              <!-- Main Column -->
-              <div class="main-column">
-                <el-form
-                  :model="sampleData"
-                  label-width="120px"
-                  label-position="right"
-                  class="designer-preview-form"
+              <BaseDetailPage
+                :title="previewPageTitle"
+                :sections="designerCanvasSections"
+                :data="sampleData"
+                :audit-info="previewAuditInfo"
+                :show-back="false"
+                :show-edit="false"
+                :show-delete="false"
+                :show-related-objects="true"
+                :object-code="objectCode"
+                :object-name="previewObjectName"
+                :reverse-relations="previewReverseRelations"
+              >
+                <template
+                  v-for="(section, sectionIndex) in (layoutConfig.sections || [])"
+                  :key="`slot-${section.id}`"
+                  #[`section-${section.id}`]
                 >
                   <div
-                    v-for="(section, sectionIndex) in mainSections"
-                    :key="section.id"
-                    class="layout-section"
+                    class="designer-section-slot"
                     data-testid="layout-section"
-                    :class="{
-                      'is-selected': selectedId === section.id,
-                      'is-collapsed': section.collapsed
-                    }"
-                    :data-section-position="section.position"
+                    :class="{ 'is-selected': selectedId === section.id }"
                     :data-section-id="section.id"
+                    :data-section-position="section.position"
+                    @click.stop="selectSection(section.id)"
                   >
-                    <!-- Section Header -->
                     <div
-                      class="section-header"
+                      class="designer-section-header-proxy"
                       data-testid="layout-section-header"
                       @click.stop="selectSection(section.id)"
                     >
-                      <div class="section-title">
-                        <el-icon v-if="section.collapsible">
-                          <component :is="section.collapsed ? 'ArrowRight' : 'ArrowDown'" />
-                        </el-icon>
-                        <span class="title-text">{{ section.title || 'Untitled Section' }}</span>
-                      </div>
-                      <div
-                        v-if="selectedId === section.id"
-                        class="section-actions"
-                        @click.stop
-                      >
-                        <el-button
-                          size="small"
-                          text
-                          @click="deleteSection(section.id)"
-                        >
-                          删除分区
-                        </el-button>
-                        <el-button
-                          v-if="section.collapsible"
-                          size="small"
-                          text
-                          @click="toggleSectionCollapse(section.id)"
-                        >
-                          {{ section.collapsed ? 'Expand' : 'Collapse' }}
-                        </el-button>
-                      </div>
+                      {{ section.title || 'Untitled Section' }}
                     </div>
 
-                    <!-- Section Content -->
                     <div
-                      v-show="!section.collapsed"
-                      class="section-content"
-                      :class="`columns-${getColumns(section)}`"
-                      :data-section-id="section.id"
-                      @drop="handleSectionDrop"
-                      @dragover="handleSectionDragOver"
-                      @dragleave="handleSectionDragLeave"
+                      v-if="selectedId === section.id"
+                      class="designer-section-toolbar"
+                      @click.stop
                     >
-                      <!-- Render fields in this section -->
-                      <template v-if="section.type === 'tab'">
-                        <!-- Tab Section -->
-                        <el-tabs
-                          v-model="activeTabs[section.id]"
-                          type="card"
+                      <el-button
+                        size="small"
+                        text
+                        @click="selectSection(section.id)"
+                      >
+                        编辑分区
+                      </el-button>
+                      <el-button
+                        v-if="section.collapsible"
+                        size="small"
+                        text
+                        @click="toggleSectionCollapse(section.id)"
+                      >
+                        {{ section.collapsed ? 'Expand' : 'Collapse' }}
+                      </el-button>
+                      <el-button
+                        size="small"
+                        text
+                        type="danger"
+                        @click="deleteSection(section.id)"
+                      >
+                        删除分区
+                      </el-button>
+                    </div>
+
+                    <template v-if="section.type === 'tab'">
+                      <el-tabs
+                        v-model="activeTabs[section.id]"
+                        type="card"
+                      >
+                        <el-tab-pane
+                          v-for="tab in section.tabs"
+                          :key="tab.id"
+                          :label="tab.title"
+                          :name="tab.id"
+                          class="tab-pane-content"
+                          :data-tab-id="tab.id"
+                          :data-section-id="section.id"
+                          @drop="handleTabDrop"
+                          @dragover="handleSectionDragOver"
+                          @dragleave="handleSectionDragLeave"
                         >
-                          <el-tab-pane
-                            v-for="tab in section.tabs"
-                            :key="tab.id"
-                            :label="tab.title"
-                            :name="tab.id"
-                            class="tab-pane-content"
-                            :data-tab-id="tab.id"
+                          <el-row
+                            :gutter="24"
+                            class="tab-fields designer-fields-container dynamic-form-section__fields"
+                            data-container-kind="tab"
                             :data-section-id="section.id"
-                            @drop="handleTabDrop"
+                            :data-tab-id="tab.id"
+                          >
+                            <el-col
+                              v-for="field in tab.fields"
+                              :key="field.id"
+                              class="field-renderer field-col"
+                              :span="getDetailSpan(field, section)"
+                              :data-field-id="field.id"
+                              :data-field-code="field.fieldCode"
+                            >
+                              <DesignerFieldCard
+                                :field="field"
+                                :display-field="fieldToDesignDisplayField(field)"
+                                :value="sampleData[field.fieldCode] ?? getSampleValue(field)"
+                                :selected="selectedId === field.id"
+                                :section-id="section.id"
+                                :section-index="sectionIndex"
+                                @select="selectField(field, section)"
+                                @remove="removeField"
+                              />
+                            </el-col>
+                            <el-col
+                              v-if="!tab.fields || tab.fields.length === 0"
+                              :span="24"
+                              class="empty-column-placeholder compact"
+                            >
+                              拖拽字段到当前标签页
+                            </el-col>
+                          </el-row>
+                        </el-tab-pane>
+                      </el-tabs>
+                    </template>
+
+                    <template v-else-if="section.type === 'collapse'">
+                      <el-collapse
+                        v-model="activeCollapses[section.id]"
+                        :accordion="false"
+                      >
+                        <el-collapse-item
+                          v-for="item in section.items"
+                          :key="item.id"
+                          :name="item.id"
+                          :data-collapse-id="item.id"
+                        >
+                          <template #title>
+                            <span>{{ item.title }}</span>
+                          </template>
+                          <div
+                            class="collapse-fields dynamic-form-section__fields"
+                            data-container-kind="collapse"
+                            :data-section-id="section.id"
+                            :data-collapse-id="item.id"
+                            @drop="handleCollapseDrop"
                             @dragover="handleSectionDragOver"
                             @dragleave="handleSectionDragLeave"
                           >
-                            <div
-                              class="tab-fields designer-fields-container dynamic-form-section__fields"
-                              :class="`columns-${getColumns(section)}`"
-                              data-container-kind="tab"
-                              :data-section-id="section.id"
-                              :data-tab-id="tab.id"
-                            >
-                              <div
-                                v-for="field in tab.fields"
-                                :key="field.id"
-                                class="field-renderer dynamic-form-section__field"
-                                data-testid="layout-canvas-field"
-                                :class="{
-                                  'is-selected': selectedId === field.id
-                                }"
-                                :data-field-id="field.id"
-                                :data-field-code="field.fieldCode"
-                                :style="{ gridColumn: `span ${getGridSpan(field, section)} / ${getColumns(section)}` }"
-                                @click.stop="selectField(field, section)"
-                              >
-                                <el-form-item
-                                  :label="field.label"
-                                  :prop="field.fieldCode"
-                                  :required="!!field.required"
-                                >
-                                  <RuntimeFieldControl
-                                    :field="fieldToFieldRenderer(field)"
-                                    :model-value="sampleData[field.fieldCode] ?? getSampleValue(field)"
-                                    :form-data="sampleData"
-                                    :disabled="field.readonly || mode === 'readonly'"
-                                    @update:model-value="handleFieldUpdate(field, $event)"
-                                  />
-                                </el-form-item>
-                                <!-- Selection overlay -->
-                                <div
-                                  v-if="selectedId === field.id"
-                                  class="field-overlay"
-                                >
-                                  <div class="overlay-label">
-                                    {{ field.label }}
-                                    <span
-                                      v-if="field.fieldCode"
-                                      class="overlay-code"
-                                    >[{{ field.fieldCode }}]</span>
-                                  </div>
-                                  <div
-                                    v-if="selectedId === field.id"
-                                    class="overlay-actions"
-                                  >
-                                    <el-button
-                                      size="small"
-                                      circle
-                                      data-testid="layout-remove-field-button"
-                                      @click.stop="removeField(field.id, section.id, sectionIndex)"
-                                    >
-                                      <el-icon><Delete /></el-icon>
-                                    </el-button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </el-tab-pane>
-                        </el-tabs>
-                      </template>
-
-                      <template v-else-if="section.type === 'collapse'">
-                        <!-- Collapse/Accordion Section -->
-                        <el-collapse
-                          v-model="activeCollapses[section.id]"
-                          :accordion="false"
-                        >
-                          <el-collapse-item
-                            v-for="item in section.items"
-                            :key="item.id"
-                            :name="item.id"
-                            class="collapse-item-content"
-                            :data-collapse-id="item.id"
-                          >
-                            <template #title>
-                              <span>{{ item.title }}</span>
-                            </template>
-                            <div
-                              class="collapse-fields designer-fields-container dynamic-form-section__fields"
-                              :class="`columns-${getColumns(section)}`"
+                            <el-row
+                              :gutter="24"
+                              class="designer-fields-container"
                               data-container-kind="collapse"
                               :data-section-id="section.id"
                               :data-collapse-id="item.id"
-                              @drop="handleCollapseDrop"
-                              @dragover="handleSectionDragOver"
-                              @dragleave="handleSectionDragLeave"
                             >
-                              <div
+                              <el-col
                                 v-for="field in item.fields"
                                 :key="field.id"
-                                class="field-renderer dynamic-form-section__field"
-                                data-testid="layout-canvas-field"
-                                :class="{
-                                  'is-selected': selectedId === field.id
-                                }"
+                                class="field-renderer field-col"
+                                :span="getDetailSpan(field, section)"
                                 :data-field-id="field.id"
                                 :data-field-code="field.fieldCode"
-                                :style="{ gridColumn: `span ${getGridSpan(field, section)} / ${getColumns(section)}` }"
-                                @click.stop="selectField(field, section)"
                               >
-                                <el-form-item
-                                  :label="field.label"
-                                  :prop="field.fieldCode"
-                                  :required="!!field.required"
-                                >
-                                  <RuntimeFieldControl
-                                    :field="fieldToFieldRenderer(field)"
-                                    :model-value="sampleData[field.fieldCode] ?? getSampleValue(field)"
-                                    :form-data="sampleData"
-                                    :disabled="field.readonly || mode === 'readonly'"
-                                    @update:model-value="handleFieldUpdate(field, $event)"
-                                  />
-                                </el-form-item>
-                                <div
-                                  v-if="selectedId === field.id"
-                                  class="field-overlay"
-                                >
-                                  <div class="overlay-label">
-                                    {{ field.label }}
-                                    <span
-                                      v-if="field.fieldCode"
-                                      class="overlay-code"
-                                    >[{{ field.fieldCode }}]</span>
-                                  </div>
-                                  <div
-                                    v-if="selectedId === field.id"
-                                    class="overlay-actions"
-                                  >
-                                    <el-button
-                                      size="small"
-                                      circle
-                                      data-testid="layout-remove-field-button"
-                                      @click.stop="removeField(field.id, section.id, sectionIndex)"
-                                    >
-                                      <el-icon><Delete /></el-icon>
-                                    </el-button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </el-collapse-item>
-                        </el-collapse>
-                      </template>
-
-                      <template v-else>
-                        <!-- Regular Section - Direct field rendering -->
-                        <div
-                          class="section-fields designer-fields-container dynamic-form-section__fields"
-                          :class="`columns-${getColumns(section)}`"
-                          data-container-kind="section"
-                          :data-section-id="section.id"
-                        >
-                          <div
-                            v-for="field in section.fields"
-                            :key="field.id"
-                            class="field-renderer dynamic-form-section__field"
-                            data-testid="layout-canvas-field"
-                            :class="{
-                              'is-selected': selectedId === field.id
-                            }"
-                            :data-field-id="field.id"
-                            :data-field-code="field.fieldCode"
-                            :style="{ gridColumn: `span ${getGridSpan(field, section)} / ${getColumns(section)}` }"
-                            @click.stop="selectField(field, section)"
-                          >
-                            <el-form-item
-                              :label="field.label"
-                              :prop="field.fieldCode"
-                              :required="!!field.required"
+                                <DesignerFieldCard
+                                  :field="field"
+                                  :display-field="fieldToDesignDisplayField(field)"
+                                  :value="sampleData[field.fieldCode] ?? getSampleValue(field)"
+                                  :selected="selectedId === field.id"
+                                  :section-id="section.id"
+                                  :section-index="sectionIndex"
+                                  @select="selectField(field, section)"
+                                  @remove="removeField"
+                                />
+                              </el-col>
+                            </el-row>
+                            <el-col
+                              v-if="!item.fields || item.fields.length === 0"
+                              :span="24"
+                              class="empty-column-placeholder compact"
                             >
-                              <RuntimeFieldControl
-                                :field="fieldToFieldRenderer(field)"
-                                :model-value="sampleData[field.fieldCode] ?? getSampleValue(field)"
-                                :form-data="sampleData"
-                                :disabled="field.readonly || mode === 'readonly'"
-                                @update:model-value="handleFieldUpdate(field, $event)"
-                              />
-                            </el-form-item>
-                            <!-- Selection overlay -->
-                            <div
-                              v-if="selectedId === field.id"
-                              class="field-overlay"
-                            >
-                              <div class="overlay-label">
-                                {{ field.label }}
-                                <span
-                                  v-if="field.fieldCode"
-                                  class="overlay-code"
-                                >[{{ field.fieldCode }}]</span>
-                                <el-tag
-                                  v-if="field.required"
-                                  type="danger"
-                                  size="small"
-                                >
-                                  *
-                                </el-tag>
-                              </div>
-                              <div
-                                v-if="selectedId === field.id"
-                                class="overlay-actions"
-                              >
-                                <el-button
-                                  size="small"
-                                  circle
-                                  title="Remove field"
-                                  data-testid="layout-remove-field-button"
-                                  @click.stop="removeField(field.id, section.id, sectionIndex)"
-                                >
-                                  <el-icon><Delete /></el-icon>
-                                </el-button>
-                              </div>
-                            </div>
+                              拖拽字段到当前折叠项
+                            </el-col>
                           </div>
-                        </div>
-                      </template>
-                    </div>
-                  </div>
-              
-                  <!-- Placeholder for drag/drop when Main column is empty -->
-                  <div
-                    v-if="mainSections.length === 0"
-                    class="empty-column-placeholder"
-                    data-section-position="main"
-                  >
-                    Main Column (Drag sections here)
-                  </div>
-                </el-form>
-              </div>
+                        </el-collapse-item>
+                      </el-collapse>
+                    </template>
 
-              <!-- Sidebar Column -->
-              <div class="sidebar-column">
-                <el-form
-                  :model="sampleData"
-                  label-position="top"
-                  class="designer-preview-sidebar-form"
-                >
-                  <div
-                    v-for="(section, sectionIndex) in sidebarSections"
-                    :key="section.id"
-                    class="sidebar-section-block layout-section"
-                    data-testid="layout-sidebar-section"
-                    :class="{
-                      'is-selected': selectedId === section.id,
-                      'is-collapsed': section.collapsed
-                    }"
-                    :data-section-position="section.position"
-                    :data-section-id="section.id"
-                  >
-                    <div
-                      class="section-header"
-                      data-testid="layout-section-header"
-                      @click.stop="selectSection(section.id)"
-                    >
-                      <div class="section-title">
-                        <span class="title-text">{{ section.title || 'Untitled Section' }}</span>
-                      </div>
+                    <template v-else>
                       <div
-                        v-if="selectedId === section.id"
-                        class="section-actions"
-                        @click.stop
-                      >
-                        <el-button
-                          size="small"
-                          text
-                          @click="deleteSection(section.id)"
-                        >
-                          删除分区
-                        </el-button>
-                      </div>
-                    </div>
-
-                    <!-- Sidebar Section Content -->
-                    <div
-                      v-show="!section.collapsed"
-                      class="section-content"
-                      :class="`columns-${getColumns(section)}`"
-                      :data-section-id="section.id"
-                      @drop="handleSectionDrop"
-                      @dragover="handleSectionDragOver"
-                      @dragleave="handleSectionDragLeave"
-                    >
-                      <div
-                        class="section-fields designer-fields-container dynamic-form-section__fields"
-                        :class="`columns-${getColumns(section)}`"
-                        data-container-kind="section"
+                        class="designer-section-body"
                         :data-section-id="section.id"
+                        @drop="handleSectionDrop"
+                        @dragover="handleSectionDragOver"
+                        @dragleave="handleSectionDragLeave"
                       >
-                        <div
-                          v-for="field in section.fields"
-                          :key="field.id"
-                          class="field-renderer sidebar-field-col dynamic-form-section__field"
-                          data-testid="layout-canvas-field"
-                          :class="{ 'is-selected': selectedId === field.id }"
-                          :data-field-id="field.id"
-                          :data-field-code="field.fieldCode"
-                          :style="{ gridColumn: `span ${getGridSpan(field, section)} / ${getColumns(section)}` }"
-                          @click.stop="selectField(field, section)"
-                        >
-                          <div class="sidebar-field-item">
-                            <div class="field-label">
-                              {{ field.label }}
-                              <span
-                                v-if="field.required"
-                                style="color: red"
-                              >*</span>
-                            </div>
-                            <div class="field-value">
-                              <RuntimeFieldControl
-                                :field="fieldToFieldRenderer(field)"
-                                :model-value="sampleData[field.fieldCode] ?? getSampleValue(field)"
-                                :form-data="sampleData"
-                                :disabled="field.readonly || mode === 'readonly'"
-                                @update:model-value="handleFieldUpdate(field, $event)"
+                        <template v-if="section.position === 'sidebar'">
+                          <div
+                            class="section-fields-sidebar designer-fields-container dynamic-form-section__fields"
+                            data-container-kind="section"
+                            :data-section-id="section.id"
+                          >
+                            <div
+                              v-for="field in section.fields"
+                              :key="field.id"
+                              class="field-renderer field-col sidebar-field-col"
+                              :data-field-id="field.id"
+                              :data-field-code="field.fieldCode"
+                            >
+                              <DesignerFieldCard
+                                :field="field"
+                                :display-field="fieldToDesignDisplayField(field)"
+                                :value="sampleData[field.fieldCode] ?? getSampleValue(field)"
+                                :selected="selectedId === field.id"
+                                :sidebar="true"
+                                :section-id="section.id"
+                                :section-index="sectionIndex"
+                                @select="selectField(field, section)"
+                                @remove="removeField"
                               />
                             </div>
+                            <el-col
+                              v-if="!section.fields || section.fields.length === 0"
+                              :span="24"
+                              class="empty-column-placeholder compact"
+                            >
+                              拖拽字段到当前分区
+                            </el-col>
                           </div>
-
-                          <!-- Selection overlay -->
-                          <div
-                            v-if="selectedId === field.id"
-                            class="field-overlay"
+                        </template>
+                        <template v-else>
+                          <el-row
+                            :gutter="24"
+                            class="section-fields designer-fields-container dynamic-form-section__fields"
+                            data-container-kind="section"
+                            :data-section-id="section.id"
                           >
-                            <div class="overlay-actions">
-                              <el-button
-                                size="small"
-                                circle
-                                title="Remove field"
-                                data-testid="layout-remove-field-button"
-                                @click.stop="removeField(field.id, section.id, sectionIndex)"
-                              >
-                                <el-icon><Delete /></el-icon>
-                              </el-button>
+                            <el-col
+                              v-for="field in section.fields"
+                              :key="field.id"
+                              class="field-renderer field-col"
+                              :span="getDetailSpan(field, section)"
+                              :data-field-id="field.id"
+                              :data-field-code="field.fieldCode"
+                            >
+                              <DesignerFieldCard
+                                :field="field"
+                                :display-field="fieldToDesignDisplayField(field)"
+                                :value="sampleData[field.fieldCode] ?? getSampleValue(field)"
+                                :selected="selectedId === field.id"
+                                :section-id="section.id"
+                                :section-index="sectionIndex"
+                                @select="selectField(field, section)"
+                                @remove="removeField"
+                              />
+                            </el-col>
+                            <div
+                              v-if="!section.fields || section.fields.length === 0"
+                              class="empty-column-placeholder compact"
+                            >
+                              拖拽字段到当前分区
                             </div>
-                          </div>
-                        </div>
+                          </el-row>
+                        </template>
                       </div>
-                    </div>
+                    </template>
                   </div>
-                  <!-- Placeholder for drag/drop when Sidebar column is empty -->
-                  <div
-                    v-if="sidebarSections.length === 0"
-                    class="empty-column-placeholder"
-                    data-section-position="sidebar"
-                  >
-                    Sidebar Column (Configure 'Position' on a section to Sidebar)
-                  </div>
-                </el-form>
-              </div>
+                </template>
+              </BaseDetailPage>
             </div>
 
             <!-- Empty State -->
@@ -691,40 +512,27 @@
               </el-empty>
             </div>
           </template>
-          <template v-else-if="renderMode === 'edit'">
+          <template v-else>
             <div class="runtime-preview-card detail-mode-preview dynamic-detail-page">
               <BaseDetailPage
                 v-model:form-data="sampleData"
-                :title="layoutName"
+                :title="previewPageTitle"
                 :sections="detailPreviewSections"
                 :data="sampleData"
                 :form-rules="previewFormRules"
                 :audit-info="previewAuditInfo"
                 :show-back="false"
-                :show-edit="false"
-                :show-delete="false"
-                :show-related-objects="false"
-                :edit-mode="true"
+                :show-edit="true"
+                :show-delete="true"
+                :show-related-objects="true"
+                :edit-mode="previewEditMode"
                 :object-code="objectCode"
-                :object-name="layoutName"
+                :object-name="previewObjectName"
+                :reverse-relations="previewReverseRelations"
+                @edit="handlePreviewEnterEdit"
                 @save="handleDetailPreviewSave"
                 @cancel="handleDetailPreviewCancel"
-              />
-            </div>
-          </template>
-          <template v-else>
-            <div class="runtime-preview-card detail-mode-preview dynamic-detail-page">
-              <BaseDetailPage
-                :title="layoutName"
-                :sections="detailPreviewSections"
-                :data="sampleData"
-                :audit-info="previewAuditInfo"
-                :show-back="false"
-                :show-edit="false"
-                :show-delete="false"
-                :show-related-objects="false"
-                :object-code="objectCode"
-                :object-name="layoutName"
+                @delete="handlePreviewDelete"
               />
             </div>
           </template>
@@ -802,17 +610,15 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import Sortable from 'sortablejs'
 import {
-  ArrowLeft, ArrowRight, ArrowDown, Search, Plus, Delete, Check, RefreshLeft, RefreshRight,
-  Edit, Grid, View, Hide, Lock, Unlock, Document, Histogram, Calendar, Timer,
+  ArrowLeft, ArrowRight, Search, Plus, Check, RefreshLeft, RefreshRight,
+  Edit, Grid, Document, Histogram, Calendar, Timer,
   Message, Link, Connection, User, OfficeBuilding, Folder, Picture, Select,
-  CircleCheck, Ticket, FolderOpened, Operation, Minus
+  CircleCheck, Ticket, FolderOpened
 } from '@element-plus/icons-vue'
 import FieldPropertyEditor from '@/components/designer/FieldPropertyEditor.vue'
 import SectionPropertyEditor from '@/components/designer/SectionPropertyEditor.vue'
-import RuntimeFieldControl from '@/components/engine/RuntimeFieldControl.vue'
-import BaseDetailPage, { type DetailSection, type DetailField } from '@/components/common/BaseDetailPage.vue'
-import { adaptFieldDefinition, mergeRuntimeField } from '@/adapters/fieldAdapter'
-import { normalizeSpan } from '@/adapters/layoutNormalizer'
+import DesignerFieldCard from '@/components/designer/DesignerFieldCard.vue'
+import BaseDetailPage, { type DetailSection, type DetailField, type ReverseRelationField } from '@/components/common/BaseDetailPage.vue'
 import { dynamicApi } from '@/api/dynamic'
 import { pageLayoutApi } from '@/api/system'
 import { useLayoutHistory } from '@/composables/useLayoutHistory'
@@ -820,6 +626,8 @@ import { normalizeFieldType } from '@/utils/fieldType'
 import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
 import { buildRenderSchema, type RenderSchema } from '@/platform/layout/renderSchema'
 import { projectDetailSectionsFromRenderSchema } from '@/platform/layout/detailSchemaProjector'
+import { isAuditFieldCode, normalizeDetailSpan, toUnifiedDetailField, buildRequiredFormRules } from '@/platform/layout/unifiedDetailField'
+import { toRuntimeFieldFromLayout } from '@/platform/layout/unifiedRuntimeField'
 import { canAddFieldInDesigner, getFieldDisabledReason } from '@/platform/layout/designerFieldGuard'
 import { ensureLayoutConfigIds as ensurePersistLayoutConfigIds, preparePersistLayoutConfig } from '@/platform/layout/layoutPersistGuard'
 import { mergeFieldSources } from '@/platform/layout/unifiedFieldOrder'
@@ -930,6 +738,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  layoutId: '',
   mode: 'edit',
   layoutName: '新建布局',
   objectCode: '',
@@ -952,7 +761,7 @@ const layoutConfig = ref<LayoutConfig>(
   normalizeAndEnsureLayoutConfig(getDefaultLayoutConfig(props.mode) as LayoutConfig)
 )
 const selectedId = ref<string>('')
-const renderMode = ref<'design' | 'edit' | 'detail'>('design')
+const renderMode = ref<'design' | 'preview'>('design')
 const previewMode = ref<'current' | 'active'>('current')
 const currentLayoutSnapshot = ref<LayoutConfig | null>(null)
 const previewLoading = ref(false)
@@ -974,9 +783,12 @@ const dragOverSection = ref<string | null>(null)
 
 // Available fields
 const availableFields = ref<FieldDefinition[]>([])
+const previewReverseRelations = ref<ReverseRelationField[]>([])
 
 // Sample data for preview
 const sampleData = ref<Record<string, any>>({})
+const previewEditSnapshot = ref<Record<string, any> | null>(null)
+const previewEditMode = ref(false)
 const canvasContentRef = ref<HTMLElement | null>(null)
 
 type ContainerKind = 'section' | 'tab' | 'collapse'
@@ -1099,17 +911,12 @@ const initSortables = async () => {
   }
 }
 
-function handleFieldUpdate(field: any, value: any) {
-  if (!field?.fieldCode) return
-  sampleData.value[field.fieldCode] = value
-}
-
 function getColumns(section: any): number {
   return Number(section?.columns || section?.columnCount || section?.column || 2) || 2
 }
 
-function getGridSpan(field: any, section: any): number {
-  return normalizeSpan(field?.span ?? 1, getColumns(section))
+function getDetailSpan(field: any, section: any): number {
+  return normalizeDetailSpan(field?.span ?? 1, getColumns(section))
 }
 
 // Active tabs and collapses state
@@ -1191,14 +998,6 @@ const addedFieldCodes = computed(() => {
     }
   }
   return codes
-})
-
-const mainSections = computed(() => {
-  return (layoutConfig.value.sections || []).filter(s => s.position !== 'sidebar')
-})
-
-const sidebarSections = computed(() => {
-  return (layoutConfig.value.sections || []).filter(s => s.position === 'sidebar')
 })
 
 // Group metadata for field types
@@ -1304,48 +1103,12 @@ function findItemById(config: LayoutConfig, id: string): any {
   return null
 }
 
-function fieldToFieldRenderer(field: LayoutField): any {
-  const fullField = availableFields.value.find(f => f.code === field.fieldCode)
-  const base = fullField ? adaptFieldDefinition(fullField as any) : null
-
-  const normalizedType = normalizeFieldType(field.fieldType || 'text')
-  const mergedComponentProps = {
-    ...(field.componentProps || {}),
-    ...(field as any).component_props || {}
-  }
-
-  const override = {
-    code: field.fieldCode,
-    label: field.label,
-    fieldType: normalizedType,
-    field_type: normalizedType,
-    required: field.required,
-    readonly: field.readonly,
-    hidden: field.visible === false,
-    span: field.span,
-    placeholder: field.placeholder,
-    defaultValue: field.defaultValue,
-    helpText: field.helpText,
-    options: field.options,
-    referenceObject: field.referenceObject || field.relatedObject,
-    componentProps: mergedComponentProps,
-    component_props: mergedComponentProps
-  }
-
-  const runtimeField = base ? mergeRuntimeField(base, override) : {
-    code: field.fieldCode,
-    label: field.label || field.fieldCode,
-    fieldType: normalizedType,
-    field_type: normalizedType,
-    required: field.required,
-    readonly: field.readonly,
-    options: field.options,
-    referenceObject: field.referenceObject || field.relatedObject,
-    componentProps: mergedComponentProps,
-    component_props: mergedComponentProps
-  }
-
-  return runtimeField
+function fieldToDesignDisplayField(field: LayoutField): DetailField {
+  const runtimeField = toRuntimeFieldFromLayout(field as any, availableFields.value as any[])
+  const detailField = toUnifiedDetailField(runtimeField as any) as DetailField
+  detailField.prop = field.fieldCode
+  detailField.label = field.label || detailField.label || field.fieldCode
+  return detailField
 }
 
 /**
@@ -1497,82 +1260,21 @@ const previewRenderSchema = computed<RenderSchema>(() => {
   })
 })
 
-const AUDIT_FIELD_CODES = new Set([
-  'created_at',
-  'created_by',
-  'updated_at',
-  'updated_by',
-  'createdAt',
-  'createdBy',
-  'updatedAt',
-  'updatedBy'
-])
-
-const isAuditFieldCode = (code: string) => AUDIT_FIELD_CODES.has(String(code || '').trim())
-
 function shouldSkipPreviewDetailField(field: RuntimeFieldDefinition): boolean {
   const hidden = (field as any).isHidden ?? (field as any).is_hidden
   if (hidden) return true
   if (isSystemField(field)) return true
+  // Keep visibility semantics aligned with DynamicDetailPage runtime path:
+  // detail rendering currently reuses edit metadata (showInForm first).
+  const showInForm = (field as any).showInForm ?? (field as any).show_in_form
+  if (showInForm === false) return true
   const showInDetail = (field as any).showInDetail ?? (field as any).show_in_detail
-  return showInDetail === false
-}
-
-function normalizeDetailSpan(rawSpan: any, rawColumns: any): number {
-  const columns = Number(rawColumns) || 2
-  const span = Number(rawSpan)
-
-  if (!Number.isFinite(span) || span <= 0) return Math.max(1, Math.round(24 / columns))
-  if (span <= columns) return Math.max(1, Math.min(24, Math.round((24 / columns) * span)))
-  if (span <= 24) return Math.max(1, Math.min(24, Math.round(span)))
-  return 24
+  if (showInForm === undefined && showInDetail === false) return true
+  return false
 }
 
 function fieldToPreviewDetailField(field: RuntimeFieldDefinition): DetailField {
-  const rawType = (field as any).fieldType || (field as any).field_type || (field as any).type || 'text'
-  const normalizedType = normalizeFieldType(rawType)
-  const options = (field as any).options || []
-
-  const detailField: DetailField = {
-    prop: field.code,
-    label: field.label || field.name || field.code,
-    span: field.span || 12,
-    options
-  }
-
-  if (normalizedType === 'date' || normalizedType === 'datetime' || normalizedType === 'time') {
-    detailField.type = normalizedType as DetailField['type']
-    if (normalizedType === 'date') detailField.dateFormat = (field as any).dateFormat || 'YYYY-MM-DD'
-    if (normalizedType === 'datetime') detailField.dateFormat = (field as any).dateFormat || 'YYYY-MM-DD HH:mm:ss'
-    if (normalizedType === 'time') detailField.dateFormat = (field as any).dateFormat || 'HH:mm:ss'
-  } else if (normalizedType === 'number' || normalizedType === 'currency') {
-    detailField.type = normalizedType === 'currency' ? 'currency' : 'number'
-    detailField.precision = (field as any).precision ?? (field as any).decimalPlaces ?? (field as any).decimal_places ?? 2
-    detailField.currency = (field as any).currencySymbol || (field as any).currency || undefined
-  } else if (normalizedType === 'percent') {
-    detailField.type = 'percent'
-    detailField.precision = (field as any).precision ?? (field as any).decimalPlaces ?? (field as any).decimal_places ?? 2
-  } else if (normalizedType === 'image') {
-    detailField.type = 'image'
-    detailField.span = 24
-  } else {
-    detailField.type = 'text'
-  }
-
-  const shouldTag =
-    normalizedType === 'status' ||
-    normalizedType === 'enum' ||
-    field.code === 'status' ||
-    !!(field as any).tagTypeMapping ||
-    options.some((opt: any) => opt?.color)
-
-  if (shouldTag) {
-    detailField.type = 'tag'
-    detailField.tagType = (field as any).tagTypeMapping as Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'>
-    detailField.defaultTagType = ((field as any).defaultTagType as any) || 'info'
-  }
-
-  return detailField
+  return toUnifiedDetailField(field as any) as DetailField
 }
 
 const detailPreviewSections = computed<DetailSection[]>(() => {
@@ -1580,7 +1282,8 @@ const detailPreviewSections = computed<DetailSection[]>(() => {
     previewRenderSchema.value,
     previewFieldDefinitions.value as any[],
     {
-      strictVisibility: true,
+      // Align with DynamicDetailPage runtime path: detail reuses edit layout model.
+      strictVisibility: false,
       isAuditFieldCode,
       mustSkipField: (field) => {
         if (isSystemField(field) || isAuditFieldCode(field.code)) return true
@@ -1594,6 +1297,18 @@ const detailPreviewSections = computed<DetailSection[]>(() => {
   ) as DetailSection[]
 })
 
+const designerCanvasSections = computed<DetailSection[]>(() => {
+  return (layoutConfig.value.sections || []).map((section: LayoutSection) => ({
+    name: section.id,
+    title: section.title || 'Untitled Section',
+    type: section.type || 'section',
+    position: section.position,
+    fields: [],
+    collapsible: section.collapsible === true,
+    collapsed: section.collapsed === true
+  }))
+})
+
 const previewAuditInfo = computed(() => ({
   createdBy: sampleData.value.createdBy || sampleData.value.created_by || 'System',
   createdAt: sampleData.value.createdAt || sampleData.value.created_at || '2026-03-01 10:00:00',
@@ -1601,20 +1316,36 @@ const previewAuditInfo = computed(() => ({
   updatedAt: sampleData.value.updatedAt || sampleData.value.updated_at || '2026-03-01 12:30:00'
 }))
 
-const previewFormRules = computed<Record<string, any>>(() => {
-  const rules: Record<string, any> = {}
-  for (const field of previewFieldDefinitions.value) {
-    if (!field.isRequired) continue
-    const label = field.label || field.name || field.code
-    rules[field.code] = [
-      { required: true, message: `${label}不能为空`, trigger: ['blur', 'change'] }
-    ]
+const previewObjectName = computed(() => {
+  return props.objectCode || props.layoutName || 'Record'
+})
+
+const previewPageTitle = computed(() => {
+  const fields = previewFieldDefinitions.value || []
+  const identifier = fields.find((field: any) => field?.isIdentifier || field?.is_identifier || field?.code === 'name')
+  const candidateKeys = [
+    identifier?.code,
+    'name',
+    'title',
+    'code'
+  ].filter(Boolean) as string[]
+
+  for (const key of candidateKeys) {
+    const value = sampleData.value?.[key]
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return String(value)
+    }
   }
-  return rules
+
+  return props.layoutName || previewObjectName.value
+})
+
+const previewFormRules = computed<Record<string, any>>(() => {
+  return buildRequiredFormRules(previewFieldDefinitions.value as any[])
 })
 
 function setRenderMode(mode: string | number) {
-  const nextMode = mode === 'edit' || mode === 'detail' || mode === 'design'
+  const nextMode = mode === 'preview' || mode === 'design'
     ? mode
     : 'design'
   renderMode.value = nextMode
@@ -1625,11 +1356,30 @@ function handleDetailPreviewSave(value: Record<string, any>) {
     ...sampleData.value,
     ...(value || {})
   }
+  previewEditSnapshot.value = null
+  previewEditMode.value = false
+  renderMode.value = 'preview'
   ElMessage.success('预览模式：示例数据已更新（未保存到后台）')
 }
 
 function handleDetailPreviewCancel() {
+  if (previewEditSnapshot.value) {
+    sampleData.value = { ...previewEditSnapshot.value }
+  }
+  previewEditSnapshot.value = null
+  previewEditMode.value = false
+  renderMode.value = 'preview'
   ElMessage.info('预览模式：已取消编辑')
+}
+
+function handlePreviewEnterEdit() {
+  previewEditSnapshot.value = { ...sampleData.value }
+  previewEditMode.value = true
+  renderMode.value = 'preview'
+}
+
+function handlePreviewDelete() {
+  ElMessage.info('预览模式：删除操作仅用于界面演示，不会删除真实数据')
 }
 
 function isGroupExpanded(type: string): boolean {
@@ -1660,6 +1410,31 @@ function notifyUnsupportedField(field: FieldDefinition): void {
   const reason = getDisabledReason(field)
   if (!reason) return
   ElMessage.warning(`Cannot add "${field.name}": ${reason}`)
+}
+
+function extractRelatedObjectCode(field: Record<string, any>): string {
+  const direct = field.relatedObjectCode || field.related_object_code || field.referenceObject
+  if (direct) return String(direct)
+  if (field.reverseRelationModel || field.reverse_relation_model) {
+    const model = String(field.reverseRelationModel || field.reverse_relation_model)
+    const parts = model.split('.')
+    return parts[parts.length - 1]
+  }
+  return String(field.code || '').replace(/(_?record|_?items|s?)$/, '')
+}
+
+function mapPreviewReverseRelations(fields: any[]): ReverseRelationField[] {
+  return (fields || []).map((rel: any) => ({
+    code: rel.code,
+    label: rel.label || rel.name || rel.code,
+    displayMode: rel.relationDisplayMode || rel.relation_display_mode || 'inline_readonly',
+    relatedObjectCode: extractRelatedObjectCode(rel),
+    reverseRelationField: rel.reverseRelationField || rel.reverse_relation_field,
+    reverseRelationModel: rel.reverseRelationModel || rel.reverse_relation_model,
+    title: rel.label || rel.name || rel.code,
+    showCreate: (rel.relationDisplayMode || rel.relation_display_mode) === 'inline_editable',
+    position: rel.position
+  })) as ReverseRelationField[]
 }
 
 function buildLayoutField(field: FieldDefinition): LayoutField {
@@ -1782,11 +1557,6 @@ function handleFieldDragStart(e: DragEvent, field: FieldDefinition) {
   e.dataTransfer!.setData('field', JSON.stringify(field))
 }
 
-function handleCanvasFieldDragStart(e: DragEvent, field: LayoutField) {
-  e.dataTransfer!.effectAllowed = 'move'
-  e.dataTransfer!.setData('canvasField', JSON.stringify(field))
-}
-
 function handleDragEnd() {
   draggedField.value = null
   isDragOverCanvas.value = false
@@ -1799,7 +1569,7 @@ function handleCanvasDragOver(e: DragEvent) {
   isDragOverCanvas.value = true
 }
 
-function handleCanvasDragLeave(e: DragEvent) {
+function handleCanvasDragLeave(_e: DragEvent) {
   if (renderMode.value !== 'design') return
   isDragOverCanvas.value = false
 }
@@ -1951,19 +1721,7 @@ function handleSectionPropertyUpdate(payload: { key: string; value: any }) {
   updateSection(payload.key, payload.value)
 }
 
-function updateFieldProps() {
-  if (selectedItem.value && elementType.value === 'field') {
-    Object.assign(selectedItem.value, fieldProps.value)
-  }
-}
-
-function updateSectionProps() {
-  if (selectedItem.value && elementType.value === 'section') {
-    Object.assign(selectedItem.value, sectionProps.value)
-  }
-}
-
-function removeField(fieldId: string, sectionId: string, sectionIndex?: number) {
+function removeField(fieldId: string, sectionId: string, _sectionIndex?: number) {
   const previousConfig = cloneLayoutConfig(layoutConfig.value)
   const newConfig = cloneLayoutConfig(layoutConfig.value)
   
@@ -2558,6 +2316,7 @@ async function loadLayout() {
 async function loadAvailableFields() {
   if (!props.objectCode) {
     console.warn('[LayoutDesigner] No objectCode provided, cannot load fields')
+    previewReverseRelations.value = []
     return
   }
 
@@ -2573,6 +2332,11 @@ async function loadAvailableFields() {
       runtimeResult.status === 'fulfilled' && Array.isArray(runtimeResult.value?.fields)
         ? runtimeResult.value.fields
         : []
+    const runtimeReverseRelations =
+      runtimeResult.status === 'fulfilled' && Array.isArray((runtimeResult.value as any)?.reverseRelations)
+        ? (runtimeResult.value as any).reverseRelations
+        : []
+    previewReverseRelations.value = mapPreviewReverseRelations(runtimeReverseRelations)
 
     const metadataPayload =
       metadataResult.status === 'fulfilled'
@@ -2590,6 +2354,7 @@ async function loadAvailableFields() {
     console.warn('[LayoutDesigner] No fields returned from runtime/metadata endpoints, keeping current fields')
   } catch (error) {
     console.error('Failed to load fields:', error)
+    previewReverseRelations.value = []
     // Only set fallback mock data if availableFields is empty
     if (availableFields.value.length === 0) {
       console.log('[LayoutDesigner] Using fallback mock data')
@@ -2701,10 +2466,16 @@ watch(
 )
 
 watch(renderMode, (mode) => {
-  if (mode === 'design') return
-  deselect()
-  isDragOverCanvas.value = false
-  dragOverSection.value = null
+  if (mode !== 'preview') {
+    previewEditSnapshot.value = null
+    previewEditMode.value = false
+  }
+
+  if (mode !== 'design') {
+    deselect()
+    isDragOverCanvas.value = false
+    dragOverSection.value = null
+  }
 })
 
 // Lifecycle
@@ -2838,7 +2609,7 @@ watch(() => props.mode, (newType) => {
   }
 }
 
-.field-item {
+.palette-field-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2931,67 +2702,6 @@ watch(() => props.mode, (newType) => {
   }
 }
 
-.form-renderer {
-  max-width: 1200px; /* expanded to accommodate two columns */
-  margin: 0 auto;
-
-  .designer-preview-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    align-items: flex-start;
-  }
-}
-
-.layout-section {
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e4e7ed;
-  overflow: hidden;
-
-  /* Default (Main Activity) takes up full remaining width but max 860 roughly */
-  flex: 1 1 600px;
-  max-width: 100%;
-
-  &.is-sidebar-position {
-    /* Sidebar blocks are constrained */
-    flex: 0 0 320px;
-    max-width: 320px;
-
-    /* A visual hint that it is a sidebar in design mode */
-    border-top: 3px solid #64748b;
-  }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    background: #f5f7fa;
-    border-bottom: 1px solid #e4e7ed;
-    cursor: pointer;
-
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 500;
-      color: #303133;
-    }
-  }
-
-  &.is-selected {
-    border-color: #409eff;
-    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
-  }
-
-  &.is-collapsed {
-    .section-content {
-      display: none;
-    }
-  }
-}
-
 .empty-column-placeholder {
   padding: 30px;
   text-align: center;
@@ -3001,96 +2711,58 @@ watch(() => props.mode, (newType) => {
   font-size: 14px;
 }
 
-.section-content {
-  padding: 16px;
+.empty-column-placeholder.compact {
+  padding: 14px;
+  font-size: 12px;
+}
+
+.designer-section-slot {
+  position: relative;
+}
+
+.designer-section-slot.is-selected {
+  outline: 2px dashed #409eff;
+  outline-offset: 6px;
+  border-radius: 6px;
+}
+
+.designer-section-header-proxy {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #606266;
+  cursor: pointer;
+}
+
+.designer-section-toolbar {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.designer-section-slot.is-selected .designer-section-header-proxy {
+  color: #409eff;
+}
+
+.designer-section-body {
+  min-height: 24px;
 }
 
 .designer-fields-container {
-  display: grid;
-  gap: 12px;
+  min-height: 24px;
+}
 
-  &.columns-1 {
-    grid-template-columns: 1fr;
-  }
+.designer-fields-container.el-row {
+  row-gap: 12px;
+}
 
-  &.columns-2 {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  &.columns-3 {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  &.columns-4 {
-    grid-template-columns: repeat(4, 1fr);
-  }
+.section-fields-sidebar .field-col {
+  margin-bottom: 12px;
 }
 
 .field-renderer {
-  position: relative;
-  min-width: 0;
-  padding: 4px;
-  border-radius: 4px;
-  transition: all 0.2s;
   cursor: move;
-
-  &:hover {
-    background: #f0f9ff;
-  }
-
-  &.is-selected {
-    background: #ecf5ff;
-    border: 1px dashed #409eff;
-    border-radius: 4px;
-  }
-
-}
-
-.designer-field-label {
-  font-size: 12px;
-  color: #303133;
-  margin: 2px 0 6px;
-}
-
-.designer-field-code {
-  margin-left: 6px;
-  font-size: 11px;
-  color: #909399;
-}
-
-.field-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-
-  .overlay-label {
-    position: absolute;
-    top: 2px;
-    left: 8px;
-    font-size: 12px;
-    color: #409eff;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 2px 6px;
-    border-radius: 3px;
-  }
-  .overlay-code {
-    margin-left: 6px;
-    font-size: 11px;
-    color: #909399;
-  }
-
-  .overlay-actions {
-    position: absolute;
-    top: 50%;
-    right: 4px;
-    transform: translateY(-50%);
-    pointer-events: auto;
-    display: flex;
-    gap: 4px;
-  }
 }
 
 // Right Panel - Property Editor

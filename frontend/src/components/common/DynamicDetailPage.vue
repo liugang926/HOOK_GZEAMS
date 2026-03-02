@@ -31,13 +31,13 @@ import BaseDetailPage, {
 import { useFieldMetadata } from '@/composables/useFieldMetadata'
 import type { FieldDefinition } from '@/types'
 import request from '@/utils/request'
-import { normalizeFieldType } from '@/utils/fieldType'
 import { isSystemField } from '@/utils/transform'
 import { createObjectClient } from '@/api/dynamic'
 import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
 import { orderFieldsWithSchema } from '@/platform/layout/unifiedFieldOrder'
 import { buildRenderSchema } from '@/platform/layout/renderSchema'
 import { projectDetailSectionsFromRenderSchema } from '@/platform/layout/detailSchemaProjector'
+import { isAuditFieldCode, normalizeDetailSpan, toUnifiedDetailField, buildRequiredFormRules } from '@/platform/layout/unifiedDetailField'
 
 const { t } = useI18n()
 const slots = useSlots()
@@ -118,21 +118,6 @@ const runtimeLayoutSections = ref<any[] | null>(null)
 const runtimeEditableFields = ref<FieldDefinition[] | null>(null)
 const runtimeReverseRelationFields = ref<FieldDefinition[] | null>(null)
 
-const AUDIT_FIELD_CODES = new Set([
-  'created_at',
-  'created_by',
-  'updated_at',
-  'updated_by',
-  'createdAt',
-  'createdBy',
-  'updatedAt',
-  'updatedBy'
-])
-
-function isAuditFieldCode(code: string): boolean {
-  return AUDIT_FIELD_CODES.has(String(code || '').trim())
-}
-
 // Use field metadata composable
 const {
   editableFields,
@@ -191,19 +176,10 @@ const auditInfo = computed<AuditInfo>(() => ({
 
 /** Dynamically generate Form Rules based on field attributes */
 const generateFormRules = () => {
-  const rules: Record<string, any> = {}
   const sourceFields = (runtimeEditableFields.value && runtimeEditableFields.value.length > 0
     ? runtimeEditableFields.value
     : editableFields.value) as FieldDefinition[]
-
-  sourceFields.forEach((field: any) => {
-    if (field.is_required || field.isRequired || field.required) {
-      rules[field.code] = [
-        { required: true, message: `${field.name || field.label}不能为空`, trigger: ['blur', 'change'] }
-      ]
-    }
-  })
-  formRules.value = rules
+  formRules.value = buildRequiredFormRules(sourceFields as any[])
 }
 
 const effectiveAuditInfo = computed<AuditInfo | null>(() => {
@@ -357,16 +333,6 @@ function hasVisibleBusinessFields(fields: FieldDefinition[]): boolean {
   return fields.some((field) => !shouldSkipField(field))
 }
 
-function normalizeDetailSpan(rawSpan: any, rawColumns: any): number {
-  const columns = Number(rawColumns) || 2
-  const span = Number(rawSpan)
-
-  if (!Number.isFinite(span) || span <= 0) return Math.max(1, Math.round(24 / columns))
-  if (span <= columns) return Math.max(1, Math.min(24, Math.round((24 / columns) * span)))
-  if (span <= 24) return Math.max(1, Math.min(24, Math.round(span)))
-  return 24
-}
-
 function buildSectionsFromRuntimeLayout(
   layoutSections: any[],
   fields: FieldDefinition[],
@@ -487,53 +453,7 @@ function getSectionIcon(sectionName: string): string {
  * Convert field definition to detail field
  */
 function fieldToDetailField(field: FieldDefinition): DetailField {
-  const rawType = (field as any).fieldType || (field as any).field_type || (field as any).type || 'text'
-  const normalizedType = normalizeFieldType(rawType)
-  const options = (field as any).options || []
-
-  const detailField: DetailField = {
-    prop: field.code,
-    label: field.label || field.name,
-    span: field.span || 12,
-    options
-  }
-
-  if (normalizedType === 'date' || normalizedType === 'datetime' || normalizedType === 'time') {
-    detailField.type = normalizedType as DetailField['type']
-    if (normalizedType === 'date') detailField.dateFormat = (field as any).dateFormat || 'YYYY-MM-DD'
-    if (normalizedType === 'datetime') detailField.dateFormat = (field as any).dateFormat || 'YYYY-MM-DD HH:mm:ss'
-    if (normalizedType === 'time') detailField.dateFormat = (field as any).dateFormat || 'HH:mm:ss'
-  } else if (normalizedType === 'number' || normalizedType === 'currency') {
-    detailField.type = normalizedType === 'currency' ? 'currency' : 'number'
-    detailField.precision = (field as any).precision ?? (field as any).decimalPlaces ?? (field as any).decimal_places ?? 2
-    detailField.currency = (field as any).currencySymbol || (field as any).currency || undefined
-  } else if (normalizedType === 'percent') {
-    detailField.type = 'percent'
-    detailField.precision = (field as any).precision ?? (field as any).decimalPlaces ?? (field as any).decimal_places ?? 2
-  } else if (normalizedType === 'image') {
-    detailField.type = 'image'
-    detailField.span = 24
-  } else if (normalizedType === 'file') {
-    detailField.type = 'text'
-    detailField.span = 24
-  } else {
-    detailField.type = 'text'
-  }
-
-  const shouldTag =
-    normalizedType === 'status' ||
-    normalizedType === 'enum' ||
-    field.code === 'status' ||
-    !!(field as any).tagTypeMapping ||
-    options.some((opt: any) => opt?.color)
-
-  if (shouldTag) {
-    detailField.type = 'tag'
-    detailField.tagType = (field as any).tagTypeMapping as Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'>
-    detailField.defaultTagType = ((field as any).defaultTagType as any) || 'info'
-  }
-
-  return detailField
+  return toUnifiedDetailField(field as any) as DetailField
 }
 
 /**
