@@ -1,0 +1,40 @@
+{
+  "scanner": {
+    "title": "扫码",
+    "startScan": "开始扫描",
+    "stopScan": "停止扫描",
+    "scanResult": "扫描结果",
+    "noResult": "未扫描到内容",
+    "permissionDenied": "相机权限被拒绝",
+    "cameraUnavailable": "相机不可用",
+    "switchCamera": "切换摄像头",
+    "flashOn": "开启闪光灯",
+    "flashOff": "关闭闪光灯",
+    "scanQR": "扫描二维码",
+    "scanBar": "扫描条形码"
+  },
+  "assetDetail": {
+    "title": "资产详情",
+    "basicInfo": "基本信息",
+    "usageInfo": "使用信息",
+    "maintenanceInfo": "维护信息",
+    "operations": "操作",
+    "scanRecord": "扫码记录",
+    "history": "历史记录"
+  },
+  "actions": {
+    "pickup": "领用",
+    "return": "归还",
+    "transfer": "调拨",
+    "inventory": "盘点",
+    "maintenance": "报修",
+    "scanQR": "扫码"
+  },
+  "messages": {
+    "scanSuccess": "扫描成功",
+    "scanFailed": "扫描失败",
+    "assetNotFound": "未找到该资产",
+    "operationSuccess": "操作成功",
+    "operationFailed": "操作失败"
+  }
+}

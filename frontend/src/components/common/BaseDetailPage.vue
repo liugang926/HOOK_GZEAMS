@@ -43,6 +43,7 @@ import { isPlainObject, isEmptyValue, resolveFieldValue } from '@/utils/fieldKey
 import RelatedObjectTable from './RelatedObjectTable.vue'
 import FieldDisplay from './FieldDisplay.vue'
 import ObjectAvatar from './ObjectAvatar.vue'
+import FieldRenderer from '@/components/engine/FieldRenderer.vue'
 import type { FieldDefinition } from '@/types'
 
 // ============================================================================
@@ -184,6 +185,12 @@ interface Props {
   reverseRelations?: ReverseRelationField[]
   /** Whether to show related objects inline */
   showRelatedObjects?: boolean
+  /** Whether the page is in edit mode */
+  editMode?: boolean
+  /** Form data for editing */
+  formData?: Record<string, any>
+  /** Form validation rules */
+  formRules?: Record<string, any>
 }
 
 interface Emits {
@@ -193,6 +200,9 @@ interface Emits {
   (e: 'related-record-click', relationCode: string, record: any): void
   (e: 'related-record-edit', relationCode: string, record: any): void
   (e: 'related-refresh', relationCode: string): void
+  (e: 'save', data: Record<string, any>): void
+  (e: 'cancel'): void
+  (e: 'update:formData', data: Record<string, any>): void
 }
 
 // ============================================================================
@@ -211,10 +221,15 @@ const props = withDefaults(defineProps<Props>(), {
   fieldSpan: 12,
   extraActions: () => [],
   reverseRelations: () => [],
-  showRelatedObjects: true
+  showRelatedObjects: true,
+  editMode: false,
+  formData: () => ({}),
+  formRules: () => ({})
 })
 
 const emit = defineEmits<Emits>()
+
+const formRef = ref<any>(null)
 
 // ============================================================================
 // State
@@ -250,7 +265,13 @@ const hasAuditInfo = computed(() => {
 
 /** Available actions */
 const availableActions = computed(() => {
-  const actions: Array<{ label: string; type?: string; icon?: string; action: () => void }> = []
+  const actions: Array<{ label: string; type?: string; icon?: string; action: () => void; disabled?: boolean }> = []
+
+  if (props.editMode) {
+    actions.push({ label: t('common.actions.cancel'), action: () => emit('cancel') })
+    actions.push({ label: t('common.actions.save') || 'Save', type: 'primary', action: () => emit('save', props.formData) })
+    return actions
+  }
 
   if (props.showEdit) {
     actions.push({ label: props.editText || t('common.actions.edit'), type: 'primary', action: () => emit('edit') })
@@ -393,9 +414,29 @@ const handleBack = () => {
 // Expose
 // ============================================================================
 
+/**
+ * Expose layout check and form validation method
+ */
+const validateForm = async () => {
+  if (!formRef.value) return true
+  try {
+    const valid = await formRef.value.validate()
+    return valid
+  } catch (err) {
+    return false
+  }
+}
+
+const updateFormData = (prop: string, value: any) => {
+  const newData = { ...props.formData }
+  newData[prop] = value
+  emit('update:formData', newData)
+}
+
 defineExpose({
   toggleSection,
-  isSectionCollapsed
+  isSectionCollapsed,
+  validateForm
 })
 </script>
 
@@ -440,20 +481,31 @@ defineExpose({
             />
             <div class="profile-text">
               <span class="object-type-name">{{ objectName || '记录' }}</span>
-              <h1 class="page-title">{{ title || '...' }}</h1>
+              <h1 class="page-title">
+                {{ title || '...' }}
+              </h1>
             </div>
           </div>
         </div>
 
         <div class="header-right">
           <!-- Compact Audit Info inline -->
-          <div v-if="hasAuditInfo" class="header-audit-info">
+          <div
+            v-if="hasAuditInfo"
+            class="header-audit-info"
+          >
             <template v-if="auditInfo?.updatedBy">
-              <div class="audit-item">更新于: <span class="val">{{ formatDate(auditInfo?.updatedAt || '') }}</span></div>
-              <div class="audit-item">更新者: <span class="val">{{ auditInfo?.updatedBy }}</span></div>
+              <div class="audit-item">
+                更新于: <span class="val">{{ formatDate(auditInfo?.updatedAt || '') }}</span>
+              </div>
+              <div class="audit-item">
+                更新者: <span class="val">{{ auditInfo?.updatedBy }}</span>
+              </div>
             </template>
             <template v-else-if="auditInfo?.createdBy">
-              <div class="audit-item">创建者: <span class="val">{{ auditInfo?.createdBy }}</span></div>
+              <div class="audit-item">
+                创建者: <span class="val">{{ auditInfo?.createdBy }}</span>
+              </div>
             </template>
           </div>
 
@@ -472,73 +524,136 @@ defineExpose({
       </div>
 
       <!-- Layout Container for Two Columns -->
-      <div class="detail-layout-container" :class="{ 'has-sidebar': sidebarSections.length > 0 }">
-        <!-- Main Column -->
-        <div class="main-column detail-sections">
-          <el-empty
-            v-if="mainSections.length === 0"
-            :description="$t('common.messages.noData')"
-          />
+      <el-form
+        ref="formRef"
+        :model="formData"
+        :rules="formRules"
+        @submit.prevent
+      >
+        <div
+          class="detail-layout-container"
+          :class="{ 'has-sidebar': sidebarSections.length > 0 }"
+        >
+          <!-- Main Column -->
+          <div class="main-column detail-sections">
+            <el-empty
+              v-if="mainSections.length === 0"
+              :description="$t('common.messages.noData')"
+            />
 
-          <template
-            v-for="section in mainSections"
-            :key="section.name"
-          >
-          <div :class="['detail-section', { 'is-collapsed': isSectionCollapsed(section) }]">
-            <!-- Section Header -->
-            <div
-              v-if="section.title"
-              class="section-header"
-              @click="section.collapsible ? toggleSection(section.name) : null"
+            <template
+              v-for="section in mainSections"
+              :key="section.name"
             >
-              <div class="section-title">
-                <el-icon
-                  v-if="section.icon"
-                  class="section-icon"
+              <div :class="['detail-section', { 'is-collapsed': isSectionCollapsed(section) }]">
+                <!-- Section Header -->
+                <div
+                  v-if="section.title"
+                  class="section-header"
+                  @click="section.collapsible ? toggleSection(section.name) : null"
                 >
-                  <component :is="section.icon" />
-                </el-icon>
-                <span>{{ section.title }}</span>
-              </div>
-              <el-icon
-                v-if="section.collapsible"
-                :class="['collapse-icon', { 'is-collapsed': isSectionCollapsed(section) }]"
-              >
-                <ArrowDown />
-              </el-icon>
-            </div>
-
-            <!-- Section Content -->
-            <div
-              v-show="!isSectionCollapsed(section)"
-              class="section-content"
-            >
-              <!-- Custom slot for this section -->
-              <slot
-                v-if="$slots[`section-${section.name}`]"
-                :name="`section-${section.name}`"
-                :data="data"
-                :section="section"
-              />
-              <!-- Default field rendering -->
-              <template v-else>
-                <!-- Render as Tabs if section type is 'tab' -->
-                <template v-if="section.type === 'tab' && section.tabs && section.tabs.length > 0">
-                  <el-tabs 
-                    v-model="activeTabs[section.name]"
-                    type="card"
-                    class="detail-section-tabs"
-                  >
-                    <!-- Initialize activeTabs loosely on mount through a quick hack / v-once evaluated default but Vue handles it gracefully if value is undefined -->
-                    <el-tab-pane
-                      v-for="tab in section.tabs"
-                      :key="tab.id"
-                      :label="tab.title"
-                      :name="tab.id"
+                  <div class="section-title">
+                    <el-icon
+                      v-if="section.icon"
+                      class="section-icon"
                     >
+                      <component :is="section.icon" />
+                    </el-icon>
+                    <span>{{ section.title }}</span>
+                  </div>
+                  <el-icon
+                    v-if="section.collapsible"
+                    :class="['collapse-icon', { 'is-collapsed': isSectionCollapsed(section) }]"
+                  >
+                    <ArrowDown />
+                  </el-icon>
+                </div>
+
+                <!-- Section Content -->
+                <div
+                  v-show="!isSectionCollapsed(section)"
+                  class="section-content"
+                >
+                  <!-- Custom slot for this section -->
+                  <slot
+                    v-if="$slots[`section-${section.name}`]"
+                    :name="`section-${section.name}`"
+                    :data="data"
+                    :section="section"
+                  />
+                  <!-- Default field rendering -->
+                  <template v-else>
+                    <!-- Render as Tabs if section type is 'tab' -->
+                    <template v-if="section.type === 'tab' && section.tabs && section.tabs.length > 0">
+                      <el-tabs 
+                        v-model="activeTabs[section.name]"
+                        type="card"
+                        class="detail-section-tabs"
+                      >
+                        <!-- Initialize activeTabs loosely on mount through a quick hack / v-once evaluated default but Vue handles it gracefully if value is undefined -->
+                        <el-tab-pane
+                          v-for="tab in section.tabs"
+                          :key="tab.id"
+                          :label="tab.title"
+                          :name="tab.id"
+                        >
+                          <el-row :gutter="24">
+                            <el-col
+                              v-for="field in tab.fields.filter(f => !f.hidden)"
+                              :key="field.prop"
+                              :span="field.span || fieldSpan"
+                              class="field-col"
+                            >
+                              <!-- Slot field -->
+                              <div
+                                v-if="field.type === 'slot'"
+                                class="field-item"
+                              >
+                                <slot
+                                  :name="`field-${field.prop}`"
+                                  :field="field"
+                                  :data="data"
+                                  :value="getFieldValue(field)"
+                                />
+                              </div>
+
+                              <div
+                                v-else
+                                :class="['field-item', { 'field-image': field.type === 'image' }]"
+                              >
+                                <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
+                                <div :class="['field-value', field.valueClass]">
+                                  <template v-if="editMode">
+                                    <el-form-item
+                                      :prop="field.prop"
+                                      style="margin-bottom: 0px"
+                                    >
+                                      <FieldRenderer
+                                        :field="{ code: field.prop, name: field.label, fieldType: field.type, options: field.options }"
+                                        :model-value="formData[field.prop]"
+                                        @update:model-value="updateFormData(field.prop, $event)"
+                                      />
+                                    </el-form-item>
+                                  </template>
+                                  <template v-else>
+                                    <FieldDisplay
+                                      :field="field"
+                                      :value="getFieldValue(field)"
+                                    />
+                                  </template>
+                                </div>
+                              </div>
+                            </el-col>
+                          </el-row>
+                        </el-tab-pane>
+                      </el-tabs>
+                    </template>
+
+                    <!-- Standard Flow Layout -->
+                    <template v-else>
                       <el-row :gutter="24">
                         <el-col
-                          v-for="field in tab.fields.filter(f => !f.hidden)"
+                          v-for="field in section.fields.filter(f => !f.hidden)"
                           :key="field.prop"
                           :span="field.span || fieldSpan"
                           class="field-col"
@@ -562,149 +677,142 @@ defineExpose({
                           >
                             <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
                             <div :class="['field-value', field.valueClass]">
-                              <FieldDisplay
-                                :field="field"
-                                :value="getFieldValue(field)"
-                              />
+                              <template v-if="editMode">
+                                <el-form-item
+                                  :prop="field.prop"
+                                  style="margin-bottom: 0px"
+                                >
+                                  <FieldRenderer
+                                    :field="{ code: field.prop, name: field.label, fieldType: field.type, options: field.options }"
+                                    :model-value="formData[field.prop]"
+                                    @update:model-value="updateFormData(field.prop, $event)"
+                                  />
+                                </el-form-item>
+                              </template>
+                              <template v-else>
+                                <FieldDisplay
+                                  :field="field"
+                                  :value="getFieldValue(field)"
+                                />
+                              </template>
                             </div>
                           </div>
                         </el-col>
                       </el-row>
-                    </el-tab-pane>
-                  </el-tabs>
-                </template>
-
-                <!-- Standard Flow Layout -->
-                <template v-else>
-                  <el-row :gutter="24">
-                    <el-col
-                      v-for="field in section.fields.filter(f => !f.hidden)"
-                      :key="field.prop"
-                      :span="field.span || fieldSpan"
-                      class="field-col"
-                    >
-                      <!-- Slot field -->
-                      <div
-                        v-if="field.type === 'slot'"
-                        class="field-item"
-                      >
-                        <slot
-                          :name="`field-${field.prop}`"
-                          :field="field"
-                          :data="data"
-                          :value="getFieldValue(field)"
-                        />
-                      </div>
-
-                      <div
-                        v-else
-                        :class="['field-item', { 'field-image': field.type === 'image' }]"
-                      >
-                        <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
-                        <div :class="['field-value', field.valueClass]">
-                          <FieldDisplay
-                            :field="field"
-                            :value="getFieldValue(field)"
-                          />
-                        </div>
-                      </div>
-                    </el-col>
-                  </el-row>
-                </template>
-              </template>
-            </div>
-          </div>
-        </template>
-        </div> <!-- End Main Column -->
-
-        <!-- Sidebar Column -->
-        <div v-if="sidebarSections.length > 0" class="sidebar-column">
-          <template
-            v-for="section in sidebarSections"
-            :key="section.name"
-          >
-            <div :class="['detail-section sidebar-section-block', { 'is-collapsed': isSectionCollapsed(section) }]">
-              <!-- Sidebar Section Header -->
-              <div
-                v-if="section.title"
-                class="section-header"
-                @click="section.collapsible ? toggleSection(section.name) : null"
-              >
-                <div class="section-title">
-                  <el-icon
-                    v-if="section.icon"
-                    class="section-icon"
-                  >
-                    <component :is="section.icon" />
-                  </el-icon>
-                  <span>{{ section.title }}</span>
+                    </template>
+                  </template>
                 </div>
-                <el-icon
-                  v-if="section.collapsible"
-                  :class="['collapse-icon', { 'is-collapsed': isSectionCollapsed(section) }]"
-                >
-                  <ArrowDown />
-                </el-icon>
               </div>
+            </template>
+          </div> <!-- End Main Column -->
 
-              <!-- Sidebar Section Content -->
-              <div
-                v-show="!isSectionCollapsed(section)"
-                class="section-content"
-              >
-                <!-- Custom slot for this section -->
-                <slot
-                  v-if="$slots[`section-${section.name}`]"
-                  :name="`section-${section.name}`"
-                  :data="data"
-                  :section="section"
-                />
-
-                <template v-else>
-                  <!-- In the sidebar, fields typically stack linearly with full width -->
-                  <el-row :gutter="0">
-                    <el-col
-                      v-for="field in section.fields.filter(f => !f.hidden)"
-                      :key="field.prop"
-                      :span="24"
-                      class="field-col sidebar-field-col"
+          <!-- Sidebar Column -->
+          <div
+            v-if="sidebarSections.length > 0"
+            class="sidebar-column"
+          >
+            <template
+              v-for="section in sidebarSections"
+              :key="section.name"
+            >
+              <div :class="['detail-section sidebar-section-block', { 'is-collapsed': isSectionCollapsed(section) }]">
+                <!-- Sidebar Section Header -->
+                <div
+                  v-if="section.title"
+                  class="section-header"
+                  @click="section.collapsible ? toggleSection(section.name) : null"
+                >
+                  <div class="section-title">
+                    <el-icon
+                      v-if="section.icon"
+                      class="section-icon"
                     >
-                      <!-- Slot field -->
-                      <div
-                        v-if="field.type === 'slot'"
-                        class="field-item sidebar-field-item"
-                      >
-                        <slot
-                          :name="`field-${field.prop}`"
-                          :field="field"
-                          :data="data"
-                          :value="getFieldValue(field)"
-                        />
-                      </div>
+                      <component :is="section.icon" />
+                    </el-icon>
+                    <span>{{ section.title }}</span>
+                  </div>
+                  <el-icon
+                    v-if="section.collapsible"
+                    :class="['collapse-icon', { 'is-collapsed': isSectionCollapsed(section) }]"
+                  >
+                    <ArrowDown />
+                  </el-icon>
+                </div>
 
-                      <div
-                        v-else
-                        :class="['field-item sidebar-field-item', { 'field-image': field.type === 'image' }]"
+                <!-- Sidebar Section Content -->
+                <div
+                  v-show="!isSectionCollapsed(section)"
+                  class="section-content"
+                >
+                  <!-- Custom slot for this section -->
+                  <slot
+                    v-if="$slots[`section-${section.name}`]"
+                    :name="`section-${section.name}`"
+                    :data="data"
+                    :section="section"
+                  />
+
+                  <template v-else>
+                    <!-- In the sidebar, fields typically stack linearly with full width -->
+                    <el-row :gutter="0">
+                      <el-col
+                        v-for="field in section.fields.filter(f => !f.hidden)"
+                        :key="field.prop"
+                        :span="24"
+                        class="field-col sidebar-field-col"
                       >
-                        <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
-                        <div :class="['field-value', field.valueClass]">
-                          <FieldDisplay
+                        <!-- Slot field -->
+                        <div
+                          v-if="field.type === 'slot'"
+                          class="field-item sidebar-field-item"
+                        >
+                          <slot
+                            :name="`field-${field.prop}`"
                             :field="field"
+                            :data="data"
                             :value="getFieldValue(field)"
                           />
                         </div>
-                      </div>
-                    </el-col>
-                  </el-row>
-                </template>
+
+                        <div
+                          v-else
+                          :class="['field-item sidebar-field-item', { 'field-image': field.type === 'image' }]"
+                        >
+                          <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
+                          <div :class="['field-value', field.valueClass]">
+                            <template v-if="editMode">
+                              <el-form-item
+                                :prop="field.prop"
+                                style="margin-bottom: 0px"
+                              >
+                                <FieldRenderer
+                                  :field="{ code: field.prop, name: field.label, fieldType: field.type, options: field.options }"
+                                  :model-value="formData[field.prop]"
+                                  @update:model-value="updateFormData(field.prop, $event)"
+                                />
+                              </el-form-item>
+                            </template>
+                            <template v-else>
+                              <FieldDisplay
+                                :field="field"
+                                :value="getFieldValue(field)"
+                              />
+                            </template>
+                          </div>
+                        </div>
+                      </el-col>
+                    </el-row>
+                  </template>
+                </div>
               </div>
-            </div>
-          </template>
+            </template>
 
           <!-- System Info in Sidebar (if moved here optionally) -->
           <!-- We keep system info at bottom by default, but it could be embedded here -->
-        </div> <!-- End Sidebar Column -->
-      </div> <!-- End Layout Container -->
+          </div> <!-- End Sidebar Column -->
+        </div> 
+      </el-form>
+      <!-- End Layout Container -->
 
       <!-- Audit Info (System Information) -->
       <div

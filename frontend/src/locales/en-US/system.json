@@ -1,0 +1,847 @@
+{
+    "title": "System Management",
+    "department": {
+        "title": "Department Management",
+        "createButton": "Create Department",
+        "addSubDept": "Add Sub-Department",
+        "columns": {
+            "name": "Department Name",
+            "code": "Code",
+            "manager": "Manager",
+            "phone": "Phone",
+            "sortOrder": "Sort",
+            "status": "Status"
+        },
+        "status": {
+            "enabled": "Enabled",
+            "disabled": "Disabled"
+        },
+        "messages": {
+            "confirmDelete": "Are you sure to delete this department?"
+        }
+    },
+    "dictionary": {
+        "title": "Dictionary Management",
+        "createTypButton": "Create Dictionary Type",
+        "columns": {
+            "code": "Dictionary Code",
+            "name": "Dictionary Name",
+            "description": "Description",
+            "isSystem": "System Dict",
+            "status": "Status",
+            "itemCount": "Item Count",
+            "sortOrder": "Sort"
+        },
+        "status": {
+            "enabled": "Enabled",
+            "disabled": "Disabled"
+        },
+        "isSystem": {
+            "yes": "Yes",
+            "no": "No"
+        },
+        "actions": {
+            "viewItems": "Items"
+        },
+        "messages": {
+            "confirmDelete": "Are you sure to delete dictionary type \"{name}\"? Associated items will also be deleted.",
+            "confirmDeleteTitle": "Confirm Delete",
+            "loadFailed": "Failed to load data"
+        }
+    },
+    "common": {
+        "all": "All",
+        "item": "Item",
+        "actions": {
+            "search": "Search",
+            "reset": "Reset",
+            "edit": "Edit",
+            "delete": "Delete",
+            "cancel": "Cancel",
+            "save": "Save",
+            "create": "Create",
+            "confirm": "Confirm",
+            "detail": "Detail"
+        },
+        "messages": {
+            "loadFailed": "Load failed",
+            "operationFailed": "Operation failed",
+            "saveSuccess": "Saved successfully",
+            "deleteSuccess": "Deleted successfully",
+            "confirmDelete": "Are you sure you want to delete this?"
+        }
+    },
+    "config": {
+        "title": "System Configuration",
+        "addConfig": "Add Config",
+        "tabs": {
+            "all": "All",
+            "general": "General",
+            "qrcode": "QR Code",
+            "notification": "Notification",
+            "asset": "Asset",
+            "inventory": "Inventory"
+        },
+        "columns": {
+            "key": "Key",
+            "name": "Name",
+            "value": "Value",
+            "type": "Type",
+            "category": "Category",
+            "isSystem": "System",
+            "description": "Description"
+        },
+        "status": {
+            "enabled": "Enabled",
+            "disabled": "Disabled"
+        },
+        "messages": {
+            "loadFailed": "Failed to load system configs",
+            "confirmDelete": "Are you sure to delete this config?"
+        },
+        "searchPlaceholder": "Search by key or name"
+    },
+    "businessObject": {
+        "title": "Business Objects",
+        "create": "Create Business Object",
+        "createTitle": "Create Business Object",
+        "editTitle": "Edit Business Object",
+        "tabs": {
+            "basic": "Basic Info",
+            "actions": "Custom Actions"
+        },
+        "columns": {
+            "name": "Object Name",
+            "code": "Object Code",
+            "description": "Description",
+            "type": "Type",
+            "fieldCount": "Fields",
+            "layoutCount": "Layouts",
+            "workflow": "Workflow"
+        },
+        "fields": {
+            "code": "Object Code",
+            "name": "Object Name",
+            "description": "Description",
+            "tableName": "Table Name",
+            "pkField": "Primary Key",
+            "enableWorkflow": "Enable Workflow",
+            "enableVersion": "Enable Versioning",
+            "enableSoftDelete": "Enable Soft Delete",
+            "isSystem": "System Object"
+        },
+        "placeholders": {
+            "code": "Enter object code (English, e.g., Asset)",
+            "name": "Enter object name (e.g., Fixed Asset)",
+            "description": "Enter object description",
+            "tableName": "Database table name (e.g., assets_asset)",
+            "pkField": "Default: id"
+        },
+        "tips": {
+            "workflow": "Enable to configure approval workflows",
+            "version": "Enable to track data history",
+            "softDelete": "Logical delete instead of physical delete",
+            "system": "System objects cannot be deleted"
+        },
+        "type": {
+            "custom": "Custom",
+            "system": "System"
+        },
+        "actions": {
+            "fields": "Fields",
+            "layouts": "Layouts"
+        },
+        "validation": {
+            "codeRequired": "Please enter object code",
+            "codePattern": "Must start with uppercase letter, alphanumeric only",
+            "nameRequired": "Please enter object name",
+            "tableNameRequired": "Please enter table name"
+        },
+        "info": {
+            "customActions": "Define custom actions (buttons/triggers) for this object.",
+            "customActionsExample": "Example: [{\"code\": \"approve\", \"label\": \"Approve\", \"type\": \"api\"}]"
+        },
+        "messages": {
+            "loadFailed": "Failed to load business objects"
+        }
+    },
+    "pageLayout": {
+        "title": "{name} - Layout Management",
+        "create": "New Layout",
+        "createTitle": "Create Layout",
+        "modes": {
+            "edit": "Edit Mode",
+            "readonly": "Readonly Mode",
+            "search": "Search Mode"
+        },
+        "columns": {
+            "name": "Layout Name",
+            "code": "Layout Code",
+            "mode": "Mode",
+            "description": "Description",
+            "version": "Version",
+            "isDefault": "Default",
+            "status": "Status"
+        },
+        "tags": {
+            "systemDefault": "System Default",
+            "default": "Default"
+        },
+        "status": {
+            "draft": "Draft",
+            "published": "Published",
+            "archived": "Archived"
+        },
+        "types": {
+            "form": "Form",
+            "edit": "Edit",
+            "readonly": "Readonly",
+            "detail": "Detail",
+            "list": "List",
+            "search": "Search"
+        },
+        "actions": {
+            "customize": "Customize",
+            "preview": "Preview",
+            "design": "Design",
+            "duplicate": "Duplicate",
+            "publish": "Publish",
+            "rollback": "Rollback",
+            "createAndDesign": "Create & Design"
+        },
+        "fields": {
+            "code": "Layout Code",
+            "name": "Layout Name",
+            "type": "Layout Type",
+            "isDefault": "Set as Default",
+            "description": "Description"
+        },
+        "placeholders": {
+            "code": "e.g., asset_form_custom",
+            "name": "e.g., Custom Asset Form",
+            "description": "Describe the usage of this layout"
+        },
+        "tips": {
+            "default": "Default layout will be the preferred choice for this type"
+        },
+        "alert": {
+            "autoGenerated": "List layouts are auto-generated based on field definitions. Please configure 'show_in_list' property in Field Management."
+        },
+        "messages": {
+            "emptyState": "No {mode} layouts found, click button below to create",
+            "createSuccess": "Layout created successfully",
+            "confirmPublish": "Are you sure to publish layout \"{name}\"? A new version will be created.",
+            "publishSuccess": "Published successfully",
+            "confirmRollback": "Are you sure to rollback layout \"{name}\" to the previous version?",
+            "rollbackSuccess": "Rollback successful",
+            "rollbackFailed": "Rollback failed",
+            "noRollbackTarget": "No previous version available for rollback",
+            "required": "Please enter layout code and name"
+        },
+        "designer": {
+            "title": "Layout Designer"
+        }
+    },
+    "fieldDefinition": {
+        "title": "{name} - Field Management",
+        "create": "Add Field",
+        "createTitle": "Add Field",
+        "editTitle": "Edit Field",
+        "groups": {
+            "basic": "Basic Types",
+            "datetime": "Date & Time",
+            "selection": "Selection Types",
+            "reference": "Reference Types",
+            "media": "Media Files",
+            "advanced": "Advanced Types"
+        },
+        "types": {
+            "text": "Text",
+            "textarea": "Text Area",
+            "number": "Number",
+            "currency": "Currency",
+            "percent": "Percentage",
+            "date": "Date",
+            "datetime": "Date Time",
+            "time": "Time",
+            "select": "Select",
+            "multi_select": "Multi Select",
+            "radio": "Radio",
+            "checkbox": "Checkbox",
+            "boolean": "Switch",
+            "user": "User Select",
+            "department": "Department Select",
+            "reference": "Reference",
+            "asset": "Asset Select",
+            "location": "Location Select",
+            "file": "File Upload",
+            "image": "Image Upload",
+            "qr_code": "QR Code",
+            "barcode": "Barcode",
+            "formula": "Formula",
+            "sub_table": "Sub Table",
+            "rich_text": "Rich Text",
+            "auto_number": "Auto Number",
+            "json": "JSON"
+        },
+        "columns": {
+            "sortOrder": "Sort",
+            "name": "Field Name",
+            "code": "Field Code",
+            "type": "Type",
+            "description": "Description",
+            "required": "Required",
+            "readonly": "Readonly",
+            "system": "System"
+        },
+        "fields": {
+            "code": "Field Code",
+            "name": "Field Name",
+            "type": "Field Type",
+            "referenceObject": "Reference Object",
+            "options": "Options Configuration",
+            "formula": "Formula Expression",
+            "sortOrder": "Sort Order",
+            "defaultValue": "Default Value",
+            "placeholder": "Placeholder",
+            "description": "Description",
+            "required": "Required",
+            "readonly": "Readonly",
+            "unique": "Unique",
+            "showInList": "Show in List",
+            "listWidth": "List Width",
+            "maxLength": "Max Length",
+            "numericRange": "Numeric Range",
+            "decimalPlaces": "Decimal Places"
+        },
+        "placeholders": {
+            "code": "Enter field code (English, e.g., userName)",
+            "name": "Enter field name (e.g., User Name)",
+            "type": "Select field type",
+            "referenceObject": "Select reference object",
+            "optionLabel": "Option Name",
+            "optionValue": "Option Value",
+            "formula": "e.g., {quantity} * {price}",
+            "description": "Field description",
+            "placeholder": "Placeholder text for input",
+            "minValue": "Min",
+            "maxValue": "Max",
+            "defaultValue": {
+                "text": "Default text",
+                "number": "Default number",
+                "date": "e.g., 2024-01-01",
+                "switch": "true/false",
+                "select": "Option value"
+            }
+        },
+        "tips": {
+            "formula": "Use {fieldCode} to reference other fields",
+            "showInList": "Show in list view by default",
+            "listWidth": "Column width in pixels"
+        },
+        "tags": {
+            "system": "System"
+        },
+        "actions": {
+            "addOption": "Add Option",
+            "retry": "Retry"
+        },
+        "validation": {
+            "codeRequired": "Please enter field code",
+            "codePattern": "Must start with lowercase letter, alphanumeric only",
+            "nameRequired": "Please enter field name",
+            "typeRequired": "Please select field type",
+            "referenceObjectRequired": "Please select reference object"
+        },
+        "messages": {
+            "confirmDelete": "Are you sure to delete this field?",
+            "noObjectCode": "No business object specified",
+            "noData": "No field data retrieved",
+            "loadFailed": "Failed to load field definitions"
+        }
+    },
+    "businessRule": {
+        "title": "Business Rules",
+        "create": "Create Rule",
+        "editTitle": "Edit Rule",
+        "createTitle": "Create Rule",
+        "types": {
+            "validation": "Validation",
+            "visibility": "Visibility",
+            "computed": "Computed",
+            "linkage": "Linkage",
+            "trigger": "Trigger",
+            "all": "All"
+        },
+        "columns": {
+            "code": "Rule Code",
+            "name": "Rule Name",
+            "type": "Type",
+            "priority": "Priority",
+            "status": "Status"
+        },
+        "messages": {
+            "confirmDelete": "Are you sure to delete this rule?",
+            "enabled": "Rule Enabled",
+            "disabled": "Rule Disabled",
+            "testTitle": "Test Rule",
+            "testData": "Test Data",
+            "testDataPlaceholder": "Enter JSON format test data",
+            "testResult": "Test Result",
+            "testPassed": "Passed",
+            "testFailed": "Failed",
+            "invalidJson": "Invalid JSON format"
+        },
+        "placeholders": {
+            "empty": "No business rules",
+            "emptyType": "No {type} rules"
+        }
+    },
+    "sequenceRule": {
+        "title": "Sequence Rule Management",
+        "create": "Create Rule",
+        "editTitle": "Edit Sequence Rule",
+        "createTitle": "Create Sequence Rule",
+        "previewTitle": "Sequence Preview",
+        "columns": {
+            "code": "Rule Code",
+            "name": "Rule Name",
+            "pattern": "Pattern Preview",
+            "prefix": "Prefix",
+            "seqLength": "Seq Length",
+            "currentValue": "Current Value",
+            "resetPeriod": "Reset Period",
+            "status": "Status",
+            "description": "Description"
+        },
+        "fields": {
+            "code": "Rule Code",
+            "name": "Rule Name",
+            "prefix": "Prefix",
+            "seqLength": "Sequence Length",
+            "currentValue": "Current Value",
+            "resetPeriod": "Reset Period",
+            "pattern": "Pattern Preview",
+            "description": "Description",
+            "active": "Active"
+        },
+        "placeholders": {
+            "code": "e.g., ASSET_CODE, ORDER_NO",
+            "name": "e.g., Asset Code, Order Number",
+            "prefix": "e.g., AST, ORD-",
+            "description": "Describe what this sequence is used for",
+            "statusAll": "All"
+        },
+        "tips": {
+            "code": "Unique identifier for the sequence rule (uppercase)",
+            "prefix": "Fixed prefix for generated numbers",
+            "seqLength": "Number of digits for the sequence part",
+            "currentValue": "Starting value for the sequence",
+            "resetPeriod": "When to reset the counter to 0",
+            "example": "Example:"
+        },
+        "periods": {
+            "never": "Never",
+            "yearly": "Yearly",
+            "monthly": "Monthly",
+            "daily": "Daily"
+        },
+        "actions": {
+            "preview": "Preview",
+            "generate": "Generate",
+            "reset": "Reset"
+        },
+        "messages": {
+            "confirmReset": "Reset sequence rule \"{name}\" to initial value?",
+            "confirmDelete": "Are you sure to delete this rule?",
+            "resetSuccess": "Sequence rule reset successfully",
+            "resetFailed": "Failed to reset sequence rule",
+            "generateSuccess": "Generated: {number}",
+            "generateFailed": "Failed to generate number",
+            "previewFailed": "Failed to get preview"
+        }
+    },
+    "permission": {
+        "title": "Permission Management",
+        "tabs": {
+            "field": "Field Permissions",
+            "data": "Data Permissions",
+            "audit": "Permission Log"
+        },
+        "data": {
+            "toolbar": {
+                "role": "Role",
+                "rolePlaceholder": "Select Role",
+                "createRule": "Add Rule"
+            },
+            "columns": {
+                "role": "Role",
+                "object": "Business Object",
+                "type": "Permission Type",
+                "scope": "Permission Scope",
+                "status": "Status",
+                "description": "Description",
+                "operation": "Operation"
+            },
+            "types": {
+                "all": "All Data",
+                "department": "My Department",
+                "department_and_sub": "Dept & Sub-Dept",
+                "self": "Only Self",
+                "custom": "Custom"
+            },
+            "status": {
+                "active": "Active",
+                "inactive": "Inactive",
+                "enable": "Enable",
+                "disable": "Disable"
+            },
+            "dialog": {
+                "createTitle": "Create Data Permission Rule",
+                "editTitle": "Edit Data Permission Rule",
+                "role": "Role",
+                "rolePlaceholder": "Please select role",
+                "object": "Business Object",
+                "objectPlaceholder": "Please select object",
+                "type": "Permission Type",
+                "typePlaceholder": "Please select type",
+                "expression": "Permission Expression",
+                "expressionPlaceholder": "Custom expression, e.g.: department_id in (1, 2, 3)",
+                "scope": "Permission Scope",
+                "status": "Status",
+                "description": "Description",
+                "descriptionPlaceholder": "Enter rule description"
+            },
+            "messages": {
+                "enabled": "Enabled",
+                "disabled": "Disabled",
+                "createSuccess": "Created successfully",
+                "updateSuccess": "Updated successfully"
+            }
+        },
+        "field": {
+            "toolbar": {
+                "role": "Role",
+                "rolePlaceholder": "Select Role",
+                "object": "Business Object",
+                "objectPlaceholder": "Select Object"
+            },
+            "columns": {
+                "role": "Role",
+                "object": "Business Object",
+                "field": "Field Name",
+                "read": "Read",
+                "write": "Write",
+                "visibility": "Visibility",
+                "description": "Description",
+                "operation": "Operation"
+            },
+            "status": {
+                "allow": "Allow",
+                "deny": "Deny",
+                "show": "Show",
+                "hide": "Hide"
+            },
+            "dialog": {
+                "title": "Edit Field Permission",
+                "role": "Role",
+                "object": "Business Object",
+                "field": "Field Name",
+                "read": "Read",
+                "write": "Write",
+                "visibility": "Visibility",
+                "description": "Description"
+            },
+            "messages": {
+                "saveSuccess": "Saved successfully",
+                "saveFailed": "Failed to save"
+            }
+        },
+        "audit": {
+            "toolbar": {
+                "action": "Action Type",
+                "actionPlaceholder": "All",
+                "timeRange": "Time Range",
+                "startDate": "Start Date",
+                "endDate": "End Date"
+            },
+            "stats": {
+                "todayGrants": "Today Grants",
+                "todayRevokes": "Today Revokes",
+                "weekTotal": "Week Total",
+                "activeUsers": "Active Users"
+            },
+            "columns": {
+                "time": "Time",
+                "operator": "Operator",
+                "action": "Action",
+                "type": "Type",
+                "target": "Target",
+                "details": "Details",
+                "ip": "IP Address",
+                "operation": "Operation"
+            },
+            "actions": {
+                "grant": "Grant",
+                "revoke": "Revoke",
+                "update": "Update"
+            },
+            "types": {
+                "field": "Field",
+                "data": "Data"
+            },
+            "dialog": {
+                "title": "Log Details",
+                "time": "Time",
+                "operator": "Operator",
+                "action": "Action",
+                "type": "Type",
+                "target": "Target",
+                "details": "Details",
+                "ip": "IP Address",
+                "userAgent": "User Agent"
+            }
+        }
+    },
+    "configPackage": {
+        "title": "Config Packages",
+        "description": "Import/Export business object configurations, supports environment migration and backup",
+        "actions": {
+            "import": "Import Config",
+            "export": "Export Config",
+            "download": "Download",
+            "diff": "Diff",
+            "delete": "Delete",
+            "rollback": "Rollback"
+        },
+        "tabs": {
+            "packages": "Packages",
+            "history": "Import History"
+        },
+        "columns": {
+            "name": "Package Name",
+            "type": "Type",
+            "objects": "Included Objects",
+            "source": "Source Env",
+            "exportTime": "Export Time",
+            "status": "Status",
+            "package": "Package",
+            "strategy": "Strategy",
+            "result": "Result",
+            "importTime": "Import Time",
+            "operation": "Operation"
+        },
+        "types": {
+            "full": "Full",
+            "partial": "Partial",
+            "diff": "Diff"
+        },
+        "strategies": {
+            "merge": "Merge",
+            "replace": "Replace",
+            "skip": "Skip"
+        },
+        "status": {
+            "pending": "Pending",
+            "processing": "Processing",
+            "success": "Success",
+            "failed": "Failed",
+            "partial": "Partial",
+            "rolled_back": "Rolled Back"
+        },
+        "dialog": {
+            "exportTitle": "Export Config",
+            "importTitle": "Import Config",
+            "name": "Package Name",
+            "namePlaceholder": "e.g., Asset Management Config",
+            "version": "Version",
+            "versionPlaceholder": "e.g., 1.0.0",
+            "description": "Description",
+            "objects": "Business Objects",
+            "objectsPlaceholder": "Select objects to export",
+            "package": "Select Package",
+            "packagePlaceholder": "Import from existing package",
+            "strategy": "Import Strategy",
+            "strategies": {
+                "merge": "Merge (Update existing)",
+                "replace": "Replace (Overwrite existing)",
+                "skip": "Skip (Create new only)"
+            }
+        },
+        "messages": {
+            "loadPackagesFailed": "Failed to load packages",
+            "loadLogsFailed": "Failed to load import logs",
+            "exportSuccess": "Export success: {objects} objects, {fields} fields, {layouts} layouts, {rules} rules",
+            "exportFailed": "Export failed",
+            "importSuccess": "Import success: {created} created, {updated} updated, {skipped} skipped",
+            "importPartial": "Import partially completed, {failed} failed",
+            "importFailed": "Import failed",
+            "downloadStart": "Download started",
+            "downloadFailed": "Download failed",
+            "diffDeveloping": "Diff feature under development...",
+            "deleteSuccess": "Deleted successfully",
+            "deleteFailed": "Delete failed",
+            "rollbackConfirm": "Rollback will undo all changes from this import. Continue?",
+            "rollbackTitle": "Confirm Rollback",
+            "rollbackSuccess": "Rollback successful",
+            "rollbackFailed": "Rollback failed",
+            "required": "Please fill in required fields",
+            "selectPackage": "Please select a package",
+            "confirmDelete": "Are you sure to delete this package?"
+        }
+    },
+    "workflow": {
+        "title": "Workflow Management",
+        "create": "Create Workflow",
+        "createTitle": "Create Workflow",
+        "editTitle": "Edit Workflow",
+        "columns": {
+            "name": "Name",
+            "code": "Code",
+            "businessObject": "Business Object",
+            "operation": "Operation"
+        },
+        "form": {
+            "name": "Name",
+            "code": "Code",
+            "businessObject": "Business Object"
+        },
+        "businessObjects": {
+            "asset_pickup": "Asset Pickup",
+            "asset_transfer": "Asset Transfer",
+            "asset_return": "Asset Return"
+        },
+        "messages": {
+            "saveSuccess": "Saved successfully",
+            "createSuccess": "Created successfully",
+            "updateSuccess": "Updated successfully",
+            "saveFailed": "Failed to save",
+            "required": "Please enter name and code"
+        }
+    },
+    "file": {
+        "title": "System File Management",
+        "actions": {
+            "upload": "Upload File",
+            "batchDelete": "Batch Delete",
+            "clearSelection": "Clear Selection",
+            "selection": "{count} files selected"
+        },
+        "filter": {
+            "search": "Search",
+            "searchPlaceholder": "File name",
+            "fileType": "File Type",
+            "allTypes": "All Types",
+            "bizType": "Business Type",
+            "allBizTypes": "All"
+        },
+        "types": {
+            "image": "Images",
+            "document": "Documents",
+            "video": "Videos",
+            "archive": "Archives",
+            "asset_image": "Asset Image",
+            "contract": "Contract",
+            "invoice": "Invoice",
+            "attachment": "Attachment",
+            "other": "Other",
+            "pdf": "PDF",
+            "file": "File"
+        },
+        "stats": {
+            "totalFiles": "Total Files",
+            "totalSize": "Total Size",
+            "todayUploads": "Today Uploads",
+            "images": "Images"
+        },
+        "columns": {
+            "preview": "Preview",
+            "fileName": "File Name",
+            "type": "Type",
+            "size": "Size",
+            "bizType": "Business Type",
+            "description": "Description",
+            "uploadDate": "Upload Date"
+        },
+        "dialog": {
+            "editTitle": "Edit File",
+            "fileName": "File Name",
+            "bizType": "Business Type",
+            "description": "Description"
+        },
+        "messages": {
+            "sizeLimit": "File size cannot exceed {size}",
+            "uploadSuccess": "File uploaded successfully",
+            "uploadFailed": "Upload failed",
+            "updateSuccess": "Updated successfully",
+            "updateFailed": "Update failed",
+            "deleteSuccess": "Deleted successfully",
+            "deleteFailed": "Delete failed",
+            "batchDeleteFailed": "Batch delete failed",
+            "confirmDelete": "Are you sure to delete this file?",
+            "batchDeleteSuccess": "Deleted {count} files",
+            "loadFailed": "Failed to load files"
+        }
+    },
+    "languages": {
+        "title": "Language Management",
+        "create": "Create Language",
+        "edit": "Edit Language",
+        "delete": "Delete Language",
+        "deleteConfirm": "Are you sure to delete this language?",
+        "setDefault": "Set as Default",
+        "flag": "Flag",
+        "code": "Language Code",
+        "name": "Language Name",
+        "nativeName": "Native Name",
+        "locale": "Locale",
+        "sortOrder": "Sort Order",
+        "isActive": "Active",
+        "isDefault": "Default",
+        "flagPlaceholder": "Select flag emoji",
+        "codePlaceholder": "e.g., zh-CN, en-US",
+        "namePlaceholder": "e.g., Chinese (Simplified)",
+        "nativeNamePlaceholder": "e.g., 中文",
+        "localePlaceholder": "e.g., zhCN, enUS"
+    },
+    "translations": {
+        "title": "Translation Management",
+        "create": "Create Translation",
+        "edit": "Edit Translation",
+        "delete": "Delete Translation",
+        "deleteConfirm": "Are you sure to delete this translation?",
+        "language": "Language",
+        "namespace": "Namespace",
+        "key": "Translation Key",
+        "text": "Translation Text",
+        "type": "Type",
+        "isSystem": "System Translation",
+        "systemOnly": "System Only",
+        "contentType": "Content Type",
+        "objectId": "Object ID",
+        "fieldName": "Field Name",
+        "context": "Context",
+        "mode": "Translation Mode",
+        "modes": {
+            "namespace": "Static Translation",
+            "object": "Object Translation"
+        },
+        "types": {
+            "label": "Label",
+            "message": "Message",
+            "enum": "Enum",
+            "objectField": "Object Field"
+        },
+        "stats": {
+            "total": "Total Translations",
+            "system": "System",
+            "user": "User",
+            "coverage": "Coverage"
+        },
+        "namespacePlaceholder": "e.g., asset, common",
+        "keyPlaceholder": "e.g., status.idle, button.save",
+        "textPlaceholder": "Enter translation text",
+        "contextPlaceholder": "Context for disambiguation (optional)",
+        "isSystemLabel": "System translation (read-only)"
+    }
+}

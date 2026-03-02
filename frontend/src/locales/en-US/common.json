@@ -1,0 +1,205 @@
+{
+  "locale": "en-US",
+  "TabConfig": "Tab Config",
+  "actions": {
+    "add": "Add",
+    "approve": "Approve",
+    "back": "Back",
+    "batchDelete": "Batch Delete",
+    "cancel": "Cancel",
+    "close": "Close",
+    "collapse": "Collapse",
+    "confirm": "Confirm",
+    "create": "Create",
+    "delete": "Delete",
+    "detail": "Detail",
+    "download": "Download",
+    "edit": "Edit",
+    "expand": "Expand",
+    "export": "Export",
+    "import": "Import",
+    "print": "Print",
+    "refresh": "Refresh",
+    "reject": "Reject",
+    "reset": "Reset",
+    "save": "Save",
+    "search": "Search",
+    "submit": "Submit",
+    "submitApprove": "Submit for Approval",
+    "test": "Test",
+    "view": "View"
+  },
+  "addChange": "Add Change",
+  "addRecord": "Add Record",
+  "all": "All",
+  "asset": "Asset",
+  "basicInfo": "Basic Info",
+  "change": "Change",
+  "changedBy": "Changed By",
+  "columns": {
+    "actions": "Actions",
+    "createdAt": "Created At",
+    "name": "Name",
+    "status": "Status"
+  },
+  "cost": "Cost",
+  "date": "Date",
+  "description": "Description",
+  "detailInfo": "Detail Info",
+  "detailPage": {
+    "attachments": "Attachments",
+    "deleteFailed": "Delete Failed",
+    "deleteSuccess": "Delete Success",
+    "images": "Images",
+    "loadFailed": "Load Failed",
+    "recordIdNotExists": "Record Id Not Exists",
+    "statusInfo": "Status Info",
+    "title": "Title"
+  },
+  "dialog": {
+    "confirmDelete": "Confirm delete",
+    "confirmDeleteMessage": "Are you sure to delete selected records?",
+    "confirmTitle": "Confirm"
+  },
+  "filters": {
+    "all": "All"
+  },
+  "item": "Item",
+  "json": "JSON",
+  "labels": {
+    "assetForSearch": "Asset For Search",
+    "auditInfo": "Audit Info",
+    "contact": "Contact",
+    "createdAt": "Created At",
+    "createdBy": "Created By",
+    "description": "Description",
+    "operation": "Operation",
+    "relatedObjects": "Related Objects",
+    "remark": "Remark",
+    "status": "Status",
+    "system": "System",
+    "totalItems": "Total Items",
+    "updatedAt": "Updated At",
+    "updatedBy": "Updated By"
+  },
+  "locationInfo": "Location Info",
+  "messages": {
+    "addSuccess": "Add Success",
+    "cancelSuccess": "Canceled successfully",
+    "confirmDelete": "Are you sure to delete?",
+    "confirmTitle": "Confirm",
+    "createFailed": "Create failed",
+    "createSuccess": "Created successfully",
+    "deleteFailed": "Delete failed",
+    "deleteSuccess": "Deleted successfully",
+    "functionUnderDevelopment": "Feature under development",
+    "loadFailed": "Load failed",
+    "noData": "No data",
+    "operationFailed": "Operation failed",
+    "operationSuccess": "Operation succeeded",
+    "pleaseSelectData": "Please select data",
+    "saveSuccess": "Saved successfully",
+    "selected": "{count} items selected",
+    "tips": "Tips",
+    "updateFailed": "Update failed",
+    "updateSuccess": "Updated successfully"
+  },
+  "no": "No",
+  "notes": "Notes",
+  "performedBy": "Performed By",
+  "placeholders": {
+    "endDate": "End Date",
+    "input": "Input",
+    "maxValue": "Max Value",
+    "minValue": "Min Value",
+    "select": "Select",
+    "startDate": "Start Date"
+  },
+  "reason": "Reason",
+  "relatedObject": {
+    "code": "Code",
+    "createdAt": "Created At",
+    "id": "Id",
+    "loadFailed": "Load Failed",
+    "loan": {
+      "loanDate": "Loan Date",
+      "loanUser": "Loan User",
+      "returnDate": "Return Date"
+    },
+    "location": "Location",
+    "maintenance": {
+      "cost": "Cost",
+      "date": "Date"
+    },
+    "name": "Name",
+    "pickup": {
+      "pickupDate": "Pickup Date",
+      "pickupUser": "Pickup User"
+    },
+    "quantity": "Quantity",
+    "return": {
+      "condition": "Condition",
+      "returnDate": "Return Date",
+      "returnUser": "Return User"
+    },
+    "status": "Status",
+    "type": "Type"
+  },
+  "rules": {
+    "required": "Required"
+  },
+  "searchConfigPlaceholder": "Search configuration",
+  "searchMaintenancePlaceholder": "Search maintenance records",
+  "select": "Select",
+  "selectors": {
+    "assetAdmin": "Asset Admin",
+    "deptManager": "Dept Manager",
+    "filterByDept": "Filter By Dept",
+    "noMatchUser": "No Match User",
+    "normalUser": "Normal User",
+    "searchKeyword": "Search Keyword",
+    "searchUser": "Search User",
+    "selectDept": "Select Dept",
+    "selectRole": "Select Role",
+    "selectUser": "Select User",
+    "systemAdmin": "System Admin"
+  },
+  "status": {
+    "abnormal": "Abnormal",
+    "active": "Active",
+    "enabled": "Enabled",
+    "inactive": "Inactive",
+    "info": "Info",
+    "loading": "Loading...",
+    "processing": "Processing",
+    "warning": "Warning"
+  },
+  "supplierInfo": "Supplier Info",
+  "table": {
+    "index": "Index",
+    "noData": "No data",
+    "operations": "Operations"
+  },
+  "title": "Title",
+  "units": {
+    "hours": "Hours",
+    "item": "Item",
+    "level": "Level",
+    "no": "No",
+    "pending": "Pending",
+    "people": "People",
+    "piece": "Piece",
+    "year": "Year",
+    "yes": "Yes",
+    "yuan": "Yuan"
+  },
+  "usageInfo": "Usage Info",
+  "validation": {
+    "phone": "Please enter a valid phone number",
+    "required": "This field is required"
+  },
+  "valueInfo": "Value Info",
+  "vendor": "Vendor",
+  "warrantyInfo": "Warranty Info",
+  "yes": "Yes"
+}

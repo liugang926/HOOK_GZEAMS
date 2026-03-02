@@ -11,6 +11,8 @@ const Login = () => import('@/views/auth/Login.vue')
 const TaskCenter = () => import('@/views/workflow/TaskCenter.vue')
 const TaskDetail = () => import('@/views/workflow/TaskDetail.vue')
 const MyApprovals = () => import('@/views/workflow/MyApprovals.vue')
+const NotificationCenter = () => import('@/views/notifications/NotificationCenter.vue')
+const NotificationPreferences = () => import('@/views/notifications/NotificationPreferences.vue')
 
 // Dynamic Pages (Unified routing for all business objects)
 const DynamicListPage = () => import('@/views/dynamic/DynamicListPage.vue')
@@ -94,7 +96,11 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'objects/:code/:id/edit',
         name: 'DynamicObjectEdit',
-        component: DynamicFormPage,
+        redirect: to => ({
+          name: 'DynamicObjectDetail',
+          params: { code: to.params.code, id: to.params.id },
+          query: { ...to.query, action: 'edit' }
+        }),
         meta: { title: 'menu.routes.objectEdit' }
       },
 
@@ -403,6 +409,18 @@ export const routes: RouteRecordRaw[] = [
         name: 'MyApprovals',
         component: MyApprovals,
         meta: { title: 'menu.routes.myApprovals' }
+      },
+      {
+        path: 'notifications/center',
+        name: 'NotificationCenter',
+        component: NotificationCenter,
+        meta: { title: 'menu.routes.notificationCenter' }
+      },
+      {
+        path: 'notifications/preferences',
+        name: 'NotificationPreferences',
+        component: NotificationPreferences,
+        meta: { title: 'menu.routes.notificationPreferences' }
       },
 
       // Integration

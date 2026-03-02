@@ -1,0 +1,100 @@
+{
+    "inventory": {
+        "title": "Asset Inventory",
+        "taskList": "Inventory Tasks",
+        "taskDetail": "Task Detail",
+        "createTask": "Create Inventory Task",
+        "taskExecute": "Execute Inventory",
+        "columns": {
+            "taskNo": "Task No",
+            "name": "Task Name",
+            "status": "Status",
+            "type": "Type",
+            "planDate": "Plan Date",
+            "actualDate": "Actual Date",
+            "creator": "Creator",
+            "createdAt": "Created At",
+            "warehouse": "Warehouse",
+            "progress": "Progress"
+        },
+        "status": {
+            "pending": "Pending",
+            "in_progress": "In Progress",
+            "completed": "Completed",
+            "canceled": "Canceled",
+            "cancelled": "Cancelled"
+        },
+        "type": {
+            "all": "Full Count",
+            "random": "Random Count",
+            "dynamic": "Dynamic Count",
+            "full": "Full Inventory",
+            "partial": "Partial",
+            "department": "Department"
+        },
+        "actions": {
+            "start": "Start",
+            "finish": "Finish",
+            "cancel": "Cancel",
+            "viewDiff": "View Diff",
+            "scan": "Scan"
+        },
+        "execute": {
+            "scanPlaceholder": "Scan asset tag or enter code",
+            "scannedList": "Scanned",
+            "unscannedList": "Unscanned",
+            "diffList": "Differences",
+            "manualInput": "Manual Input",
+            "confirmCount": "Confirm Count",
+            "submitResult": "Submit Result"
+        },
+        "fields": {
+            "taskCode": "Task Code",
+            "taskName": "Task Name",
+            "taskType": "Task Type",
+            "planDate": "Plan Date",
+            "executor": "Executor",
+            "assetCount": "Asset Count",
+            "scannedCount": "Scanned Count",
+            "differenceCount": "Difference Count",
+            "remark": "Remark"
+        },
+        "operations": {
+            "scan": "Scan",
+            "manualInput": "Manual Input",
+            "confirmInventory": "Confirm",
+            "viewDifference": "View Difference",
+            "submitReview": "Submit Review",
+            "start": "Start",
+            "pause": "Pause",
+            "resume": "Resume",
+            "complete": "Complete"
+        },
+        "scanner": {
+            "title": "Scan Assets",
+            "scanResult": "Scan Result",
+            "assetFound": "Asset Found",
+            "assetNotFound": "Asset Not Found",
+            "scanSuccess": "Scan Successful",
+            "scanFailed": "Scan Failed",
+            "cameraError": "Camera initialization failed",
+            "selectCamera": "Select Camera",
+            "manualInput": "Manual Input",
+            "inputPlaceholder": "Enter asset code or scan QR code",
+            "alreadyScanned": "Already Scanned",
+            "notInTask": "Not in task scope"
+        },
+        "difference": {
+            "title": "Inventory Difference",
+            "missing": "Missing",
+            "extra": "Extra",
+            "locationMismatch": "Location Mismatch",
+            "statusMismatch": "Status Mismatch",
+            "confirm": "Confirm",
+            "adjust": "Adjust"
+        },
+        "messages": {
+            "exportDeveloping": "Export {count} inventory tasks - Feature in development"
+        }
+    }
+}

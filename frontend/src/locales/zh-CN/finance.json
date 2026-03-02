@@ -1,0 +1,40 @@
+{
+    "finance": {
+        "voucherList": "财务凭证",
+        "depreciationList": "折旧管理",
+        "columns": {
+            "voucherNo": "凭证号",
+            "businessType": "业务类型",
+            "voucherDate": "凭证日期",
+            "summary": "摘要",
+            "totalAmount": "总金额",
+            "status": "状态",
+            "assetCode": "资产编码",
+            "assetName": "资产名称",
+            "period": "期间",
+            "currentDepreciation": "本期折旧",
+            "accumulatedDepreciation": "累计折旧",
+            "netValue": "净值"
+        },
+        "status": {
+            "draft": "草稿",
+            "pending": "待审批",
+            "approved": "已审批",
+            "posted": "已入账",
+            "rejected": "已驳回"
+        },
+        "businessType": {
+            "assetPurchase": "资产采购",
+            "depreciation": "折旧计提",
+            "assetDisposal": "资产处置"
+        },
+        "actions": {
+            "createVoucher": "新增凭证",
+            "batchPushToERP": "批量推送到ERP",
+            "batchPush": "批量推送",
+            "detail": "详情",
+            "post": "入账",
+            "calculateDepreciation": "计提折旧"
+        }
+    }
+}

@@ -806,7 +806,10 @@ defineExpose({
           <h2 class="page-title">
             {{ title }}
           </h2>
-          <span v-if="total > 0" class="record-count">
+          <span
+            v-if="total > 0"
+            class="record-count"
+          >
             {{ total }} {{ $t('common.messages.records') || '条记录' }}
           </span>
         </div>
@@ -837,443 +840,445 @@ defineExpose({
         </div>
       </div>
 
-    <!-- Search Form -->
-    <div
-      v-if="normalizedSearchFields.length > 0"
-      class="search-form-container"
-    >
-      <el-form
-        :model="searchForm"
-        class="search-form"
-        label-width="auto"
-        label-position="right"
-      >
-        <div class="search-grid">
-        <template
-          v-for="field in visibleSearchFields"
-          :key="getSearchFieldKey(field)"
-        >
-          <!-- Text Input -->
-          <el-form-item
-            v-if="!field.type || field.type === 'text'"
-            :label="field.label"
-          >
-            <el-input
-              v-model="searchForm[getSearchFieldKey(field)]"
-              :placeholder="field.placeholder || $t('common.placeholders.input', { field: field.label })"
-              clearable
-              @keyup.enter="handleSearch"
-            />
-          </el-form-item>
-
-          <!-- Select -->
-          <el-form-item
-            v-else-if="field.type === 'select'"
-            :label="field.label"
-          >
-            <el-select
-              v-model="searchForm[getSearchFieldKey(field)]"
-              :placeholder="field.placeholder || $t('common.placeholders.select', { field: field.label })"
-              clearable
-              :multiple="field.multiple"
-            >
-              <el-option
-                v-for="option in field.options"
-                :key="option.value"
-                :label="option.label"
-                :value="option.value"
-              />
-            </el-select>
-          </el-form-item>
-
-          <!-- Date Range -->
-          <el-form-item
-            v-else-if="field.type === 'dateRange'"
-            :label="field.label"
-          >
-            <el-date-picker
-              v-model="searchForm[getSearchFieldKey(field)]"
-              type="daterange"
-              range-separator="-"
-              :start-placeholder="$t('common.placeholders.startDate')"
-              :end-placeholder="$t('common.placeholders.endDate')"
-              value-format="YYYY-MM-DD"
-            />
-          </el-form-item>
-
-          <!-- Date Picker -->
-          <el-form-item
-            v-else-if="field.type === 'date'"
-            :label="field.label"
-          >
-            <el-date-picker
-              v-model="searchForm[getSearchFieldKey(field)]"
-              type="date"
-              :placeholder="field.placeholder || $t('common.placeholders.select', { field: field.label })"
-              value-format="YYYY-MM-DD"
-            />
-          </el-form-item>
-
-          <!-- Month Picker -->
-          <el-form-item
-            v-else-if="field.type === 'month'"
-            :label="field.label"
-          >
-            <el-date-picker
-              v-model="searchForm[getSearchFieldKey(field)]"
-              type="month"
-              :placeholder="field.placeholder || $t('common.placeholders.select', { field: field.label })"
-              value-format="YYYY-MM"
-            />
-          </el-form-item>
-
-          <!-- Year Picker -->
-          <el-form-item
-            v-else-if="field.type === 'year'"
-            :label="field.label"
-          >
-            <el-date-picker
-              v-model="searchForm[getSearchFieldKey(field)]"
-              type="year"
-              :placeholder="field.placeholder || $t('common.placeholders.select', { field: field.label })"
-              value-format="YYYY"
-            />
-          </el-form-item>
-
-          <!-- Number Range -->
-          <el-form-item
-            v-else-if="field.type === 'numberRange'"
-            :label="field.label"
-          >
-            <div class="number-range">
-              <el-input
-                v-model="searchForm[`${field.prop}_min`]"
-                :placeholder="$t('common.placeholders.minValue')"
-              />
-              <span class="separator">-</span>
-              <el-input
-                v-model="searchForm[`${field.prop}_max`]"
-                :placeholder="$t('common.placeholders.maxValue')"
-              />
-            </div>
-          </el-form-item>
-
-          <!-- Custom Slot -->
-          <el-form-item
-            v-else-if="field.type === 'slot'"
-            :label="field.label"
-          >
-            <slot
-              :name="`search-${field.prop}`"
-              :field="field"
-              :form="searchForm"
-            />
-          </el-form-item>
-        </template>
-        </div><!-- end .search-grid -->
-
-        <!-- Actions -->
-        <div class="search-actions">
-          <el-button
-            type="primary"
-            @click="handleSearch"
-          >
-            {{ $t('common.actions.search') }}
-          </el-button>
-          <el-button @click="handleReset">
-            {{ $t('common.actions.reset') }}
-          </el-button>
-          <el-button
-            v-if="needExpand"
-            link
-            type="primary"
-            @click="toggleSearchExpand"
-          >
-            {{ searchExpanded ? $t('common.actions.collapse') : $t('common.actions.expand') }}
-            <el-icon>
-              <component :is="searchExpanded ? 'arrow-up' : 'arrow-down'" />
-            </el-icon>
-          </el-button>
-        </div>
-      </el-form>
-    </div>
-
-    <!-- Batch Actions Toolbar -->
-    <div
-      v-if="hasBatchActions && hasSelection"
-      class="batch-toolbar"
-    >
-      <span class="selection-info">{{ $t('common.messages.selected', { count: selectedRows.length }) }}</span>
-      <el-button
-        v-for="action in batchActions"
-        :key="action.label"
-        :type="action.type || 'default'"
-        :icon="action.icon"
-        size="small"
-        @click="handleBatchAction(action)"
-      >
-        {{ action.label }}
-      </el-button>
-    </div>
-
-    <!-- Mobile Card View -->
-    <div
-      v-if="isMobile"
-      class="mobile-card-container"
-    >
+      <!-- Search Form -->
       <div
-        v-if="loading"
-        class="skeleton-container"
-        style="padding: 20px;"
+        v-if="normalizedSearchFields.length > 0"
+        class="search-form-container"
       >
-        <el-skeleton
-          :rows="3"
-          animated
-          count="3"
-        />
-      </div>
-      <div v-else>
-        <div
-          v-for="(row, index) in tableData"
-          :key="index"
-          class="mobile-card"
-          @click="handleRowClick(row)"
+        <el-form
+          :model="searchForm"
+          class="search-form"
+          label-width="auto"
+          label-position="right"
         >
-          <div class="card-header-row">
-            <span class="card-title">#{{ index + 1 }}</span>
-            <el-tag
-              v-if="row.status"
-              size="small"
+          <div class="search-grid">
+            <template
+              v-for="field in visibleSearchFields"
+              :key="getSearchFieldKey(field)"
             >
-              {{ row.status }}
-            </el-tag>
-          </div>
-          <div class="card-body">
-            <div
-              v-for="col in visibleDataColumns.slice(0, 4)"
-              :key="col.prop"
-              class="card-item"
-            >
-              <span class="label">{{ col.label }}:</span>
-              <span class="value">
-                <template v-if="resolveSlotName(col)">
-                  <slot
-                    :name="resolveSlotName(col)"
-                    :row="row"
-                    :column="col"
-                    :index="index"
-                  />
-                </template>
-                <template v-else>
-                  <template v-if="col.format">
-                    {{ getColumnDisplayValue(row, col) }}
-                  </template>
-                  <FieldRenderer 
-                    v-else
-                    :field="{
-                      prop: col.fieldCode || col.prop,
-                      type: col.fieldType || col.type || 'text',
-                      code: col.fieldCode || col.prop,
-                      fieldCode: col.fieldCode || col.prop,
-                      fieldType: col.fieldType || col.type || 'text',
-                      label: col.label,
-                      options: col.options
-                    }" 
-                    :model-value="getColumnValue(row, col)" 
-                    mode="table" 
-                  />
-                </template>
-              </span>
-            </div>
-          </div>
-          <div
-            v-if="$slots.actions"
-            class="card-actions"
-          >
-            <slot
-              name="actions"
-              :row="row"
-              :index="index"
-            />
-          </div>
-        </div>
-        <el-empty
-          v-if="tableData.length === 0"
-          :description="$t('common.messages.noData')"
-        />
-      </div>
-    </div>
+              <!-- Text Input -->
+              <el-form-item
+                v-if="!field.type || field.type === 'text'"
+                :label="field.label"
+              >
+                <el-input
+                  v-model="searchForm[getSearchFieldKey(field)]"
+                  :placeholder="field.placeholder || $t('common.placeholders.input', { field: field.label })"
+                  clearable
+                  @keyup.enter="handleSearch"
+                />
+              </el-form-item>
 
-    <!-- Data Table (Desktop) -->
-    <div
-      v-else
-      class="table-container"
-    >
-      <el-table
-        ref="tableRef"
-        :data="tableData"
-        border
-        stripe
-        class="base-list-table"
-        @row-click="handleRowClick"
-        @selection-change="handleSelectionChange"
-        @sort-change="handleSortChange"
-        @header-dragend="handleHeaderDragend"
+              <!-- Select -->
+              <el-form-item
+                v-else-if="field.type === 'select'"
+                :label="field.label"
+              >
+                <el-select
+                  v-model="searchForm[getSearchFieldKey(field)]"
+                  :placeholder="field.placeholder || $t('common.placeholders.select', { field: field.label })"
+                  clearable
+                  :multiple="field.multiple"
+                >
+                  <el-option
+                    v-for="option in field.options"
+                    :key="option.value"
+                    :label="option.label"
+                    :value="option.value"
+                  />
+                </el-select>
+              </el-form-item>
+
+              <!-- Date Range -->
+              <el-form-item
+                v-else-if="field.type === 'dateRange'"
+                :label="field.label"
+              >
+                <el-date-picker
+                  v-model="searchForm[getSearchFieldKey(field)]"
+                  type="daterange"
+                  range-separator="-"
+                  :start-placeholder="$t('common.placeholders.startDate')"
+                  :end-placeholder="$t('common.placeholders.endDate')"
+                  value-format="YYYY-MM-DD"
+                />
+              </el-form-item>
+
+              <!-- Date Picker -->
+              <el-form-item
+                v-else-if="field.type === 'date'"
+                :label="field.label"
+              >
+                <el-date-picker
+                  v-model="searchForm[getSearchFieldKey(field)]"
+                  type="date"
+                  :placeholder="field.placeholder || $t('common.placeholders.select', { field: field.label })"
+                  value-format="YYYY-MM-DD"
+                />
+              </el-form-item>
+
+              <!-- Month Picker -->
+              <el-form-item
+                v-else-if="field.type === 'month'"
+                :label="field.label"
+              >
+                <el-date-picker
+                  v-model="searchForm[getSearchFieldKey(field)]"
+                  type="month"
+                  :placeholder="field.placeholder || $t('common.placeholders.select', { field: field.label })"
+                  value-format="YYYY-MM"
+                />
+              </el-form-item>
+
+              <!-- Year Picker -->
+              <el-form-item
+                v-else-if="field.type === 'year'"
+                :label="field.label"
+              >
+                <el-date-picker
+                  v-model="searchForm[getSearchFieldKey(field)]"
+                  type="year"
+                  :placeholder="field.placeholder || $t('common.placeholders.select', { field: field.label })"
+                  value-format="YYYY"
+                />
+              </el-form-item>
+
+              <!-- Number Range -->
+              <el-form-item
+                v-else-if="field.type === 'numberRange'"
+                :label="field.label"
+              >
+                <div class="number-range">
+                  <el-input
+                    v-model="searchForm[`${field.prop}_min`]"
+                    :placeholder="$t('common.placeholders.minValue')"
+                  />
+                  <span class="separator">-</span>
+                  <el-input
+                    v-model="searchForm[`${field.prop}_max`]"
+                    :placeholder="$t('common.placeholders.maxValue')"
+                  />
+                </div>
+              </el-form-item>
+
+              <!-- Custom Slot -->
+              <el-form-item
+                v-else-if="field.type === 'slot'"
+                :label="field.label"
+              >
+                <slot
+                  :name="`search-${field.prop}`"
+                  :field="field"
+                  :form="searchForm"
+                />
+              </el-form-item>
+            </template>
+          </div><!-- end .search-grid -->
+
+          <!-- Actions -->
+          <div class="search-actions">
+            <el-button
+              type="primary"
+              @click="handleSearch"
+            >
+              {{ $t('common.actions.search') }}
+            </el-button>
+            <el-button @click="handleReset">
+              {{ $t('common.actions.reset') }}
+            </el-button>
+            <el-button
+              v-if="needExpand"
+              link
+              type="primary"
+              @click="toggleSearchExpand"
+            >
+              {{ searchExpanded ? $t('common.actions.collapse') : $t('common.actions.expand') }}
+              <el-icon>
+                <component :is="searchExpanded ? 'arrow-up' : 'arrow-down'" />
+              </el-icon>
+            </el-button>
+          </div>
+        </el-form>
+      </div>
+
+      <!-- Batch Actions Toolbar -->
+      <div
+        v-if="hasBatchActions && hasSelection"
+        class="batch-toolbar"
       >
-        <template #empty>
+        <span class="selection-info">{{ $t('common.messages.selected', { count: selectedRows.length }) }}</span>
+        <el-button
+          v-for="action in batchActions"
+          :key="action.label"
+          :type="action.type || 'default'"
+          :icon="action.icon"
+          size="small"
+          @click="handleBatchAction(action)"
+        >
+          {{ action.label }}
+        </el-button>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div
+        v-if="isMobile"
+        class="mobile-card-container"
+      >
+        <div
+          v-if="loading"
+          class="skeleton-container"
+          style="padding: 20px;"
+        >
+          <el-skeleton
+            :rows="3"
+            animated
+            count="3"
+          />
+        </div>
+        <div v-else>
           <div
-            v-if="loading"
-            class="skeleton-container"
+            v-for="(row, index) in tableData"
+            :key="index"
+            class="mobile-card"
+            @click="handleRowClick(row)"
           >
-            <el-skeleton
-              :rows="pageSize"
-              animated
-            />
+            <div class="card-header-row">
+              <span class="card-title">#{{ index + 1 }}</span>
+              <el-tag
+                v-if="row.status"
+                size="small"
+              >
+                {{ row.status }}
+              </el-tag>
+            </div>
+            <div class="card-body">
+              <div
+                v-for="col in visibleDataColumns.slice(0, 4)"
+                :key="col.prop"
+                class="card-item"
+              >
+                <span class="label">{{ col.label }}:</span>
+                <span class="value">
+                  <template v-if="resolveSlotName(col)">
+                    <slot
+                      :name="resolveSlotName(col)"
+                      :row="row"
+                      :column="col"
+                      :index="index"
+                    />
+                  </template>
+                  <template v-else>
+                    <template v-if="col.format">
+                      {{ getColumnDisplayValue(row, col) }}
+                    </template>
+                    <FieldRenderer 
+                      v-else
+                      :field="{
+                        prop: col.fieldCode || col.prop,
+                        type: col.fieldType || col.type || 'text',
+                        code: col.fieldCode || col.prop,
+                        fieldCode: col.fieldCode || col.prop,
+                        fieldType: col.fieldType || col.type || 'text',
+                        label: col.label,
+                        options: col.options
+                      }" 
+                      :model-value="getColumnValue(row, col)" 
+                      mode="table" 
+                    />
+                  </template>
+                </span>
+              </div>
+            </div>
+            <div
+              v-if="$slots.actions"
+              class="card-actions"
+            >
+              <slot
+                name="actions"
+                :row="row"
+                :index="index"
+              />
+            </div>
           </div>
           <el-empty
-            v-else
+            v-if="tableData.length === 0"
             :description="$t('common.messages.noData')"
           />
-        </template>
-        <!-- Selection Column -->
-        <el-table-column
-          v-if="selectable"
-          type="selection"
-          width="55"
-          fixed="left"
-        />
+        </div>
+      </div>
 
-        <!-- Index Column -->
-        <el-table-column
-          v-if="showIndex"
-          type="index"
-          :label="$t('common.table.index')"
-          width="60"
-          fixed="left"
-        />
-
-        <!-- Dynamic Columns -->
-        <template
-          v-for="column in visibleTableColumns"
-          :key="column.prop"
+      <!-- Data Table (Desktop) -->
+      <div
+        v-else
+        class="table-container"
+      >
+        <el-table
+          ref="tableRef"
+          :data="tableData"
+          border
+          stripe
+          class="base-list-table"
+          @row-click="handleRowClick"
+          @selection-change="handleSelectionChange"
+          @sort-change="handleSortChange"
+          @header-dragend="handleHeaderDragend"
         >
-          <!-- Slot Column -->
+          <template #empty>
+            <div
+              v-if="loading"
+              class="skeleton-container"
+            >
+              <el-skeleton
+                :rows="pageSize"
+                animated
+              />
+            </div>
+            <el-empty
+              v-else
+              :description="$t('common.messages.noData')"
+            />
+          </template>
+          <!-- Selection Column -->
           <el-table-column
-            v-if="resolveSlotName(column)"
-            v-bind="column"
+            v-if="selectable"
+            type="selection"
+            width="55"
+            fixed="left"
+          />
+
+          <!-- Index Column -->
+          <el-table-column
+            v-if="showIndex"
+            type="index"
+            :label="$t('common.table.index')"
+            width="60"
+            fixed="left"
+          />
+
+          <!-- Dynamic Columns -->
+          <template
+            v-for="column in visibleTableColumns"
+            :key="column.prop"
+          >
+            <!-- Slot Column -->
+            <el-table-column
+              v-if="resolveSlotName(column)"
+              v-bind="column"
+            >
+              <template #default="scope">
+                <slot
+                  :name="resolveSlotName(column)"
+                  :row="scope.row"
+                  :column="column"
+                  :index="scope.$index"
+                />
+              </template>
+            </el-table-column>
+
+            <!-- Tag Column -->
+            <el-table-column
+              v-else-if="column.tagType"
+              v-bind="column"
+            >
+              <template #default="scope">
+                <el-tag :type="column.tagType(scope.row)">
+                  {{ getColumnDisplayValue(scope.row, column) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+
+            <!-- Date Column -->
+            <el-table-column
+              v-else-if="column.dateFormatter"
+              v-bind="column"
+            >
+              <template #default="scope">
+                {{ formatDate(getColumnValue(scope.row, column), column.dateFormatter) }}
+              </template>
+            </el-table-column>
+
+            <!-- Custom Format Column -->
+            <el-table-column
+              v-else-if="column.format"
+              v-bind="column"
+            >
+              <template #default="scope">
+                {{ getColumnDisplayValue(scope.row, column) }}
+              </template>
+            </el-table-column>
+
+            <!-- Standard Column using FieldRenderer -->
+            <el-table-column
+              v-else
+              v-bind="column"
+            >
+              <template #default="scope">
+                <FieldRenderer 
+                  :field="{
+                    prop: column.fieldCode || column.prop,
+                    type: column.fieldType || column.type || 'text',
+                    code: column.fieldCode || column.prop,
+                    fieldCode: column.fieldCode || column.prop,
+                    fieldType: column.fieldType || column.type || 'text',
+                    label: column.label,
+                    options: column.options
+                  }" 
+                  :model-value="getColumnValue(scope.row, column)" 
+                  mode="table" 
+                />
+              </template>
+            </el-table-column>
+          </template>
+
+          <!-- Actions Column -->
+          <el-table-column
+            v-if="$slots.actions && !hasActionsColumn"
+            :label="$t('common.table.operations')"
+            width="180"
+            fixed="right"
           >
             <template #default="scope">
               <slot
-                :name="resolveSlotName(column)"
+                name="actions"
                 :row="scope.row"
-                :column="column"
                 :index="scope.$index"
               />
             </template>
           </el-table-column>
+        </el-table>
+      </div>
 
-          <!-- Tag Column -->
-          <el-table-column
-            v-else-if="column.tagType"
-            v-bind="column"
-          >
-            <template #default="scope">
-              <el-tag :type="column.tagType(scope.row)">
-                {{ getColumnDisplayValue(scope.row, column) }}
-              </el-tag>
-            </template>
-          </el-table-column>
+      <!-- Pagination -->
+      <div
+        v-if="total > 0"
+        class="pagination-container"
+      >
+        <el-pagination
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :total="total"
+          :page-sizes="pageSizes"
+          :layout="paginationLayout"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
 
-          <!-- Date Column -->
-          <el-table-column
-            v-else-if="column.dateFormatter"
-            v-bind="column"
-          >
-            <template #default="scope">
-              {{ formatDate(getColumnValue(scope.row, column), column.dateFormatter) }}
-            </template>
-          </el-table-column>
-
-          <!-- Custom Format Column -->
-          <el-table-column
-            v-else-if="column.format"
-            v-bind="column"
-          >
-            <template #default="scope">
-              {{ getColumnDisplayValue(scope.row, column) }}
-            </template>
-          </el-table-column>
-
-          <!-- Standard Column using FieldRenderer -->
-          <el-table-column
-            v-else
-            v-bind="column"
-          >
-            <template #default="scope">
-              <FieldRenderer 
-                :field="{
-                  prop: column.fieldCode || column.prop,
-                  type: column.fieldType || column.type || 'text',
-                  code: column.fieldCode || column.prop,
-                  fieldCode: column.fieldCode || column.prop,
-                  fieldType: column.fieldType || column.type || 'text',
-                  label: column.label,
-                  options: column.options
-                }" 
-                :model-value="getColumnValue(scope.row, column)" 
-                mode="table" 
-              />
-            </template>
-          </el-table-column>
-        </template>
-
-        <!-- Actions Column -->
-        <el-table-column
-          v-if="$slots.actions && !hasActionsColumn"
-          :label="$t('common.table.operations')"
-          width="180"
-          fixed="right"
-        >
-          <template #default="scope">
-            <slot
-              name="actions"
-              :row="scope.row"
-              :index="scope.$index"
-            />
+      <!-- Empty State -->
+      <div
+        v-if="!loading && tableData.length === 0"
+        class="empty-state"
+      >
+        <el-empty :description="$t('common.messages.noData')">
+          <template #default>
+            <slot name="empty-action">
+              <p class="empty-hint">
+                {{ $t('common.messages.emptyHint') || '暂无数据，请尝试创建一条新记录' }}
+              </p>
+            </slot>
           </template>
-        </el-table-column>
-      </el-table>
-    </div>
-
-    <!-- Pagination -->
-    <div
-      v-if="total > 0"
-      class="pagination-container"
-    >
-      <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :total="total"
-        :page-sizes="pageSizes"
-        :layout="paginationLayout"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
-    </div>
-
-    <!-- Empty State -->
-    <div
-      v-if="!loading && tableData.length === 0"
-      class="empty-state"
-    >
-      <el-empty :description="$t('common.messages.noData')">
-        <template #default>
-          <slot name="empty-action">
-            <p class="empty-hint">{{ $t('common.messages.emptyHint') || '暂无数据，请尝试创建一条新记录' }}</p>
-          </slot>
-        </template>
-      </el-empty>
-    </div>
+        </el-empty>
+      </div>
     </div><!-- end .list-card -->
   </div>
 </template>

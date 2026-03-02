@@ -1,0 +1,79 @@
+{
+  "header": {
+    "title": "通知"
+  },
+  "center": {
+    "title": "通知中心",
+    "subtitle": "查看系统消息状态，并跳转到相关业务对象。"
+  },
+  "preferences": {
+    "title": "通知偏好",
+    "subtitle": "管理个人通知渠道，以及管理员模板/通道配置。",
+    "tabs": {
+      "my": "我的偏好",
+      "channels": "通道配置",
+      "templates": "模板配置"
+    },
+    "fields": {
+      "enableInbox": "站内信",
+      "enableEmail": "邮件通知",
+      "enableSms": "短信通知",
+      "enableWework": "企微通知",
+      "enableDingtalk": "钉钉通知",
+      "quietHoursEnabled": "免打扰时段",
+      "quietHoursStart": "免打扰开始",
+      "quietHoursEnd": "免打扰结束",
+      "emailAddress": "通知邮箱覆盖",
+      "phoneNumber": "通知手机号覆盖"
+    },
+    "placeholders": {
+      "time": "请选择时间",
+      "email": "name@company.com",
+      "phone": "请输入手机号"
+    }
+  },
+  "summary": {
+    "total": "总数",
+    "unread": "未读",
+    "urgent": "紧急"
+  },
+  "filters": {
+    "all": "全部",
+    "unread": "未读"
+  },
+  "columns": {
+    "title": "标题",
+    "type": "类型",
+    "priority": "优先级",
+    "createdAt": "创建时间",
+    "status": "状态",
+    "channel": "通道",
+    "channelName": "通道名称",
+    "enabled": "启用",
+    "templateCode": "模板编码",
+    "templateName": "模板名称",
+    "language": "语言",
+    "version": "版本"
+  },
+  "status": {
+    "read": "已读",
+    "unread": "未读"
+  },
+  "actions": {
+    "viewAll": "查看全部",
+    "markRead": "标记已读",
+    "markAllRead": "全部已读",
+    "open": "打开",
+    "preferences": "偏好设置",
+    "backToCenter": "返回通知中心"
+  },
+  "messages": {
+    "empty": "暂无通知",
+    "markAllReadSuccess": "已全部标记为已读",
+    "preferenceSaved": "偏好保存成功",
+    "channelUpdated": "通道状态已更新"
+  },
+  "fallback": {
+    "untitled": "未命名通知"
+  }
+}

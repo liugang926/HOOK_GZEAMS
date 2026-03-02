@@ -39,10 +39,10 @@
 
       <template #batch-actions="{ selectedRows }">
         <span
-          v-if="selectedRows.length > 0"
+          v-if="(selectedRows as any[]).length > 0"
           class="selection-info"
         >
-          {{ $t('assets.list.selected', { count: selectedRows.length }) }}
+          {{ $t('assets.list.selected', { count: (selectedRows as any[]).length }) }}
         </span>
       </template>
 
@@ -133,11 +133,11 @@ const {
 })
 
 // Wrappers or Direct usage
-const handleDelete = (row: Asset) => crudDelete(row).then((success) => {
+const handleDelete = (row: Asset) => crudDelete(row.id as any).then((success) => {
   if (success) refreshList()
 })
 
-const handleExport = () => crudExport()
+const handleExport = (ids?: any[]) => crudExport(ids as any)
 
 // ============================================================================
 // Table Columns
@@ -305,7 +305,7 @@ const handleView = (row: Asset) => {
  * Handle edit button click
  */
 const handleEdit = (row: Asset) => {
-  router.push(`/assets/edit/${row.id}`)
+  router.push(`/assets/${row.id}?action=edit`)
 }
 
 /**

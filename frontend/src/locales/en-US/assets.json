@@ -1,0 +1,360 @@
+{
+    "title": "Asset Management",
+    "list": {
+        "title": "Asset List",
+        "createButton": "Create Asset",
+        "selected": "{count} item(s) selected",
+        "batchDelete": "Batch Delete",
+        "batchExport": "Batch Export"
+    },
+    "form": {
+        "title": "Asset Information",
+        "create": "Create Asset",
+        "edit": "Edit Asset",
+        "sections": {
+            "basicInfo": "Basic Information",
+            "valueInfo": "Value Information",
+            "useInfo": "Usage Information",
+            "image": "Image"
+        }
+    },
+    "detail": {
+        "title": "Asset Detail",
+        "unknownAsset": "Unknown Asset"
+    },
+    "relations": {
+        "maintenanceRecords": "Maintenance Records",
+        "loanRecords": "Loan Records",
+        "pickupRecords": "Pickup Records",
+        "returnRecords": "Return Records"
+    },
+    "messages": {
+        "loadFailed": "Failed to load asset details"
+    },
+    "status": {
+        "idle": "Idle",
+        "inUse": "In Use",
+        "maintenance": "In Maintenance",
+        "scrapped": "Scrapped",
+        "borrowed": "Borrowed",
+        "disposed": "Disposed",
+        "draft": "Draft",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "loaned": "On Loan",
+        "returned": "Returned",
+        "cancelled": "Cancelled",
+        "completed": "Completed"
+    },
+    "operations": {
+        "pickup": "Pickup",
+        "transfer": "Transfer",
+        "return": "Return",
+        "loan": "Loan",
+        "maintenance": "Maintenance",
+        "scrap": "Scrap"
+    },
+    "fields": {
+        "assetCode": "Asset Code",
+        "assetName": "Asset Name",
+        "category": "Category",
+        "department": "Department",
+        "user": "User",
+        "location": "Location",
+        "purchaseDate": "Purchase Date",
+        "purchasePrice": "Purchase Price",
+        "supplier": "Supplier",
+        "warrantyDate": "Warranty Date",
+        "serialNumber": "Serial Number",
+        "brand": "Brand",
+        "model": "Model",
+        "returnDate": "Return Date",
+        "borrower": "Borrower",
+        "loanQuantity": "Loan Quantity",
+        "custodian": "Custodian",
+        "pickupDate": "Pickup Date",
+        "pickupQuantity": "Pickup Quantity",
+        "returner": "Returner",
+        "returnQuantity": "Return Quantity",
+        "fromDept": "From Dept",
+        "toDept": "To Dept",
+        "transferDate": "Transfer Date",
+        "receiver": "Receiver",
+        "unit": "Unit",
+        "invoiceNo": "Invoice No",
+        "currentValue": "Current Net Value",
+        "usefulLife": "Useful Life (Months)"
+    },
+    "search": {
+        "keyword": "Keyword",
+        "keywordPlaceholder": "Asset Code/Name",
+        "status": "Status",
+        "dateRange": "Purchase Date"
+    },
+    "loan": {
+        "title": "Asset Loan",
+        "createButton": "New Loan",
+        "editTitle": "Edit Loan",
+        "createTitle": "New Loan",
+        "detailTitle": "Loan Detail",
+        "columns": {
+            "loanNo": "Loan No",
+            "borrower": "Borrower",
+            "department": "Department",
+            "loanDate": "Loan Date",
+            "expectedReturnDate": "Exp. Return Date",
+            "actualReturnDate": "Actual Return Date",
+            "status": "Status",
+            "assetCount": "Asset Count"
+        },
+        "form": {
+            "borrower": "Borrower",
+            "borrowerPlaceholder": "Select Borrower",
+            "loanDate": "Loan Date",
+            "expectedReturnDate": "Exp. Return Date",
+            "requiresDeposit": "Deposit Required",
+            "depositAmount": "Deposit Amount",
+            "reason": "Reason",
+            "reasonPlaceholder": "Enter reason",
+            "assetDetails": "Asset Details",
+            "addAsset": "Add Asset",
+            "quantity": "Quantity",
+            "remark": "Remark"
+        },
+        "dialog": {
+            "returnTitle": "Return Asset",
+            "returnDate": "Return Date",
+            "returnRemark": "Remark",
+            "returnRemarkPlaceholder": "Enter remark",
+            "confirmReturn": "Confirm Return"
+        },
+        "messages": {
+            "confirmCancel": "Are you sure to cancel this loan?",
+            "returnSuccess": "Returned successfully",
+            "returnFailed": "Failed to return",
+            "submitApproveSuccess": "Submitted for approval",
+            "submitApproveFailed": "Failed to submit",
+            "selectAssetWarning": "Please add at least one asset"
+        }
+    },
+    "return": {
+        "title": "Asset Return",
+        "listTitle": "Return List",
+        "createButton": "New Return",
+        "createTitle": "New Return",
+        "columns": {
+            "returnNo": "Return No",
+            "assetName": "Asset Name",
+            "returnDate": "Return Date",
+            "applicant": "Returner",
+            "applyTime": "Apply Time",
+            "status": "Status"
+        },
+        "form": {
+            "selectAsset": "Select Asset",
+            "selectAssetButton": "Click to Select",
+            "reselectAsset": "Reselect",
+            "returnDate": "Return Date",
+            "reason": "Reason",
+            "reasonPlaceholder": "Enter reason"
+        },
+        "messages": {
+            "confirmApprove": "Are you sure to approve this return?",
+            "confirmReject": "Please enter rejection reason",
+            "rejectReasonRequired": "Reason is required",
+            "approveSuccess": "Approved",
+            "rejectSuccess": "Rejected",
+            "submitSuccess": "Submitted successfully",
+            "submitApproveSuccess": "Submitted for approval",
+            "submitFailed": "Failed to submit"
+        }
+    },
+    "pickup": {
+        "title": "Asset Pickup",
+        "listTitle": "Pickup List",
+        "createButton": "New Pickup",
+        "createTitle": "New Pickup",
+        "editTitle": "Edit Pickup",
+        "columns": {
+            "pickupNo": "Pickup No",
+            "applicant": "Applicant",
+            "department": "Department",
+            "pickupDate": "Pickup Date",
+            "status": "Status",
+            "assetCount": "Asset Count",
+            "createdAt": "Created At"
+        },
+        "form": {
+            "department": "Department",
+            "departmentPlaceholder": "Select Department",
+            "pickupDate": "Pickup Date",
+            "reason": "Reason",
+            "reasonPlaceholder": "Enter reason",
+            "assetDetails": "Asset Details",
+            "addAsset": "Add Asset",
+            "quantity": "Quantity",
+            "remark": "Remark",
+            "submitForApproval": "Submit for Approval"
+        },
+        "messages": {
+            "confirmCancel": "Are you sure to cancel this pickup?",
+            "selectAssetWarning": "Please add at least one asset",
+            "submitApproveSuccess": "Submitted for approval",
+            "submitApproveFailed": "Failed to submit"
+        }
+    },
+    "transfer": {
+        "title": "Asset Transfer",
+        "listTitle": "Transfer List",
+        "createButton": "New Transfer",
+        "createTitle": "New Transfer",
+        "columns": {
+            "transferNo": "Transfer No",
+            "assetName": "Asset Name",
+            "fromLocation": "From Location",
+            "toLocation": "To Location",
+            "applicant": "Applicant",
+            "applyTime": "Apply Time",
+            "status": "Status"
+        },
+        "form": {
+            "selectAsset": "Select Asset",
+            "selectAssetButton": "Click to Select",
+            "reselectAsset": "Reselect",
+            "toLocation": "To Location",
+            "toLocationPlaceholder": "Enter Target Location ID",
+            "receiver": "Receiver",
+            "receiverPlaceholder": "Select Receiver",
+            "reason": "Transfer Reason",
+            "reasonPlaceholder": "Enter reason"
+        },
+        "messages": {
+            "confirmApprove": "Are you sure to approve this transfer?",
+            "confirmReject": "Please enter rejection reason",
+            "rejectReasonRequired": "Reason is required",
+            "approveSuccess": "Approved",
+            "rejectSuccess": "Rejected",
+            "submitSuccess": "Submitted successfully",
+            "submitApproveSuccess": "Submitted for approval",
+            "submitFailed": "Failed to submit"
+        }
+    },
+    "location": {
+        "title": "Storage Location",
+        "code": "Location Code",
+        "name": "Location Name",
+        "parent": "Parent Location",
+        "fullPath": "Full Path",
+        "status": "Status",
+        "sort": "Sort Order",
+        "description": "Description",
+        "manage": "Location Management",
+        "create": "Create Location",
+        "edit": "Edit Location",
+        "createChild": "Create Child Location",
+        "current": "Current Location",
+        "tree": "Location Tree",
+        "enterCode": "Please enter location code",
+        "enterName": "Please enter location name",
+        "selectParent": "Select parent location (root if not selected)"
+    },
+    "supplier": {
+        "title": "Supplier",
+        "code": "Supplier Code",
+        "name": "Supplier Name",
+        "contact": "Contact Person",
+        "phone": "Contact Phone",
+        "email": "Email",
+        "address": "Address",
+        "manage": "Supplier Management",
+        "create": "Create Supplier",
+        "edit": "Edit Supplier",
+        "enterCode": "Please enter supplier code",
+        "enterName": "Please enter supplier name",
+        "enterContact": "Please enter contact person",
+        "enterPhone": "Please enter contact phone"
+    },
+    "category": {
+        "title": "Asset Category",
+        "code": "Category Code",
+        "name": "Category Name",
+        "parent": "Parent Category",
+        "depreciation": "Depreciation Settings",
+        "method": "Depreciation Method",
+        "usefulLife": "Expected Useful Life",
+        "salvageRate": "Salvage Rate",
+        "months": "Months",
+        "usefulLifeHint": "Please enter months (e.g., 5 years = 60 months)",
+        "enterCode": "Please enter unique code",
+        "enterName": "Please enter category name",
+        "selectMethod": "Please select depreciation method",
+        "addRoot": "Add Root Category",
+        "addChild": "Add Child",
+        "create": "Create Category",
+        "edit": "Edit Category",
+        "search": "Search Category",
+        "deleteChildrenFirst": "Please delete child categories first"
+    },
+    "depreciation": {
+        "straightLine": "Straight Line Method",
+        "doubleDeclining": "Double Declining Balance",
+        "sumOfYears": "Sum of Years' Digits",
+        "noDepreciation": "No Depreciation"
+    },
+    "statusLog": {
+        "title": "Asset Status Log",
+        "listTitle": "Asset Status Log",
+        "selectAsset": "Please select asset",
+        "statusChange": "Status Change",
+        "allTypes": "All Types",
+        "dateRange": "Date Range",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "assetCode": "Asset Code",
+        "assetName": "Asset Name",
+        "previousStatus": "Previous Status",
+        "newStatus": "New Status",
+        "operator": "Operator",
+        "operationTime": "Operation Time",
+        "relatedBusiness": "Related Business",
+        "relatedNo": "Related Document No",
+        "ipAddress": "IP Address",
+        "userAgent": "User Agent",
+        "remark": "Remark",
+        "detailTitle": "Status Change Detail",
+        "changeTypes": {
+            "inbound": "Inbound",
+            "pickup": "Pickup",
+            "transfer": "Transfer",
+            "return": "Return",
+            "loan": "Loan",
+            "loanReturn": "Loan Return",
+            "disposal": "Disposal",
+            "inventory": "Inventory",
+            "maintenance": "Maintenance"
+        },
+        "assetStatus": {
+            "idle": "Idle",
+            "inUse": "In Use",
+            "pickupPending": "Pickup Pending",
+            "transferPending": "Transfer Pending",
+            "returnPending": "Return Pending",
+            "onLoan": "On Loan",
+            "maintenance": "Maintenance",
+            "disposal": "Disposal",
+            "lost": "Lost"
+        },
+        "businessTypes": {
+            "pickup": "Pickup Order",
+            "transfer": "Transfer Order",
+            "return": "Return Order",
+            "loan": "Loan Order",
+            "inventory": "Inventory Task",
+            "maintenance": "Maintenance Order"
+        }
+    },
+    "selector": {
+        "selectAsset": "Please select asset"
+    }
+}

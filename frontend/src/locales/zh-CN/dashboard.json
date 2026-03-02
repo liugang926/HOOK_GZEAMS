@@ -1,0 +1,15 @@
+{
+    "title": "工作台",
+    "metrics": {
+        "assetCount": "资产总数",
+        "assetValue": "资产总值",
+        "warningCount": "库存预警",
+        "pendingApproval": "待办审批"
+    },
+    "charts": {
+        "statusDistribution": "资产状态分布",
+        "categoryStatistics": "资产分类统计",
+        "assetStatus": "资产状态",
+        "quantity": "数量"
+    }
+}

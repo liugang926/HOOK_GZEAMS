@@ -17,11 +17,15 @@ export const notificationApi = {
   },
 
   markAsRead(id: string): Promise<void> {
-    return request.post(`/notifications/${id}/read/`)
+    return request.post(`/notifications/${id}/mark_read/`)
+  },
+
+  markAsUnread(id: string): Promise<void> {
+    return request.post(`/notifications/${id}/mark_unread/`)
   },
 
   markAllAsRead(): Promise<void> {
-    return request.post('/notifications/mark-all-read/')
+    return request.post('/notifications/mark_all_read/')
   },
 
   delete(id: string): Promise<void> {
@@ -29,7 +33,16 @@ export const notificationApi = {
   },
 
   getUnreadCount(): Promise<{ count: number }> {
-    return request.get('/notifications/unread-count/')
+    return request.get('/notifications/unread_count/')
+  },
+
+  getSummary(): Promise<{
+    total: number
+    unread: number
+    urgent: number
+    high: number
+  }> {
+    return request.get('/notifications/summary/')
   }
 }
 
@@ -56,7 +69,7 @@ export const notificationTemplateApi = {
   },
 
   preview(id: string, data: any): Promise<any> {
-    return request.post(`/notifications/templates/${id}/preview/`, data)
+    return request.get(`/notifications/templates/${id}/preview/`, { params: data })
   }
 }
 
@@ -70,8 +83,12 @@ export const notificationConfigApi = {
     return request.get(`/notifications/configs/${id}/`)
   },
 
+  myConfig(): Promise<any> {
+    return request.get('/notifications/configs/my_config/')
+  },
+
   update(id: string, data: any): Promise<any> {
-    return request.put(`/notifications/configs/${id}/`, data)
+    return request.patch(`/notifications/configs/${id}/`, data)
   }
 }
 
@@ -136,9 +153,11 @@ export const inAppMessageApi = {
 export const getNotificationList = notificationApi.list
 export const getNotificationDetail = notificationApi.detail
 export const markNotificationAsRead = notificationApi.markAsRead
+export const markNotificationAsUnread = notificationApi.markAsUnread
 export const markAllNotificationsAsRead = notificationApi.markAllAsRead
 export const deleteNotification = notificationApi.delete
 export const getUnreadCount = notificationApi.getUnreadCount
+export const getNotificationSummary = notificationApi.getSummary
 
 export const getNotificationTemplateList = notificationTemplateApi.list
 export const getNotificationTemplateDetail = notificationTemplateApi.detail
@@ -149,6 +168,7 @@ export const previewNotificationTemplate = notificationTemplateApi.preview
 
 export const getNotificationConfigList = notificationConfigApi.list
 export const getNotificationConfigDetail = notificationConfigApi.detail
+export const getMyNotificationConfig = notificationConfigApi.myConfig
 export const updateNotificationConfig = notificationConfigApi.update
 
 export const getNotificationChannelList = notificationChannelApi.list

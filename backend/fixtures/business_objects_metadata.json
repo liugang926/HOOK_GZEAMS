@@ -1,0 +1,526 @@
+{
+  "business_objects": [
+    {
+      "code": "Asset",
+      "name": "Asset Card",
+      "name_en": "Asset Card",
+      "description": "Fixed asset master data for tracking all physical and intangible assets",
+      "enable_workflow": false,
+      "enable_version": true,
+      "enable_soft_delete": true,
+      "fields": [
+        {
+          "code": "asset_code",
+          "name": "Asset Code",
+          "field_type": "text",
+          "is_required": true,
+          "is_unique": true,
+          "is_readonly": true,
+          "is_system": true,
+          "show_in_list": true,
+          "show_in_detail": true,
+          "sort_order": 1,
+          "column_width": 120,
+          "sortable": true
+        },
+        {
+          "code": "asset_name",
+          "name": "Asset Name",
+          "field_type": "text",
+          "is_required": true,
+          "is_searchable": true,
+          "show_in_list": true,
+          "show_in_detail": true,
+          "show_in_filter": true,
+          "sort_order": 2,
+          "column_width": 200,
+          "sortable": true
+        },
+        {
+          "code": "category_id",
+          "name": "Category",
+          "field_type": "reference",
+          "reference_object": "AssetCategory",
+          "reference_display_field": "name",
+          "is_required": true,
+          "show_in_list": true,
+          "show_in_detail": true,
+          "show_in_filter": true,
+          "sort_order": 3,
+          "column_width": 120,
+          "sortable": true
+        },
+        {
+          "code": "specification",
+          "name": "Specification",
+          "field_type": "text",
+          "show_in_list": true,
+          "show_in_detail": true,
+          "sort_order": 4,
+          "column_width": 150
+        },
+        {
+          "code": "brand",
+          "name": "Brand",
+          "field_type": "text",
+          "show_in_list": true,
+          "show_in_detail": true,
+          "sort_order": 5,
+          "column_width": 100
+        },
+        {
+          "code": "model",
+          "name": "Model",
+          "field_type": "text",
+          "show_in_list": true,
+          "show_in_detail": true,
+          "sort_order": 6,
+          "column_width": 100
+        },
+        {
+          "code": "serial_number",
+          "name": "Serial Number",
+          "field_type": "text",
+          "is_unique": true,
+          "show_in_list": false,
+          "show_in_detail": true,
+          "sort_order": 7
+        },
+        {
+          "code": "purchase_price",
+          "name": "Purchase Price",
+          "field_type": "currency",
+          "decimal_places": 2,
+          "is_required": true,
+          "show_in_list": true,
+          "show_in_detail": true,
+          "sort_order": 10,
+          "column_width": 100,
+          "sortable": true
+        },
+        {
+          "code": "current_value",
+          "name": "Current Value",
+          "field_type": "currency",
+          "decimal_places": 2,
+          "show_in_list": true,
+          "show_in_detail": true,
+          "sort_order": 11,
+          "column_width": 100,
+          "sortable": true
+        },
+        {
+          "code": "accumulated_depreciation",
+          "name": "Accumulated Depreciation",
+          "field_type": "currency",
+          "decimal_places": 2,
+          "show_in_list": true,
+          "show_in_detail": true,
+          "sort_order": 12,
+          "column_width": 120,
+          "sortable": true
+        },
+        {
+          "code": "purchase_date",
+          "name": "Purchase Date",
+          "field_type": "date",
+          "is_required": true,
+          "show_in_list": true,
+          "show_in_detail": true,
+          "sort_order": 13,
+          "column_width": 100,
+          "sortable": true
+        },
+        {
+          "code": "custodian_id",
+          "name": "Custodian",
+          "field_type": "user",
+          "show_in_list": true,
+          "show_in_detail": true,
+          "sort_order": 14,
+          "column_width": 100
+        },
+        {
+          "code": "department_id",
+          "name": "Department",
+          "field_type": "department",
+          "show_in_list": true,
+          "show_in_detail": true,
+          "sort_order": 15,
+          "column_width": 120
+        },
+        {
+          "code": "location_id",
+          "name": "Location",
+          "field_type": "reference",
+          "reference_object": "Location",
+          "reference_display_field": "name",
+          "show_in_list": true,
+          "show_in_detail": true,
+          "sort_order": 16,
+          "column_width": 120
+        },
+        {
+          "code": "asset_status",
+          "name": "Asset Status",
+          "field_type": "select",
+          "is_required": true,
+          "options": [
+            {"value": "pending", "label": "Pending Entry"},
+            {"value": "in_use", "label": "In Use"},
+            {"value": "idle", "label": "Idle"},
+            {"value": "maintenance", "label": "Under Maintenance"},
+            {"value": "scrapped", "label": "Scrapped"}
+          ],
+          "default_value": "pending",
+          "show_in_list": true,
+          "show_in_detail": true,
+          "show_in_filter": true,
+          "sort_order": 17,
+          "column_width": 100,
+          "sortable": true
+        },
+        {
+          "code": "remarks",
+          "name": "Remarks",
+          "field_type": "textarea",
+          "show_in_list": false,
+          "show_in_detail": true,
+          "sort_order": 18
+        }
+      ],
+      "page_layouts": [
+        {
+          "layout_code": "asset_form",
+          "layout_name": "Asset Form",
+          "layout_type": "form",
+          "is_default": true,
+          "layout_config": {
+            "sections": [
+              {
+                "title": "Basic Information",
+                "columns": 2,
+                "collapsible": false,
+                "fields": ["asset_code", "asset_name", "category_id", "specification", "brand", "model", "serial_number"]
+              },
+              {
+                "title": "Financial Information",
+                "columns": 2,
+                "collapsible": true,
+                "collapsed": false,
+                "fields": ["purchase_price", "current_value", "accumulated_depreciation", "purchase_date"]
+              },
+              {
+                "title": "Usage Information",
+                "columns": 2,
+                "collapsible": true,
+                "collapsed": false,
+                "fields": ["custodian_id", "department_id", "location_id", "asset_status"]
+              },
+              {
+                "title": "Additional Information",
+                "columns": 1,
+                "collapsible": true,
+                "collapsed": true,
+                "fields": ["remarks"]
+              }
+            ]
+          }
+        },
+        {
+          "layout_code": "asset_list",
+          "layout_name": "Asset List",
+          "layout_type": "list",
+          "is_default": true,
+          "layout_config": {
+            "columns": [
+              "asset_code",
+              "asset_name",
+              "category_id",
+              "specification",
+              "brand",
+              "custodian_id",
+              "location_id",
+              "asset_status",
+              "purchase_price",
+              "purchase_date"
+            ],
+            "default_sort": "-created_at"
+          }
+        }
+      ]
+    },
+    {
+      "code": "AssetPickup",
+      "name": "Asset Pickup",
+      "name_en": "Asset Pickup",
+      "description": "Employee asset pickup request form",
+      "enable_workflow": true,
+      "enable_version": true,
+      "enable_soft_delete": true,
+      "fields": [
+        {
+          "code": "pickup_no",
+          "name": "Pickup No",
+          "field_type": "text",
+          "is_required": true,
+          "is_readonly": true,
+          "is_system": true,
+          "show_in_list": true,
+          "sort_order": 1
+        },
+        {
+          "code": "pickup_date",
+          "name": "Pickup Date",
+          "field_type": "date",
+          "is_required": true,
+          "default_value": "{today}",
+          "show_in_list": true,
+          "sort_order": 2
+        },
+        {
+          "code": "requester_id",
+          "name": "Requester",
+          "field_type": "user",
+          "is_required": true,
+          "default_value": "{current_user}",
+          "show_in_list": true,
+          "sort_order": 3
+        },
+        {
+          "code": "department_id",
+          "name": "Department",
+          "field_type": "department",
+          "is_required": true,
+          "show_in_list": true,
+          "sort_order": 4
+        },
+        {
+          "code": "items",
+          "name": "Asset Items",
+          "field_type": "sub_table",
+          "is_required": true,
+          "sub_table_fields": [
+            {
+              "code": "asset_id",
+              "name": "Asset",
+              "field_type": "reference",
+              "reference_object": "Asset",
+              "is_required": true
+            },
+            {
+              "code": "quantity",
+              "name": "Quantity",
+              "field_type": "number",
+              "is_required": true,
+              "default_value": "1"
+            },
+            {
+              "code": "purpose",
+              "name": "Purpose",
+              "field_type": "text"
+            }
+          ],
+          "show_in_detail": true,
+          "sort_order": 5
+        },
+        {
+          "code": "total_items",
+          "name": "Total Items",
+          "field_type": "formula",
+          "formula": "sum({items.quantity})",
+          "is_readonly": true,
+          "show_in_list": true,
+          "sort_order": 6
+        },
+        {
+          "code": "status",
+          "name": "Status",
+          "field_type": "select",
+          "is_required": true,
+          "options": [
+            {"value": "draft", "label": "Draft"},
+            {"value": "submitted", "label": "Submitted"},
+            {"value": "approved", "label": "Approved"},
+            {"value": "rejected", "label": "Rejected"},
+            {"value": "completed", "label": "Completed"}
+          ],
+          "default_value": "draft",
+          "show_in_list": true,
+          "show_in_filter": true,
+          "sort_order": 7
+        },
+        {
+          "code": "remarks",
+          "name": "Remarks",
+          "field_type": "textarea",
+          "show_in_list": false,
+          "sort_order": 8
+        }
+      ],
+      "page_layouts": [
+        {
+          "layout_code": "pickup_form",
+          "layout_name": "Pickup Form",
+          "layout_type": "form",
+          "is_default": true,
+          "layout_config": {
+            "sections": [
+              {
+                "title": "Basic Information",
+                "columns": 2,
+                "fields": ["pickup_no", "pickup_date", "requester_id", "department_id", "status"]
+              },
+              {
+                "title": "Asset Items",
+                "columns": 1,
+                "fields": ["items"]
+              },
+              {
+                "title": "Additional Information",
+                "columns": 1,
+                "fields": ["remarks"]
+              }
+            ]
+          }
+        },
+        {
+          "layout_code": "pickup_list",
+          "layout_name": "Pickup List",
+          "layout_type": "list",
+          "is_default": true,
+          "layout_config": {
+            "columns": ["pickup_no", "pickup_date", "requester_id", "department_id", "total_items", "status"],
+            "default_sort": "-created_at"
+          }
+        }
+      ]
+    },
+    {
+      "code": "InventoryTask",
+      "name": "Inventory Task",
+      "name_en": "Inventory Task",
+      "description": "Asset inventory task for physical count verification",
+      "enable_workflow": true,
+      "enable_version": true,
+      "enable_soft_delete": true,
+      "fields": [
+        {
+          "code": "task_no",
+          "name": "Task No",
+          "field_type": "text",
+          "is_required": true,
+          "is_readonly": true,
+          "is_system": true,
+          "show_in_list": true,
+          "sort_order": 1
+        },
+        {
+          "code": "task_name",
+          "name": "Task Name",
+          "field_type": "text",
+          "is_required": true,
+          "show_in_list": true,
+          "sort_order": 2
+        },
+        {
+          "code": "inventory_type",
+          "name": "Inventory Type",
+          "field_type": "select",
+          "is_required": true,
+          "options": [
+            {"value": "full", "label": "Full Inventory"},
+            {"value": "partial", "label": "Partial Inventory"},
+            {"value": "spot", "label": "Spot Check"}
+          ],
+          "default_value": "partial",
+          "show_in_list": true,
+          "sort_order": 3
+        },
+        {
+          "code": "planned_date",
+          "name": "Planned Date",
+          "field_type": "date",
+          "is_required": true,
+          "show_in_list": true,
+          "sort_order": 4
+        },
+        {
+          "code": "department_id",
+          "name": "Department",
+          "field_type": "department",
+          "is_required": true,
+          "show_in_list": true,
+          "sort_order": 5
+        },
+        {
+          "code": "location_id",
+          "name": "Location",
+          "field_type": "reference",
+          "reference_object": "Location",
+          "show_in_list": true,
+          "sort_order": 6
+        },
+        {
+          "code": "status",
+          "name": "Status",
+          "field_type": "select",
+          "is_required": true,
+          "options": [
+            {"value": "draft", "label": "Draft"},
+            {"value": "in_progress", "label": "In Progress"},
+            {"value": "completed", "label": "Completed"},
+            {"value": "cancelled", "label": "Cancelled"}
+          ],
+          "default_value": "draft",
+          "show_in_list": true,
+          "sort_order": 7
+        },
+        {
+          "code": "notes",
+          "name": "Notes",
+          "field_type": "textarea",
+          "show_in_list": false,
+          "sort_order": 8
+        }
+      ],
+      "page_layouts": [
+        {
+          "layout_code": "task_form",
+          "layout_name": "Task Form",
+          "layout_type": "form",
+          "is_default": true,
+          "layout_config": {
+            "sections": [
+              {
+                "title": "Basic Information",
+                "columns": 2,
+                "fields": ["task_no", "task_name", "inventory_type", "planned_date", "status"]
+              },
+              {
+                "title": "Scope",
+                "columns": 2,
+                "fields": ["department_id", "location_id"]
+              },
+              {
+                "title": "Additional Information",
+                "columns": 1,
+                "fields": ["notes"]
+              }
+            ]
+          }
+        },
+        {
+          "layout_code": "task_list",
+          "layout_name": "Task List",
+          "layout_type": "list",
+          "is_default": true,
+          "layout_config": {
+            "columns": ["task_no", "task_name", "inventory_type", "planned_date", "department_id", "status"],
+            "default_sort": "-created_at"
+          }
+        }
+      ]
+    }
+  ]
+}

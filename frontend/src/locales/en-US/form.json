@@ -1,0 +1,60 @@
+{
+  "fields": {
+    "name": "Name",
+    "code": "Code",
+    "status": "Status",
+    "type": "Type",
+    "category": "Category",
+    "description": "Description",
+    "remark": "Remark",
+    "createTime": "Created At",
+    "updateTime": "Updated At",
+    "createdBy": "Created By",
+    "updatedBy": "Updated By",
+    "org": "Organization",
+    "dept": "Department",
+    "user": "User",
+    "date": "Date",
+    "time": "Time",
+    "quantity": "Quantity",
+    "amount": "Amount",
+    "price": "Price",
+    "location": "Location",
+    "address": "Address",
+    "phone": "Phone",
+    "email": "Email",
+    "attachment": "Attachment",
+    "image": "Image",
+    "file": "File",
+    "selectDate": "Select date",
+    "selectTime": "Select time",
+    "selectDateTime": "Select date and time",
+    "selectOption": "Please select",
+    "inputText": "Please input",
+    "selectUser": "Select user",
+    "selectDepartment": "Select department",
+    "selectLocation": "Select location",
+    "selectAsset": "Select asset",
+    "uploadFile": "Upload file",
+    "uploadImage": "Upload image"
+  },
+  "placeholders": {
+    "input": "Please enter {field}",
+    "select": "Please select {field}",
+    "search": "Search {field}"
+  },
+  "validation": {
+    "required": "This field is required",
+    "invalidFormat": "Invalid format",
+    "invalidEmail": "Invalid email format",
+    "invalidPhone": "Invalid phone format",
+    "minLength": "Minimum {min} characters required",
+    "maxLength": "Maximum {max} characters allowed",
+    "range": "Please enter a value between {min} and {max}"
+  },
+  "actions": {
+    "addRow": "Add Row",
+    "deleteRow": "Delete Row",
+    "resetForm": "Reset Form"
+  }
+}

@@ -1,0 +1,362 @@
+{
+    "title": "资产管理",
+    "list": {
+        "title": "资产列表",
+        "createButton": "新增资产",
+        "selected": "已选择 {count} 项",
+        "batchDelete": "批量删除",
+        "batchExport": "批量导出"
+    },
+    "form": {
+        "title": "资产信息",
+        "create": "新建资产",
+        "edit": "编辑资产",
+        "sections": {
+            "basicInfo": "基本信息",
+            "valueInfo": "价值信息",
+            "useInfo": "使用信息",
+            "image": "图片"
+        }
+    },
+    "detail": {
+        "title": "资产详情",
+        "unknownAsset": "未知资产"
+    },
+    "relations": {
+        "maintenanceRecords": "维护记录",
+        "loanRecords": "借用记录",
+        "pickupRecords": "领用记录",
+        "returnRecords": "归还记录"
+    },
+    "messages": {
+        "loadFailed": "加载资产详情失败"
+    },
+    "status": {
+        "idle": "闲置",
+        "inUse": "使用中",
+        "maintenance": "维修中",
+        "scrapped": "报废",
+        "borrowed": "借用中",
+        "disposed": "已处置",
+        "draft": "草稿",
+        "pending": "待审批",
+        "approved": "已审批",
+        "rejected": "已拒绝",
+        "loaned": "借出中",
+        "returned": "已归还",
+        "cancelled": "已取消",
+        "completed": "已完成"
+    },
+    "operations": {
+        "pickup": "领用",
+        "transfer": "调拨",
+        "return": "归还",
+        "loan": "借用",
+        "maintenance": "维修",
+        "scrap": "报废"
+    },
+    "fields": {
+        "assetCode": "资产编号",
+        "assetName": "资产名称",
+        "category": "资产分类",
+        "department": "所属部门",
+        "user": "使用人",
+        "location": "存放位置",
+        "purchaseDate": "购买日期",
+        "purchasePrice": "购买价格",
+        "supplier": "供应商",
+        "warrantyDate": "保修期至",
+        "serialNumber": "序列号",
+        "brand": "品牌",
+        "model": "型号",
+        "unit": "计量单位",
+        "invoiceNo": "发票号",
+        "currentValue": "当前净值",
+        "usefulLife": "使用年限(月)",
+        "returnDate": "归还日期",
+        "borrower": "借用人",
+        "loanQuantity": "借用数量",
+        "custodian": "领用人",
+        "pickupDate": "领用日期",
+        "pickupQuantity": "领用数量",
+        "returner": "归还人",
+        "returnQuantity": "归还数量",
+        "fromDept": "调出部门",
+        "toDept": "调入部门",
+        "transferDate": "调拨日期",
+        "receiver": "接收人"
+    },
+    "search": {
+        "keyword": "关键词",
+        "keywordPlaceholder": "资产编码/名称",
+        "status": "状态",
+        "dateRange": "采购日期"
+    },
+    "loan": {
+        "title": "资产借出单",
+        "createButton": "新建借出单",
+        "editTitle": "编辑借出单",
+        "createTitle": "新建借出单",
+        "detailTitle": "借出单详情",
+        "columns": {
+            "loanNo": "借出单号",
+            "borrower": "借用人",
+            "department": "部门",
+            "loanDate": "借出日期",
+            "expectedReturnDate": "预计归还日期",
+            "actualReturnDate": "实际归还日期",
+            "status": "状态",
+            "assetCount": "资产数量"
+        },
+        "form": {
+            "borrower": "借用人",
+            "borrowerPlaceholder": "请选择借用人",
+            "loanDate": "借出日期",
+            "expectedReturnDate": "预计归还日期",
+            "requiresDeposit": "是否需要押金",
+            "depositAmount": "押金金额",
+            "reason": "借出原因",
+            "reasonPlaceholder": "请输入借出原因",
+            "assetDetails": "借出资产明细",
+            "addAsset": "添加资产",
+            "quantity": "数量",
+            "remark": "备注"
+        },
+        "dialog": {
+            "returnTitle": "资产归还",
+            "returnDate": "归还日期",
+            "returnDatePlaceholder": "请选择归还日期",
+            "returnRemark": "归还说明",
+            "returnRemarkPlaceholder": "请输入归还说明",
+            "confirmReturn": "确认归还"
+        },
+        "messages": {
+            "confirmCancel": "确定要取消此借出单吗？",
+            "returnSuccess": "归还成功",
+            "returnFailed": "归还失败",
+            "submitApproveSuccess": "提交审批成功",
+            "submitApproveFailed": "提交审批失败",
+            "selectAssetWarning": "请至少添加一项资产"
+        }
+    },
+    "return": {
+        "title": "资产退库",
+        "listTitle": "资产退库单",
+        "createButton": "新建退库单",
+        "createTitle": "新建退库单",
+        "columns": {
+            "returnNo": "退库单号",
+            "assetName": "资产名称",
+            "returnDate": "退库日期",
+            "applicant": "退库人",
+            "applyTime": "申请时间",
+            "status": "状态"
+        },
+        "form": {
+            "selectAsset": "选择资产",
+            "selectAssetButton": "点击选择资产",
+            "reselectAsset": "重新选择",
+            "returnDate": "退库日期",
+            "reason": "退库原因",
+            "reasonPlaceholder": "请输入退库原因"
+        },
+        "messages": {
+            "confirmApprove": "确定批准此退库申请吗？",
+            "confirmReject": "请输入拒绝理由",
+            "rejectReasonRequired": "理由不能为空",
+            "approveSuccess": "已批准",
+            "rejectSuccess": "已拒绝",
+            "submitSuccess": "提交成功",
+            "submitApproveSuccess": "提交审批成功",
+            "submitFailed": "提交失败"
+        }
+    },
+    "pickup": {
+        "title": "资产领用",
+        "listTitle": "资产领用单",
+        "createButton": "新建领用单",
+        "createTitle": "新建领用单",
+        "editTitle": "编辑领用单",
+        "columns": {
+            "pickupNo": "领用单号",
+            "applicant": "申请人",
+            "department": "领用部门",
+            "pickupDate": "领用日期",
+            "status": "状态",
+            "assetCount": "资产数量",
+            "createdAt": "创建时间"
+        },
+        "form": {
+            "department": "领用部门",
+            "departmentPlaceholder": "请选择领用部门",
+            "pickupDate": "领用日期",
+            "reason": "领用原因",
+            "reasonPlaceholder": "请输入领用原因",
+            "assetDetails": "领用资产明细",
+            "addAsset": "添加资产",
+            "quantity": "数量",
+            "remark": "备注",
+            "submitForApproval": "提交审批"
+        },
+        "messages": {
+            "confirmCancel": "确定要取消此领用单吗？",
+            "selectAssetWarning": "请至少添加一项资产",
+            "submitApproveSuccess": "提交审批成功",
+            "submitApproveFailed": "提交审批失败"
+        }
+    },
+    "transfer": {
+        "title": "资产调拨",
+        "listTitle": "资产调拨单",
+        "createButton": "新建调拨单",
+        "createTitle": "新建调拨单",
+        "columns": {
+            "transferNo": "调拨单号",
+            "assetName": "资产名称",
+            "fromLocation": "原位置",
+            "toLocation": "目标位置",
+            "applicant": "申请人",
+            "applyTime": "申请时间",
+            "status": "状态"
+        },
+        "form": {
+            "selectAsset": "选择资产",
+            "selectAssetButton": "点击选择资产",
+            "reselectAsset": "重新选择",
+            "toLocation": "调入位置",
+            "toLocationPlaceholder": "请输入目标位置ID",
+            "receiver": "接收人",
+            "receiverPlaceholder": "请选择接收人",
+            "reason": "调拨原因",
+            "reasonPlaceholder": "请输入调拨原因"
+        },
+        "messages": {
+            "confirmApprove": "确定批准此调拨申请吗？",
+            "confirmReject": "请输入拒绝理由",
+            "rejectReasonRequired": "理由不能为空",
+            "approveSuccess": "已批准",
+            "rejectSuccess": "已拒绝",
+            "submitSuccess": "提交成功",
+            "submitApproveSuccess": "提交审批成功",
+            "submitFailed": "提交失败"
+        }
+    },
+    "location": {
+        "title": "存放位置",
+        "code": "位置编码",
+        "name": "位置名称",
+        "parent": "上级位置",
+        "fullPath": "完整路径",
+        "status": "状态",
+        "sort": "排序",
+        "description": "描述",
+        "manage": "存放位置管理",
+        "create": "新建位置",
+        "edit": "编辑存放位置",
+        "createChild": "新建子位置",
+        "current": "当前位置",
+        "tree": "位置树",
+        "enterCode": "请输入位置编码",
+        "enterName": "请输入位置名称",
+        "selectParent": "请选择上级位置（不选则为根位置）"
+    },
+    "supplier": {
+        "title": "供应商",
+        "code": "供应商编码",
+        "name": "供应商名称",
+        "contact": "联系人",
+        "phone": "联系电话",
+        "email": "邮箱",
+        "address": "地址",
+        "manage": "供应商管理",
+        "create": "新建供应商",
+        "edit": "编辑供应商",
+        "enterCode": "请输入供应商编码",
+        "enterName": "请输入供应商名称",
+        "enterContact": "请输入联系人",
+        "enterPhone": "请输入联系电话"
+    },
+    "category": {
+        "title": "资产分类",
+        "code": "分类编码",
+        "name": "分类名称",
+        "parent": "上级分类",
+        "depreciation": "折旧设置",
+        "method": "折旧方法",
+        "usefulLife": "预计使用年限",
+        "salvageRate": "残值率",
+        "months": "月",
+        "usefulLifeHint": "请输入月数 (例如: 5年 = 60月)",
+        "enterCode": "请输入唯一编码",
+        "enterName": "请输入分类名称",
+        "selectMethod": "请选择折旧方法",
+        "addRoot": "新增根分类",
+        "addChild": "新增子级",
+        "create": "新建分类",
+        "edit": "编辑分类",
+        "search": "搜索分类",
+        "deleteChildrenFirst": "请先删除子分类"
+    },
+    "depreciation": {
+        "straightLine": "年限平均法",
+        "doubleDeclining": "双倍余额递减法",
+        "sumOfYears": "年数总和法",
+        "noDepreciation": "不计提折旧"
+    },
+    "statusLog": {
+        "title": "资产状态日志",
+        "listTitle": "资产状态日志",
+        "selectAsset": "请选择资产",
+        "statusChange": "状态变更",
+        "allTypes": "全部类型",
+        "dateRange": "日期范围",
+        "startDate": "开始日期",
+        "endDate": "结束日期",
+        "searchPlaceholder": "资产编码/名称",
+        "assetCode": "资产编码",
+        "assetName": "资产名称",
+        "previousStatus": "变更前状态",
+        "newStatus": "变更后状态",
+        "operator": "操作人",
+        "operationTime": "操作时间",
+        "remark": "备注",
+        "relatedBusiness": "关联业务",
+        "relatedNo": "关联单号",
+        "ipAddress": "IP地址",
+        "userAgent": "用户代理",
+        "detailTitle": "状态变更详情",
+        "changeTypes": {
+            "inbound": "入库",
+            "pickup": "领用",
+            "transfer": "调拨",
+            "return": "退库",
+            "loan": "借出",
+            "loanReturn": "归还",
+            "disposal": "报废",
+            "inventory": "盘点",
+            "maintenance": "维修"
+        },
+        "assetStatus": {
+            "idle": "空闲",
+            "inUse": "在用",
+            "pickupPending": "待领用",
+            "transferPending": "待调拨",
+            "returnPending": "待退库",
+            "onLoan": "借出",
+            "maintenance": "维修中",
+            "disposal": "报废",
+            "lost": "丢失"
+        },
+        "businessTypes": {
+            "pickup": "领用单",
+            "transfer": "调拨单",
+            "return": "退库单",
+            "loan": "借出单",
+            "inventory": "盘点任务",
+            "maintenance": "维修单"
+        }
+    },
+    "selector": {
+        "selectAsset": "请选择资产"
+    }
+}

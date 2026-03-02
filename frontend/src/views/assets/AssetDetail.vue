@@ -253,7 +253,7 @@ const handleAssetLoaded = (record: any) => {
 }
 
 const handleEdit = () => {
-  router.push(`/assets/edit/${route.params.id}`)
+  router.push(`/assets/${route.params.id}?action=edit`)
 }
 
 const handleDelete = async () => {
@@ -297,7 +297,7 @@ const handleRelatedRecordEdit = (relationCode: string, record: any) => {
   }
   const objectCode = objectMap[relationCode]
   if (objectCode && record.id) {
-    router.push(`/${objectCode.toLowerCase()}/edit/${record.id}`)
+    router.push(`/${objectCode.toLowerCase()}/${record.id}?action=edit`)
   }
 }
 </script>

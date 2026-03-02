@@ -1,0 +1,15 @@
+{
+    "title": "Dashboard",
+    "metrics": {
+        "assetCount": "Total Assets",
+        "assetValue": "Total Value",
+        "warningCount": "Stock Alerts",
+        "pendingApproval": "Pending Approvals"
+    },
+    "charts": {
+        "statusDistribution": "Asset Status Distribution",
+        "categoryStatistics": "Asset Category Statistics",
+        "assetStatus": "Asset Status",
+        "quantity": "Quantity"
+    }
+}

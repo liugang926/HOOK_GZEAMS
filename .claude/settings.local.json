@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git rm:*)",
+      "Bash(npm run test:unit:*)",
+      "Bash(npm run)",
+      "Bash(npm run test:contract:runtime:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git add:*)",
+      "Bash(findstr:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

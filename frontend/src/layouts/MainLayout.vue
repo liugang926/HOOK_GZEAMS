@@ -1,5 +1,8 @@
 <template>
-  <div class="main-layout" :class="{ 'sidebar-collapsed': isCollapsed }">
+  <div
+    class="main-layout"
+    :class="{ 'sidebar-collapsed': isCollapsed }"
+  >
     <el-container>
       <!-- Sidebar -->
       <el-aside
@@ -11,7 +14,10 @@
           <h1 class="logo">
             <span class="logo-icon">📦</span>
             <transition name="fade">
-              <span v-if="!isCollapsed" class="logo-text">GZEAMS</span>
+              <span
+                v-if="!isCollapsed"
+                class="logo-text"
+              >GZEAMS</span>
             </transition>
           </h1>
         </div>
@@ -27,9 +33,14 @@
             text-color="rgba(255,255,255,0.7)"
             active-text-color="#ffffff"
           >
-            <el-menu-item index="/dashboard" class="sidebar-menu-item">
+            <el-menu-item
+              index="/dashboard"
+              class="sidebar-menu-item"
+            >
               <el-icon><Odometer /></el-icon>
-              <template #title>{{ $t('menu.menu.dashboard') }}</template>
+              <template #title>
+                {{ $t('menu.menu.dashboard') }}
+              </template>
             </el-menu-item>
 
             <template
@@ -56,7 +67,9 @@
                   <el-icon v-if="item.icon">
                     <component :is="resolveIcon(item.icon)" />
                   </el-icon>
-                  <template #title>{{ getItemLabel(item) }}</template>
+                  <template #title>
+                    {{ getItemLabel(item) }}
+                  </template>
                 </el-menu-item>
               </el-sub-menu>
 
@@ -70,20 +83,28 @@
                 <el-icon v-if="group.items[0].icon">
                   <component :is="resolveIcon(group.items[0].icon)" />
                 </el-icon>
-                <template #title>{{ getItemLabel(group.items[0]) }}</template>
+                <template #title>
+                  {{ getItemLabel(group.items[0]) }}
+                </template>
               </el-menu-item>
             </template>
           </el-menu>
         </el-scrollbar>
 
         <!-- Collapse toggle -->
-        <div class="sidebar-footer" @click="toggleCollapse">
+        <div
+          class="sidebar-footer"
+          @click="toggleCollapse"
+        >
           <el-icon :size="18">
             <Fold v-if="!isCollapsed" />
             <Expand v-else />
           </el-icon>
           <transition name="fade">
-            <span v-if="!isCollapsed" class="collapse-label">{{ $t('common.actions.collapse') || '收起菜单' }}</span>
+            <span
+              v-if="!isCollapsed"
+              class="collapse-label"
+            >{{ $t('common.actions.collapse') || '收起菜单' }}</span>
           </transition>
         </div>
       </el-aside>
@@ -143,7 +164,10 @@
       <!-- Main content column -->
       <el-container class="main-container">
         <!-- Top header bar -->
-        <el-header class="top-header" height="56px">
+        <el-header
+          class="top-header"
+          height="56px"
+        >
           <div class="header-left">
             <el-button
               v-if="isMobile"
@@ -176,7 +200,10 @@
         <!-- Page content -->
         <el-main class="page-main">
           <router-view v-slot="{ Component }">
-            <transition name="page-fade" mode="out-in">
+            <transition
+              name="page-fade"
+              mode="out-in"
+            >
               <component :is="Component" />
             </transition>
           </router-view>

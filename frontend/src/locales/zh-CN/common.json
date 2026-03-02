@@ -1,0 +1,208 @@
+{
+  "locale": "zh-CN",
+  "TabConfig": "标签配置",
+  "actions": {
+    "add": "新增",
+    "approve": "通过",
+    "back": "返回",
+    "batchDelete": "批量删除",
+    "cancel": "取消",
+    "close": "关闭",
+    "collapse": "收起",
+    "confirm": "确认",
+    "create": "新建",
+    "delete": "删除",
+    "detail": "详情",
+    "download": "下载",
+    "edit": "编辑",
+    "expand": "展开",
+    "export": "导出",
+    "import": "导入",
+    "print": "打印",
+    "refresh": "刷新",
+    "reject": "拒绝",
+    "reset": "重置",
+    "save": "保存",
+    "search": "搜索",
+    "submit": "提交",
+    "submitApprove": "提交审批",
+    "test": "测试",
+    "view": "查看"
+  },
+  "addChange": "addChange",
+  "addRecord": "addRecord",
+  "all": "全部",
+  "asset": "asset",
+  "basicInfo": "basicInfo",
+  "change": "change",
+  "changedBy": "changedBy",
+  "columns": {
+    "actions": "actions",
+    "createdAt": "createdAt",
+    "name": "name",
+    "status": "status"
+  },
+  "cost": "费用",
+  "date": "日期",
+  "description": "描述",
+  "detailInfo": "detailInfo",
+  "detailPage": {
+    "attachments": "attachments",
+    "deleteFailed": "deleteFailed",
+    "deleteSuccess": "deleteSuccess",
+    "images": "images",
+    "loadFailed": "loadFailed",
+    "recordIdNotExists": "recordIdNotExists",
+    "statusInfo": "statusInfo",
+    "title": "title"
+  },
+  "dialog": {
+    "confirmDelete": "确认删除",
+    "confirmDeleteMessage": "确认删除选中记录吗？",
+    "confirmTitle": "确认"
+  },
+  "filters": {
+    "all": "all"
+  },
+  "item": "项目",
+  "json": "JSON",
+  "labels": {
+    "assetForSearch": "assetForSearch",
+    "auditInfo": "系统信息",
+    "contact": "contact",
+    "createdAt": "创建时间",
+    "createdBy": "创建人",
+    "description": "description",
+    "operation": "operation",
+    "relatedObjects": "相关对象",
+    "remark": "remark",
+    "status": "status",
+    "system": "系统",
+    "totalItems": "totalItems",
+    "updatedAt": "最后更新时间",
+    "updatedBy": "最后更新人"
+  },
+  "locationInfo": "locationInfo",
+  "messages": {
+    "addSuccess": "addSuccess",
+    "cancelSuccess": "取消成功",
+    "confirmDelete": "确认删除吗？",
+    "confirmTitle": "确认",
+    "createFailed": "创建失败",
+    "createSuccess": "创建成功",
+    "deleteFailed": "删除失败",
+    "deleteSuccess": "删除成功",
+    "functionUnderDevelopment": "功能开发中",
+    "loadFailed": "加载失败",
+    "noData": "暂无数据",
+    "operationFailed": "操作失败",
+    "operationSuccess": "操作成功",
+    "pleaseSelectData": "请选择数据",
+    "saveSuccess": "保存成功",
+    "selected": "已选择 {count} 项",
+    "tips": "提示",
+    "updateFailed": "更新失败",
+    "updateSuccess": "更新成功"
+  },
+  "no": "否",
+  "notes": "notes",
+  "performedBy": "performedBy",
+  "placeholders": {
+    "endDate": "endDate",
+    "input": "input",
+    "maxValue": "maxValue",
+    "minValue": "minValue",
+    "select": "select",
+    "startDate": "startDate"
+  },
+  "reason": "原因",
+  "relatedObject": {
+    "code": "code",
+    "createdAt": "createdAt",
+    "id": "id",
+    "loadFailed": "loadFailed",
+    "loan": {
+      "loanDate": "loanDate",
+      "loanUser": "loanUser",
+      "returnDate": "returnDate"
+    },
+    "location": "location",
+    "maintenance": {
+      "cost": "cost",
+      "date": "date"
+    },
+    "name": "name",
+    "pickup": {
+      "pickupDate": "pickupDate",
+      "pickupUser": "pickupUser"
+    },
+    "quantity": "quantity",
+    "return": {
+      "condition": "condition",
+      "returnDate": "returnDate",
+      "returnUser": "returnUser"
+    },
+    "status": "status",
+    "type": "type"
+  },
+  "rules": {
+    "required": "required"
+  },
+  "searchConfigPlaceholder": "搜索配置",
+  "searchMaintenancePlaceholder": "搜索维保记录",
+  "select": "请选择",
+  "selectors": {
+    "assetAdmin": "assetAdmin",
+    "deptManager": "deptManager",
+    "filterByDept": "filterByDept",
+    "noMatchUser": "noMatchUser",
+    "normalUser": "normalUser",
+    "searchKeyword": "searchKeyword",
+    "searchUser": "searchUser",
+    "selectDept": "selectDept",
+    "selectRole": "selectRole",
+    "selectUser": "selectUser",
+    "systemAdmin": "systemAdmin"
+  },
+  "status": {
+    "abnormal": "异常",
+    "active": "启用",
+    "enabled": "启用",
+    "inactive": "停用",
+    "info": "提示",
+    "loading": "加载中...",
+    "processing": "处理中",
+    "warning": "警告"
+  },
+  "supplierInfo": "supplierInfo",
+  "table": {
+    "index": "序号",
+    "noData": "暂无数据",
+    "operations": "操作",
+    "total": "共 {total} 条",
+    "selected": "已选择 {count} 项",
+    "seq": "序号"
+  },
+  "title": "标题",
+  "units": {
+    "hours": "hours",
+    "item": "item",
+    "level": "level",
+    "no": "no",
+    "pending": "pending",
+    "people": "people",
+    "piece": "piece",
+    "year": "year",
+    "yes": "yes",
+    "yuan": "yuan"
+  },
+  "usageInfo": "usageInfo",
+  "validation": {
+    "phone": "请输入有效手机号",
+    "required": "此项为必填"
+  },
+  "valueInfo": "valueInfo",
+  "vendor": "vendor",
+  "warrantyInfo": "warrantyInfo",
+  "yes": "是"
+}

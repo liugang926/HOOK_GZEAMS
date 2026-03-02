@@ -1,0 +1,60 @@
+{
+  "fields": {
+    "name": "名称",
+    "code": "编码",
+    "status": "状态",
+    "type": "类型",
+    "category": "类别",
+    "description": "描述",
+    "remark": "备注",
+    "createTime": "创建时间",
+    "updateTime": "更新时间",
+    "createdBy": "创建人",
+    "updatedBy": "更新人",
+    "org": "所属组织",
+    "dept": "所属部门",
+    "user": "用户",
+    "date": "日期",
+    "time": "时间",
+    "quantity": "数量",
+    "amount": "金额",
+    "price": "价格",
+    "location": "位置",
+    "address": "地址",
+    "phone": "电话",
+    "email": "邮箱",
+    "attachment": "附件",
+    "image": "图片",
+    "file": "文件",
+    "selectDate": "请选择日期",
+    "selectTime": "请选择时间",
+    "selectDateTime": "请选择日期时间",
+    "selectOption": "请选择",
+    "inputText": "请输入",
+    "selectUser": "请选择用户",
+    "selectDepartment": "请选择部门",
+    "selectLocation": "请选择位置",
+    "selectAsset": "请选择资产",
+    "uploadFile": "上传文件",
+    "uploadImage": "上传图片"
+  },
+  "placeholders": {
+    "input": "请输入{field}",
+    "select": "请选择{field}",
+    "search": "搜索{field}"
+  },
+  "validation": {
+    "required": "该字段不能为空",
+    "invalidFormat": "格式不正确",
+    "invalidEmail": "邮箱格式不正确",
+    "invalidPhone": "电话格式不正确",
+    "minLength": "最少输入 {min} 个字符",
+    "maxLength": "最多输入 {max} 个字符",
+    "range": "请输入 {min} 到 {max} 之间的数值"
+  },
+  "actions": {
+    "addRow": "添加行",
+    "deleteRow": "删除行",
+    "resetForm": "重置表单"
+  }
+}

@@ -1,0 +1,11 @@
+{
+    "subtitle": "钩子固定资产管理系统",
+    "username": "用户名",
+    "password": "密码",
+    "loginButton": "登录",
+    "success": "登录成功",
+    "failed": "登录失败",
+    "validation": {
+        "required": "请输入用户名和密码"
+    }
+}

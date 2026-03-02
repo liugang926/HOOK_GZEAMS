@@ -1,0 +1,7 @@
+src/components/common/BaseEmptyState.vue(114,79): error TS1002: Unterminated string literal.
+src/components/common/BaseEmptyState.vue(115,3): error TS1005: ',' expected.
+src/components/designer/WysiwygLayoutDesigner.vue(2130,31): error TS1005: ',' expected.
+src/components/designer/WysiwygLayoutDesigner.vue(2130,38): error TS1005: ',' expected.
+src/components/designer/WysiwygLayoutDesigner.vue(2130,39): error TS1002: Unterminated string literal.
+src/components/designer/WysiwygLayoutDesigner.vue(2131,7): error TS1005: ',' expected.
+src/components/designer/WysiwygLayoutDesigner.vue(2141,1): error TS1128: Declaration or statement expected.

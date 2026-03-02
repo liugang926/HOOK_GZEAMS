@@ -1,0 +1,117 @@
+{
+    "catalog": {
+        "title": "Software Catalog",
+        "add": "Add Software",
+        "edit": "Edit Software",
+        "viewLicenses": "Licenses",
+        "fields": {
+            "code": "Code",
+            "name": "Software Name",
+            "version": "Version",
+            "vendor": "Vendor",
+            "type": "Type",
+            "licenseType": "License Type",
+            "status": "Status"
+        },
+        "types": {
+            "os": "Operating System",
+            "office": "Office Software",
+            "professional": "Professional",
+            "development": "Development Tool",
+            "security": "Security Software",
+            "database": "Database",
+            "other": "Other"
+        },
+        "placeholders": {
+            "code": "e.g., WIN11, OFF365",
+            "name": "Product Name",
+            "version": "e.g., 2021, Pro",
+            "vendor": "Software Vendor",
+            "licenseType": "e.g., perpetual, subscription",
+            "search": "Code/Name/Vendor"
+        },
+        "messages": {
+            "deleteConfirm": "Are you sure you want to delete the selected software?"
+        }
+    },
+    "licenses": {
+        "title": "Software Licenses",
+        "add": "Add License",
+        "edit": "Edit License",
+        "refreshStats": "Refresh Stats",
+        "allocate": "Allocate",
+        "sections": {
+            "term": "License Term",
+            "financial": "Financial Info",
+            "status": "Status Info"
+        },
+        "systemUpdate": "System auto-updated",
+        "fields": {
+            "licenseNo": "License No",
+            "software": "Software",
+            "licenseKey": "License Key",
+            "totalUnits": "Total Units",
+            "usedUnits": "Used",
+            "availableUnits": "Available",
+            "utilization": "Utilization",
+            "purchaseDate": "Purchase Date",
+            "expiryDate": "Expiry Date",
+            "purchasePrice": "Price",
+            "annualCost": "Annual Cost",
+            "status": "Status",
+            "agreementNo": "Agreement No",
+            "notes": "Notes"
+        },
+        "status": {
+            "active": "Active",
+            "expired": "Expired",
+            "suspended": "Suspended",
+            "revoked": "Revoked"
+        },
+        "tags": {
+            "perpetual": "Perpetual",
+            "expired": "Expired",
+            "expiringSoon": "Expiring Soon"
+        },
+        "compliance": {
+            "title": "Compliance Overview",
+            "totalLicenses": "Total Licenses",
+            "expiringLicenses": "Expiring Soon",
+            "days30": "Within 30 Days",
+            "overUtilized": "Over Utilized",
+            "noOverUtilized": "No Over Utilization"
+        },
+        "placeholders": {
+            "licenseNo": "e.g., OFF365-2024-001",
+            "key": "Optional, encrypted",
+            "type": "e.g., perpetual, subscription, OEM",
+            "agreement": "Enterprise Agreement No",
+            "notes": "Notes regarding this license",
+            "search": "License No/Software Name"
+        },
+        "messages": {
+            "deleteConfirm": "Are you sure you want to delete the selected licenses?"
+        }
+    },
+    "allocations": {
+        "title": "Allocation Records",
+        "add": "New Allocation",
+        "deallocate": "Deallocate",
+        "fields": {
+            "software": "Software",
+            "licenseNo": "License No",
+            "assetCode": "Asset Code",
+            "assetName": "Asset Name",
+            "allocatedDate": "Allocated Date",
+            "allocatedBy": "Allocated By",
+            "status": "Status"
+        },
+        "status": {
+            "allocated": "Allocated",
+            "revoked": "Revoked"
+        },
+        "messages": {
+            "deallocateConfirm": "Are you sure you want to deallocate {software} from {asset}?"
+        }
+    }
+}
