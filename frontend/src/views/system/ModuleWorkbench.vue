@@ -5,14 +5,14 @@
   >
     <div class="header-row">
       <div>
-        <h2>Module Workbench</h2>
-        <p>Check backend object coverage and quickly open missing frontend entries.</p>
+        <h2>{{ t('system.moduleWorkbench.title') }}</h2>
+        <p>{{ t('system.moduleWorkbench.subtitle') }}</p>
       </div>
       <el-button
         type="primary"
         @click="loadData"
       >
-        Refresh
+        {{ t('common.actions.refresh') }}
       </el-button>
     </div>
 
@@ -20,7 +20,7 @@
       <el-col :span="6">
         <el-card shadow="hover">
           <div class="metric-label">
-            Backend Objects
+            {{ t('system.moduleWorkbench.metrics.backendObjects') }}
           </div>
           <div class="metric-value">
             {{ allObjects.length }}
@@ -30,7 +30,7 @@
       <el-col :span="6">
         <el-card shadow="hover">
           <div class="metric-label">
-            Menu Covered
+            {{ t('system.moduleWorkbench.metrics.menuCovered') }}
           </div>
           <div class="metric-value">
             {{ coveredObjects.length }}
@@ -40,7 +40,7 @@
       <el-col :span="6">
         <el-card shadow="hover">
           <div class="metric-label">
-            Missing Entries
+            {{ t('system.moduleWorkbench.metrics.missingEntries') }}
           </div>
           <div class="metric-value warning">
             {{ missingObjects.length }}
@@ -50,7 +50,7 @@
       <el-col :span="6">
         <el-card shadow="hover">
           <div class="metric-label">
-            Invalid Menu Codes
+            {{ t('system.moduleWorkbench.metrics.invalidMenuCodes') }}
           </div>
           <div class="metric-value danger">
             {{ orphanMenuCodes.length }}
@@ -65,7 +65,7 @@
     >
       <template #header>
         <div class="card-header">
-          <span>Missing Frontend Entries</span>
+          <span>{{ t('system.moduleWorkbench.sections.missingFrontendEntries') }}</span>
           <el-tag
             v-if="missingObjects.length"
             type="warning"
@@ -77,7 +77,7 @@
 
       <el-empty
         v-if="!missingObjects.length"
-        description="All backend objects are covered by menu entries."
+        :description="t('system.moduleWorkbench.empty.noMissingEntries')"
       />
 
       <el-table
@@ -87,12 +87,12 @@
       >
         <el-table-column
           prop="code"
-          label="Object Code"
+          :label="t('system.moduleWorkbench.columns.objectCode')"
           min-width="180"
         />
         <el-table-column
           prop="name"
-          label="Name"
+          :label="t('system.moduleWorkbench.columns.name')"
           min-width="180"
         >
           <template #default="{ row }">
@@ -101,22 +101,22 @@
         </el-table-column>
         <el-table-column
           prop="djangoModelPath"
-          label="Model Path"
+          :label="t('system.moduleWorkbench.columns.modelPath')"
           min-width="260"
           show-overflow-tooltip
         />
         <el-table-column
-          label="Type"
+          :label="t('system.moduleWorkbench.columns.type')"
           width="120"
         >
           <template #default="{ row }">
             <el-tag :type="row.isHardcoded ? 'info' : 'success'">
-              {{ row.isHardcoded ? 'System' : 'Custom' }}
+              {{ row.isHardcoded ? t('system.moduleWorkbench.type.system') : t('system.moduleWorkbench.type.custom') }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column
-          label="Readiness"
+          :label="t('system.moduleWorkbench.columns.readiness')"
           width="180"
         >
           <template #default="{ row }">
@@ -124,30 +124,30 @@
               v-if="row.readiness === 'ready'"
               type="success"
             >
-              Ready
+              {{ t('system.moduleWorkbench.readiness.ready') }}
             </el-tag>
             <el-tag
               v-else-if="row.readiness === 'empty_fields'"
               type="warning"
             >
-              No Business Fields
+              {{ t('system.moduleWorkbench.readiness.emptyFields') }}
             </el-tag>
             <el-tag
               v-else-if="row.readiness === 'checking'"
               type="info"
             >
-              Checking
+              {{ t('system.moduleWorkbench.readiness.checking') }}
             </el-tag>
             <el-tag
               v-else
               type="danger"
             >
-              Unavailable
+              {{ t('system.moduleWorkbench.readiness.unavailable') }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column
-          label="Quick Actions"
+          :label="t('system.moduleWorkbench.columns.actions')"
           width="200"
           fixed="right"
         >
@@ -158,7 +158,7 @@
               :disabled="row.readiness !== 'ready'"
               @click="openList(row.code)"
             >
-              List
+              {{ t('system.moduleWorkbench.actions.list') }}
             </el-button>
             <el-button
               link
@@ -166,7 +166,7 @@
               :disabled="row.readiness !== 'ready'"
               @click="openCreate(row.code)"
             >
-              Create
+              {{ t('common.actions.create') }}
             </el-button>
           </template>
         </el-table-column>
@@ -179,12 +179,12 @@
     >
       <template #header>
         <div class="card-header">
-          <span>All Objects</span>
+          <span>{{ t('system.moduleWorkbench.sections.allObjects') }}</span>
           <el-input
             v-model="keyword"
             clearable
             class="search-input"
-            placeholder="Search by code or name"
+            :placeholder="t('system.moduleWorkbench.searchPlaceholder')"
           />
         </div>
       </template>
@@ -195,12 +195,12 @@
       >
         <el-table-column
           prop="code"
-          label="Object Code"
+          :label="t('system.moduleWorkbench.columns.objectCode')"
           min-width="180"
         />
         <el-table-column
           prop="name"
-          label="Name"
+          :label="t('system.moduleWorkbench.columns.name')"
           min-width="180"
         >
           <template #default="{ row }">
@@ -208,17 +208,17 @@
           </template>
         </el-table-column>
         <el-table-column
-          label="Coverage"
+          :label="t('system.moduleWorkbench.columns.coverage')"
           width="120"
         >
           <template #default="{ row }">
             <el-tag :type="isCovered(row.code) ? 'success' : 'warning'">
-              {{ isCovered(row.code) ? 'Covered' : 'Missing' }}
+              {{ isCovered(row.code) ? t('system.moduleWorkbench.coverage.covered') : t('system.moduleWorkbench.coverage.missing') }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column
-          label="Quick Actions"
+          :label="t('system.moduleWorkbench.columns.actions')"
           width="200"
           fixed="right"
         >
@@ -228,14 +228,14 @@
               type="primary"
               @click="openList(row.code)"
             >
-              List
+              {{ t('system.moduleWorkbench.actions.list') }}
             </el-button>
             <el-button
               link
               type="primary"
               @click="openCreate(row.code)"
             >
-              Create
+              {{ t('common.actions.create') }}
             </el-button>
           </template>
         </el-table-column>
@@ -248,7 +248,7 @@
     >
       <template #header>
         <div class="card-header">
-          <span>Invalid Menu Object Codes</span>
+          <span>{{ t('system.moduleWorkbench.sections.invalidMenuObjectCodes') }}</span>
           <el-tag
             v-if="orphanMenuCodes.length"
             type="danger"
@@ -260,7 +260,7 @@
 
       <el-empty
         v-if="!orphanMenuCodes.length"
-        description="No invalid object code found in menu."
+        :description="t('system.moduleWorkbench.empty.noInvalidMenuCodes')"
       />
 
       <el-table
@@ -270,17 +270,17 @@
       >
         <el-table-column
           prop="code"
-          label="Code"
+          :label="t('system.moduleWorkbench.columns.code')"
           min-width="200"
         />
         <el-table-column
           prop="name"
-          label="Menu Name"
+          :label="t('system.moduleWorkbench.columns.menuName')"
           min-width="240"
         />
         <el-table-column
           prop="url"
-          label="URL"
+          :label="t('system.moduleWorkbench.columns.url')"
           min-width="260"
           show-overflow-tooltip
         />
@@ -293,7 +293,7 @@
     >
       <template #header>
         <div class="card-header">
-          <span>Broken Menu URLs</span>
+          <span>{{ t('system.moduleWorkbench.sections.brokenMenuUrls') }}</span>
           <el-tag
             v-if="brokenMenuRows.length"
             type="danger"
@@ -305,7 +305,7 @@
 
       <el-empty
         v-if="!brokenMenuRows.length"
-        description="All menu URLs can be resolved by current frontend router."
+        :description="t('system.moduleWorkbench.empty.noBrokenMenuUrls')"
       />
 
       <el-table
@@ -315,17 +315,17 @@
       >
         <el-table-column
           prop="name"
-          label="Menu Name"
+          :label="t('system.moduleWorkbench.columns.menuName')"
           min-width="240"
         />
         <el-table-column
           prop="code"
-          label="Code"
+          :label="t('system.moduleWorkbench.columns.code')"
           min-width="200"
         />
         <el-table-column
           prop="url"
-          label="URL"
+          :label="t('system.moduleWorkbench.columns.url')"
           min-width="300"
           show-overflow-tooltip
         />
@@ -359,6 +359,16 @@ const keyword = ref('')
 const allObjects = ref<BusinessObject[]>([])
 const menuItems = ref<MenuCoverageItem[]>([])
 const readinessByCode = ref<Record<string, { readiness: ReadinessState; fieldCount: number; error?: string }>>({})
+
+const unwrapPayload = (value: unknown): AnyRecord => {
+  if (!value || typeof value !== 'object') return {}
+  const raw = value as AnyRecord
+  const data = raw.data
+  if (data && typeof data === 'object' && !Array.isArray(data)) {
+    return data as AnyRecord
+  }
+  return raw
+}
 
 const normalizeObjects = (payload: AnyRecord): BusinessObject[] => {
   const source: AnyRecord[] = []
@@ -485,8 +495,8 @@ const canResolveMenuUrl = (rawUrl: string): boolean => {
   const value = String(rawUrl || '').trim()
   if (!value || isExternalUrl(value)) return true
   const url = value.startsWith('/') ? value : `/${value}`
-  const matchedPaths = router.resolve(url).matched.map((record) => record.path)
-  return matchedPaths.some((path) => path !== '/:pathMatch(.*)*')
+  const matchedPaths = router.resolve(url).matched.map((record: { path: string }) => record.path)
+  return matchedPaths.some((path: string) => path !== '/:pathMatch(.*)*')
 }
 
 const brokenMenuRows = computed(() => {
@@ -530,11 +540,11 @@ const loadData = async () => {
       businessObjectApi.list({ pageSize: 500 }),
       menuApi.get()
     ])
-    allObjects.value = normalizeObjects((objectResponse || {}) as AnyRecord)
-    menuItems.value = normalizeMenuItems((menuResponse || {}) as AnyRecord)
+    allObjects.value = normalizeObjects(unwrapPayload(objectResponse))
+    menuItems.value = normalizeMenuItems(unwrapPayload(menuResponse))
     await checkMissingObjectReadiness()
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to load module coverage data.'
+    const message = error instanceof Error ? error.message : t('system.moduleWorkbench.messages.loadFailed')
     ElMessage.error(message)
   } finally {
     loading.value = false
@@ -562,15 +572,16 @@ const checkMissingObjectReadiness = async () => {
   await Promise.all(codes.map(async (code) => {
     try {
       const metadata = await dynamicApi.getMetadata(code)
-      const fields = Array.isArray((metadata as AnyRecord)?.fields)
-        ? ((metadata as AnyRecord).fields as AnyRecord[])
+      const metadataPayload = unwrapPayload(metadata)
+      const fields = Array.isArray(metadataPayload.fields)
+        ? (metadataPayload.fields as AnyRecord[])
         : []
       const businessFields = filterSystemFields(fields)
       const fieldCount = businessFields.length
       const readiness: ReadinessState = fieldCount > 0 ? 'ready' : 'empty_fields'
       updateReadiness(code, { readiness, fieldCount })
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'metadata unavailable'
+      const message = error instanceof Error ? error.message : t('system.moduleWorkbench.messages.metadataUnavailable')
       updateReadiness(code, { readiness: 'unavailable', fieldCount: 0, error: message })
     }
   }))

@@ -15,12 +15,14 @@ const props = withDefaults(defineProps<{
   displayField: DetailField
   value: unknown
   selected?: boolean
+  interactive?: boolean
   sidebar?: boolean
   sectionId: string
   sectionIndex: number
   removeTitle?: string
 }>(), {
   selected: false,
+  interactive: true,
   sidebar: false,
   removeTitle: 'Remove field'
 })
@@ -31,7 +33,13 @@ const emit = defineEmits<{
 }>()
 
 function handleRemove() {
+  if (!props.interactive) return
   emit('remove', props.field.id, props.sectionId, props.sectionIndex)
+}
+
+function handleSelect() {
+  if (!props.interactive) return
+  emit('select')
 }
 </script>
 
@@ -39,10 +47,11 @@ function handleRemove() {
   <div
     class="designer-field-card dynamic-form-section__field"
     data-testid="layout-canvas-field"
-    :class="{ 'is-selected': selected, 'sidebar-field-col': sidebar }"
+    :class="{ 'is-selected': interactive && selected, 'sidebar-field-col': sidebar, 'is-readonly': !interactive }"
     :data-field-id="field.id"
     :data-field-code="field.fieldCode"
-    @click.stop="emit('select')"
+    @mousedown.stop="handleSelect"
+    @click.stop="handleSelect"
   >
     <div
       class="field-item"
@@ -63,7 +72,7 @@ function handleRemove() {
       </div>
     </div>
     <div
-      v-if="selected"
+      v-if="interactive && selected"
       class="field-overlay"
     >
       <div class="overlay-label">
@@ -101,6 +110,10 @@ function handleRemove() {
     background: #ecf5ff;
     border: 1px dashed #409eff;
     border-radius: 4px;
+  }
+
+  &.is-readonly {
+    cursor: default;
   }
 }
 

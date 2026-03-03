@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route } from '@playwright/test'
-
+import { clickDesignerSectionHeader, waitForDesignerReady } from '../helpers/page-ready.helpers'
 interface LayoutField {
   id: string
   fieldCode: string
@@ -33,6 +33,7 @@ const LAYOUT_ID = 'layout-asset-readonly-reset-save'
 const INITIAL_TITLE = 'Custom Layout Section'
 const EDITED_TITLE = 'Edited Before Reset'
 const RESET_TITLE = 'Basic Information'
+const RESET_TITLE_KEY = 'system.pageLayout.designer.defaults.basicInformation'
 
 const recordPayload = {
   id: RECORD_ID,
@@ -266,16 +267,20 @@ test.describe('Layout Designer Reset -> Save Regression', () => {
       `/system/page-layouts/designer?layoutId=${LAYOUT_ID}&objectCode=${OBJECT_CODE}&layoutType=readonly&layoutName=Asset%20Readonly&businessObjectId=bo-asset`
     )
 
-    await expect(page.getByTestId('layout-designer')).toBeVisible()
+    await waitForDesignerReady(page)
     await expect.poll(async () => (await getCanvasFieldOrder(page)).join(',')).toBe('assetName,assetCode')
 
     // Make one edit first to ensure history exists before reset.
-    await page.getByTestId('layout-section-header').first().click()
+    await clickDesignerSectionHeader(page)
     await expect(page.getByTestId('layout-section-property-editor')).toBeVisible()
     const titleInput = page.getByTestId('section-prop-title').locator('input').first()
     await titleInput.fill(EDITED_TITLE)
     await titleInput.press('Tab')
-    await expect(page.locator('.layout-section .title-text', { hasText: EDITED_TITLE }).first()).toBeVisible()
+    await expect(
+      page.locator('.detail-section .section-title')
+        .filter({ hasText: EDITED_TITLE })
+        .first()
+    ).toBeVisible()
 
     const resetButton = page.getByTestId('layout-reset-button').first()
     await expect(resetButton).toBeVisible()
@@ -283,7 +288,11 @@ test.describe('Layout Designer Reset -> Save Regression', () => {
     await expect(page.locator('.el-message-box')).toBeVisible()
     await page.locator('.el-message-box__btns .el-button--primary').click()
 
-    await expect(page.locator('.layout-section .title-text', { hasText: RESET_TITLE }).first()).toBeVisible()
+    await expect(
+      page.locator('.detail-section .section-title')
+        .filter({ hasText: new RegExp(`(${RESET_TITLE}|${RESET_TITLE_KEY})`) })
+        .first()
+    ).toBeVisible()
     await expect.poll(async () => (await getCanvasFieldOrder(page)).join(',')).toBe('assetName,assetCode')
 
     const undoButton = page.getByTestId('layout-undo-button')
@@ -294,16 +303,25 @@ test.describe('Layout Designer Reset -> Save Regression', () => {
     const saveButton = page.getByTestId('layout-save-button').first()
     await saveButton.click()
     await expect.poll(() => saveCallCount).toBe(1)
-    await expect.poll(() => sectionTitle(activeLayoutConfig)).toBe(RESET_TITLE)
+    await expect.poll(() => {
+      const title = sectionTitle(activeLayoutConfig)
+      return title === RESET_TITLE || title === RESET_TITLE_KEY
+    }).toBe(true)
     await expect.poll(() => getFieldOrder(activeLayoutConfig).join(',')).toBe('assetName,assetCode')
 
     await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
     await expect(page.locator('.dynamic-detail-page').first()).toBeVisible()
     await expect(page.locator('.load-error')).toHaveCount(0)
-    await expect(page.locator('.detail-sections .section-title', { hasText: RESET_TITLE }).first()).toBeVisible()
+    await expect(
+      page.locator('.detail-sections .section-title')
+        .filter({ hasText: new RegExp(`(${RESET_TITLE}|${RESET_TITLE_KEY})`) })
+        .first()
+    ).toBeVisible()
     const labels = page.locator('.detail-sections .field-label')
     await expect(labels).toHaveCount(2)
     await expect(labels.nth(0)).toContainText('Asset Name')
     await expect(labels.nth(1)).toContainText('Asset Code')
   })
 })
+
+

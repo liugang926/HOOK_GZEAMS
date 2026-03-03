@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route } from '@playwright/test'
-
+import { waitForDesignerReady } from '../helpers/page-ready.helpers'
 interface LayoutField {
   id: string
   fieldCode: string
@@ -272,7 +272,7 @@ test.describe('Layout Designer DnD + Undo/Redo Regression', () => {
       `/system/page-layouts/designer?layoutId=${LAYOUT_ID}&objectCode=${OBJECT_CODE}&layoutType=readonly&layoutName=Asset%20Readonly&businessObjectId=bo-asset`
     )
 
-    await expect(page.getByTestId('layout-designer')).toBeVisible()
+    await waitForDesignerReady(page)
     await expect(page.locator('[data-testid="layout-canvas-field"]')).toHaveCount(2)
 
     await expect.poll(async () => (await getCanvasFieldOrder(page)).join(',')).toBe('assetName,assetCode')
@@ -308,3 +308,5 @@ test.describe('Layout Designer DnD + Undo/Redo Regression', () => {
     await expect(page.locator('.detail-content')).toContainText(recordPayload.assetName)
   })
 })
+
+

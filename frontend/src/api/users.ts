@@ -82,6 +82,7 @@ export const userApi = {
     email?: string
     phone?: string
     avatar?: string
+    preferredLanguage?: string
   }): Promise<User> {
     return request.put('/system/objects/User/me/profile/', data)
   },

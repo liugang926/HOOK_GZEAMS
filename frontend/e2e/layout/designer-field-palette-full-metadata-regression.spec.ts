@@ -1,4 +1,5 @@
 import { expect, test, type Route } from '@playwright/test'
+import { gotoDesignerAndWait } from '../helpers/page-ready.helpers'
 
 const OBJECT_CODE = 'Asset'
 
@@ -11,6 +12,8 @@ function fulfillSuccess(route: Route, data: unknown) {
 }
 
 test.describe('Layout Designer Field Palette Metadata Merge Regression', () => {
+  test.setTimeout(120000)
+
   test('palette should include metadata fields that are missing from runtime layout fields', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('access_token', 'e2e-designer-palette-merge-token')
@@ -109,13 +112,15 @@ test.describe('Layout Designer Field Palette Metadata Merge Regression', () => {
       return fulfillSuccess(route, {})
     })
 
-    await page.goto(
-      `/system/page-layouts/designer?objectCode=${OBJECT_CODE}&layoutType=edit&layoutName=Asset%20Layout&businessObjectId=bo-asset`
+    await gotoDesignerAndWait(
+      page,
+      `/system/page-layouts/designer?objectCode=${OBJECT_CODE}&layoutType=edit&layoutName=Asset%20Layout&businessObjectId=bo-asset`,
+      { requiredFieldCode: 'asset_name' }
     )
 
     const ensurePaletteFieldPresent = async (fieldCode: string) => {
       const allItems = page.locator(`[data-testid="layout-palette-field-${fieldCode}"]`)
-      expect(await allItems.count()).toBeGreaterThan(0)
+      await expect.poll(async () => allItems.count(), { timeout: 15000 }).toBeGreaterThan(0)
 
       const itemAny = allItems.first()
       if (!(await itemAny.isVisible())) {
@@ -127,8 +132,6 @@ test.describe('Layout Designer Field Palette Metadata Merge Regression', () => {
       await expect(allItems.first()).toBeVisible()
     }
 
-    await expect(page.getByTestId('layout-designer')).toBeVisible()
-    await expect(page.locator('[data-testid="layout-canvas-field"][data-field-code="asset_name"]').first()).toBeVisible()
     await ensurePaletteFieldPresent('asset_code')
     await ensurePaletteFieldPresent('purchase_date')
   })

@@ -207,6 +207,11 @@ jobs:
           cd frontend
           npm run lint -- --max-warnings 0
 
+      - name: Run i18n hardcode guard (changed files)
+        run: |
+          cd frontend
+          npm run i18n:check
+
       - name: Run Prettier check
         run: |
           cd frontend

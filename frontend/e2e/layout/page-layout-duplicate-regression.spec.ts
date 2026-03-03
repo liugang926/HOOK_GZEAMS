@@ -1,5 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
-
+import { waitForDesignerReady } from '../helpers/page-ready.helpers'
 type AnyRecord = Record<string, any>
 
 const OBJECT_CODE = 'Asset'
@@ -232,7 +232,9 @@ test.describe('Page Layout Duplicate Regression', () => {
     expect(fieldCodes).not.toContain('created_at')
 
     await expect(page).toHaveURL(/\/system\/page-layouts\/designer/)
-    await expect(page.getByTestId('layout-designer')).toBeVisible()
+    await waitForDesignerReady(page)
     await expect(page.locator('[data-testid="layout-canvas-field"]').first()).toBeVisible()
   })
 })
+
+

@@ -1,19 +1,30 @@
 from .base import *
+import os
+import dj_database_url
 
 DEBUG = True
 
-# Use PostgreSQL for tests (same as development but with test database name)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'gzeams_test',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': 'db',
-        'PORT': '5432',
-        'ATOMIC_REQUESTS': True,
+# Use PostgreSQL for tests.
+# Supports local overrides while keeping container defaults:
+# - TEST_DATABASE_URL
+# - TEST_DB_NAME / TEST_DB_USER / TEST_DB_PASSWORD / TEST_DB_HOST / TEST_DB_PORT
+test_database_url = os.getenv('TEST_DATABASE_URL', '').strip()
+if test_database_url:
+    parsed_test_db = dj_database_url.parse(test_database_url, conn_max_age=0)
+    parsed_test_db['ATOMIC_REQUESTS'] = True
+    DATABASES = {'default': parsed_test_db}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('TEST_DB_NAME', 'gzeams_test'),
+            'USER': os.getenv('TEST_DB_USER', 'postgres'),
+            'PASSWORD': os.getenv('TEST_DB_PASSWORD', 'postgres'),
+            'HOST': os.getenv('TEST_DB_HOST', 'db'),
+            'PORT': os.getenv('TEST_DB_PORT', '5432'),
+            'ATOMIC_REQUESTS': True,
+        }
     }
-}
 
 # Add testserver for API tests
 ALLOWED_HOSTS = list(ALLOWED_HOSTS) + ['testserver', 'localhost', '127.0.0.1']

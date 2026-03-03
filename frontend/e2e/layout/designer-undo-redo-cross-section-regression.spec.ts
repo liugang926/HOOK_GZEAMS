@@ -1,5 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
-
+import { clickDesignerSectionHeader, waitForDesignerReady } from '../helpers/page-ready.helpers'
 interface LayoutField {
   id: string
   fieldCode: string
@@ -267,18 +267,15 @@ test.describe('Layout Designer Undo/Redo Cross-section Regression', () => {
       `/system/page-layouts/designer?layoutId=${LAYOUT_ID}&objectCode=${OBJECT_CODE}&layoutType=readonly&layoutName=Asset%20Readonly&businessObjectId=bo-asset`
     )
 
-    await expect(page.getByTestId('layout-designer')).toBeVisible()
+    await waitForDesignerReady(page)
 
-    const sectionHeaders = page.getByTestId('layout-section-header')
-    await expect(sectionHeaders).toHaveCount(2)
-
-    await sectionHeaders.first().click()
+    await clickDesignerSectionHeader(page, { title: INITIAL_TITLE_A })
     await expect(page.getByTestId('layout-section-property-editor')).toBeVisible()
     const titleInputA = page.getByTestId('section-prop-title').locator('input').first()
     await titleInputA.fill(UPDATED_TITLE_A)
     await titleInputA.press('Tab')
 
-    await sectionHeaders.nth(1).click()
+    await clickDesignerSectionHeader(page, { title: INITIAL_TITLE_B })
     const titleInputB = page.getByTestId('section-prop-title').locator('input').first()
     await titleInputB.fill(UPDATED_TITLE_B)
     await titleInputB.press('Tab')
@@ -312,3 +309,5 @@ test.describe('Layout Designer Undo/Redo Cross-section Regression', () => {
     await expect(page.locator('.detail-content')).toContainText(recordPayload.assetCode)
   })
 })
+
+

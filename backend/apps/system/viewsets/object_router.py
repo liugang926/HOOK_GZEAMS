@@ -9,7 +9,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
-from typing import Optional
+from typing import Any, List, Optional
 import inspect
 import re
 import logging
@@ -19,6 +19,7 @@ from apps.system.services.object_registry import ObjectRegistry
 from apps.system.services.layout_runtime_normalizer import normalize_layout_config_for_runtime
 from apps.common.viewsets.metadata_driven import MetadataDrivenViewSet
 from apps.common.responses.base import BaseResponse
+from apps.common.services.i18n_service import TranslationService, get_current_language
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +52,8 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         super().__init__(*args, **kwargs)
         self._delegate_viewset: Optional[viewsets.ModelViewSet] = None
         self._object_meta = None
+        self._feature_flag_cache = {}
+        self._legacy_field_code_warned = False
 
     def initial(self, request, *args, **kwargs):
         """
@@ -631,42 +634,29 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         # Get field definitions from both sources:
         # 1. FieldDefinition for low-code custom fields
         # 2. ModelFieldDefinition for hardcoded Django model fields
+        request_locale = self._get_request_locale(request)
+        runtime_i18n_enabled = self._is_feature_enabled(
+            'runtime_i18n_enabled',
+            default=True,
+            request=request,
+        )
         fields = []
 
         # For hardcoded objects, get fields from ModelFieldDefinition
         if self._object_meta.is_hardcoded:
-            # BusinessObject uses GlobalMetadataManager (no org filtering)
-            from apps.system.models import BusinessObject
-            bo = BusinessObject.objects.filter(code=self._object_meta.code).first()
-
             model_fields = ModelFieldDefinition.objects.filter(
                 business_object__code=self._object_meta.code
             ).order_by('sort_order')
 
             for fd in model_fields:
-                # Map ModelFieldDefinition fields to common format
-                # Note: ModelFieldDefinition has different field names than FieldDefinition
-                fields.append({
-                    'code': fd.field_name,
-                    'name': fd.display_name or fd.field_name,
-                    'field_type': fd.field_type,
-                    'is_required': fd.is_required,
-                    'is_readonly': fd.is_readonly,
-                    'is_system': False,  # Model fields are not system fields
-                    'is_searchable': True,  # Default to True for model fields
-                    'sortable': True,  # Default to True
-                    'show_in_filter': False,  # Not defined in ModelFieldDefinition
-                    'show_in_list': fd.show_in_list,
-                    'show_in_detail': fd.show_in_detail,
-                    'sort_order': fd.sort_order,
-                    'column_width': None,  # Not defined in ModelFieldDefinition
-                    'min_column_width': None,  # Not defined
-                    'fixed': False,  # Not defined
-                    'options': None,  # Not defined
-                    'placeholder': None,  # Not defined
-                    'default_value': None,  # Not defined
-                    'reference_object': fd.reference_model_path if fd.field_type == 'reference' else None,
-                })
+                fields.append(
+                    self._format_model_field(
+                        fd,
+                        context='form',
+                        locale=request_locale,
+                        localize=runtime_i18n_enabled,
+                    )
+                )
         else:
             # For dynamic objects, get fields from FieldDefinition
             # FieldDefinition uses GlobalMetadataManager (no org filtering)
@@ -675,27 +665,14 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             ).order_by('sort_order')
 
             for fd in fields_query:
-                fields.append({
-                    'code': fd.code,
-                    'name': fd.name,
-                    'field_type': fd.field_type,
-                    'is_required': fd.is_required,
-                    'is_readonly': fd.is_readonly,
-                    'is_system': fd.is_system,
-                    'is_searchable': fd.is_searchable,
-                    'sortable': fd.sortable,
-                    'show_in_filter': fd.show_in_filter,
-                    'show_in_list': fd.show_in_list,
-                    'show_in_detail': fd.show_in_detail,
-                    'sort_order': fd.sort_order,
-                    'column_width': fd.column_width,
-                    'min_column_width': fd.min_column_width,
-                    'fixed': fd.fixed,
-                    'options': fd.options,
-                    'placeholder': fd.placeholder,
-                    'default_value': fd.default_value,
-                    'reference_object': fd.reference_object,
-                })
+                fields.append(
+                    self._format_field_definition(
+                        fd,
+                        context='form',
+                        locale=request_locale,
+                        localize=runtime_i18n_enabled,
+                    )
+                )
 
         # Get layouts - auto-generate from field definitions if not exist
         from apps.system.services.layout_generator import LayoutGenerator
@@ -744,9 +721,13 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         # Get permissions for current user
         permissions = self._get_user_permissions(request.user, self._object_meta.code)
 
+        object_name = self._object_meta.name
+        if runtime_i18n_enabled and bo:
+            object_name = self._localize_field_value(bo, 'name', request_locale, bo.name)
+
         return BaseResponse.success({
             'code': self._object_meta.code,
-            'name': self._object_meta.name,
+            'name': object_name,
             'is_hardcoded': self._object_meta.is_hardcoded,
             'django_model_path': self._object_meta.django_model_path,
             'enable_workflow': self._get_business_object_flag('enable_workflow'),
@@ -767,6 +748,74 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             return getattr(bo, flag_name, False)
         except Exception:
             return False
+
+    def _coerce_bool(self, value: Any, default: bool) -> bool:
+        """Coerce config value to boolean safely."""
+        if isinstance(value, bool):
+            return value
+        if value is None:
+            return default
+        if isinstance(value, (int, float)):
+            return value != 0
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {'true', '1', 'yes', 'y', 'on'}:
+                return True
+            if normalized in {'false', '0', 'no', 'n', 'off'}:
+                return False
+        return default
+
+    def _is_feature_enabled(self, config_key: str, *, default: bool, request=None) -> bool:
+        """
+        Resolve feature flag from SystemConfig with org > global fallback.
+
+        Cached per viewset instance to avoid repeated lookups.
+        """
+        request_obj = request or getattr(self, 'request', None)
+        org_id = getattr(request_obj, 'organization_id', None)
+        cache_key = (config_key, str(org_id) if org_id else 'global')
+        if cache_key in self._feature_flag_cache:
+            return self._feature_flag_cache[cache_key]
+
+        resolved = default
+        try:
+            from apps.system.models import SystemConfig
+
+            query = SystemConfig.objects.filter(config_key=config_key)
+            config = None
+            if org_id:
+                config = query.filter(organization_id=org_id).order_by('-updated_at', '-created_at').first()
+            if not config:
+                config = query.filter(organization__isnull=True).order_by('-updated_at', '-created_at').first()
+            if config:
+                resolved = self._coerce_bool(config.get_typed_value(), default)
+        except Exception:
+            resolved = default
+
+        self._feature_flag_cache[cache_key] = resolved
+        return resolved
+
+    def _build_field_identifier_payload(self, field_code: str) -> dict:
+        """
+        Build field identity payload with strict/compat mode.
+
+        strict: only field_code
+        compat: field_code + legacy code
+        """
+        strict_mode = self._is_feature_enabled(
+            'field_code_strict_mode',
+            default=False,
+        )
+        payload = {'field_code': field_code}
+        if not strict_mode:
+            payload['code'] = field_code
+            if not self._legacy_field_code_warned:
+                logger.info(
+                    "Legacy `code` key is still emitted for compatibility. "
+                    "Enable field_code_strict_mode to return field_code only."
+                )
+                self._legacy_field_code_warned = True
+        return payload
 
     def _get_user_permissions(self, user, object_code: str) -> dict:
         """
@@ -806,6 +855,92 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         perm_code = f"{object_code.lower()}_{action}"
         return user.has_perm(perm_code)
+
+    def _get_request_locale(self, request) -> str:
+        """Resolve locale from middleware context with safe fallback."""
+        locale = (
+            getattr(request, 'language_code', None)
+            or getattr(request, 'locale', None)
+            or get_current_language()
+            or TranslationService.DEFAULT_LANGUAGE
+        )
+        if locale not in TranslationService.SUPPORTED_LANGUAGES:
+            if locale.startswith('zh'):
+                return 'zh-CN'
+            if locale.startswith('en'):
+                return 'en-US'
+            if locale.startswith('ja'):
+                return 'ja-JP'
+            return TranslationService.DEFAULT_LANGUAGE
+        return locale
+
+    def _localize_field_value(self, obj, field_name: str, locale: str, default_value: Any = '') -> Any:
+        """Localize a model field via TranslationService with safe fallback."""
+        try:
+            value = TranslationService.get_localized_value(
+                obj,
+                field_name,
+                lang_code=locale,
+                fallback_to_original=True,
+            )
+            if value not in (None, ''):
+                return value
+        except Exception:
+            pass
+        return default_value
+
+    def _pick_locale_text(self, localized_map: Any, locale: str) -> str:
+        """Pick a localized text from a locale map."""
+        if not isinstance(localized_map, dict):
+            return ''
+        if locale in localized_map and localized_map.get(locale):
+            return str(localized_map.get(locale))
+        short_locale = locale.split('-', 1)[0]
+        if short_locale in localized_map and localized_map.get(short_locale):
+            return str(localized_map.get(short_locale))
+        if 'zh-CN' in localized_map and localized_map.get('zh-CN'):
+            return str(localized_map.get('zh-CN'))
+        if 'en-US' in localized_map and localized_map.get('en-US'):
+            return str(localized_map.get('en-US'))
+        for _, value in localized_map.items():
+            if value:
+                return str(value)
+        return ''
+
+    def _localize_options(self, options: Any, locale: str) -> Any:
+        """Localize option labels while preserving original option structure."""
+        if not options:
+            return options
+
+        if isinstance(options, list):
+            localized_options = []
+            for option in options:
+                if not isinstance(option, dict):
+                    localized_options.append(option)
+                    continue
+
+                normalized_option = dict(option)
+                localized_label = self._pick_locale_text(normalized_option.get('label_i18n'), locale)
+                if not localized_label and locale.startswith('en') and normalized_option.get('label_en'):
+                    localized_label = str(normalized_option.get('label_en'))
+                if localized_label:
+                    normalized_option['label'] = localized_label
+                localized_options.append(normalized_option)
+            return localized_options
+
+        if isinstance(options, dict):
+            # For dict-style options, value is usually the visible label.
+            # Keep shape intact and localize only map values when they are locale maps.
+            localized_options = {}
+            for key, value in options.items():
+                if isinstance(value, dict):
+                    localized_text = self._pick_locale_text(value, locale)
+                    localized_options[key] = localized_text or value
+                else:
+                    localized_options[key] = value
+            return localized_options
+
+        return options
 
     @action(detail=False, methods=['post'], url_path='batch-delete')
     def batch_delete(self, request, *args, **kwargs):
@@ -896,6 +1031,12 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         # Get query parameters
         context = request.query_params.get('context', 'form')
         include_relations = request.query_params.get('include_relations', 'true').lower() == 'true'
+        request_locale = self._get_request_locale(request)
+        runtime_i18n_enabled = self._is_feature_enabled(
+            'runtime_i18n_enabled',
+            default=True,
+            request=request,
+        )
 
         # Validate context parameter
         valid_contexts = ['form', 'detail', 'list']
@@ -906,13 +1047,10 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 http_status=status.HTTP_400_BAD_REQUEST
             )
 
-        from apps.system.models import FieldDefinition, ModelFieldDefinition, BusinessObject
+        from apps.system.models import FieldDefinition, ModelFieldDefinition
 
         editable_fields = []
         reverse_relations = []
-
-        # Get BusinessObject for context filtering
-        bo = BusinessObject.objects.filter(code=self._object_meta.code).first()
 
         if self._object_meta.is_hardcoded:
             # For hardcoded objects, get fields from ModelFieldDefinition
@@ -921,7 +1059,12 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             ).order_by('sort_order')
 
             for fd in model_fields:
-                field_data = self._format_model_field(fd, context)
+                field_data = self._format_model_field(
+                    fd,
+                    context,
+                    request_locale,
+                    localize=runtime_i18n_enabled,
+                )
                 # Check if this is a reverse relation (sub_table type)
                 if fd.field_type == 'sub_table':
                     if include_relations:
@@ -937,7 +1080,12 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             ).order_by('sort_order')
 
             for fd in fields_query:
-                field_data = self._format_field_definition(fd, context)
+                field_data = self._format_field_definition(
+                    fd,
+                    context,
+                    request_locale,
+                    localize=runtime_i18n_enabled,
+                )
 
                 # Check if this is a reverse relation
                 if fd.is_reverse_relation:
@@ -955,17 +1103,32 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 for fd in model_fields:
                     if fd.field_type == 'sub_table':
                         continue
-                    editable_fields.append(self._format_model_field(fd, context))
+                    editable_fields.append(
+                        self._format_model_field(
+                            fd,
+                            context,
+                            request_locale,
+                            localize=runtime_i18n_enabled,
+                        )
+                    )
             else:
                 for fd in fields_query:
                     if fd.is_reverse_relation:
                         continue
-                    editable_fields.append(self._format_field_definition(fd, context))
+                    editable_fields.append(
+                        self._format_field_definition(
+                            fd,
+                            context,
+                            request_locale,
+                            localize=runtime_i18n_enabled,
+                        )
+                    )
 
         return BaseResponse.success({
             'editable_fields': editable_fields,
             'reverse_relations': reverse_relations,
             'context': context,
+            'locale': request_locale,
         })
 
     @action(detail=False, methods=['get'], url_path='runtime')
@@ -991,6 +1154,17 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         mode = request.query_params.get('mode', 'edit')
         include_relations = request.query_params.get('include_relations', 'true').lower() == 'true'
+        request_locale = self._get_request_locale(request)
+        runtime_i18n_enabled = self._is_feature_enabled(
+            'runtime_i18n_enabled',
+            default=True,
+            request=request,
+        )
+        layout_merge_unified_enabled = self._is_feature_enabled(
+            'layout_merge_unified_enabled',
+            default=True,
+            request=request,
+        )
 
         # Single-layout model:
         # - readonly/detail/search pages reuse edit/form field model for consistency.
@@ -1014,7 +1188,12 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             ).order_by('sort_order')
 
             for fd in model_fields:
-                field_data = self._format_model_field(fd, context)
+                field_data = self._format_model_field(
+                    fd,
+                    context,
+                    request_locale,
+                    localize=runtime_i18n_enabled,
+                )
                 if fd.field_type == 'sub_table':
                     if include_relations:
                         reverse_relations.append(field_data)
@@ -1027,7 +1206,12 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             ).order_by('sort_order')
 
             for fd in fields_query:
-                field_data = self._format_field_definition(fd, context)
+                field_data = self._format_field_definition(
+                    fd,
+                    context,
+                    request_locale,
+                    localize=runtime_i18n_enabled,
+                )
                 if fd.is_reverse_relation:
                     if include_relations:
                         reverse_relations.append(field_data)
@@ -1042,12 +1226,26 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 for fd in model_fields:
                     if fd.field_type == 'sub_table':
                         continue
-                    editable_fields.append(self._format_model_field(fd, context))
+                    editable_fields.append(
+                        self._format_model_field(
+                            fd,
+                            context,
+                            request_locale,
+                            localize=runtime_i18n_enabled,
+                        )
+                    )
             else:
                 for fd in fields_query:
                     if fd.is_reverse_relation:
                         continue
-                    editable_fields.append(self._format_field_definition(fd, context))
+                    editable_fields.append(
+                        self._format_field_definition(
+                            fd,
+                            context,
+                            request_locale,
+                            localize=runtime_i18n_enabled,
+                        )
+                    )
 
         # Resolve active layout (custom > default > generated config).
         # Single-layout model: readonly/detail/search reuses shared form layout.
@@ -1089,16 +1287,26 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 'is_template': True,
                 'source': user_column_config.get('source', 'default'),
             }
+            layout_source = user_column_config.get('source', 'default')
+            if layout_merge_unified_enabled:
+                layout_layers = ['user', 'default'] if layout_source == 'user' else ['default']
+            else:
+                layout_layers = ['default']
             return BaseResponse.success({
                 'runtime_version': 1,
                 'object_code': self._object_meta.code,
                 'mode': mode,
                 'context': context,
+                'locale': request_locale,
+                'layout_source': layout_source,
+                'layout_layers': layout_layers,
+                'layout_id': layout_payload.get('id'),
                 'permissions': self._get_user_permissions(request.user, self._object_meta.code),
                 'fields': {
                     'editable_fields': editable_fields,
                     'reverse_relations': reverse_relations,
                     'context': context,
+                    'locale': request_locale,
                 },
                 'layout': layout_payload,
                 'is_default': user_column_config.get('source', 'default') != 'user',
@@ -1125,25 +1333,26 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         # Runtime pages should prefer published layouts first.
         # Draft layouts are fallback only when nothing published exists.
-        layout = (
-            _scope_custom(base_qs.filter(is_default=False, status='published'))
-            .order_by('-updated_at', '-created_at')
-            .first()
-            or _scope_default(base_qs.filter(is_default=True, status='published'))
-            .order_by('-updated_at', '-created_at')
-            .first()
-            or _scope_custom(base_qs.filter(is_default=False))
-            .order_by('-updated_at', '-created_at')
-            .first()
-            or _scope_default(base_qs.filter(is_default=True))
-            .order_by('-updated_at', '-created_at')
-            .first()
-        )
+        layout_source = 'default'
+        layout = None
+        layout_candidates = [
+            ('org', _scope_custom(base_qs.filter(is_default=False, status='published'))),
+            ('default', _scope_default(base_qs.filter(is_default=True, status='published'))),
+            ('org', _scope_custom(base_qs.filter(is_default=False))),
+            ('default', _scope_default(base_qs.filter(is_default=True))),
+        ]
+        for candidate_source, candidate_qs in layout_candidates:
+            layout = candidate_qs.order_by('-updated_at', '-created_at').first()
+            if layout:
+                layout_source = candidate_source
+                if candidate_source == 'org' and getattr(layout, 'organization_id', None) is None:
+                    layout_source = 'global'
+                break
 
         if layout:
             layout_payload = PageLayoutSerializer(layout).data
             raw_layout_config = layout_payload.get('layout_config')
-            if isinstance(raw_layout_config, dict):
+            if layout_merge_unified_enabled and isinstance(raw_layout_config, dict):
                 normalized_layout_config = normalize_layout_config_for_runtime(
                     business_object,
                     raw_layout_config
@@ -1160,7 +1369,8 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 layout_config = LayoutGenerator.get_or_generate_layout(business_object, layout_type)
             else:
                 layout_config = get_default_layout_config(layout_type)
-            layout_config = normalize_layout_config_for_runtime(business_object, layout_config)
+            if layout_merge_unified_enabled:
+                layout_config = normalize_layout_config_for_runtime(business_object, layout_config)
 
             layout_payload = {
                 'layout_type': layout_type,
@@ -1168,17 +1378,28 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 'is_template': True
             }
             is_default = True
+            layout_source = 'default'
+
+        if layout_merge_unified_enabled:
+            layout_layers = ['user', 'role', 'org', 'global', 'default']
+        else:
+            layout_layers = ['default']
 
         return BaseResponse.success({
             'runtime_version': 1,
             'object_code': self._object_meta.code,
             'mode': mode,
             'context': context,
+            'locale': request_locale,
+            'layout_source': layout_source,
+            'layout_layers': layout_layers,
+            'layout_id': layout_payload.get('id') if isinstance(layout_payload, dict) else None,
             'permissions': self._get_user_permissions(request.user, self._object_meta.code),
             'fields': {
                 'editable_fields': editable_fields,
                 'reverse_relations': reverse_relations,
                 'context': context,
+                'locale': request_locale,
             },
             'layout': layout_payload,
             'is_default': is_default,
@@ -1307,11 +1528,22 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         return True
 
-    def _format_field_definition(self, fd, context: str) -> dict:
+    def _format_field_definition(self, fd, context: str, locale: Optional[str] = None, *, localize: bool = True) -> dict:
         """Format FieldDefinition instance for API response."""
+        resolved_locale = locale or TranslationService.DEFAULT_LANGUAGE
+        if localize:
+            localized_name = self._localize_field_value(fd, 'name', resolved_locale, fd.name)
+            localized_placeholder = self._localize_field_value(fd, 'placeholder', resolved_locale, fd.placeholder)
+            localized_options = self._localize_options(fd.options, resolved_locale)
+        else:
+            localized_name = fd.name
+            localized_placeholder = fd.placeholder
+            localized_options = fd.options
+
         return {
-            'code': fd.code,
-            'name': fd.name,
+            **self._build_field_identifier_payload(fd.code),
+            'name': localized_name,
+            'label': localized_name,
             'field_type': fd.field_type,
             'is_required': fd.is_required,
             'is_readonly': fd.is_readonly,
@@ -1326,8 +1558,8 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             'column_width': fd.column_width,
             'min_column_width': fd.min_column_width,
             'fixed': fd.fixed,
-            'options': fd.options,
-            'placeholder': fd.placeholder,
+            'options': localized_options,
+            'placeholder': localized_placeholder,
             'default_value': fd.default_value,
             'reference_object': fd.reference_object,
             # Reverse relation fields
@@ -1335,21 +1567,37 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             'reverse_relation_model': getattr(fd, 'reverse_relation_model', ''),
             'reverse_relation_field': getattr(fd, 'reverse_relation_field', ''),
             'relation_display_mode': getattr(fd, 'relation_display_mode', 'tab_readonly'),
+            'locale': resolved_locale,
         }
 
-    def _format_model_field(self, fd, context: str) -> dict:
+    def _format_model_field(self, fd, context: str, locale: Optional[str] = None, *, localize: bool = True) -> dict:
         """Format ModelFieldDefinition instance for API response."""
+        resolved_locale = locale or TranslationService.DEFAULT_LANGUAGE
         # Try to get field choices from the actual Django model
         options = self._get_model_field_choices(fd)
-        
+        if localize:
+            options = self._localize_options(options, resolved_locale)
+
         # Determine field type - if has choices, it should be rendered as select
         field_type = fd.field_type
         if options and field_type == 'text':
             field_type = 'select'
-        
+        if localize:
+            localized_display_name = self._localize_field_value(
+                fd,
+                'display_name',
+                resolved_locale,
+                fd.display_name or fd.field_name,
+            )
+            if resolved_locale.startswith('en') and getattr(fd, 'display_name_en', None):
+                localized_display_name = fd.display_name_en
+        else:
+            localized_display_name = fd.display_name or fd.field_name
+
         return {
-            'code': fd.field_name,
-            'name': fd.display_name or fd.field_name,
+            **self._build_field_identifier_payload(fd.field_name),
+            'name': localized_display_name,
+            'label': localized_display_name,
             'field_type': field_type,
             'is_required': fd.is_required,
             'is_readonly': fd.is_readonly,
@@ -1373,6 +1621,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             'reverse_relation_model': '',
             'reverse_relation_field': '',
             'relation_display_mode': 'tab_readonly',
+            'locale': resolved_locale,
         }
 
     def _get_model_field_choices(self, fd) -> list:

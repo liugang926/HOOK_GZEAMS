@@ -16,7 +16,7 @@
       @tab-change="handleCategoryChange"
     >
       <el-tab-pane
-        label="All"
+        :label="$t('system.config.tabs.all')"
         name=""
       />
       <el-tab-pane
@@ -38,6 +38,10 @@
       <el-tab-pane
         :label="$t('system.config.tabs.inventory')"
         name="inventory"
+      />
+      <el-tab-pane
+        :label="$t('system.config.tabs.featureFlags')"
+        name="feature_flag"
       />
     </el-tabs>
 
@@ -64,23 +68,23 @@
           @change="handleSearch"
         >
           <el-option
-            label="String"
+            :label="$t('system.config.valueTypes.string')"
             value="string"
           />
           <el-option
-            label="Integer"
+            :label="$t('system.config.valueTypes.integer')"
             value="integer"
           />
           <el-option
-            label="Float"
+            :label="$t('system.config.valueTypes.float')"
             value="float"
           />
           <el-option
-            label="Boolean"
+            :label="$t('system.config.valueTypes.boolean')"
             value="boolean"
           />
           <el-option
-            label="JSON"
+            :label="$t('system.config.valueTypes.json')"
             value="json"
           />
         </el-select>
@@ -115,7 +119,11 @@
         prop="name"
         :label="$t('system.config.columns.name')"
         width="180"
-      />
+      >
+        <template #default="{ row }">
+          {{ getDisplayName(row) }}
+        </template>
+      </el-table-column>
       <el-table-column
         prop="config_value"
         :label="$t('system.config.columns.value')"
@@ -131,7 +139,7 @@
               :type="row.config_value === 'true' ? 'success' : 'info'"
               size="small"
             >
-              {{ row.config_value === 'true' ? 'Enabled' : 'Disabled' }}
+              {{ row.config_value === 'true' ? $t('system.config.status.enabled') : $t('system.config.status.disabled') }}
             </el-tag>
           </span>
           <span
@@ -153,7 +161,7 @@
             size="small"
             :type="getValueTypeColor(row.value_type)"
           >
-            {{ row.value_type }}
+            {{ getValueTypeLabel(row.value_type) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -161,7 +169,11 @@
         prop="category"
         :label="$t('system.config.columns.category')"
         width="120"
-      />
+      >
+        <template #default="{ row }">
+          {{ getCategoryLabel(row.category) }}
+        </template>
+      </el-table-column>
       <el-table-column
         :label="$t('system.config.columns.isSystem')"
         width="80"
@@ -173,16 +185,19 @@
             type="warning"
             size="small"
           >
-            System
+            {{ $t('system.config.tags.system') }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
-        prop="description"
         :label="$t('system.config.columns.description')"
         min-width="150"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          {{ getDisplayDescription(row) }}
+        </template>
+      </el-table-column>
       <el-table-column
         :label="$t('common.labels.operation')"
         width="180"
@@ -237,18 +252,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { SystemConfig } from '@/api/system'
 import { systemConfigApi } from '@/api/system'
 import SystemConfigForm from './components/SystemConfigForm.vue'
 
+type SystemConfigValueType = 'string' | 'integer' | 'float' | 'boolean' | 'json'
+
+interface SystemConfigRow extends Partial<SystemConfig> {
+  config_key?: string
+  config_value?: string
+  value_type?: SystemConfigValueType
+  is_system?: boolean
+  is_encrypted?: boolean
+}
+
+interface SystemConfigListResponse {
+  results?: SystemConfigRow[]
+  count?: number
+}
+
+interface SystemConfigListParams {
+  page: number
+  page_size: number
+  category?: string
+  search?: string
+  value_type?: string
+}
+
 const loading = ref(false)
-const tableData = ref<SystemConfig[]>([])
+const tableData = ref<SystemConfigRow[]>([])
 const dialogVisible = ref(false)
 const activeCategory = ref('')
-const currentRow = ref<SystemConfig | null>(null)
+const currentRow = ref<SystemConfigRow | null>(null)
 const { t } = useI18n()
 
 const filterForm = reactive({
@@ -262,7 +300,7 @@ const pagination = reactive({
   total: 0
 })
 
-const getValueTypeColor = (type: string) => {
+const getValueTypeColor = (type?: string) => {
   const colorMap: Record<string, string> = {
     string: '',
     integer: 'success',
@@ -270,10 +308,59 @@ const getValueTypeColor = (type: string) => {
     boolean: 'info',
     json: 'danger'
   }
+  if (!type) return ''
   return colorMap[type] || ''
 }
 
-const formatJsonDisplay = (value: string) => {
+const getValueTypeLabel = (type: string) => {
+  const key = `system.config.valueTypes.${type}`
+  const label = t(key)
+  return label === key ? type : label
+}
+
+const getCategoryLabel = (category?: string) => {
+  const safeCategory = category || ''
+  if (!safeCategory) {
+    return t('system.config.tabs.all')
+  }
+  const key = `system.config.categories.${safeCategory}`
+  const label = t(key)
+  return label === key ? safeCategory : label
+}
+
+const FEATURE_FLAG_CONFIG_KEYS = new Set([
+  'runtime_i18n_enabled',
+  'layout_merge_unified_enabled',
+  'field_code_strict_mode'
+])
+
+const getFeatureFlagI18nBaseKey = (configKey?: string) => {
+  if (!configKey || !FEATURE_FLAG_CONFIG_KEYS.has(configKey)) {
+    return ''
+  }
+  return `system.config.featureFlags.${configKey}`
+}
+
+const getDisplayName = (row: SystemConfigRow) => {
+  const configKey = row.config_key || row.configKey
+  const baseKey = getFeatureFlagI18nBaseKey(configKey)
+  if (!baseKey) {
+    return row.name || ''
+  }
+  return t(`${baseKey}.name`)
+}
+
+const getDisplayDescription = (row: SystemConfigRow) => {
+  const configKey = row.config_key || row.configKey
+  const baseKey = getFeatureFlagI18nBaseKey(configKey)
+  if (!baseKey) {
+    return row.description || ''
+  }
+  return t(`${baseKey}.description`)
+}
+
+const formatJsonDisplay = (value?: string) => {
+  if (!value) return ''
   try {
     const parsed = JSON.parse(value)
     if (typeof parsed === 'object') {
@@ -288,7 +375,7 @@ const formatJsonDisplay = (value: string) => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const params: any = {
+    const params: SystemConfigListParams = {
       page: pagination.page,
       page_size: pagination.pageSize
     }
@@ -302,10 +389,10 @@ const fetchData = async () => {
       params.value_type = filterForm.value_type
     }
 
-    const res = await systemConfigApi.list(params) as any
+    const res = await systemConfigApi.list(params) as SystemConfigListResponse
     tableData.value = res.results || []
     pagination.total = res.count || 0
-  } catch (error) {
+  } catch {
     ElMessage.error(t('system.config.messages.loadFailed'))
   } finally {
     loading.value = false
@@ -333,17 +420,21 @@ const handleCreate = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (row: SystemConfig) => {
+const handleEdit = (row: SystemConfigRow) => {
   currentRow.value = row
   dialogVisible.value = true
 }
 
-const handleDelete = async (row: SystemConfig) => {
+const handleDelete = async (row: SystemConfigRow) => {
+  if (!row.id) {
+    ElMessage.error(t('common.messages.operationFailed'))
+    return
+  }
   try {
     await systemConfigApi.delete(row.id)
     ElMessage.success(t('common.messages.deleteSuccess'))
     await fetchData()
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error !== 'cancel') {
       ElMessage.error(t('common.messages.deleteFailed'))
     }

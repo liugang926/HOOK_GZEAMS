@@ -31,19 +31,19 @@ import BaseDetailPage, {
 import { useFieldMetadata } from '@/composables/useFieldMetadata'
 import type { FieldDefinition } from '@/types'
 import request from '@/utils/request'
-import { isSystemField } from '@/utils/transform'
 import { createObjectClient } from '@/api/dynamic'
 import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
 import { orderFieldsWithSchema } from '@/platform/layout/unifiedFieldOrder'
 import { buildRenderSchema } from '@/platform/layout/renderSchema'
-import { projectDetailSectionsFromRenderSchema } from '@/platform/layout/detailSchemaProjector'
-import { isAuditFieldCode, normalizeDetailSpan, toUnifiedDetailField, buildRequiredFormRules } from '@/platform/layout/unifiedDetailField'
+import { projectUnifiedDetailSectionsFromLayout, shouldSkipUnifiedDetailField } from '@/platform/layout/unifiedDetailSections'
+import { createModePolicyForContext } from '@/platform/layout/layoutRenderModel'
+import { toUnifiedDetailField, buildRequiredFormRules } from '@/platform/layout/unifiedDetailField'
 
 const { t } = useI18n()
 const slots = useSlots()
 
 const isDetailDebugEnabled = (() => {
-  if (!import.meta.env.DEV || typeof window === 'undefined') return false
+  if (!(import.meta as any).env?.DEV || typeof window === 'undefined') return false
   return window.localStorage.getItem('detail_debug') === '1'
 })()
 
@@ -290,7 +290,7 @@ function groupFieldsBySection(fields: FieldDefinition[]): Record<string, FieldDe
   for (const field of fields) {
     if (shouldSkipField(field)) continue
 
-    const sectionName = field.sectionName || 'basic'
+    const sectionName = (field as any).sectionName || 'basic'
     if (!groups[sectionName]) {
       groups[sectionName] = []
     }
@@ -311,19 +311,7 @@ function groupFieldsBySection(fields: FieldDefinition[]): Record<string, FieldDe
  * In fallback mode (metadata loaded from form context), we respect form visibility flags.
  */
 function shouldSkipField(field: FieldDefinition): boolean {
-  const hidden = (field as any).isHidden ?? (field as any).is_hidden
-  if (hidden) return true
-
-  // Keep framework/audit fields out of content sections; audit info is rendered separately.
-  if (isSystemField(field)) return true
-
-  if (metadataSourceContext.value === 'form') {
-    const showInForm = (field as any).showInForm ?? (field as any).show_in_form
-    return showInForm === false
-  }
-
-  const showInDetail = (field as any).showInDetail ?? (field as any).show_in_detail
-  return showInDetail === false
+  return shouldSkipUnifiedDetailField(field, metadataSourceContext.value)
 }
 
 /**
@@ -338,27 +326,16 @@ function buildSectionsFromRuntimeLayout(
   fields: FieldDefinition[],
   options: { strictVisibility?: boolean } = {}
 ): DetailSection[] {
-  const strictVisibility = options.strictVisibility !== false
-  const renderSchema = buildRenderSchema({
-    // Keep detail rendering order aligned with edit layout model.
-    mode: 'edit',
-    fields: fields as any[],
-    layoutConfig: { sections: layoutSections || [] }
+  const modePolicy = createModePolicyForContext('detail-runtime', {
+    metadataContext: metadataSourceContext.value,
+    strictVisibility: options.strictVisibility === true
   })
-
-  return projectDetailSectionsFromRenderSchema(renderSchema, fields, {
-    strictVisibility,
-    isAuditFieldCode,
-    mustSkipField: (field) => {
-      if (isSystemField(field) || isAuditFieldCode(field.code)) return true
-      const hidden = (field as any).isHidden ?? (field as any).is_hidden
-      return hidden === true
-    },
-    shouldSkipField,
-    fieldToDetailField: (field) => fieldToDetailField(field) as DetailField,
+  return projectUnifiedDetailSectionsFromLayout({
+    layoutSections,
+    fields,
+    modePolicy,
     getSectionTitle,
-    getSectionIcon,
-    normalizeSpan: normalizeDetailSpan
+    getSectionIcon
   }) as DetailSection[]
 }
 
@@ -531,7 +508,7 @@ async function handleSave(updatedFormData: Record<string, any>) {
   if (baseDetailRef.value) {
     const valid = await baseDetailRef.value.validateForm()
     if (!valid) {
-      ElMessage.warning(t('common.messages.formValidationFailed', '表单校验失败，请检查必填项'))
+      ElMessage.warning(t('common.messages.formValidationFailed'))
       return
     }
   }
@@ -539,11 +516,11 @@ async function handleSave(updatedFormData: Record<string, any>) {
   submitting.value = true
   try {
     await apiClient.value.update(recordId.value, updatedFormData)
-    ElMessage.success(t('common.detailPage.saveSuccess', '保存成功'))
+    ElMessage.success(t('common.detailPage.saveSuccess'))
     isEditing.value = false
     await fetchRecordDetail()
   } catch (error: any) {
-    ElMessage.error(error.message || t('common.detailPage.saveFailed', '保存失败'))
+    ElMessage.error(error.message || t('common.detailPage.saveFailed'))
   } finally {
     submitting.value = false
   }

@@ -54,7 +54,9 @@
     "loadFailed": "loadFailed",
     "recordIdNotExists": "recordIdNotExists",
     "statusInfo": "statusInfo",
-    "title": "title"
+    "title": "title",
+    "saveSuccess": "????",
+    "saveFailed": "????"
   },
   "dialog": {
     "confirmDelete": "确认删除",
@@ -80,9 +82,25 @@
     "system": "系统",
     "totalItems": "totalItems",
     "updatedAt": "最后更新时间",
-    "updatedBy": "最后更新人"
+    "updatedBy": "最后更新人",
+    "record": "记录"
   },
   "locationInfo": "locationInfo",
+  "localeSwitcher": {
+    "title": "语言偏好",
+    "actions": {
+      "syncProfile": "同步到个人偏好",
+      "localOnly": "仅本地切换"
+    },
+    "prompts": {
+      "syncProfile": "是否同时将该语言同步到你的个人偏好？"
+    },
+    "messages": {
+      "profileSynced": "语言已切换并同步到个人偏好",
+      "profileSyncFailed": "语言已本地切换，但同步个人偏好失败",
+      "localOnlySwitched": "语言已本地切换"
+    }
+  },
   "messages": {
     "addSuccess": "addSuccess",
     "cancelSuccess": "取消成功",
@@ -102,7 +120,12 @@
     "selected": "已选择 {count} 项",
     "tips": "提示",
     "updateFailed": "更新失败",
-    "updateSuccess": "更新成功"
+    "updateSuccess": "更新成功",
+    "noSearchResults": "未找到匹配项",
+    "records": "条记录",
+    "emptyHint": "暂无数据，请尝试创建一条新记录",
+    "systemError": "系统出错",
+    "formValidationFailed": "?????????????"
   },
   "no": "否",
   "notes": "notes",
@@ -162,7 +185,8 @@
     "selectDept": "selectDept",
     "selectRole": "selectRole",
     "selectUser": "selectUser",
-    "systemAdmin": "systemAdmin"
+    "systemAdmin": "systemAdmin",
+    "allFields": "全部字段"
   },
   "status": {
     "abnormal": "异常",

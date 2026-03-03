@@ -33,8 +33,8 @@ export const useLocaleStore = defineStore('locale', () => {
             console.warn('Failed to load languages from API, using fallback:', error)
             // Fallback to static list
             availableLanguages.value = [
-                { id: '', code: 'zh-CN', name: 'Chinese (Simplified)', nativeName: '简体中文', flagEmoji: '🇨🇳', isActive: true, isDefault: true, sortOrder: 0 },
-                { id: '', code: 'en-US', name: 'English (US)', nativeName: 'English', flagEmoji: '🇺🇸', isActive: true, isDefault: false, sortOrder: 1 }
+                { id: '', code: 'zh-CN', name: 'zh-CN', nativeName: 'zh-CN', flagEmoji: '🇨🇳', isActive: true, isDefault: true, sortOrder: 0 },
+                { id: '', code: 'en-US', name: 'en-US', nativeName: 'en-US', flagEmoji: '🇺🇸', isActive: true, isDefault: false, sortOrder: 1 }
             ]
             languagesLoaded.value = true
         }

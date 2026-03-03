@@ -132,6 +132,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import SectionBlock from '@/components/common/SectionBlock.vue'
@@ -140,6 +141,7 @@ import { languageApi } from '@/api/translations'
 import type { Language } from '@/api/translations'
 
 // State
+const { t } = useI18n()
 const loading = ref(false)
 const languages = ref<Language[]>([])
 const dialogVisible = ref(false)
@@ -149,10 +151,17 @@ const currentLanguage = ref<Language | null>(null)
 const loadLanguages = async () => {
   loading.value = true
   try {
-    const { data } = await languageApi.list()
-    if (data) {
-      languages.value = data
+    const response = await languageApi.list()
+    const payload = (response as any)?.data ?? response
+    if (Array.isArray(payload)) {
+      languages.value = payload as Language[]
+      return
     }
+    if (Array.isArray(payload?.data)) {
+      languages.value = payload.data as Language[]
+      return
+    }
+    languages.value = []
   } finally {
     loading.value = false
   }
@@ -174,10 +183,10 @@ const handleEdit = (row: Language) => {
 const handleSetDefault = async (row: Language) => {
   try {
     await languageApi.setDefault(row.id)
-    ElMessage.success(`${row.name} set as default language`)
+    ElMessage.success(t('system.languages.messages.setDefaultSuccess', { name: row.name }))
     loadLanguages()
   } catch (error) {
-    ElMessage.error('Failed to set default language')
+    ElMessage.error(t('system.languages.messages.setDefaultFailed'))
   }
 }
 
@@ -185,11 +194,15 @@ const handleSetDefault = async (row: Language) => {
 const handleToggleActive = async (row: Language) => {
   try {
     await languageApi.update(row.id, { isActive: row.isActive })
-    ElMessage.success(`Language ${row.isActive ? 'activated' : 'deactivated'}`)
+    ElMessage.success(
+      row.isActive
+        ? t('system.languages.messages.activateSuccess')
+        : t('system.languages.messages.deactivateSuccess')
+    )
   } catch (error) {
     // Revert on error
     row.isActive = !row.isActive
-    ElMessage.error('Failed to update language')
+    ElMessage.error(t('system.languages.messages.updateFailed'))
   }
 }
 
@@ -197,10 +210,10 @@ const handleToggleActive = async (row: Language) => {
 const handleDelete = async (id: string) => {
   try {
     await languageApi.delete(id)
-    ElMessage.success('Language deleted successfully')
+    ElMessage.success(t('system.languages.messages.deleteSuccess'))
     loadLanguages()
   } catch (error) {
-    ElMessage.error('Failed to delete language')
+    ElMessage.error(t('system.languages.messages.deleteFailed'))
   }
 }
 

@@ -1,5 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
-
+import { waitForDesignerReady } from '../helpers/page-ready.helpers'
 type AnyRecord = Record<string, any>
 
 const OBJECT_CODE = 'Asset'
@@ -159,7 +159,7 @@ test.describe('Layout Designer Locale Switch Persistence Regression', () => {
     await page.goto(
       `/system/page-layouts/designer?layoutId=${LAYOUT_ID}&objectCode=${OBJECT_CODE}&layoutType=readonly&layoutName=Asset%20Readonly&businessObjectId=bo-asset`
     )
-    await expect(page.getByTestId('layout-designer')).toBeVisible()
+    await waitForDesignerReady(page)
 
     const previewField = page.locator('[data-testid="layout-canvas-field"][data-field-code="assetName"]').first()
     await previewField.click({ position: { x: 4, y: 4 } })
@@ -175,9 +175,11 @@ test.describe('Layout Designer Locale Switch Persistence Regression', () => {
     await localeTrigger.click()
     await page.locator('.el-dropdown-menu__item:not(.is-disabled)').first().click()
 
-    await expect(page.getByTestId('layout-designer')).toBeVisible()
+    await waitForDesignerReady(page)
     await expect(labelInput).toHaveValue(UPDATED_LABEL)
     await expect(page.locator('[data-testid="layout-canvas-field"][data-field-code="assetName"] .el-form-item__label')).toContainText(UPDATED_LABEL)
     await expect(page.getByTestId('layout-save-button').first()).toBeEnabled()
   })
 })
+
+

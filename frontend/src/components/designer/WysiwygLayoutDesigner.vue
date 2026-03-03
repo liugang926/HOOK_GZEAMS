@@ -23,7 +23,7 @@
           @click="handleCancel"
         >
           <el-icon><ArrowLeft /></el-icon>
-          返回
+          {{ t('common.actions.back') }}
         </el-button>
         <el-divider direction="vertical" />
         <span class="layout-info">{{ layoutName }} ({{ modeLabel }})</span>
@@ -32,7 +32,7 @@
           type="warning"
           size="small"
         >
-          自定义布局
+          {{ t('system.pageLayout.designer.badges.customLayout') }}
         </el-tag>
       </div>
       <div class="toolbar-center">
@@ -43,7 +43,7 @@
             @click="undo"
           >
             <el-icon><RefreshLeft /></el-icon>
-            撤销
+            {{ t('system.pageLayout.designer.actions.undo') }}
           </el-button>
           <el-button
             data-testid="layout-redo-button"
@@ -51,7 +51,7 @@
             @click="redo"
           >
             <el-icon><RefreshRight /></el-icon>
-            重做
+            {{ t('system.pageLayout.designer.actions.redo') }}
           </el-button>
         </el-button-group>
       </div>
@@ -60,7 +60,7 @@
           data-testid="layout-reset-button"
           @click="handleReset"
         >
-          恢复默认
+          {{ t('system.pageLayout.designer.actions.reset') }}
         </el-button>
         <el-button-group>
           <el-button
@@ -70,7 +70,7 @@
             :type="previewMode === 'current' ? 'primary' : 'default'"
             @click="setPreviewMode('current')"
           >
-            自定义
+            {{ t('system.pageLayout.designer.actions.custom') }}
           </el-button>
           <el-button
             size="small"
@@ -80,21 +80,21 @@
             :type="previewMode === 'active' ? 'primary' : 'default'"
             @click="setPreviewMode('active')"
           >
-            预览
+            {{ t('system.pageLayout.designer.actions.preview') }}
           </el-button>
         </el-button-group>
         <el-tag
           size="small"
           effect="plain"
         >
-          {{ previewMode === 'active' ? '预览模式' : '自定义模式' }}
+          {{ previewMode === 'active' ? t('system.pageLayout.designer.status.previewMode') : t('system.pageLayout.designer.status.customMode') }}
         </el-tag>
         <el-button
           :disabled="previewMode === 'active'"
           data-testid="layout-save-button"
           @click="handleSave"
         >
-          保存草稿
+          {{ t('system.pageLayout.designer.actions.saveDraft') }}
         </el-button>
         <el-button
           type="success"
@@ -103,7 +103,7 @@
           data-testid="layout-publish-button"
           @click="handlePublish"
         >
-          发布
+          {{ t('system.pageLayout.designer.actions.publish') }}
         </el-button>
       </div>
     </div>
@@ -119,7 +119,7 @@
         <div class="panel-header">
           <el-input
             v-model="searchQuery"
-            placeholder="搜索字段名称或编�?.."
+            :placeholder="t('system.pageLayout.designer.placeholders.searchField')"
             :prefix-icon="Search"
             size="small"
             clearable
@@ -196,8 +196,8 @@
       >
         <div class="canvas-header">
           <div class="canvas-header-left">
-            <span v-if="renderMode === 'design'">布局设计画布（点击字段可编辑属性）</span>
-            <span v-else>预览态渲染（与对象详情页一致，可切换编辑）</span>
+            <span v-if="renderMode === 'design'">{{ t('system.pageLayout.designer.hints.designCanvas') }}</span>
+            <span v-else>{{ t('system.pageLayout.designer.hints.previewCanvas') }}</span>
           </div>
           <div class="canvas-header-right">
             <el-radio-group
@@ -206,10 +206,14 @@
               @update:model-value="setRenderMode"
             >
               <el-radio-button label="design">
-                设计态
+                <span data-testid="layout-render-design-button">
+                {{ t('system.pageLayout.designer.status.designState') }}
+                </span>
               </el-radio-button>
               <el-radio-button label="preview">
-                预览态
+                <span data-testid="layout-render-preview-button">
+                {{ t('system.pageLayout.designer.status.previewState') }}
+                </span>
               </el-radio-button>
             </el-radio-group>
             <el-button
@@ -219,7 +223,7 @@
               @click="addSection"
             >
               <el-icon><Plus /></el-icon>
-              新增分区
+              {{ t('system.pageLayout.designer.actions.addSection') }}
             </el-button>
           </div>
         </div>
@@ -227,7 +231,7 @@
           ref="canvasContentRef"
           class="canvas-content"
         >
-          <template v-if="renderMode === 'design'">
+          <div class="canvas-render-shell">
             <!-- Render the actual form using real components -->
             <div
               v-if="layoutConfig.sections && layoutConfig.sections.length > 0"
@@ -241,10 +245,12 @@
                 :show-back="false"
                 :show-edit="false"
                 :show-delete="false"
+                section-header-test-id="layout-section-header"
                 :show-related-objects="true"
                 :object-code="objectCode"
                 :object-name="previewObjectName"
                 :reverse-relations="previewReverseRelations"
+                @section-click="maybeSelectSection"
               >
                 <template
                   v-for="(section, sectionIndex) in (layoutConfig.sections || [])"
@@ -254,21 +260,13 @@
                   <div
                     class="designer-section-slot layout-section"
                     data-testid="layout-section"
-                    :class="{ 'is-selected': selectedId === section.id }"
+                    :class="{ 'is-selected': isDesignMode && selectedId === section.id }"
                     :data-section-id="section.id"
                     :data-section-position="section.position"
-                    @click.stop="selectSection(section.id)"
+                    @click.stop="maybeSelectSection(section.id)"
                   >
                     <div
-                      class="designer-section-header-proxy"
-                      data-testid="layout-section-header"
-                      @click.stop="selectSection(section.id)"
-                    >
-                      <span class="title-text">{{ section.title || 'Untitled Section' }}</span>
-                    </div>
-
-                    <div
-                      v-if="selectedId === section.id"
+                      v-if="isDesignMode && selectedId === section.id"
                       class="designer-section-toolbar"
                       @click.stop
                     >
@@ -277,7 +275,7 @@
                         text
                         @click="selectSection(section.id)"
                       >
-                        编辑分区
+                        {{ t('system.pageLayout.designer.actions.editSection') }}
                       </el-button>
                       <el-button
                         v-if="section.collapsible"
@@ -285,7 +283,7 @@
                         text
                         @click="toggleSectionCollapse(section.id)"
                       >
-                        {{ section.collapsed ? 'Expand' : 'Collapse' }}
+                        {{ section.collapsed ? t('common.actions.expand') : t('common.actions.collapse') }}
                       </el-button>
                       <el-button
                         size="small"
@@ -293,7 +291,7 @@
                         type="danger"
                         @click="deleteSection(section.id)"
                       >
-                        删除分区
+                        {{ t('system.pageLayout.designer.actions.deleteSection') }}
                       </el-button>
                     </div>
 
@@ -333,10 +331,11 @@
                                 :field="field"
                                 :display-field="fieldToDesignDisplayField(field)"
                                 :value="sampleData[field.fieldCode] ?? getSampleValue(field)"
-                                :selected="selectedId === field.id"
+                                :selected="isDesignMode && selectedId === field.id"
+                                :interactive="isDesignMode"
                                 :section-id="section.id"
                                 :section-index="sectionIndex"
-                                @select="selectField(field, section)"
+                                @select="maybeSelectField(field, section)"
                                 @remove="removeField"
                               />
                             </el-col>
@@ -345,7 +344,7 @@
                               :span="24"
                               class="empty-column-placeholder compact"
                             >
-                              拖拽字段到当前标签页
+                              {{ t('system.pageLayout.designer.hints.dropToTab') }}
                             </el-col>
                           </el-row>
                         </el-tab-pane>
@@ -394,10 +393,11 @@
                                   :field="field"
                                   :display-field="fieldToDesignDisplayField(field)"
                                   :value="sampleData[field.fieldCode] ?? getSampleValue(field)"
-                                  :selected="selectedId === field.id"
+                                  :selected="isDesignMode && selectedId === field.id"
+                                  :interactive="isDesignMode"
                                   :section-id="section.id"
                                   :section-index="sectionIndex"
-                                  @select="selectField(field, section)"
+                                  @select="maybeSelectField(field, section)"
                                   @remove="removeField"
                                 />
                               </el-col>
@@ -407,7 +407,7 @@
                               :span="24"
                               class="empty-column-placeholder compact"
                             >
-                              拖拽字段到当前折叠项
+                              {{ t('system.pageLayout.designer.hints.dropToCollapse') }}
                             </el-col>
                           </div>
                         </el-collapse-item>
@@ -439,11 +439,12 @@
                                 :field="field"
                                 :display-field="fieldToDesignDisplayField(field)"
                                 :value="sampleData[field.fieldCode] ?? getSampleValue(field)"
-                                :selected="selectedId === field.id"
+                                :selected="isDesignMode && selectedId === field.id"
+                                :interactive="isDesignMode"
                                 :sidebar="true"
                                 :section-id="section.id"
                                 :section-index="sectionIndex"
-                                @select="selectField(field, section)"
+                                @select="maybeSelectField(field, section)"
                                 @remove="removeField"
                               />
                             </div>
@@ -452,7 +453,7 @@
                               :span="24"
                               class="empty-column-placeholder compact"
                             >
-                              拖拽字段到当前分区
+                              {{ t('system.pageLayout.designer.hints.dropToSection') }}
                             </el-col>
                           </div>
                         </template>
@@ -475,10 +476,11 @@
                                 :field="field"
                                 :display-field="fieldToDesignDisplayField(field)"
                                 :value="sampleData[field.fieldCode] ?? getSampleValue(field)"
-                                :selected="selectedId === field.id"
+                                :selected="isDesignMode && selectedId === field.id"
+                                :interactive="isDesignMode"
                                 :section-id="section.id"
                                 :section-index="sectionIndex"
-                                @select="selectField(field, section)"
+                                @select="maybeSelectField(field, section)"
                                 @remove="removeField"
                               />
                             </el-col>
@@ -486,7 +488,7 @@
                               v-if="!section.fields || section.fields.length === 0"
                               class="empty-column-placeholder compact"
                             >
-                              拖拽字段到当前分区
+                              {{ t('system.pageLayout.designer.hints.dropToSection') }}
                             </div>
                           </el-row>
                         </template>
@@ -502,40 +504,17 @@
               v-else
               class="empty-canvas"
             >
-              <el-empty description="Layout is empty. Add a section to start designing.">
+              <el-empty :description="t('system.pageLayout.designer.empty.layoutEmpty')">
                 <el-button
+                  v-if="isDesignMode"
                   type="primary"
                   @click="addSection"
                 >
-                  新增分区
+                  {{ t('system.pageLayout.designer.actions.addSection') }}
                 </el-button>
               </el-empty>
             </div>
-          </template>
-          <template v-else>
-            <div class="runtime-preview-card detail-mode-preview dynamic-detail-page">
-              <BaseDetailPage
-                v-model:form-data="sampleData"
-                :title="previewPageTitle"
-                :sections="detailPreviewSections"
-                :data="sampleData"
-                :form-rules="previewFormRules"
-                :audit-info="previewAuditInfo"
-                :show-back="false"
-                :show-edit="true"
-                :show-delete="true"
-                :show-related-objects="true"
-                :edit-mode="previewEditMode"
-                :object-code="objectCode"
-                :object-name="previewObjectName"
-                :reverse-relations="previewReverseRelations"
-                @edit="handlePreviewEnterEdit"
-                @save="handleDetailPreviewSave"
-                @cancel="handleDetailPreviewCancel"
-                @delete="handlePreviewDelete"
-              />
-            </div>
-          </template>
+          </div>
         </div>
       </div>
 
@@ -546,7 +525,7 @@
         data-testid="layout-property-panel"
       >
         <div class="panel-header">
-          <span>Properties</span>
+          <span>{{ t('system.pageLayout.designer.panel.properties') }}</span>
         </div>
         <div class="panel-content">
           <!-- No Selection -->
@@ -555,7 +534,7 @@
             class="no-selection"
           >
             <el-empty
-              description="Select a field or section to edit its properties."
+              :description="t('system.pageLayout.designer.empty.selectTarget')"
               :image-size="80"
             />
           </div>
@@ -567,7 +546,7 @@
           >
             <div class="property-header">
               <el-icon><Edit /></el-icon>
-              <span>Field Properties</span>
+              <span>{{ t('system.pageLayout.designer.panel.fieldProperties') }}</span>
               <el-tag size="small">
                 {{ selectedItem.fieldCode }}
               </el-tag>
@@ -590,7 +569,7 @@
           >
             <div class="property-header">
               <el-icon><Grid /></el-icon>
-              <span>Section Properties</span>
+              <span>{{ t('system.pageLayout.designer.panel.sectionProperties') }}</span>
             </div>
             <SectionPropertyEditor
               v-model="sectionProps"
@@ -607,6 +586,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import Sortable from 'sortablejs'
 import {
@@ -624,14 +604,11 @@ import { pageLayoutApi } from '@/api/system'
 import { useLayoutHistory } from '@/composables/useLayoutHistory'
 import { normalizeFieldType } from '@/utils/fieldType'
 import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
-import { buildRenderSchema, type RenderSchema } from '@/platform/layout/renderSchema'
-import { projectDetailSectionsFromRenderSchema } from '@/platform/layout/detailSchemaProjector'
-import { isAuditFieldCode, normalizeDetailSpan, toUnifiedDetailField, buildRequiredFormRules } from '@/platform/layout/unifiedDetailField'
+import { normalizeDetailSpan, toUnifiedDetailField } from '@/platform/layout/unifiedDetailField'
 import { toRuntimeFieldFromLayout } from '@/platform/layout/unifiedRuntimeField'
 import { canAddFieldInDesigner, getFieldDisabledReason } from '@/platform/layout/designerFieldGuard'
 import { ensureLayoutConfigIds as ensurePersistLayoutConfigIds, preparePersistLayoutConfig } from '@/platform/layout/layoutPersistGuard'
 import { mergeFieldSources } from '@/platform/layout/unifiedFieldOrder'
-import { isSystemField } from '@/utils/transform'
 import {
   getDefaultLayoutConfig,
   cloneLayoutConfig,
@@ -740,7 +717,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   layoutId: '',
   mode: 'edit',
-  layoutName: '新建布局',
+  layoutName: '',
   objectCode: '',
   businessObjectId: '',
   initialPreviewMode: 'current',
@@ -752,6 +729,7 @@ const emit = defineEmits<{
   cancel: []
   published: [data: Record<string, unknown>]
 }>()
+const { t } = useI18n()
 
 // ============================================================================
 // State
@@ -762,6 +740,7 @@ const layoutConfig = ref<LayoutConfig>(
 )
 const selectedId = ref<string>('')
 const renderMode = ref<'design' | 'preview'>('design')
+const isDesignMode = computed(() => renderMode.value === 'design')
 const previewMode = ref<'current' | 'active'>('current')
 const currentLayoutSnapshot = ref<LayoutConfig | null>(null)
 const previewLoading = ref(false)
@@ -787,8 +766,6 @@ const previewReverseRelations = ref<ReverseRelationField[]>([])
 
 // Sample data for preview
 const sampleData = ref<Record<string, any>>({})
-const previewEditSnapshot = ref<Record<string, any> | null>(null)
-const previewEditMode = ref(false)
 const canvasContentRef = ref<HTMLElement | null>(null)
 
 type ContainerKind = 'section' | 'tab' | 'collapse'
@@ -863,7 +840,7 @@ const applySortableMove = (evt: any) => {
   if (oldIndex === null || newIndex === null) return
 
   const previousConfig = cloneLayoutConfig(layoutConfig.value)
-  const newConfig = cloneLayoutConfig(layoutConfig.value)
+  const newConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
   const fromArr = getFieldArrayRef(newConfig, fromMeta)
   const toArr = getFieldArrayRef(newConfig, toMeta)
   if (!fromArr || !toArr) return
@@ -929,11 +906,11 @@ const { canUndo, canRedo, undo, redo, historyLength } = history
 
 function commitLayoutChange(newConfig: LayoutConfig, description: string, previousConfig?: LayoutConfig) {
   if (historyLength.value === 0) {
-    const baseline = cloneLayoutConfig(previousConfig || layoutConfig.value)
+    const baseline = cloneLayoutConfig(previousConfig || layoutConfig.value) as Record<string, unknown>
     history.push(baseline, 'Initial state')
   }
   layoutConfig.value = newConfig
-  history.push(newConfig, description)
+  history.push(newConfig as unknown as Record<string, unknown>, description)
 }
 
 // Property form state
@@ -946,11 +923,11 @@ const sectionProps = ref<Partial<LayoutSection>>({})
 
 const modeLabel = computed(() => {
   const labels: Record<LayoutMode, string> = {
-    edit: 'Edit Layout',
-    readonly: 'Readonly Layout',
-    search: 'Search Layout'
+    edit: t('system.pageLayout.modes.edit'),
+    readonly: t('system.pageLayout.modes.readonly'),
+    search: t('system.pageLayout.modes.search')
   }
-  return labels[props.mode] || props.mode
+  return labels[props.mode] || String(props.mode)
 })
 
 const selectedItem = computed(() => {
@@ -1252,51 +1229,6 @@ const previewFieldDefinitions = computed<RuntimeFieldDefinition[]>(() => {
   return Array.from(map.values())
 })
 
-const previewRenderSchema = computed<RenderSchema>(() => {
-  return buildRenderSchema({
-    mode: 'edit',
-    layoutConfig: layoutConfig.value || { sections: [] },
-    fields: previewFieldDefinitions.value as any[]
-  })
-})
-
-function shouldSkipPreviewDetailField(field: RuntimeFieldDefinition): boolean {
-  const hidden = (field as any).isHidden ?? (field as any).is_hidden
-  if (hidden) return true
-  if (isSystemField(field)) return true
-  // Keep visibility semantics aligned with DynamicDetailPage runtime path:
-  // detail rendering currently reuses edit metadata (showInForm first).
-  const showInForm = (field as any).showInForm ?? (field as any).show_in_form
-  if (showInForm === false) return true
-  const showInDetail = (field as any).showInDetail ?? (field as any).show_in_detail
-  if (showInForm === undefined && showInDetail === false) return true
-  return false
-}
-
-function fieldToPreviewDetailField(field: RuntimeFieldDefinition): DetailField {
-  return toUnifiedDetailField(field as any) as DetailField
-}
-
-const detailPreviewSections = computed<DetailSection[]>(() => {
-  return projectDetailSectionsFromRenderSchema(
-    previewRenderSchema.value,
-    previewFieldDefinitions.value as any[],
-    {
-      // Align with DynamicDetailPage runtime path: detail reuses edit layout model.
-      strictVisibility: false,
-      isAuditFieldCode,
-      mustSkipField: (field) => {
-        if (isSystemField(field) || isAuditFieldCode(field.code)) return true
-        const hidden = (field as any).isHidden ?? (field as any).is_hidden
-        return hidden === true
-      },
-      shouldSkipField: (field) => shouldSkipPreviewDetailField(field as RuntimeFieldDefinition),
-      fieldToDetailField: (field) => fieldToPreviewDetailField(field as RuntimeFieldDefinition) as DetailField,
-      normalizeSpan: normalizeDetailSpan
-    }
-  ) as DetailSection[]
-})
-
 const designerCanvasSections = computed<DetailSection[]>(() => {
   return (layoutConfig.value.sections || []).map((section: LayoutSection) => ({
     name: section.id,
@@ -1340,46 +1272,11 @@ const previewPageTitle = computed(() => {
   return props.layoutName || previewObjectName.value
 })
 
-const previewFormRules = computed<Record<string, any>>(() => {
-  return buildRequiredFormRules(previewFieldDefinitions.value as any[])
-})
-
 function setRenderMode(mode: string | number) {
   const nextMode = mode === 'preview' || mode === 'design'
     ? mode
     : 'design'
   renderMode.value = nextMode
-}
-
-function handleDetailPreviewSave(value: Record<string, any>) {
-  sampleData.value = {
-    ...sampleData.value,
-    ...(value || {})
-  }
-  previewEditSnapshot.value = null
-  previewEditMode.value = false
-  renderMode.value = 'preview'
-  ElMessage.success('预览模式：示例数据已更新（未保存到后台）')
-}
-
-function handleDetailPreviewCancel() {
-  if (previewEditSnapshot.value) {
-    sampleData.value = { ...previewEditSnapshot.value }
-  }
-  previewEditSnapshot.value = null
-  previewEditMode.value = false
-  renderMode.value = 'preview'
-  ElMessage.info('预览模式：已取消编辑')
-}
-
-function handlePreviewEnterEdit() {
-  previewEditSnapshot.value = { ...sampleData.value }
-  previewEditMode.value = true
-  renderMode.value = 'preview'
-}
-
-function handlePreviewDelete() {
-  ElMessage.info('预览模式：删除操作仅用于界面演示，不会删除真实数据')
 }
 
 function isGroupExpanded(type: string): boolean {
@@ -1409,7 +1306,7 @@ function canAddField(field: FieldDefinition): boolean {
 function notifyUnsupportedField(field: FieldDefinition): void {
   const reason = getDisabledReason(field)
   if (!reason) return
-  ElMessage.warning(`Cannot add "${field.name}": ${reason}`)
+  ElMessage.warning(t('system.pageLayout.designer.messages.cannotAddField', { name: field.name, reason }))
 }
 
 function extractRelatedObjectCode(field: Record<string, any>): string {
@@ -1471,12 +1368,12 @@ function addFieldToContainer(field: FieldDefinition, meta: ContainerMeta) {
   }
 
   if (isFieldAdded(field.code)) {
-    ElMessage.warning('Field already added')
+    ElMessage.warning(t('system.pageLayout.designer.messages.fieldAlreadyAdded'))
     return
   }
 
   const previousConfig = cloneLayoutConfig(layoutConfig.value)
-  const newConfig = cloneLayoutConfig(layoutConfig.value)
+  const newConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
   const targetArr = getFieldArrayRef(newConfig, meta)
   if (!targetArr) return
 
@@ -1505,12 +1402,12 @@ function handleFieldClick(field: FieldDefinition) {
 
   // Check if already added
   if (isFieldAdded(field.code)) {
-    ElMessage.warning('Field already added')
+    ElMessage.warning(t('system.pageLayout.designer.messages.fieldAlreadyAdded'))
     return
   }
 
   const previousConfig = cloneLayoutConfig(layoutConfig.value)
-  const newConfig = cloneLayoutConfig(layoutConfig.value)
+  const newConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
   const firstSection = newConfig.sections![0]
   if (!firstSection.fields) {
     firstSection.fields = []
@@ -1530,11 +1427,21 @@ function selectField(field: LayoutField, section: LayoutSection) {
   fieldProps.value = { ...field }
 }
 
+function maybeSelectField(field: LayoutField, section: LayoutSection) {
+  if (!isDesignMode.value) return
+  selectField(field, section)
+}
+
 function selectSection(id: string) {
   selectedId.value = id
   const section = findItemById(layoutConfig.value, id)
   selectedSection.value = section
   sectionProps.value = { ...section }
+}
+
+function maybeSelectSection(id: string) {
+  if (!isDesignMode.value) return
+  selectSection(id)
 }
 
 function deselect() {
@@ -1664,7 +1571,7 @@ function updateField(key: string, value: any) {
     const nextType = normalizeFieldType(value || 'text')
     const reason = getFieldDisabledReason(nextType, props.mode)
     if (reason) {
-      ElMessage.warning(`Cannot switch field type: ${reason}`)
+      ElMessage.warning(t('system.pageLayout.designer.messages.cannotSwitchFieldType', { reason }))
       const current = findItemById(layoutConfig.value, selectedId.value)
       if (current) {
         fieldProps.value = {
@@ -1677,7 +1584,7 @@ function updateField(key: string, value: any) {
   }
 
   const previousConfig = cloneLayoutConfig(layoutConfig.value)
-  const newConfig = cloneLayoutConfig(layoutConfig.value)
+  const newConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
   const item = findItemById(newConfig, selectedId.value)
   if (item) {
     item[key] = key === 'fieldType' ? normalizeFieldType(value || 'text') : value
@@ -1693,7 +1600,7 @@ function updateSection(key: string, value: any) {
   if (!selectedId.value || elementType.value !== 'section') return
 
   const previousConfig = cloneLayoutConfig(layoutConfig.value)
-  const newConfig = cloneLayoutConfig(layoutConfig.value)
+  const newConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
   const item = findItemById(newConfig, selectedId.value)
   if (item) {
     item[key] = value
@@ -1704,7 +1611,7 @@ function updateSection(key: string, value: any) {
         const tabId = `tab_${Date.now()}`
         item.tabs = [{
           id: tabId,
-          title: 'Tab 1',
+          title: t('system.pageLayout.designer.defaults.tabTitle', { index: 1 }),
           name: tabId,
           fields: []
         }]
@@ -1723,7 +1630,7 @@ function handleSectionPropertyUpdate(payload: { key: string; value: any }) {
 
 function removeField(fieldId: string, sectionId: string, _sectionIndex?: number) {
   const previousConfig = cloneLayoutConfig(layoutConfig.value)
-  const newConfig = cloneLayoutConfig(layoutConfig.value)
+  const newConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
   
   const section = newConfig.sections?.find(s => s.id === sectionId)
   if (!section) return
@@ -1746,15 +1653,18 @@ function removeField(fieldId: string, sectionId: string, _sectionIndex?: number)
 }
 
 function deleteSection(sectionId: string) {
-  ElMessageBox.confirm('Delete this section? Fields in this section will be removed.', 'Delete section', {
+  ElMessageBox.confirm(
+    t('system.pageLayout.designer.messages.deleteSectionConfirm'),
+    t('system.pageLayout.designer.messages.deleteSectionTitle'),
+    {
     type: 'warning'
   }).then(() => {
     const previousConfig = cloneLayoutConfig(layoutConfig.value)
-    const newConfig = cloneLayoutConfig(layoutConfig.value)
+    const newConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
     newConfig.sections = newConfig.sections?.filter(s => s.id !== sectionId) || []
     commitLayoutChange(newConfig, `Delete section ${sectionId}`, previousConfig)
     selectedId.value = ''
-    ElMessage.success('Section deleted')
+    ElMessage.success(t('system.pageLayout.designer.messages.sectionDeleted'))
   }).catch(() => {})
 }
 
@@ -1762,7 +1672,7 @@ function addSection() {
   const newSection: LayoutSection = {
     id: generateId('section'),
     type: 'section',
-    title: 'New Section',
+    title: t('system.pageLayout.designer.defaults.newSection'),
     collapsible: true,
     collapsed: false,
     columns: 2,
@@ -1771,7 +1681,7 @@ function addSection() {
   }
 
   const previousConfig = cloneLayoutConfig(layoutConfig.value)
-  const newConfig = cloneLayoutConfig(layoutConfig.value)
+  const newConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
   if (!newConfig.sections) {
     newConfig.sections = []
   }
@@ -1929,7 +1839,7 @@ const prepareLayoutConfig = (): LayoutConfig | null => {
     layoutConfig.value = prepared
     return prepared
   } catch (error: any) {
-    ElMessage.error(error?.message || 'Layout configuration is invalid')
+    ElMessage.error(error?.message || t('system.pageLayout.designer.messages.invalidLayoutConfig'))
     return null
   }
 }
@@ -1968,14 +1878,14 @@ async function handleSave() {
         layoutName: props.layoutName,
         mode: props.mode,
         business_object: props.businessObjectId
-      })
+      } as any)
     }
 
-    ElMessage.success('Layout saved')
+    ElMessage.success(t('system.pageLayout.designer.messages.layoutSaved'))
     emit('save', data)
   } catch (error: any) {
     console.error('Save failed:', error)
-    ElMessage.error(error.response?.data?.message || 'Save failed')
+    ElMessage.error(error.response?.data?.message || t('system.pageLayout.designer.messages.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -2021,19 +1931,20 @@ async function handlePublish() {
         mode: props.mode,
         business_object: props.businessObjectId,
         status: 'draft'
-      })
-      await pageLayoutApi.publish(createResult.id, {
+      } as any)
+      const createdPayload = ((createResult as any)?.data ?? createResult) as { id: string }
+      await pageLayoutApi.publish(createdPayload.id, {
         change_summary: 'Publish layout',
         set_as_default: true
       })
     }
 
     isPublished.value = true
-    ElMessage.success('Layout published')
+    ElMessage.success(t('system.pageLayout.designer.messages.layoutPublished'))
     emit('published', layoutConfig.value)
   } catch (error: any) {
     console.error('Publish failed:', error)
-    ElMessage.error(error.response?.data?.message || 'Publish failed')
+    ElMessage.error(error.response?.data?.message || t('system.pageLayout.designer.messages.publishFailed'))
   } finally {
     publishing.value = false
   }
@@ -2046,8 +1957,8 @@ async function handlePublish() {
 async function handleReset() {
   try {
     await ElMessageBox.confirm(
-      'Reset layout to system default? Unsaved changes will be lost.',
-      'Reset confirmation',
+      t('system.pageLayout.designer.messages.resetConfirm'),
+      t('system.pageLayout.designer.messages.resetConfirmTitle'),
       { type: 'warning' }
     )
   } catch {
@@ -2088,7 +1999,7 @@ async function handleReset() {
       const defaultSection = {
         id: `section-${Date.now()}`,
         type: 'section',
-        title: 'Basic Information',
+        title: t('system.pageLayout.designer.defaults.basicInformation'),
         collapsible: true,
         collapsed: false,
         columns: 2,
@@ -2119,10 +2030,10 @@ async function handleReset() {
     
     selectedId.value = ''
     history.clear()
-    ElMessage.success('Reset to system default layout')
+    ElMessage.success(t('system.pageLayout.designer.messages.resetToDefaultSuccess'))
   } catch (error) {
     console.error('[LayoutDesigner Reset] Failed:', error)
-    ElMessage.error('Reset failed, please refresh and try again')
+    ElMessage.error(t('system.pageLayout.designer.messages.resetFailedRefresh'))
   }
 }
 
@@ -2214,7 +2125,7 @@ async function setPreviewMode(mode: 'current' | 'active') {
       layoutConfig.value = cloneLayoutConfig(currentLayoutSnapshot.value)
       populateSampleData()
     }
-    ElMessage.info('已切换到自定义模式')
+    ElMessage.info(t('system.pageLayout.designer.messages.switchedToCustomMode'))
     return
   }
 
@@ -2230,10 +2141,10 @@ async function setPreviewMode(mode: 'current' | 'active') {
         layoutConfig.value = cloneLayoutConfig(currentLayoutSnapshot.value)
         populateSampleData()
       }
-      ElMessage.warning('未获取到可预览布局，已回退到自定义模式')
+      ElMessage.warning(t('system.pageLayout.designer.messages.noPreviewLayoutFallback'))
       return
     }
-    ElMessage.success('已切换到预览模式')
+    ElMessage.success(t('system.pageLayout.designer.messages.switchedToPreviewMode'))
   } finally {
     previewLoading.value = false
   }
@@ -2248,13 +2159,14 @@ async function loadLayout() {
   // Otherwise, load from API if layoutId is provided
   if (props.layoutId && !isReadonlyMode.value) {
     try {
-      const layout = await pageLayoutApi.detail(props.layoutId)
-      const rawConfig = layout.layoutConfig || getDefaultLayoutConfig(props.mode)
+      const layoutRaw = await pageLayoutApi.detail(props.layoutId)
+      const layout = ((layoutRaw as any)?.data ?? layoutRaw) as any
+      const rawConfig = layout.layoutConfig || layout.layout_config || getDefaultLayoutConfig(props.mode)
       // Normalize the layout config to handle backend API format (field -> fieldCode)
       layoutConfig.value = normalizeAndEnsureLayoutConfig(rawConfig as LayoutConfig)
-      isDefault.value = layout.isDefault
-      isPublished.value = layout.status === 'published'
-      layoutVersion.value = layout.version
+      isDefault.value = Boolean(layout.isDefault ?? layout.is_default)
+      isPublished.value = String(layout.status || '') === 'published'
+      layoutVersion.value = String(layout.version || layoutVersion.value)
       // Populate sample data with values from the loaded layout
       await loadAvailableFields()
       populateSampleData()
@@ -2466,11 +2378,6 @@ watch(
 )
 
 watch(renderMode, (mode) => {
-  if (mode !== 'preview') {
-    previewEditSnapshot.value = null
-    previewEditMode.value = false
-  }
-
   if (mode !== 'design') {
     deselect()
     isDragOverCanvas.value = false
@@ -2726,23 +2633,11 @@ watch(() => props.mode, (newType) => {
   border-radius: 6px;
 }
 
-.designer-section-header-proxy {
-  display: block;
-  margin-bottom: 10px;
-  font-size: 12px;
-  color: #606266;
-  cursor: pointer;
-}
-
 .designer-section-toolbar {
   display: flex;
   gap: 6px;
   justify-content: flex-end;
   margin-bottom: 12px;
-}
-
-.designer-section-slot.is-selected .designer-section-header-proxy {
-  color: #409eff;
 }
 
 .designer-section-body {

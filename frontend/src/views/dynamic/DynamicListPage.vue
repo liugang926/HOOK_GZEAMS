@@ -8,12 +8,21 @@
       class="list-health-alert"
       type="warning"
       :closable="false"
-      :title="t('system.businessObject.messages.noBusinessFields') || 'Warning: No business fields defined for this object layout.'"
+      :title="t('system.businessObject.messages.noBusinessFields')"
       show-icon
     />
 
+    <div
+      v-if="showListTitleProxy"
+      class="base-list-page list-title-loading-proxy"
+    >
+      <h2 class="page-title">
+        {{ objectDisplayName || t('common.status.loading') || '...' }}
+      </h2>
+    </div>
+
     <BaseListPage
-      v-if="objectMetadata"
+      v-if="!loadError"
       ref="tableRef"
       :title="objectDisplayName || t('common.status.loading') || '...'"
       :api="fetchData"
@@ -21,7 +30,7 @@
       :search-fields="unifiedSearchFields"
       :batch-actions="batchActions"
       :object-code="objectCode"
-      :object-icon="objectMetadata.icon"
+      :object-icon="objectMetadata?.icon"
       @row-click="handleRowClick"
     >
       <!-- Toolbar slot for create button -->
@@ -50,7 +59,7 @@
             :placeholder="t('common.select')"
           >
             <el-option
-              :label="t('common.all')"
+              :label="unifiedAllFieldsLabel"
               value="__all"
             />
             <el-option
@@ -64,7 +73,7 @@
             v-model="form.__unifiedKeyword"
             class="unified-search-keyword"
             clearable
-            :placeholder="t('common.selectors.searchKeyword')"
+            :placeholder="searchKeywordPlaceholder"
           />
         </div>
       </template>
@@ -77,8 +86,8 @@
       >
         <FieldRenderer
           :field="getFieldDefinition(field)"
-          :model-value="slotProps.row[field.fieldCode]"
-          :form-data="slotProps.row"
+          :model-value="(slotProps as any).row[field.fieldCode]"
+          :form-data="(slotProps as any).row"
           :disabled="true"
         />
       </template>
@@ -125,7 +134,7 @@
     <el-result
       v-else-if="loadError"
       icon="error"
-      :title="t('common.messages.loadFailed') || 'Load Failed'"
+      :title="t('common.messages.loadFailed')"
       :sub-title="loadError"
     >
       <template #extra>
@@ -160,8 +169,7 @@ import FieldRenderer from '@/components/engine/FieldRenderer.vue'
 import type { ObjectMetadata } from '@/types'
 import { createObjectClient } from '@/api/dynamic'
 import { resolveObjectDisplayName } from '@/utils/objectDisplay'
-import type { TableColumn, BatchAction } from '@/components/common/BaseListPage.vue'
-import type { SearchField } from '@/types/common'
+import type { TableColumn, SearchField } from '@/types/common'
 import { filterSystemFields } from '@/utils/transform'
 import { extractRuntimeListColumns } from '@/adapters/runtimeListLayoutAdapter'
 import { buildSearchFields } from '@/platform/layout/searchFieldBuilder'
@@ -174,6 +182,15 @@ import {
   projectSearchFieldsFromRenderSchema,
 } from '@/platform/layout/renderSchemaProjector'
 import { mergeFieldSources, orderFieldsWithSchema } from '@/platform/layout/unifiedFieldOrder'
+
+interface BatchAction {
+  label: string
+  type?: 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'default'
+  icon?: any
+  action: (selectedRows: any[]) => void | Promise<void>
+  confirm?: boolean
+  confirmMessage?: string
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -189,6 +206,7 @@ const runtimePermissions = ref<RuntimePermissions | null>(null)
 const loading = ref(false)
 const loadError = ref<string | null>(null)
 const tableRef = ref()
+const showListTitleProxy = computed(() => !tableRef.value)
 
 const objectDisplayName = computed(() => {
   return resolveObjectDisplayName(
@@ -197,6 +215,14 @@ const objectDisplayName = computed(() => {
     t as (key: string) => string,
     te
   )
+})
+
+const searchKeywordPlaceholder = computed(() => {
+  return t('common.selectors.searchKeyword')
+})
+
+const unifiedAllFieldsLabel = computed(() => {
+  return t('common.selectors.allFields')
 })
 
 const buildFallbackMetadata = (): ObjectMetadata => ({
@@ -215,6 +241,20 @@ const buildFallbackMetadata = (): ObjectMetadata => ({
     delete: true
   }
 } as ObjectMetadata)
+
+const withTimeout = async <T>(promise: Promise<T>, timeoutMs = 2500): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('timeout')), timeoutMs)
+      })
+    ])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}
 
 // Watch route changes to refresh data when navigating back from form page
 watch(() => route.params.code, (newCode) => {
@@ -471,24 +511,24 @@ const batchActions = computed<BatchAction[]>(() => {
   if (!canDelete.value) return []
   return [
     {
-      label: t('common.actions.batchDelete') || 'Batch Delete',
+      label: t('common.actions.batchDelete'),
       type: 'danger',
       action: async (selectedRows: any[]) => {
         try {
           await ElMessageBox.confirm(
-            t('common.messages.confirmDelete') || 'Confirm Delete',
-            t('common.dialog.confirmTitle') || 'Confirm',
+            t('common.messages.confirmDelete'),
+            t('common.dialog.confirmTitle'),
             {
               type: 'warning'
             }
           )
           const ids = selectedRows.map((row: any) => row.id)
           await apiClient.value.batchDelete(ids)
-          ElMessage.success(t('common.messages.deleteSuccess') || 'Success')
+          ElMessage.success(t('common.messages.deleteSuccess'))
           tableRef.value?.refresh()
         } catch (error: any) {
           if (error !== 'cancel') {
-            ElMessage.error(error.message || t('common.messages.deleteFailed') || 'Failed')
+            ElMessage.error(error.message || t('common.messages.deleteFailed'))
           }
         }
       }
@@ -574,17 +614,17 @@ const handleEdit = (row: any) => {
 const handleDelete = async (row: any) => {
   try {
     await ElMessageBox.confirm(
-      t('common.messages.confirmDeleteMessage') || 'Confirm Delete',
-      t('common.dialog.confirmTitle') || 'Confirm Delete', {
+      t('common.messages.confirmDeleteMessage'),
+      t('common.dialog.confirmTitle'), {
       type: 'warning'
     })
     await apiClient.value.delete(row.id)
-    ElMessage.success(t('common.messages.deleteSuccess') || 'Success')
+    ElMessage.success(t('common.messages.deleteSuccess'))
     // Refresh list
     tableRef.value?.refresh()
   } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error(error.message || t('common.messages.deleteFailed') || 'Failed')
+      ElMessage.error(error.message || t('common.messages.deleteFailed'))
     }
   }
 }
@@ -638,7 +678,7 @@ const loadMetadata = async () => {
   runtimePermissions.value = null
   try {
     const [runtimeResult, metadataResult] = await Promise.allSettled([
-      resolveRuntimeLayout(objectCode.value, 'list', { includeRelations: false }),
+      withTimeout(resolveRuntimeLayout(objectCode.value, 'list', { includeRelations: false })),
       apiClient.value.getMetadata()
     ])
 
@@ -657,7 +697,8 @@ const loadMetadata = async () => {
     }
 
     if (metadataResult.status === 'fulfilled') {
-      objectMetadata.value = (metadataResult.value as ObjectMetadata) || buildFallbackMetadata()
+      const metadataPayload = ((metadataResult.value as any)?.data ?? metadataResult.value) as ObjectMetadata
+      objectMetadata.value = metadataPayload || buildFallbackMetadata()
     } else {
       objectMetadata.value = buildFallbackMetadata()
     }
@@ -674,7 +715,7 @@ const loadMetadata = async () => {
       }
     }
   } catch (error: any) {
-    loadError.value = error.message || 'Failed to load object metadata'
+    loadError.value = error.message || t('system.businessObject.messages.loadMetadataFailed')
     ElMessage.error(loadError.value)
   } finally {
     loading.value = false
@@ -697,6 +738,18 @@ onMounted(() => {
 
 .list-health-alert {
   margin-bottom: 12px;
+}
+
+.list-title-loading-proxy {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 :deep(.unified-search) {

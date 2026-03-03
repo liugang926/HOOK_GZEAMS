@@ -4,11 +4,19 @@ Custom middleware for GZEAMS multi-organization support.
 Handles organization context extraction and validation for multi-tenant data isolation.
 Gracefully handles users without organization assignments to prevent 500 errors.
 """
+from typing import List, Tuple
+
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.functional import SimpleLazyObject
 from rest_framework.exceptions import PermissionDenied
 from django.contrib.auth.middleware import get_user
 import logging
+
+from apps.common.services.i18n_service import (
+    TranslationService,
+    clear_current_language,
+    set_current_language,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -186,3 +194,115 @@ class OrganizationMiddleware(MiddlewareMixin):
             return Organization.objects.get(id=org_id, is_deleted=False)
         except Organization.DoesNotExist:
             return None
+
+
+class LanguageContextMiddleware(MiddlewareMixin):
+    """
+    Language context middleware for i18n runtime behavior.
+
+    Resolution priority:
+    1. Query parameter: `locale` / `lang`
+    2. HTTP Header: `Accept-Language`
+    3. User preference: `preferred_language` (authenticated user)
+    4. System default language
+    """
+
+    FALLBACK_LANGUAGE = TranslationService.DEFAULT_LANGUAGE
+
+    def process_request(self, request):
+        language = self._resolve_language(request)
+        set_current_language(language)
+        request.language_code = language
+        request.locale = language
+        return None
+
+    def process_response(self, request, response):
+        clear_current_language()
+        return response
+
+    def process_exception(self, request, exception):
+        clear_current_language()
+        raise exception
+
+    def _resolve_language(self, request) -> str:
+        # 1) Query parameter has highest priority for explicit override.
+        query_locale = request.GET.get('locale') or request.GET.get('lang')
+        normalized_query_locale = self._normalize_locale(query_locale)
+        if normalized_query_locale:
+            return normalized_query_locale
+
+        # 2) Parse Accept-Language header.
+        accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', '')
+        for candidate in self._parse_accept_language(accept_language):
+            normalized = self._normalize_locale(candidate)
+            if normalized:
+                return normalized
+
+        # 3) User profile preference.
+        user = get_user(request)
+        preferred_language = getattr(user, 'preferred_language', None) if user and user.is_authenticated else None
+        normalized_preferred_language = self._normalize_locale(preferred_language)
+        if normalized_preferred_language:
+            return normalized_preferred_language
+
+        # 4) System default.
+        return self.FALLBACK_LANGUAGE
+
+    def _parse_accept_language(self, raw_header: str) -> List[str]:
+        if not raw_header:
+            return []
+
+        candidates: List[Tuple[str, float]] = []
+        for chunk in raw_header.split(','):
+            part = chunk.strip()
+            if not part:
+                continue
+
+            lang = part
+            quality = 1.0
+            if ';' in part:
+                pieces = [p.strip() for p in part.split(';') if p.strip()]
+                lang = pieces[0]
+                for piece in pieces[1:]:
+                    if piece.startswith('q='):
+                        try:
+                            quality = float(piece.split('=', 1)[1])
+                        except (ValueError, TypeError):
+                            quality = 0.0
+                        break
+
+            if lang:
+                candidates.append((lang, quality))
+
+        candidates.sort(key=lambda item: item[1], reverse=True)
+        return [lang for lang, _ in candidates]
+
+    def _normalize_locale(self, locale: str) -> str:
+        if not locale:
+            return ''
+
+        cleaned = locale.strip().replace('_', '-')
+        lowered = cleaned.lower()
+
+        if lowered in {'zh', 'zh-cn', 'zh-hans', 'zh-hans-cn'}:
+            return 'zh-CN'
+        if lowered in {'en', 'en-us', 'en-gb'}:
+            return 'en-US'
+        if lowered in {'ja', 'ja-jp'}:
+            return 'ja-JP'
+
+        for supported in TranslationService.SUPPORTED_LANGUAGES:
+            normalized_supported = supported.lower()
+            if lowered == normalized_supported:
+                return supported
+            if lowered.startswith(f'{normalized_supported}-'):
+                return supported
+
+        if lowered.startswith('zh-'):
+            return 'zh-CN'
+        if lowered.startswith('en-'):
+            return 'en-US'
+        if lowered.startswith('ja-'):
+            return 'ja-JP'
+
+        return ''

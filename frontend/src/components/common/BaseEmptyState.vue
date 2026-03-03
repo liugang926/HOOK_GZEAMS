@@ -110,9 +110,9 @@ const { t } = useI18n()
 
 const computedTitle = computed(() => {
   if (props.title) return props.title
-  if (props.type === 'search') return t('common.messages.noSearchResults', '未找到匹配项')
-  if (props.type === 'error') return t('common.messages.systemError', '系统出错�?)
-  return t('common.messages.noData', '暂无数据')
+  if (props.type === 'search') return t('common.messages.noSearchResults')
+  if (props.type === 'error') return t('common.messages.systemError')
+  return t('common.messages.noData')
 })
 </script>
 

@@ -1,5 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
-
+import { waitForDesignerReady } from '../helpers/page-ready.helpers'
 const OBJECT_CODE = 'Asset'
 const LAYOUT_ID = 'layout-asset-entry-stability'
 const DESIGNER_URL =
@@ -173,7 +173,7 @@ test.describe('Layout Designer Entry Stability Regression', () => {
       await page.goto('/dashboard')
       await page.goto(DESIGNER_URL)
 
-      await expect(page.getByTestId('layout-designer')).toBeVisible()
+      await waitForDesignerReady(page)
       await expect(page.getByTestId('layout-preview-current-button').first()).toBeVisible()
       await expect(page.locator('[data-testid="layout-canvas-field"]').first()).toBeVisible()
     }
@@ -182,4 +182,6 @@ test.describe('Layout Designer Entry Stability Regression', () => {
     await expect.poll(() => runtimeCallCount).toBeGreaterThanOrEqual(4)
   })
 })
+
+
 

@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="visible"
-    :title="isEdit ? 'Edit Configuration' : 'Add Configuration'"
+    :title="isEdit ? t('system.config.form.titles.edit') : t('system.config.form.titles.create')"
     width="600px"
     @update:model-value="handleClose"
   >
@@ -12,72 +12,58 @@
       label-width="140px"
     >
       <el-form-item
-        label="Config Key"
+        :label="t('system.config.form.labels.configKey')"
         prop="config_key"
       >
         <el-input
           v-model="formData.config_key"
-          placeholder="e.g., QR_CODE_TEMPLATE, ENABLE_EMAIL"
+          :placeholder="t('system.config.form.placeholders.configKey')"
           :disabled="isEdit"
         />
         <div class="form-tip">
-          Unique identifier for the configuration (uppercase recommended)
+          {{ t('system.config.form.tips.configKey') }}
         </div>
       </el-form-item>
 
       <el-form-item
-        label="Display Name"
+        :label="t('system.config.form.labels.displayName')"
         prop="name"
       >
         <el-input
           v-model="formData.name"
-          placeholder="e.g., QR Code Template, Enable Email Notifications"
+          :placeholder="t('system.config.form.placeholders.displayName')"
         />
       </el-form-item>
 
       <el-form-item
-        label="Value Type"
+        :label="t('system.config.form.labels.valueType')"
         prop="value_type"
       >
         <el-select
           v-model="formData.value_type"
-          placeholder="Select value type"
+          :placeholder="t('system.config.form.placeholders.valueType')"
           :disabled="isEdit"
           @change="handleValueTypeChange"
         >
           <el-option
-            label="String"
-            value="string"
-          />
-          <el-option
-            label="Integer"
-            value="integer"
-          />
-          <el-option
-            label="Float"
-            value="float"
-          />
-          <el-option
-            label="Boolean"
-            value="boolean"
-          />
-          <el-option
-            label="JSON"
-            value="json"
+            v-for="item in valueTypeOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
           />
         </el-select>
       </el-form-item>
 
       <el-form-item
-        label="Value"
+        :label="t('system.config.form.labels.value')"
         prop="config_value"
       >
         <!-- Boolean: switch -->
         <el-switch
           v-if="formData.value_type === 'boolean'"
           v-model="booleanValue"
-          active-text="Enabled"
-          inactive-text="Disabled"
+          :active-text="t('system.config.status.enabled')"
+          :inactive-text="t('system.config.status.disabled')"
         />
         <!-- String/Integer/Float: input -->
         <el-input
@@ -92,7 +78,7 @@
           v-model="formData.config_value"
           type="textarea"
           :rows="4"
-          placeholder="e.g., {&quot;key&quot;: &quot;value&quot;}"
+          :placeholder="t('system.config.form.placeholders.jsonValue')"
           @blur="validateJson"
         />
         <div
@@ -104,101 +90,75 @@
       </el-form-item>
 
       <el-form-item
-        label="Category"
+        :label="t('system.config.form.labels.category')"
         prop="category"
       >
         <el-select
           v-model="formData.category"
-          placeholder="Select category"
+          :placeholder="t('system.config.form.placeholders.category')"
           allow-create
           filterable
         >
           <el-option
-            label="General"
-            value="general"
-          />
-          <el-option
-            label="QR Code"
-            value="qrcode"
-          />
-          <el-option
-            label="Notification"
-            value="notification"
-          />
-          <el-option
-            label="Asset"
-            value="asset"
-          />
-          <el-option
-            label="Inventory"
-            value="inventory"
-          />
-          <el-option
-            label="Finance"
-            value="finance"
-          />
-          <el-option
-            label="Workflow"
-            value="workflow"
-          />
-          <el-option
-            label="Integration"
-            value="integration"
+            v-for="item in categoryOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
           />
         </el-select>
       </el-form-item>
 
       <el-form-item
-        label="Description"
+        :label="t('system.config.form.labels.description')"
         prop="description"
       >
         <el-input
           v-model="formData.description"
           type="textarea"
           :rows="2"
-          placeholder="Describe what this configuration does"
+          :placeholder="t('system.config.form.placeholders.description')"
         />
       </el-form-item>
 
       <el-form-item
-        label="Is System"
+        :label="t('system.config.form.labels.isSystem')"
         prop="is_system"
       >
         <el-switch
           v-model="formData.is_system"
-          active-text="System Config"
-          inactive-text="User Config"
+          :active-text="t('system.config.form.switches.systemConfig')"
+          :inactive-text="t('system.config.form.switches.userConfig')"
         />
         <div class="form-tip">
-          System configs cannot be deleted by users
+          {{ t('system.config.form.tips.isSystem') }}
         </div>
       </el-form-item>
 
       <el-form-item
-        label="Is Encrypted"
+        :label="t('system.config.form.labels.isEncrypted')"
         prop="is_encrypted"
       >
         <el-switch
           v-model="formData.is_encrypted"
-          active-text="Encrypted"
-          inactive-text="Plain Text"
+          :active-text="t('system.config.form.switches.encrypted')"
+          :inactive-text="t('system.config.form.switches.plainText')"
         />
         <div class="form-tip">
-          Encrypt value for sensitive data (passwords, API keys)
+          {{ t('system.config.form.tips.isEncrypted') }}
         </div>
       </el-form-item>
     </el-form>
 
     <template #footer>
       <el-button @click="handleClose">
-        Cancel
+        {{ t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="submitting"
         @click="handleSubmit"
       >
-        {{ isEdit ? 'Save' : 'Add' }}
+        {{ isEdit ? t('common.actions.save') : t('system.config.form.actions.add') }}
       </el-button>
     </template>
   </el-dialog>
@@ -206,14 +166,24 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
+import type { FormInstance } from 'element-plus/es/components/form'
+import type { FormRules } from 'element-plus/es/components/form/src/types'
 import type { SystemConfig } from '@/api/system'
 import { systemConfigApi } from '@/api/system'
 
+interface SystemConfigFormInput extends Partial<SystemConfig> {
+  config_key?: string
+  config_value?: string
+  value_type?: 'string' | 'integer' | 'float' | 'boolean' | 'json'
+  is_system?: boolean
+  is_encrypted?: boolean
+}
+
 interface Props {
   visible: boolean
-  data?: SystemConfig | null
+  data?: SystemConfigFormInput | null
 }
 
 interface Emits {
@@ -223,12 +193,33 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
 const jsonError = ref('')
 
 const isEdit = computed(() => !!props.data?.id)
+
+const valueTypeOptions = computed(() => [
+  { value: 'string', label: t('system.config.valueTypes.string') },
+  { value: 'integer', label: t('system.config.valueTypes.integer') },
+  { value: 'float', label: t('system.config.valueTypes.float') },
+  { value: 'boolean', label: t('system.config.valueTypes.boolean') },
+  { value: 'json', label: t('system.config.valueTypes.json') }
+])
+
+const categoryOptions = computed(() => [
+  { value: 'general', label: t('system.config.categories.general') },
+  { value: 'qrcode', label: t('system.config.categories.qrcode') },
+  { value: 'notification', label: t('system.config.categories.notification') },
+  { value: 'asset', label: t('system.config.categories.asset') },
+  { value: 'inventory', label: t('system.config.categories.inventory') },
+  { value: 'feature_flag', label: t('system.config.categories.feature_flag') },
+  { value: 'finance', label: t('system.config.categories.finance') },
+  { value: 'workflow', label: t('system.config.categories.workflow') },
+  { value: 'integration', label: t('system.config.categories.integration') }
+])
 
 const formData = ref({
   config_key: '',
@@ -251,31 +242,29 @@ const booleanValue = computed({
 
 const rules: FormRules = {
   config_key: [
-    { required: true, message: 'Please enter config key', trigger: 'blur' },
+    { required: true, message: t('system.config.form.validation.configKeyRequired'), trigger: 'blur' },
     {
       pattern: /^[A-Z_][A-Z0-9_]*$/,
-      message: 'Key must be uppercase letters, numbers, and underscores only',
+      message: t('system.config.form.validation.configKeyPattern'),
       trigger: 'blur'
     }
   ],
   name: [
-    { required: true, message: 'Please enter display name', trigger: 'blur' }
+    { required: true, message: t('system.config.form.validation.displayNameRequired'), trigger: 'blur' }
   ],
   value_type: [
-    { required: true, message: 'Please select value type', trigger: 'change' }
+    { required: true, message: t('system.config.form.validation.valueTypeRequired'), trigger: 'change' }
   ],
   config_value: [
-    { required: true, message: 'Please enter config value', trigger: 'blur' }
+    { required: true, message: t('system.config.form.validation.valueRequired'), trigger: 'blur' }
   ]
 }
 
 const getValuePlaceholder = (type: string) => {
-  const placeholders: Record<string, string> = {
-    string: 'Enter text value',
-    integer: 'Enter integer value',
-    float: 'Enter decimal value'
-  }
-  return placeholders[type] || 'Enter value'
+  const key = `system.config.form.valuePlaceholders.${type}`
+  const fallback = t('system.config.form.valuePlaceholders.default')
+  const label = t(key)
+  return label === key ? fallback : label
 }
 
 const validateJson = () => {
@@ -285,7 +274,7 @@ const validateJson = () => {
       jsonError.value = ''
       return true
     } catch {
-      jsonError.value = 'Invalid JSON format'
+      jsonError.value = t('system.config.form.messages.invalidJson')
       return false
     }
   }
@@ -307,14 +296,14 @@ const handleValueTypeChange = () => {
 watch(() => props.visible, (val) => {
   if (val && props.data) {
     Object.assign(formData.value, {
-      config_key: props.data.config_key || '',
-      config_value: props.data.config_value || '',
-      value_type: props.data.value_type || 'string',
+      config_key: props.data.config_key || props.data.configKey || '',
+      config_value: props.data.config_value || props.data.configValue || '',
+      value_type: props.data.value_type || props.data.valueType || 'string',
       name: props.data.name || '',
       description: props.data.description || '',
       category: props.data.category || '',
-      is_system: props.data.is_system || false,
-      is_encrypted: props.data.is_encrypted || false
+      is_system: props.data.is_system || props.data.isSystem || false,
+      is_encrypted: props.data.is_encrypted || props.data.isEncrypted || false
     })
   } else if (val) {
     resetForm()
@@ -355,15 +344,23 @@ const handleSubmit = async () => {
     submitting.value = true
     try {
       if (isEdit.value) {
-        await systemConfigApi.update(props.data!.id, formData.value)
+        if (!props.data?.id) {
+          ElMessage.error(t('system.config.form.messages.operationFailed'))
+          return
+        }
+        await systemConfigApi.update(props.data.id, formData.value)
       } else {
         await systemConfigApi.create(formData.value)
       }
-      ElMessage.success(isEdit.value ? 'Updated successfully' : 'Added successfully')
+      ElMessage.success(
+        isEdit.value
+          ? t('system.config.form.messages.updateSuccess')
+          : t('system.config.form.messages.createSuccess')
+      )
       emit('success')
       handleClose()
     } catch (error) {
-      ElMessage.error('Operation failed')
+      ElMessage.error(t('system.config.form.messages.operationFailed'))
     } finally {
       submitting.value = false
     }

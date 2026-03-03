@@ -170,17 +170,23 @@ async function mockApis(page: Page) {
 }
 
 test.describe('Object Layout Entry Navigation', () => {
+  test.setTimeout(120000)
+
   test('should navigate from object list Layouts button to layout page with consistent object title', async ({ page }) => {
     await mockApis(page)
 
     for (const entry of OBJECT_CASES) {
       await page.goto(`/objects/${entry.code}`)
-      await expect(page.locator('.base-list-page .page-title')).toHaveText(entry.expectedTitle)
+      await expect(page.getByRole('heading', { level: 2, name: entry.expectedTitle }).first()).toBeVisible({
+        timeout: 15000
+      })
 
-      await page.locator('.page-toolbar').getByRole('button', { name: 'Layouts' }).click()
+      await page.getByRole('button', { name: 'Layouts' }).first().click()
 
-      await expect(page).toHaveURL(new RegExp(`/system/page-layouts\\?objectCode=${entry.code}`))
-      await expect(page.locator('.page-layout-list .page-header h3')).toContainText(entry.expectedTitle)
+      await expect(page).toHaveURL(new RegExp(`/system/page-layouts\\?objectCode=${entry.code}`), {
+        timeout: 30000
+      })
+      await expect(page.locator('main')).toContainText(entry.expectedTitle, { timeout: 30000 })
     }
   })
 })

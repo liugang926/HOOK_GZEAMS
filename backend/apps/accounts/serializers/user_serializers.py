@@ -84,6 +84,7 @@ class UserSerializer(BaseModelSerializer):
             'wework_userid',
             'dingtalk_userid',
             'feishu_userid',
+            'preferred_language',
         ]
         read_only_fields = BaseModelSerializer.Meta.read_only_fields + [
             'username',
@@ -209,6 +210,7 @@ class UserDetailSerializer(BaseModelWithAuditSerializer):
             'dingtalk_unionid',
             'feishu_userid',
             'feishu_unionid',
+            'preferred_language',
         ]
         read_only_fields = BaseModelWithAuditSerializer.Meta.read_only_fields + [
             'username',
@@ -337,7 +339,18 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'current_organization',
+            'preferred_language',
         ]
+
+    def validate_preferred_language(self, value):
+        """Validate preferred language against supported languages."""
+        if value in (None, ''):
+            return value
+
+        from apps.common.services.i18n_service import TranslationService
+        if value not in TranslationService.SUPPORTED_LANGUAGES:
+            raise serializers.ValidationError('Unsupported language code')
+        return value
 
     def update(self, instance, validated_data):
         """Update user instance."""

@@ -80,7 +80,11 @@
             "qrcode": "QR Code",
             "notification": "Notification",
             "asset": "Asset",
-            "inventory": "Inventory"
+            "inventory": "Inventory",
+            "featureFlags": "Feature Flags",
+            "finance": "Finance",
+            "workflow": "Workflow",
+            "integration": "Integration"
         },
         "columns": {
             "key": "Key",
@@ -95,11 +99,103 @@
             "enabled": "Enabled",
             "disabled": "Disabled"
         },
+        "tags": {
+            "system": "System"
+        },
+        "valueTypes": {
+            "string": "String",
+            "integer": "Integer",
+            "float": "Float",
+            "boolean": "Boolean",
+            "json": "JSON"
+        },
+        "categories": {
+            "general": "General",
+            "qrcode": "QR Code",
+            "notification": "Notification",
+            "asset": "Asset",
+            "inventory": "Inventory",
+            "feature_flag": "Feature Flags",
+            "finance": "Finance",
+            "workflow": "Workflow",
+            "integration": "Integration"
+        },
+        "featureFlags": {
+            "runtime_i18n_enabled": {
+                "name": "Runtime i18n Enabled",
+                "description": "Enable runtime localization for object/layout metadata."
+            },
+            "layout_merge_unified_enabled": {
+                "name": "Layout Merge Unified Enabled",
+                "description": "Enable unified runtime layout merge and normalization path."
+            },
+            "field_code_strict_mode": {
+                "name": "Field Code Strict Mode",
+                "description": "Return field_code only and stop emitting legacy code key."
+            }
+        },
         "messages": {
             "loadFailed": "Failed to load system configs",
             "confirmDelete": "Are you sure to delete this config?"
         },
-        "searchPlaceholder": "Search by key or name"
+        "searchPlaceholder": "Search by key or name",
+        "form": {
+            "titles": {
+                "create": "Add Configuration",
+                "edit": "Edit Configuration"
+            },
+            "labels": {
+                "configKey": "Config Key",
+                "displayName": "Display Name",
+                "valueType": "Value Type",
+                "value": "Value",
+                "category": "Category",
+                "description": "Description",
+                "isSystem": "Is System",
+                "isEncrypted": "Is Encrypted"
+            },
+            "placeholders": {
+                "configKey": "e.g., QR_CODE_TEMPLATE, ENABLE_EMAIL",
+                "displayName": "e.g., QR Code Template, Enable Email Notifications",
+                "valueType": "Select value type",
+                "jsonValue": "e.g., {\"key\": \"value\"}",
+                "category": "Select category",
+                "description": "Describe what this configuration does"
+            },
+            "valuePlaceholders": {
+                "string": "Enter text value",
+                "integer": "Enter integer value",
+                "float": "Enter decimal value",
+                "default": "Enter value"
+            },
+            "switches": {
+                "systemConfig": "System Config",
+                "userConfig": "User Config",
+                "encrypted": "Encrypted",
+                "plainText": "Plain Text"
+            },
+            "tips": {
+                "configKey": "Unique identifier for the configuration (uppercase recommended)",
+                "isSystem": "System configs cannot be deleted by users",
+                "isEncrypted": "Encrypt value for sensitive data (passwords, API keys)"
+            },
+            "validation": {
+                "configKeyRequired": "Please enter config key",
+                "configKeyPattern": "Key must be uppercase letters, numbers, and underscores only",
+                "displayNameRequired": "Please enter display name",
+                "valueTypeRequired": "Please select value type",
+                "valueRequired": "Please enter config value"
+            },
+            "messages": {
+                "invalidJson": "Invalid JSON format",
+                "updateSuccess": "Updated successfully",
+                "createSuccess": "Added successfully",
+                "operationFailed": "Operation failed"
+            },
+            "actions": {
+                "add": "Add"
+            }
+        }
     },
     "businessObject": {
         "title": "Business Objects",
@@ -162,7 +258,9 @@
             "customActionsExample": "Example: [{\"code\": \"approve\", \"label\": \"Approve\", \"type\": \"api\"}]"
         },
         "messages": {
-            "loadFailed": "Failed to load business objects"
+            "loadFailed": "Failed to load business objects",
+            "noBusinessFields": "No business fields are configured for this object layout.",
+            "loadMetadataFailed": "Failed to load object metadata"
         }
     },
     "pageLayout": {
@@ -239,7 +337,76 @@
             "required": "Please enter layout code and name"
         },
         "designer": {
-            "title": "Layout Designer"
+            "title": "Layout Designer",
+            "badges": {
+                "customLayout": "Custom Layout"
+            },
+            "actions": {
+                "undo": "Undo",
+                "redo": "Redo",
+                "reset": "Restore Default",
+                "custom": "Custom",
+                "preview": "Preview",
+                "saveDraft": "Save Draft",
+                "publish": "Publish",
+                "addSection": "Add Section",
+                "editSection": "Edit Section",
+                "deleteSection": "Delete Section"
+            },
+            "status": {
+                "previewMode": "Preview Mode",
+                "customMode": "Custom Mode",
+                "designState": "Design",
+                "previewState": "Preview"
+            },
+            "placeholders": {
+                "searchField": "Search field name or code..."
+            },
+            "hints": {
+                "designCanvas": "Layout design canvas (click fields to edit properties)",
+                "previewCanvas": "Preview rendering (aligned with detail page rendering)",
+                "dropToTab": "Drag fields into the current tab",
+                "dropToCollapse": "Drag fields into the current collapse item",
+                "dropToSection": "Drag fields into the current section"
+            },
+            "panel": {
+                "properties": "Properties",
+                "fieldProperties": "Field Properties",
+                "sectionProperties": "Section Properties"
+            },
+            "empty": {
+                "layoutEmpty": "Layout is empty. Add a section to start designing.",
+                "selectTarget": "Select a field or section to edit its properties."
+            },
+            "defaults": {
+                "untitledSection": "Untitled Section",
+                "tabTitle": "Tab {index}",
+                "newSection": "New Section",
+                "basicInformation": "Basic Information"
+            },
+            "messages": {
+                "previewSampleUpdated": "Preview mode: sample data updated (not saved to backend)",
+                "previewEditCancelled": "Preview mode: edit cancelled",
+                "previewDeleteDemoOnly": "Preview mode: delete is only a UI demo and will not remove real data",
+                "cannotAddField": "Cannot add \"{name}\": {reason}",
+                "fieldAlreadyAdded": "Field already added",
+                "cannotSwitchFieldType": "Cannot switch field type: {reason}",
+                "deleteSectionConfirm": "Delete this section? Fields in this section will be removed.",
+                "deleteSectionTitle": "Delete section",
+                "sectionDeleted": "Section deleted",
+                "invalidLayoutConfig": "Layout configuration is invalid",
+                "layoutSaved": "Layout saved",
+                "saveFailed": "Save failed",
+                "layoutPublished": "Layout published",
+                "publishFailed": "Publish failed",
+                "resetConfirm": "Reset layout to system default? Unsaved changes will be lost.",
+                "resetConfirmTitle": "Reset confirmation",
+                "resetToDefaultSuccess": "Reset to system default layout",
+                "resetFailedRefresh": "Reset failed, please refresh and try again",
+                "switchedToCustomMode": "Switched to custom mode",
+                "noPreviewLayoutFallback": "No previewable layout found. Fallback to custom mode.",
+                "switchedToPreviewMode": "Switched to preview mode"
+            }
         }
     },
     "fieldDefinition": {
@@ -802,7 +969,16 @@
         "codePlaceholder": "e.g., zh-CN, en-US",
         "namePlaceholder": "e.g., Chinese (Simplified)",
         "nativeNamePlaceholder": "e.g., 中文",
-        "localePlaceholder": "e.g., zhCN, enUS"
+        "localePlaceholder": "e.g., zhCN, enUS",
+        "messages": {
+            "setDefaultSuccess": "{name} is set as the default language",
+            "setDefaultFailed": "Failed to set default language",
+            "activateSuccess": "Language activated",
+            "deactivateSuccess": "Language deactivated",
+            "updateFailed": "Failed to update language",
+            "deleteSuccess": "Language deleted successfully",
+            "deleteFailed": "Failed to delete language"
+        }
     },
     "translations": {
         "title": "Translation Management",
@@ -843,5 +1019,60 @@
         "textPlaceholder": "Enter translation text",
         "contextPlaceholder": "Context for disambiguation (optional)",
         "isSystemLabel": "System translation (read-only)"
+    },
+    "moduleWorkbench": {
+        "title": "Module Workbench",
+        "subtitle": "Check backend object coverage and quickly open missing frontend entries.",
+        "metrics": {
+            "backendObjects": "Backend Objects",
+            "menuCovered": "Menu Covered",
+            "missingEntries": "Missing Entries",
+            "invalidMenuCodes": "Invalid Menu Codes"
+        },
+        "sections": {
+            "missingFrontendEntries": "Missing Frontend Entries",
+            "allObjects": "All Objects",
+            "invalidMenuObjectCodes": "Invalid Menu Object Codes",
+            "brokenMenuUrls": "Broken Menu URLs"
+        },
+        "columns": {
+            "objectCode": "Object Code",
+            "name": "Name",
+            "modelPath": "Model Path",
+            "type": "Type",
+            "readiness": "Readiness",
+            "actions": "Quick Actions",
+            "coverage": "Coverage",
+            "menuName": "Menu Name",
+            "code": "Code",
+            "url": "URL"
+        },
+        "type": {
+            "system": "System",
+            "custom": "Custom"
+        },
+        "readiness": {
+            "ready": "Ready",
+            "emptyFields": "No Business Fields",
+            "checking": "Checking",
+            "unavailable": "Unavailable"
+        },
+        "coverage": {
+            "covered": "Covered",
+            "missing": "Missing"
+        },
+        "actions": {
+            "list": "List"
+        },
+        "empty": {
+            "noMissingEntries": "All backend objects are covered by menu entries.",
+            "noInvalidMenuCodes": "No invalid object code found in menu.",
+            "noBrokenMenuUrls": "All menu URLs can be resolved by current frontend router."
+        },
+        "searchPlaceholder": "Search by code or name",
+        "messages": {
+            "loadFailed": "Failed to load module coverage data.",
+            "metadataUnavailable": "Metadata unavailable"
+        }
     }
 }

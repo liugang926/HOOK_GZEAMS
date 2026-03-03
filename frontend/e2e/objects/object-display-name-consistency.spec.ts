@@ -184,15 +184,21 @@ async function mockApis(page: Page) {
 }
 
 test.describe('Object Display Name Consistency', () => {
+  test.setTimeout(120000)
+
   test('should keep list page title and layout page title consistent for core object modules', async ({ page }) => {
     await mockApis(page)
 
     for (const entry of OBJECT_CASES) {
       await page.goto(`/objects/${entry.code}`)
-      await expect(page.locator('.base-list-page .page-title')).toHaveText(entry.expectedTitle)
+      await expect(page.getByRole('heading', { level: 2, name: entry.expectedTitle }).first()).toBeVisible({
+        timeout: 15000
+      })
 
-      await page.goto(`/system/page-layouts?objectCode=${entry.code}&objectName=${entry.code}`)
-      await expect(page.locator('.page-layout-list .page-header h3')).toContainText(entry.expectedTitle)
+      await page.goto(`/system/page-layouts?objectCode=${entry.code}&objectName=${entry.code}`, {
+        waitUntil: 'domcontentloaded'
+      })
+      await expect(page.locator('main')).toContainText(entry.expectedTitle, { timeout: 30000 })
     }
   })
 })

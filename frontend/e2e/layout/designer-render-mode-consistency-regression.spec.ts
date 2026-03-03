@@ -1,7 +1,9 @@
-import { test, expect, type Route } from '@playwright/test'
+import { test, expect, type Route, type Page } from '@playwright/test'
 import { waitForDesignerReady } from '../helpers/page-ready.helpers'
+
 const OBJECT_CODE = 'Asset'
-const LAYOUT_ID = 'layout-asset-readonly-preview-toggle'
+const LAYOUT_ID = 'layout-asset-render-mode-consistency'
+const SECTION_TITLE = 'Basic Information'
 
 function fulfillSuccess(route: Route, data: unknown) {
   return route.fulfill({
@@ -17,13 +19,23 @@ function buildLayoutConfig() {
       {
         id: 'section-basic',
         type: 'section',
-        title: 'Basic Information',
+        title: SECTION_TITLE,
         columns: 2,
         fields: [
           {
             id: 'field-asset-name',
             fieldCode: 'assetName',
             label: 'Asset Name',
+            fieldType: 'text',
+            span: 1,
+            visible: true,
+            required: false,
+            readonly: true
+          },
+          {
+            id: 'field-asset-code',
+            fieldCode: 'assetCode',
+            label: 'Asset Code',
             fieldType: 'text',
             span: 1,
             visible: true,
@@ -37,12 +49,32 @@ function buildLayoutConfig() {
   }
 }
 
-test.describe('Layout Designer Preview Toggle Regression', () => {
-  test('preview and custom buttons must be clickable and switch save/publish state', async ({ page }) => {
+function normalizeLabel(text: string): string {
+  return String(text || '')
+    .replace(/\*/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+async function readCanvasSnapshot(page: Page) {
+  const title = normalizeLabel(
+    await page.locator('.detail-section .section-title').first().innerText()
+  )
+  const labels = (await page
+    .locator('[data-testid="layout-canvas-field"] .el-form-item__label')
+    .allTextContents())
+    .map(normalizeLabel)
+    .filter(Boolean)
+
+  return { title, labels }
+}
+
+test.describe('Layout Designer Render Mode Consistency Regression', () => {
+  test('design mode and preview mode should render the same section and field labels', async ({ page }) => {
     const layoutConfig = buildLayoutConfig()
 
     await page.addInitScript(() => {
-      localStorage.setItem('access_token', 'e2e-designer-preview-token')
+      localStorage.setItem('access_token', 'e2e-designer-render-mode-token')
       localStorage.setItem('current_org_id', 'org-e2e')
       localStorage.setItem('locale', 'en-US')
     })
@@ -84,8 +116,8 @@ test.describe('Layout Designer Preview Toggle Regression', () => {
       if (pathname.endsWith(`/api/system/page-layouts/${LAYOUT_ID}/`)) {
         return fulfillSuccess(route, {
           id: LAYOUT_ID,
-          layoutCode: `${OBJECT_CODE}_readonly_preview_toggle`,
-          layoutName: 'Asset Readonly Layout',
+          layoutCode: `${OBJECT_CODE}_render_mode_consistency`,
+          layoutName: 'Asset Render Mode Consistency',
           mode: 'readonly',
           status: 'draft',
           version: 1,
@@ -103,6 +135,17 @@ test.describe('Layout Designer Preview Toggle Regression', () => {
                 code: 'assetName',
                 name: 'Asset Name',
                 label: 'Asset Name',
+                fieldType: 'text',
+                isRequired: false,
+                isReadonly: false,
+                showInDetail: true,
+                showInForm: true,
+                showInList: true
+              },
+              {
+                code: 'assetCode',
+                name: 'Asset Code',
+                label: 'Asset Code',
                 fieldType: 'text',
                 isRequired: false,
                 isReadonly: false,
@@ -133,6 +176,14 @@ test.describe('Layout Designer Preview Toggle Regression', () => {
               fieldType: 'text',
               showInDetail: true,
               showInForm: true
+            },
+            {
+              code: 'assetCode',
+              name: 'Asset Code',
+              label: 'Asset Code',
+              fieldType: 'text',
+              showInDetail: true,
+              showInForm: true
             }
           ],
           reverse_relations: [],
@@ -156,26 +207,19 @@ test.describe('Layout Designer Preview Toggle Regression', () => {
     )
 
     await waitForDesignerReady(page)
+    await expect(page.getByTestId('layout-field-panel')).toBeVisible()
+    await expect(page.getByTestId('layout-property-panel')).toBeVisible()
 
-    const previewCurrentButton = page.getByTestId('layout-preview-current-button').first()
-    const previewActiveButton = page.getByTestId('layout-preview-active-button').first()
-    const saveButton = page.getByTestId('layout-save-button').first()
-    const publishButton = page.getByTestId('layout-publish-button').first()
+    const designSnapshot = await readCanvasSnapshot(page)
+    expect(designSnapshot.title).toContain(SECTION_TITLE)
+    expect(designSnapshot.labels).toEqual(['Asset Name', 'Asset Code'])
 
-    await expect(previewCurrentButton).toBeVisible()
-    await expect(previewActiveButton).toBeVisible()
-    await expect(saveButton).toBeEnabled()
-    await expect(publishButton).toBeEnabled()
+    await page.getByTestId('layout-render-preview-button').click()
+    await expect(page.getByTestId('layout-field-panel')).toHaveCount(0)
+    await expect(page.getByTestId('layout-property-panel')).toHaveCount(0)
 
-    await previewActiveButton.click()
-    await expect(saveButton).toBeDisabled()
-    await expect(publishButton).toBeDisabled()
-
-    await previewCurrentButton.click()
-    await expect(saveButton).toBeEnabled()
-    await expect(publishButton).toBeEnabled()
+    const previewSnapshot = await readCanvasSnapshot(page)
+    expect(previewSnapshot).toEqual(designSnapshot)
   })
 })
-
-
 

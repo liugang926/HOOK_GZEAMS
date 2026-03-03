@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { authApi } from '@/api/auth'
 import { userApi } from '@/api/users'
+import { useLocaleStore } from '@/stores/locale'
+import { normalizeLocale } from '@/locales'
 
 export const useUserStore = defineStore('user', () => {
     const token = ref(localStorage.getItem('access_token') || '')
@@ -9,6 +11,22 @@ export const useUserStore = defineStore('user', () => {
     const currentOrganization = ref<any>(null)
     const roles = ref<string[]>([])
     const permissions = ref<string[]>([])
+
+    const applyProfileLocale = (user: any) => {
+        const preferredLanguage = user?.preferredLanguage
+        if (!preferredLanguage) return
+
+        const localeSource = localStorage.getItem('locale_source')
+        if (localeSource === 'local') return
+
+        const localeStore = useLocaleStore()
+        const targetLocale = normalizeLocale(preferredLanguage)
+
+        if (localeStore.currentLocale !== targetLocale) {
+            localeStore.setLocale(targetLocale)
+        }
+        localStorage.setItem('locale_source', 'profile')
+    }
 
     const login = async (loginForm: any) => {
         try {
@@ -36,6 +54,7 @@ export const useUserStore = defineStore('user', () => {
         try {
             const user = await userApi.getMe()
             userInfo.value = user
+            applyProfileLocale(user)
 
             // Update organization from user info if available
             if (user.primaryOrganization) {

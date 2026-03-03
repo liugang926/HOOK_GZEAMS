@@ -1,5 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
-
+import { waitForDesignerReady } from '../helpers/page-ready.helpers'
 type AnyRecord = Record<string, any>
 
 const OBJECT_CODE = 'Asset'
@@ -262,7 +262,7 @@ test.describe('Page Layout Rollback -> Re-save Regression', () => {
       `/system/page-layouts/designer?layoutId=${LAYOUT_ID}&objectCode=${OBJECT_CODE}&layoutType=edit&layoutName=Asset%20Form&businessObjectId=bo-asset`
     )
 
-    await expect(page.getByTestId('layout-designer')).toBeVisible()
+    await waitForDesignerReady(page)
     await expect(page.locator('[data-testid="layout-canvas-field"]').first()).toBeVisible()
 
     await page.getByTestId('layout-save-button').first().click()
@@ -276,4 +276,6 @@ test.describe('Page Layout Rollback -> Re-save Regression', () => {
     expect(latestConfig?.sections?.[0]?.fields?.[0]?.fieldCode).toBe('assetName')
   })
 })
+
+
 

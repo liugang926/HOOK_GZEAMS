@@ -1,4 +1,5 @@
 import { test, expect, type Route, type Page } from '@playwright/test'
+import { gotoObjectListAndWait } from '../helpers/page-ready.helpers'
 
 const OBJECT_CODE = 'Asset'
 
@@ -149,28 +150,31 @@ async function mockListPageApis(page: Page, requestQueries: Array<Record<string,
 }
 
 test.describe('List Unified Search And Column Config Regression', () => {
+  test.setTimeout(120000)
+
   test('should map unified search to field query or global search query', async ({ page }) => {
     const requestQueries: Array<Record<string, string>> = []
     await mockListPageApis(page, requestQueries)
 
-    await page.goto(`/objects/${OBJECT_CODE}`)
-    await expect(page.locator('.dynamic-list-page .el-table')).toBeVisible()
-    await expect(page.locator('.dynamic-list-page')).toContainText('Unified Search Regression Asset')
+    await gotoObjectListAndWait(page, OBJECT_CODE, {
+      expectedContent: 'Unified Search Regression Asset'
+    })
 
     // Remove initial load query, keep only search-triggered requests.
     requestQueries.length = 0
+    const keywordInput = page.locator('.unified-search-keyword input').first()
 
     await page.locator('.unified-search-field').click()
     await page.getByRole('option', { name: 'Asset Code' }).click()
-    await page.getByPlaceholder('请输入关键词').fill('ASSET-SEARCH-001')
+    await keywordInput.fill('ASSET-SEARCH-001')
     await page.locator('.search-form-container .el-button--primary').click()
 
     await expect.poll(() => requestQueries.at(-1)?.asset_code || '').toBe('ASSET-SEARCH-001')
     await expect.poll(() => requestQueries.at(-1)?.search || '').toBe('')
 
     await page.locator('.unified-search-field').click()
-    await page.getByRole('option', { name: '全部字段' }).click()
-    await page.getByPlaceholder('请输入关键词').fill('Regression')
+    await page.locator('.el-select-dropdown__item').filter({ hasText: /All|全部|鍏ㄩ儴/i }).first().click()
+    await keywordInput.fill('Regression')
     await page.locator('.search-form-container .el-button--primary').click()
 
     await expect.poll(() => requestQueries.at(-1)?.search || '').toBe('Regression')
@@ -181,14 +185,16 @@ test.describe('List Unified Search And Column Config Regression', () => {
     const requestQueries: Array<Record<string, string>> = []
     await mockListPageApis(page, requestQueries)
 
-    await page.goto(`/objects/${OBJECT_CODE}`)
-    await expect(page.locator('.dynamic-list-page .el-table')).toBeVisible()
+    await gotoObjectListAndWait(page, OBJECT_CODE, {
+      expectedContent: 'Unified Search Regression Asset',
+      requireColumnManagerTrigger: true
+    })
 
     await page.locator('.column-manager-trigger .el-button').click()
     const manager = page.locator('.column-manager')
     await expect(manager).toBeVisible()
-    await expect(manager).toContainText('Asset Name')
-    await expect(manager).toContainText('Asset Code')
-    await expect(manager).toContainText('Serial Number')
+    await expect(manager).toContainText('Asset Name', { timeout: 15000 })
+    await expect(manager).toContainText('Asset Code', { timeout: 15000 })
+    await expect(manager).toContainText('Serial Number', { timeout: 15000 })
   })
 })

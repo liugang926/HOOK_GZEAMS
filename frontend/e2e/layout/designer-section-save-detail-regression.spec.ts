@@ -1,5 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
-
+import { clickDesignerSectionHeader, waitForDesignerReady } from '../helpers/page-ready.helpers'
 type AnyRecord = Record<string, any>
 
 const OBJECT_CODE = 'Asset'
@@ -196,11 +196,9 @@ test.describe('Layout Designer Section Save -> Detail Rendering Regression', () 
       `/system/page-layouts/designer?layoutId=${LAYOUT_ID}&objectCode=${OBJECT_CODE}&layoutType=readonly&layoutName=Asset%20Readonly&businessObjectId=bo-asset`
     )
 
-    await expect(page.getByTestId('layout-designer')).toBeVisible()
+    await waitForDesignerReady(page)
 
-    const sectionHeader = page.getByTestId('layout-section-header').first()
-    await expect(sectionHeader).toBeVisible()
-    await sectionHeader.click()
+    await clickDesignerSectionHeader(page, { title: INITIAL_SECTION_TITLE })
 
     const sectionPropertyEditor = page.getByTestId('layout-section-property-editor')
     await expect(sectionPropertyEditor).toBeVisible()
@@ -224,4 +222,6 @@ test.describe('Layout Designer Section Save -> Detail Rendering Regression', () 
     await expect(page.locator('.detail-content')).toContainText(recordPayload.assetName)
   })
 })
+
+
 

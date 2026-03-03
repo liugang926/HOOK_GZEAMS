@@ -1,5 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
-
+import { waitForDesignerReady } from '../helpers/page-ready.helpers'
 type AnyRecord = Record<string, any>
 
 const OBJECT_CODE = 'Asset'
@@ -174,7 +174,7 @@ test.describe('Layout Designer Field Type Switch Save Regression', () => {
     await page.goto(
       `/system/page-layouts/designer?layoutId=${LAYOUT_ID}&objectCode=${OBJECT_CODE}&layoutType=readonly&layoutName=Asset%20Readonly&businessObjectId=bo-asset`
     )
-    await expect(page.getByTestId('layout-designer')).toBeVisible()
+    await waitForDesignerReady(page)
 
     const previewField = page.locator('[data-testid="layout-canvas-field"][data-field-code="assetName"]').first()
     await expect(previewField).toBeVisible()
@@ -198,3 +198,5 @@ test.describe('Layout Designer Field Type Switch Save Regression', () => {
     await expect(page.locator('.detail-content')).toContainText('1200')
   })
 })
+
+

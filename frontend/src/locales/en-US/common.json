@@ -54,7 +54,9 @@
     "loadFailed": "Load Failed",
     "recordIdNotExists": "Record Id Not Exists",
     "statusInfo": "Status Info",
-    "title": "Title"
+    "title": "Title",
+    "saveSuccess": "Saved successfully",
+    "saveFailed": "Save failed"
   },
   "dialog": {
     "confirmDelete": "Confirm delete",
@@ -74,6 +76,7 @@
     "createdBy": "Created By",
     "description": "Description",
     "operation": "Operation",
+    "record": "Record",
     "relatedObjects": "Related Objects",
     "remark": "Remark",
     "status": "Status",
@@ -83,6 +86,21 @@
     "updatedBy": "Updated By"
   },
   "locationInfo": "Location Info",
+  "localeSwitcher": {
+    "title": "Language Preference",
+    "actions": {
+      "syncProfile": "Sync to Profile",
+      "localOnly": "Local Only"
+    },
+    "prompts": {
+      "syncProfile": "Also sync this language to your profile preference?"
+    },
+    "messages": {
+      "profileSynced": "Language switched and synced to profile",
+      "profileSyncFailed": "Language switched locally, but profile sync failed",
+      "localOnlySwitched": "Language switched locally"
+    }
+  },
   "messages": {
     "addSuccess": "Add Success",
     "cancelSuccess": "Canceled successfully",
@@ -95,14 +113,19 @@
     "functionUnderDevelopment": "Feature under development",
     "loadFailed": "Load failed",
     "noData": "No data",
+    "noSearchResults": "No matching results",
     "operationFailed": "Operation failed",
     "operationSuccess": "Operation succeeded",
     "pleaseSelectData": "Please select data",
+    "records": "records",
     "saveSuccess": "Saved successfully",
     "selected": "{count} items selected",
+    "emptyHint": "No data yet. Try creating a new record.",
+    "systemError": "System error",
     "tips": "Tips",
     "updateFailed": "Update failed",
-    "updateSuccess": "Updated successfully"
+    "updateSuccess": "Updated successfully",
+    "formValidationFailed": "Form validation failed. Please check required fields."
   },
   "no": "No",
   "notes": "Notes",
@@ -157,6 +180,7 @@
     "filterByDept": "Filter By Dept",
     "noMatchUser": "No Match User",
     "normalUser": "Normal User",
+    "allFields": "All Fields",
     "searchKeyword": "Search Keyword",
     "searchUser": "Search User",
     "selectDept": "Select Dept",

@@ -1,4 +1,5 @@
 import { test, expect, type Route, type Page } from '@playwright/test'
+import { gotoDesignerAndWait } from '../helpers/page-ready.helpers'
 
 interface LayoutField {
   fieldCode?: string
@@ -126,15 +127,34 @@ function fulfillSuccess(route: Route, data: unknown) {
 }
 
 async function selectCanvasField(page: Page, fieldCode: string) {
-  const card = page.locator(`[data-testid="layout-canvas-field"][data-field-code="${fieldCode}"]`).first()
+  const visibleCard = page.locator(`[data-testid="layout-canvas-field"][data-field-code="${fieldCode}"]:visible`).first()
+  const card = (await visibleCard.count()) ? visibleCard : page.locator(`[data-testid="layout-canvas-field"][data-field-code="${fieldCode}"]`).first()
   await expect(card).toBeVisible()
   await card.click({ position: { x: 4, y: 4 }, force: true })
 
   const editor = page.getByTestId('layout-field-property-editor')
-  if (!(await editor.count())) {
-    await page.locator('.canvas-content .el-form-item__label').first().click({ force: true })
+  const labelInput = page.getByTestId('field-prop-label').locator('input').first()
+  const isExpectedFieldSelected = async () => {
+    if (!(await labelInput.count())) return false
+    const value = await labelInput.inputValue()
+    if (fieldCode === 'assetName') return value.includes('Asset Name')
+    if (fieldCode === 'assetCode') return value.includes('Asset Code')
+    return value.length > 0
   }
+
+  if (!(await editor.count()) || !(await isExpectedFieldSelected())) {
+    await card.click({ position: { x: 4, y: 4 }, force: true })
+  }
+
+  if (!(await isExpectedFieldSelected())) {
+    await page
+      .locator(`[data-testid="layout-canvas-field"][data-field-code="${fieldCode}"]:visible .el-form-item__label`)
+      .first()
+      .click({ force: true })
+  }
+
   await expect(editor).toBeVisible()
+  await expect.poll(async () => isExpectedFieldSelected(), { timeout: 10000 }).toBe(true)
 }
 
 test.describe('Layout Designer Multi-field Session Regression', () => {
@@ -295,11 +315,11 @@ test.describe('Layout Designer Multi-field Session Regression', () => {
       return fulfillSuccess(route, {})
     })
 
-    await page.goto(
-      `/system/page-layouts/designer?layoutId=${LAYOUT_ID}&objectCode=${OBJECT_CODE}&layoutType=readonly&layoutName=Asset%20Readonly&businessObjectId=bo-asset`
+    await gotoDesignerAndWait(
+      page,
+      `/system/page-layouts/designer?layoutId=${LAYOUT_ID}&objectCode=${OBJECT_CODE}&layoutType=readonly&layoutName=Asset%20Readonly&businessObjectId=bo-asset`,
+      { requiredFieldCode: 'assetName' }
     )
-
-    await expect(page.getByTestId('layout-designer')).toBeVisible()
 
     await selectCanvasField(page, 'assetName')
     const labelInput = page.getByTestId('field-prop-label').locator('input').first()
@@ -316,7 +336,9 @@ test.describe('Layout Designer Multi-field Session Regression', () => {
     }
 
     const collapseHeader = page.locator('.el-collapse-item__header', { hasText: 'Basic Group' }).first()
-    if (await collapseHeader.isVisible()) {
+    const collapseItem = page.locator('.el-collapse-item', { has: collapseHeader }).first()
+    const isCollapsed = ((await collapseItem.getAttribute('class')) || '').includes('is-active') === false
+    if (await collapseHeader.isVisible() && isCollapsed) {
       await collapseHeader.click({ force: true })
     }
     await selectCanvasField(page, 'assetCode')

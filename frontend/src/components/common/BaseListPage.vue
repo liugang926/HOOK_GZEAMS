@@ -653,6 +653,9 @@ onMounted(async () => {
   })
 
   // Initialize columns with persistence
+  // NOTE:
+  // Parent pages (e.g. DynamicListPage) may provide columns asynchronously.
+  // Avoid capturing an early empty snapshot that can race with later updates.
   const defaultCols = props.tableColumns
 
   if (props.objectCode && defaultCols.length > 0) {
@@ -677,11 +680,12 @@ onMounted(async () => {
       }
 
       // Use the provided columns directly
+      const latestDefaultCols = props.tableColumns
       if (columnConfig) {
           await columnConfig.fetchConfig()
-          activeColumns.value = columnConfig.applyConfig(prepareBaseColumns(defaultCols) as any) as any
+          activeColumns.value = columnConfig.applyConfig(prepareBaseColumns(latestDefaultCols) as any) as any
       } else {
-          activeColumns.value = prepareBaseColumns(defaultCols)
+          activeColumns.value = prepareBaseColumns(latestDefaultCols)
       }
   } else if (props.objectCode) {
       // No columns provided, try to fetch from field definitions
@@ -707,7 +711,16 @@ onMounted(async () => {
               columnsFromLayout = []
           }
 
-          if (columnsFromLayout.length > 0) {
+          const latestDefaultCols = props.tableColumns
+          if (latestDefaultCols.length > 0) {
+              // Parent provided canonical columns after mount; always prefer these
+              if (columnConfig) {
+                  await columnConfig.fetchConfig()
+                  activeColumns.value = columnConfig.applyConfig(prepareBaseColumns(latestDefaultCols) as any) as any
+              } else {
+                  activeColumns.value = prepareBaseColumns(latestDefaultCols)
+              }
+          } else if (columnsFromLayout.length > 0) {
               const baseCols = prepareColumns(columnsFromLayout)
               if (columnConfig) {
                   await columnConfig.fetchConfig()
@@ -717,19 +730,19 @@ onMounted(async () => {
               }
           } else {
               console.warn('List layout columns missing; using default columns only')
-              activeColumns.value = prepareBaseColumns(defaultCols)
+              activeColumns.value = prepareBaseColumns(props.tableColumns)
           }
       } catch (e: any) {
           console.warn('Failed to load object metadata', e)
-          activeColumns.value = prepareBaseColumns(defaultCols)
+          activeColumns.value = prepareBaseColumns(props.tableColumns)
       }
   } else {
       // No object code, just use defaults
       if (columnConfig) {
           await columnConfig.fetchConfig()
-          activeColumns.value = columnConfig.applyConfig(prepareBaseColumns(defaultCols) as any) as any
+          activeColumns.value = columnConfig.applyConfig(prepareBaseColumns(props.tableColumns) as any) as any
       } else {
-          activeColumns.value = prepareBaseColumns(defaultCols)
+          activeColumns.value = prepareBaseColumns(props.tableColumns)
       }
   }
 
@@ -810,7 +823,7 @@ defineExpose({
             v-if="total > 0"
             class="record-count"
           >
-            {{ total }} {{ $t('common.messages.records') || '条记录' }}
+            {{ total }} {{ $t('common.messages.records') }}
           </span>
         </div>
         <div class="page-toolbar">
@@ -1273,7 +1286,7 @@ defineExpose({
           <template #default>
             <slot name="empty-action">
               <p class="empty-hint">
-                {{ $t('common.messages.emptyHint') || '暂无数据，请尝试创建一条新记录' }}
+                {{ $t('common.messages.emptyHint') }}
               </p>
             </slot>
           </template>

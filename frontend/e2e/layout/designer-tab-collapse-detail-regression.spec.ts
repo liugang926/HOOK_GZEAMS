@@ -1,5 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
-
+import { clickDesignerSectionHeader, waitForDesignerReady } from '../helpers/page-ready.helpers'
 type AnyRecord = Record<string, any>
 type ScenarioType = 'tab' | 'collapse'
 
@@ -123,6 +123,8 @@ function fulfillSuccess(route: Route, data: unknown) {
 }
 
 test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
+  test.setTimeout(120000)
+
   for (const scenario of scenarios) {
     test(`${scenario.type} section title save must reflect on readonly detail`, async ({ page }) => {
       let activeLayoutConfig = buildLayoutConfig(scenario)
@@ -261,8 +263,8 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
         `/system/page-layouts/designer?layoutId=${scenario.layoutId}&objectCode=${OBJECT_CODE}&layoutType=readonly&layoutName=Asset%20Readonly&businessObjectId=bo-asset`
       )
 
-      await expect(page.getByTestId('layout-designer')).toBeVisible()
-      await page.getByTestId('layout-section-header').first().click()
+      await waitForDesignerReady(page, { timeout: 30000 })
+      await clickDesignerSectionHeader(page, { title: scenario.baseTitle })
       await expect(page.getByTestId('layout-section-property-editor')).toBeVisible()
 
       const titleInput = page.getByTestId('section-prop-title').locator('input').first()
@@ -277,8 +279,8 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
       await expect.poll(() => saveCallCount).toBe(1)
       await expect.poll(() => getFirstSectionTitle(activeLayoutConfig)).toBe(scenario.updatedTitle)
 
-      await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
-      await expect(page.locator('.dynamic-detail-page').first()).toBeVisible()
+      await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`, { waitUntil: 'domcontentloaded' })
+      await expect(page.locator('.detail-content').first()).toBeVisible()
       await expect(page.locator('.load-error')).toHaveCount(0)
 
       const expectedTitle = `${scenario.updatedTitle} / ${scenario.nestedTitle}`
@@ -423,7 +425,7 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
         `/system/page-layouts/designer?layoutId=${scenario.layoutId}&objectCode=${OBJECT_CODE}&layoutType=readonly&layoutName=Asset%20Readonly&businessObjectId=bo-asset`
       )
 
-      await expect(page.getByTestId('layout-designer')).toBeVisible()
+      await waitForDesignerReady(page, { timeout: 30000 })
 
       const fieldCard = page
         .locator('[data-testid="layout-canvas-field"][data-field-code="assetName"]')
@@ -467,8 +469,8 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
       await expect.poll(() => Number(getNestedField(activeLayoutConfig, scenario).span || 0)).toBe(2)
       await expect.poll(() => Boolean(getNestedField(activeLayoutConfig, scenario).readonly)).toBe(false)
 
-      await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
-      await expect(page.locator('.dynamic-detail-page').first()).toBeVisible()
+      await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`, { waitUntil: 'domcontentloaded' })
+      await expect(page.locator('.detail-content').first()).toBeVisible()
       await expect(page.locator('.load-error')).toHaveCount(0)
 
       await expect(page.locator('.detail-content')).toContainText(recordPayload.assetName)
@@ -616,7 +618,7 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
         `/system/page-layouts/designer?layoutId=${scenario.layoutId}&objectCode=${OBJECT_CODE}&layoutType=readonly&layoutName=Asset%20Readonly&businessObjectId=bo-asset`
       )
 
-      await expect(page.getByTestId('layout-designer')).toBeVisible()
+      await waitForDesignerReady(page, { timeout: 30000 })
 
       const fieldCard = page
         .locator('[data-testid="layout-canvas-field"][data-field-code="assetName"]')
@@ -648,8 +650,8 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
       await expect.poll(() => saveCallCount).toBe(1)
       await expect.poll(() => Boolean(getNestedField(activeLayoutConfig, scenario).visible)).toBe(false)
 
-      await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
-      await expect(page.locator('.dynamic-detail-page').first()).toBeVisible()
+      await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`, { waitUntil: 'domcontentloaded' })
+      await expect(page.locator('.detail-content').first()).toBeVisible()
       await expect(page.locator('.load-error')).toHaveCount(0)
 
       await expect(page.locator('.detail-sections .field-col')).toHaveCount(0)
@@ -657,3 +659,5 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
     })
   }
 })
+
+

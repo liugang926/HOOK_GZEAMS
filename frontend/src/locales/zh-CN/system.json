@@ -133,7 +133,11 @@
             "qrcode": "二维码",
             "notification": "通知",
             "asset": "资产",
-            "inventory": "盘点"
+            "inventory": "盘点",
+            "featureFlags": "功能开关",
+            "finance": "财务",
+            "workflow": "工作流",
+            "integration": "集成"
         },
         "columns": {
             "key": "配置键",
@@ -148,11 +152,103 @@
             "enabled": "启用",
             "disabled": "禁用"
         },
+        "tags": {
+            "system": "系统"
+        },
+        "valueTypes": {
+            "string": "字符串",
+            "integer": "整数",
+            "float": "浮点数",
+            "boolean": "布尔",
+            "json": "JSON"
+        },
+        "categories": {
+            "general": "通用",
+            "qrcode": "二维码",
+            "notification": "通知",
+            "asset": "资产",
+            "inventory": "盘点",
+            "feature_flag": "功能开关",
+            "finance": "财务",
+            "workflow": "工作流",
+            "integration": "集成"
+        },
+        "featureFlags": {
+            "runtime_i18n_enabled": {
+                "name": "运行时国际化开关",
+                "description": "启用对象/布局元数据的运行时本地化输出。"
+            },
+            "layout_merge_unified_enabled": {
+                "name": "布局统一合并开关",
+                "description": "启用统一的运行时布局合并与标准化路径。"
+            },
+            "field_code_strict_mode": {
+                "name": "field_code 严格模式",
+                "description": "仅返回 field_code，不再输出兼容字段 code。"
+            }
+        },
         "messages": {
             "loadFailed": "加载系统配置失败",
             "confirmDelete": "确定删除此配置吗？"
         },
-        "searchPlaceholder": "按键或名称搜索"
+        "searchPlaceholder": "按键或名称搜索",
+        "form": {
+            "titles": {
+                "create": "新增配置",
+                "edit": "编辑配置"
+            },
+            "labels": {
+                "configKey": "配置键",
+                "displayName": "显示名称",
+                "valueType": "值类型",
+                "value": "值",
+                "category": "分类",
+                "description": "描述",
+                "isSystem": "系统配置",
+                "isEncrypted": "加密存储"
+            },
+            "placeholders": {
+                "configKey": "例如：QR_CODE_TEMPLATE、ENABLE_EMAIL",
+                "displayName": "例如：二维码模板、启用邮件通知",
+                "valueType": "请选择值类型",
+                "jsonValue": "例如：{\"key\": \"value\"}",
+                "category": "请选择分类",
+                "description": "请描述该配置的用途"
+            },
+            "valuePlaceholders": {
+                "string": "请输入文本值",
+                "integer": "请输入整数值",
+                "float": "请输入小数值",
+                "default": "请输入值"
+            },
+            "switches": {
+                "systemConfig": "系统配置",
+                "userConfig": "用户配置",
+                "encrypted": "加密",
+                "plainText": "明文"
+            },
+            "tips": {
+                "configKey": "配置唯一标识（建议使用大写字母和下划线）",
+                "isSystem": "系统配置不可被普通用户删除",
+                "isEncrypted": "敏感数据建议开启加密（如密码、API 密钥）"
+            },
+            "validation": {
+                "configKeyRequired": "请输入配置键",
+                "configKeyPattern": "配置键仅支持大写字母、数字和下划线",
+                "displayNameRequired": "请输入显示名称",
+                "valueTypeRequired": "请选择值类型",
+                "valueRequired": "请输入配置值"
+            },
+            "messages": {
+                "invalidJson": "JSON 格式不正确",
+                "updateSuccess": "更新成功",
+                "createSuccess": "新增成功",
+                "operationFailed": "操作失败"
+            },
+            "actions": {
+                "add": "新增"
+            }
+        }
     },
     "businessObject": {
         "title": "业务对象管理",
@@ -215,7 +311,9 @@
             "customActionsExample": "示例: [{\"code\": \"approve\", \"label\": \"审批\", \"type\": \"api\"}]"
         },
         "messages": {
-            "loadFailed": "加载业务对象失败"
+            "loadFailed": "加载业务对象失败",
+            "noBusinessFields": "该对象布局未配置业务字段",
+            "loadMetadataFailed": "加载对象元数据失败"
         }
     },
     "pageLayout": {
@@ -292,7 +390,76 @@
             "required": "请填写布局编码和名称"
         },
         "designer": {
-            "title": "布局设计器"
+            "title": "?????",
+            "badges": {
+                "customLayout": "?????"
+            },
+            "actions": {
+                "undo": "??",
+                "redo": "??",
+                "reset": "????",
+                "custom": "???",
+                "preview": "??",
+                "saveDraft": "????",
+                "publish": "??",
+                "addSection": "????",
+                "editSection": "????",
+                "deleteSection": "????"
+            },
+            "status": {
+                "previewMode": "????",
+                "customMode": "?????",
+                "designState": "???",
+                "previewState": "???"
+            },
+            "placeholders": {
+                "searchField": "?????????..."
+            },
+            "hints": {
+                "designCanvas": "?????????????????",
+                "previewCanvas": "?????????????????????",
+                "dropToTab": "??????????",
+                "dropToCollapse": "??????????",
+                "dropToSection": "?????????"
+            },
+            "panel": {
+                "properties": "??",
+                "fieldProperties": "????",
+                "sectionProperties": "????"
+            },
+            "empty": {
+                "layoutEmpty": "????????????????",
+                "selectTarget": "???????????????"
+            },
+            "defaults": {
+                "untitledSection": "?????",
+                "tabTitle": "?? {index}",
+                "newSection": "????",
+                "basicInformation": "????"
+            },
+            "messages": {
+                "previewSampleUpdated": "????????????????????",
+                "previewEditCancelled": "??????????",
+                "previewDeleteDemoOnly": "?????????????????????????",
+                "cannotAddField": "?????{name}??{reason}",
+                "fieldAlreadyAdded": "?????",
+                "cannotSwitchFieldType": "?????????{reason}",
+                "deleteSectionConfirm": "????????????????????",
+                "deleteSectionTitle": "????",
+                "sectionDeleted": "?????",
+                "invalidLayoutConfig": "??????",
+                "layoutSaved": "?????",
+                "saveFailed": "????",
+                "layoutPublished": "?????",
+                "publishFailed": "????",
+                "resetConfirm": "???????????????????????",
+                "resetConfirmTitle": "??????",
+                "resetToDefaultSuccess": "??????????",
+                "resetFailedRefresh": "???????????",
+                "switchedToCustomMode": "?????????",
+                "noPreviewLayoutFallback": "???????????????????",
+                "switchedToPreviewMode": "????????"
+            }
         }
     },
     "fieldDefinition": {
@@ -855,7 +1022,16 @@
         "codePlaceholder": "如: zh-CN, en-US",
         "namePlaceholder": "如: 简体中文",
         "nativeNamePlaceholder": "如: 中文",
-        "localePlaceholder": "如: zhCN, enUS"
+        "localePlaceholder": "如: zhCN, enUS",
+        "messages": {
+            "setDefaultSuccess": "已将 {name} 设为默认语言",
+            "setDefaultFailed": "设置默认语言失败",
+            "activateSuccess": "语言已启用",
+            "deactivateSuccess": "语言已停用",
+            "updateFailed": "更新语言失败",
+            "deleteSuccess": "语言删除成功",
+            "deleteFailed": "删除语言失败"
+        }
     },
     "translations": {
         "title": "翻译管理",
@@ -896,5 +1072,60 @@
         "textPlaceholder": "输入翻译文本",
         "contextPlaceholder": "用于消歧义的上下文说明（可选）",
         "isSystemLabel": "系统翻译（不可被用户编辑）"
+    },
+    "moduleWorkbench": {
+        "title": "模块工作台",
+        "subtitle": "检查后端对象覆盖情况，并快速打开缺失的前端入口。",
+        "metrics": {
+            "backendObjects": "后端对象数",
+            "menuCovered": "菜单已覆盖",
+            "missingEntries": "缺失入口",
+            "invalidMenuCodes": "无效菜单编码"
+        },
+        "sections": {
+            "missingFrontendEntries": "缺失前端入口",
+            "allObjects": "全部对象",
+            "invalidMenuObjectCodes": "无效菜单对象编码",
+            "brokenMenuUrls": "损坏的菜单 URL"
+        },
+        "columns": {
+            "objectCode": "对象编码",
+            "name": "名称",
+            "modelPath": "模型路径",
+            "type": "类型",
+            "readiness": "就绪状态",
+            "actions": "快捷操作",
+            "coverage": "覆盖状态",
+            "menuName": "菜单名称",
+            "code": "编码",
+            "url": "URL"
+        },
+        "type": {
+            "system": "系统",
+            "custom": "自定义"
+        },
+        "readiness": {
+            "ready": "就绪",
+            "emptyFields": "无业务字段",
+            "checking": "检查中",
+            "unavailable": "不可用"
+        },
+        "coverage": {
+            "covered": "已覆盖",
+            "missing": "缺失"
+        },
+        "actions": {
+            "list": "列表"
+        },
+        "empty": {
+            "noMissingEntries": "所有后端对象都已在菜单中覆盖。",
+            "noInvalidMenuCodes": "菜单中未发现无效对象编码。",
+            "noBrokenMenuUrls": "当前前端路由可解析所有菜单 URL。"
+        },
+        "searchPlaceholder": "按编码或名称搜索",
+        "messages": {
+            "loadFailed": "加载模块覆盖数据失败",
+            "metadataUnavailable": "元数据不可用"
+        }
     }
 }

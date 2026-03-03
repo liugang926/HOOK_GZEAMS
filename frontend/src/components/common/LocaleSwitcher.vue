@@ -26,26 +26,99 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useLocaleStore } from '@/stores/locale'
 import type { LocaleType } from '@/locales'
 import { ArrowDown } from '@element-plus/icons-vue'
+import { useUserStore } from '@/stores/user'
+import { userApi } from '@/api/users'
 
 const localeStore = useLocaleStore()
+const userStore = useUserStore()
+const { t } = useI18n()
 const currentLocale = computed(() => localeStore.currentLocale)
 
-const locales: Array<{ value: LocaleType; label: string }> = [
-  { value: 'zh-CN', label: '简体中文' },
-  { value: 'en-US', label: 'English' }
-]
+const locales = computed<Array<{ value: LocaleType; label: string }>>(() => {
+  const supported = new Set(localeStore.supportedLocales)
+  const fromApi = localeStore.activeLanguages
+    .map((language) => {
+      if (!supported.has(language.code as LocaleType)) return null
+      return {
+        value: language.code as LocaleType,
+        label: language.nativeName || language.name || language.code
+      }
+    })
+    .filter((item): item is { value: LocaleType; label: string } => Boolean(item))
+
+  if (fromApi.length > 0) return fromApi
+  return localeStore.supportedLocales.map((locale) => ({ value: locale, label: locale }))
+})
 
 const currentLabel = computed(
-  () => locales.find((l) => l.value === currentLocale.value)?.label || '语言'
+  () => locales.value.find((l) => l.value === currentLocale.value)?.label || t('notifications.columns.language')
 )
 
-const handleCommand = (locale: LocaleType) => {
+const applyLocalLocale = (locale: LocaleType) => {
   localeStore.setLocale(locale)
+  localStorage.setItem('locale_source', 'local')
 }
+
+const syncProfileLocale = async (locale: LocaleType): Promise<boolean> => {
+  try {
+    await userApi.updateProfile({ preferredLanguage: locale })
+    localStorage.setItem('locale_source', 'profile')
+    if (userStore.userInfo) {
+      userStore.userInfo.preferredLanguage = locale
+    }
+    return true
+  } catch {
+    localStorage.setItem('locale_source', 'local')
+    ElMessage.error(t('common.localeSwitcher.messages.profileSyncFailed'))
+    return false
+  }
+}
+
+const handleCommand = async (locale: LocaleType) => {
+  if (locale === currentLocale.value) return
+
+  // Guest users can only switch locally.
+  if (!userStore.token) {
+    applyLocalLocale(locale)
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      t('common.localeSwitcher.prompts.syncProfile'),
+      t('common.localeSwitcher.title'),
+      {
+        type: 'info',
+        distinguishCancelAndClose: true,
+        confirmButtonText: t('common.localeSwitcher.actions.syncProfile'),
+        cancelButtonText: t('common.localeSwitcher.actions.localOnly')
+      }
+    )
+
+    applyLocalLocale(locale)
+    const synced = await syncProfileLocale(locale)
+    if (synced) {
+      ElMessage.success(t('common.localeSwitcher.messages.profileSynced'))
+    }
+  } catch (action: unknown) {
+    if (action === 'cancel') {
+      applyLocalLocale(locale)
+      ElMessage.success(t('common.localeSwitcher.messages.localOnlySwitched'))
+    }
+  }
+}
+
+onMounted(async () => {
+  if (!localeStore.languagesLoaded) {
+    await localeStore.initialize()
+  }
+})
 </script>
 
 <style scoped>
