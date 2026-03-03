@@ -1,5 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
-import { waitForDesignerReady } from '../helpers/page-ready.helpers'
+import { clickDesignerSaveDraft, waitForDesignerReady } from '../helpers/page-ready.helpers'
 type AnyRecord = Record<string, any>
 
 const OBJECT_CODE = 'Asset'
@@ -185,7 +185,7 @@ test.describe('Layout Designer Field Type Switch Save Regression', () => {
     await fieldTypeControl.click()
     await page.getByRole('option', { name: 'Number' }).first().click()
 
-    await page.getByTestId('layout-save-button').first().click()
+    await clickDesignerSaveDraft(page)
     await expect.poll(() => saveCallCount).toBe(1)
     await expect
       .poll(() => String(activeLayoutConfig.sections?.[0]?.fields?.[0]?.fieldType || ''))

@@ -390,75 +390,76 @@
             "required": "请填写布局编码和名称"
         },
         "designer": {
-            "title": "?????",
+            "title": "布局设计器",
             "badges": {
-                "customLayout": "?????"
+                "customLayout": "自定义布局"
             },
             "actions": {
-                "undo": "??",
-                "redo": "??",
-                "reset": "????",
-                "custom": "???",
-                "preview": "??",
-                "saveDraft": "????",
-                "publish": "??",
-                "addSection": "????",
-                "editSection": "????",
-                "deleteSection": "????"
+                "undo": "撤销",
+                "redo": "重做",
+                "reset": "恢复默认",
+                "custom": "自定义",
+                "preview": "预览",
+                "saveDraft": "保存草稿",
+                "publish": "发布",
+                "addSection": "新增分组",
+                "editSection": "编辑分组",
+                "deleteSection": "删除分组"
             },
             "status": {
-                "previewMode": "????",
-                "customMode": "?????",
-                "designState": "???",
-                "previewState": "???"
+                "previewMode": "预览模式",
+                "customMode": "自定义模式",
+                "designState": "设计态",
+                "previewState": "预览态"
             },
             "placeholders": {
-                "searchField": "?????????..."
+                "searchField": "搜索字段名称或编码..."
             },
             "hints": {
-                "designCanvas": "?????????????????",
-                "previewCanvas": "?????????????????????",
-                "dropToTab": "??????????",
-                "dropToCollapse": "??????????",
-                "dropToSection": "?????????"
+                "designCanvas": "布局设计画布（点击字段可编辑属性）",
+                "previewCanvas": "预览渲染（与详情页渲染保持一致）",
+                "dropToTab": "拖拽字段到当前标签页",
+                "dropToCollapse": "拖拽字段到当前折叠项",
+                "dropToSection": "拖拽字段到当前分组",
+                "singleLayoutModel": "单一布局模型：在此配置编辑布局，详情页复用该布局；列表页由字段配置（show_in_list + sort_order）驱动。"
             },
             "panel": {
-                "properties": "??",
-                "fieldProperties": "????",
-                "sectionProperties": "????"
+                "properties": "属性",
+                "fieldProperties": "字段属性",
+                "sectionProperties": "分组属性"
             },
             "empty": {
-                "layoutEmpty": "????????????????",
-                "selectTarget": "???????????????"
+                "layoutEmpty": "布局为空，请先新增分组开始设计。",
+                "selectTarget": "请选择字段或分组后再编辑属性。"
             },
             "defaults": {
-                "untitledSection": "?????",
-                "tabTitle": "?? {index}",
-                "newSection": "????",
-                "basicInformation": "????"
+                "untitledSection": "未命名分组",
+                "tabTitle": "标签 {index}",
+                "newSection": "新分组",
+                "basicInformation": "基本信息"
             },
             "messages": {
-                "previewSampleUpdated": "????????????????????",
-                "previewEditCancelled": "??????????",
-                "previewDeleteDemoOnly": "?????????????????????????",
-                "cannotAddField": "?????{name}??{reason}",
-                "fieldAlreadyAdded": "?????",
-                "cannotSwitchFieldType": "?????????{reason}",
-                "deleteSectionConfirm": "????????????????????",
-                "deleteSectionTitle": "????",
-                "sectionDeleted": "?????",
-                "invalidLayoutConfig": "??????",
-                "layoutSaved": "?????",
-                "saveFailed": "????",
-                "layoutPublished": "?????",
-                "publishFailed": "????",
-                "resetConfirm": "???????????????????????",
-                "resetConfirmTitle": "??????",
-                "resetToDefaultSuccess": "??????????",
-                "resetFailedRefresh": "???????????",
-                "switchedToCustomMode": "?????????",
-                "noPreviewLayoutFallback": "???????????????????",
-                "switchedToPreviewMode": "????????"
+                "previewSampleUpdated": "预览模式：样例数据已更新（不会保存到后端）",
+                "previewEditCancelled": "预览模式：已取消编辑",
+                "previewDeleteDemoOnly": "预览模式：删除仅用于界面演示，不会删除真实数据",
+                "cannotAddField": "无法添加“{name}”：{reason}",
+                "fieldAlreadyAdded": "字段已添加",
+                "cannotSwitchFieldType": "无法切换字段类型：{reason}",
+                "deleteSectionConfirm": "确认删除该分组吗？分组内字段将一并移除。",
+                "deleteSectionTitle": "删除分组",
+                "sectionDeleted": "分组已删除",
+                "invalidLayoutConfig": "布局配置无效",
+                "layoutSaved": "布局已保存",
+                "saveFailed": "保存失败",
+                "layoutPublished": "布局已发布",
+                "publishFailed": "发布失败",
+                "resetConfirm": "确认将布局重置为系统默认吗？未保存的改动会丢失。",
+                "resetConfirmTitle": "重置确认",
+                "resetToDefaultSuccess": "已重置为系统默认布局",
+                "resetFailedRefresh": "重置失败，请刷新后重试",
+                "switchedToCustomMode": "已切换到自定义模式",
+                "noPreviewLayoutFallback": "未找到可预览布局，已回退到自定义模式。",
+                "switchedToPreviewMode": "已切换到预览模式"
             }
         }
     },
@@ -555,7 +556,7 @@
             }
         },
         "tips": {
-            "formula": "使用 {字段编码} 引用其他字段",
+            "formula": "使用 {fieldCode} 引用其他字段",
             "showInList": "在列表页默认显示",
             "listWidth": "列表页列宽度（像素）"
         },
@@ -679,328 +680,6 @@
             "generateSuccess": "生成成功: {number}",
             "generateFailed": "生成失败",
             "previewFailed": "获取预览失败"
-        },
-        "permission": {
-            "title": "权限管理",
-            "tabs": {
-                "field": "字段权限",
-                "data": "数据权限",
-                "audit": "权限日志"
-            },
-            "data": {
-                "toolbar": {
-                    "role": "角色",
-                    "rolePlaceholder": "选择角色",
-                    "createRule": "新增规则"
-                },
-                "columns": {
-                    "role": "角色",
-                    "object": "业务对象",
-                    "type": "权限类型",
-                    "scope": "权限范围",
-                    "status": "状态",
-                    "description": "说明",
-                    "operation": "操作"
-                },
-                "types": {
-                    "all": "全部数据",
-                    "department": "本部门",
-                    "department_and_sub": "本部门及子部门",
-                    "self": "仅本人",
-                    "custom": "自定义"
-                },
-                "status": {
-                    "active": "启用",
-                    "inactive": "禁用",
-                    "enable": "启用",
-                    "disable": "禁用"
-                },
-                "dialog": {
-                    "createTitle": "新增数据权限规则",
-                    "editTitle": "编辑数据权限规则",
-                    "role": "角色",
-                    "rolePlaceholder": "请选择角色",
-                    "object": "业务对象",
-                    "objectPlaceholder": "请选择业务对象",
-                    "type": "权限类型",
-                    "typePlaceholder": "请选择权限类型",
-                    "expression": "权限表达式",
-                    "expressionPlaceholder": "自定义权限表达式，如: department_id in (1, 2, 3)",
-                    "scope": "权限范围",
-                    "status": "状态",
-                    "description": "说明",
-                    "descriptionPlaceholder": "请输入权限规则说明"
-                },
-                "messages": {
-                    "enabled": "已启用",
-                    "disabled": "已禁用",
-                    "createSuccess": "创建成功",
-                    "updateSuccess": "更新成功"
-                }
-            },
-            "field": {
-                "toolbar": {
-                    "role": "角色",
-                    "rolePlaceholder": "选择角色",
-                    "object": "业务对象",
-                    "objectPlaceholder": "选择业务对象"
-                },
-                "columns": {
-                    "role": "角色",
-                    "object": "业务对象",
-                    "field": "字段名称",
-                    "read": "读取权限",
-                    "write": "写入权限",
-                    "visibility": "可见性",
-                    "description": "说明",
-                    "operation": "操作"
-                },
-                "status": {
-                    "allow": "允许",
-                    "deny": "禁止",
-                    "show": "显示",
-                    "hide": "隐藏"
-                },
-                "dialog": {
-                    "title": "编辑字段权限",
-                    "role": "角色",
-                    "object": "业务对象",
-                    "field": "字段名称",
-                    "read": "读取权限",
-                    "write": "写入权限",
-                    "visibility": "可见性",
-                    "description": "说明"
-                },
-                "messages": {
-                    "saveSuccess": "保存成功",
-                    "saveFailed": "保存失败"
-                }
-            },
-            "audit": {
-                "toolbar": {
-                    "action": "操作类型",
-                    "actionPlaceholder": "全部",
-                    "timeRange": "时间范围",
-                    "startDate": "开始日期",
-                    "endDate": "结束日期"
-                },
-                "stats": {
-                    "todayGrants": "今日授权",
-                    "todayRevokes": "今日撤销",
-                    "weekTotal": "本周操作",
-                    "activeUsers": "活跃用户"
-                },
-                "columns": {
-                    "time": "操作时间",
-                    "operator": "操作人",
-                    "action": "操作类型",
-                    "type": "权限类型",
-                    "target": "目标对象",
-                    "details": "操作详情",
-                    "ip": "IP地址",
-                    "operation": "操作"
-                },
-                "actions": {
-                    "grant": "授权",
-                    "revoke": "撤销",
-                    "update": "修改"
-                },
-                "types": {
-                    "field": "字段权限",
-                    "data": "数据权限"
-                },
-                "dialog": {
-                    "title": "日志详情",
-                    "time": "操作时间",
-                    "operator": "操作人",
-                    "action": "操作类型",
-                    "type": "权限类型",
-                    "target": "目标对象",
-                    "details": "操作详情",
-                    "ip": "IP地址",
-                    "userAgent": "用户代理"
-                }
-            }
-        },
-        "configPackage": {
-            "title": "配置包管理",
-            "description": "导入导出业务对象配置，支持环境迁移和版本备份",
-            "actions": {
-                "import": "导入配置",
-                "export": "导出配置",
-                "download": "下载",
-                "diff": "对比",
-                "delete": "删除",
-                "rollback": "回滚"
-            },
-            "tabs": {
-                "packages": "配置包",
-                "history": "导入历史"
-            },
-            "columns": {
-                "name": "包名称",
-                "type": "类型",
-                "objects": "包含对象",
-                "source": "来源环境",
-                "exportTime": "导出时间",
-                "status": "状态",
-                "package": "配置包",
-                "strategy": "策略",
-                "result": "结果",
-                "importTime": "导入时间",
-                "operation": "操作"
-            },
-            "types": {
-                "full": "全量",
-                "partial": "增量",
-                "diff": "差异"
-            },
-            "strategies": {
-                "merge": "合并",
-                "replace": "替换",
-                "skip": "跳过"
-            },
-            "status": {
-                "pending": "等待中",
-                "processing": "处理中",
-                "success": "成功",
-                "failed": "失败",
-                "partial": "部分成功",
-                "rolled_back": "已回滚"
-            },
-            "dialog": {
-                "exportTitle": "导出配置",
-                "importTitle": "导入配置",
-                "name": "包名称",
-                "namePlaceholder": "例如: 资产管理配置",
-                "version": "版本号",
-                "versionPlaceholder": "例如: 1.0.0",
-                "description": "描述",
-                "objects": "业务对象",
-                "objectsPlaceholder": "选择要导出的业务对象",
-                "package": "选择包",
-                "packagePlaceholder": "从已有配置包导入",
-                "strategy": "导入策略",
-                "strategies": {
-                    "merge": "合并 (更新已存在)",
-                    "replace": "替换 (覆盖已存在)",
-                    "skip": "跳过 (只创建新的)"
-                }
-            },
-            "messages": {
-                "loadPackagesFailed": "加载配置包失败",
-                "loadLogsFailed": "加载导入记录失败",
-                "exportSuccess": "导出成功：{objects} 对象, {fields} 字段, {layouts} 布局, {rules} 规则",
-                "exportFailed": "导出失败",
-                "importSuccess": "导入成功：创建 {created}, 更新 {updated}, 跳过 {skipped}",
-                "importPartial": "导入部分完成，{failed} 项失败",
-                "importFailed": "导入失败",
-                "downloadStart": "下载已开始",
-                "downloadFailed": "下载失败",
-                "diffDeveloping": "对比功能开发中...",
-                "deleteSuccess": "删除成功",
-                "deleteFailed": "删除失败",
-                "rollbackConfirm": "回滚将撤销此次导入的所有更改，确定继续吗？",
-                "rollbackTitle": "确认回滚",
-                "rollbackSuccess": "回滚成功",
-                "rollbackFailed": "回滚失败",
-                "required": "请填写必填项",
-                "selectPackage": "请选择配置包",
-                "confirmDelete": "确定删除此配置包？"
-            }
-        },
-        "workflow": {
-            "title": "工作流管理",
-            "create": "创建工作流",
-            "createTitle": "创建工作流",
-            "editTitle": "编辑工作流",
-            "columns": {
-                "name": "名称",
-                "code": "编码",
-                "businessObject": "业务对象",
-                "operation": "操作"
-            },
-            "form": {
-                "name": "名称",
-                "code": "编码",
-                "businessObject": "业务对象"
-            },
-            "businessObjects": {
-                "asset_pickup": "资产领用",
-                "asset_transfer": "资产调拨",
-                "asset_return": "资产退库"
-            },
-            "messages": {
-                "saveSuccess": "保存成功",
-                "createSuccess": "创建成功",
-                "updateSuccess": "更新成功",
-                "saveFailed": "保存失败",
-                "required": "请填写名称和编码"
-            }
-        },
-        "file": {
-            "title": "系统文件管理",
-            "actions": {
-                "upload": "上传文件",
-                "batchDelete": "批量删除",
-                "clearSelection": "取消选择",
-                "selection": "已选择 {count} 个文件"
-            },
-            "filter": {
-                "search": "搜索",
-                "searchPlaceholder": "文件名",
-                "fileType": "文件类型",
-                "allTypes": "所有类型",
-                "bizType": "业务类型",
-                "allBizTypes": "全部"
-            },
-            "types": {
-                "image": "图片",
-                "document": "文档",
-                "video": "视频",
-                "archive": "压缩包",
-                "asset_image": "资产图片",
-                "contract": "合同",
-                "invoice": "发票",
-                "attachment": "附件",
-                "other": "其他",
-                "pdf": "PDF",
-                "file": "文件"
-            },
-            "stats": {
-                "totalFiles": "文件总数",
-                "totalSize": "总大小",
-                "todayUploads": "今日上传",
-                "images": "图片数量"
-            },
-            "columns": {
-                "preview": "预览",
-                "fileName": "文件名",
-                "type": "类型",
-                "size": "大小",
-                "bizType": "业务类型",
-                "description": "描述",
-                "uploadDate": "上传时间"
-            },
-            "dialog": {
-                "editTitle": "编辑文件",
-                "fileName": "文件名",
-                "bizType": "业务类型",
-                "description": "描述"
-            },
-            "messages": {
-                "sizeLimit": "文件大小不能超过 {size}",
-                "uploadSuccess": "文件上传成功",
-                "uploadFailed": "上传失败",
-                "updateSuccess": "更新成功",
-                "updateFailed": "更新失败",
-                "deleteSuccess": "删除成功",
-                "deleteFailed": "删除失败",
-                "batchDeleteFailed": "批量删除失败",
-                "confirmDelete": "确定要删除此文件吗？",
-                "batchDeleteSuccess": "已删除 {count} 个文件",
-                "loadFailed": "加载文件失败"
-            }
         }
     },
     "languages": {
@@ -1126,6 +805,328 @@
         "messages": {
             "loadFailed": "加载模块覆盖数据失败",
             "metadataUnavailable": "元数据不可用"
+        }
+    },
+    "permission": {
+        "title": "权限管理",
+        "tabs": {
+            "field": "字段权限",
+            "data": "数据权限",
+            "audit": "权限日志"
+        },
+        "data": {
+            "toolbar": {
+                "role": "角色",
+                "rolePlaceholder": "选择角色",
+                "createRule": "新增规则"
+            },
+            "columns": {
+                "role": "角色",
+                "object": "业务对象",
+                "type": "权限类型",
+                "scope": "权限范围",
+                "status": "状态",
+                "description": "说明",
+                "operation": "操作"
+            },
+            "types": {
+                "all": "全部数据",
+                "department": "本部门",
+                "department_and_sub": "本部门及子部门",
+                "self": "仅本人",
+                "custom": "自定义"
+            },
+            "status": {
+                "active": "启用",
+                "inactive": "禁用",
+                "enable": "启用",
+                "disable": "禁用"
+            },
+            "dialog": {
+                "createTitle": "新增数据权限规则",
+                "editTitle": "编辑数据权限规则",
+                "role": "角色",
+                "rolePlaceholder": "请选择角色",
+                "object": "业务对象",
+                "objectPlaceholder": "请选择业务对象",
+                "type": "权限类型",
+                "typePlaceholder": "请选择权限类型",
+                "expression": "权限表达式",
+                "expressionPlaceholder": "自定义权限表达式，如: department_id in (1, 2, 3)",
+                "scope": "权限范围",
+                "status": "状态",
+                "description": "说明",
+                "descriptionPlaceholder": "请输入权限规则说明"
+            },
+            "messages": {
+                "enabled": "已启用",
+                "disabled": "已禁用",
+                "createSuccess": "创建成功",
+                "updateSuccess": "更新成功"
+            }
+        },
+        "field": {
+            "toolbar": {
+                "role": "角色",
+                "rolePlaceholder": "选择角色",
+                "object": "业务对象",
+                "objectPlaceholder": "选择业务对象"
+            },
+            "columns": {
+                "role": "角色",
+                "object": "业务对象",
+                "field": "字段名称",
+                "read": "读取权限",
+                "write": "写入权限",
+                "visibility": "可见性",
+                "description": "说明",
+                "operation": "操作"
+            },
+            "status": {
+                "allow": "允许",
+                "deny": "禁止",
+                "show": "显示",
+                "hide": "隐藏"
+            },
+            "dialog": {
+                "title": "编辑字段权限",
+                "role": "角色",
+                "object": "业务对象",
+                "field": "字段名称",
+                "read": "读取权限",
+                "write": "写入权限",
+                "visibility": "可见性",
+                "description": "说明"
+            },
+            "messages": {
+                "saveSuccess": "保存成功",
+                "saveFailed": "保存失败"
+            }
+        },
+        "audit": {
+            "toolbar": {
+                "action": "操作类型",
+                "actionPlaceholder": "全部",
+                "timeRange": "时间范围",
+                "startDate": "开始日期",
+                "endDate": "结束日期"
+            },
+            "stats": {
+                "todayGrants": "今日授权",
+                "todayRevokes": "今日撤销",
+                "weekTotal": "本周操作",
+                "activeUsers": "活跃用户"
+            },
+            "columns": {
+                "time": "操作时间",
+                "operator": "操作人",
+                "action": "操作类型",
+                "type": "权限类型",
+                "target": "目标对象",
+                "details": "操作详情",
+                "ip": "IP地址",
+                "operation": "操作"
+            },
+            "actions": {
+                "grant": "授权",
+                "revoke": "撤销",
+                "update": "修改"
+            },
+            "types": {
+                "field": "字段权限",
+                "data": "数据权限"
+            },
+            "dialog": {
+                "title": "日志详情",
+                "time": "操作时间",
+                "operator": "操作人",
+                "action": "操作类型",
+                "type": "权限类型",
+                "target": "目标对象",
+                "details": "操作详情",
+                "ip": "IP地址",
+                "userAgent": "用户代理"
+            }
+        }
+    },
+    "configPackage": {
+        "title": "配置包管理",
+        "description": "导入导出业务对象配置，支持环境迁移和版本备份",
+        "actions": {
+            "import": "导入配置",
+            "export": "导出配置",
+            "download": "下载",
+            "diff": "对比",
+            "delete": "删除",
+            "rollback": "回滚"
+        },
+        "tabs": {
+            "packages": "配置包",
+            "history": "导入历史"
+        },
+        "columns": {
+            "name": "包名称",
+            "type": "类型",
+            "objects": "包含对象",
+            "source": "来源环境",
+            "exportTime": "导出时间",
+            "status": "状态",
+            "package": "配置包",
+            "strategy": "策略",
+            "result": "结果",
+            "importTime": "导入时间",
+            "operation": "操作"
+        },
+        "types": {
+            "full": "全量",
+            "partial": "增量",
+            "diff": "差异"
+        },
+        "strategies": {
+            "merge": "合并",
+            "replace": "替换",
+            "skip": "跳过"
+        },
+        "status": {
+            "pending": "等待中",
+            "processing": "处理中",
+            "success": "成功",
+            "failed": "失败",
+            "partial": "部分成功",
+            "rolled_back": "已回滚"
+        },
+        "dialog": {
+            "exportTitle": "导出配置",
+            "importTitle": "导入配置",
+            "name": "包名称",
+            "namePlaceholder": "例如: 资产管理配置",
+            "version": "版本号",
+            "versionPlaceholder": "例如: 1.0.0",
+            "description": "描述",
+            "objects": "业务对象",
+            "objectsPlaceholder": "选择要导出的业务对象",
+            "package": "选择包",
+            "packagePlaceholder": "从已有配置包导入",
+            "strategy": "导入策略",
+            "strategies": {
+                "merge": "合并 (更新已存在)",
+                "replace": "替换 (覆盖已存在)",
+                "skip": "跳过 (只创建新的)"
+            }
+        },
+        "messages": {
+            "loadPackagesFailed": "加载配置包失败",
+            "loadLogsFailed": "加载导入记录失败",
+            "exportSuccess": "导出成功：{objects} 对象, {fields} 字段, {layouts} 布局, {rules} 规则",
+            "exportFailed": "导出失败",
+            "importSuccess": "导入成功：创建 {created}, 更新 {updated}, 跳过 {skipped}",
+            "importPartial": "导入部分完成，{failed} 项失败",
+            "importFailed": "导入失败",
+            "downloadStart": "下载已开始",
+            "downloadFailed": "下载失败",
+            "diffDeveloping": "对比功能开发中...",
+            "deleteSuccess": "删除成功",
+            "deleteFailed": "删除失败",
+            "rollbackConfirm": "回滚将撤销此次导入的所有更改，确定继续吗？",
+            "rollbackTitle": "确认回滚",
+            "rollbackSuccess": "回滚成功",
+            "rollbackFailed": "回滚失败",
+            "required": "请填写必填项",
+            "selectPackage": "请选择配置包",
+            "confirmDelete": "确定删除此配置包？"
+        }
+    },
+    "workflow": {
+        "title": "工作流管理",
+        "create": "创建工作流",
+        "createTitle": "创建工作流",
+        "editTitle": "编辑工作流",
+        "columns": {
+            "name": "名称",
+            "code": "编码",
+            "businessObject": "业务对象",
+            "operation": "操作"
+        },
+        "form": {
+            "name": "名称",
+            "code": "编码",
+            "businessObject": "业务对象"
+        },
+        "businessObjects": {
+            "asset_pickup": "资产领用",
+            "asset_transfer": "资产调拨",
+            "asset_return": "资产退库"
+        },
+        "messages": {
+            "saveSuccess": "保存成功",
+            "createSuccess": "创建成功",
+            "updateSuccess": "更新成功",
+            "saveFailed": "保存失败",
+            "required": "请填写名称和编码"
+        }
+    },
+    "file": {
+        "title": "系统文件管理",
+        "actions": {
+            "upload": "上传文件",
+            "batchDelete": "批量删除",
+            "clearSelection": "取消选择",
+            "selection": "已选择 {count} 个文件"
+        },
+        "filter": {
+            "search": "搜索",
+            "searchPlaceholder": "文件名",
+            "fileType": "文件类型",
+            "allTypes": "所有类型",
+            "bizType": "业务类型",
+            "allBizTypes": "全部"
+        },
+        "types": {
+            "image": "图片",
+            "document": "文档",
+            "video": "视频",
+            "archive": "压缩包",
+            "asset_image": "资产图片",
+            "contract": "合同",
+            "invoice": "发票",
+            "attachment": "附件",
+            "other": "其他",
+            "pdf": "PDF",
+            "file": "文件"
+        },
+        "stats": {
+            "totalFiles": "文件总数",
+            "totalSize": "总大小",
+            "todayUploads": "今日上传",
+            "images": "图片数量"
+        },
+        "columns": {
+            "preview": "预览",
+            "fileName": "文件名",
+            "type": "类型",
+            "size": "大小",
+            "bizType": "业务类型",
+            "description": "描述",
+            "uploadDate": "上传时间"
+        },
+        "dialog": {
+            "editTitle": "编辑文件",
+            "fileName": "文件名",
+            "bizType": "业务类型",
+            "description": "描述"
+        },
+        "messages": {
+            "sizeLimit": "文件大小不能超过 {size}",
+            "uploadSuccess": "文件上传成功",
+            "uploadFailed": "上传失败",
+            "updateSuccess": "更新成功",
+            "updateFailed": "更新失败",
+            "deleteSuccess": "删除成功",
+            "deleteFailed": "删除失败",
+            "batchDeleteFailed": "批量删除失败",
+            "confirmDelete": "确定要删除此文件吗？",
+            "batchDeleteSuccess": "已删除 {count} 个文件",
+            "loadFailed": "加载文件失败"
         }
     }
 }

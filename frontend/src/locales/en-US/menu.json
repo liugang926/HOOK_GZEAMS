@@ -99,6 +99,8 @@
         "notificationPreferences": "Notification Preferences",
         "location": "Locations",
         "supplier": "Suppliers",
-        "assetStatusLog": "Asset Status Logs"
+        "assetStatusLog": "Asset Status Logs",
+        "languages": "Language Management",
+        "translations": "Translation Management"
     }
 }

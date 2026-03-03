@@ -1,5 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
-import { waitForDesignerReady } from '../helpers/page-ready.helpers'
+import { clickDesignerPublish, waitForDesignerReady } from '../helpers/page-ready.helpers'
 type AnyRecord = Record<string, any>
 
 const OBJECT_CODE = 'Asset'
@@ -229,9 +229,7 @@ test.describe('Layout Designer Publish Latest Regression', () => {
     await labelInput.fill(UPDATED_LABEL)
     await labelInput.press('Tab')
 
-    const publishButton = page.getByTestId('layout-publish-button').first()
-    await expect(publishButton).toBeVisible()
-    await publishButton.click()
+    await clickDesignerPublish(page)
 
     await expect.poll(() => saveCallCount).toBe(1)
     await expect.poll(() => publishCallCount).toBe(1)

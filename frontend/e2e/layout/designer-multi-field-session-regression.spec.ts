@@ -1,5 +1,5 @@
 import { test, expect, type Route, type Page } from '@playwright/test'
-import { gotoDesignerAndWait } from '../helpers/page-ready.helpers'
+import { clickDesignerSaveDraft, gotoDesignerAndWait } from '../helpers/page-ready.helpers'
 
 interface LayoutField {
   fieldCode?: string
@@ -357,9 +357,7 @@ test.describe('Layout Designer Multi-field Session Regression', () => {
     await finalLabelInput.fill(UPDATED_NAME_LABEL)
     await finalLabelInput.press('Tab')
 
-    const saveButton = page.getByTestId('layout-save-button').first()
-    await expect(saveButton).toBeVisible()
-    await saveButton.click()
+    await clickDesignerSaveDraft(page)
 
     await expect.poll(() => saveCallCount).toBe(1)
     await expect.poll(() => findField(activeLayoutConfig, 'assetName')?.label).toBe(UPDATED_NAME_LABEL)

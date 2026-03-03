@@ -127,7 +127,8 @@
             "returnDate": "Return Date",
             "returnRemark": "Remark",
             "returnRemarkPlaceholder": "Enter remark",
-            "confirmReturn": "Confirm Return"
+            "confirmReturn": "Confirm Return",
+            "returnDatePlaceholder": "Select return date"
         },
         "messages": {
             "confirmCancel": "Are you sure to cancel this loan?",
@@ -352,7 +353,8 @@
             "loan": "Loan Order",
             "inventory": "Inventory Task",
             "maintenance": "Maintenance Order"
-        }
+        },
+        "searchPlaceholder": "Search by status/log content"
     },
     "selector": {
         "selectAsset": "Please select asset"

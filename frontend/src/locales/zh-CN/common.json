@@ -55,8 +55,8 @@
     "recordIdNotExists": "recordIdNotExists",
     "statusInfo": "statusInfo",
     "title": "title",
-    "saveSuccess": "????",
-    "saveFailed": "????"
+    "saveSuccess": "保存成功",
+    "saveFailed": "保存失败"
   },
   "dialog": {
     "confirmDelete": "确认删除",
@@ -125,7 +125,7 @@
     "records": "条记录",
     "emptyHint": "暂无数据，请尝试创建一条新记录",
     "systemError": "系统出错",
-    "formValidationFailed": "?????????????"
+    "formValidationFailed": "表单校验失败，请检查输入内容"
   },
   "no": "否",
   "notes": "notes",

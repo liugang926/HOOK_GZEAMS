@@ -1,5 +1,9 @@
 import { test, expect, type Route } from '@playwright/test'
-import { clickDesignerSectionHeader, waitForDesignerReady } from '../helpers/page-ready.helpers'
+import {
+  clickDesignerSaveDraft,
+  clickDesignerSectionHeader,
+  waitForDesignerReady
+} from '../helpers/page-ready.helpers'
 interface LayoutField {
   id: string
   fieldCode: string
@@ -282,12 +286,11 @@ test.describe('Layout Designer Undo/Redo Cross-section Regression', () => {
 
     const undoButton = page.getByTestId('layout-undo-button')
     const redoButton = page.getByTestId('layout-redo-button')
-    const saveButton = page.getByTestId('layout-save-button').first()
 
     await expect(undoButton).toBeEnabled()
     await undoButton.click()
 
-    await saveButton.click()
+    await clickDesignerSaveDraft(page)
     await expect.poll(() => saveCallCount).toBe(1)
     await expect.poll(() => sectionTitle(activeLayoutConfig, 0)).toBe(UPDATED_TITLE_A)
     await expect.poll(() => sectionTitle(activeLayoutConfig, 1)).toBe(INITIAL_TITLE_B)
@@ -295,7 +298,7 @@ test.describe('Layout Designer Undo/Redo Cross-section Regression', () => {
     await expect(redoButton).toBeEnabled()
     await redoButton.click()
 
-    await saveButton.click()
+    await clickDesignerSaveDraft(page)
     await expect.poll(() => saveCallCount).toBe(2)
     await expect.poll(() => sectionTitle(activeLayoutConfig, 0)).toBe(UPDATED_TITLE_A)
     await expect.poll(() => sectionTitle(activeLayoutConfig, 1)).toBe(UPDATED_TITLE_B)

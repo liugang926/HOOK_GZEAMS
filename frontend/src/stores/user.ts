@@ -4,15 +4,24 @@ import { authApi } from '@/api/auth'
 import { userApi } from '@/api/users'
 import { useLocaleStore } from '@/stores/locale'
 import { normalizeLocale } from '@/locales'
+import type { LoginData } from '@/types/auth'
+import type { User } from '@/types/common'
+
+type CurrentOrganization = {
+    id: string
+    name: string
+    role?: string
+    code?: string
+}
 
 export const useUserStore = defineStore('user', () => {
     const token = ref(localStorage.getItem('access_token') || '')
-    const userInfo = ref<any>(null)
-    const currentOrganization = ref<any>(null)
+    const userInfo = ref<User | null>(null)
+    const currentOrganization = ref<CurrentOrganization | null>(null)
     const roles = ref<string[]>([])
     const permissions = ref<string[]>([])
 
-    const applyProfileLocale = (user: any) => {
+    const applyProfileLocale = (user: User | null) => {
         const preferredLanguage = user?.preferredLanguage
         if (!preferredLanguage) return
 
@@ -28,7 +37,7 @@ export const useUserStore = defineStore('user', () => {
         localStorage.setItem('locale_source', 'profile')
     }
 
-    const login = async (loginForm: any) => {
+    const login = async (loginForm: LoginData) => {
         try {
             const res = await authApi.login(loginForm)
             if (res.token) {

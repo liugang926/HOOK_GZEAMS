@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route } from '@playwright/test'
-import { waitForDesignerReady } from '../helpers/page-ready.helpers'
+import { clickDesignerSaveDraft, waitForDesignerReady } from '../helpers/page-ready.helpers'
 interface LayoutField {
   id: string
   fieldCode: string
@@ -282,7 +282,6 @@ test.describe('Layout Designer DnD + Undo/Redo Regression', () => {
 
     const undoButton = page.getByTestId('layout-undo-button')
     const redoButton = page.getByTestId('layout-redo-button')
-    const saveButton = page.getByTestId('layout-save-button').first()
 
     await expect(undoButton).toBeEnabled()
     await undoButton.click()
@@ -292,7 +291,7 @@ test.describe('Layout Designer DnD + Undo/Redo Regression', () => {
     await redoButton.click()
     await expect.poll(async () => (await getCanvasFieldOrder(page)).join(',')).toBe('assetCode,assetName')
 
-    await saveButton.click()
+    await clickDesignerSaveDraft(page)
     await expect.poll(() => saveCallCount).toBe(1)
     await expect.poll(() => getFieldOrder(activeLayoutConfig).join(',')).toBe('assetCode,assetName')
 

@@ -25,11 +25,27 @@ export const useLocaleStore = defineStore('locale', () => {
     const loadLanguages = async () => {
         try {
             const response = await languageApi.getActive()
-            if (response?.data) {
-                availableLanguages.value = response.data
-                languagesLoaded.value = true
+            const raw = response as unknown
+            const payload = (
+                raw && typeof raw === 'object' && 'data' in (raw as Record<string, unknown>)
+                    ? (raw as Record<string, unknown>).data
+                    : raw
+            ) as unknown
+
+            if (Array.isArray(payload)) {
+                availableLanguages.value = payload as Language[]
+            } else if (
+                payload &&
+                typeof payload === 'object' &&
+                'data' in (payload as Record<string, unknown>) &&
+                Array.isArray((payload as Record<string, unknown>).data)
+            ) {
+                availableLanguages.value = (payload as { data: Language[] }).data
+            } else {
+                availableLanguages.value = []
             }
-        } catch (error) {
+            languagesLoaded.value = true
+        } catch (error: unknown) {
             console.warn('Failed to load languages from API, using fallback:', error)
             // Fallback to static list
             availableLanguages.value = [

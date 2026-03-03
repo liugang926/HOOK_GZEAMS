@@ -202,7 +202,10 @@
   "table": {
     "index": "Index",
     "noData": "No data",
-    "operations": "Operations"
+    "operations": "Operations",
+    "total": "Total {total} items",
+    "selected": "{count} selected",
+    "seq": "No."
   },
   "title": "Title",
   "units": {

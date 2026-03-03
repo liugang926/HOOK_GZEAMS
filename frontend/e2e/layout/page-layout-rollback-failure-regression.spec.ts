@@ -1,4 +1,5 @@
 import { test, expect, type Page, type Route } from '@playwright/test'
+import { confirmDialogPrimary } from '../helpers/page-ready.helpers'
 
 type AnyRecord = Record<string, any>
 
@@ -201,8 +202,7 @@ test.describe('Page Layout Rollback Failure Regression', () => {
     await expect(page.locator('.version-badge').first()).toContainText(LATEST_VERSION)
 
     await page.getByTestId('layout-list-rollback-button').first().click()
-    await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box__btns .el-button--primary').click()
+    await confirmDialogPrimary(page)
 
     await expect(
       page.locator('.el-message .el-message__content', {
@@ -247,8 +247,7 @@ test.describe('Page Layout Rollback Failure Regression', () => {
     await expect(page.locator('.version-badge').first()).toContainText(LATEST_VERSION)
 
     await page.getByTestId('layout-list-rollback-button').first().click()
-    await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box__btns .el-button--primary').click()
+    await confirmDialogPrimary(page)
 
     await expect.poll(() => rollbackCallCount).toBe(1)
     await expect(page.locator('.el-message .el-message__content', { hasText: rollbackMessage }).first()).toBeVisible()
@@ -289,8 +288,7 @@ test.describe('Page Layout Rollback Failure Regression', () => {
     await expect(page.locator('.version-badge').first()).toContainText(LATEST_VERSION)
 
     await page.getByTestId('layout-list-rollback-button').first().click()
-    await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box__btns .el-button--primary').click()
+    await confirmDialogPrimary(page)
 
     const backendMessageLocator = page.locator('.el-message .el-message__content', { hasText: rollbackMessage })
     await expect.poll(() => rollbackCallCount).toBe(1)

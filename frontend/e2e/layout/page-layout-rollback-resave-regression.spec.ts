@@ -1,5 +1,9 @@
 import { test, expect, type Route } from '@playwright/test'
-import { waitForDesignerReady } from '../helpers/page-ready.helpers'
+import {
+  clickDesignerSaveDraft,
+  confirmDialogPrimary,
+  waitForDesignerReady
+} from '../helpers/page-ready.helpers'
 type AnyRecord = Record<string, any>
 
 const OBJECT_CODE = 'Asset'
@@ -252,8 +256,7 @@ test.describe('Page Layout Rollback -> Re-save Regression', () => {
     const rollbackButton = page.getByTestId('layout-list-rollback-button').first()
     await expect(rollbackButton).toBeVisible()
     await rollbackButton.click()
-    await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box__btns .el-button--primary').click()
+    await confirmDialogPrimary(page)
 
     await expect.poll(() => rollbackCallCount).toBe(1)
     const patchCountAfterRollback = patchBodies.length
@@ -265,7 +268,7 @@ test.describe('Page Layout Rollback -> Re-save Regression', () => {
     await waitForDesignerReady(page)
     await expect(page.locator('[data-testid="layout-canvas-field"]').first()).toBeVisible()
 
-    await page.getByTestId('layout-save-button').first().click()
+    await clickDesignerSaveDraft(page)
 
     await expect.poll(() => patchBodies.length).toBeGreaterThan(patchCountAfterRollback)
     const latestPatch = patchBodies[patchBodies.length - 1] || {}

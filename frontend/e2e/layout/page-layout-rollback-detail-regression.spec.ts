@@ -1,4 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
+import { confirmDialogPrimary } from '../helpers/page-ready.helpers'
 
 type AnyRecord = Record<string, any>
 
@@ -216,8 +217,7 @@ test.describe('Page Layout Rollback -> Detail Regression', () => {
     await expect(rollbackButton).toBeVisible()
     await rollbackButton.click()
 
-    await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box__btns .el-button--primary').click()
+    await confirmDialogPrimary(page)
 
     await expect.poll(() => rollbackCallCount).toBe(1)
     await expect(page.locator('.version-badge').first()).toContainText('1')

@@ -38,7 +38,7 @@
       show-icon
       class="designer-hint"
     >
-      Single layout model: configure edit layout here; detail reuses it. List pages are field-driven (`show_in_list` + `sort_order`).
+      {{ $t('system.pageLayout.designer.hints.singleLayoutModel') }}
     </el-alert>
 
     <WysiwygLayoutDesigner

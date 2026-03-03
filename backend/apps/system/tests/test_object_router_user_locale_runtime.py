@@ -322,3 +322,183 @@ def test_runtime_layout_layers_fallback_when_unified_merge_disabled():
     if layout_layers is None:
         layout_layers = payload.get('layout_layers')
     assert layout_layers == ['default']
+
+
+@pytest.mark.django_db
+def test_runtime_locale_falls_back_to_profile_when_header_missing():
+    org = Organization.objects.create(name='Profile Locale Org', code='profile-locale-org')
+    user = User.objects.create_user(
+        username='profile_locale_user',
+        password='pass123456',
+        organization=org,
+        preferred_language='en-US',
+    )
+    UserOrganization.objects.create(
+        user=user,
+        organization=org,
+        role='admin',
+        is_active=True,
+        is_primary=True,
+    )
+    user.current_organization = org
+    user.save(update_fields=['current_organization'])
+
+    bo = BusinessObject.objects.create(
+        code='PROFILELOCALEOBJ',
+        name='Profile Locale Object',
+        is_hardcoded=False,
+    )
+    FieldDefinition.objects.create(
+        business_object=bo,
+        code='asset_name',
+        name='Asset Name',
+        field_type='text',
+        show_in_form=True,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id))
+
+    runtime_resp = client.get('/api/system/objects/PROFILELOCALEOBJ/runtime/?mode=readonly')
+    assert runtime_resp.status_code == 200
+    assert runtime_resp.data['success'] is True
+    assert runtime_resp.data['data']['locale'] == 'en-US'
+
+
+@pytest.mark.django_db
+def test_runtime_locale_falls_back_to_system_default_when_profile_unsupported():
+    org = Organization.objects.create(name='Default Locale Org', code='default-locale-org')
+    user = User.objects.create_user(
+        username='default_locale_user',
+        password='pass123456',
+        organization=org,
+        preferred_language='es-ES',
+    )
+    UserOrganization.objects.create(
+        user=user,
+        organization=org,
+        role='admin',
+        is_active=True,
+        is_primary=True,
+    )
+    user.current_organization = org
+    user.save(update_fields=['current_organization'])
+
+    bo = BusinessObject.objects.create(
+        code='DEFAULTLOCALEOBJ',
+        name='Default Locale Object',
+        is_hardcoded=False,
+    )
+    FieldDefinition.objects.create(
+        business_object=bo,
+        code='asset_name',
+        name='Asset Name',
+        field_type='text',
+        show_in_form=True,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id))
+
+    runtime_resp = client.get('/api/system/objects/DEFAULTLOCALEOBJ/runtime/?mode=readonly')
+    assert runtime_resp.status_code == 200
+    assert runtime_resp.data['success'] is True
+    assert runtime_resp.data['data']['locale'] == 'zh-CN'
+
+
+@pytest.mark.django_db
+def test_runtime_localized_field_falls_back_to_original_when_translation_missing():
+    org = Organization.objects.create(name='Fallback Translation Org', code='fallback-translation-org')
+    user = User.objects.create_user(
+        username='fallback_translation_user',
+        password='pass123456',
+        organization=org,
+        preferred_language='en-US',
+    )
+    UserOrganization.objects.create(
+        user=user,
+        organization=org,
+        role='admin',
+        is_active=True,
+        is_primary=True,
+    )
+    user.current_organization = org
+    user.save(update_fields=['current_organization'])
+
+    bo = BusinessObject.objects.create(
+        code='FALLBACKFIELDOBJ',
+        name='Fallback Field Object',
+        is_hardcoded=False,
+    )
+    FieldDefinition.objects.create(
+        business_object=bo,
+        code='asset_name',
+        name='资产名称',
+        field_type='text',
+        show_in_form=True,
+        show_in_detail=True,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(
+        HTTP_X_ORGANIZATION_ID=str(org.id),
+        HTTP_ACCEPT_LANGUAGE='en-US,en;q=0.9',
+    )
+
+    runtime_resp = client.get('/api/system/objects/FALLBACKFIELDOBJ/runtime/?mode=readonly')
+    assert runtime_resp.status_code == 200
+    assert runtime_resp.data['success'] is True
+
+    editable_fields = _extract_editable_fields_from_response(runtime_resp.data)
+    target_field = next((item for item in editable_fields if _field_code(item) == 'asset_name'), None)
+    assert target_field is not None
+    assert target_field.get('name') == '资产名称'
+    assert target_field.get('name') != ''
+
+
+@pytest.mark.django_db
+def test_runtime_locale_query_param_overrides_header_and_profile():
+    org = Organization.objects.create(name='Query Locale Org', code='query-locale-org')
+    user = User.objects.create_user(
+        username='query_locale_user',
+        password='pass123456',
+        organization=org,
+        preferred_language='zh-CN',
+    )
+    UserOrganization.objects.create(
+        user=user,
+        organization=org,
+        role='admin',
+        is_active=True,
+        is_primary=True,
+    )
+    user.current_organization = org
+    user.save(update_fields=['current_organization'])
+
+    bo = BusinessObject.objects.create(
+        code='QUERYLOCALEOBJ',
+        name='Query Locale Object',
+        is_hardcoded=False,
+    )
+    FieldDefinition.objects.create(
+        business_object=bo,
+        code='asset_name',
+        name='Asset Name',
+        field_type='text',
+        show_in_form=True,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(
+        HTTP_X_ORGANIZATION_ID=str(org.id),
+        HTTP_ACCEPT_LANGUAGE='zh-CN,zh;q=0.9',
+    )
+
+    runtime_resp = client.get('/api/system/objects/QUERYLOCALEOBJ/runtime/?mode=readonly&locale=en-US')
+    assert runtime_resp.status_code == 200
+    assert runtime_resp.data['success'] is True
+    assert runtime_resp.data['data']['locale'] == 'en-US'

@@ -73,118 +73,118 @@
             "addSuccess": "新增成功",
             "updateSuccess": "更新成功",
             "operationFailed": "操作失败"
-        }
-    },
-    "form": {
-        "addTitle": "新增IT资产信息",
-        "editTitle": "编辑IT资产信息",
-        "sections": {
-            "hardware": "硬件配置",
-            "network": "网络信息",
-            "os": "操作系统",
-            "security": "安全信息",
-            "activeDirectory": "活动目录(AD)"
         },
-        "fields": {
-            "cpuModel": "CPU型号",
-            "cpuCores": "CPU核心数",
-            "cpuThreads": "CPU线程数",
-            "ramCapacity": "内存容量(GB)",
-            "ramType": "内存类型",
-            "ramSlots": "内存插槽数",
-            "diskType": "硬盘类型",
-            "diskCapacity": "硬盘容量(GB)",
-            "diskCount": "硬盘数量",
-            "gpuModel": "显卡型号",
-            "gpuMemory": "显存大小(MB)",
-            "macAddress": "MAC地址",
-            "ipAddress": "IP地址",
-            "hostname": "主机名",
-            "osName": "操作系统",
-            "osVersion": "系统版本",
-            "osArch": "系统架构",
-            "osLicense": "系统序列号",
-            "diskEncrypted": "硬盘加密",
-            "antivirus": "启用杀毒软件",
-            "antivirusSoftware": "杀毒软件名称",
-            "adDomain": "AD域",
-            "adComputer": "AD计算机名"
-        },
-        "placeholders": {
-            "selectAsset": "选择资产",
-            "cpuModel": "如: Intel Core i7-12700K",
-            "selectType": "选择类型",
-            "gpuModel": "如: NVIDIA GeForce RTX 3080",
-            "macAddress": "XX:XX:XX:XX:XX:XX",
-            "ipAddress": "192.168.1.1",
-            "hostname": "如: PC-DESKTOP-001",
-            "selectOs": "选择操作系统",
-            "osVersion": "如: 11, 22.04, 10.0.19043",
-            "selectArch": "选择架构",
-            "licenseKey": "XXXXX-XXXXX-XXXXX-XXXXX",
-            "antivirusSoftware": "如: Windows Defender",
-            "domain": "如: corp.local",
-            "computerName": "如: DESKTOP-001"
-        },
-        "validation": {
-            "selectAsset": "请选择资产",
-            "invalidMac": "MAC地址格式无效",
-            "invalidIp": "IP地址格式无效"
+        "form": {
+            "addTitle": "新增IT资产信息",
+            "editTitle": "编辑IT资产信息",
+            "sections": {
+                "hardware": "硬件配置",
+                "network": "网络信息",
+                "os": "操作系统",
+                "security": "安全信息",
+                "activeDirectory": "活动目录(AD)"
+            },
+            "fields": {
+                "cpuModel": "CPU型号",
+                "cpuCores": "CPU核心数",
+                "cpuThreads": "CPU线程数",
+                "ramCapacity": "内存容量(GB)",
+                "ramType": "内存类型",
+                "ramSlots": "内存插槽数",
+                "diskType": "硬盘类型",
+                "diskCapacity": "硬盘容量(GB)",
+                "diskCount": "硬盘数量",
+                "gpuModel": "显卡型号",
+                "gpuMemory": "显存大小(MB)",
+                "macAddress": "MAC地址",
+                "ipAddress": "IP地址",
+                "hostname": "主机名",
+                "osName": "操作系统",
+                "osVersion": "系统版本",
+                "osArch": "系统架构",
+                "osLicense": "系统序列号",
+                "diskEncrypted": "硬盘加密",
+                "antivirus": "启用杀毒软件",
+                "antivirusSoftware": "杀毒软件名称",
+                "adDomain": "AD域",
+                "adComputer": "AD计算机名"
+            },
+            "placeholders": {
+                "selectAsset": "选择资产",
+                "cpuModel": "如: Intel Core i7-12700K",
+                "selectType": "选择类型",
+                "gpuModel": "如: NVIDIA GeForce RTX 3080",
+                "macAddress": "XX:XX:XX:XX:XX:XX",
+                "ipAddress": "192.168.1.1",
+                "hostname": "如: PC-DESKTOP-001",
+                "selectOs": "选择操作系统",
+                "osVersion": "如: 11, 22.04, 10.0.19043",
+                "selectArch": "选择架构",
+                "licenseKey": "XXXXX-XXXXX-XXXXX-XXXXX",
+                "antivirusSoftware": "如: Windows Defender",
+                "domain": "如: corp.local",
+                "computerName": "如: DESKTOP-001"
+            },
+            "validation": {
+                "selectAsset": "请选择资产",
+                "invalidMac": "MAC地址格式无效",
+                "invalidIp": "IP地址格式无效"
+            },
+            "maintenance": {
+                "addTitle": "新增维护记录",
+                "editTitle": "编辑维护记录"
+            },
+            "configChange": {
+                "addTitle": "新增配置变更",
+                "editTitle": "编辑配置变更"
+            }
         },
         "maintenance": {
-            "addTitle": "新增维护记录",
-            "editTitle": "编辑维护记录"
+            "title": "IT维护记录",
+            "type": "维护类型",
+            "allTypes": "全部类型",
+            "types": {
+                "preventive": "预防性维护",
+                "corrective": "纠正性维护",
+                "upgrade": "升级",
+                "replacement": "更换",
+                "inspection": "巡检",
+                "cleaning": "清洁",
+                "other": "其他"
+            }
         },
         "configChange": {
-            "addTitle": "新增配置变更",
-            "editTitle": "编辑配置变更"
+            "title": "配置变更记录",
+            "field": "字段",
+            "allFields": "全部字段",
+            "changeDetails": "变更详情",
+            "oldValue": "变更前",
+            "newValue": "变更后",
+            "empty": "(空)",
+            "fields": {
+                "cpuModel": "CPU型号",
+                "ramCapacity": "内存",
+                "diskCapacity": "硬盘",
+                "osName": "操作系统",
+                "ipAddress": "IP地址"
+            }
+        },
+        "common": {
+            "asset": "资产",
+            "title": "标题",
+            "date": "日期",
+            "cost": "费用",
+            "vendor": "服务商",
+            "performedBy": "执行人",
+            "changedBy": "修改人",
+            "reason": "原因",
+            "description": "描述",
+            "notes": "备注",
+            "change": "变更内容",
+            "addRecord": "新增记录",
+            "addChange": "新增变更",
+            "searchMaintenancePlaceholder": "资产编码、标题、服务商...",
+            "searchConfigPlaceholder": "资产编码、字段名称..."
         }
-    },
-    "maintenance": {
-        "title": "IT维护记录",
-        "type": "维护类型",
-        "allTypes": "全部类型",
-        "types": {
-            "preventive": "预防性维护",
-            "corrective": "纠正性维护",
-            "upgrade": "升级",
-            "replacement": "更换",
-            "inspection": "巡检",
-            "cleaning": "清洁",
-            "other": "其他"
-        }
-    },
-    "configChange": {
-        "title": "配置变更记录",
-        "field": "字段",
-        "allFields": "全部字段",
-        "changeDetails": "变更详情",
-        "oldValue": "变更前",
-        "newValue": "变更后",
-        "empty": "(空)",
-        "fields": {
-            "cpuModel": "CPU型号",
-            "ramCapacity": "内存",
-            "diskCapacity": "硬盘",
-            "osName": "操作系统",
-            "ipAddress": "IP地址"
-        }
-    },
-    "common": {
-        "asset": "资产",
-        "title": "标题",
-        "date": "日期",
-        "cost": "费用",
-        "vendor": "服务商",
-        "performedBy": "执行人",
-        "changedBy": "修改人",
-        "reason": "原因",
-        "description": "描述",
-        "notes": "备注",
-        "change": "变更内容",
-        "addRecord": "新增记录",
-        "addChange": "新增变更",
-        "searchMaintenancePlaceholder": "资产编码、标题、服务商...",
-        "searchConfigPlaceholder": "资产编码、字段名称..."
     }
 }

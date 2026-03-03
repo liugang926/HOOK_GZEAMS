@@ -32,6 +32,12 @@ export interface User {
   fullName: string
   avatar?: string
   isActive: boolean
+  preferredLanguage?: string
+  primaryOrganization?: {
+    id: string
+    name: string
+    code?: string
+  } | null
   roles?: string[]
   permissions?: string[]
 }

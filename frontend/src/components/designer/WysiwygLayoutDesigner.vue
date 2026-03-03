@@ -205,15 +205,17 @@
               size="small"
               @update:model-value="setRenderMode"
             >
-              <el-radio-button label="design">
-                <span data-testid="layout-render-design-button">
+              <el-radio-button
+                label="design"
+                data-testid="layout-render-design-button"
+              >
                 {{ t('system.pageLayout.designer.status.designState') }}
-                </span>
               </el-radio-button>
-              <el-radio-button label="preview">
-                <span data-testid="layout-render-preview-button">
+              <el-radio-button
+                label="preview"
+                data-testid="layout-render-preview-button"
+              >
                 {{ t('system.pageLayout.designer.status.previewState') }}
-                </span>
               </el-radio-button>
             </el-radio-group>
             <el-button

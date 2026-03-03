@@ -1,5 +1,9 @@
 import { test, expect, type Route } from '@playwright/test'
-import { clickDesignerSectionHeader, waitForDesignerReady } from '../helpers/page-ready.helpers'
+import {
+  clickDesignerSaveDraft,
+  clickDesignerSectionHeader,
+  waitForDesignerReady
+} from '../helpers/page-ready.helpers'
 type AnyRecord = Record<string, any>
 
 const OBJECT_CODE = 'Asset'
@@ -208,9 +212,7 @@ test.describe('Layout Designer Section Save -> Detail Rendering Regression', () 
     await titleInput.fill(UPDATED_SECTION_TITLE)
     await titleInput.press('Tab')
 
-    const saveButton = page.getByTestId('layout-save-button').first()
-    await expect(saveButton).toBeVisible()
-    await saveButton.click()
+    await clickDesignerSaveDraft(page)
 
     await expect.poll(() => saveCallCount).toBe(1)
     await expect.poll(() => getFirstSectionTitle(activeLayoutConfig)).toBe(UPDATED_SECTION_TITLE)

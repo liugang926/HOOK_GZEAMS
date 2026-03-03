@@ -18,6 +18,17 @@
         },
         "messages": {
             "confirmDelete": "Are you sure to delete this department?"
+        },
+        "parent": "Parent Department",
+        "namePlaceholder": "Please enter department name",
+        "codePlaceholder": "Please enter department code",
+        "parentPlaceholder": "Please select parent department (leave empty for top-level)",
+        "managerPlaceholder": "Please select manager",
+        "phonePlaceholder": "Please enter phone number",
+        "descriptionPlaceholder": "Please enter description",
+        "validation": {
+            "nameRequired": "Please enter department name",
+            "codeRequired": "Please enter department code"
         }
     },
     "dictionary": {
@@ -46,7 +57,49 @@
         "messages": {
             "confirmDelete": "Are you sure to delete dictionary type \"{name}\"? Associated items will also be deleted.",
             "confirmDeleteTitle": "Confirm Delete",
-            "loadFailed": "Failed to load data"
+            "loadFailed": "Failed to load data",
+            "loadItemsFailed": "Failed to load dictionary items",
+            "enabled": "Enabled",
+            "disabled": "Disabled",
+            "updateSortFailed": "Failed to update sort order",
+            "confirmBatchSort": "Reorder all dictionary items by the current sort order?",
+            "batchSortSuccess": "Batch sort successful",
+            "batchSortFailed": "Batch sort failed",
+            "confirmDeleteItem": "Are you sure to delete dictionary item \"{name}\"?"
+        },
+        "type": "Dictionary Type",
+        "code": "Dictionary Code",
+        "name": "Dictionary Name",
+        "englishName": "English Name",
+        "sortOrder": "Sort Order",
+        "itemManagement": "Item Management",
+        "addItem": "Add Item",
+        "batchSort": "Batch Sort",
+        "item": "Item",
+        "itemCode": "Item Code",
+        "displayName": "Display Name",
+        "color": "Color",
+        "icon": "Icon",
+        "isDefault": "Set as Default",
+        "isDefaultTip": "Default option will be selected automatically",
+        "enabled": "Enabled",
+        "default": "Default",
+        "codePlaceholder": "Please enter dictionary code (e.g., ASSET_STATUS)",
+        "codeTip": "Code must be unique. Use uppercase letters and underscores.",
+        "namePlaceholder": "Please enter dictionary name",
+        "englishNamePlaceholder": "Please enter English name",
+        "descriptionPlaceholder": "Please enter description",
+        "itemCodePlaceholder": "Please enter item code",
+        "displayNamePlaceholder": "Please enter display name",
+        "colorPlaceholder": "Please enter color value (e.g., #409EFF)",
+        "iconPlaceholder": "Select icon",
+        "validation": {
+            "codeRequired": "Please enter dictionary code",
+            "codePattern": "Code can include uppercase letters, numbers, and underscores, and must start with a letter or underscore",
+            "nameRequired": "Please enter dictionary name",
+            "itemCodeRequired": "Please enter item code",
+            "itemCodePattern": "Code can include letters, numbers, and underscores, and must start with a letter or underscore",
+            "displayNameRequired": "Please enter display name"
         }
     },
     "common": {
@@ -367,7 +420,8 @@
                 "previewCanvas": "Preview rendering (aligned with detail page rendering)",
                 "dropToTab": "Drag fields into the current tab",
                 "dropToCollapse": "Drag fields into the current collapse item",
-                "dropToSection": "Drag fields into the current section"
+                "dropToSection": "Drag fields into the current section",
+                "singleLayoutModel": "Single layout model: configure edit layout here; detail reuses it. List pages are field-driven (`show_in_list` + `sort_order`)."
             },
             "panel": {
                 "properties": "Properties",

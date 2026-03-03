@@ -1,5 +1,5 @@
 import { test, expect, type Route, type Page } from '@playwright/test'
-import { waitForDesignerReady } from '../helpers/page-ready.helpers'
+import { setDesignerRenderMode, waitForDesignerReady } from '../helpers/page-ready.helpers'
 
 const OBJECT_CODE = 'Asset'
 const LAYOUT_ID = 'layout-asset-render-mode-consistency'
@@ -207,19 +207,19 @@ test.describe('Layout Designer Render Mode Consistency Regression', () => {
     )
 
     await waitForDesignerReady(page)
-    await expect(page.getByTestId('layout-field-panel')).toBeVisible()
-    await expect(page.getByTestId('layout-property-panel')).toBeVisible()
+    await setDesignerRenderMode(page, 'design')
 
     const designSnapshot = await readCanvasSnapshot(page)
     expect(designSnapshot.title).toContain(SECTION_TITLE)
     expect(designSnapshot.labels).toEqual(['Asset Name', 'Asset Code'])
 
-    await page.getByTestId('layout-render-preview-button').click()
-    await expect(page.getByTestId('layout-field-panel')).toHaveCount(0)
-    await expect(page.getByTestId('layout-property-panel')).toHaveCount(0)
+    await setDesignerRenderMode(page, 'preview')
 
     const previewSnapshot = await readCanvasSnapshot(page)
     expect(previewSnapshot).toEqual(designSnapshot)
+
+    await setDesignerRenderMode(page, 'design')
+    const designSnapshotAfterBack = await readCanvasSnapshot(page)
+    expect(designSnapshotAfterBack).toEqual(designSnapshot)
   })
 })
-

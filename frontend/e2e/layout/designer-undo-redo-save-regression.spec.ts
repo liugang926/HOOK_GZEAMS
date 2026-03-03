@@ -1,5 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
-import { waitForDesignerReady } from '../helpers/page-ready.helpers'
+import { clickDesignerSaveDraft, waitForDesignerReady } from '../helpers/page-ready.helpers'
 type AnyRecord = Record<string, any>
 
 const OBJECT_CODE = 'Asset'
@@ -220,15 +220,14 @@ test.describe('Layout Designer Undo/Redo -> Save Regression', () => {
     await expect(undoButton).toBeEnabled()
     await undoButton.click()
 
-    const saveButton = page.getByTestId('layout-save-button').first()
-    await saveButton.click()
+    await clickDesignerSaveDraft(page)
 
     await expect.poll(() => saveCallCount).toBe(1)
     await expect.poll(() => findAssetNameLabel(activeLayoutConfig)).toBe(INITIAL_LABEL)
 
     await expect(redoButton).toBeEnabled()
     await redoButton.click()
-    await saveButton.click()
+    await clickDesignerSaveDraft(page)
 
     await expect.poll(() => saveCallCount).toBe(2)
     await expect.poll(() => findAssetNameLabel(activeLayoutConfig)).toBe(UPDATED_LABEL)

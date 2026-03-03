@@ -857,22 +857,76 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         return user.has_perm(perm_code)
 
     def _get_request_locale(self, request) -> str:
-        """Resolve locale from middleware context with safe fallback."""
-        locale = (
+        """Resolve locale with runtime-safe priority: query > header > profile > context/default."""
+
+        def _normalize_locale(raw_locale: Any) -> str:
+            if not raw_locale:
+                return ''
+            locale = str(raw_locale).strip()
+            if not locale:
+                return ''
+            if locale in TranslationService.SUPPORTED_LANGUAGES:
+                return locale
+
+            lowered = locale.lower().replace('_', '-')
+            if lowered.startswith('zh'):
+                return 'zh-CN'
+            if lowered.startswith('en'):
+                return 'en-US'
+            if lowered.startswith('ja'):
+                return 'ja-JP'
+            return ''
+
+        def _parse_accept_language(raw_header: str) -> List[str]:
+            if not raw_header:
+                return []
+            candidates: List[tuple[str, float]] = []
+            for chunk in raw_header.split(','):
+                part = chunk.strip()
+                if not part:
+                    continue
+                lang = part
+                quality = 1.0
+                if ';' in part:
+                    pieces = [p.strip() for p in part.split(';') if p.strip()]
+                    lang = pieces[0]
+                    for piece in pieces[1:]:
+                        if piece.startswith('q='):
+                            try:
+                                quality = float(piece.split('=', 1)[1])
+                            except (ValueError, TypeError):
+                                quality = 0.0
+                            break
+                candidates.append((lang, quality))
+            candidates.sort(key=lambda item: item[1], reverse=True)
+            return [lang for lang, _ in candidates]
+
+        query_locale = request.query_params.get('locale') or request.query_params.get('lang')
+        normalized_query_locale = _normalize_locale(query_locale)
+        if normalized_query_locale:
+            return normalized_query_locale
+
+        accept_language = request.META.get('HTTP_ACCEPT_LANGUAGE', '')
+        for candidate in _parse_accept_language(accept_language):
+            normalized_header_locale = _normalize_locale(candidate)
+            if normalized_header_locale:
+                return normalized_header_locale
+
+        user = getattr(request, 'user', None)
+        preferred_language = getattr(user, 'preferred_language', None) if user and user.is_authenticated else None
+        normalized_preferred_language = _normalize_locale(preferred_language)
+        if normalized_preferred_language:
+            return normalized_preferred_language
+
+        context_locale = (
             getattr(request, 'language_code', None)
             or getattr(request, 'locale', None)
             or get_current_language()
-            or TranslationService.DEFAULT_LANGUAGE
         )
-        if locale not in TranslationService.SUPPORTED_LANGUAGES:
-            if locale.startswith('zh'):
-                return 'zh-CN'
-            if locale.startswith('en'):
-                return 'en-US'
-            if locale.startswith('ja'):
-                return 'ja-JP'
-            return TranslationService.DEFAULT_LANGUAGE
-        return locale
+        normalized_context_locale = _normalize_locale(context_locale)
+        if normalized_context_locale:
+            return normalized_context_locale
+        return TranslationService.DEFAULT_LANGUAGE
 
     def _localize_field_value(self, obj, field_name: str, locale: str, default_value: Any = '') -> Any:
         """Localize a model field via TranslationService with safe fallback."""

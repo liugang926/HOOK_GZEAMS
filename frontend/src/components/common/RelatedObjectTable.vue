@@ -14,17 +14,16 @@
  * in various display modes configured on the field definition.
  */
 
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Plus, Refresh } from '@element-plus/icons-vue'
 import BaseTable from './BaseTable.vue'
 import type { FieldDefinition, TableColumn } from '@/types'
-import { useFieldMetadata } from '@/composables/useFieldMetadata'
 import request from '@/utils/request'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 // ============================================================================
 // Types
@@ -49,8 +48,10 @@ export interface RelatedObjectTableProps {
 
 interface RelatedRecord {
   id: string
-  [key: string]: any
+  [key: string]: unknown
 }
+
+type AnyRecord = Record<string, any>
 
 // ============================================================================
 // Props & Emits
@@ -78,6 +79,7 @@ const records = ref<RelatedRecord[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(props.pageSize)
+const metadataColumns = ref<TableColumn[] | null>(null)
 
 // Extract related object info from field definition
 const relatedObjectCode = computed(() => {
@@ -102,66 +104,150 @@ const relatedObjectDisplay = computed(() => {
 // ============================================================================
 
 const tableColumns = computed<TableColumn[]>(() => {
-  // Build columns from field definition or use defaults
   const columns: TableColumn[] = [
     {
       prop: 'id',
       label: t('common.relatedObject.id'),
-      width: 80,
+      width: 96,
       sortable: true
     }
   ]
 
-  // Add common display fields based on related object type
-  // This can be enhanced to fetch actual field definitions
-  const commonFields = getCommonDisplayFields(relatedObjectCode.value)
-  columns.push(...commonFields)
-
+  if (metadataColumns.value?.length) {
+    columns.push(...metadataColumns.value)
+  } else {
+    columns.push(...buildFallbackColumnsFromRecords(records.value))
+  }
   return columns
 })
 
-// Get common display fields for known object types
-function getCommonDisplayFields(objectCode: string): TableColumn[] {
-  const fieldMap: Record<string, TableColumn[]> = {
-    Maintenance: [
-      { prop: 'code', label: t('common.relatedObject.code'), width: 120 },
-      { prop: 'maintenanceType', label: t('common.relatedObject.type'), width: 100 },
-      { prop: 'maintenanceDate', label: t('common.relatedObject.maintenance.date'), width: 120 },
-      { prop: 'status', label: t('common.relatedObject.status'), width: 100 },
-      { prop: 'cost', label: t('common.relatedObject.maintenance.cost'), width: 100 }
-    ],
-    AssetLoan: [
-      { prop: 'code', label: t('common.relatedObject.code'), width: 120 },
-      { prop: 'loanDate', label: t('common.relatedObject.loan.loanDate'), width: 120 },
-      { prop: 'returnDate', label: t('common.relatedObject.loan.returnDate'), width: 120 },
-      { prop: 'loanUser', label: t('common.relatedObject.loan.loanUser'), width: 120 },
-      { prop: 'status', label: t('common.relatedObject.status'), width: 100 }
-    ],
-    AssetPickup: [
-      { prop: 'code', label: t('common.relatedObject.code'), width: 120 },
-      { prop: 'pickupDate', label: t('common.relatedObject.pickup.pickupDate'), width: 120 },
-      { prop: 'pickupUser', label: t('common.relatedObject.pickup.pickupUser'), width: 120 },
-      { prop: 'status', label: t('common.relatedObject.status'), width: 100 }
-    ],
-    AssetReturn: [
-      { prop: 'code', label: t('common.relatedObject.code'), width: 120 },
-      { prop: 'returnDate', label: t('common.relatedObject.return.returnDate'), width: 120 },
-      { prop: 'returnUser', label: t('common.relatedObject.return.returnUser'), width: 120 },
-      { prop: 'condition', label: t('common.relatedObject.return.condition'), width: 100 }
-    ],
-    InventoryTaskItem: [
-      { prop: 'code', label: t('common.relatedObject.code'), width: 120 },
-      { prop: 'status', label: t('common.relatedObject.status'), width: 100 },
-      { prop: 'quantity', label: t('common.relatedObject.quantity'), width: 80 },
-      { prop: 'location', label: t('common.relatedObject.location'), width: 120 }
-    ]
-  }
+function toPositiveNumber(value: unknown): number | undefined {
+  const num = Number(value)
+  return Number.isFinite(num) && num > 0 ? num : undefined
+}
 
-  return fieldMap[objectCode] || [
-    { prop: 'code', label: t('common.relatedObject.code'), width: 150 },
-    { prop: 'name', label: t('common.relatedObject.name'), width: 200 },
-    { prop: 'createdAt', label: t('common.relatedObject.createdAt'), width: 150 }
-  ]
+function getFieldCode(field: AnyRecord): string {
+  return String(field?.fieldCode || field?.field_code || field?.code || '').trim()
+}
+
+function shouldDisplayInRelatedTable(field: AnyRecord): boolean {
+  const hidden = field?.isHidden ?? field?.is_hidden
+  if (hidden === true) return false
+  const showInList = field?.showInList ?? field?.show_in_list
+  return showInList !== false
+}
+
+function buildColumnsFromMetadata(fields: AnyRecord[]): TableColumn[] {
+  const candidates = fields
+    .filter((field) => shouldDisplayInRelatedTable(field))
+    .map((field) => {
+      const code = getFieldCode(field)
+      if (!code || code === 'id') return null
+      const sortOrder = Number(field?.sortOrder ?? field?.sort_order ?? 9999)
+      return {
+        code,
+        sortOrder,
+        column: {
+          prop: code,
+          label: String(field?.label || field?.name || code),
+          width: toPositiveNumber(field?.columnWidth ?? field?.column_width),
+          minWidth: toPositiveNumber(field?.minColumnWidth ?? field?.min_column_width),
+          sortable: field?.sortable !== false
+        } satisfies TableColumn
+      }
+    })
+    .filter((item): item is { code: string; sortOrder: number; column: TableColumn } => !!item)
+    .sort((a, b) => {
+      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
+      return a.code.localeCompare(b.code)
+    })
+
+  return candidates.slice(0, 8).map((item) => item.column)
+}
+
+function buildFallbackColumnsFromRecords(dataRows: RelatedRecord[]): TableColumn[] {
+  const first = Array.isArray(dataRows) && dataRows.length > 0 ? (dataRows[0] as AnyRecord) : null
+  const allKeys = first
+    ? Object.keys(first).filter((key) => key !== 'id' && typeof first[key] !== 'object')
+    : []
+  const preferredKeys = ['code', 'name', 'status', 'createdAt']
+  const selectedKeys = [
+    ...preferredKeys.filter((key) => allKeys.includes(key)),
+    ...allKeys.filter((key) => !preferredKeys.includes(key))
+  ].slice(0, 3)
+
+  const fallbackKeys = selectedKeys.length > 0 ? selectedKeys : ['code', 'name', 'createdAt']
+
+  return fallbackKeys.map((key) => {
+    const labelByKey: Record<string, string> = {
+      code: t('common.relatedObject.code'),
+      name: t('common.relatedObject.name'),
+      status: t('common.relatedObject.status'),
+      createdAt: t('common.relatedObject.createdAt')
+    }
+    return {
+      prop: key,
+      label: labelByKey[key] || key,
+      minWidth: 120
+    }
+  })
+}
+
+function extractFieldsFromResponse(payload: unknown): AnyRecord[] {
+  if (!payload || typeof payload !== 'object') return []
+  const unwrapped = payload as AnyRecord
+  const source =
+    unwrapped.success === true && unwrapped.data && typeof unwrapped.data === 'object'
+      ? (unwrapped.data as AnyRecord)
+      : unwrapped
+  const editableFields = Array.isArray(source.editableFields)
+    ? source.editableFields
+    : Array.isArray(source.editable_fields)
+      ? source.editable_fields
+      : []
+
+  return editableFields.filter((field: AnyRecord) => {
+    const isReverse = field?.isReverseRelation ?? field?.is_reverse_relation
+    return isReverse !== true
+  })
+}
+
+function extractRecordPageFromResponse(payload: unknown): { results: RelatedRecord[]; count: number } {
+  if (!payload || typeof payload !== 'object') {
+    return { results: [], count: 0 }
+  }
+  const unwrapped = payload as AnyRecord
+  const source =
+    unwrapped.success === true && unwrapped.data && typeof unwrapped.data === 'object'
+      ? (unwrapped.data as AnyRecord)
+      : unwrapped
+  const results = Array.isArray(source.results) ? (source.results as RelatedRecord[]) : []
+  const count = Number(source.count)
+  return {
+    results,
+    count: Number.isFinite(count) ? count : results.length
+  }
+}
+
+/**
+ * Fetch related object list metadata and build table columns.
+ */
+const fetchRelatedColumns = async () => {
+  try {
+    const response = await request({
+      url: `/system/objects/${relatedObjectCode.value}/fields/`,
+      method: 'get',
+      params: {
+        context: 'list',
+        include_relations: false
+      }
+    })
+    const metadataFields = extractFieldsFromResponse(response)
+    const columns = buildColumnsFromMetadata(metadataFields)
+    metadataColumns.value = columns.length > 0 ? columns : null
+  } catch {
+    metadataColumns.value = null
+  }
 }
 
 // ============================================================================
@@ -188,12 +274,9 @@ const fetchRecords = async () => {
       }
     })
 
-    if (response.success) {
-      records.value = response.data.results || []
-      total.value = response.data.count || 0
-    } else {
-      ElMessage.error(response.error?.message || t('common.relatedObject.loadFailed'))
-    }
+    const page = extractRecordPageFromResponse(response)
+    records.value = page.results
+    total.value = page.count
   } catch (error: any) {
     ElMessage.error(error.message || t('common.relatedObject.loadFailed'))
     records.value = []
@@ -263,17 +346,24 @@ const refresh = () => {
 // Lifecycle
 // ============================================================================
 
-onMounted(() => {
-  fetchRecords()
-})
-
 // Watch for parent ID changes
 watch(() => props.parentId, () => {
   if (props.parentId) {
     currentPage.value = 1
     fetchRecords()
   }
+})
+
+watch(relatedObjectCode, () => {
+  metadataColumns.value = null
+  currentPage.value = 1
+  fetchRelatedColumns()
+  fetchRecords()
 }, { immediate: true })
+
+watch(locale, () => {
+  fetchRelatedColumns()
+})
 
 // ============================================================================
 // Expose

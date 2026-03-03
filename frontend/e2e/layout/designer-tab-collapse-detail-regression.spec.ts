@@ -1,5 +1,9 @@
 import { test, expect, type Route } from '@playwright/test'
-import { clickDesignerSectionHeader, waitForDesignerReady } from '../helpers/page-ready.helpers'
+import {
+  clickDesignerSaveDraft,
+  clickDesignerSectionHeader,
+  waitForDesignerReady
+} from '../helpers/page-ready.helpers'
 type AnyRecord = Record<string, any>
 type ScenarioType = 'tab' | 'collapse'
 
@@ -272,9 +276,7 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
       await titleInput.fill(scenario.updatedTitle)
       await titleInput.press('Tab')
 
-      const saveButton = page.getByTestId('layout-save-button').first()
-      await expect(saveButton).toBeVisible()
-      await saveButton.click()
+      await clickDesignerSaveDraft(page)
 
       await expect.poll(() => saveCallCount).toBe(1)
       await expect.poll(() => getFirstSectionTitle(activeLayoutConfig)).toBe(scenario.updatedTitle)
@@ -460,9 +462,7 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
         await readonlySwitch.click({ force: true })
       }
 
-      const saveButton = page.getByTestId('layout-save-button').first()
-      await expect(saveButton).toBeVisible()
-      await saveButton.click()
+      await clickDesignerSaveDraft(page)
 
       await expect.poll(() => saveCallCount).toBe(1)
       await expect.poll(() => getNestedField(activeLayoutConfig, scenario).label).toBe(scenario.updatedFieldLabel)
@@ -643,9 +643,7 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
         await visibleSwitch.click({ force: true })
       }
 
-      const saveButton = page.getByTestId('layout-save-button').first()
-      await expect(saveButton).toBeVisible()
-      await saveButton.click()
+      await clickDesignerSaveDraft(page)
 
       await expect.poll(() => saveCallCount).toBe(1)
       await expect.poll(() => Boolean(getNestedField(activeLayoutConfig, scenario).visible)).toBe(false)

@@ -1,5 +1,10 @@
 import { test, expect, type Page, type Route } from '@playwright/test'
-import { clickDesignerSectionHeader, waitForDesignerReady } from '../helpers/page-ready.helpers'
+import {
+  clickDesignerResetAndConfirm,
+  clickDesignerSaveDraft,
+  clickDesignerSectionHeader,
+  waitForDesignerReady
+} from '../helpers/page-ready.helpers'
 interface LayoutField {
   id: string
   fieldCode: string
@@ -282,11 +287,7 @@ test.describe('Layout Designer Reset -> Save Regression', () => {
         .first()
     ).toBeVisible()
 
-    const resetButton = page.getByTestId('layout-reset-button').first()
-    await expect(resetButton).toBeVisible()
-    await resetButton.click()
-    await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box__btns .el-button--primary').click()
+    await clickDesignerResetAndConfirm(page)
 
     await expect(
       page.locator('.detail-section .section-title')
@@ -300,8 +301,7 @@ test.describe('Layout Designer Reset -> Save Regression', () => {
     await expect(undoButton).toBeDisabled()
     await expect(redoButton).toBeDisabled()
 
-    const saveButton = page.getByTestId('layout-save-button').first()
-    await saveButton.click()
+    await clickDesignerSaveDraft(page)
     await expect.poll(() => saveCallCount).toBe(1)
     await expect.poll(() => {
       const title = sectionTitle(activeLayoutConfig)

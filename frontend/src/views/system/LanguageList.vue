@@ -152,13 +152,24 @@ const loadLanguages = async () => {
   loading.value = true
   try {
     const response = await languageApi.list()
-    const payload = (response as any)?.data ?? response
+    const raw = response as unknown
+    const payload = (
+      raw && typeof raw === 'object' && 'data' in (raw as Record<string, unknown>)
+        ? (raw as Record<string, unknown>).data
+        : raw
+    ) as unknown
+
     if (Array.isArray(payload)) {
       languages.value = payload as Language[]
       return
     }
-    if (Array.isArray(payload?.data)) {
-      languages.value = payload.data as Language[]
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      'data' in (payload as Record<string, unknown>) &&
+      Array.isArray((payload as Record<string, unknown>).data)
+    ) {
+      languages.value = (payload as { data: Language[] }).data
       return
     }
     languages.value = []
