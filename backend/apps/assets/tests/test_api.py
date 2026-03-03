@@ -314,6 +314,50 @@ class AssetAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['data']['asset_name'], 'Updated Laptop')
 
+    def test_update_asset_accepts_expanded_reference_objects(self):
+        """PUT should accept expanded relation objects and coerce them to IDs."""
+        asset = Asset.objects.create(
+            organization=self.org,
+            asset_name='Reference Payload Laptop',
+            asset_category=self.category,
+            supplier=self.supplier,
+            location=self.location,
+            custodian=self.user,
+            purchase_price=Decimal('1000.00'),
+            purchase_date='2024-01-01',
+            created_by=self.user
+        )
+
+        url = f'/api/assets/{asset.id}/'
+        data = {
+            'asset_name': 'Reference Payload Laptop Updated',
+            'asset_category': {
+                'id': str(self.category.id),
+                'code': self.category.code,
+                'name': self.category.name
+            },
+            'supplier': {
+                'id': str(self.supplier.id),
+                'code': self.supplier.code,
+                'name': self.supplier.name
+            },
+            'location': {
+                'id': str(self.location.id),
+                'name': self.location.name
+            },
+            'custodian': {
+                'id': str(self.user.id),
+                'username': self.user.username
+            },
+            'purchase_price': '1200.00',
+            'purchase_date': '2024-01-01',
+        }
+
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['success'])
+        self.assertEqual(response.data['data']['asset_name'], 'Reference Payload Laptop Updated')
+
     def test_delete_asset(self):
         """Test DELETE /api/assets/{id}/ (soft delete)"""
         asset = Asset.objects.create(

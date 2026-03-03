@@ -8,6 +8,7 @@
     "batchDelete": "Batch Delete",
     "cancel": "Cancel",
     "close": "Close",
+    "clear": "Clear",
     "collapse": "Collapse",
     "confirm": "Confirm",
     "create": "Create",
@@ -22,6 +23,7 @@
     "refresh": "Refresh",
     "reject": "Reject",
     "reset": "Reset",
+    "loadMore": "Load More",
     "save": "Save",
     "search": "Search",
     "submit": "Submit",
@@ -112,6 +114,13 @@
     "deleteSuccess": "Deleted successfully",
     "functionUnderDevelopment": "Feature under development",
     "loadFailed": "Load failed",
+    "dragFileHere": "Drag file here or",
+    "clickToUpload": "click to upload",
+    "uploading": "Uploading...",
+    "uploadComplete": "Upload complete",
+    "uploadPendingCount": "Upload {count} file(s)",
+    "fileValidationFailed": "File validation failed",
+    "unknownError": "Unknown error",
     "noData": "No data",
     "noSearchResults": "No matching results",
     "operationFailed": "Operation failed",
@@ -123,6 +132,7 @@
     "emptyHint": "No data yet. Try creating a new record.",
     "systemError": "System error",
     "tips": "Tips",
+    "maxFileCountExceeded": "Maximum {count} file(s) allowed.",
     "updateFailed": "Update failed",
     "updateSuccess": "Updated successfully",
     "formValidationFailed": "Form validation failed. Please check required fields."
@@ -132,10 +142,11 @@
   "performedBy": "Performed By",
   "placeholders": {
     "endDate": "End Date",
-    "input": "Input",
+    "input": "Please enter",
     "maxValue": "Max Value",
     "minValue": "Min Value",
-    "select": "Select",
+    "search": "Please enter search keyword",
+    "select": "Please select",
     "startDate": "Start Date"
   },
   "reason": "Reason",
@@ -223,7 +234,8 @@
   "usageInfo": "Usage Info",
   "validation": {
     "phone": "Please enter a valid phone number",
-    "required": "This field is required"
+    "required": "This field is required",
+    "requiredWithField": "{field} is required"
   },
   "valueInfo": "Value Info",
   "vendor": "Vendor",

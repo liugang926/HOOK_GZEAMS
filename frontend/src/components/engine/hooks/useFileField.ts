@@ -17,6 +17,7 @@
  */
 
 import { ref, computed, watch, type Ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { systemFileApi, type SystemFile, validateFile, validateFiles } from '@/api/systemFile'
 
@@ -128,6 +129,8 @@ export function useFileField(
   uploadOptions: FileUploadOptions = {},
   uploadContext: FileUploadContext = {}
 ): UseFileFieldReturn {
+  const { t } = useI18n()
+
   // State
   const files = ref<FileDisplayItem[]>([]) as Ref<FileDisplayItem[]>
   const fileMetadataMap = ref<Map<string, SystemFile>>(new Map())
@@ -190,7 +193,7 @@ export function useFileField(
       files.value = metadata.map(toFileDisplayItem)
     } catch (error) {
       console.error('Failed to load file metadata:', error)
-      ElMessage.error('Failed to load file information')
+      ElMessage.error(t('common.messages.loadFailed'))
     }
   }
 
@@ -204,7 +207,7 @@ export function useFileField(
     // Validate file
     const validation = validateUpload(file, uploadOptions)
     if (!validation.valid) {
-      uploadState.value.error = validation.error || 'File validation failed'
+      uploadState.value.error = validation.error || t('common.messages.operationFailed')
       ElMessage.error(uploadState.value.error)
       return null
     }
@@ -224,7 +227,7 @@ export function useFileField(
       })
 
       if (!fileData?.id) {
-        uploadState.value.error = 'Upload failed'
+        uploadState.value.error = t('common.messages.operationFailed')
         ElMessage.error(uploadState.value.error)
         return null
       }
@@ -241,10 +244,10 @@ export function useFileField(
       }
 
       uploadState.value.progress = 100
-      ElMessage.success('File uploaded successfully.')
+      ElMessage.success(t('common.messages.operationSuccess'))
       return fileData
     } catch (error: any) {
-      uploadState.value.error = error.message || 'Upload failed'
+      uploadState.value.error = error.message || t('common.messages.operationFailed')
       ElMessage.error(uploadState.value.error)
       return null
     } finally {
@@ -262,7 +265,7 @@ export function useFileField(
     // Validate files
     const validation = validateFiles(fileList, uploadOptions)
     if (!validation.valid) {
-      uploadState.value.error = validation.error || 'File validation failed'
+      uploadState.value.error = validation.error || t('common.messages.operationFailed')
       ElMessage.error(uploadState.value.error)
       return []
     }
@@ -296,10 +299,10 @@ export function useFileField(
       // Remove from files array
       files.value = files.value.filter(f => f.id !== fileId)
 
-      ElMessage.success('File deleted successfully.')
+      ElMessage.success(t('common.messages.deleteSuccess'))
     } catch (error) {
       console.error('Failed to delete file:', error)
-      ElMessage.error('Failed to delete file.')
+      ElMessage.error(t('common.messages.deleteFailed'))
     }
   }
 
@@ -392,7 +395,7 @@ export function useFileField(
       const maxSizeMB = Math.round(opts.maxSize / 1024 / 1024 * 100) / 100
       return {
         valid: false,
-        error: `File size exceeds ${maxSizeMB}MB limit.`
+        error: t('common.messages.operationFailed')
       }
     }
 
@@ -411,7 +414,7 @@ export function useFileField(
       if (!typeMatch) {
         return {
           valid: false,
-          error: `File type not allowed. Allowed types: ${opts.allowedTypes.join(', ')}`
+          error: t('common.messages.operationFailed')
         }
       }
     }

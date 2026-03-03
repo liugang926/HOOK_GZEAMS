@@ -1,7 +1,5 @@
-```html
 <template>
   <div class="permission-audit-log-tab">
-    <!-- Filters -->
     <el-form
       :model="filterForm"
       inline
@@ -51,7 +49,6 @@
       </el-form-item>
     </el-form>
 
-    <!-- Statistics Cards -->
     <el-row
       :gutter="20"
       class="stats-row"
@@ -106,7 +103,6 @@
       </el-col>
     </el-row>
 
-    <!-- Audit Log Table -->
     <el-table
       v-loading="loading"
       :data="tableData"
@@ -122,11 +118,11 @@
       <el-table-column
         prop="operatorName"
         :label="$t('system.permission.audit.columns.operator')"
-        width="120"
+        width="140"
       />
       <el-table-column
         :label="$t('system.permission.audit.columns.action')"
-        width="100"
+        width="110"
         align="center"
       >
         <template #default="{ row }">
@@ -134,28 +130,27 @@
             :type="getActionTag(row.action)"
             size="small"
           >
-            {{ getActionLabel(row.action) }}
+            {{ getActionLabel(row.action, row.actionLabel) }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
-        prop="permissionType"
         :label="$t('system.permission.audit.columns.type')"
-        width="100"
+        width="120"
       >
         <template #default="{ row }">
           <el-tag
-            :type="row.permissionType === 'field' ? 'primary' : 'success'"
+            :type="row.permissionType === 'field' ? 'primary' : (row.permissionType === 'data' ? 'success' : 'info')"
             size="small"
           >
-            {{ row.permissionType === 'field' ? $t('system.permission.audit.types.field') : $t('system.permission.audit.types.data') }}
+            {{ row.permissionTypeLabel }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column
         prop="targetName"
         :label="$t('system.permission.audit.columns.target')"
-        width="120"
+        width="140"
       />
       <el-table-column
         prop="details"
@@ -185,7 +180,6 @@
       </el-table-column>
     </el-table>
 
-    <!-- Pagination -->
     <div class="pagination-footer">
       <el-pagination
         v-model:current-page="pagination.page"
@@ -198,7 +192,6 @@
       />
     </div>
 
-    <!-- Detail Dialog -->
     <el-dialog
       v-model="detailVisible"
       :title="$t('system.permission.audit.dialog.title')"
@@ -216,12 +209,12 @@
         </el-descriptions-item>
         <el-descriptions-item :label="$t('system.permission.audit.dialog.action')">
           <el-tag :type="getActionTag(currentLog?.action)">
-            {{ getActionLabel(currentLog?.action) }}
+            {{ getActionLabel(currentLog?.action, currentLog?.actionLabel) }}
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item :label="$t('system.permission.audit.dialog.type')">
-          <el-tag :type="currentLog?.permissionType === 'field' ? 'primary' : 'success'">
-            {{ currentLog?.permissionType === 'field' ? $t('system.permission.audit.types.field') : $t('system.permission.audit.types.data') }}
+          <el-tag :type="currentLog?.permissionType === 'field' ? 'primary' : (currentLog?.permissionType === 'data' ? 'success' : 'info')">
+            {{ currentLog?.permissionTypeLabel }}
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item
@@ -249,20 +242,40 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
-import { permissionAuditLogApi } from '@/api/permissions'
+import {
+  permissionAuditLogApi,
+  type PermissionAuditLogRecord,
+  type PermissionAuditStatistics,
+  type PermissionListParams
+} from '@/api/permissions'
 
 const { t } = useI18n()
 
 const loading = ref(false)
-const tableData = ref<any[]>([])
+interface AuditLogViewRow {
+  id: string
+  createdAt: string
+  operatorName: string
+  action: 'grant' | 'revoke' | 'update' | 'check' | 'deny'
+  actionLabel: string
+  permissionType: 'field' | 'data' | 'other'
+  permissionTypeLabel: string
+  targetName: string
+  details: string
+  ipAddress: string
+  userAgent: string
+}
+
+const tableData = ref<AuditLogViewRow[]>([])
 const detailVisible = ref(false)
-const currentLog = ref<any>(null)
+const currentLog = ref<AuditLogViewRow | null>(null)
 
 const filterForm = reactive({
-  action: '',
-  dateRange: null as any
+  action: '' as '' | 'grant' | 'revoke' | 'update',
+  dateRange: [] as Date[]
 })
 
 const pagination = reactive({
@@ -278,81 +291,163 @@ const stats = ref({
   activeUsers: 0
 })
 
-const getActionLabel = (action: string) => {
-  const labels: Record<string, string> = {
-    'grant': t('system.permission.audit.actions.grant'),
-    'revoke': t('system.permission.audit.actions.revoke'),
-    'update': t('system.permission.audit.actions.update')
+const normalizeAction = (operationType: PermissionAuditLogRecord['operationType']): AuditLogViewRow['action'] => {
+  if (operationType === 'modify') {
+    return 'update'
   }
-  return labels[action] || action
+  return operationType
+}
+
+const mapActionFilter = (action: '' | 'grant' | 'revoke' | 'update') => {
+  if (action === 'update') {
+    return 'modify'
+  }
+  return action
+}
+
+const getActionLabel = (action: AuditLogViewRow['action'], fallbackLabel?: string) => {
+  const labels: Record<string, string> = {
+    grant: t('system.permission.audit.actions.grant'),
+    revoke: t('system.permission.audit.actions.revoke'),
+    update: t('system.permission.audit.actions.update')
+  }
+  return labels[action] || fallbackLabel || action || '-'
 }
 
 const getActionTag = (action: string) => {
-  const tags: Record<string, any> = {
-    'grant': 'success',
-    'revoke': 'danger',
-    'update': 'warning'
+  const tags: Record<string, string> = {
+    grant: 'success',
+    revoke: 'danger',
+    update: 'warning',
+    check: 'info',
+    deny: 'danger'
   }
   return tags[action] || 'info'
+}
+
+const resolvePermissionType = (targetType: PermissionAuditLogRecord['targetType']) => {
+  if (targetType === 'field_permission') {
+    return {
+      type: 'field' as const,
+      label: t('system.permission.audit.types.field')
+    }
+  }
+
+  if (targetType === 'data_permission') {
+    return {
+      type: 'data' as const,
+      label: t('system.permission.audit.types.data')
+    }
+  }
+
+  return {
+    type: 'other' as const,
+    label: targetType || '-'
+  }
+}
+
+const formatPermissionDetails = (details: unknown) => {
+  if (details === null || details === undefined) {
+    return '-'
+  }
+
+  if (typeof details === 'string') {
+    return details
+  }
+
+  try {
+    return JSON.stringify(details)
+  } catch {
+    return String(details)
+  }
+}
+
+const resolveTargetName = (item: PermissionAuditLogRecord) => {
+  if (item.targetUserDisplay) {
+    return item.targetUserDisplay
+  }
+
+  if (item.objectId) {
+    return `${item.targetTypeDisplay || item.targetType}#${item.objectId}`
+  }
+
+  return item.targetTypeDisplay || item.targetType || '-'
+}
+
+const mapRow = (item: PermissionAuditLogRecord): AuditLogViewRow => {
+  const permissionType = resolvePermissionType(item.targetType)
+  const action = normalizeAction(item.operationType)
+
+  return {
+    id: item.id,
+    createdAt: item.createdAt,
+    operatorName: item.actorDisplay || '-',
+    action,
+    actionLabel: item.operationTypeDisplay,
+    permissionType: permissionType.type,
+    permissionTypeLabel: permissionType.label,
+    targetName: resolveTargetName(item),
+    details: formatPermissionDetails(item.permissionDetails),
+    ipAddress: item.ipAddress || '-',
+    userAgent: item.userAgent || '-'
+  }
+}
+
+const extractOperationCount = (statData: PermissionAuditStatistics | null, operationType: string) => {
+  const list = Array.isArray(statData?.byOperation) ? statData.byOperation : []
+  const match = list.find((item) => item.operationType === operationType)
+  return Number(match?.count || 0)
+}
+
+const toDateRangeParams = (): Partial<Pick<PermissionListParams, 'created_at_from' | 'created_at_to'>> => {
+  if (!Array.isArray(filterForm.dateRange) || filterForm.dateRange.length !== 2) {
+    return {}
+  }
+
+  const [start, end] = filterForm.dateRange
+  if (!start || !end) {
+    return {}
+  }
+
+  return {
+    created_at_from: dayjs(start).startOf('day').toISOString(),
+    created_at_to: dayjs(end).endOf('day').toISOString()
+  }
 }
 
 const fetchData = async () => {
   loading.value = true
   try {
-    // TODO: Replace with actual API call
-    // const res = await permissionAuditLogApi.list({
-    //   ...filterForm,
-    //   page: pagination.page,
-    //   pageSize: pagination.pageSize
-    // })
-    // tableData.value = res.results || []
-    // pagination.total = res.count || 0
-
-    // Mock data
-    tableData.value = [
-      {
-        id: '1',
-        createdAt: '2025-01-25 14:30:15',
-        operatorName: '张三',
-        action: 'grant',
-        permissionType: 'field',
-        targetName: '固定资产.资产名称',
-        details: '授予角色[普通用户]字段[资产名称]的读取权限',
-        ipAddress: '192.168.1.100',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0)'
-      },
-      {
-        id: '2',
-        createdAt: '2025-01-25 14:25:30',
-        operatorName: '李四',
-        action: 'revoke',
-        permissionType: 'data',
-        targetName: '固定资产',
-        details: '撤销用户[王五]的数据权限',
-        ipAddress: '192.168.1.101',
-        userAgent: 'Mozilla/5.0 (Macintosh)'
-      },
-      {
-        id: '3',
-        createdAt: '2025-01-25 14:20:00',
-        operatorName: '张三',
-        action: 'update',
-        permissionType: 'field',
-        targetName: '固定资产.资产原值',
-        details: '修改角色[普通用户]字段[资产原值]的权限为只读',
-        ipAddress: '192.168.1.100',
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0)'
-      }
-    ]
-    pagination.total = 3
-
-    // Mock stats
-    stats.value = {
-      todayGrants: 15,
-      todayRevokes: 3,
-      weekTotal: 87,
-      activeUsers: 8
+    const params: PermissionListParams = {
+      page: pagination.page,
+      page_size: pagination.pageSize,
+      ...toDateRangeParams()
     }
+
+    if (filterForm.action) {
+      params.operation_type = mapActionFilter(filterForm.action)
+    }
+
+    const [res, todayStat, weekStat] = await Promise.all([
+      permissionAuditLogApi.list(params),
+      permissionAuditLogApi.statistics({ days: 1 }).catch(() => null),
+      permissionAuditLogApi.statistics({ days: 7 }).catch(() => null)
+    ])
+
+    const results = Array.isArray(res?.results) ? res.results : []
+    tableData.value = results.map(mapRow)
+    pagination.total = Number(res?.count || 0)
+
+    stats.value.todayGrants = extractOperationCount(todayStat, 'grant')
+    stats.value.todayRevokes = extractOperationCount(todayStat, 'revoke')
+    stats.value.weekTotal = Number(weekStat?.totalCount || 0)
+
+    const actorSet = new Set(
+      results
+        .map((item) => item.actor)
+        .filter((id: string | null | undefined) => !!id)
+    )
+    stats.value.activeUsers = actorSet.size
   } catch (error) {
     ElMessage.error(t('common.messages.loadFailed'))
   } finally {
@@ -367,11 +462,11 @@ const handleSearch = () => {
 
 const handleReset = () => {
   filterForm.action = ''
-  filterForm.dateRange = null
+  filterForm.dateRange = []
   handleSearch()
 }
 
-const handleViewDetail = (row: any) => {
+const handleViewDetail = (row: AuditLogViewRow) => {
   currentLog.value = row
   detailVisible.value = true
 }
@@ -385,29 +480,34 @@ onMounted(() => {
 .permission-audit-log-tab {
   padding: 10px 0;
 }
+
 .filter-form {
   margin-bottom: 20px;
 }
+
 .stats-row {
   margin-bottom: 20px;
 }
+
 .stat-item {
   text-align: center;
 }
+
 .stat-label {
   font-size: 14px;
   color: #909399;
   margin-bottom: 8px;
 }
+
 .stat-value {
   font-size: 24px;
   font-weight: bold;
   color: #409eff;
 }
+
 .pagination-footer {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
 }
 </style>
-```

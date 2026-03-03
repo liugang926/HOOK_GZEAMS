@@ -33,7 +33,7 @@
           <UploadFilled />
         </el-icon>
         <div class="upload-text">
-          Drag file here or <em>click to upload</em>
+          {{ $t('common.messages.dragFileHere') }} <em>{{ $t('common.messages.clickToUpload') }}</em>
         </div>
         <div
           v-if="hint"
@@ -51,7 +51,7 @@
         :loading="uploading"
       >
         <el-icon><Upload /></el-icon>
-        {{ uploading ? 'Uploading...' : buttonText }}
+        {{ uploading ? $t('common.messages.uploading') : resolvedButtonText }}
       </el-button>
 
       <!-- File list slot for picture-card type -->
@@ -121,10 +121,10 @@
         :loading="uploading"
         @click="startUpload"
       >
-        Upload {{ pendingFileCount }} File(s)
+        {{ $t('common.messages.uploadPendingCount', { count: pendingFileCount }) }}
       </el-button>
       <el-button @click="clearFiles">
-        Clear
+        {{ $t('common.actions.clear') }}
       </el-button>
     </div>
   </div>
@@ -132,6 +132,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { UploadInstance, UploadProps, UploadUserFile, UploadRawFile } from 'element-plus'
 import {
@@ -182,7 +183,7 @@ const props = withDefaults(
     maxCount: 10,
     dragUpload: false,
     listType: 'text',
-    buttonText: 'Select File'
+    buttonText: ''
   }
 )
 
@@ -190,6 +191,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string[]]
   'change': [value: string[], files: FileItem[]]
 }>()
+const { t } = useI18n()
 
 const uploadRef = ref<UploadInstance>()
 const uploadFileList = ref<UploadUserFile[]>([])
@@ -210,6 +212,7 @@ const uploadHeaders = computed(() => {
     'Authorization': token ? `Bearer ${token}` : ''
   }
 })
+const resolvedButtonText = computed(() => props.buttonText || t('form.fields.uploadFile'))
 
 // Overall upload progress
 const overallProgress = computed(() => uploadProgress.value)
@@ -223,9 +226,9 @@ const uploadStatus = computed<'success' | 'exception' | undefined>(() => {
 
 // Upload status text
 const uploadStatusText = computed(() => {
-  if (errorMessage.value) return 'Upload failed'
-  if (uploadProgress.value === 100) return 'Upload complete'
-  return `Uploading... ${uploadProgress.value}%`
+  if (errorMessage.value) return t('common.messages.operationFailed')
+  if (uploadProgress.value === 100) return t('common.messages.uploadComplete')
+  return `${t('common.messages.uploading')} ${uploadProgress.value}%`
 })
 
 // Check if there are pending files
@@ -304,7 +307,7 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
   })
 
   if (!validation.valid) {
-    errorMessage.value = validation.error || 'File validation failed'
+    errorMessage.value = validation.error || t('common.messages.fileValidationFailed')
     ElMessage.error(errorMessage.value)
     return false
   }
@@ -336,14 +339,14 @@ const handleSuccess: UploadProps['onSuccess'] = (response, file) => {
     updateModelValue()
   } else {
     file.status = 'fail'
-    errorMessage.value = response.message || 'Upload failed'
+    errorMessage.value = response.message || t('common.messages.operationFailed')
   }
 }
 
 // Handle upload error
 const handleError: UploadProps['onError'] = (error, file) => {
   file.status = 'fail'
-  errorMessage.value = `Upload failed: ${error.message || 'Unknown error'}`
+  errorMessage.value = `${t('common.messages.operationFailed')}: ${error.message || t('common.messages.unknownError')}`
   ElMessage.error(errorMessage.value)
 }
 
@@ -358,7 +361,7 @@ const handleRemove: UploadProps['onRemove'] = (file) => {
 
 // Handle exceed max count
 const handleExceed: UploadProps['onExceed'] = () => {
-  ElMessage.warning(`Maximum ${props.maxCount} file(s) allowed.`)
+  ElMessage.warning(t('common.messages.maxFileCountExceeded', { count: props.maxCount }))
 }
 
 // Start manual upload
@@ -377,7 +380,7 @@ function startUpload() {
   )
 
   if (!validation.valid) {
-    errorMessage.value = validation.error || 'File validation failed'
+    errorMessage.value = validation.error || t('common.messages.fileValidationFailed')
     ElMessage.error(errorMessage.value)
     return
   }

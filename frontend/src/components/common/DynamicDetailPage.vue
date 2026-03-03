@@ -31,6 +31,8 @@ import BaseDetailPage, {
 import { useFieldMetadata } from '@/composables/useFieldMetadata'
 import type { FieldDefinition } from '@/types'
 import request from '@/utils/request'
+import { snakeToCamel } from '@/utils/case'
+import { resolveFieldValue } from '@/utils/fieldKey'
 import { createObjectClient } from '@/api/dynamic'
 import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
 import { orderFieldsWithSchema } from '@/platform/layout/unifiedFieldOrder'
@@ -151,7 +153,18 @@ const pageTitle = computed(() => {
       ? runtimeEditableFields.value
       : editableFields.value) as FieldDefinition[]
   const nameField = sourceFields.find((f: any) => f.isIdentifier || f.is_identifier || f.code === 'name')
-  return nameField ? recordData.value[nameField.code] : t('common.detailPage.title')
+  if (!nameField?.code) return t('common.detailPage.title')
+  const resolvedTitle = resolveFieldValue(recordData.value, {
+    fieldCode: nameField.code,
+    includeWrappedData: true,
+    includeCustomBags: true,
+    treatEmptyAsMissing: true,
+    returnEmptyMatch: true
+  })
+  if (resolvedTitle !== undefined && resolvedTitle !== null && String(resolvedTitle).trim()) {
+    return String(resolvedTitle)
+  }
+  return t('common.detailPage.title')
 })
 
 /** Audit information */
@@ -433,6 +446,49 @@ function fieldToDetailField(field: FieldDefinition): DetailField {
   return toUnifiedDetailField(field as any) as DetailField
 }
 
+function collectEditableFieldProps(sections: DetailSection[]): string[] {
+  const props = new Set<string>()
+  for (const section of sections || []) {
+    const direct = Array.isArray(section.fields) ? section.fields : []
+    for (const field of direct) {
+      if (field?.prop) props.add(field.prop)
+    }
+    const tabs = Array.isArray(section.tabs) ? section.tabs : []
+    for (const tab of tabs) {
+      for (const field of tab.fields || []) {
+        if (field?.prop) props.add(field.prop)
+      }
+    }
+  }
+  return Array.from(props)
+}
+
+function buildInlineEditFormSeed(record: Record<string, any>, sections: DetailSection[]): Record<string, any> {
+  const seed: Record<string, any> = JSON.parse(JSON.stringify(record || {}))
+  const props = collectEditableFieldProps(sections)
+
+  for (const prop of props) {
+    if (!prop || prop.includes('.')) continue
+
+    const resolved = resolveFieldValue(record, {
+      fieldCode: prop,
+      includeWrappedData: true,
+      includeCustomBags: true,
+      // Prefer non-empty alias values when both snake/camel keys coexist.
+      // This avoids blank edit controls when one alias is an empty placeholder.
+      treatEmptyAsMissing: true,
+      returnEmptyMatch: true
+    })
+    if (resolved === undefined) continue
+
+    seed[prop] = resolved
+    const camelKey = snakeToCamel(prop)
+    if (camelKey !== prop) seed[camelKey] = resolved
+  }
+
+  return seed
+}
+
 /**
  * Extract object code from reverse relation
  */
@@ -496,7 +552,7 @@ function handleEdit() {
   }
 
   // Inline editing mode
-  formData.value = JSON.parse(JSON.stringify(recordData.value))
+  formData.value = buildInlineEditFormSeed(recordData.value, detailSections.value)
   isEditing.value = true
   generateFormRules()
 }

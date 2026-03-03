@@ -270,6 +270,57 @@ def test_fields_strict_mode_returns_field_code_only():
 
 
 @pytest.mark.django_db
+def test_fields_default_mode_keeps_legacy_code_for_compatibility():
+    org = Organization.objects.create(name='Compat Field Org', code='compat-field-org')
+    user = User.objects.create_user(
+        username='compat_field_user',
+        password='pass123456',
+        organization=org,
+        preferred_language='en-US',
+    )
+    UserOrganization.objects.create(
+        user=user,
+        organization=org,
+        role='admin',
+        is_active=True,
+        is_primary=True,
+    )
+    user.current_organization = org
+    user.save(update_fields=['current_organization'])
+
+    bo = BusinessObject.objects.create(
+        code='COMPACTOBJ',
+        name='Compat Object',
+        is_hardcoded=False,
+    )
+    FieldDefinition.objects.create(
+        business_object=bo,
+        code='asset_name',
+        name='Asset Name',
+        field_type='text',
+        show_in_form=True,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id))
+
+    fields_resp = client.get('/api/system/objects/COMPACTOBJ/fields/?context=form')
+    assert fields_resp.status_code == 200
+    assert fields_resp.data['success'] is True
+
+    data = fields_resp.data.get('data', {})
+    editable_fields = data.get('editableFields')
+    if editable_fields is None:
+        editable_fields = data.get('editable_fields')
+    editable_fields = editable_fields or []
+    target_field = next((item for item in editable_fields if _field_code(item) == 'asset_name'), None)
+    assert target_field is not None
+    assert target_field.get('code') == 'asset_name'
+    assert (target_field.get('fieldCode') or target_field.get('field_code')) == 'asset_name'
+
+
+@pytest.mark.django_db
 def test_runtime_layout_layers_fallback_when_unified_merge_disabled():
     org = Organization.objects.create(name='Legacy Merge Org', code='legacy-merge-org')
     user = User.objects.create_user(

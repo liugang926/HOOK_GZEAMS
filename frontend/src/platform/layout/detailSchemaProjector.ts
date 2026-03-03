@@ -5,7 +5,35 @@ import type { RenderSchema } from '@/platform/layout/renderSchema'
 export interface ProjectedDetailField {
   prop: string
   label: string
-  type?: 'text' | 'date' | 'datetime' | 'time' | 'number' | 'currency' | 'percent' | 'tag' | 'slot' | 'link' | 'image'
+  editorType?: string
+  type?:
+    | 'text'
+    | 'date'
+    | 'datetime'
+    | 'time'
+    | 'daterange'
+    | 'year'
+    | 'month'
+    | 'number'
+    | 'currency'
+    | 'percent'
+    | 'boolean'
+    | 'switch'
+    | 'checkbox'
+    | 'tag'
+    | 'slot'
+    | 'link'
+    | 'image'
+    | 'qr_code'
+    | 'barcode'
+    | 'color'
+    | 'rate'
+    | 'file'
+    | 'attachment'
+    | 'rich_text'
+    | 'sub_table'
+    | 'json'
+    | 'object'
   options?: { label: string; value: any; color?: string }[]
   dateFormat?: string
   precision?: number
@@ -15,6 +43,7 @@ export interface ProjectedDetailField {
   span?: number
   href?: string
   hidden?: boolean
+  readonly?: boolean
   labelClass?: string
   valueClass?: string
 }
@@ -97,8 +126,10 @@ export function projectDetailSectionsFromRenderSchema(
         if (strictVisibility && shouldSkipField?.(metaField)) continue
 
         const detailField = fieldToDetailField(metaField)
+        detailField.editorType = detailField.editorType || normalizeFieldType(renderField.fieldType || metaField.fieldType || 'text')
         detailField.label = renderField.label || detailField.label
         detailField.hidden = renderField.visible === false
+        detailField.readonly = renderField.readonly === true
         detailField.span = normalizeSpan(renderField.span ?? detailField.span ?? 1, section.columns)
         detailFields.push(detailField)
         continue
@@ -107,9 +138,11 @@ export function projectDetailSectionsFromRenderSchema(
       detailFields.push({
         prop: code,
         label: renderField.label || code,
+        editorType: normalizeFieldType(renderField.fieldType || 'text'),
         type: normalizeFieldType(renderField.fieldType || 'text') as ProjectedDetailField['type'],
         span: normalizeSpan(renderField.span ?? 1, section.columns),
-        hidden: renderField.visible === false
+        hidden: renderField.visible === false,
+        readonly: renderField.readonly === true
       })
     }
 

@@ -44,8 +44,15 @@ Scope: `frontend/src/locales/*.json`
 - npm scripts:
   - `npm run i18n:parity`
   - `npm run i18n:parity:strict`
+  - `npm run i18n:parity:all:strict`
+  - `npm run i18n:parity:all:mojibake`
+  - `npm run i18n:parity:all:mojibake:strict`
+- Optional detector:
+  - `--detect-mojibake` (heuristic CJK mojibake scan)
+  - Current baseline result: `mojibakeValues = 0` (all locale files)
+  - CI observability step added: `npm run i18n:parity:all:mojibake` (report-only)
 
 ## Recommended Next Batch
 
-1. Add an optional mojibake detector (e.g., CJK corruption heuristic) to parity script because current suspicious-value checks only catch `???` and `\uFFFD`.
-2. Keep `i18n:parity:all:strict` in CI as the long-term gate to prevent structural drift from reappearing.
+1. Calibrate mojibake heuristic thresholds with a small allowlist/denylist to reduce future false positives on niche domain terms.
+2. Keep `i18n:parity:all:strict` in CI as the hard gate, and keep `i18n:parity:all:mojibake` as observability until the detector is stable enough for strict mode.

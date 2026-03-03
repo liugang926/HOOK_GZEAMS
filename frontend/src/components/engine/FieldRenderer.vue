@@ -11,6 +11,7 @@
 
 <script setup>
 import { computed, defineAsyncComponent } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   FIELD_COMPONENT_LOADERS,
   buildNormalizedRuntimeField,
@@ -25,6 +26,7 @@ const props = defineProps({
 })
 
 defineEmits(['update:modelValue'])
+const { t } = useI18n()
 
 const ASYNC_FIELD_COMPONENTS = Object.fromEntries(
   Object.entries(FIELD_COMPONENT_LOADERS).map(([type, loader]) => [type, defineAsyncComponent(loader)])
@@ -62,13 +64,17 @@ const fieldProps = computed(() => {
   if (!field || Object.keys(field).length <= 2) {
     return {
       disabled: props.disabled,
-      placeholder: 'Please enter'
+      placeholder: t('form.fields.inputText')
     }
   }
 
   const fieldType = resolveEngineFieldType(field)
   const fallbackLabel = field.label || field.name || ''
-  const placeholderText = field.placeholder || (fallbackLabel ? `Please enter ${fallbackLabel}` : 'Please enter')
+  const placeholderText =
+    field.placeholder ||
+    (fallbackLabel
+      ? t('form.placeholders.input', { field: fallbackLabel })
+      : t('form.fields.inputText'))
 
   const baseProps = {
     disabled: props.disabled,
@@ -117,8 +123,8 @@ const fieldProps = computed(() => {
     daterange: {
       type: 'daterange',
       rangeSeparator: '-',
-      startPlaceholder: 'Start date',
-      endPlaceholder: 'End date',
+      startPlaceholder: t('common.placeholders.startDate'),
+      endPlaceholder: t('common.placeholders.endDate'),
       valueFormat: 'YYYY-MM-DD'
     },
     year: {

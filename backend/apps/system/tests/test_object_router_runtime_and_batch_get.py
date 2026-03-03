@@ -91,7 +91,17 @@ def test_object_router_runtime_returns_layout_and_fields():
 
     fields = data['fields']
     assert isinstance(fields.get('editableFields'), list)
-    assert any(f.get('code') == 'name' for f in fields['editableFields'])
+    target = next(
+        (
+            f
+            for f in fields['editableFields']
+            if (f.get('fieldCode') or f.get('field_code') or f.get('code')) == 'name'
+        ),
+        None,
+    )
+    assert target is not None
+    assert 'code' not in target
+    assert (target.get('fieldCode') or target.get('field_code')) == 'name'
     assert fields.get('context') == 'form'
 
     layout = data['layout']

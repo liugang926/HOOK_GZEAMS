@@ -1,4 +1,5 @@
 ﻿import type { SearchField } from '@/types/common'
+import i18n from '@/locales'
 import { resolveFieldType } from '@/utils/fieldType'
 import { isFieldSupportedInMode } from '@/platform/layout/fieldCapabilityMatrix'
 
@@ -31,7 +32,7 @@ export function buildSearchFields(fields: AnyRecord[]): SearchField[] {
         prop: String(field?.code || ''),
         label: name,
         type: toSearchType(fieldType),
-        placeholder: String(field?.placeholder || `搜索${name}`),
+        placeholder: String(field?.placeholder || i18n.global.t('common.placeholders.search', { field: name })),
         options: (field?.options || undefined) as SearchField['options'],
         ...(fieldType === 'multi_select' ? { multiple: true } : {}),
       } as SearchField

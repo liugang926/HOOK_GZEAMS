@@ -28,6 +28,7 @@ describe('unifiedDetailField', () => {
       options: [{ label: 'Active', value: 'active', color: 'green' }]
     })
     expect(statusField.type).toBe('tag')
+    expect(statusField.editorType).toBe('select')
     expect(statusField.prop).toBe('status')
 
     const fileField = toUnifiedDetailField({
@@ -35,8 +36,99 @@ describe('unifiedDetailField', () => {
       label: 'Attachment',
       fieldType: 'attachment'
     })
-    expect(fileField.type).toBe('text')
+    expect(fileField.type).toBe('attachment')
     expect(fileField.span).toBe(24)
+
+    const qrField = toUnifiedDetailField({
+      code: 'qr_code',
+      label: 'QR Code',
+      fieldType: 'qr_code'
+    })
+    expect(qrField.type).toBe('qr_code')
+
+    const barcodeField = toUnifiedDetailField({
+      code: 'barcode',
+      label: 'Barcode',
+      fieldType: 'barcode'
+    })
+    expect(barcodeField.type).toBe('barcode')
+
+    const daterangeField = toUnifiedDetailField({
+      code: 'warranty_period',
+      label: 'Warranty',
+      fieldType: 'daterange'
+    })
+    expect(daterangeField.type).toBe('daterange')
+
+    const yearField = toUnifiedDetailField({
+      code: 'fiscal_year',
+      label: 'Year',
+      fieldType: 'year'
+    })
+    expect(yearField.type).toBe('year')
+
+    const boolField = toUnifiedDetailField({
+      code: 'active',
+      label: 'Active',
+      fieldType: 'boolean'
+    })
+    expect(boolField.type).toBe('boolean')
+
+    const colorField = toUnifiedDetailField({
+      code: 'theme_color',
+      label: 'Theme Color',
+      fieldType: 'color'
+    })
+    expect(colorField.type).toBe('color')
+
+    const urlField = toUnifiedDetailField({
+      code: 'website',
+      label: 'Website',
+      fieldType: 'url'
+    })
+    expect(urlField.type).toBe('link')
+    expect(urlField.href).toBe('{value}')
+    expect(urlField.editorType).toBe('url')
+
+    const emailField = toUnifiedDetailField({
+      code: 'email',
+      label: 'Email',
+      fieldType: 'email'
+    })
+    expect(emailField.type).toBe('link')
+    expect(emailField.href).toBe('mailto:{value}')
+
+    const phoneField = toUnifiedDetailField({
+      code: 'mobile',
+      label: 'Mobile',
+      fieldType: 'phone'
+    })
+    expect(phoneField.type).toBe('link')
+    expect(phoneField.href).toBe('tel:{value}')
+
+    const richTextField = toUnifiedDetailField({
+      code: 'description',
+      label: 'Description',
+      fieldType: 'rich_text'
+    })
+    expect(richTextField.type).toBe('rich_text')
+    expect(richTextField.span).toBe(24)
+
+    const subTableField = toUnifiedDetailField({
+      code: 'lines',
+      label: 'Lines',
+      fieldType: 'sub_table'
+    })
+    expect(subTableField.type).toBe('sub_table')
+    expect(subTableField.span).toBe(24)
+
+    const jsonField = toUnifiedDetailField({
+      code: 'extra',
+      label: 'Extra',
+      fieldType: 'json'
+    })
+    expect(jsonField.type).toBe('json')
+    expect(jsonField.span).toBe(24)
   })
 
   it('builds required form rules from field metadata', () => {

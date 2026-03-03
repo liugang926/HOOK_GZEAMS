@@ -1,9 +1,38 @@
 import { normalizeFieldType } from '@/utils/fieldType'
+import i18n from '@/locales'
 
 export type UnifiedDetailField = {
   prop: string
   label: string
-  type?: 'text' | 'date' | 'datetime' | 'time' | 'number' | 'currency' | 'percent' | 'tag' | 'slot' | 'link' | 'image'
+  editorType?: string
+  type?:
+    | 'text'
+    | 'date'
+    | 'datetime'
+    | 'time'
+    | 'daterange'
+    | 'year'
+    | 'month'
+    | 'number'
+    | 'currency'
+    | 'percent'
+    | 'boolean'
+    | 'switch'
+    | 'checkbox'
+    | 'tag'
+    | 'slot'
+    | 'link'
+    | 'image'
+    | 'qr_code'
+    | 'barcode'
+    | 'color'
+    | 'rate'
+    | 'file'
+    | 'attachment'
+    | 'rich_text'
+    | 'sub_table'
+    | 'json'
+    | 'object'
   options?: { label: string; value: any; color?: string }[]
   dateFormat?: string
   precision?: number
@@ -51,15 +80,27 @@ export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailF
   const detailField: UnifiedDetailField = {
     prop: code,
     label: field.label || field.name || code,
+    editorType: normalizedType,
     span: field.span || 12,
     options
   }
 
-  if (normalizedType === 'date' || normalizedType === 'datetime' || normalizedType === 'time') {
+  if (
+    normalizedType === 'date' ||
+    normalizedType === 'datetime' ||
+    normalizedType === 'time' ||
+    normalizedType === 'year' ||
+    normalizedType === 'month'
+  ) {
     detailField.type = normalizedType as UnifiedDetailField['type']
     if (normalizedType === 'date') detailField.dateFormat = field.dateFormat || 'YYYY-MM-DD'
     if (normalizedType === 'datetime') detailField.dateFormat = field.dateFormat || 'YYYY-MM-DD HH:mm:ss'
     if (normalizedType === 'time') detailField.dateFormat = field.dateFormat || 'HH:mm:ss'
+    if (normalizedType === 'year') detailField.dateFormat = field.dateFormat || 'YYYY'
+    if (normalizedType === 'month') detailField.dateFormat = field.dateFormat || 'YYYY-MM'
+  } else if (normalizedType === 'daterange') {
+    detailField.type = 'daterange'
+    detailField.dateFormat = field.dateFormat || 'YYYY-MM-DD'
   } else if (normalizedType === 'number' || normalizedType === 'currency') {
     detailField.type = normalizedType === 'currency' ? 'currency' : 'number'
     detailField.precision = field.precision ?? field.decimalPlaces ?? field.decimal_places ?? 2
@@ -67,11 +108,35 @@ export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailF
   } else if (normalizedType === 'percent') {
     detailField.type = 'percent'
     detailField.precision = field.precision ?? field.decimalPlaces ?? field.decimal_places ?? 2
+  } else if (normalizedType === 'boolean' || normalizedType === 'switch' || normalizedType === 'checkbox') {
+    detailField.type = normalizedType as UnifiedDetailField['type']
+  } else if (normalizedType === 'color' || normalizedType === 'rate') {
+    detailField.type = normalizedType as UnifiedDetailField['type']
+  } else if (normalizedType === 'url') {
+    detailField.type = 'link'
+    detailField.href = '{value}'
+  } else if (normalizedType === 'email') {
+    detailField.type = 'link'
+    detailField.href = 'mailto:{value}'
+  } else if (normalizedType === 'phone') {
+    detailField.type = 'link'
+    detailField.href = 'tel:{value}'
+  } else if (normalizedType === 'rich_text') {
+    detailField.type = 'rich_text'
+    detailField.span = 24
+  } else if (normalizedType === 'sub_table') {
+    detailField.type = 'sub_table'
+    detailField.span = 24
+  } else if (normalizedType === 'json' || normalizedType === 'object') {
+    detailField.type = normalizedType as UnifiedDetailField['type']
+    detailField.span = 24
   } else if (normalizedType === 'image') {
     detailField.type = 'image'
     detailField.span = 24
+  } else if (normalizedType === 'qr_code' || normalizedType === 'barcode') {
+    detailField.type = normalizedType as UnifiedDetailField['type']
   } else if (normalizedType === 'file' || normalizedType === 'attachment') {
-    detailField.type = 'text'
+    detailField.type = normalizedType as UnifiedDetailField['type']
     detailField.span = 24
   } else {
     detailField.type = 'text'
@@ -102,7 +167,11 @@ export function buildRequiredFormRules(fields: Array<Record<string, any>>): Reco
     if (!code) continue
     const label = field.label || field.name || code
     rules[code] = [
-      { required: true, message: `${label}不能为空`, trigger: ['blur', 'change'] }
+      {
+        required: true,
+        message: i18n.global.t('common.validation.requiredWithField', { field: label }),
+        trigger: ['blur', 'change']
+      }
     ]
   }
   return rules

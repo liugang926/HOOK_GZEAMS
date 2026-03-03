@@ -55,8 +55,37 @@ export interface DetailField {
   prop: string
   /** Field label */
   label: string
+  /** Raw editor type for edit-mode renderer */
+  editorType?: string
   /** Field type: text, date, datetime, time, number, currency, percent, tag, slot, link */
-  type?: 'text' | 'date' | 'datetime' | 'time' | 'number' | 'currency' | 'percent' | 'tag' | 'slot' | 'link' | 'image'
+  type?:
+    | 'text'
+    | 'date'
+    | 'datetime'
+    | 'time'
+    | 'daterange'
+    | 'year'
+    | 'month'
+    | 'number'
+    | 'currency'
+    | 'percent'
+    | 'boolean'
+    | 'switch'
+    | 'checkbox'
+    | 'tag'
+    | 'slot'
+    | 'link'
+    | 'image'
+    | 'qr_code'
+    | 'barcode'
+    | 'color'
+    | 'rate'
+    | 'file'
+    | 'attachment'
+    | 'rich_text'
+    | 'sub_table'
+    | 'json'
+    | 'object'
   /** Options for select-like fields */
   options?: { label: string; value: any; color?: string }[]
   /** Date format (for date type) */
@@ -75,6 +104,8 @@ export interface DetailField {
   href?: string
   /** Whether to hide the field */
   hidden?: boolean
+  /** Whether field is readonly in edit mode */
+  readonly?: boolean
   /** Custom label class */
   labelClass?: string
   /** Custom value class */
@@ -409,6 +440,21 @@ const getFieldValue = (field: DetailField) => {
   return value !== undefined && value !== null ? value : '-'
 }
 
+const getEditFieldValue = (field: DetailField) => {
+  const value = resolveValue(props.formData, field.prop, false)
+  return value !== undefined ? value : null
+}
+
+const resolveEditFieldType = (field: DetailField): string => {
+  const explicitType = String(field.editorType || '').trim()
+  if (explicitType) return explicitType
+
+  const fallbackType = String(field.type || 'text').trim()
+  if (fallbackType === 'tag') return 'select'
+  if (fallbackType === 'link') return 'text'
+  return fallbackType || 'text'
+}
+
 /**
  * Toggle section collapse
  */
@@ -471,6 +517,17 @@ const validateForm = async () => {
 const updateFormData = (prop: string, value: any) => {
   const newData = { ...props.formData }
   newData[prop] = value
+
+  const camelKey = snakeToCamel(prop)
+  if (camelKey !== prop && (Object.prototype.hasOwnProperty.call(newData, camelKey) || prop.includes('_'))) {
+    newData[camelKey] = value
+  }
+
+  const snakeKey = camelToSnake(prop)
+  if (snakeKey !== prop && (Object.prototype.hasOwnProperty.call(newData, snakeKey) || /[A-Z]/.test(prop))) {
+    newData[snakeKey] = value
+  }
+
   emit('update:formData', newData)
 }
 
@@ -709,8 +766,9 @@ defineExpose({
                                       style="margin-bottom: 0px"
                                     >
                                       <FieldRenderer
-                                        :field="{ code: field.prop, name: field.label, fieldType: field.type, options: field.options }"
-                                        :model-value="formData[field.prop]"
+                                        :field="{ code: field.prop, name: field.label, fieldType: resolveEditFieldType(field), options: field.options }"
+                                        :model-value="getEditFieldValue(field)"
+                                        :disabled="field.readonly === true"
                                         @update:model-value="updateFormData(field.prop, $event)"
                                       />
                                     </el-form-item>
@@ -763,8 +821,9 @@ defineExpose({
                                   style="margin-bottom: 0px"
                                 >
                                   <FieldRenderer
-                                    :field="{ code: field.prop, name: field.label, fieldType: field.type, options: field.options }"
-                                    :model-value="formData[field.prop]"
+                                    :field="{ code: field.prop, name: field.label, fieldType: resolveEditFieldType(field), options: field.options }"
+                                    :model-value="getEditFieldValue(field)"
+                                    :disabled="field.readonly === true"
                                     @update:model-value="updateFormData(field.prop, $event)"
                                   />
                                 </el-form-item>
@@ -867,8 +926,9 @@ defineExpose({
                                 style="margin-bottom: 0px"
                               >
                                 <FieldRenderer
-                                  :field="{ code: field.prop, name: field.label, fieldType: field.type, options: field.options }"
-                                  :model-value="formData[field.prop]"
+                                  :field="{ code: field.prop, name: field.label, fieldType: resolveEditFieldType(field), options: field.options }"
+                                  :model-value="getEditFieldValue(field)"
+                                  :disabled="field.readonly === true"
                                   @update:model-value="updateFormData(field.prop, $event)"
                                 />
                               </el-form-item>

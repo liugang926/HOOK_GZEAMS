@@ -1,4 +1,5 @@
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 /**
@@ -31,6 +32,7 @@ export function useListPage(options = {}) {
     // ============================================================================
 
     const loading = ref(false)
+    const { t } = useI18n()
     const list = ref([])
     const total = ref(0)
     const selection = ref([])
@@ -58,7 +60,7 @@ export function useListPage(options = {}) {
             total.value = totalCount || 0
         } catch (error) {
             console.error('Failed to load list:', error)
-            ElMessage.error('获取列表失败')
+            ElMessage.error(t('common.messages.loadFailed'))
         } finally {
             loading.value = false
         }
@@ -118,13 +120,13 @@ export function useListPage(options = {}) {
     const handleDelete = (id) => {
         if (!deleteMethod) return
 
-        ElMessageBox.confirm('确认删除该记录吗?', '提示', {
+        ElMessageBox.confirm(t('common.messages.confirmDelete'), t('common.actions.confirm'), {
             type: 'warning'
         }).then(async () => {
             loading.value = true
             try {
                 await deleteMethod(id)
-                ElMessage.success('删除成功')
+                ElMessage.success(t('common.messages.deleteSuccess'))
                 // Refresh list
                 if (list.value.length === 1 && query.page > 1) {
                     query.page--
@@ -132,7 +134,7 @@ export function useListPage(options = {}) {
                 getList()
             } catch (error) {
                 console.error(error)
-                ElMessage.error(error.message || '删除失败')
+                ElMessage.error(error.message || t('common.messages.deleteFailed'))
             } finally {
                 loading.value = false
             }
@@ -145,23 +147,27 @@ export function useListPage(options = {}) {
     const handleBatchDelete = () => {
         if (!batchDeleteMethod) return
         if (selection.value.length === 0) {
-            ElMessage.warning('请选择要删除的记录')
+            ElMessage.warning(t('common.messages.pleaseSelectData'))
             return
         }
 
-        ElMessageBox.confirm(`确认删除选中的 ${selection.value.length} 条记录吗?`, '提示', {
+        ElMessageBox.confirm(
+            t('common.messages.confirmDelete', { count: selection.value.length }),
+            t('common.actions.confirm'),
+            {
             type: 'warning'
-        }).then(async () => {
+            }
+        ).then(async () => {
             loading.value = true
             try {
                 const ids = selection.value.map(item => item.id)
                 await batchDeleteMethod(ids)
-                ElMessage.success('批量删除成功')
+                ElMessage.success(t('common.messages.deleteSuccess'))
                 selection.value = [] // Clear selection
                 getList()
             } catch (error) {
                 console.error(error)
-                ElMessage.error(error.message || '删除失败')
+                ElMessage.error(error.message || t('common.messages.deleteFailed'))
             } finally {
                 loading.value = false
             }

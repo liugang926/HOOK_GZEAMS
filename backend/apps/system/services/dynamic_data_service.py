@@ -189,6 +189,9 @@ class DynamicDataService(BaseCRUDService):
             if field_def.is_required and field_code not in data:
                 raise ValueError(f"Required field '{field_def.name}' is missing.")
 
+        # Sanitize reference fields: extract IDs from expanded object dicts
+        data = self._sanitize_reference_fields(data, field_defs)
+
         # Process default values
         processed_data = data.copy()
         for field_code, field_def in field_defs.items():
@@ -236,13 +239,19 @@ class DynamicDataService(BaseCRUDService):
 
         # Merge with existing data
         current_fields = dynamic_data.dynamic_fields.copy()
-        current_fields.update(data)
 
-        # Recalculate formulas
+        # Get field definitions
         field_defs = {
             f.code: f
             for f in self.business_object.field_definitions.all()
         }
+
+        # Sanitize reference fields in incoming data before merging
+        data = self._sanitize_reference_fields(data, field_defs)
+
+        current_fields.update(data)
+
+        # Recalculate formulas
         current_fields = self._calculate_formulas(current_fields, field_defs)
 
         # Update the record
@@ -325,6 +334,46 @@ class DynamicDataService(BaseCRUDService):
             seq = 1
 
         return f"{today_prefix}{seq:04d}"
+
+    def _sanitize_reference_fields(self, data: Dict, field_defs: Dict) -> Dict:
+        """
+        Pre-process incoming data to extract IDs from expanded reference objects.
+
+        When the frontend submits a reference field value as a full object dict
+        (e.g. {'id': '<uuid>', 'code': '2001', 'name': 'Computer Equipment'})
+        instead of a plain UUID string, this method extracts just the 'id' so
+        that subsequent validation and JSONB storage receive clean UUID values.
+
+        Args:
+            data: Raw field values submitted from the frontend
+            field_defs: Dict of {field_code: FieldDefinition}
+
+        Returns:
+            Cleaned copy of data with reference IDs extracted
+        """
+        REFERENCE_TYPES = frozenset([
+            'reference', 'user', 'department', 'location',
+            'organization', 'asset'
+        ])
+
+        result = {}
+        for key, value in data.items():
+            field_def = field_defs.get(key)
+            if field_def and field_def.field_type in REFERENCE_TYPES:
+                if isinstance(value, dict):
+                    # Expanded object -> extract ID
+                    result[key] = value.get('id', value)
+                elif isinstance(value, list):
+                    # Multi-reference: each item may be a dict or a plain ID
+                    result[key] = [
+                        (v.get('id', v) if isinstance(v, dict) else v)
+                        for v in value
+                    ]
+                else:
+                    result[key] = value
+            else:
+                result[key] = value
+        return result
 
     def _parse_default_value(self, value: str) -> Any:
         """

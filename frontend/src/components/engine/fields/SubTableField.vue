@@ -14,7 +14,7 @@
     </div>
 
     <el-table
-      :data="internalValue"
+      :data="pagedRows"
       border
       size="small"
     >
@@ -22,6 +22,7 @@
         type="index"
         width="50"
         label="#"
+        :index="resolveRowIndex"
       />
 
       <el-table-column
@@ -45,23 +46,37 @@
         :label="$t('fields.operations')"
         width="80"
       >
-        <template #default="{ $index }">
+        <template #default="{ row }">
           <el-button
             type="danger"
             link
             size="small"
-            @click="handleRemoveRow($index)"
+            @click="handleRemoveRow(row)"
           >
             {{ $t('fields.delete') }}
           </el-button>
         </template>
       </el-table-column>
     </el-table>
+
+    <div
+      v-if="shouldPaginate"
+      class="pagination"
+    >
+      <el-pagination
+        size="small"
+        :current-page="currentPage"
+        :page-size="rowsPerPage"
+        :total="totalRows"
+        layout="total, prev, pager, next"
+        @current-change="handlePageChange"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { normalizeFieldType } from '@/utils/fieldType'
 
 // Avoid circular dependency in recursion if FieldRenderer is used inside SubTable
@@ -70,9 +85,36 @@ import { normalizeFieldType } from '@/utils/fieldType'
 // However, the user provided code structure implies FieldRenderer is the main dispatcher.
 import FieldRenderer from '@/components/engine/FieldRenderer.vue'
 
+interface ColumnDefinition {
+  code?: string
+  fieldCode?: string
+  name?: string
+  label?: string
+  width?: number
+  fieldType?: string
+  field_type?: string
+  type?: string
+  defaultValue?: unknown
+  default_value?: unknown
+  componentProps?: Record<string, unknown>
+  component_props?: Record<string, unknown>
+}
+
+interface SubTableFieldModel {
+  [key: string]: unknown
+}
+
+interface SubTableFieldDefinition {
+  name?: string
+  related_fields?: ColumnDefinition[]
+  relatedFields?: ColumnDefinition[]
+  componentProps?: Record<string, unknown>
+  component_props?: Record<string, unknown>
+}
+
 const props = defineProps<{
-  modelValue: any[]
-  field: any
+  modelValue: SubTableFieldModel[]
+  field: SubTableFieldDefinition
   disabled?: boolean
   readonly?: boolean
 }>()
@@ -94,9 +136,47 @@ const columns = computed(() => {
   )
 })
 
-const getColumnCode = (col: any): string => col.code || col.fieldCode || ''
+const currentPage = ref(1)
 
-const buildColumnField = (col: any) => {
+const toPositiveInt = (value: unknown, fallback: number) => {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback
+  return Math.max(1, Math.floor(parsed))
+}
+
+const rowsPerPage = computed(() => {
+  const componentProps = props.field?.componentProps || props.field?.component_props || {}
+  return toPositiveInt(
+    componentProps?.paginationPageSize ??
+    componentProps?.pagination_page_size ??
+    componentProps?.pageSize ??
+    componentProps?.page_size,
+    20
+  )
+})
+
+const totalRows = computed(() => internalValue.value.length)
+const shouldPaginate = computed(() => totalRows.value > rowsPerPage.value)
+
+const pagedRows = computed(() => {
+  if (!shouldPaginate.value) return internalValue.value
+  const start = (currentPage.value - 1) * rowsPerPage.value
+  const end = start + rowsPerPage.value
+  return internalValue.value.slice(start, end)
+})
+
+const resolveRowIndex = (index: number) => {
+  if (!shouldPaginate.value) return index + 1
+  return (currentPage.value - 1) * rowsPerPage.value + index + 1
+}
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+}
+
+const getColumnCode = (col: ColumnDefinition): string => col.code || col.fieldCode || ''
+
+const buildColumnField = (col: ColumnDefinition) => {
   const componentProps = {
     ...(col.component_props || {}),
     ...(col.componentProps || {})
@@ -115,8 +195,8 @@ const buildColumnField = (col: any) => {
 }
 
 const handleAddRow = () => {
-  const newRow: any = {}
-  columns.value.forEach((col: any) => {
+  const newRow: SubTableFieldModel = {}
+  columns.value.forEach((col: ColumnDefinition) => {
     const key = getColumnCode(col)
     const defaultValue = col.defaultValue !== undefined ? col.defaultValue : col.default_value
     if (key) {
@@ -125,13 +205,22 @@ const handleAddRow = () => {
   })
   const newList = [...internalValue.value, newRow]
   emit('update:modelValue', newList)
+  currentPage.value = Math.max(1, Math.ceil(newList.length / rowsPerPage.value))
 }
 
-const handleRemoveRow = (index: number) => {
+const handleRemoveRow = (row: Record<string, unknown>) => {
+  const index = internalValue.value.indexOf(row)
+  if (index < 0) return
   const newList = [...internalValue.value]
   newList.splice(index, 1)
   emit('update:modelValue', newList)
 }
+
+watch([totalRows, rowsPerPage], () => {
+  const pageCount = Math.max(1, Math.ceil(totalRows.value / rowsPerPage.value))
+  if (currentPage.value > pageCount) currentPage.value = pageCount
+  if (currentPage.value < 1) currentPage.value = 1
+}, { immediate: true })
 </script>
 
 <style scoped>
@@ -146,5 +235,10 @@ const handleRemoveRow = (index: number) => {
   align-items: center;
   margin-bottom: 10px;
   font-weight: bold;
+}
+.pagination {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

@@ -1,5 +1,6 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 
 /**
@@ -32,6 +33,7 @@ export function useFormPage(options = {}) {
 
     const route = useRoute()
     const router = useRouter()
+    const { t } = useI18n()
 
     const loading = ref(false)
     const submitting = ref(false)
@@ -55,7 +57,7 @@ export function useFormPage(options = {}) {
             form.value = data
         } catch (error) {
             console.error('Failed to load detail:', error)
-            ElMessage.error('获取详情失败')
+            ElMessage.error(t('common.messages.loadFailed'))
         } finally {
             loading.value = false
         }
@@ -71,17 +73,17 @@ export function useFormPage(options = {}) {
             if (isEdit.value) {
                 if (!updateMethod) throw new Error('Update method not provided')
                 await updateMethod(route.params.id, data)
-                ElMessage.success('更新成功')
+                ElMessage.success(t('common.messages.updateSuccess'))
             } else {
                 if (!createMethod) throw new Error('Create method not provided')
                 await createMethod(data)
-                ElMessage.success('创建成功')
+                ElMessage.success(t('common.messages.createSuccess'))
             }
 
             handleBack()
         } catch (error) {
             console.error(error)
-            ElMessage.error(error.message || '操作失败')
+            ElMessage.error(error.message || t('common.messages.operationFailed'))
         } finally {
             submitting.value = false
         }

@@ -212,10 +212,35 @@ jobs:
           cd frontend
           npm run i18n:check
 
+      - name: Run i18n hardcode guard (dynamic runtime full scope)
+        run: |
+          cd frontend
+          npm run i18n:check:dynamic:all:strict
+
+      - name: Run i18n dynamic coverage gate (all dynamic runtime files)
+        run: |
+          cd frontend
+          npm run i18n:coverage:all:strict
+
+      - name: Generate i18n dynamic coverage trend snapshot
+        run: |
+          cd frontend
+          npm run i18n:coverage:trend
+
       - name: Run i18n locale parity guard (all locale files)
         run: |
           cd frontend
           npm run i18n:parity:all:strict
+
+      - name: Run i18n P1 defect gate
+        run: |
+          cd frontend
+          npm run i18n:defects:p1:strict
+
+      - name: Run i18n mojibake scan (report only)
+        run: |
+          cd frontend
+          npm run i18n:parity:all:mojibake
 
       - name: Run related-table metadata audit guard (all tracked renderers)
         run: |
@@ -226,6 +251,16 @@ jobs:
         run: |
           cd frontend
           npx prettier --check "src/**/*.{vue,ts,js,tsx,jsx}" || true
+
+      - name: Archive i18n trend snapshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i18n-trend-snapshots
+          path: |
+            docs/reports/history/i18n-dynamic-coverage-history.json
+            docs/reports/i18n-dynamic-coverage-trend-latest.md
+          retention-days: 7
 
   # ============================================================================
   # Job 5: Frontend - Unit Tests
@@ -262,6 +297,11 @@ jobs:
         run: |
           cd frontend
           npm run test:contract:runtime
+
+      - name: Run layout order consistency gate
+        run: |
+          cd frontend
+          npm run layout:order:consistency:strict
 
       - name: Run unit tests with coverage
         run: |
@@ -340,6 +380,14 @@ jobs:
           CI: true
           PLAYWRIGHT_WEB_SERVER: '1'
 
+      - name: Run sub-table render performance telemetry gate
+        run: |
+          cd frontend
+          npm run subtable:telemetry:trend:strict
+        env:
+          CI: true
+          PLAYWRIGHT_WEB_SERVER: '1'
+
       - name: Run E2E tests
         run: |
           cd frontend
@@ -356,6 +404,8 @@ jobs:
           path: |
             frontend/test-results/
             frontend/playwright-report/
+            docs/reports/history/subtable-first-render-history.json
+            docs/reports/subtable-first-render-trend-latest.md
           retention-days: 7
 
   # ============================================================================

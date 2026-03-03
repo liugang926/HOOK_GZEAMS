@@ -82,7 +82,7 @@
         v-else-if="fieldType === 'reference'"
         :model-value="modelValue?.name || modelValue"
         readonly
-        placeholder="Click to select..."
+        :placeholder="$t('common.placeholders.select')"
         :disabled="disabled"
       >
         <template #append>
@@ -102,7 +102,7 @@
       <el-input
         v-else-if="fieldType === 'file'"
         :model-value="modelValue"
-        placeholder="File URL"
+        :placeholder="$t('form.fields.file')"
         :disabled="disabled"
         @update:model-value="handleChange"
       />
@@ -111,7 +111,7 @@
       <span
         v-else
         class="text-gray-400"
-      >Unsupported type: {{ fieldType }}</span>
+      >{{ $t('common.messages.operationFailed') }}: {{ fieldType }}</span>
     </template>
 
     <!-- READ / TABLE MODE -->
@@ -184,7 +184,7 @@
           class="flex items-center gap-1 text-blue-500 hover:text-blue-700"
         >
           <el-icon><Document /></el-icon>
-          <span>Download</span>
+          <span>{{ $t('common.actions.download') }}</span>
         </a>
         <span v-else>-</span>
       </template>
@@ -223,6 +223,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { resolveFieldType } from '@/utils/fieldType'
 import { Check, Close, Document, Search } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
@@ -246,11 +247,12 @@ const props = withDefaults(defineProps<Props>(), {
   mode: 'read',
   disabled: false
 })
+const { t } = useI18n()
 
 const emit = defineEmits(['update:modelValue', 'change'])
 
 const fieldType = computed(() => resolveFieldType(props.field))
-const placeholder = computed(() => `Please enter ${props.field.label}`)
+const placeholder = computed(() => t('form.placeholders.input', { field: props.field.label || '' }))
 
 const options = computed(() => props.field.options || [])
 

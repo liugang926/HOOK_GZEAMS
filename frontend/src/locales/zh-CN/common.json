@@ -8,6 +8,7 @@
     "batchDelete": "批量删除",
     "cancel": "取消",
     "close": "关闭",
+    "clear": "清空",
     "collapse": "收起",
     "confirm": "确认",
     "create": "新建",
@@ -22,6 +23,7 @@
     "refresh": "刷新",
     "reject": "拒绝",
     "reset": "重置",
+    "loadMore": "加载更多",
     "save": "保存",
     "search": "搜索",
     "submit": "提交",
@@ -112,6 +114,13 @@
     "deleteSuccess": "删除成功",
     "functionUnderDevelopment": "功能开发中",
     "loadFailed": "加载失败",
+    "dragFileHere": "将文件拖拽到此处或",
+    "clickToUpload": "点击上传",
+    "uploading": "上传中...",
+    "uploadComplete": "上传完成",
+    "uploadPendingCount": "上传 {count} 个文件",
+    "fileValidationFailed": "文件校验失败",
+    "unknownError": "未知错误",
     "noData": "暂无数据",
     "operationFailed": "操作失败",
     "operationSuccess": "操作成功",
@@ -125,18 +134,20 @@
     "records": "条记录",
     "emptyHint": "暂无数据，请尝试创建一条新记录",
     "systemError": "系统出错",
-    "formValidationFailed": "表单校验失败，请检查输入内容"
+    "formValidationFailed": "表单校验失败，请检查输入内容",
+    "maxFileCountExceeded": "最多允许上传 {count} 个文件"
   },
   "no": "否",
   "notes": "notes",
   "performedBy": "performedBy",
   "placeholders": {
-    "endDate": "endDate",
-    "input": "input",
-    "maxValue": "maxValue",
-    "minValue": "minValue",
-    "select": "select",
-    "startDate": "startDate"
+    "endDate": "结束日期",
+    "input": "请输入",
+    "maxValue": "最大值",
+    "minValue": "最小值",
+    "search": "\u8bf7\u8f93\u5165\u641c\u7d22\u5173\u952e\u8bcd",
+    "select": "请选择",
+    "startDate": "开始日期"
   },
   "reason": "原因",
   "relatedObject": {
@@ -223,7 +234,8 @@
   "usageInfo": "usageInfo",
   "validation": {
     "phone": "请输入有效手机号",
-    "required": "此项为必填"
+    "required": "此项为必填",
+    "requiredWithField": "{field}不能为空"
   },
   "valueInfo": "valueInfo",
   "vendor": "vendor",

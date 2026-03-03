@@ -1,0 +1,23 @@
+{
+  "metric": "subtableFirstRenderElapsedMs",
+  "unit": "ms",
+  "source": "frontend/e2e/objects/subtable-first-render-performance.spec.ts",
+  "points": [
+    {
+      "date": "2026-03-03",
+      "timestamp": "2026-03-03T08:45:48.803Z",
+      "commit": "c85a2df",
+      "project": "chromium",
+      "objectCode": "Asset",
+      "rowCount": 200,
+      "pageSize": 20,
+      "sampleCount": 1,
+      "targetMs": 1500,
+      "minMs": 392,
+      "medianMs": 392,
+      "p95Ms": 392,
+      "maxMs": 392,
+      "withinTarget": true
+    }
+  ]
+}

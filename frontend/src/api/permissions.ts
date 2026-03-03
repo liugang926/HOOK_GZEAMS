@@ -6,21 +6,127 @@ import type { PaginatedResponse } from '@/types/api'
  * Handles field permissions, data permissions, and audit logs
  */
 
+export interface FieldPermissionRecord {
+  id: string
+  user: string
+  userDisplay?: string
+  contentType: number
+  contentTypeDisplay?: string
+  fieldName: string
+  permissionType: 'read' | 'write' | 'hidden' | 'masked'
+  permissionTypeDisplay?: string
+  maskRule?: string | null
+  customMaskPattern?: string
+  condition?: Record<string, unknown> | null
+  priority?: number
+  description?: string
+}
+
+export interface FieldPermissionUpdatePayload {
+  permissionType: 'read' | 'write' | 'hidden' | 'masked'
+  maskRule?: string | null
+  customMaskPattern?: string
+  condition?: Record<string, unknown> | null
+  priority?: number
+  description?: string
+}
+
+export interface DataPermissionRecord {
+  id: string
+  user: string
+  userDisplay?: string
+  contentType: number
+  contentTypeDisplay?: string
+  scopeType: 'all' | 'self' | 'self_dept' | 'self_and_sub' | 'specified' | 'custom'
+  scopeTypeDisplay?: string
+  scopeValue: Record<string, unknown>
+  departmentField?: string
+  userField?: string
+  description?: string
+}
+
+export interface DataPermissionCreatePayload {
+  userUsername: string
+  contentTypeAppLabel: string
+  contentTypeModel: string
+  scopeType: 'all' | 'self' | 'self_dept' | 'self_and_sub' | 'specified' | 'custom'
+  scopeValue: Record<string, unknown>
+  departmentField?: string
+  userField?: string
+  description?: string
+}
+
+export interface DataPermissionUpdatePayload {
+  scopeType: 'all' | 'self' | 'self_dept' | 'self_and_sub' | 'specified' | 'custom'
+  scopeValue: Record<string, unknown>
+  departmentField?: string
+  userField?: string
+  description?: string
+}
+
+export interface PermissionAuditLogRecord {
+  id: string
+  createdAt: string
+  actor?: string | null
+  actorDisplay?: string | null
+  targetUser?: string | null
+  targetUserDisplay?: string | null
+  operationType: 'check' | 'grant' | 'revoke' | 'modify' | 'deny'
+  operationTypeDisplay?: string
+  targetType: 'field_permission' | 'data_permission' | 'user_permission'
+  targetTypeDisplay?: string
+  permissionDetails?: unknown
+  contentType?: number | null
+  objectId?: string | null
+  result?: 'success' | 'failure' | 'partial'
+  resultDisplay?: string
+  errorMessage?: string
+  ipAddress?: string | null
+  userAgent?: string
+}
+
+export interface PermissionAuditStatistics {
+  periodDays: number
+  totalCount: number
+  byOperation: Array<{
+    operationType: string
+    count: number
+  }>
+  byResult: Array<{
+    result: string
+    count: number
+  }>
+  byTargetType: Array<{
+    targetType: string
+    count: number
+  }>
+}
+
+export interface PermissionListParams {
+  page?: number
+  page_size?: number
+  user_username?: string
+  content_type_model?: string
+  operation_type?: string
+  created_at_from?: string
+  created_at_to?: string
+}
+
 // Field Permissions
 export const fieldPermissionApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
+  list(params?: PermissionListParams): Promise<PaginatedResponse<FieldPermissionRecord>> {
     return request.get('/permissions/field-permissions/', { params })
   },
 
-  detail(id: string): Promise<any> {
+  detail(id: string): Promise<FieldPermissionRecord> {
     return request.get(`/permissions/field-permissions/${id}/`)
   },
 
-  create(data: any): Promise<any> {
+  create(data: Record<string, unknown>): Promise<FieldPermissionRecord> {
     return request.post('/permissions/field-permissions/', data)
   },
 
-  update(id: string, data: any): Promise<any> {
+  update(id: string, data: FieldPermissionUpdatePayload): Promise<FieldPermissionRecord> {
     return request.put(`/permissions/field-permissions/${id}/`, data)
   },
 
@@ -28,30 +134,30 @@ export const fieldPermissionApi = {
     return request.delete(`/permissions/field-permissions/${id}/`)
   },
 
-  grant(data: any): Promise<void> {
+  grant(data: Record<string, unknown>): Promise<void> {
     return request.post('/permissions/field-permissions/grant/', data)
   },
 
-  revoke(data: any): Promise<void> {
+  revoke(data: Record<string, unknown>): Promise<void> {
     return request.post('/permissions/field-permissions/revoke/', data)
   }
 }
 
 // Data Permissions
 export const dataPermissionApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
+  list(params?: PermissionListParams): Promise<PaginatedResponse<DataPermissionRecord>> {
     return request.get('/permissions/data-permissions/', { params })
   },
 
-  detail(id: string): Promise<any> {
+  detail(id: string): Promise<DataPermissionRecord> {
     return request.get(`/permissions/data-permissions/${id}/`)
   },
 
-  create(data: any): Promise<any> {
+  create(data: DataPermissionCreatePayload): Promise<DataPermissionRecord> {
     return request.post('/permissions/data-permissions/', data)
   },
 
-  update(id: string, data: any): Promise<any> {
+  update(id: string, data: DataPermissionUpdatePayload): Promise<DataPermissionRecord> {
     return request.put(`/permissions/data-permissions/${id}/`, data)
   },
 
@@ -59,22 +165,22 @@ export const dataPermissionApi = {
     return request.delete(`/permissions/data-permissions/${id}/`)
   },
 
-  grant(data: any): Promise<void> {
+  grant(data: Record<string, unknown>): Promise<void> {
     return request.post('/permissions/data-permissions/grant/', data)
   },
 
-  revoke(data: any): Promise<void> {
+  revoke(data: Record<string, unknown>): Promise<void> {
     return request.post('/permissions/data-permissions/revoke/', data)
   }
 }
 
 // Data Permission Expansions
 export const dataPermissionExpandApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
+  list(params?: PermissionListParams): Promise<PaginatedResponse<Record<string, unknown>>> {
     return request.get('/permissions/data-permission-expands/', { params })
   },
 
-  detail(id: string): Promise<any> {
+  detail(id: string): Promise<Record<string, unknown>> {
     return request.get(`/permissions/data-permission-expands/${id}/`)
   },
 
@@ -89,15 +195,15 @@ export const dataPermissionExpandApi = {
 
 // Audit Logs
 export const permissionAuditLogApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
+  list(params?: PermissionListParams): Promise<PaginatedResponse<PermissionAuditLogRecord>> {
     return request.get('/permissions/audit-logs/', { params })
   },
 
-  detail(id: string): Promise<any> {
+  detail(id: string): Promise<PermissionAuditLogRecord> {
     return request.get(`/permissions/audit-logs/${id}/`)
   },
 
-  statistics(params?: any): Promise<any> {
+  statistics(params?: { user_id?: string; days?: number }): Promise<PermissionAuditStatistics> {
     return request.get('/permissions/audit-logs/statistics/', { params })
   }
 }

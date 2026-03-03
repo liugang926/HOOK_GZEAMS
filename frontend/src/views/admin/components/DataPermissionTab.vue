@@ -1,6 +1,5 @@
 <template>
   <div class="data-permission-tab">
-    <!-- Filters -->
     <el-form
       :model="filterForm"
       inline
@@ -9,21 +8,40 @@
       <el-form-item :label="$t('system.permission.data.toolbar.role')">
         <el-select
           v-model="filterForm.role"
+          filterable
+          remote
+          reserve-keyword
           clearable
           :placeholder="$t('system.permission.data.toolbar.rolePlaceholder')"
+          :loading="optionsLoading.users"
+          :remote-method="handleUserRemoteSearch"
           @change="handleSearch"
         >
           <el-option
-            label="管理员"
-            value="admin"
+            v-for="option in userOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
           />
+        </el-select>
+      </el-form-item>
+      <el-form-item :label="$t('system.permission.data.columns.object')">
+        <el-select
+          v-model="filterForm.objectModel"
+          filterable
+          remote
+          reserve-keyword
+          clearable
+          :loading="optionsLoading.objects"
+          :placeholder="$t('system.permission.data.dialog.objectPlaceholder')"
+          :remote-method="handleObjectRemoteSearch"
+          @change="handleSearch"
+        >
           <el-option
-            label="部门主管"
-            value="manager"
-          />
-          <el-option
-            label="普通员工"
-            value="employee"
+            v-for="option in objectOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
           />
         </el-select>
       </el-form-item>
@@ -46,7 +64,6 @@
       </el-form-item>
     </el-form>
 
-    <!-- Data Permission Rules -->
     <el-table
       v-loading="loading"
       :data="tableData"
@@ -57,16 +74,16 @@
       <el-table-column
         prop="roleName"
         :label="$t('system.permission.data.columns.role')"
-        width="120"
+        width="160"
       />
       <el-table-column
         prop="businessObjectName"
         :label="$t('system.permission.data.columns.object')"
-        width="150"
+        width="160"
       />
       <el-table-column
         :label="$t('system.permission.data.columns.type')"
-        width="120"
+        width="140"
         align="center"
       >
         <template #default="{ row }">
@@ -81,32 +98,18 @@
       <el-table-column
         prop="scopeExpression"
         :label="$t('system.permission.data.columns.scope')"
-        min-width="250"
+        min-width="260"
         show-overflow-tooltip
       />
       <el-table-column
-        :label="$t('system.permission.data.columns.status')"
-        width="80"
-        align="center"
-      >
-        <template #default="{ row }">
-          <el-tag
-            :type="row.isActive ? 'success' : 'info'"
-            size="small"
-          >
-            {{ row.isActive ? $t('system.permission.data.status.active') : $t('system.permission.data.status.inactive') }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
         prop="description"
         :label="$t('system.permission.data.columns.description')"
-        min-width="200"
+        min-width="220"
         show-overflow-tooltip
       />
       <el-table-column
         :label="$t('system.permission.data.columns.operation')"
-        width="150"
+        width="140"
         fixed="right"
       >
         <template #default="{ row }">
@@ -119,16 +122,15 @@
           </el-button>
           <el-button
             link
-            :type="row.isActive ? 'warning' : 'success'"
-            @click="handleToggleActive(row)"
+            type="danger"
+            @click="handleDelete(row)"
           >
-            {{ row.isActive ? $t('system.permission.data.status.disable') : $t('system.permission.data.status.enable') }}
+            {{ $t('common.actions.delete') }}
           </el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <!-- Pagination -->
     <div class="pagination-footer">
       <el-pagination
         v-model:current-page="pagination.page"
@@ -141,7 +143,6 @@
       />
     </div>
 
-    <!-- Edit Dialog -->
     <DataPermissionDialog
       v-model:visible="dialogVisible"
       :data="currentRow"
@@ -152,20 +153,50 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
-import { dataPermissionApi } from '@/api/permissions'
+import {
+  dataPermissionApi,
+  type DataPermissionRecord,
+  type PermissionListParams
+} from '@/api/permissions'
+import {
+  fetchPermissionUserOptions,
+  fetchPermissionObjectOptions,
+  type PermissionUserOption,
+  type PermissionObjectOption
+} from './permissionOptions'
 import DataPermissionDialog from './DataPermissionDialog.vue'
 
 const { t } = useI18n()
 
 const loading = ref(false)
-const tableData = ref<any[]>([])
+const tableData = ref<DataPermissionViewRow[]>([])
 const dialogVisible = ref(false)
-const currentRow = ref<any>(null)
+const currentRow = ref<DataPermissionViewRow | null>(null)
+const userOptions = ref<PermissionUserOption[]>([])
+const objectOptions = ref<PermissionObjectOption[]>([])
+const optionsLoading = reactive({
+  users: false,
+  objects: false
+})
+
+interface DataPermissionViewRow {
+  id: string
+  roleName: string
+  businessObjectName: string
+  permissionType: 'all' | 'department' | 'department_and_sub' | 'self' | 'custom'
+  scopeType: DataPermissionRecord['scopeType']
+  scopeExpression: string
+  description: string
+  scopeValue: Record<string, unknown>
+  departmentField?: string
+  userField?: string
+}
 
 const filterForm = reactive({
-  role: ''
+  role: '',
+  objectModel: ''
 })
 
 const pagination = reactive({
@@ -174,71 +205,143 @@ const pagination = reactive({
   total: 0
 })
 
+const parseModelIdentifier = (input: string) => {
+  const raw = input.trim()
+  if (!raw) return { model: '' }
+  const chunks = raw.split('.')
+  if (chunks.length >= 2) {
+    return { model: chunks[chunks.length - 1] }
+  }
+  return { model: raw }
+}
+
+const mapScopeTypeToUiType = (scopeType: DataPermissionRecord['scopeType']): DataPermissionViewRow['permissionType'] => {
+  const map: Record<string, string> = {
+    all: 'all',
+    self_dept: 'department',
+    self_and_sub: 'department_and_sub',
+    self: 'self',
+    custom: 'custom',
+    specified: 'custom'
+  }
+  return map[scopeType] || 'custom'
+}
+
+const formatScopeExpression = (item: DataPermissionRecord) => {
+  if (item.scopeType === 'custom') {
+    const expression = item.scopeValue?.filterExpression
+    if (typeof expression === 'string' && expression.trim()) {
+      return expression
+    }
+    return item.scopeTypeDisplay || item.scopeType
+  }
+
+  if (item.scopeType === 'specified') {
+    const departmentIds = item.scopeValue?.departmentIds
+    if (Array.isArray(departmentIds) && departmentIds.length > 0) {
+      return `department_ids: ${departmentIds.join(', ')}`
+    }
+    return item.scopeTypeDisplay || item.scopeType
+  }
+
+  return item.scopeTypeDisplay || item.scopeType
+}
+
+const mapRow = (item: DataPermissionRecord): DataPermissionViewRow => {
+  const permissionType = mapScopeTypeToUiType(item.scopeType)
+
+  return {
+    id: item.id,
+    roleName: item.userDisplay || '-',
+    businessObjectName: item.contentTypeDisplay || '-',
+    permissionType,
+    scopeType: item.scopeType,
+    scopeExpression: formatScopeExpression(item),
+    description: item.description || '',
+    scopeValue: item.scopeValue || {},
+    departmentField: item.departmentField,
+    userField: item.userField,
+  }
+}
+
 const getPermissionTypeLabel = (type: string) => {
   const labels: Record<string, string> = {
-    'all': t('system.permission.data.types.all'),
-    'department': t('system.permission.data.types.department'),
-    'department_and_sub': t('system.permission.data.types.department_and_sub'),
-    'self': t('system.permission.data.types.self'),
-    'custom': t('system.permission.data.types.custom')
+    all: t('system.permission.data.types.all'),
+    department: t('system.permission.data.types.department'),
+    department_and_sub: t('system.permission.data.types.department_and_sub'),
+    self: t('system.permission.data.types.self'),
+    custom: t('system.permission.data.types.custom')
   }
   return labels[type] || type
 }
 
 const getPermissionTypeTag = (type: string) => {
-  const tags: Record<string, any> = {
-    'all': 'danger',
-    'department': 'warning',
-    'department_and_sub': 'warning',
-    'self': 'info',
-    'custom': 'primary'
+  const tags: Record<string, string> = {
+    all: 'danger',
+    department: 'warning',
+    department_and_sub: 'warning',
+    self: 'info',
+    custom: 'primary'
   }
   return tags[type] || 'info'
+}
+
+const fetchUserOptions = async (search = '') => {
+  optionsLoading.users = true
+  try {
+    const users = await fetchPermissionUserOptions(search).catch(() => [])
+    userOptions.value = users
+  } finally {
+    optionsLoading.users = false
+  }
+}
+
+const fetchObjectOptions = async (search = '') => {
+  optionsLoading.objects = true
+  try {
+    const objects = await fetchPermissionObjectOptions(search).catch(() => [])
+    objectOptions.value = objects
+  } finally {
+    optionsLoading.objects = false
+  }
+}
+
+const loadOptions = async () => {
+  await Promise.all([
+    fetchUserOptions(''),
+    fetchObjectOptions('')
+  ])
+}
+
+const handleUserRemoteSearch = (query: string) => {
+  fetchUserOptions(query)
+}
+
+const handleObjectRemoteSearch = (query: string) => {
+  fetchObjectOptions(query)
 }
 
 const fetchData = async () => {
   loading.value = true
   try {
-    // TODO: Replace with actual API call
-    // const res = await dataPermissionApi.list({
-    //   ...filterForm,
-    //   page: pagination.page,
-    //   pageSize: pagination.pageSize
-    // })
-    // tableData.value = res.results || []
-    // pagination.total = res.count || 0
+    const params: PermissionListParams = {
+      page: pagination.page,
+      page_size: pagination.pageSize
+    }
 
-    // Mock data
-    tableData.value = [
-      {
-        id: '1',
-        roleName: '管理员',
-        businessObjectName: '固定资产',
-        permissionType: 'all',
-        scopeExpression: t('system.permission.data.types.all'),
-        isActive: true,
-        description: '管理员可查看所有资产'
-      },
-      {
-        id: '2',
-        roleName: '部门主管',
-        businessObjectName: '固定资产',
-        permissionType: 'department_and_sub',
-        scopeExpression: '部门及子部门数据',
-        isActive: true,
-        description: '部门主管可查看本部门及下级部门资产'
-      },
-      {
-        id: '3',
-        roleName: '普通员工',
-        businessObjectName: '固定资产',
-        permissionType: 'self',
-        scopeExpression: '仅本人使用资产',
-        isActive: true,
-        description: '普通员工只能查看自己使用的资产'
-      }
-    ]
-    pagination.total = 3
+    if (filterForm.role.trim()) {
+      params.user_username = filterForm.role.trim()
+    }
+
+    if (filterForm.objectModel.trim()) {
+      params.content_type_model = parseModelIdentifier(filterForm.objectModel).model
+    }
+
+    const res = await dataPermissionApi.list(params)
+    const results = Array.isArray(res?.results) ? res.results : []
+
+    tableData.value = results.map(mapRow)
+    pagination.total = Number(res?.count || 0)
   } catch (error) {
     ElMessage.error(t('common.messages.loadFailed'))
   } finally {
@@ -253,6 +356,7 @@ const handleSearch = () => {
 
 const handleReset = () => {
   filterForm.role = ''
+  filterForm.objectModel = ''
   handleSearch()
 }
 
@@ -261,22 +365,39 @@ const handleCreate = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (row: any) => {
+const handleEdit = (row: DataPermissionViewRow) => {
   currentRow.value = row
   dialogVisible.value = true
 }
 
-const handleToggleActive = async (row: any) => {
+const handleDelete = async (row: DataPermissionViewRow) => {
   try {
-    // TODO: Replace with actual API call
-    row.isActive = !row.isActive
-    ElMessage.success(row.isActive ? t('system.permission.data.messages.enabled') : t('system.permission.data.messages.disabled'))
-  } catch (error) {
+    await ElMessageBox.confirm(
+      t('common.messages.confirmDelete'),
+      t('common.actions.confirm'),
+      {
+        type: 'warning'
+      }
+    )
+
+    await dataPermissionApi.delete(row.id)
+    ElMessage.success(t('common.messages.deleteSuccess'))
+
+    if (tableData.value.length === 1 && pagination.page > 1) {
+      pagination.page -= 1
+    }
+
+    fetchData()
+  } catch (error: unknown) {
+    if (error === 'cancel' || error === 'close') {
+      return
+    }
     ElMessage.error(t('common.messages.operationFailed'))
   }
 }
 
 onMounted(() => {
+  loadOptions()
   fetchData()
 })
 </script>
@@ -285,12 +406,14 @@ onMounted(() => {
 .data-permission-tab {
   padding: 10px 0;
 }
+
 .filter-form {
   margin-bottom: 20px;
 }
-  .pagination-footer {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end;
-  }
+
+.pagination-footer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
 </style>

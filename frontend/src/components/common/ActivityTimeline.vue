@@ -58,11 +58,11 @@
             >
               <span class="field-name">{{ change.fieldLabel }}</span>
               <div class="diff-container">
-                <span class="old-value">{{ change.oldValue || '�? }}</span>
+                <span class="old-value">{{ change.oldValue || '-' }}</span>
                 <el-icon class="arrow-icon">
                   <ArrowRight />
                 </el-icon>
-                <span class="new-value">{{ change.newValue || '�? }}</span>
+                <span class="new-value">{{ change.newValue || '-' }}</span>
               </div>
             </div>
           </div>
@@ -80,7 +80,7 @@
         link 
         @click="loadMore"
       >
-        {{ $t('common.actions.loadMore', '加载更多...') }}
+        {{ $t('common.actions.loadMore') }}
       </el-button>
     </div>
   </div>

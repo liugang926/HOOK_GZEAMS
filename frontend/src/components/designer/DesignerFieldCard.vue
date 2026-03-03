@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Delete } from '@element-plus/icons-vue'
+import { Delete, Lock } from '@element-plus/icons-vue'
 import FieldDisplay from '@/components/common/FieldDisplay.vue'
 import type { DetailField } from '@/components/common/BaseDetailPage.vue'
 
@@ -8,6 +8,7 @@ interface DesignerFieldLite {
   fieldCode: string
   label: string
   required?: boolean
+  readonly?: boolean
 }
 
 const props = withDefaults(defineProps<{
@@ -20,11 +21,13 @@ const props = withDefaults(defineProps<{
   sectionId: string
   sectionIndex: number
   removeTitle?: string
+  readonlyTitle?: string
 }>(), {
   selected: false,
   interactive: true,
   sidebar: false,
-  removeTitle: 'Remove field'
+  removeTitle: 'Remove field',
+  readonlyTitle: 'Readonly'
 })
 
 const emit = defineEmits<{
@@ -47,9 +50,15 @@ function handleSelect() {
   <div
     class="designer-field-card dynamic-form-section__field"
     data-testid="layout-canvas-field"
-    :class="{ 'is-selected': interactive && selected, 'sidebar-field-col': sidebar, 'is-readonly': !interactive }"
+    :class="{
+      'is-selected': interactive && selected,
+      'sidebar-field-col': sidebar,
+      'is-readonly': !interactive,
+      'is-field-readonly': field.readonly === true
+    }"
     :data-field-id="field.id"
     :data-field-code="field.fieldCode"
+    :data-field-readonly="field.readonly === true ? 'true' : 'false'"
     @mousedown.stop="handleSelect"
     @click.stop="handleSelect"
   >
@@ -70,6 +79,13 @@ function handleSelect() {
           :value="value"
         />
       </div>
+    </div>
+    <div
+      v-if="field.readonly === true"
+      class="readonly-indicator"
+      :title="readonlyTitle"
+    >
+      <el-icon><Lock /></el-icon>
     </div>
     <div
       v-if="interactive && selected"
@@ -114,6 +130,16 @@ function handleSelect() {
 
   &.is-readonly {
     cursor: default;
+  }
+
+  &.is-field-readonly {
+    background: #f5f7fa;
+    border: 1px solid #e4e7ed;
+  }
+
+  &.is-field-readonly .field-label,
+  &.is-field-readonly .field-value {
+    color: #909399;
   }
 }
 
@@ -194,5 +220,14 @@ function handleSelect() {
   pointer-events: auto;
   display: flex;
   gap: 4px;
+}
+
+.readonly-indicator {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  color: #909399;
+  font-size: 12px;
+  pointer-events: none;
 }
 </style>

@@ -4,7 +4,7 @@ Dynamic field validator for metadata-driven forms.
 Validates data against FieldDefinition configurations.
 """
 from typing import Dict, List, Any, Optional
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, FieldDoesNotExist
 import re
 from decimal import Decimal, InvalidOperation
 from datetime import datetime, date
@@ -277,13 +277,25 @@ class DynamicFieldValidator:
         return [str(v) for v in value]
 
     def _validate_reference(self, field_def, value: Any) -> str:
-        """Validate reference field (UUID)."""
+        """Validate reference field (UUID).
+
+        Accepts either a plain UUID string/int or an expanded object dict/object
+        that has an 'id' key (e.g. {'id': '<uuid>', 'name': 'Computer Equipment'}).
+        The frontend may submit expanded objects when the user hasn't changed a
+        field that was pre-populated with a full reference object from the detail API.
+        """
         import uuid
+        # If the front-end submitted a full object, extract its ID.
+        if isinstance(value, dict):
+            value = value.get('id', value)
+        elif hasattr(value, 'id'):
+            value = value.id
+
         try:
             uuid.UUID(str(value))
             return str(value)
-        except ValueError:
-            raise ValidationError(f"{field_def.name} must be a valid UUID")
+        except (ValueError, AttributeError):
+            raise ValidationError(f"{field_def.name} must be a valid UUID (value: {value!r})")
 
     def _validate_user(self, field_def, value: Any) -> str:
         """Validate user reference."""
@@ -367,17 +379,29 @@ def validate_dynamic_data(
     """
     from apps.system.models import BusinessObject
 
+    def _model_has_field(model_cls, field_name: str) -> bool:
+        try:
+            model_cls._meta.get_field(field_name)
+            return True
+        except FieldDoesNotExist:
+            return False
+
     try:
-        business_object = BusinessObject.objects.get(
+        business_object_qs = BusinessObject.objects.filter(
             code=business_object_code,
-            is_active=True
+            is_deleted=False
         )
+        if _model_has_field(BusinessObject, 'is_active'):
+            business_object_qs = business_object_qs.filter(is_active=True)
+
+        business_object = business_object_qs.get()
     except BusinessObject.DoesNotExist:
         raise ValidationError(f"BusinessObject '{business_object_code}' not found")
 
-    field_definitions = business_object.field_definitions.filter(
-        is_active=True
-    )
+    field_definitions = business_object.field_definitions.filter(is_deleted=False)
+    field_model = business_object.field_definitions.model
+    if _model_has_field(field_model, 'is_active'):
+        field_definitions = field_definitions.filter(is_active=True)
 
     if exclude_fields:
         field_definitions = field_definitions.exclude(code__in=exclude_fields)

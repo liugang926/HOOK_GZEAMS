@@ -5,7 +5,16 @@ Dynamically generates serializers based on BusinessObject and FieldDefinition.
 """
 from rest_framework import serializers
 from typing import Dict, List, Any, Optional, Type
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, FieldDoesNotExist
+
+
+def _model_has_field(model_cls, field_name: str) -> bool:
+    """Return True when a concrete model field exists."""
+    try:
+        model_cls._meta.get_field(field_name)
+        return True
+    except FieldDoesNotExist:
+        return False
 
 
 class FieldDefinitionMapper:
@@ -139,13 +148,23 @@ class MetadataDrivenSerializer(serializers.Serializer):
 
         try:
             from apps.system.models import BusinessObject
-            self._business_object = BusinessObject.objects.get(
+            business_object_qs = BusinessObject.objects.filter(
                 code=code,
-                is_active=True
+                is_deleted=False
             )
-            self._field_definitions = self._business_object.field_definitions.filter(
-                is_active=True
-            ).order_by('sort_order')
+            if _model_has_field(BusinessObject, 'is_active'):
+                business_object_qs = business_object_qs.filter(is_active=True)
+
+            self._business_object = business_object_qs.get()
+
+            field_definitions_qs = self._business_object.field_definitions.filter(
+                is_deleted=False
+            )
+            field_model = self._business_object.field_definitions.model
+            if _model_has_field(field_model, 'is_active'):
+                field_definitions_qs = field_definitions_qs.filter(is_active=True)
+
+            self._field_definitions = field_definitions_qs.order_by('sort_order')
         except ObjectDoesNotExist:
             raise serializers.ValidationError(
                 f"BusinessObject '{code}' not found"
@@ -194,7 +213,8 @@ class MetadataDrivenSerializer(serializers.Serializer):
 
     def to_internal_value(self, data):
         """Deserialize input data."""
-        result = super().to_internal_value(data)
+        normalized_data = self._normalize_reference_like_inputs(data)
+        result = super().to_internal_value(normalized_data)
 
         # For DynamicData, pack fields into custom_fields
         if self._business_object:
@@ -207,6 +227,44 @@ class MetadataDrivenSerializer(serializers.Serializer):
                 result['business_object'] = self._business_object
 
         return result
+
+    @staticmethod
+    def _extract_reference_id(value):
+        """Normalize expanded reference objects into scalar IDs."""
+        if isinstance(value, dict):
+            return value.get('id', value)
+        if hasattr(value, 'id'):
+            return getattr(value, 'id')
+        return value
+
+    def _normalize_reference_like_inputs(self, data):
+        """Pre-process UUID-typed fields before DRF validation."""
+        if not isinstance(data, dict):
+            return data
+
+        normalized = dict(data)
+        for field_name, field in self.fields.items():
+            if field.read_only or field_name not in normalized:
+                continue
+
+            raw_value = normalized.get(field_name)
+            if raw_value is None:
+                continue
+
+            if isinstance(field, serializers.UUIDField):
+                normalized[field_name] = self._extract_reference_id(raw_value)
+                continue
+
+            if (
+                isinstance(field, serializers.ListField)
+                and isinstance(field.child, serializers.UUIDField)
+                and isinstance(raw_value, list)
+            ):
+                normalized[field_name] = [
+                    self._extract_reference_id(item) for item in raw_value
+                ]
+
+        return normalized
 
     def _format_field_value(self, field_def, value: Any) -> Any:
         """Format field value for output."""

@@ -91,4 +91,51 @@ describe('renderSchema', () => {
     expect(schema.sections[0].fields[0].label).toBe('Asset Name (Layout)')
     expect(schema.sections[0].fields[0].readonly).toBe(true)
   })
+
+  it('prioritizes layout readonly/editable flags in edit mode', () => {
+    const schema = buildRenderSchema({
+      mode: 'edit',
+      fields: [
+        { code: 'assetCode', fieldType: 'text', isReadonly: false, isEditable: true },
+        { code: 'assetName', fieldType: 'text', isReadonly: false, isEditable: true }
+      ],
+      layoutConfig: {
+        sections: [
+          {
+            id: 'basic',
+            type: 'section',
+            fields: [
+              { fieldCode: 'assetCode', readonly: true },
+              { fieldCode: 'assetName', editable: false }
+            ]
+          }
+        ]
+      }
+    })
+
+    expect(schema.sections[0].fields[0].readonly).toBe(true)
+    expect(schema.sections[0].fields[1].readonly).toBe(true)
+  })
+
+  it('falls back to metadata editable flags when layout readonly is missing', () => {
+    const schema = buildRenderSchema({
+      mode: 'edit',
+      fields: [
+        { code: 'assetCode', fieldType: 'text', isEditable: false },
+        { code: 'assetName', fieldType: 'text', isEditable: true }
+      ],
+      layoutConfig: {
+        sections: [
+          {
+            id: 'basic',
+            type: 'section',
+            fields: [{ fieldCode: 'assetCode' }, { fieldCode: 'assetName' }]
+          }
+        ]
+      }
+    })
+
+    expect(schema.sections[0].fields[0].readonly).toBe(true)
+    expect(schema.sections[0].fields[1].readonly).toBe(false)
+  })
 })

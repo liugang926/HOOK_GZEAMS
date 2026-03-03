@@ -795,14 +795,14 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         self._feature_flag_cache[cache_key] = resolved
         return resolved
 
-    def _build_field_identifier_payload(self, field_code: str) -> dict:
+    def _build_field_identifier_payload(self, field_code: str, *, force_strict: bool = False) -> dict:
         """
         Build field identity payload with strict/compat mode.
 
         strict: only field_code
         compat: field_code + legacy code
         """
-        strict_mode = self._is_feature_enabled(
+        strict_mode = force_strict or self._is_feature_enabled(
             'field_code_strict_mode',
             default=False,
         )
@@ -1247,6 +1247,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                     context,
                     request_locale,
                     localize=runtime_i18n_enabled,
+                    strict_identifier=True,
                 )
                 if fd.field_type == 'sub_table':
                     if include_relations:
@@ -1265,6 +1266,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                     context,
                     request_locale,
                     localize=runtime_i18n_enabled,
+                    strict_identifier=True,
                 )
                 if fd.is_reverse_relation:
                     if include_relations:
@@ -1286,6 +1288,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                             context,
                             request_locale,
                             localize=runtime_i18n_enabled,
+                            strict_identifier=True,
                         )
                     )
             else:
@@ -1298,6 +1301,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                             context,
                             request_locale,
                             localize=runtime_i18n_enabled,
+                            strict_identifier=True,
                         )
                     )
 
@@ -1582,7 +1586,15 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         return True
 
-    def _format_field_definition(self, fd, context: str, locale: Optional[str] = None, *, localize: bool = True) -> dict:
+    def _format_field_definition(
+        self,
+        fd,
+        context: str,
+        locale: Optional[str] = None,
+        *,
+        localize: bool = True,
+        strict_identifier: bool = False,
+    ) -> dict:
         """Format FieldDefinition instance for API response."""
         resolved_locale = locale or TranslationService.DEFAULT_LANGUAGE
         if localize:
@@ -1595,7 +1607,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             localized_options = fd.options
 
         return {
-            **self._build_field_identifier_payload(fd.code),
+            **self._build_field_identifier_payload(fd.code, force_strict=strict_identifier),
             'name': localized_name,
             'label': localized_name,
             'field_type': fd.field_type,
@@ -1624,7 +1636,15 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             'locale': resolved_locale,
         }
 
-    def _format_model_field(self, fd, context: str, locale: Optional[str] = None, *, localize: bool = True) -> dict:
+    def _format_model_field(
+        self,
+        fd,
+        context: str,
+        locale: Optional[str] = None,
+        *,
+        localize: bool = True,
+        strict_identifier: bool = False,
+    ) -> dict:
         """Format ModelFieldDefinition instance for API response."""
         resolved_locale = locale or TranslationService.DEFAULT_LANGUAGE
         # Try to get field choices from the actual Django model
@@ -1649,7 +1669,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             localized_display_name = fd.display_name or fd.field_name
 
         return {
-            **self._build_field_identifier_payload(fd.field_name),
+            **self._build_field_identifier_payload(fd.field_name, force_strict=strict_identifier),
             'name': localized_display_name,
             'label': localized_display_name,
             'field_type': field_type,

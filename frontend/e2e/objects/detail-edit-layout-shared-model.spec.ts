@@ -41,6 +41,19 @@ function buildRuntimeLayoutResponse() {
           showInForm: true,
           showInDetail: true,
           sortOrder: 3
+        },
+        {
+          code: 'status',
+          name: 'Status',
+          fieldType: 'select',
+          isHidden: false,
+          showInForm: true,
+          showInDetail: true,
+          sortOrder: 4,
+          options: [
+            { label: 'Active', value: 'active' },
+            { label: 'Inactive', value: 'inactive' }
+          ]
         }
       ],
       reverse_relations: []
@@ -56,8 +69,9 @@ function buildRuntimeLayoutResponse() {
             columns: 2,
             fields: [
               { fieldCode: 'asset_name' },
-              { fieldCode: 'asset_code' },
-              { fieldCode: 'purchase_date' }
+              { fieldCode: 'asset_code', readonly: true },
+              { fieldCode: 'purchase_date' },
+              { fieldCode: 'status' }
             ]
           }
         ]
@@ -163,13 +177,15 @@ async function mockApis(page: Page, state: { readonlyCalls: number }) {
     if (pathname.endsWith('/api/system/objects/Asset/asset-shared-layout-1/')) {
       return fulfillSuccess(route, {
         id: 'asset-shared-layout-1',
-        asset_name: 'Shared Layout Asset',
-        asset_code: 'ASSET-SHARED-001',
-        purchase_date: '2026-02-26',
-        created_by: { username: 'admin' },
-        created_at: '2026-02-26T08:00:00+08:00',
-        updated_by: { username: 'admin' },
-        updated_at: '2026-02-26T08:30:00+08:00'
+        asset_code: '',
+        assetName: 'Shared Layout Asset',
+        assetCode: 'ASSET-SHARED-001',
+        purchaseDate: '2026-02-26',
+        status: 'active',
+        createdBy: { username: 'admin' },
+        createdAt: '2026-02-26T08:00:00+08:00',
+        updatedBy: { username: 'admin' },
+        updatedAt: '2026-02-26T08:30:00+08:00'
       })
     }
 
@@ -183,8 +199,17 @@ function normalizeLabels(values: string[]) {
     .filter(Boolean)
 }
 
+async function hasInputWithValue(page: Page, value: string) {
+  return page.evaluate((v) => {
+    const inputs = Array.from(document.querySelectorAll('input, textarea')) as Array<
+      HTMLInputElement | HTMLTextAreaElement
+    >
+    return inputs.some((el) => el.value === v || el.value.includes(v))
+  }, value)
+}
+
 test.describe('Detail/Edit Shared Layout Model', () => {
-  test('detail view and edit drawer should follow the same edit layout field order', async ({ page }) => {
+  test('detail view and inline edit should follow the same edit layout field order', async ({ page }) => {
     const state = { readonlyCalls: 0 }
     await mockApis(page, state)
 
@@ -200,13 +225,29 @@ test.describe('Detail/Edit Shared Layout Model', () => {
     expect(detailLabels.slice(0, 3)).toEqual(['AssetName', 'AssetCode', 'PurchaseDate'])
 
     await page.locator('.header-actions .el-button').first().click()
-    const openedDrawer = page.locator('.el-drawer.open')
-    await expect(openedDrawer).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
+    const editSurface = page.locator('.detail-content')
 
     const drawerLabels = normalizeLabels(
-      await openedDrawer.locator('.el-form-item__label').allTextContents()
+      await editSurface.locator('.el-form-item__label').allTextContents()
     )
     expect(drawerLabels.slice(0, 3)).toEqual(['AssetName', 'AssetCode', 'PurchaseDate'])
+    await expect.poll(async () => hasInputWithValue(page, 'ASSET-SHARED-001')).toBe(true)
+    await expect.poll(async () => hasInputWithValue(page, 'Shared Layout Asset')).toBe(true)
+    const purchaseDateField = editSurface.locator('.field-item').filter({
+      has: page.locator('.field-label', { hasText: 'Purchase Date' })
+    }).first()
+    const assetCodeField = editSurface.locator('.field-item').filter({
+      has: page.locator('.field-label', { hasText: 'Asset Code' })
+    }).first()
+    const statusField = editSurface.locator('.field-item').filter({
+      has: page.locator('.field-label', { hasText: 'Status' })
+    }).first()
+    await expect(assetCodeField.locator('input')).toHaveValue('ASSET-SHARED-001')
+    await expect(assetCodeField.locator('input')).toBeDisabled()
+    await expect(purchaseDateField.locator('.el-date-editor')).toHaveCount(1)
+    await expect(statusField.locator('.el-select')).toHaveCount(1)
 
     expect(state.readonlyCalls).toBe(0)
   })

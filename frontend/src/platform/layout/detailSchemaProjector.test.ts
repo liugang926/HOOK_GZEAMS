@@ -45,6 +45,8 @@ describe('detailSchemaProjector', () => {
     expect(sections[0].fields.map((field) => field.prop)).toEqual(['assetName', 'status'])
     expect(sections[0].fields[0].span).toBe(12)
     expect(sections[0].fields[1].span).toBe(24)
+    expect(sections[0].fields[0].readonly).toBe(true)
+    expect(sections[0].fields[1].readonly).toBe(true)
   })
 
   it('respects visibility skip rules and audit exclusion', () => {

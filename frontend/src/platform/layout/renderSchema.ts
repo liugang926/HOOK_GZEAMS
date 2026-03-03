@@ -56,9 +56,50 @@ const resolveColumns = (section: AnyRecord): number => {
   return Number(section?.columns || section?.columnCount || section?.column || 2) || 2
 }
 
-const normalizeReadonly = (meta: AnyRecord | undefined, mode: RuntimeMode): boolean => {
+const coerceBoolean = (value: unknown): boolean | undefined => {
+  if (typeof value === 'boolean') return value
+  if (typeof value === 'number') {
+    if (value === 1) return true
+    if (value === 0) return false
+    return undefined
+  }
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase()
+    if (['true', '1', 'yes', 'y'].includes(normalized)) return true
+    if (['false', '0', 'no', 'n'].includes(normalized)) return false
+  }
+  return undefined
+}
+
+const pickBooleanByKeys = (source: AnyRecord | undefined, keys: string[]): boolean | undefined => {
+  if (!source) return undefined
+  for (const key of keys) {
+    const value = coerceBoolean(source[key])
+    if (value !== undefined) return value
+  }
+  return undefined
+}
+
+const normalizeReadonly = (
+  layoutField: AnyRecord | undefined,
+  meta: AnyRecord | undefined,
+  mode: RuntimeMode
+): boolean => {
   if (mode === 'readonly') return true
-  return Boolean(meta?.readonly ?? meta?.isReadonly ?? meta?.is_readonly ?? false)
+
+  const layoutReadonly = pickBooleanByKeys(layoutField, ['readonly', 'isReadonly', 'is_readonly'])
+  if (layoutReadonly !== undefined) return layoutReadonly
+
+  const layoutEditable = pickBooleanByKeys(layoutField, ['editable', 'isEditable', 'is_editable', 'allowEdit', 'allow_edit'])
+  if (layoutEditable !== undefined) return !layoutEditable
+
+  const metaReadonly = pickBooleanByKeys(meta, ['readonly', 'isReadonly', 'is_readonly'])
+  if (metaReadonly !== undefined) return metaReadonly
+
+  const metaEditable = pickBooleanByKeys(meta, ['editable', 'isEditable', 'is_editable'])
+  if (metaEditable !== undefined) return !metaEditable
+
+  return false
 }
 
 const buildRenderField = (
@@ -81,7 +122,7 @@ const buildRenderField = (
     fieldType: normalizeFieldType(rawType),
     span,
     required: Boolean(layoutField?.required ?? meta?.required ?? meta?.isRequired ?? meta?.is_required ?? false),
-    readonly: normalizeReadonly(meta, mode),
+    readonly: normalizeReadonly(layoutField, meta, mode),
     visible: layoutField?.visible !== false && meta?.isHidden !== true && meta?.is_hidden !== true,
     metadata: meta
   }

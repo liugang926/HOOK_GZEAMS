@@ -1,6 +1,5 @@
 <template>
   <div class="field-permission-tab">
-    <!-- Filters -->
     <el-form
       :model="filterForm"
       inline
@@ -9,42 +8,40 @@
       <el-form-item :label="$t('system.permission.field.toolbar.role')">
         <el-select
           v-model="filterForm.role"
+          filterable
+          remote
+          reserve-keyword
           clearable
           :placeholder="$t('system.permission.field.toolbar.rolePlaceholder')"
+          :loading="optionsLoading.users"
+          :remote-method="handleUserRemoteSearch"
           @change="handleSearch"
         >
           <el-option
-            label="管理员"
-            value="admin"
-          />
-          <el-option
-            label="普通用户"
-            value="user"
-          />
-          <el-option
-            label="访客"
-            value="guest"
+            v-for="option in userOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
           />
         </el-select>
       </el-form-item>
       <el-form-item :label="$t('system.permission.field.toolbar.object')">
         <el-select
           v-model="filterForm.businessObject"
+          filterable
+          remote
+          reserve-keyword
           clearable
           :placeholder="$t('system.permission.field.toolbar.objectPlaceholder')"
+          :loading="optionsLoading.objects"
+          :remote-method="handleObjectRemoteSearch"
           @change="handleSearch"
         >
           <el-option
-            label="固定资产"
-            value="Asset"
-          />
-          <el-option
-            label="员工信息"
-            value="Employee"
-          />
-          <el-option
-            label="部门"
-            value="Department"
+            v-for="option in objectOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
           />
         </el-select>
       </el-form-item>
@@ -61,7 +58,6 @@
       </el-form-item>
     </el-form>
 
-    <!-- Field Permission Matrix -->
     <el-table
       v-loading="loading"
       :data="tableData"
@@ -72,7 +68,7 @@
       <el-table-column
         prop="roleName"
         :label="$t('system.permission.field.columns.role')"
-        width="120"
+        width="160"
         fixed="left"
       />
       <el-table-column
@@ -130,7 +126,7 @@
       <el-table-column
         prop="description"
         :label="$t('system.permission.field.columns.description')"
-        min-width="200"
+        min-width="220"
         show-overflow-tooltip
       />
       <el-table-column
@@ -150,7 +146,6 @@
       </el-table-column>
     </el-table>
 
-    <!-- Pagination -->
     <div class="pagination-footer">
       <el-pagination
         v-model:current-page="pagination.page"
@@ -163,7 +158,6 @@
       />
     </div>
 
-    <!-- Edit Dialog -->
     <FieldPermissionDialog
       v-model:visible="dialogVisible"
       :data="currentRow"
@@ -176,15 +170,46 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
-import { fieldPermissionApi } from '@/api/permissions'
+import {
+  fieldPermissionApi,
+  type FieldPermissionRecord,
+  type PermissionListParams
+} from '@/api/permissions'
+import {
+  fetchPermissionUserOptions,
+  fetchPermissionObjectOptions,
+  type PermissionUserOption,
+  type PermissionObjectOption
+} from './permissionOptions'
 import FieldPermissionDialog from './FieldPermissionDialog.vue'
 
 const { t } = useI18n()
 
 const loading = ref(false)
-const tableData = ref<any[]>([])
+const tableData = ref<FieldPermissionViewRow[]>([])
 const dialogVisible = ref(false)
-const currentRow = ref<any>(null)
+const currentRow = ref<FieldPermissionViewRow | null>(null)
+const userOptions = ref<PermissionUserOption[]>([])
+const objectOptions = ref<PermissionObjectOption[]>([])
+const optionsLoading = reactive({
+  users: false,
+  objects: false
+})
+
+interface FieldPermissionViewRow {
+  id: string
+  roleName: string
+  businessObjectName: string
+  fieldName: string
+  canRead: boolean
+  canWrite: boolean
+  isVisible: boolean
+  description: string
+  permissionType: FieldPermissionRecord['permissionType']
+  permissionTypeDisplay?: string
+  maskRule?: string | null
+  customMaskPattern?: string
+}
 
 const filterForm = reactive({
   role: '',
@@ -197,52 +222,104 @@ const pagination = reactive({
   total: 0
 })
 
+const parseModelIdentifier = (input: string) => {
+  const raw = input.trim()
+  if (!raw) return { model: '' }
+  const chunks = raw.split('.')
+  if (chunks.length >= 2) {
+    return { model: chunks[chunks.length - 1] }
+  }
+  return { model: raw }
+}
+
+const mapPermissionToFlags = (permissionType: FieldPermissionRecord['permissionType']) => {
+  switch (permissionType) {
+    case 'write':
+      return { canRead: true, canWrite: true, isVisible: true }
+    case 'hidden':
+      return { canRead: false, canWrite: false, isVisible: false }
+    case 'masked':
+      return { canRead: true, canWrite: false, isVisible: true }
+    case 'read':
+    default:
+      return { canRead: true, canWrite: false, isVisible: true }
+  }
+}
+
+const mapRow = (item: FieldPermissionRecord): FieldPermissionViewRow => {
+  const flags = mapPermissionToFlags(item.permissionType)
+  return {
+    id: item.id,
+    roleName: item.userDisplay || '-',
+    businessObjectName: item.contentTypeDisplay || '-',
+    fieldName: item.fieldName,
+    canRead: flags.canRead,
+    canWrite: flags.canWrite,
+    isVisible: flags.isVisible,
+    description: item.description || '',
+    permissionType: item.permissionType,
+    permissionTypeDisplay: item.permissionTypeDisplay,
+    maskRule: item.maskRule,
+    customMaskPattern: item.customMaskPattern,
+  }
+}
+
+const fetchUserOptions = async (search = '') => {
+  optionsLoading.users = true
+  try {
+    const users = await fetchPermissionUserOptions(search).catch(() => [])
+    userOptions.value = users
+  } finally {
+    optionsLoading.users = false
+  }
+}
+
+const fetchObjectOptions = async (search = '') => {
+  optionsLoading.objects = true
+  try {
+    const objects = await fetchPermissionObjectOptions(search).catch(() => [])
+    objectOptions.value = objects
+  } finally {
+    optionsLoading.objects = false
+  }
+}
+
+const loadOptions = async () => {
+  await Promise.all([
+    fetchUserOptions(''),
+    fetchObjectOptions('')
+  ])
+}
+
+const handleUserRemoteSearch = (query: string) => {
+  fetchUserOptions(query)
+}
+
+const handleObjectRemoteSearch = (query: string) => {
+  fetchObjectOptions(query)
+}
+
 const fetchData = async () => {
   loading.value = true
   try {
-    // TODO: Replace with actual API call
-    // const res = await fieldPermissionApi.list({
-    //   ...filterForm,
-    //   page: pagination.page,
-    //   pageSize: pagination.pageSize
-    // })
-    // tableData.value = res.results || []
-    // pagination.total = res.count || 0
+    const params: PermissionListParams = {
+      page: pagination.page,
+      page_size: pagination.pageSize
+    }
 
-    // Mock data
-    tableData.value = [
-      {
-        id: '1',
-        roleName: '管理员',
-        businessObjectName: '固定资产',
-        fieldName: '资产名称',
-        canRead: true,
-        canWrite: true,
-        isVisible: true,
-        description: '管理员可完全控制'
-      },
-      {
-        id: '2',
-        roleName: '普通用户',
-        businessObjectName: '固定资产',
-        fieldName: '资产原值',
-        canRead: true,
-        canWrite: false,
-        isVisible: true,
-        description: '普通用户只读'
-      },
-      {
-        id: '3',
-        roleName: '访客',
-        businessObjectName: '固定资产',
-        fieldName: '资产原值',
-        canRead: false,
-        canWrite: false,
-        isVisible: false,
-        description: '访客不可见'
-      }
-    ]
-    pagination.total = 3
+    if (filterForm.role.trim()) {
+      params.user_username = filterForm.role.trim()
+    }
+
+    if (filterForm.businessObject.trim()) {
+      params.content_type_model = parseModelIdentifier(filterForm.businessObject).model
+    }
+
+    const res = await fieldPermissionApi.list(params)
+    const results = Array.isArray(res?.results) ? res.results : []
+
+    tableData.value = results.map(mapRow)
+    pagination.total = Number(res?.count || 0)
   } catch (error) {
     ElMessage.error(t('common.messages.loadFailed'))
   } finally {
@@ -261,12 +338,13 @@ const handleReset = () => {
   handleSearch()
 }
 
-const handleEdit = (row: any) => {
+const handleEdit = (row: FieldPermissionViewRow) => {
   currentRow.value = row
   dialogVisible.value = true
 }
 
 onMounted(() => {
+  loadOptions()
   fetchData()
 })
 </script>
@@ -275,9 +353,11 @@ onMounted(() => {
 .field-permission-tab {
   padding: 10px 0;
 }
+
 .filter-form {
   margin-bottom: 20px;
 }
+
 .pagination-footer {
   margin-top: 20px;
   display: flex;

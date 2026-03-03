@@ -69,6 +69,10 @@ async function readCanvasSnapshot(page: Page) {
   return { title, labels }
 }
 
+async function countReadonlyCards(page: Page) {
+  return page.locator('[data-testid="layout-canvas-field"].is-field-readonly').count()
+}
+
 test.describe('Layout Designer Render Mode Consistency Regression', () => {
   test('design mode and preview mode should render the same section and field labels', async ({ page }) => {
     const layoutConfig = buildLayoutConfig()
@@ -212,14 +216,17 @@ test.describe('Layout Designer Render Mode Consistency Regression', () => {
     const designSnapshot = await readCanvasSnapshot(page)
     expect(designSnapshot.title).toContain(SECTION_TITLE)
     expect(designSnapshot.labels).toEqual(['Asset Name', 'Asset Code'])
+    await expect.poll(async () => countReadonlyCards(page)).toBe(2)
 
     await setDesignerRenderMode(page, 'preview')
 
     const previewSnapshot = await readCanvasSnapshot(page)
     expect(previewSnapshot).toEqual(designSnapshot)
+    await expect.poll(async () => countReadonlyCards(page)).toBe(2)
 
     await setDesignerRenderMode(page, 'design')
     const designSnapshotAfterBack = await readCanvasSnapshot(page)
     expect(designSnapshotAfterBack).toEqual(designSnapshot)
+    await expect.poll(async () => countReadonlyCards(page)).toBe(2)
   })
 })

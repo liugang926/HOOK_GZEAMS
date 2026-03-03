@@ -34,6 +34,8 @@ const TARGET_FILES = new Set([
 ])
 
 const normalizePath = (relativePath) => relativePath.replace(/\\/g, '/')
+const writeStdout = (text) => process.stdout.write(`${text}\n`)
+const writeStderr = (text) => process.stderr.write(`${text}\n`)
 
 const getCandidateFiles = () => {
   const fromAll = () =>
@@ -167,7 +169,7 @@ const writeReport = (issues, filesScanned) => {
 const run = () => {
   const files = getCandidateFiles()
   if (files.length === 0) {
-    console.log('[related-metadata-audit] No candidate files to scan.')
+    writeStdout('[related-metadata-audit] No candidate files to scan.')
     writeReport([], 0)
     return
   }
@@ -180,9 +182,9 @@ const run = () => {
   writeReport(issues, files.length)
 
   if (issues.length > 0) {
-    console.error('\n[related-metadata-audit] Found issues:')
+    writeStderr('\n[related-metadata-audit] Found issues:')
     for (const issue of issues) {
-      console.error(`- ${issue.file} [${issue.rule}] ${issue.detail}`)
+      writeStderr(`- ${issue.file} [${issue.rule}] ${issue.detail}`)
     }
     if (failOnIssues) {
       process.exit(1)
@@ -190,10 +192,9 @@ const run = () => {
   }
 
   const mode = changedOnly ? 'changed' : 'all'
-  console.log(
+  writeStdout(
     `[related-metadata-audit] Completed (${mode} mode, ${files.length} files, ${issues.length} issues).`
   )
 }
 
 run()
-

@@ -8,10 +8,13 @@ import { normalizeFieldType } from '@/utils/fieldType'
 
 type AnyRecord = Record<string, any>
 
+const getFieldCode = (field: AnyRecord): string =>
+  String(field?.code || field?.fieldCode || field?.field_code || field?.fieldName || '').trim()
+
 const toFieldMap = (fields: AnyRecord[]): Map<string, AnyRecord> => {
   const map = new Map<string, AnyRecord>()
   for (const field of fields || []) {
-    const code = String(field?.code || field?.fieldCode || field?.field_code || '').trim()
+    const code = getFieldCode(field)
     if (!code) continue
     if (!map.has(code)) map.set(code, field)
   }
@@ -223,7 +226,7 @@ export const orderFieldsByRenderSchema = (fields: AnyRecord[], schema: RenderSch
   }
 
   for (const field of fields || []) {
-    const code = String(field?.code || field?.fieldCode || field?.field_code || '').trim()
+    const code = getFieldCode(field)
     if (!code) continue
     if (!order.includes(code)) ordered.push(field)
   }

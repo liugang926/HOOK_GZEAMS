@@ -51,7 +51,7 @@ interface RelatedRecord {
   [key: string]: unknown
 }
 
-type AnyRecord = Record<string, any>
+type AnyRecord = Record<string, unknown>
 
 // ============================================================================
 // Props & Emits
@@ -59,6 +59,7 @@ type AnyRecord = Record<string, any>
 
 const props = withDefaults(defineProps<RelatedObjectTableProps>(), {
   mode: 'inline_readonly',
+  title: '',
   showCreate: true,
   pageSize: 10
 })
@@ -120,6 +121,11 @@ const tableColumns = computed<TableColumn[]>(() => {
   }
   return columns
 })
+
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message
+  return ''
+}
 
 function toPositiveNumber(value: unknown): number | undefined {
   const num = Number(value)
@@ -277,8 +283,8 @@ const fetchRecords = async () => {
     const page = extractRecordPageFromResponse(response)
     records.value = page.results
     total.value = page.count
-  } catch (error: any) {
-    ElMessage.error(error.message || t('common.relatedObject.loadFailed'))
+  } catch (error: unknown) {
+    ElMessage.error(toErrorMessage(error) || t('common.relatedObject.loadFailed'))
     records.value = []
     total.value = 0
   } finally {

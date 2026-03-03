@@ -11,39 +11,17 @@
       label-width="120px"
     >
       <el-form-item :label="$t('system.permission.field.dialog.role')">
-        <el-select
+        <el-input
           v-model="formData.roleName"
           disabled
-        >
-          <el-option
-            label="管理员"
-            value="admin"
-          />
-          <el-option
-            label="普通用户"
-            value="user"
-          />
-          <el-option
-            label="访客"
-            value="guest"
-          />
-        </el-select>
+        />
       </el-form-item>
 
       <el-form-item :label="$t('system.permission.field.dialog.object')">
-        <el-select
+        <el-input
           v-model="formData.businessObjectName"
           disabled
-        >
-          <el-option
-            label="固定资产"
-            value="Asset"
-          />
-          <el-option
-            label="员工信息"
-            value="Employee"
-          />
-        </el-select>
+        />
       </el-form-item>
 
       <el-form-item :label="$t('system.permission.field.dialog.field')">
@@ -106,12 +84,13 @@ import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import { fieldPermissionApi, type FieldPermissionRecord } from '@/api/permissions'
 
 const { t } = useI18n()
 
 interface Props {
   visible: boolean
-  data?: any
+  data?: FieldPermissionDialogData | null
 }
 
 interface Emits {
@@ -125,19 +104,62 @@ const emit = defineEmits<Emits>()
 const formRef = ref<FormInstance>()
 const submitting = ref(false)
 
+interface FieldPermissionDialogData {
+  id: string
+  roleName: string
+  businessObjectName: string
+  fieldName: string
+  description?: string
+  permissionType: FieldPermissionRecord['permissionType']
+  maskRule?: string | null
+  customMaskPattern?: string
+}
+
 const formData = ref({
   roleName: '',
   businessObjectName: '',
   fieldName: '',
   canRead: true,
-  canWrite: true,
+  canWrite: false,
   isVisible: true,
-  description: ''
+  description: '',
+  permissionType: 'read',
+  maskRule: null as string | null,
+  customMaskPattern: ''
 })
 
+const mapPermissionToFlags = (permissionType: FieldPermissionRecord['permissionType']) => {
+  switch (permissionType) {
+    case 'write':
+      return { canRead: true, canWrite: true, isVisible: true }
+    case 'hidden':
+      return { canRead: false, canWrite: false, isVisible: false }
+    case 'masked':
+      return { canRead: true, canWrite: false, isVisible: true }
+    case 'read':
+    default:
+      return { canRead: true, canWrite: false, isVisible: true }
+  }
+}
+
 watch(() => props.visible, (val) => {
-  if (val && props.data) {
-    Object.assign(formData.value, props.data)
+  if (!val) return
+
+  if (props.data) {
+    const flags = mapPermissionToFlags(props.data.permissionType)
+    formData.value = {
+      roleName: props.data.roleName || '',
+      businessObjectName: props.data.businessObjectName || '',
+      fieldName: props.data.fieldName || '',
+      canRead: flags.canRead,
+      canWrite: flags.canWrite,
+      isVisible: flags.isVisible,
+      description: props.data.description || '',
+      permissionType: props.data.permissionType || 'read',
+      maskRule: props.data.maskRule || null,
+      customMaskPattern: props.data.customMaskPattern || ''
+    }
+    formRef.value?.clearValidate()
   }
 })
 
@@ -145,11 +167,42 @@ const handleClose = () => {
   emit('update:visible', false)
 }
 
+const resolvePermissionType = () => {
+  if (!formData.value.isVisible || (!formData.value.canRead && !formData.value.canWrite)) {
+    return 'hidden'
+  }
+
+  if (formData.value.canWrite) {
+    return 'write'
+  }
+
+  if (formData.value.canRead) {
+    if (formData.value.permissionType === 'masked') {
+      return 'masked'
+    }
+    return 'read'
+  }
+
+  return 'hidden'
+}
+
 const handleSubmit = async () => {
+  if (!props.data?.id) {
+    ElMessage.error(t('system.permission.field.messages.saveFailed'))
+    return
+  }
+
   submitting.value = true
   try {
-    // TODO: Replace with actual API call
-    // await fieldPermissionApi.update(props.data.id, formData.value)
+    const permissionType = resolvePermissionType()
+
+    await fieldPermissionApi.update(props.data.id, {
+      permissionType,
+      maskRule: permissionType === 'masked' ? formData.value.maskRule : null,
+      customMaskPattern: permissionType === 'masked' ? formData.value.customMaskPattern : '',
+      description: formData.value.description || ''
+    })
+
     ElMessage.success(t('system.permission.field.messages.saveSuccess'))
     emit('success')
     handleClose()
