@@ -408,9 +408,7 @@ const ensureBusinessObjectId = async (): Promise<string> => {
 // Use useLayoutFields composable for field metadata with unified API layer
 const {
   availableFields,
-  fetchFields: fetchLayoutFields,
-  loading: fieldsLoading,
-  clearCache: clearFieldsCache
+  fetchFields: fetchLayoutFields
 } = useLayoutFields(objectCode.value)
 
 // Internal field definitions for backward compatibility

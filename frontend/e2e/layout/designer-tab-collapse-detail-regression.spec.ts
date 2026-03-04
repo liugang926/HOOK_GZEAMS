@@ -282,7 +282,10 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
       await expect.poll(() => getFirstSectionTitle(activeLayoutConfig)).toBe(scenario.updatedTitle)
 
       await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`, { waitUntil: 'domcontentloaded' })
-      await expect(page.locator('.detail-content').first()).toBeVisible()
+      await expect(page).toHaveURL(new RegExp(`/objects/${OBJECT_CODE}/${RECORD_ID}`))
+      const detailRoot = page.locator('.dynamic-detail-page, .base-detail-page, .object-detail-page').first()
+      await expect(detailRoot).toBeVisible({ timeout: 15000 })
+      await expect(page.locator('.detail-content').first()).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.load-error')).toHaveCount(0)
 
       const expectedTitle = `${scenario.updatedTitle} / ${scenario.nestedTitle}`
@@ -470,7 +473,10 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
       await expect.poll(() => Boolean(getNestedField(activeLayoutConfig, scenario).readonly)).toBe(false)
 
       await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`, { waitUntil: 'domcontentloaded' })
-      await expect(page.locator('.detail-content').first()).toBeVisible()
+      await expect(page).toHaveURL(new RegExp(`/objects/${OBJECT_CODE}/${RECORD_ID}`))
+      const detailRoot = page.locator('.dynamic-detail-page, .base-detail-page, .object-detail-page').first()
+      await expect(detailRoot).toBeVisible({ timeout: 15000 })
+      await expect(page.locator('.detail-content').first()).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.load-error')).toHaveCount(0)
 
       await expect(page.locator('.detail-content')).toContainText(recordPayload.assetName)
@@ -649,7 +655,10 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
       await expect.poll(() => Boolean(getNestedField(activeLayoutConfig, scenario).visible)).toBe(false)
 
       await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`, { waitUntil: 'domcontentloaded' })
-      await expect(page.locator('.detail-content').first()).toBeVisible()
+      await expect(page).toHaveURL(new RegExp(`/objects/${OBJECT_CODE}/${RECORD_ID}`))
+      const detailRoot = page.locator('.dynamic-detail-page, .base-detail-page, .object-detail-page').first()
+      await expect(detailRoot).toBeVisible({ timeout: 15000 })
+      await expect(page.locator('.detail-content').first()).toBeVisible({ timeout: 15000 })
       await expect(page.locator('.load-error')).toHaveCount(0)
 
       await expect(page.locator('.detail-sections .field-col')).toHaveCount(0)

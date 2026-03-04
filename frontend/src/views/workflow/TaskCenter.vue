@@ -96,8 +96,8 @@ import { workflowNodeApi } from '@/api/workflow'
 const router = useRouter()
 const activeTab = ref('pending')
 const loading = ref(false)
-const pendingTasks = ref([])
-const processedTasks = ref([])
+const pendingTasks = ref<any[]>([])
+const processedTasks = ref<any[]>([])
 
 const fetchData = async () => {
     loading.value = true

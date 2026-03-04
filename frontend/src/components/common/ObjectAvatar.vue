@@ -97,7 +97,7 @@ const fallbackText = computed(() => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/variables.scss';
+@use '@/styles/variables.scss' as *;
 
 .object-avatar {
   display: inline-flex;

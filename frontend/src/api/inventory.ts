@@ -6,6 +6,7 @@
  */
 
 import request from '@/utils/request'
+import { toData, toPaginated } from '@/api/contract'
 import { BaseApiService } from '@/api/base'
 import type { PaginatedResponse } from '@/types/api'
 import type { InventoryTask, InventorySnapshot } from '@/types/inventory'
@@ -26,36 +27,28 @@ class InventoryTaskApiService extends BaseApiService<InventoryTask> {
    * List inventory tasks (delegates to dynamic API)
    */
   async list(params?: any): Promise<PaginatedResponse<InventoryTask>> {
-    const res = await inventoryTaskApi.list(params)
-    return {
-      items: res.data?.results || [],
-      total: res.data?.count || 0,
-      ...params
-    }
+    return toPaginated<InventoryTask>(await inventoryTaskApi.list(params))
   }
 
   /**
    * Get single task (delegates to dynamic API)
    */
   async get(id: string, params?: any): Promise<InventoryTask> {
-    const res = await inventoryTaskApi.get(id, params)
-    return res.data as InventoryTask
+    return toData<InventoryTask>(await inventoryTaskApi.get(id, params))
   }
 
   /**
    * Create task (delegates to dynamic API)
    */
   async create(data: Partial<InventoryTask>): Promise<InventoryTask> {
-    const res = await inventoryTaskApi.create(data)
-    return res.data as InventoryTask
+    return toData<InventoryTask>(await inventoryTaskApi.create(data))
   }
 
   /**
    * Update task (delegates to dynamic API)
    */
   async update(id: string, data: Partial<InventoryTask>): Promise<InventoryTask> {
-    const res = await inventoryTaskApi.update(id, data)
-    return res.data as InventoryTask
+    return toData<InventoryTask>(await inventoryTaskApi.update(id, data))
   }
 
   /**
@@ -186,19 +179,14 @@ export const snapshotApi = {
    * List snapshots (delegates to dynamic API)
    */
   async list(params?: any): Promise<PaginatedResponse<InventorySnapshot>> {
-    const res = await inventorySnapshotApi.list(params)
-    return {
-      items: res.data?.results || [],
-      total: res.data?.count || 0
-    }
+    return toPaginated<InventorySnapshot>(await inventorySnapshotApi.list(params))
   },
 
   /**
    * Get single snapshot (delegates to dynamic API)
    */
   async get(id: string): Promise<InventorySnapshot> {
-    const res = await inventorySnapshotApi.get(id)
-    return res.data as InventorySnapshot
+    return toData<InventorySnapshot>(await inventorySnapshotApi.get(id))
   }
 }
 

@@ -404,7 +404,9 @@
                 "publish": "Publish",
                 "addSection": "Add Section",
                 "editSection": "Edit Section",
-                "deleteSection": "Delete Section"
+                "deleteSection": "Delete Section",
+                "removeField": "Remove Field",
+                "resetSize": "Reset Size"
             },
             "status": {
                 "previewMode": "Preview Mode",
@@ -421,6 +423,8 @@
                 "dropToTab": "Drag fields into the current tab",
                 "dropToCollapse": "Drag fields into the current collapse item",
                 "dropToSection": "Drag fields into the current section",
+                "dragToResize": "Drag to resize field size",
+                "sidebarHeightOnly": "Sidebar field supports height resize only",
                 "singleLayoutModel": "Single layout model: configure edit layout here; detail reuses it. List pages are field-driven (`show_in_list` + `sort_order`)."
             },
             "panel": {
@@ -578,7 +582,11 @@
             "confirmDelete": "Are you sure to delete this field?",
             "noObjectCode": "No business object specified",
             "noData": "No field data retrieved",
-            "loadFailed": "Failed to load field definitions"
+            "loadFailed": "Failed to load field definitions",
+            "systemFieldReadOnly": "System fields cannot be edited or deleted.",
+            "hardcodedReadonly": "Hardcoded object fields are read-only.",
+            "missingObjectMeta": "Missing business object metadata. Please refresh and try again.",
+            "readOnlySubmitBlocked": "This field is read-only and cannot be modified."
         }
     },
     "businessRule": {

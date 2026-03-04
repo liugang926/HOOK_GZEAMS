@@ -171,6 +171,106 @@ describe('layoutValidation', () => {
       expect(result.errors.some(e => e.message.includes('span'))).toBe(true)
     })
 
+    it('should accept valid minHeight value', () => {
+      const config = {
+        sections: [
+          {
+            id: 'section-1',
+            type: 'section',
+            fields: [
+              {
+                id: 'field-1',
+                fieldCode: 'name',
+                label: 'Name',
+                span: 12,
+                minHeight: 136
+              }
+            ]
+          }
+        ]
+      }
+
+      const result = validateLayoutConfig(config, 'form')
+      expect(result.valid).toBe(true)
+      expect(result.errors).toHaveLength(0)
+    })
+
+    it('should accept valid minHeight from componentProps', () => {
+      const config = {
+        sections: [
+          {
+            id: 'section-1',
+            type: 'section',
+            fields: [
+              {
+                id: 'field-1',
+                fieldCode: 'name',
+                label: 'Name',
+                span: 12,
+                componentProps: {
+                  minHeight: 152
+                }
+              }
+            ]
+          }
+        ]
+      }
+
+      const result = validateLayoutConfig(config, 'form')
+      expect(result.valid).toBe(true)
+      expect(result.errors).toHaveLength(0)
+    })
+
+    it('should reject invalid minHeight value', () => {
+      const config = {
+        sections: [
+          {
+            id: 'section-1',
+            type: 'section',
+            fields: [
+              {
+                id: 'field-1',
+                fieldCode: 'name',
+                label: 'Name',
+                span: 12,
+                minHeight: 20
+              }
+            ]
+          }
+        ]
+      }
+
+      const result = validateLayoutConfig(config, 'form')
+      expect(result.valid).toBe(false)
+      expect(result.errors.some(e => e.path.endsWith('.minHeight'))).toBe(true)
+    })
+
+    it('should reject invalid minHeight from componentProps', () => {
+      const config = {
+        sections: [
+          {
+            id: 'section-1',
+            type: 'section',
+            fields: [
+              {
+                id: 'field-1',
+                fieldCode: 'name',
+                label: 'Name',
+                span: 12,
+                component_props: {
+                  min_height: 16
+                }
+              }
+            ]
+          }
+        ]
+      }
+
+      const result = validateLayoutConfig(config, 'form')
+      expect(result.valid).toBe(false)
+      expect(result.errors.some(e => e.path.endsWith('.minHeight'))).toBe(true)
+    })
+
     it('should validate a correct tab section', () => {
       const config = {
         sections: [

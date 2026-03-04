@@ -7,8 +7,7 @@
 
 import { ElMessage, ElMessageBox } from 'element-plus'
 import router from '@/router'
-import type { ErrorCode } from '@/types/error'
-import { ErrorCodeMessages } from '@/types/error'
+import { ErrorCode, ErrorCodeMessages } from '@/types/error'
 
 /**
  * Handle API errors with standardized behavior
@@ -22,12 +21,14 @@ export function handleApiError(error: any): Promise<never> {
   const silent = error?.config?.silent === true
 
   // Extract error information
-  let errorCode: ErrorCode = 'SERVER_ERROR'
+  let errorCode: ErrorCode = ErrorCode.SERVER_ERROR
   let message = '服务器错误，请稍后再试'
   let details: Record<string, string[]> | undefined
 
   if (data?.error) {
-    errorCode = data.error.code
+    if (Object.values(ErrorCode).includes(data.error.code as ErrorCode)) {
+      errorCode = data.error.code as ErrorCode
+    }
     message = data.error.message || ErrorCodeMessages[errorCode] || message
     details = data.error.details
   } else if (status) {
@@ -43,7 +44,9 @@ export function handleApiError(error: any): Promise<never> {
     }
     message = statusMessages[status] || message
   } else if (error.code) {
-    errorCode = error.code
+    if (Object.values(ErrorCode).includes(error.code as ErrorCode)) {
+      errorCode = error.code as ErrorCode
+    }
     message = error.message || ErrorCodeMessages[errorCode] || message
     details = error.details
   }

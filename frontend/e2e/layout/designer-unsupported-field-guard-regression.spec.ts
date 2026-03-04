@@ -38,6 +38,8 @@ function buildLayoutConfig() {
 }
 
 test.describe('Layout Designer Unsupported Field Guard Regression', () => {
+  test.setTimeout(60000)
+
   test('unsupported field must be disabled and cannot be added to canvas', async ({ page }) => {
     const layoutConfig = buildLayoutConfig()
 

@@ -272,7 +272,7 @@ const formatDefaultValue = (val: any): string => {
   return String(val)
 }
 
-const getStatusLabel = (val: any) => {
+const getStatusLabel = (val: any): string => {
   if (Array.isArray(val)) return val.map(getStatusLabel).join(', ')
   const opt = options.value.find(o => o.value === val)
   return opt ? opt.label : formatDefaultValue(val)

@@ -10,6 +10,7 @@ export interface LayoutRuntimeFieldInput {
   readonly?: boolean
   visible?: boolean
   span?: number
+  minHeight?: number
   placeholder?: string
   defaultValue?: any
   helpText?: string
@@ -23,6 +24,18 @@ export interface LayoutRuntimeFieldInput {
 export interface CatalogRuntimeFieldInput {
   code?: string
   [key: string]: any
+}
+
+const resolveMinHeight = (field: LayoutRuntimeFieldInput | null | undefined): number | undefined => {
+  if (!field) return undefined
+  const raw = (field?.componentProps as any)?.minHeight ??
+    (field?.componentProps as any)?.min_height ??
+    (field as any)?.component_props?.minHeight ??
+    (field as any)?.component_props?.min_height ??
+    field?.minHeight ??
+    (field as any)?.min_height
+  const normalized = Number(raw)
+  return Number.isFinite(normalized) && normalized > 0 ? Math.round(normalized) : undefined
 }
 
 /**
@@ -42,6 +55,11 @@ export function toRuntimeFieldFromLayout(
     ...(layoutField?.componentProps || {}),
     ...(layoutField as any)?.component_props || {}
   }
+  const minHeight = resolveMinHeight(layoutField)
+  if (minHeight !== undefined) {
+    (mergedComponentProps as any).minHeight = minHeight
+    delete (mergedComponentProps as any).min_height
+  }
 
   const override = {
     code,
@@ -52,6 +70,7 @@ export function toRuntimeFieldFromLayout(
     readonly: layoutField?.readonly,
     hidden: layoutField?.visible === false,
     span: layoutField?.span,
+    minHeight,
     placeholder: layoutField?.placeholder,
     defaultValue: layoutField?.defaultValue,
     helpText: layoutField?.helpText,
@@ -73,6 +92,7 @@ export function toRuntimeFieldFromLayout(
     readonly: layoutField?.readonly,
     hidden: layoutField?.visible === false,
     span: layoutField?.span,
+    minHeight,
     placeholder: layoutField?.placeholder,
     defaultValue: layoutField?.defaultValue,
     helpText: layoutField?.helpText,

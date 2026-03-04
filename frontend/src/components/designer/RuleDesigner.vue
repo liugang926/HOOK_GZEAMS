@@ -281,7 +281,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { FormInstance } from 'element-plus'
 import {
   ArrowLeft,
   Check,
@@ -333,7 +332,7 @@ interface RuleFormData {
   action: Record<string, unknown>
 }
 
-const formRef = ref<FormInstance | null>(null)
+const formRef = ref<any>(null)
 const saving = ref(false)
 const testDialogVisible = ref(false)
 const testData = ref('{}')

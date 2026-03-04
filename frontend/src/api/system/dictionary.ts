@@ -13,10 +13,13 @@ export interface DictionaryType {
     code: string
     name: string
     nameEn?: string
+    name_en?: string
     description?: string
     isSystem: boolean
     isActive: boolean
+    is_active?: boolean
     sortOrder: number
+    sort_order?: number
     itemCount?: number
 }
 
@@ -27,16 +30,21 @@ export interface DictionaryType {
 export interface DictionaryItem {
     id: string
     dictionaryType: string
+    dictionary_type?: string
     code: string
     name: string
     nameEn?: string
+    name_en?: string
     description?: string
     color?: string
     icon?: string
     extraData?: Record<string, any>
     isDefault: boolean
+    is_default?: boolean
     isActive: boolean
+    is_active?: boolean
     sortOrder: number
+    sort_order?: number
 }
 
 // Dictionary Type API

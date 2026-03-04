@@ -192,7 +192,7 @@ watch(() => props.tabs, (newTabs) => {
     const visible = newTabs.filter(tab => tab.visible !== false)
     const activeExists = visible.some(tab => (tab.id || tab.name) === props.modelValue)
     if (!activeExists && visible.length > 0) {
-      emit('update:modelValue', visible[0].id || visible[0].name)
+      emit('update:modelValue', String(visible[0].id || visible[0].name || ''))
     }
   }
 }, { deep: true, immediate: true })

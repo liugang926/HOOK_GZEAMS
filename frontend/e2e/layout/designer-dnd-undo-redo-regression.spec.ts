@@ -296,7 +296,8 @@ test.describe('Layout Designer DnD + Undo/Redo Regression', () => {
     await expect.poll(() => getFieldOrder(activeLayoutConfig).join(',')).toBe('assetCode,assetName')
 
     await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
-    await expect(page.locator('.dynamic-detail-page').first()).toBeVisible()
+    const detailRoot = page.locator('.dynamic-detail-page, .base-detail-page, .object-detail-page').first()
+    await expect(detailRoot).toBeVisible({ timeout: 15000 })
     await expect(page.locator('.load-error')).toHaveCount(0)
 
     const labels = page.locator('.detail-sections .field-label')

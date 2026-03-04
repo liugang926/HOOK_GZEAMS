@@ -7,6 +7,7 @@ import BaseListPage from '@/components/common/BaseListPage.vue'
 import DepreciationGenerator from './components/DepreciationGenerator.vue'
 import { depreciationApi } from '@/api/depreciation'
 import { formatMoney } from '@/utils/numberFormat'
+import type { TableColumn } from '@/types/common'
 
 const fetchRecords = async (params: any) => {
   return depreciationApi.listRecords(params)
@@ -21,7 +22,7 @@ const searchFields = computed(() => [
   { prop: 'assetId', label: t('common.labels.assetForSearch') || 'Asset', type: 'input', placeholder: t('common.placeholders.input') }
 ])
 
-const columns = computed(() => [
+const columns = computed<TableColumn[]>(() => [
   { prop: 'period', label: t('finance.columns.period'), width: '120' },
   { prop: 'assetCode', label: t('finance.columns.assetId'), width: '150' },
   { prop: 'assetName', label: t('common.columns.name') || 'Asset Name', minWidth: '180' },

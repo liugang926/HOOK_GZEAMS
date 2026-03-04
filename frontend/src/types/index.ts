@@ -25,7 +25,20 @@ export * from './businessObject'
 // ========================================
 // Metadata Types (NEW)
 // ========================================
-export * from './metadata'
+export {
+  type FieldMetadata,
+  type LayoutFieldConfig,
+  type FieldOverride,
+  type SectionConfig,
+  type DesignerTabConfig,
+  type ContainerConfig,
+  type ContainerType,
+  type PreviewField,
+  type ListColumn,
+  type ValidationResult,
+  type ValidationError,
+  ERROR_CODES
+} from './metadata'
 
 // ========================================
 // Runtime Rendering Types
@@ -48,5 +61,15 @@ export * from './finance'
 export * from './inventory'
 export * from './softwareLicenses'
 export * from './workflow'
-export * from './depreciation'
+export {
+  type DepreciationRecord,
+  type DepreciationCalculation,
+  type DepreciationSummary,
+  type DepreciationReport,
+  type CategoryDepreciation,
+  type AssetDepreciation,
+  type DepreciationConfig,
+  type CalculationTaskStatus,
+  DepreciationStatus
+} from './depreciation'
 export * from './models'

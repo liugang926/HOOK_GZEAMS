@@ -107,7 +107,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { workflowNodeApi } from '@/api/workflow'
@@ -161,7 +161,7 @@ const handleTabClick = () => {
 const handleApprove = async (taskId: string, comment: string) => {
   try {
     loading.value = true
-    await workflowNodeApi.approveNode(taskId, taskId, { comment })
+    await workflowNodeApi.approveNode(taskId, taskId, { action: 'approve', comment })
     ElMessage.success(t('workflow.messages.approveSuccess'))
     await loadTasks()
   } catch (e: any) {

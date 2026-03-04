@@ -44,7 +44,6 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import CommonDynamicDetailPage from '@/components/common/DynamicDetailPage.vue'
 import { createObjectClient, type ObjectMetadata } from '@/api/dynamic'
 import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'

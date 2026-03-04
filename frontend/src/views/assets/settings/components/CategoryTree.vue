@@ -69,7 +69,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
-import { Search, Plus, Refresh, Delete } from '@element-plus/icons-vue'
+import { Plus, Refresh, Delete } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { categoryApi } from '@/api/assets'
@@ -81,7 +81,7 @@ const emit = defineEmits(['select', 'add-root', 'add-child', 'delete'])
 const loading = ref(false)
 const filterText = ref('')
 const treeRef = ref()
-const treeData = ref([])
+const treeData = ref<any[]>([])
 const currentNodeId = ref<string | null>(null)
 
 const defaultProps = {

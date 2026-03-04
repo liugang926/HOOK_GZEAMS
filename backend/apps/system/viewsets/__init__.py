@@ -228,6 +228,8 @@ class BusinessObjectViewSet(BaseModelViewSetWithBatch):
 
         Query parameters:
             object_code: Business object code (required)
+            context: form | detail | list (optional, default=form)
+            include_relations: true | false (optional, default=false)
 
         Response format:
         {
@@ -253,8 +255,23 @@ class BusinessObjectViewSet(BaseModelViewSetWithBatch):
                 }
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        context = str(request.query_params.get('context', 'form')).lower()
+        include_relations = str(request.query_params.get('include_relations', 'false')).lower() == 'true'
+        if context not in {'form', 'detail', 'list'}:
+            return Response({
+                'success': False,
+                'error': {
+                    'code': 'VALIDATION_ERROR',
+                    'message': 'context must be one of: form, detail, list'
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         service = BusinessObjectService()
-        data = service.get_object_fields(object_code)
+        data = service.get_object_fields(
+            object_code,
+            context=context,
+            include_relations=include_relations,
+        )
 
         if 'error' in data:
             return Response({
@@ -530,6 +547,21 @@ class BusinessObjectViewSet(BaseModelViewSetWithBatch):
 class FieldDefinitionViewSet(BaseModelViewSetWithBatch):
     """Field Definition ViewSet."""
 
+    IMMUTABLE_SYSTEM_FIELD_CODES = {
+        'id',
+        'created_at',
+        'created_by',
+        'updated_at',
+        'updated_by',
+        'deleted_at',
+        'deleted_by',
+        'is_deleted',
+        'version',
+        'organization',
+        'organization_id',
+        'tenant_id',
+    }
+
     queryset = FieldDefinition.objects.filter(is_deleted=False)
     serializer_class = FieldDefinitionSerializer
     filterset_class = FieldDefinitionFilter
@@ -542,6 +574,89 @@ class FieldDefinitionViewSet(BaseModelViewSetWithBatch):
         if self.action in ['retrieve', 'list']:
             return FieldDefinitionDetailSerializer
         return FieldDefinitionSerializer
+
+    @classmethod
+    def _is_builtin_system_code(cls, code: str) -> bool:
+        normalized = str(code or '').strip().lower()
+        if not normalized:
+            return False
+        if normalized in cls.IMMUTABLE_SYSTEM_FIELD_CODES:
+            return True
+        return normalized in {
+            'createdat',
+            'createdby',
+            'createdbyid',
+            'updatedat',
+            'updatedby',
+            'updatedbyid',
+            'deletedat',
+            'deletedby',
+            'deletedbyid',
+        }
+
+    @classmethod
+    def _is_immutable_system_field(cls, instance: FieldDefinition) -> bool:
+        return bool(getattr(instance, 'is_system', False) or cls._is_builtin_system_code(getattr(instance, 'code', '')))
+
+    @staticmethod
+    def _payload_requests_system_flag(request) -> bool:
+        raw = request.data.get('is_system')
+        if raw is None:
+            raw = request.data.get('isSystem')
+        if isinstance(raw, bool):
+            return raw
+        if isinstance(raw, str):
+            return raw.strip().lower() in {'true', '1', 'yes', 'y', 'on'}
+        if isinstance(raw, (int, float)):
+            return bool(raw)
+        return False
+
+    @staticmethod
+    def _readonly_system_field_error():
+        return BaseResponse.error(
+            code='READONLY_SYSTEM_FIELD',
+            message='System fields cannot be edited or deleted.',
+            http_status=status.HTTP_403_FORBIDDEN,
+        )
+
+    def create(self, request, *args, **kwargs):
+        if self._payload_requests_system_flag(request):
+            return BaseResponse.error(
+                code='INVALID_OPERATION',
+                message='Creating system fields is not allowed.',
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if self._is_immutable_system_field(instance):
+            return self._readonly_system_field_error()
+        if self._payload_requests_system_flag(request):
+            return BaseResponse.error(
+                code='INVALID_OPERATION',
+                message='Escalating a field to system type is not allowed.',
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if self._is_immutable_system_field(instance):
+            return self._readonly_system_field_error()
+        if self._payload_requests_system_flag(request):
+            return BaseResponse.error(
+                code='INVALID_OPERATION',
+                message='Escalating a field to system type is not allowed.',
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if self._is_immutable_system_field(instance):
+            return self._readonly_system_field_error()
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=['get'], url_path='by-object/(?P<object_code>[^/]+)')
     def by_object(self, request, object_code=None):

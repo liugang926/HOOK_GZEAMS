@@ -4,8 +4,8 @@
     <el-upload
       ref="uploadRef"
       v-model:file-list="uploadFileList"
-      :action="uploadUrl"
-      :headers="uploadHeaders"
+      action="#"
+      :http-request="httpRequest"
       :auto-upload="autoUpload"
       :disabled="disabled || uploading"
       :on-change="handleChange"
@@ -80,7 +80,7 @@
           >
             <el-progress
               type="circle"
-              :percentage="parseInt(file.percentage || '0')"
+              :percentage="Number(file.percentage || 0)"
               :width="50"
             />
           </div>
@@ -134,7 +134,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import type { UploadInstance, UploadProps, UploadUserFile, UploadRawFile } from 'element-plus'
+import type { UploadInstance, UploadProps, UploadUserFile, UploadRequestOptions } from 'element-plus'
 import {
   Upload,
   UploadFilled,
@@ -150,10 +150,10 @@ interface FileItem {
   thumbnailUrl?: string
 }
 
-interface UploadOptions {
-  objectCode?: string
-  instanceId?: string
-  fieldCode?: string
+interface UploadSuccessResponse {
+  success?: boolean
+  data?: FileItem
+  message?: string
 }
 
 const props = withDefaults(
@@ -199,19 +199,8 @@ const uploading = ref(false)
 const uploadProgress = ref(0)
 const errorMessage = ref('')
 const loadedFileMetadata = ref<Map<string, FileItem>>(new Map())
+const activeUploadCount = ref(0)
 
-// Upload URL (using the real endpoint)
-const uploadUrl = computed(() => {
-  return `${import.meta.env.VITE_API_BASE_URL || '/api'}/system/system-files/upload/`
-})
-
-// Upload headers with auth token
-const uploadHeaders = computed(() => {
-  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token')
-  return {
-    'Authorization': token ? `Bearer ${token}` : ''
-  }
-})
 const resolvedButtonText = computed(() => props.buttonText || t('form.fields.uploadFile'))
 
 // Overall upload progress
@@ -234,14 +223,14 @@ const uploadStatusText = computed(() => {
 // Check if there are pending files
 const hasPendingFiles = computed(() => {
   return uploadFileList.value.some(
-    f => f.status === 'ready' || f.status === 'uploading'
+    (f: UploadUserFile) => f.status === 'ready' || f.status === 'uploading'
   )
 })
 
 // Count of pending files
 const pendingFileCount = computed(() => {
   return uploadFileList.value.filter(
-    f => f.status === 'ready'
+    (f: UploadUserFile) => f.status === 'ready'
   ).length
 })
 
@@ -249,42 +238,39 @@ const pendingFileCount = computed(() => {
 watch(
   () => props.modelValue,
   async (val) => {
-    if (val && Array.isArray(val) && val.length > 0) {
-      // Fetch file metadata if we only have IDs
-      const ids = val.filter((v: any) => typeof v === 'string' || typeof v === 'object' && v.id)
-      if (ids.length > 0) {
-        try {
-          const metadata = await systemFileApi.getMetadata(ids as string[])
-          // Store metadata
-          metadata.forEach(file => {
-            loadedFileMetadata.value.set(file.id, file)
-          })
-          // Update file list for display
-          syncFileListFromMetadata()
-        } catch (error) {
-          console.error('Failed to load file metadata:', error)
-        }
+    const ids = extractModelIds(Array.isArray(val) ? val : [])
+    if (ids.length > 0) {
+      try {
+        const metadata = await systemFileApi.getMetadata(ids)
+        // Store metadata
+        metadata.forEach(file => {
+          loadedFileMetadata.value.set(file.id, file)
+        })
+        // Update file list for display
+        syncFileListFromMetadata(ids)
+      } catch (error) {
+        console.error('Failed to load file metadata:', error)
       }
+      return
     }
+
+    uploadFileList.value = []
   },
   { immediate: true }
 )
 
 // Sync file list from loaded metadata
-function syncFileListFromMetadata() {
-  const currentValue = props.modelValue || []
-  uploadFileList.value = currentValue
-    .filter((v: any) => typeof v === 'string' || v?.id)
-    .map((v: any) => {
-      const id = typeof v === 'string' ? v : v.id
+function syncFileListFromMetadata(ids: string[]) {
+  uploadFileList.value = ids
+    .map((id: string, index: number) => {
       const meta = loadedFileMetadata.value.get(id)
       if (meta) {
         return {
           name: meta.fileName,
           url: meta.url,
           status: 'success',
-          uid: id,
-          response: { data: meta }
+          uid: index + 1,
+          response: { success: true, data: meta }
         } as UploadUserFile
       }
       return null
@@ -299,9 +285,67 @@ function isImageUrl(file: UploadUserFile): boolean {
   return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(ext)
 }
 
+function resolveFieldCode(): string {
+  if (props.fieldCode) return props.fieldCode
+  const fromField = props.field?.code || props.field?.fieldCode
+  return typeof fromField === 'string' ? fromField : ''
+}
+
+function extractFileId(raw: unknown): string | null {
+  if (!raw) return null
+  if (typeof raw === 'string') return raw
+  if (typeof raw !== 'object') return null
+  const source = raw as Record<string, unknown>
+  const candidate = source.id || source.fileId || source.value
+  return typeof candidate === 'string' && candidate ? candidate : null
+}
+
+function extractModelIds(values: unknown[]): string[] {
+  const seen = new Set<string>()
+  const ids: string[] = []
+  values.forEach((item) => {
+    const id = extractFileId(item)
+    if (!id || seen.has(id)) return
+    seen.add(id)
+    ids.push(id)
+  })
+  return ids
+}
+
+const httpRequest = async (options: UploadRequestOptions) => {
+  const rawFile = options.file as File
+  activeUploadCount.value += 1
+  uploading.value = true
+  errorMessage.value = ''
+
+  try {
+    const fileData = await systemFileApi.upload(rawFile, {
+      objectCode: props.objectCode,
+      instanceId: props.instanceId,
+      fieldCode: resolveFieldCode(),
+      onProgress: (percent: number) => {
+        uploadProgress.value = Math.round(percent)
+        options.onProgress?.({ percent } as any)
+      }
+    })
+
+    loadedFileMetadata.value.set(fileData.id, fileData as unknown as FileItem)
+    options.onSuccess?.({ success: true, data: fileData } as UploadSuccessResponse)
+  } catch (error: any) {
+    const uploadError = new Error(error?.message || t('common.messages.operationFailed')) as any
+    uploadError.status = 0
+    uploadError.method = 'post'
+    uploadError.url = '/system/system-files/upload/'
+    options.onError?.(uploadError)
+  } finally {
+    activeUploadCount.value = Math.max(0, activeUploadCount.value - 1)
+    uploading.value = activeUploadCount.value > 0
+  }
+}
+
 // Before upload validation
 const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
-  const validation = validateFile(rawFile, {
+  const validation = validateFile(rawFile as File, {
     maxSize: props.maxSize,
     allowedTypes: props.allowedTypes
   })
@@ -317,7 +361,7 @@ const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
 }
 
 // Handle file selection
-const handleChange: UploadProps['onChange'] = (uploadFile, uploadFiles) => {
+const handleChange: UploadProps['onChange'] = (_uploadFile, uploadFiles) => {
   uploadFileList.value = uploadFiles
 
   // Auto-upload enabled - files will upload automatically
@@ -333,26 +377,30 @@ const handleProgress: UploadProps['onProgress'] = (evt) => {
 
 // Handle upload success
 const handleSuccess: UploadProps['onSuccess'] = (response, file) => {
-  if (response.success && response.data) {
-    const fileData: FileItem = response.data
+  const payload = response as UploadSuccessResponse
+  if (payload.success && payload.data) {
+    const fileData: FileItem = payload.data
     loadedFileMetadata.value.set(fileData.id, fileData)
     updateModelValue()
+    errorMessage.value = ''
   } else {
     file.status = 'fail'
-    errorMessage.value = response.message || t('common.messages.operationFailed')
+    errorMessage.value = payload.message || t('common.messages.operationFailed')
   }
 }
 
 // Handle upload error
 const handleError: UploadProps['onError'] = (error, file) => {
   file.status = 'fail'
-  errorMessage.value = `${t('common.messages.operationFailed')}: ${error.message || t('common.messages.unknownError')}`
+  const normalized = error as Error
+  errorMessage.value = `${t('common.messages.operationFailed')}: ${normalized.message || t('common.messages.unknownError')}`
   ElMessage.error(errorMessage.value)
 }
 
 // Handle file removal
 const handleRemove: UploadProps['onRemove'] = (file) => {
-  const index = uploadFileList.value.indexOf(file)
+  const targetUid = file.uid
+  const index = uploadFileList.value.findIndex((f: UploadUserFile) => f.uid === targetUid)
   if (index > -1) {
     uploadFileList.value.splice(index, 1)
     updateModelValue()
@@ -369,9 +417,12 @@ function startUpload() {
   if (!uploadRef.value) return
 
   // Validate all files before upload
-  const readyFiles = uploadFileList.value.filter(f => f.status === 'ready')
+  const readyFiles = uploadFileList.value.filter((f: UploadUserFile) => f.status === 'ready')
+  const rawFiles = readyFiles
+    .map((f: UploadUserFile) => f.raw)
+    .filter((raw): raw is NonNullable<typeof raw> => Boolean(raw))
   const validation = validateFiles(
-    readyFiles.map(f => f.raw as File),
+    rawFiles as unknown as File[],
     {
       maxCount: props.maxCount,
       maxSize: props.maxSize,
@@ -385,7 +436,6 @@ function startUpload() {
     return
   }
 
-  uploading.value = true
   uploadProgress.value = 0
   errorMessage.value = ''
 
@@ -401,8 +451,13 @@ function clearFiles() {
 // Update model value with current file IDs
 function updateModelValue() {
   const fileIds = uploadFileList.value
-    .filter(f => f.status === 'success' && f.response?.data?.id)
-    .map(f => f.response.data.id)
+    .map((f: UploadUserFile) => {
+      const response = f.response as { data?: { id?: string } } | undefined
+      if (f.status === 'success' && response?.data?.id) return response.data.id
+      const fallback = extractFileId((f as unknown as { response?: unknown }).response)
+      return fallback || null
+    })
+    .filter((id): id is string => typeof id === 'string' && id.length > 0)
 
   const files = fileIds.map(id => loadedFileMetadata.value.get(id)).filter(Boolean) as FileItem[]
 

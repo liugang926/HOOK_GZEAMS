@@ -1,6 +1,4 @@
 ﻿import { ref, computed, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import type { ColumnItem } from './useColumnConfig'
 
 /**
  * Table configuration types
@@ -10,7 +8,7 @@ export interface TableConfig {
   page: number
   pageSize: number
   sortField?: string
-  sortOrder?: 'asc' | 'desc' | null
+  sortOrder: 'asc' | 'desc' | null
   filters: Record<string, any>
   selectedRows: any[]
   expandedRows: any[]
@@ -262,7 +260,7 @@ export function useTableConfig(tableKey: string, options: TableOptions = {}) {
   /**
    * Handle row expansion
    */
-  const handleExpandChange = (row: any, expanded: any[]) => {
+  const handleExpandChange = (_row: any, expanded: any[]) => {
     expandedRows.value = expanded
   }
 

@@ -143,7 +143,7 @@
           <el-switch
             :model-value="row.is_active"
             size="small"
-            @change="(val) => handleToggleActive(row, val)"
+            @change="(val: boolean) => handleToggleActive(row, val)"
           />
         </template>
       </el-table-column>

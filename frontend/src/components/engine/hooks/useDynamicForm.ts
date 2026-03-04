@@ -9,7 +9,7 @@
  */
 
 import { ref, computed } from 'vue'
-import type { FieldDefinition } from '@/types'
+import type { FieldDefinition, FieldType } from '@/types'
 import type { RuntimeLayoutConfig } from '@/types/runtime'
 import { normalizeLayoutConfig } from '@/adapters/layoutNormalizer'
 import { snakeToCamel } from '@/utils/case'
@@ -87,6 +87,34 @@ export function useDynamicForm(
     return 'edit'
   }
 
+  const FIELD_TYPES: FieldType[] = [
+    'text', 'textarea', 'richtext', 'number', 'currency', 'percent',
+    'date', 'datetime', 'time', 'boolean', 'switch', 'select', 'multi_select',
+    'radio', 'checkbox', 'reference', 'user', 'department', 'file', 'image',
+    'attachment', 'qr_code', 'barcode', 'formula', 'subtable', 'location', 'organization'
+  ]
+
+  const toFieldType = (value: unknown): FieldType => {
+    const normalized = normalizeFieldType(String(value || 'text'))
+    return FIELD_TYPES.includes(normalized as FieldType) ? (normalized as FieldType) : 'text'
+  }
+
+  const toBoolean = (value: unknown, fallback = false): boolean => {
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'number') return value !== 0
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase()
+      if (normalized === 'true' || normalized === '1') return true
+      if (normalized === 'false' || normalized === '0') return false
+    }
+    return fallback
+  }
+
+  const toNumber = (value: unknown, fallback: number): number => {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : fallback
+  }
+
   const renderSchema = computed<RenderSchema>(() => {
     return buildRenderSchema({
       layoutConfig: layoutConfigState.value,
@@ -132,7 +160,7 @@ export function useDynamicForm(
       }
 
       // Type-specific validations
-      if (field.fieldType === 'email') {
+      if (String(field.fieldType) === 'email') {
         fieldRules.push({
           type: 'email',
           message: 'Please enter a valid email address',
@@ -269,24 +297,25 @@ export function useDynamicForm(
       // Handle displayName (hardcoded) and name/label (custom)
       name: String(apiField.displayName || apiField.name || apiField.label || ''),
       // fieldType is consistent across both
-      fieldType: normalizeFieldType(String(apiField.fieldType || apiField.type || 'text')),
+      fieldType: toFieldType(apiField.fieldType ?? apiField.type),
       // Handle camelCase and snake_case variants
-      isRequired: apiField.isRequired ?? apiField.is_required ?? apiField.required ?? false,
-      isReadonly: apiField.isReadonly ?? apiField.is_readonly ?? apiField.readOnly ?? false,
-      isHidden: apiField.isHidden ?? apiField.is_hidden ?? false,
-      isVisible: apiField.isVisible !== undefined ? apiField.isVisible :
-                (apiField.show_in_form !== undefined ? apiField.show_in_form !== false : true),
-      sortOrder: apiField.sortOrder ?? apiField.sort_order ?? 0,
+      isRequired: toBoolean(apiField.isRequired ?? apiField.is_required ?? apiField.required, false),
+      isReadonly: toBoolean(apiField.isReadonly ?? apiField.is_readonly ?? apiField.readOnly, false),
+      isHidden: toBoolean(apiField.isHidden ?? apiField.is_hidden, false),
+      isVisible: apiField.isVisible !== undefined
+        ? toBoolean(apiField.isVisible, true)
+        : (apiField.show_in_form !== undefined ? toBoolean(apiField.show_in_form, true) : true),
+      sortOrder: toNumber(apiField.sortOrder ?? apiField.sort_order, 0),
       defaultValue: apiField.defaultValue ?? apiField.default_value,
-      options: Array.isArray(apiField.options) ? apiField.options : [],
+      options: Array.isArray(apiField.options) ? (apiField.options as any[]) : [],
       componentProps,
-      description: apiField.description,
+      description: typeof apiField.description === 'string' ? apiField.description : undefined,
       placeholder: typeof apiField.placeholder === 'string' ? apiField.placeholder : undefined,
-      span:
-        Number(apiField.span ?? componentProps.span ?? 12) || 12,
-      referenceObject: String(
-        apiField.referenceObject || apiField.reference_model_path || apiField.referenceModelPath || ''
-      ) || undefined
+      span: toNumber(apiField.span ?? componentProps.span, 12),
+      referenceObject: (() => {
+        const value = apiField.referenceObject || apiField.reference_model_path || apiField.referenceModelPath
+        return value ? String(value) : undefined
+      })()
     }
   }
 
@@ -370,7 +399,8 @@ export function useDynamicForm(
     }
 
     try {
-      return await formRef.value.validate()
+      const result = await formRef.value.validate?.()
+      return result === undefined ? true : result
     } catch (err) {
       console.warn('useDynamicForm: validation failed', err)
       return false
@@ -386,7 +416,7 @@ export function useDynamicForm(
       return
     }
 
-    formRef.value.resetFields()
+    formRef.value.resetFields?.()
     initializeFormData(false)
   }
 
@@ -395,7 +425,7 @@ export function useDynamicForm(
    */
   function clearValidation(): void {
     if (!formRef.value) return
-    formRef.value.clearValidate()
+    formRef.value.clearValidate?.()
   }
 
   // ============================================================================

@@ -9,6 +9,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
+from djangorestframework_camel_case.parser import CamelCaseJSONParser
 from django.http import FileResponse, Http404, HttpResponse
 from django.conf import settings
 import os
@@ -47,7 +48,8 @@ class SystemFileViewSet(BaseModelViewSetWithBatch):
 
     queryset = SystemFile.objects.filter(is_deleted=False)
     serializer_class = SystemFileSerializer
-    parsers = [MultiPartParser, FormParser]  # Support file uploads
+    # Keep JSON actions (batch_delete/add_watermark/...) and multipart upload on one ViewSet.
+    parser_classes = [CamelCaseJSONParser, MultiPartParser, FormParser]
     search_fields = ['file_name', 'description']
     ordering_fields = ['file_name', 'file_size', 'created_at']
     ordering = ['-created_at']

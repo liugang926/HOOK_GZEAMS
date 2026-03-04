@@ -17,11 +17,11 @@ export interface ValidationResult {
 
 // Valid section types
 const VALID_SECTION_TYPES = ['section', 'tab', 'divider', 'collapse', 'column'] as const
-type SectionType = typeof VALID_SECTION_TYPES[number]
 
 // Valid span values (1-24, divisible by common grid systems)
 const VALID_SPANS = [1, 2, 3, 4, 6, 8, 12, 24] as const
-type SpanValue = typeof VALID_SPANS[number]
+const FIELD_MIN_HEIGHT_MIN = 44
+const FIELD_MIN_HEIGHT_MAX = 720
 
 // Layout types
 export type LayoutType = 'form' | 'list' | 'detail' | 'search'
@@ -333,6 +333,22 @@ function validateField(field: any, path: string, errors: LayoutValidationError[]
       errors.push({
         path: `${path}.span`,
         message: `span must be an integer between 1-24, preferably one of ${VALID_SPANS.join(', ')}`
+      })
+    }
+  }
+
+  const componentProps = {
+    ...(field.component_props || {}),
+    ...(field.componentProps || {})
+  }
+  const rawMinHeight = field.minHeight ?? field.min_height ?? componentProps.minHeight ?? componentProps.min_height
+  if (rawMinHeight !== undefined && rawMinHeight !== null && rawMinHeight !== '') {
+    const minHeight = Number(rawMinHeight)
+    const isInteger = Number.isInteger(minHeight)
+    if (!Number.isFinite(minHeight) || !isInteger || minHeight < FIELD_MIN_HEIGHT_MIN || minHeight > FIELD_MIN_HEIGHT_MAX) {
+      errors.push({
+        path: `${path}.minHeight`,
+        message: `minHeight must be an integer between ${FIELD_MIN_HEIGHT_MIN}-${FIELD_MIN_HEIGHT_MAX}`
       })
     }
   }

@@ -138,6 +138,8 @@ class BusinessObjectViewSet(BaseModelViewSetWithBatch):
 
         Query parameters:
             object_code: Business object code (required)
+            context: form | detail | list (optional, default=form)
+            include_relations: true | false (optional, default=false)
 
         Response format:
         {
@@ -161,8 +163,23 @@ class BusinessObjectViewSet(BaseModelViewSetWithBatch):
                 }
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        context = str(request.query_params.get('context', 'form')).lower()
+        include_relations = str(request.query_params.get('include_relations', 'false')).lower() == 'true'
+        if context not in {'form', 'detail', 'list'}:
+            return Response({
+                'success': False,
+                'error': {
+                    'code': 'VALIDATION_ERROR',
+                    'message': 'context must be one of: form, detail, list'
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         service = BusinessObjectService()
-        data = service.get_object_fields(object_code)
+        data = service.get_object_fields(
+            object_code,
+            context=context,
+            include_relations=include_relations,
+        )
 
         if 'error' in data:
             return Response({

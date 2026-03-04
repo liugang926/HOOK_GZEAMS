@@ -74,8 +74,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ref, computed } from 'vue'
+import { ElMessage } from 'element-plus'
 import { licenseAllocationApi } from '@/api/softwareLicenses'
 import { assetApi } from '@/api/assets'
 import type { SoftwareLicense } from '@/types/softwareLicenses'
@@ -93,7 +93,7 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const formRef = ref<FormInstance>()
+const formRef = ref<any>()
 const submitting = ref(false)
 const searching = ref(false)
 const assetOptions = ref<any[]>([])
@@ -109,7 +109,7 @@ const formData = ref({
   notes: ''
 })
 
-const rules: FormRules = {
+const rules = {
   asset: [
     { required: true, message: '请选择资产', trigger: 'change' }
   ]
@@ -121,7 +121,7 @@ const searchAssets = async (query: string) => {
   searching.value = true
   try {
     const response = await assetApi.list({ search: query, pageSize: 50 })
-    assetOptions.value = response.data.results || []
+    assetOptions.value = response.results || []
   } catch (error) {
     console.error('Failed to search assets:', error)
   } finally {
@@ -130,15 +130,16 @@ const searchAssets = async (query: string) => {
 }
 
 const handleSubmit = async () => {
-  if (!formRef.value || !props.license) return
+  const currentLicense = props.license
+  if (!formRef.value || !currentLicense) return
 
-  await formRef.value.validate(async (valid) => {
+  await formRef.value.validate(async (valid: boolean) => {
     if (!valid) return
 
     submitting.value = true
     try {
       await licenseAllocationApi.create({
-        license: props.license.id,
+        license: currentLicense.id,
         asset: formData.value.asset,
         allocationKey: formData.value.allocationKey || undefined,
         notes: formData.value.notes || undefined

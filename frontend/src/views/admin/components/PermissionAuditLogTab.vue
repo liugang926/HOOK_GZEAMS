@@ -305,16 +305,17 @@ const mapActionFilter = (action: '' | 'grant' | 'revoke' | 'update') => {
   return action
 }
 
-const getActionLabel = (action: AuditLogViewRow['action'], fallbackLabel?: string) => {
+const getActionLabel = (action?: AuditLogViewRow['action'], fallbackLabel?: string) => {
   const labels: Record<string, string> = {
     grant: t('system.permission.audit.actions.grant'),
     revoke: t('system.permission.audit.actions.revoke'),
     update: t('system.permission.audit.actions.update')
   }
-  return labels[action] || fallbackLabel || action || '-'
+  const key = action || ''
+  return labels[key] || fallbackLabel || action || '-'
 }
 
-const getActionTag = (action: string) => {
+const getActionTag = (action?: string) => {
   const tags: Record<string, string> = {
     grant: 'success',
     revoke: 'danger',
@@ -322,7 +323,8 @@ const getActionTag = (action: string) => {
     check: 'info',
     deny: 'danger'
   }
-  return tags[action] || 'info'
+  const key = action || ''
+  return tags[key] || 'info'
 }
 
 const resolvePermissionType = (targetType: PermissionAuditLogRecord['targetType']) => {
@@ -383,7 +385,7 @@ const mapRow = (item: PermissionAuditLogRecord): AuditLogViewRow => {
     createdAt: item.createdAt,
     operatorName: item.actorDisplay || '-',
     action,
-    actionLabel: item.operationTypeDisplay,
+    actionLabel: item.operationTypeDisplay || action,
     permissionType: permissionType.type,
     permissionTypeLabel: permissionType.label,
     targetName: resolveTargetName(item),

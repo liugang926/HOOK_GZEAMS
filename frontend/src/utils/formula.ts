@@ -7,8 +7,6 @@
  * Reference: docs/plans/phase2_3_lowcode_engine/frontend_v2.md
  */
 
-import { ParseException } from 'simpleeval'
-
 // ============================================================================
 // Types
 // ============================================================================
@@ -147,7 +145,7 @@ export const STRING_FUNCTIONS = {
 
   /** Replace */
   replace: (str: string, search: string, replacement: string) => {
-    return String(str || '').replaceAll(search, replacement)
+    return String(str || '').split(search).join(replacement)
   }
 }
 
@@ -304,7 +302,7 @@ const evaluateSimpleExpression = (
     if (typeof func !== 'function') return _
 
     const args = argsStr
-      ? argsStr.split(',').map(arg => {
+      ? argsStr.split(',').map((arg: string) => {
           const trimmed = arg.trim()
           // Handle nested expressions and field references
           if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(trimmed)) {
@@ -332,7 +330,6 @@ const evaluateSimpleExpression = (
   try {
     // Create a function with the context variables
     const contextKeys = Object.keys(context)
-    const contextValues = Object.values(context)
 
     // Replace field references with actual values
     let evalExpr = expr

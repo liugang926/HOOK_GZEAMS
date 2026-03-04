@@ -32,7 +32,7 @@
 
 import { ref, computed, onMounted, onUnmounted, watch, useSlots } from 'vue'
 import { useRoute } from 'vue-router'
-import type { TableColumn, SearchField } from '@/types/common'
+import type { TableColumn, SearchField, ColumnItem } from '@/types/common'
 import { formatDate } from '@/utils/dateFormat'
 import { normalizeFieldType } from '@/utils/fieldType'
 import ColumnManager from '@/components/common/ColumnManager.vue'
@@ -522,10 +522,17 @@ const clearSelection = () => {
 /**
  * Handle Column Configuration Save
  */
-const handleColumnSave = async (newColumns: TableColumn[]) => {
-  activeColumns.value = newColumns
+const handleColumnSave = async (newColumns: ColumnItem[]) => {
+  const normalizedColumns = newColumns
+    .map((col) => ({
+      ...col,
+      prop: col.prop || col.fieldCode || col.field_code || ''
+    }))
+    .filter((col) => !!col.prop) as TableColumn[]
+
+  activeColumns.value = normalizedColumns
   if (columnConfig) {
-      await columnConfig.saveConfig(newColumns as any)
+      await columnConfig.saveConfig(normalizedColumns as any)
   }
 }
 
@@ -1297,7 +1304,7 @@ defineExpose({
 </template>
 
 <style scoped lang="scss">
-@import '@/styles/variables.scss';
+@use '@/styles/variables.scss' as *;
 
 .base-list-page {
   padding: $spacing-lg;

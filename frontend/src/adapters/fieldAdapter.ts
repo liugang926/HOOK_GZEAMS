@@ -34,6 +34,7 @@ export function adaptFieldDefinition(field: AnyField): RuntimeField {
     hidden: field.isHidden ?? field.hidden ?? false,
     visible: field.isVisible ?? (field.visible !== undefined ? field.visible : true),
     span: field.span ?? field.componentProps?.span ?? field.component_props?.span,
+    minHeight: field.minHeight ?? field.min_height ?? field.componentProps?.minHeight ?? field.component_props?.min_height,
     placeholder: field.placeholder,
     helpText: field.helpText || field.description,
     defaultValue: field.defaultValue ?? field.default_value,

@@ -66,12 +66,12 @@ jobs:
       - name: Run black check
         run: |
           cd backend
-          black --check . || true
+          black --check .
 
       - name: Run isort check
         run: |
           cd backend
-          isort --check-only . || true
+          isort --check-only .
 
       - name: Run flake8
         run: |
@@ -207,6 +207,12 @@ jobs:
           cd frontend
           npm run lint -- --max-warnings 0
 
+      - name: Run TypeScript app typecheck (report-only baseline)
+        run: |
+          cd frontend
+          npm run typecheck:app
+        continue-on-error: true
+
       - name: Run i18n hardcode guard (changed files)
         run: |
           cd frontend
@@ -250,7 +256,7 @@ jobs:
       - name: Run Prettier check
         run: |
           cd frontend
-          npx prettier --check "src/**/*.{vue,ts,js,tsx,jsx}" || true
+          npx prettier --check "src/**/*.{vue,ts,js,tsx,jsx}"
 
       - name: Archive i18n trend snapshots
         uses: actions/upload-artifact@v4

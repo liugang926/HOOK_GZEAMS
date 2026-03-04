@@ -10,10 +10,20 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from apps.common.viewsets.health import (
+    HealthCheckAPIView,
+    LivenessAPIView,
+    HealthMetricsAPIView,
+    ReadinessAPIView,
+)
 
 urlpatterns = [
     # Admin
     path('admin/', admin.site.urls),
+    path('api/health/', HealthCheckAPIView.as_view(), name='health-check'),
+    path('api/health/live/', LivenessAPIView.as_view(), name='health-live'),
+    path('api/health/ready/', ReadinessAPIView.as_view(), name='health-ready'),
+    path('api/health/metrics/', HealthMetricsAPIView.as_view(), name='health-metrics'),
 
     # API docs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

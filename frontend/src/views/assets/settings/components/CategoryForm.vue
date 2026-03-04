@@ -141,7 +141,18 @@ const formRef = ref()
 const loading = ref(false)
 const submitting = ref(false)
 
-const form = reactive({
+interface CategoryFormModel {
+  id: string | null
+  code: string
+  name: string
+  parent_id: string
+  depreciation_method: string
+  useful_life: number
+  salvage_rate: number
+  [key: string]: string | number | null
+}
+
+const form = reactive<CategoryFormModel>({
   id: null,
   code: '',
   name: '',
@@ -170,9 +181,11 @@ const parentCategory = computed(() => {
 watch(() => props.modelValue, (val) => {
   if (val) {
     // Edit mode
-    Object.keys(form).forEach(key => {
-      if (val[key] !== undefined) {
-        form[key] = val[key]
+    const source = val as Record<string, any>
+    const target = form as Record<string, any>
+    Object.keys(target).forEach((key) => {
+      if (source[key] !== undefined) {
+        target[key] = source[key]
       }
     })
     // Ensure id is set
@@ -209,6 +222,7 @@ const handleSubmit = async () => {
   try {
     const payload = { ...form }
     if (isEdit.value) {
+      if (!form.id) return
       await categoryApi.update(form.id, payload)
       ElMessage.success(t('common.messages.updateSuccess'))
     } else {

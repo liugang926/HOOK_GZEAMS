@@ -75,5 +75,10 @@
   },
   "fallback": {
     "untitled": "未命名通知"
+  },
+  "bell": {
+    "tooltip": "通知",
+    "noMore": "没有更多通知",
+    "viewAll": "查看全部通知"
   }
 }

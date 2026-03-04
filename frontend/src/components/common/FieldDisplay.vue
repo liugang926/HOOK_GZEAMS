@@ -153,12 +153,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Picture } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/dateFormat'
 import { formatMoney } from '@/utils/numberFormat'
 import { normalizeFieldType } from '@/utils/fieldType'
+import { systemFileApi, resolveSystemFileUrl, type SystemFile } from '@/api/systemFile'
 
 interface FieldLike {
   type?: string
@@ -170,8 +171,8 @@ interface FieldLike {
   width?: number
   height?: number
   options?: { label: string; value: any; color?: string }[]
-  tagType?: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'>
-  defaultTagType?: 'success' | 'warning' | 'danger' | 'info' | 'primary'
+  tagType?: Record<string, string> | ((value: any, row?: any) => string)
+  defaultTagType?: 'success' | 'warning' | 'danger' | 'info' | 'primary' | string
   href?: string
   componentProps?: Record<string, any>
 }
@@ -192,9 +193,124 @@ const props = defineProps<{
 }>()
 const { t } = useI18n()
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const fileMetadataMap = ref<Record<string, SystemFile>>({})
+const metadataRequestToken = ref(0)
+
 const displayType = computed(() => normalizeFieldType(props.field?.fieldType || props.field?.type || 'text'))
 
 const hasValue = computed(() => props.value !== undefined && props.value !== null && props.value !== '')
+
+const isUuidLike = (value: unknown): value is string => {
+  if (typeof value !== 'string') return false
+  return UUID_PATTERN.test(value.trim())
+}
+
+const collectCandidateFileIds = (value: any, bucket: Set<string>) => {
+  if (!value) return
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectCandidateFileIds(item, bucket))
+    return
+  }
+
+  if (typeof value === 'string') {
+    const parsed = parseMaybeJson(value)
+    if (parsed !== value) {
+      collectCandidateFileIds(parsed, bucket)
+      return
+    }
+    if (isUuidLike(value)) bucket.add(value.trim())
+    return
+  }
+
+  if (typeof value !== 'object') return
+
+  const objectValue = value as Record<string, any>
+  const candidateId = objectValue.id || objectValue.fileId || objectValue.file_id || objectValue.value
+  if (isUuidLike(candidateId)) bucket.add(String(candidateId).trim())
+
+  const nested = objectValue.files || objectValue.items || objectValue.list
+  if (nested) collectCandidateFileIds(nested, bucket)
+}
+
+const getMetadataById = (value: unknown): SystemFile | null => {
+  if (!isUuidLike(value)) return null
+  return fileMetadataMap.value[String(value).trim()] || null
+}
+
+const resolveImageUrlFromValue = (value: any): string => {
+  if (!value) return ''
+  if (typeof value === 'string') {
+    const parsed = parseMaybeJson(value)
+    if (parsed !== value) return resolveImageUrlFromValue(parsed)
+    if (isUuidLike(value)) {
+      const meta = getMetadataById(value)
+      return resolveSystemFileUrl(meta?.thumbnailUrl || meta?.url || '')
+    }
+    return resolveSystemFileUrl(value)
+  }
+  if (typeof value === 'object') {
+    const meta = getMetadataById((value as any).id || (value as any).fileId || (value as any).file_id)
+    if (meta) return resolveSystemFileUrl(meta.thumbnailUrl || meta.url || '')
+    return resolveSystemFileUrl(String((value as any).url || (value as any).path || (value as any).src || ''))
+  }
+  return resolveSystemFileUrl(String(value))
+}
+
+const resolveFileEntryFromValue = (value: any): FileEntry | null => {
+  if (!value) return null
+
+  if (typeof value === 'string') {
+    const parsed = parseMaybeJson(value)
+    if (parsed !== value) return resolveFileEntryFromValue(parsed)
+    if (isUuidLike(value)) {
+      const meta = getMetadataById(value)
+      if (meta) {
+        return {
+          name: meta.fileName || value,
+          url: resolveSystemFileUrl(meta.url || '')
+        }
+      }
+    }
+    const url = /^https?:\/\//i.test(value) || value.startsWith('/') ? value : ''
+    const name = url ? decodeURIComponent(url.split('/').filter(Boolean).pop() || url) : value
+    return { name: name || 'file', url: resolveSystemFileUrl(url) }
+  }
+
+  if (typeof value === 'object') {
+    const candidateId = (value as any).id || (value as any).fileId || (value as any).file_id || (value as any).value
+    if (isUuidLike(candidateId)) {
+      const meta = getMetadataById(candidateId)
+      if (meta) {
+        return {
+          name: meta.fileName || String(candidateId),
+          url: resolveSystemFileUrl(meta.url || '')
+        }
+      }
+    }
+    const url = resolveSystemFileUrl(String(
+      (value as any).url ||
+      (value as any).path ||
+      (value as any).filePath ||
+      (value as any).file_path ||
+      (value as any).downloadUrl ||
+      (value as any).download_url ||
+      ''
+    ))
+    const name = String(
+      (value as any).name ||
+      (value as any).fileName ||
+      (value as any).filename ||
+      (url ? decodeURIComponent(url.split('/').filter(Boolean).pop() || url) : '') ||
+      'file'
+    )
+    if (!name && !url) return null
+    return { name, url }
+  }
+
+  return null
+}
 
 const safeText = (value: any): string => {
   if (value === undefined || value === null) return '-'
@@ -295,7 +411,10 @@ const tagType = computed(() => {
   const raw = props.value
   const options = props.field.options || []
   const option = options.find(item => item.value === raw)
-  return props.field.tagType?.[raw] || option?.color || props.field.defaultTagType || 'info'
+  const dynamicTag = typeof props.field.tagType === 'function'
+    ? props.field.tagType(raw)
+    : props.field.tagType?.[String(raw)]
+  return dynamicTag || option?.color || props.field.defaultTagType || 'info'
 })
 
 const linkHref = computed(() => {
@@ -304,12 +423,7 @@ const linkHref = computed(() => {
 })
 
 const normalizeImageSrc = (item: any): string => {
-  if (!item) return ''
-  if (typeof item === 'string') return item
-  if (typeof item === 'object') {
-    return item.url || item.path || item.src || ''
-  }
-  return String(item)
+  return resolveImageUrlFromValue(item)
 }
 
 const imageList = computed(() => {
@@ -364,39 +478,7 @@ const parseMaybeJson = (value: any): any => {
 }
 
 const toFileEntry = (value: any): FileEntry | null => {
-  if (!value) return null
-
-  if (typeof value === 'string') {
-    const parsed = parseMaybeJson(value)
-    if (parsed !== value) return toFileEntry(parsed)
-
-    const url = /^https?:\/\//i.test(value) || value.startsWith('/') ? value : ''
-    const name = url ? decodeURIComponent(url.split('/').filter(Boolean).pop() || url) : value
-    return { name: name || 'file', url }
-  }
-
-  if (typeof value === 'object') {
-    const url = String(
-      value.url ||
-      value.path ||
-      value.filePath ||
-      value.file_path ||
-      value.downloadUrl ||
-      value.download_url ||
-      ''
-    )
-    const name = String(
-      value.name ||
-      value.fileName ||
-      value.filename ||
-      (url ? decodeURIComponent(url.split('/').filter(Boolean).pop() || url) : '') ||
-      'file'
-    )
-    if (!name && !url) return null
-    return { name, url }
-  }
-
-  return null
+  return resolveFileEntryFromValue(value)
 }
 
 const collectFileEntries = (value: any): FileEntry[] => {
@@ -419,6 +501,37 @@ const collectFileEntries = (value: any): FileEntry[] => {
 }
 
 const fileEntries = computed<FileEntry[]>(() => collectFileEntries(props.value))
+
+watch(
+  () => [displayType.value, props.value],
+  async () => {
+    if (!['file', 'attachment', 'image'].includes(displayType.value)) return
+
+    const ids = new Set<string>()
+    collectCandidateFileIds(props.value, ids)
+    if (ids.size === 0) return
+
+    const missingIds = Array.from(ids).filter((id) => !fileMetadataMap.value[id])
+    if (missingIds.length === 0) return
+
+    const token = metadataRequestToken.value + 1
+    metadataRequestToken.value = token
+
+    try {
+      const files = await systemFileApi.getMetadata(missingIds)
+      if (metadataRequestToken.value !== token) return
+
+      const nextMap = { ...fileMetadataMap.value }
+      files.forEach((file) => {
+        nextMap[file.id] = file
+      })
+      fileMetadataMap.value = nextMap
+    } catch (error) {
+      console.error('Failed to load file metadata for field display:', error)
+    }
+  },
+  { immediate: true, deep: true }
+)
 
 const getRichTextRaw = (value: any): string => {
   if (value === undefined || value === null) return ''

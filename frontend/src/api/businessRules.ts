@@ -4,6 +4,7 @@
  */
 
 import request from '@/utils/request'
+import { toData, toPaginated } from '@/api/contract'
 
 const BASE_URL = '/system/rules'
 
@@ -76,7 +77,7 @@ export function useBusinessRulesApi() {
             url: `${BASE_URL}/by-object/${objectCode}/`,
             method: 'get'
         })
-        return (response?.results || response?.data?.results || response?.data || response || []) as BusinessRule[]
+        return toPaginated<BusinessRule>(response).results
     }
 
     /**
@@ -87,7 +88,7 @@ export function useBusinessRulesApi() {
             url: `${BASE_URL}/${id}/`,
             method: 'get'
         })
-        return (response?.data || response) as BusinessRule
+        return toData<BusinessRule>(response)
     }
 
     /**
@@ -99,7 +100,7 @@ export function useBusinessRulesApi() {
             method: 'post',
             data
         })
-        return (response?.data || response) as BusinessRule
+        return toData<BusinessRule>(response)
     }
 
     /**
@@ -111,7 +112,7 @@ export function useBusinessRulesApi() {
             method: 'patch',
             data
         })
-        return (response?.data || response) as BusinessRule
+        return toData<BusinessRule>(response)
     }
 
     /**
@@ -136,7 +137,7 @@ export function useBusinessRulesApi() {
             method: 'post',
             data: payload
         })
-        return (response?.data || response) as RuleEvaluationResult
+        return toData<RuleEvaluationResult>(response)
     }
 
     /**
@@ -161,7 +162,7 @@ export function useBusinessRulesApi() {
             method: 'post',
             data: payload
         })
-        return (response?.data || response) as any
+        return toData<{ is_valid: boolean; errors: any[] }>(response)
     }
 
     /**
@@ -176,7 +177,7 @@ export function useBusinessRulesApi() {
             method: 'post',
             data: payload
         })
-        return (response?.data || response) as any
+        return toData<Record<string, boolean>>(response)
     }
 
     /**
@@ -193,7 +194,7 @@ export function useBusinessRulesApi() {
             method: 'get',
             params
         })
-        return (response?.results || response?.data?.results || response?.data || response || []) as RuleExecution[]
+        return toPaginated<RuleExecution>(response).results
     }
 
     /**
@@ -204,7 +205,7 @@ export function useBusinessRulesApi() {
             url: `/system/rule-executions/by-record/${recordId}/`,
             method: 'get'
         })
-        return (response?.results || response?.data?.results || response?.data || response || []) as RuleExecution[]
+        return toPaginated<RuleExecution>(response).results
     }
 
     return {

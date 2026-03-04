@@ -27,7 +27,7 @@
 
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { deptApi, orgApi } from '@/api/organizations'
+import { deptApi } from '@/api/organizations'
 import type { TreeNode } from '@/types/common'
 
 const { t } = useI18n()
@@ -107,7 +107,7 @@ const emit = defineEmits<Emits>()
 
 // ============================================================================
 // State
-// ============================================================================`
+// ============================================================================
 
 const loading = ref(false)
 const treeData = ref<DeptNode[]>([])
@@ -134,29 +134,6 @@ const defaultCheckedKeys = computed(() => {
 const currentKey = computed(() => {
   if (props.multiple) return undefined
   return props.modelValue as string
-})
-
-/** Filtered tree data */
-const filteredTreeData = computed(() => {
-  if (!searchKeyword.value) return treeData.value
-
-  const filterTree = (nodes: DeptNode[]): DeptNode[] => {
-    return nodes.reduce((result: DeptNode[], node) => {
-      const matches = node.name.toLowerCase().includes(searchKeyword.value.toLowerCase())
-      const filteredChildren = node.children ? filterTree(node.children) : []
-
-      if (matches || filteredChildren.length > 0) {
-        result.push({
-          ...node,
-          children: filteredChildren.length > 0 ? filteredChildren : node.children
-        })
-      }
-
-      return result
-    }, [])
-  }
-
-  return filterTree(treeData.value)
 })
 
 // ============================================================================
@@ -238,6 +215,14 @@ const handleCheckChange = () => {
 }
 
 /**
+ * Handle model value change
+ */
+const handleChange = (value: string | string[] | undefined) => {
+  emit('update:modelValue', value)
+  emit('change', value, null)
+}
+
+/**
  * Handle clear
  */
 const handleClear = () => {
@@ -263,7 +248,7 @@ const getSelectedNode = (): DeptNode | null => {
     for (const node of nodes) {
       if (node.id === id) return node
       if (node.children) {
-        const found = findNode(node.children, id)
+        const found = findNode(node.children as DeptNode[], id)
         if (found) return found
       }
     }
@@ -291,7 +276,7 @@ const getSelectedNodes = (): DeptNode[] => {
         nodes.push(node)
       }
       if (node.children) {
-        findNodes(node.children)
+        findNodes(node.children as DeptNode[])
       }
     }
   }
@@ -340,7 +325,7 @@ defineExpose({
       :props="{
         label: 'name',
         children: 'children',
-        disabled: (data: DeptNode) => onlyLeaf && data.children?.length > 0
+        disabled: (data: DeptNode) => onlyLeaf && (data.children?.length || 0) > 0
       }"
       :node-key="nodeKey"
       :multiple="multiple"

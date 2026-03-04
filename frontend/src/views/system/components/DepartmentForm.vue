@@ -122,7 +122,6 @@ import { useI18n } from 'vue-i18n'
 import {
   createDepartment,
   updateDepartment,
-  getDepartmentTree,
   getUsers
 } from '@/api/system'
 

@@ -172,7 +172,6 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import type { FormInstance, FormRules } from 'element-plus'
 import type { FormField } from '@/types/models'
 import FieldRenderer from '@/components/engine/FieldRenderer.vue'
 
@@ -181,7 +180,7 @@ interface Props {
   fields: FormField[]
   labelWidth?: string
   gutter?: number
-  rules?: FormRules
+  rules?: Record<string, any>
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -192,7 +191,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits(['update:modelValue'])
 
-const formRef = ref<FormInstance>()
+const formRef = ref<any>()
 const formModel = ref<Record<string, any>>({ ...(props.modelValue || {}) })
 let syncingFromProps = false
 
@@ -242,7 +241,7 @@ defineExpose({
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/variables.scss';
+@use '@/styles/variables.scss' as *;
 
 .base-form {
   padding: $spacing-md 10px;

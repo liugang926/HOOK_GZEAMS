@@ -145,8 +145,11 @@ const conditionArgs = computed<unknown[]>(() => {
 
 const fieldCode = computed(() => {
   const firstArg = conditionArgs.value[0]
-  if (typeof firstArg === 'object' && firstArg?.var !== undefined) {
-    return firstArg.var
+  if (firstArg && typeof firstArg === 'object') {
+    const variable = (firstArg as Record<string, unknown>).var
+    if (variable !== undefined) {
+      return String(variable)
+    }
   }
   return ''
 })

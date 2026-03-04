@@ -107,6 +107,9 @@ export interface FieldDefinition extends FieldMetadata {
   /** Grid column span (1-24) */
   span: number
 
+  /** Minimum rendered field block height (px) */
+  minHeight?: number
+
   /** Whether field is currently visible */
   visible?: boolean
 

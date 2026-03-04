@@ -1,6 +1,7 @@
 import pytest
 from django.contrib.auth.models import AnonymousUser
 from rest_framework.test import APIRequestFactory, force_authenticate
+from rest_framework.test import APIClient
 from rest_framework.request import Request
 from apps.system.viewsets import (
     UserColumnPreferenceViewSet,
@@ -9,7 +10,7 @@ from apps.system.viewsets import (
 )
 from apps.accounts.models import User
 from apps.organizations.models import Organization
-from apps.system.models import BusinessObject, UserColumnPreference, TabConfig
+from apps.system.models import BusinessObject, UserColumnPreference, TabConfig, FieldDefinition
 from apps.system.services.column_config_service import ColumnConfigService
 
 
@@ -301,3 +302,146 @@ class TestBusinessObjectViewSetFieldTypes:
 
         # All model types should be in API response
         assert model_types.issubset(api_types)
+
+
+@pytest.mark.django_db
+class TestBusinessObjectFieldsFiltering:
+    def test_hardcoded_fields_exclude_relations_by_default(self):
+        org = Organization.objects.create(name='Field Filter Org', code='field-filter-org')
+        user = User.objects.create(username='field_filter_user', organization=org)
+        BusinessObject.objects.get_or_create(
+            code='Asset',
+            defaults={'name': 'Asset', 'is_hardcoded': True},
+        )
+
+        factory = APIRequestFactory()
+        wsgi_request = factory.get('/api/system/business-objects/fields/?object_code=Asset')
+        force_authenticate(wsgi_request, user=user)
+        request = Request(wsgi_request)
+        request.organization_id = org.id
+
+        viewset = BusinessObjectViewSet()
+        viewset.request = request
+        viewset.format_kwarg = None
+        viewset.action = 'fields'
+
+        response = viewset.fields(request)
+        assert response.status_code == 200
+        assert response.data['success'] is True
+
+        fields = response.data['data']['fields']
+        assert isinstance(fields, list)
+        assert not any(bool(item.get('isReverseRelation')) for item in fields)
+        assert not any(str(item.get('fieldName', '')).endswith('_items') for item in fields)
+        assert not any(str(item.get('fieldName', '')).endswith('_logs') for item in fields)
+
+    def test_hardcoded_fields_include_relations_when_requested(self):
+        org = Organization.objects.create(name='Field Relation Org', code='field-relation-org')
+        user = User.objects.create(username='field_relation_user', organization=org)
+        BusinessObject.objects.get_or_create(
+            code='Asset',
+            defaults={'name': 'Asset', 'is_hardcoded': True},
+        )
+
+        factory = APIRequestFactory()
+        wsgi_request = factory.get('/api/system/business-objects/fields/?object_code=Asset&include_relations=true')
+        force_authenticate(wsgi_request, user=user)
+        request = Request(wsgi_request)
+        request.organization_id = org.id
+
+        viewset = BusinessObjectViewSet()
+        viewset.request = request
+        viewset.format_kwarg = None
+        viewset.action = 'fields'
+
+        response = viewset.fields(request)
+        assert response.status_code == 200
+        assert response.data['success'] is True
+
+        fields = response.data['data']['fields']
+        assert isinstance(fields, list)
+        assert any(bool(item.get('isReverseRelation')) for item in fields)
+
+
+@pytest.mark.django_db
+class TestFieldDefinitionSystemGuard:
+    def test_system_field_cannot_be_updated_or_deleted(self):
+        org = Organization.objects.create(name='System Guard Org', code='system-guard-org')
+        user = User.objects.create(username='system_guard_user', organization=org)
+        bo = BusinessObject.objects.create(code='SYS_GUARD_OBJ', name='System Guard Object', is_hardcoded=False)
+        fd = FieldDefinition.objects.create(
+            business_object=bo,
+            code='asset_code',
+            name='Asset Code',
+            field_type='text',
+            is_system=True,
+            show_in_form=True,
+        )
+
+        client = APIClient()
+        client.force_authenticate(user=user)
+        client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id))
+
+        patch_resp = client.patch(
+            f'/api/system/field-definitions/{fd.id}/',
+            {'name': 'Asset Code Updated'},
+            format='json',
+        )
+        assert patch_resp.status_code == 403
+        assert patch_resp.data['success'] is False
+        assert patch_resp.data['error']['code'] == 'READONLY_SYSTEM_FIELD'
+
+        delete_resp = client.delete(f'/api/system/field-definitions/{fd.id}/')
+        assert delete_resp.status_code == 403
+        assert delete_resp.data['success'] is False
+        assert delete_resp.data['error']['code'] == 'READONLY_SYSTEM_FIELD'
+
+    def test_builtin_system_code_cannot_be_updated_even_when_flag_is_false(self):
+        org = Organization.objects.create(name='System Code Org', code='system-code-org')
+        user = User.objects.create(username='system_code_user', organization=org)
+        bo = BusinessObject.objects.create(code='SYS_CODE_OBJ', name='System Code Object', is_hardcoded=False)
+        fd = FieldDefinition.objects.create(
+            business_object=bo,
+            code='updated_at',
+            name='Updated At',
+            field_type='datetime',
+            is_system=False,
+            show_in_form=True,
+        )
+
+        client = APIClient()
+        client.force_authenticate(user=user)
+        client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id))
+
+        patch_resp = client.patch(
+            f'/api/system/field-definitions/{fd.id}/',
+            {'name': 'Updated At Custom'},
+            format='json',
+        )
+        assert patch_resp.status_code == 403
+        assert patch_resp.data['success'] is False
+        assert patch_resp.data['error']['code'] == 'READONLY_SYSTEM_FIELD'
+
+    def test_cannot_create_field_with_system_flag(self):
+        org = Organization.objects.create(name='Create Guard Org', code='create-guard-org')
+        user = User.objects.create(username='create_guard_user', organization=org)
+        bo = BusinessObject.objects.create(code='SYS_CREATE_OBJ', name='System Create Object', is_hardcoded=False)
+
+        client = APIClient()
+        client.force_authenticate(user=user)
+        client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id))
+
+        create_resp = client.post(
+            '/api/system/field-definitions/',
+            {
+                'business_object': str(bo.id),
+                'code': 'blocked_system_field',
+                'name': 'Blocked System Field',
+                'field_type': 'text',
+                'is_system': True,
+            },
+            format='json',
+        )
+        assert create_resp.status_code == 400
+        assert create_resp.data['success'] is False
+        assert create_resp.data['error']['code'] == 'INVALID_OPERATION'

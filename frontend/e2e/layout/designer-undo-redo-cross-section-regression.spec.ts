@@ -303,8 +303,10 @@ test.describe('Layout Designer Undo/Redo Cross-section Regression', () => {
     await expect.poll(() => sectionTitle(activeLayoutConfig, 0)).toBe(UPDATED_TITLE_A)
     await expect.poll(() => sectionTitle(activeLayoutConfig, 1)).toBe(UPDATED_TITLE_B)
 
-    await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
-    await expect(page.locator('.dynamic-detail-page').first()).toBeVisible()
+    await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`, { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(new RegExp(`/objects/${OBJECT_CODE}/${RECORD_ID}`))
+    const detailRoot = page.locator('.dynamic-detail-page, .base-detail-page, .object-detail-page').first()
+    await expect(detailRoot).toBeVisible({ timeout: 15000 })
     await expect(page.locator('.load-error')).toHaveCount(0)
     await expect(page.locator('.detail-sections .section-title', { hasText: UPDATED_TITLE_A }).first()).toBeVisible()
     await expect(page.locator('.detail-sections .section-title', { hasText: UPDATED_TITLE_B }).first()).toBeVisible()

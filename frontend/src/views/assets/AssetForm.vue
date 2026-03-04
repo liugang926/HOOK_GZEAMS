@@ -43,6 +43,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormRules } from 'element-plus'
 import { assetApi, categoryApi, locationApi } from '@/api/assets'
+import type { Asset } from '@/types/assets'
 // import { userApi, deptApi } from '@/api/system' // Assuming these exist or mock them
 import BaseForm from '@/components/common/BaseForm.vue'
 import type { FormField } from '@/types/models'
@@ -54,7 +55,27 @@ const loading = ref(false)
 const submitting = ref(false)
 const { t } = useI18n()
 
-const form = ref({
+interface AssetFormModel {
+  assetCode: string
+  assetName: string
+  assetCategory: string
+  assetStatus: string
+  brand: string
+  model: string
+  unit: string
+  serialNumber: string
+  purchasePrice: number
+  purchaseDate: string
+  supplier: string
+  invoiceNo: string
+  department: string
+  custodian: string
+  location: string
+  remarks: string
+  [key: string]: string | number
+}
+
+const form = ref<AssetFormModel>({
   assetCode: '',
   assetName: '',
   assetCategory: '',
@@ -72,6 +93,11 @@ const form = ref({
   location: '',
   remarks: ''
 })
+
+const getRouteId = (): string => {
+  const { id } = route.params
+  return Array.isArray(id) ? (id[0] || '') : (id || '')
+}
 
 const rules = computed<FormRules>(() => ({
   assetCode: [{ required: true, message: t('common.validation.required', { field: t('assets.fields.assetCode') }), trigger: 'blur' }],
@@ -174,11 +200,12 @@ onMounted(async () => {
 
 const fetchOptions = async () => {
   try {
-    const catData = await categoryApi.list()
+    const catData: any = await categoryApi.list()
     categories.value = Array.isArray(catData) ? catData : (catData.results || [])
 
-    const locData = await locationApi.tree()
-    locationTree.value = buildTree(locData || [])
+    const locData: any = await locationApi.tree()
+    const locations = Array.isArray(locData) ? locData : (locData?.results || [])
+    locationTree.value = buildTree(locations)
 
     // TODO: Load others from API
     // suppliers.value = ...
@@ -215,14 +242,18 @@ const buildTree = (flatData: any[]) => {
 }
 
 const fetchAssetDetail = async () => {
-  const id = route.params.id
+  const id = getRouteId()
+  if (!id) return
+
   loading.value = true
   try {
     const data = await assetApi.get(id)
-    // Merge data into form, ensuring all keys exist
-    Object.keys(form.value).forEach(key => {
-      if (data[key] !== undefined) {
-        form.value[key] = data[key]
+    const dataRecord = data as Record<string, any>
+    const formRecord = form.value as Record<string, any>
+
+    Object.keys(formRecord).forEach((key) => {
+      if (dataRecord[key] !== undefined) {
+        formRecord[key] = dataRecord[key]
       }
     })
   } catch (error) {
@@ -240,12 +271,16 @@ const handleSubmit = async () => {
   if (!valid) return
 
   submitting.value = true
+  const payload = { ...form.value } as unknown as Partial<Asset>
+
   try {
     if (isEdit.value) {
-      await assetApi.update(route.params.id as string, form.value)
+      const id = getRouteId()
+      if (!id) return
+      await assetApi.update(id, payload)
       ElMessage.success(t('common.messages.updateSuccess'))
     } else {
-      await assetApi.create(form.value)
+      await assetApi.create(payload)
       ElMessage.success(t('common.messages.createSuccess'))
     }
     goBack()

@@ -138,4 +138,40 @@ describe('renderSchema', () => {
     expect(schema.sections[0].fields[0].readonly).toBe(true)
     expect(schema.sections[0].fields[1].readonly).toBe(false)
   })
+
+  it('keeps layout minHeight in render fields', () => {
+    const schema = buildRenderSchema({
+      mode: 'edit',
+      fields: [{ code: 'assetName', fieldType: 'text', name: 'Asset Name' }],
+      layoutConfig: {
+        sections: [
+          {
+            id: 'basic',
+            type: 'section',
+            fields: [{ fieldCode: 'assetName', minHeight: 132 }]
+          }
+        ]
+      }
+    })
+
+    expect(schema.sections[0].fields[0].minHeight).toBe(132)
+  })
+
+  it('reads minHeight from componentProps when direct key is missing', () => {
+    const schema = buildRenderSchema({
+      mode: 'edit',
+      fields: [{ code: 'assetName', fieldType: 'text', name: 'Asset Name' }],
+      layoutConfig: {
+        sections: [
+          {
+            id: 'basic',
+            type: 'section',
+            fields: [{ fieldCode: 'assetName', componentProps: { minHeight: 168 } }]
+          }
+        ]
+      }
+    })
+
+    expect(schema.sections[0].fields[0].minHeight).toBe(168)
+  })
 })

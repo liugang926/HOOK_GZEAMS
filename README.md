@@ -79,6 +79,7 @@ See [docs/](./docs) for detailed documentation, including:
 - API Reference
 - Development Guidelines
 - Deployment Guide
+- Health and observability runbook: [docs/operations/health-observability.md](./docs/operations/health-observability.md)
 
 ## Contributing
 

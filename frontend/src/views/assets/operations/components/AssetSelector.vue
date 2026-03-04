@@ -115,7 +115,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { assetApi, categoryApi } from '@/api/assets'
 import type { Asset } from '@/types/assets'
 
@@ -140,7 +140,7 @@ const visible = computed({
 
 const loading = ref(false)
 const tableData = ref<Asset[]>([])
-const categoryTree = ref([])
+const categoryTree = ref<any[]>([])
 const selectedRows = ref<Asset[]>([])
 
 const filterForm = reactive({
@@ -190,19 +190,8 @@ const fetchData = async () => {
     }
     // Note: Assuming assetApi.list supports these params
     const res = await assetApi.list(params)
-    // Filter out excluded IDs locally if API doesn't support generic exclusion
-    // Or just mark them disabled (better UX). For now, strict filter.
-    const items = res.items || res.results || []
-    
-    // Client-side exclude (for now, ideal is server side)
-    if (props.excludeAssetIds.length > 0) {
-        // This is pagination problematic if we filter client side, but acceptable for MVP
-        // Better: pass exclude_ids to backend
-        // For now, let's just assume user won't select same.
-    }
-    
-    tableData.value = items
-    pagination.total = res.total || res.count || 0
+    tableData.value = res.results || []
+    pagination.total = res.count || 0
   } finally {
     loading.value = false
   }

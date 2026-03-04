@@ -49,12 +49,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { reactive, onMounted, computed, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
-import WorkflowDesigner from '@/components/workflow/WorkflowDesigner.vue'
 import { createWorkflow, updateWorkflow, getWorkflow } from '@/api/workflows'
+
+const WorkflowDesigner = defineAsyncComponent(() => import('@/components/workflow/WorkflowDesigner.vue'))
 
 const { t } = useI18n()
 const route = useRoute()
@@ -62,7 +63,7 @@ const router = useRouter()
 const isEdit = computed(() => !!route.params.id)
 
 const form = reactive({
-    id: null,
+    id: undefined as number | undefined,
     name: '',
     code: '',
     business_object: 'asset_pickup',

@@ -1,4 +1,5 @@
-@import './variables.scss';
+@use 'sass:color';
+@use './variables.scss' as *;
 
 // Global Reset & Typography
 body {
@@ -31,6 +32,10 @@ body {
     --el-text-color-regular: #{$text-regular};
     --el-text-color-secondary: #{$text-secondary};
     --el-font-size-base: 13px;
+
+    // Detail layout tokens
+    --gzeams-detail-label-width: 120px;
+    --gzeams-detail-field-gap: 16px;
 }
 
 /* ====================================================================
@@ -140,19 +145,19 @@ body {
     &.status-pending {
         background: #fffbeb;
         color: $warning-color;
-        border: 1px solid lighten($warning-color, 30%);
+        border: 1px solid color.adjust($warning-color, $lightness: 30%);
     }
 
     &.status-approved {
         background: #ecfdf5;
         color: $success-color;
-        border: 1px solid lighten($success-color, 30%);
+        border: 1px solid color.adjust($success-color, $lightness: 30%);
     }
 
     &.status-rejected {
         background: #fef2f2;
         color: $danger-color;
-        border: 1px solid lighten($danger-color, 30%);
+        border: 1px solid color.adjust($danger-color, $lightness: 30%);
     }
 }
 

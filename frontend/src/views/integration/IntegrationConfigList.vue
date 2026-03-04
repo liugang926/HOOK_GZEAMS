@@ -677,6 +677,15 @@ interface IntegrationConfig {
   lastSyncStatus: string
 }
 
+interface IntegrationFormData {
+  systemType: string
+  systemName: string
+  isEnabled: boolean
+  enabledModules: string[]
+  connectionConfig: Record<string, any>
+  syncConfig: Record<string, any>
+}
+
 interface IntegrationLog {
   id: string
   createdAt: string
@@ -734,7 +743,7 @@ const stats = ref({
 const formRef = ref<FormInstance>()
 const isEdit = ref(false)
 
-const formData = ref({
+const formData = ref<IntegrationFormData>({
   systemType: '',
   systemName: '',
   isEnabled: true,
@@ -1124,4 +1133,3 @@ onMounted(() => {
   font-size: 12px;
 }
 </style>
-

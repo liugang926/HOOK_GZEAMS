@@ -180,11 +180,22 @@ SIMPLE_JWT = {
 }
 
 # CORS Settings
-CORS_ALLOWED_ORIGINS = os.getenv(
-    'CORS_ALLOWED_ORIGINS',
+# - Development defaults to localhost origins and allows all origins unless explicitly disabled.
+# - Production defaults to strict allowlist mode.
+_default_cors_origins = (
     'http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174'
-).split(',')
-CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins for development
+    if DEBUG else
+    ''
+)
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('CORS_ALLOWED_ORIGINS', _default_cors_origins).split(',')
+    if origin.strip()
+]
+CORS_ALLOW_ALL_ORIGINS = os.getenv(
+    'CORS_ALLOW_ALL_ORIGINS',
+    'True' if DEBUG else 'False'
+).lower() == 'true'
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     'content-type',
@@ -195,6 +206,18 @@ CORS_ALLOW_HEADERS = [
 
 # Frontend URL for QR code generation and other features
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+
+# Health metrics endpoint access control
+HEALTH_METRICS_ALLOWLIST = [
+    entry.strip()
+    for entry in os.getenv('HEALTH_METRICS_ALLOWLIST', '127.0.0.1,::1').split(',')
+    if entry.strip()
+]
+HEALTH_METRICS_TRUST_X_FORWARDED_FOR = os.getenv(
+    'HEALTH_METRICS_TRUST_X_FORWARDED_FOR',
+    'True' if DEBUG else 'False',
+).lower() == 'true'
+HEALTH_METRICS_TOKEN = os.getenv('HEALTH_METRICS_TOKEN', '')
 
 # Redis Cache
 CACHES = {

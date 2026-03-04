@@ -144,29 +144,31 @@ function shouldDisplayInRelatedTable(field: AnyRecord): boolean {
 }
 
 function buildColumnsFromMetadata(fields: AnyRecord[]): TableColumn[] {
-  const candidates = fields
+  const candidates: Array<{ code: string; sortOrder: number; column: TableColumn }> = []
+
+  fields
     .filter((field) => shouldDisplayInRelatedTable(field))
-    .map((field) => {
+    .forEach((field) => {
       const code = getFieldCode(field)
-      if (!code || code === 'id') return null
-      const sortOrder = Number(field?.sortOrder ?? field?.sort_order ?? 9999)
-      return {
+      if (!code || code === 'id') return
+
+      candidates.push({
         code,
-        sortOrder,
+        sortOrder: Number(field?.sortOrder ?? field?.sort_order ?? 9999),
         column: {
           prop: code,
           label: String(field?.label || field?.name || code),
           width: toPositiveNumber(field?.columnWidth ?? field?.column_width),
           minWidth: toPositiveNumber(field?.minColumnWidth ?? field?.min_column_width),
           sortable: field?.sortable !== false
-        } satisfies TableColumn
-      }
+        }
+      })
     })
-    .filter((item): item is { code: string; sortOrder: number; column: TableColumn } => !!item)
-    .sort((a, b) => {
-      if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
-      return a.code.localeCompare(b.code)
-    })
+
+  candidates.sort((a, b) => {
+    if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder
+    return a.code.localeCompare(b.code)
+  })
 
   return candidates.slice(0, 8).map((item) => item.column)
 }

@@ -105,7 +105,7 @@ const searchConsumables = async (query: string) => {
         loading.value = true
         try {
             const res = await getConsumables({ search: query })
-            options.value = res.results || res.items || []
+            options.value = res.results || []
         } finally {
             loading.value = false
         }

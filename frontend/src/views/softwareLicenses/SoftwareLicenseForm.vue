@@ -250,7 +250,7 @@ const rules = computed<FormRules>(() => ({
 const loadSoftware = async () => {
   try {
     const response = await softwareApi.list({ pageSize: 1000 })
-    softwareOptions.value = response.data.results || []
+    softwareOptions.value = response.results || []
   } catch (error) {
     console.error('Failed to load software list:', error)
   }

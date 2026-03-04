@@ -1,1132 +1,1136 @@
-{
-    "title": "系统管理",
+﻿{
+    "title": "绯荤粺绠＄悊",
     "department": {
-        "title": "部门管理",
-        "createButton": "新建部门",
-        "addSubDept": "添加子部门",
-        "parent": "上级部门",
-        "namePlaceholder": "请输入部门名称",
-        "codePlaceholder": "请输入部门编码",
-        "parentPlaceholder": "请选择上级部门（不选则为顶级部门）",
-        "managerPlaceholder": "请选择负责人",
-        "phonePlaceholder": "请输入联系电话",
-        "descriptionPlaceholder": "请输入描述",
+        "title": "閮ㄩ棬绠＄悊",
+        "createButton": "鏂板缓閮ㄩ棬",
+        "addSubDept": "娣诲姞瀛愰儴闂?,
+        "parent": "涓婄骇閮ㄩ棬",
+        "namePlaceholder": "璇疯緭鍏ラ儴闂ㄥ悕绉?,
+        "codePlaceholder": "璇疯緭鍏ラ儴闂ㄧ紪鐮?,
+        "parentPlaceholder": "璇烽€夋嫨涓婄骇閮ㄩ棬锛堜笉閫夊垯涓洪《绾ч儴闂級",
+        "managerPlaceholder": "璇烽€夋嫨璐熻矗浜?,
+        "phonePlaceholder": "璇疯緭鍏ヨ仈绯荤數璇?,
+        "descriptionPlaceholder": "璇疯緭鍏ユ弿杩?,
         "columns": {
-            "name": "部门名称",
-            "code": "编码",
-            "manager": "负责人",
-            "phone": "联系电话",
-            "sortOrder": "排序",
-            "status": "状态"
+            "name": "閮ㄩ棬鍚嶇О",
+            "code": "缂栫爜",
+            "manager": "璐熻矗浜?,
+            "phone": "鑱旂郴鐢佃瘽",
+            "sortOrder": "鎺掑簭",
+            "status": "鐘舵€?
         },
         "status": {
-            "enabled": "启用",
-            "disabled": "停用"
+            "enabled": "鍚敤",
+            "disabled": "鍋滅敤"
         },
         "validation": {
-            "nameRequired": "请输入部门名称",
-            "codeRequired": "请输入部门编码"
+            "nameRequired": "璇疯緭鍏ラ儴闂ㄥ悕绉?,
+            "codeRequired": "璇疯緭鍏ラ儴闂ㄧ紪鐮?
         },
         "messages": {
-            "confirmDelete": "确定删除该部门吗？"
+            "confirmDelete": "纭畾鍒犻櫎璇ラ儴闂ㄥ悧锛?
         }
     },
     "dictionary": {
-        "title": "数据字典管理",
-        "type": "字典类型",
-        "createTypButton": "新建字典类型",
-        "code": "字典编码",
-        "name": "字典名称",
-        "englishName": "英文名称",
-        "sortOrder": "排序号",
-        "itemManagement": "字典项管理",
-        "addItem": "添加字典项",
-        "batchSort": "批量排序",
-        "item": "字典项",
-        "itemCode": "字典项编码",
-        "displayName": "显示名称",
-        "color": "显示颜色",
-        "icon": "图标",
-        "isDefault": "设为默认",
-        "isDefaultTip": "默认选项将自动选中",
-        "enabled": "启用状态",
-        "default": "默认",
-        "codePlaceholder": "请输入字典编码（英文，如：ASSET_STATUS）",
-        "codeTip": "编码必须唯一，建议使用大写字母和下划线",
-        "namePlaceholder": "请输入字典名称（中文）",
-        "englishNamePlaceholder": "请输入英文名称",
-        "descriptionPlaceholder": "请输入描述",
-        "itemCodePlaceholder": "请输入字典项编码（英文）",
-        "displayNamePlaceholder": "请输入显示名称（中文）",
-        "colorPlaceholder": "请输入颜色值（如：#409EFF）",
-        "iconPlaceholder": "选择图标",
+        "title": "鏁版嵁瀛楀吀绠＄悊",
+        "type": "瀛楀吀绫诲瀷",
+        "createTypButton": "鏂板缓瀛楀吀绫诲瀷",
+        "code": "瀛楀吀缂栫爜",
+        "name": "瀛楀吀鍚嶇О",
+        "englishName": "鑻辨枃鍚嶇О",
+        "sortOrder": "鎺掑簭鍙?,
+        "itemManagement": "瀛楀吀椤圭鐞?,
+        "addItem": "娣诲姞瀛楀吀椤?,
+        "batchSort": "鎵归噺鎺掑簭",
+        "item": "瀛楀吀椤?,
+        "itemCode": "瀛楀吀椤圭紪鐮?,
+        "displayName": "鏄剧ず鍚嶇О",
+        "color": "鏄剧ず棰滆壊",
+        "icon": "鍥炬爣",
+        "isDefault": "璁句负榛樿",
+        "isDefaultTip": "榛樿閫夐」灏嗚嚜鍔ㄩ€変腑",
+        "enabled": "鍚敤鐘舵€?,
+        "default": "榛樿",
+        "codePlaceholder": "璇疯緭鍏ュ瓧鍏哥紪鐮侊紙鑻辨枃锛屽锛欰SSET_STATUS锛?,
+        "codeTip": "缂栫爜蹇呴』鍞竴锛屽缓璁娇鐢ㄥぇ鍐欏瓧姣嶅拰涓嬪垝绾?,
+        "namePlaceholder": "璇疯緭鍏ュ瓧鍏稿悕绉帮紙涓枃锛?,
+        "englishNamePlaceholder": "璇疯緭鍏ヨ嫳鏂囧悕绉?,
+        "descriptionPlaceholder": "璇疯緭鍏ユ弿杩?,
+        "itemCodePlaceholder": "璇疯緭鍏ュ瓧鍏搁」缂栫爜锛堣嫳鏂囷級",
+        "displayNamePlaceholder": "璇疯緭鍏ユ樉绀哄悕绉帮紙涓枃锛?,
+        "colorPlaceholder": "璇疯緭鍏ラ鑹插€硷紙濡傦細#409EFF锛?,
+        "iconPlaceholder": "閫夋嫨鍥炬爣",
         "columns": {
-            "code": "字典编码",
-            "name": "字典名称",
-            "description": "描述",
-            "isSystem": "系统字典",
-            "status": "状态",
-            "itemCount": "字典项数量",
-            "sortOrder": "排序"
+            "code": "瀛楀吀缂栫爜",
+            "name": "瀛楀吀鍚嶇О",
+            "description": "鎻忚堪",
+            "isSystem": "绯荤粺瀛楀吀",
+            "status": "鐘舵€?,
+            "itemCount": "瀛楀吀椤规暟閲?,
+            "sortOrder": "鎺掑簭"
         },
         "status": {
-            "enabled": "启用",
-            "disabled": "禁用"
+            "enabled": "鍚敤",
+            "disabled": "绂佺敤"
         },
         "isSystem": {
-            "yes": "是",
-            "no": "否"
+            "yes": "鏄?,
+            "no": "鍚?
         },
         "actions": {
-            "viewItems": "字典项"
+            "viewItems": "瀛楀吀椤?
         },
         "validation": {
-            "codeRequired": "请输入字典编码",
-            "codePattern": "编码只能包含大写字母、数字和下划线，且必须以字母或下划线开头",
-            "nameRequired": "请输入字典名称",
-            "itemCodeRequired": "请输入字典项编码",
-            "itemCodePattern": "编码只能包含字母、数字和下划线，且必须以字母或下划线开头",
-            "displayNameRequired": "请输入显示名称"
+            "codeRequired": "璇疯緭鍏ュ瓧鍏哥紪鐮?,
+            "codePattern": "缂栫爜鍙兘鍖呭惈澶у啓瀛楁瘝銆佹暟瀛楀拰涓嬪垝绾匡紝涓斿繀椤讳互瀛楁瘝鎴栦笅鍒掔嚎寮€澶?,
+            "nameRequired": "璇疯緭鍏ュ瓧鍏稿悕绉?,
+            "itemCodeRequired": "璇疯緭鍏ュ瓧鍏搁」缂栫爜",
+            "itemCodePattern": "缂栫爜鍙兘鍖呭惈瀛楁瘝銆佹暟瀛楀拰涓嬪垝绾匡紝涓斿繀椤讳互瀛楁瘝鎴栦笅鍒掔嚎寮€澶?,
+            "displayNameRequired": "璇疯緭鍏ユ樉绀哄悕绉?
         },
         "messages": {
-            "confirmDelete": "确定删除字典类型\"{name}\"吗？删除后关联的字典项也将被删除。",
-            "confirmDeleteTitle": "确认删除",
-            "loadFailed": "加载数据失败",
-            "loadItemsFailed": "加载字典项失败",
-            "enabled": "已启用",
-            "disabled": "已禁用",
-            "updateSortFailed": "更新排序失败",
-            "confirmBatchSort": "确定要按当前排序号重新排列所有字典项吗？",
-            "batchSortSuccess": "批量排序成功",
-            "batchSortFailed": "批量排序失败",
-            "confirmDeleteItem": "确定删除字典项\"{name}\"吗？"
+            "confirmDelete": "纭畾鍒犻櫎瀛楀吀绫诲瀷\"{name}\"鍚楋紵鍒犻櫎鍚庡叧鑱旂殑瀛楀吀椤逛篃灏嗚鍒犻櫎銆?,
+            "confirmDeleteTitle": "纭鍒犻櫎",
+            "loadFailed": "鍔犺浇鏁版嵁澶辫触",
+            "loadItemsFailed": "鍔犺浇瀛楀吀椤瑰け璐?,
+            "enabled": "宸插惎鐢?,
+            "disabled": "宸茬鐢?,
+            "updateSortFailed": "鏇存柊鎺掑簭澶辫触",
+            "confirmBatchSort": "纭畾瑕佹寜褰撳墠鎺掑簭鍙烽噸鏂版帓鍒楁墍鏈夊瓧鍏搁」鍚楋紵",
+            "batchSortSuccess": "鎵归噺鎺掑簭鎴愬姛",
+            "batchSortFailed": "鎵归噺鎺掑簭澶辫触",
+            "confirmDeleteItem": "纭畾鍒犻櫎瀛楀吀椤筡"{name}\"鍚楋紵"
         }
     },
     "common": {
-        "all": "全部",
-        "item": "项",
+        "all": "鍏ㄩ儴",
+        "item": "椤?,
         "actions": {
-            "search": "查询",
-            "reset": "重置",
-            "edit": "编辑",
-            "delete": "删除",
-            "cancel": "取消",
-            "save": "保存",
-            "create": "新建",
-            "confirm": "确定",
-            "detail": "详情"
+            "search": "鏌ヨ",
+            "reset": "閲嶇疆",
+            "edit": "缂栬緫",
+            "delete": "鍒犻櫎",
+            "cancel": "鍙栨秷",
+            "save": "淇濆瓨",
+            "create": "鏂板缓",
+            "confirm": "纭畾",
+            "detail": "璇︽儏"
         },
         "messages": {
-            "loadFailed": "加载失败",
-            "operationFailed": "操作失败",
-            "saveSuccess": "保存成功",
-            "deleteSuccess": "删除成功",
-            "confirmDelete": "确定要删除吗？"
+            "loadFailed": "鍔犺浇澶辫触",
+            "operationFailed": "鎿嶄綔澶辫触",
+            "saveSuccess": "淇濆瓨鎴愬姛",
+            "deleteSuccess": "鍒犻櫎鎴愬姛",
+            "confirmDelete": "纭畾瑕佸垹闄ゅ悧锛?
         }
     },
     "config": {
-        "title": "系统配置",
-        "addConfig": "添加配置",
+        "title": "绯荤粺閰嶇疆",
+        "addConfig": "娣诲姞閰嶇疆",
         "tabs": {
-            "all": "全部",
-            "general": "通用",
-            "qrcode": "二维码",
-            "notification": "通知",
-            "asset": "资产",
-            "inventory": "盘点",
-            "featureFlags": "功能开关",
-            "finance": "财务",
-            "workflow": "工作流",
-            "integration": "集成"
+            "all": "鍏ㄩ儴",
+            "general": "閫氱敤",
+            "qrcode": "浜岀淮鐮?,
+            "notification": "閫氱煡",
+            "asset": "璧勪骇",
+            "inventory": "鐩樼偣",
+            "featureFlags": "鍔熻兘寮€鍏?,
+            "finance": "璐㈠姟",
+            "workflow": "宸ヤ綔娴?,
+            "integration": "闆嗘垚"
         },
         "columns": {
-            "key": "配置键",
-            "name": "名称",
-            "value": "值",
-            "type": "类型",
-            "category": "分类",
-            "isSystem": "系统",
-            "description": "描述"
+            "key": "閰嶇疆閿?,
+            "name": "鍚嶇О",
+            "value": "鍊?,
+            "type": "绫诲瀷",
+            "category": "鍒嗙被",
+            "isSystem": "绯荤粺",
+            "description": "鎻忚堪"
         },
         "status": {
-            "enabled": "启用",
-            "disabled": "禁用"
+            "enabled": "鍚敤",
+            "disabled": "绂佺敤"
         },
         "tags": {
-            "system": "系统"
+            "system": "绯荤粺"
         },
         "valueTypes": {
-            "string": "字符串",
-            "integer": "整数",
-            "float": "浮点数",
-            "boolean": "布尔",
+            "string": "瀛楃涓?,
+            "integer": "鏁存暟",
+            "float": "娴偣鏁?,
+            "boolean": "甯冨皵",
             "json": "JSON"
         },
         "categories": {
-            "general": "通用",
-            "qrcode": "二维码",
-            "notification": "通知",
-            "asset": "资产",
-            "inventory": "盘点",
-            "feature_flag": "功能开关",
-            "finance": "财务",
-            "workflow": "工作流",
-            "integration": "集成"
+            "general": "閫氱敤",
+            "qrcode": "浜岀淮鐮?,
+            "notification": "閫氱煡",
+            "asset": "璧勪骇",
+            "inventory": "鐩樼偣",
+            "feature_flag": "鍔熻兘寮€鍏?,
+            "finance": "璐㈠姟",
+            "workflow": "宸ヤ綔娴?,
+            "integration": "闆嗘垚"
         },
         "featureFlags": {
             "runtime_i18n_enabled": {
-                "name": "运行时国际化开关",
-                "description": "启用对象/布局元数据的运行时本地化输出。"
+                "name": "杩愯鏃跺浗闄呭寲寮€鍏?,
+                "description": "鍚敤瀵硅薄/甯冨眬鍏冩暟鎹殑杩愯鏃舵湰鍦板寲杈撳嚭銆?
             },
             "layout_merge_unified_enabled": {
-                "name": "布局统一合并开关",
-                "description": "启用统一的运行时布局合并与标准化路径。"
+                "name": "甯冨眬缁熶竴鍚堝苟寮€鍏?,
+                "description": "鍚敤缁熶竴鐨勮繍琛屾椂甯冨眬鍚堝苟涓庢爣鍑嗗寲璺緞銆?
             },
             "field_code_strict_mode": {
-                "name": "field_code 严格模式",
-                "description": "仅返回 field_code，不再输出兼容字段 code。"
+                "name": "field_code 涓ユ牸妯″紡",
+                "description": "浠呰繑鍥?field_code锛屼笉鍐嶈緭鍑哄吋瀹瑰瓧娈?code銆?
             }
         },
         "messages": {
-            "loadFailed": "加载系统配置失败",
-            "confirmDelete": "确定删除此配置吗？"
+            "loadFailed": "鍔犺浇绯荤粺閰嶇疆澶辫触",
+            "confirmDelete": "纭畾鍒犻櫎姝ら厤缃悧锛?
         },
-        "searchPlaceholder": "按键或名称搜索",
+        "searchPlaceholder": "鎸夐敭鎴栧悕绉版悳绱?,
         "form": {
             "titles": {
-                "create": "新增配置",
-                "edit": "编辑配置"
+                "create": "鏂板閰嶇疆",
+                "edit": "缂栬緫閰嶇疆"
             },
             "labels": {
-                "configKey": "配置键",
-                "displayName": "显示名称",
-                "valueType": "值类型",
-                "value": "值",
-                "category": "分类",
-                "description": "描述",
-                "isSystem": "系统配置",
-                "isEncrypted": "加密存储"
+                "configKey": "閰嶇疆閿?,
+                "displayName": "鏄剧ず鍚嶇О",
+                "valueType": "鍊肩被鍨?,
+                "value": "鍊?,
+                "category": "鍒嗙被",
+                "description": "鎻忚堪",
+                "isSystem": "绯荤粺閰嶇疆",
+                "isEncrypted": "鍔犲瘑瀛樺偍"
             },
             "placeholders": {
-                "configKey": "例如：QR_CODE_TEMPLATE、ENABLE_EMAIL",
-                "displayName": "例如：二维码模板、启用邮件通知",
-                "valueType": "请选择值类型",
-                "jsonValue": "例如：{\"key\": \"value\"}",
-                "category": "请选择分类",
-                "description": "请描述该配置的用途"
+                "configKey": "渚嬪锛歈R_CODE_TEMPLATE銆丒NABLE_EMAIL",
+                "displayName": "渚嬪锛氫簩缁寸爜妯℃澘銆佸惎鐢ㄩ偖浠堕€氱煡",
+                "valueType": "璇烽€夋嫨鍊肩被鍨?,
+                "jsonValue": "渚嬪锛歿\"key\": \"value\"}",
+                "category": "璇烽€夋嫨鍒嗙被",
+                "description": "璇锋弿杩拌閰嶇疆鐨勭敤閫?
             },
             "valuePlaceholders": {
-                "string": "请输入文本值",
-                "integer": "请输入整数值",
-                "float": "请输入小数值",
-                "default": "请输入值"
+                "string": "璇疯緭鍏ユ枃鏈€?,
+                "integer": "璇疯緭鍏ユ暣鏁板€?,
+                "float": "璇疯緭鍏ュ皬鏁板€?,
+                "default": "璇疯緭鍏ュ€?
             },
             "switches": {
-                "systemConfig": "系统配置",
-                "userConfig": "用户配置",
-                "encrypted": "加密",
-                "plainText": "明文"
+                "systemConfig": "绯荤粺閰嶇疆",
+                "userConfig": "鐢ㄦ埛閰嶇疆",
+                "encrypted": "鍔犲瘑",
+                "plainText": "鏄庢枃"
             },
             "tips": {
-                "configKey": "配置唯一标识（建议使用大写字母和下划线）",
-                "isSystem": "系统配置不可被普通用户删除",
-                "isEncrypted": "敏感数据建议开启加密（如密码、API 密钥）"
+                "configKey": "閰嶇疆鍞竴鏍囪瘑锛堝缓璁娇鐢ㄥぇ鍐欏瓧姣嶅拰涓嬪垝绾匡級",
+                "isSystem": "绯荤粺閰嶇疆涓嶅彲琚櫘閫氱敤鎴峰垹闄?,
+                "isEncrypted": "鏁忔劅鏁版嵁寤鸿寮€鍚姞瀵嗭紙濡傚瘑鐮併€丄PI 瀵嗛挜锛?
             },
             "validation": {
-                "configKeyRequired": "请输入配置键",
-                "configKeyPattern": "配置键仅支持大写字母、数字和下划线",
-                "displayNameRequired": "请输入显示名称",
-                "valueTypeRequired": "请选择值类型",
-                "valueRequired": "请输入配置值"
+                "configKeyRequired": "璇疯緭鍏ラ厤缃敭",
+                "configKeyPattern": "閰嶇疆閿粎鏀寔澶у啓瀛楁瘝銆佹暟瀛楀拰涓嬪垝绾?,
+                "displayNameRequired": "璇疯緭鍏ユ樉绀哄悕绉?,
+                "valueTypeRequired": "璇烽€夋嫨鍊肩被鍨?,
+                "valueRequired": "璇疯緭鍏ラ厤缃€?
             },
             "messages": {
-                "invalidJson": "JSON 格式不正确",
-                "updateSuccess": "更新成功",
-                "createSuccess": "新增成功",
-                "operationFailed": "操作失败"
+                "invalidJson": "JSON 鏍煎紡涓嶆纭?,
+                "updateSuccess": "鏇存柊鎴愬姛",
+                "createSuccess": "鏂板鎴愬姛",
+                "operationFailed": "鎿嶄綔澶辫触"
             },
             "actions": {
-                "add": "新增"
+                "add": "鏂板"
             }
         }
     },
     "businessObject": {
-        "title": "业务对象管理",
-        "create": "新建业务对象",
-        "createTitle": "新建业务对象",
-        "editTitle": "编辑业务对象",
+        "title": "涓氬姟瀵硅薄绠＄悊",
+        "create": "鏂板缓涓氬姟瀵硅薄",
+        "createTitle": "鏂板缓涓氬姟瀵硅薄",
+        "editTitle": "缂栬緫涓氬姟瀵硅薄",
         "tabs": {
-            "basic": "基本信息",
-            "actions": "自定义动作"
+            "basic": "鍩烘湰淇℃伅",
+            "actions": "鑷畾涔夊姩浣?
         },
         "columns": {
-            "name": "对象名称",
-            "code": "对象编码",
-            "description": "描述",
-            "type": "类型",
-            "fieldCount": "字段数",
-            "layoutCount": "布局数",
-            "workflow": "工作流"
+            "name": "瀵硅薄鍚嶇О",
+            "code": "瀵硅薄缂栫爜",
+            "description": "鎻忚堪",
+            "type": "绫诲瀷",
+            "fieldCount": "瀛楁鏁?,
+            "layoutCount": "甯冨眬鏁?,
+            "workflow": "宸ヤ綔娴?
         },
         "fields": {
-            "code": "对象编码",
-            "name": "对象名称",
-            "description": "描述",
-            "tableName": "数据表名",
-            "pkField": "主键字段",
-            "enableWorkflow": "启用工作流",
-            "enableVersion": "启用版本控制",
-            "enableSoftDelete": "启用软删除",
-            "isSystem": "是否系统对象"
+            "code": "瀵硅薄缂栫爜",
+            "name": "瀵硅薄鍚嶇О",
+            "description": "鎻忚堪",
+            "tableName": "鏁版嵁琛ㄥ悕",
+            "pkField": "涓婚敭瀛楁",
+            "enableWorkflow": "鍚敤宸ヤ綔娴?,
+            "enableVersion": "鍚敤鐗堟湰鎺у埗",
+            "enableSoftDelete": "鍚敤杞垹闄?,
+            "isSystem": "鏄惁绯荤粺瀵硅薄"
         },
         "placeholders": {
-            "code": "请输入对象编码（英文，如：Asset）",
-            "name": "请输入对象名称（中文，如：固定资产）",
-            "description": "请输入对象描述",
-            "tableName": "数据库表名（如：assets_asset）",
-            "pkField": "默认为 id"
+            "code": "璇疯緭鍏ュ璞＄紪鐮侊紙鑻辨枃锛屽锛欰sset锛?,
+            "name": "璇疯緭鍏ュ璞″悕绉帮紙涓枃锛屽锛氬浐瀹氳祫浜э級",
+            "description": "璇疯緭鍏ュ璞℃弿杩?,
+            "tableName": "鏁版嵁搴撹〃鍚嶏紙濡傦細assets_asset锛?,
+            "pkField": "榛樿涓?id"
         },
         "tips": {
-            "workflow": "启用后可配置审批流程",
-            "version": "启用后记录数据变更历史",
-            "softDelete": "删除数据时不物理删除",
-            "system": "系统对象不可删除"
+            "workflow": "鍚敤鍚庡彲閰嶇疆瀹℃壒娴佺▼",
+            "version": "鍚敤鍚庤褰曟暟鎹彉鏇村巻鍙?,
+            "softDelete": "鍒犻櫎鏁版嵁鏃朵笉鐗╃悊鍒犻櫎",
+            "system": "绯荤粺瀵硅薄涓嶅彲鍒犻櫎"
         },
         "type": {
-            "custom": "自定义",
-            "system": "内置"
+            "custom": "鑷畾涔?,
+            "system": "鍐呯疆"
         },
         "actions": {
-            "fields": "字段管理",
-            "layouts": "布局管理"
+            "fields": "瀛楁绠＄悊",
+            "layouts": "甯冨眬绠＄悊"
         },
         "validation": {
-            "codeRequired": "请输入对象编码",
-            "codePattern": "编码必须以大写字母开头，只能包含字母和数字",
-            "nameRequired": "请输入对象名称",
-            "tableNameRequired": "请输入数据表名"
+            "codeRequired": "璇疯緭鍏ュ璞＄紪鐮?,
+            "codePattern": "缂栫爜蹇呴』浠ュぇ鍐欏瓧姣嶅紑澶达紝鍙兘鍖呭惈瀛楁瘝鍜屾暟瀛?,
+            "nameRequired": "璇疯緭鍏ュ璞″悕绉?,
+            "tableNameRequired": "璇疯緭鍏ユ暟鎹〃鍚?
         },
         "info": {
-            "customActions": "定义此对象的自定义动作（按钮/触发器）。",
-            "customActionsExample": "示例: [{\"code\": \"approve\", \"label\": \"审批\", \"type\": \"api\"}]"
+            "customActions": "瀹氫箟姝ゅ璞＄殑鑷畾涔夊姩浣滐紙鎸夐挳/瑙﹀彂鍣級銆?,
+            "customActionsExample": "绀轰緥: [{\"code\": \"approve\", \"label\": \"瀹℃壒\", \"type\": \"api\"}]"
         },
         "messages": {
-            "loadFailed": "加载业务对象失败",
-            "noBusinessFields": "该对象布局未配置业务字段",
-            "loadMetadataFailed": "加载对象元数据失败"
+            "loadFailed": "鍔犺浇涓氬姟瀵硅薄澶辫触",
+            "noBusinessFields": "璇ュ璞″竷灞€鏈厤缃笟鍔″瓧娈?,
+            "loadMetadataFailed": "鍔犺浇瀵硅薄鍏冩暟鎹け璐?
         }
     },
     "pageLayout": {
-        "title": "{name} - 布局管理",
-        "create": "新建布局",
-        "createTitle": "新建布局",
+        "title": "{name} - 甯冨眬绠＄悊",
+        "create": "鏂板缓甯冨眬",
+        "createTitle": "鏂板缓甯冨眬",
         "modes": {
-            "edit": "编辑模式",
-            "readonly": "只读模式",
-            "search": "搜索模式"
+            "edit": "缂栬緫妯″紡",
+            "readonly": "鍙妯″紡",
+            "search": "鎼滅储妯″紡"
         },
         "columns": {
-            "name": "布局名称",
-            "code": "布局编码",
-            "mode": "布局模式",
-            "description": "描述",
-            "version": "版本",
-            "isDefault": "默认",
-            "status": "状态"
+            "name": "甯冨眬鍚嶇О",
+            "code": "甯冨眬缂栫爜",
+            "mode": "甯冨眬妯″紡",
+            "description": "鎻忚堪",
+            "version": "鐗堟湰",
+            "isDefault": "榛樿",
+            "status": "鐘舵€?
         },
         "tags": {
-            "systemDefault": "系统默认",
-            "default": "默认"
+            "systemDefault": "绯荤粺榛樿",
+            "default": "榛樿"
         },
         "status": {
-            "draft": "草稿",
-            "published": "已发布",
-            "archived": "已归档"
+            "draft": "鑽夌",
+            "published": "宸插彂甯?,
+            "archived": "宸插綊妗?
         },
         "types": {
-            "form": "表单",
-            "edit": "编辑",
-            "readonly": "只读",
-            "detail": "详情",
-            "list": "列表",
-            "search": "搜索"
+            "form": "琛ㄥ崟",
+            "edit": "缂栬緫",
+            "readonly": "鍙",
+            "detail": "璇︽儏",
+            "list": "鍒楄〃",
+            "search": "鎼滅储"
         },
         "actions": {
-            "customize": "自定义",
-            "preview": "预览",
-            "design": "设计",
-            "duplicate": "复制",
-            "publish": "发布",
-            "rollback": "回滚",
-            "createAndDesign": "创建并设计"
+            "customize": "鑷畾涔?,
+            "preview": "棰勮",
+            "design": "璁捐",
+            "duplicate": "澶嶅埗",
+            "publish": "鍙戝竷",
+            "rollback": "鍥炴粴",
+            "createAndDesign": "鍒涘缓骞惰璁?
         },
         "fields": {
-            "code": "布局编码",
-            "name": "布局名称",
-            "type": "布局类型",
-            "isDefault": "设为默认",
-            "description": "描述"
+            "code": "甯冨眬缂栫爜",
+            "name": "甯冨眬鍚嶇О",
+            "type": "甯冨眬绫诲瀷",
+            "isDefault": "璁句负榛樿",
+            "description": "鎻忚堪"
         },
         "placeholders": {
-            "code": "例如: asset_form_custom",
-            "name": "例如: 资产表单自定义布局",
-            "description": "描述此布局的用途"
+            "code": "渚嬪: asset_form_custom",
+            "name": "渚嬪: 璧勪骇琛ㄥ崟鑷畾涔夊竷灞€",
+            "description": "鎻忚堪姝ゅ竷灞€鐨勭敤閫?
         },
         "tips": {
-            "default": "默认布局将作为该业务对象此类型布局的首选"
+            "default": "榛樿甯冨眬灏嗕綔涓鸿涓氬姟瀵硅薄姝ょ被鍨嬪竷灞€鐨勯閫?
         },
         "alert": {
-            "autoGenerated": "列表布局已根据字段定义自动生成，请在字段管理中配置 show_in_list 属性。"
+            "autoGenerated": "鍒楄〃甯冨眬宸叉牴鎹瓧娈靛畾涔夎嚜鍔ㄧ敓鎴愶紝璇峰湪瀛楁绠＄悊涓厤缃?show_in_list 灞炴€с€?
         },
         "messages": {
-            "emptyState": "暂无{mode}布局，点击下方按钮创建",
-            "createSuccess": "布局创建成功",
-            "confirmPublish": "确定要发布布局 \"{name}\" 吗？发布后将创建新版本。",
-            "publishSuccess": "发布成功",
-            "confirmRollback": "确定要将布局 \"{name}\" 回滚到上一版本吗？",
-            "rollbackSuccess": "回滚成功",
-            "rollbackFailed": "回滚失败",
-            "noRollbackTarget": "没有可回滚的历史版本",
-            "required": "请填写布局编码和名称"
+            "emptyState": "鏆傛棤{mode}甯冨眬锛岀偣鍑讳笅鏂规寜閽垱寤?,
+            "createSuccess": "甯冨眬鍒涘缓鎴愬姛",
+            "confirmPublish": "纭畾瑕佸彂甯冨竷灞€ \"{name}\" 鍚楋紵鍙戝竷鍚庡皢鍒涘缓鏂扮増鏈€?,
+            "publishSuccess": "鍙戝竷鎴愬姛",
+            "confirmRollback": "纭畾瑕佸皢甯冨眬 \"{name}\" 鍥炴粴鍒颁笂涓€鐗堟湰鍚楋紵",
+            "rollbackSuccess": "鍥炴粴鎴愬姛",
+            "rollbackFailed": "鍥炴粴澶辫触",
+            "noRollbackTarget": "娌℃湁鍙洖婊氱殑鍘嗗彶鐗堟湰",
+            "required": "璇峰～鍐欏竷灞€缂栫爜鍜屽悕绉?
         },
         "designer": {
-            "title": "布局设计器",
+            "title": "甯冨眬璁捐鍣?,
             "badges": {
-                "customLayout": "自定义布局"
+                "customLayout": "鑷畾涔夊竷灞€"
             },
             "actions": {
-                "undo": "撤销",
-                "redo": "重做",
-                "reset": "恢复默认",
-                "custom": "自定义",
-                "preview": "预览",
-                "saveDraft": "保存草稿",
-                "publish": "发布",
-                "addSection": "新增分组",
-                "editSection": "编辑分组",
-                "deleteSection": "删除分组"
+                "undo": "鎾ら攢",
+                "redo": "閲嶅仛",
+                "reset": "鎭㈠榛樿",
+                "custom": "鑷畾涔?,
+                "preview": "棰勮",
+                "saveDraft": "淇濆瓨鑽夌",
+                "publish": "鍙戝竷",
+                "addSection": "鏂板鍒嗙粍",
+                "editSection": "缂栬緫鍒嗙粍",
+                "deleteSection": "鍒犻櫎鍒嗙粍"
             },
             "status": {
-                "previewMode": "预览模式",
-                "customMode": "自定义模式",
-                "designState": "设计态",
-                "previewState": "预览态"
+                "previewMode": "棰勮妯″紡",
+                "customMode": "鑷畾涔夋ā寮?,
+                "designState": "璁捐鎬?,
+                "previewState": "棰勮鎬?
             },
             "placeholders": {
-                "searchField": "搜索字段名称或编码..."
+                "searchField": "鎼滅储瀛楁鍚嶇О鎴栫紪鐮?.."
             },
             "hints": {
-                "designCanvas": "布局设计画布（点击字段可编辑属性）",
-                "previewCanvas": "预览渲染（与详情页渲染保持一致）",
-                "dropToTab": "拖拽字段到当前标签页",
-                "dropToCollapse": "拖拽字段到当前折叠项",
-                "dropToSection": "拖拽字段到当前分组",
-                "singleLayoutModel": "单一布局模型：在此配置编辑布局，详情页复用该布局；列表页由字段配置（show_in_list + sort_order）驱动。"
+                "designCanvas": "甯冨眬璁捐鐢诲竷锛堢偣鍑诲瓧娈靛彲缂栬緫灞炴€э級",
+                "previewCanvas": "棰勮娓叉煋锛堜笌璇︽儏椤垫覆鏌撲繚鎸佷竴鑷达級",
+                "dropToTab": "鎷栨嫿瀛楁鍒板綋鍓嶆爣绛鹃〉",
+                "dropToCollapse": "鎷栨嫿瀛楁鍒板綋鍓嶆姌鍙犻」",
+                "dropToSection": "鎷栨嫿瀛楁鍒板綋鍓嶅垎缁?,
+                "singleLayoutModel": "鍗曚竴甯冨眬妯″瀷锛氬湪姝ら厤缃紪杈戝竷灞€锛岃鎯呴〉澶嶇敤璇ュ竷灞€锛涘垪琛ㄩ〉鐢卞瓧娈甸厤缃紙show_in_list + sort_order锛夐┍鍔ㄣ€?
             },
             "panel": {
-                "properties": "属性",
-                "fieldProperties": "字段属性",
-                "sectionProperties": "分组属性"
+                "properties": "灞炴€?,
+                "fieldProperties": "瀛楁灞炴€?,
+                "sectionProperties": "鍒嗙粍灞炴€?
             },
             "empty": {
-                "layoutEmpty": "布局为空，请先新增分组开始设计。",
-                "selectTarget": "请选择字段或分组后再编辑属性。"
+                "layoutEmpty": "甯冨眬涓虹┖锛岃鍏堟柊澧炲垎缁勫紑濮嬭璁°€?,
+                "selectTarget": "璇烽€夋嫨瀛楁鎴栧垎缁勫悗鍐嶇紪杈戝睘鎬с€?
             },
             "defaults": {
-                "untitledSection": "未命名分组",
-                "tabTitle": "标签 {index}",
-                "newSection": "新分组",
-                "basicInformation": "基本信息"
+                "untitledSection": "鏈懡鍚嶅垎缁?,
+                "tabTitle": "鏍囩 {index}",
+                "newSection": "鏂板垎缁?,
+                "basicInformation": "鍩烘湰淇℃伅"
             },
             "messages": {
-                "previewSampleUpdated": "预览模式：样例数据已更新（不会保存到后端）",
-                "previewEditCancelled": "预览模式：已取消编辑",
-                "previewDeleteDemoOnly": "预览模式：删除仅用于界面演示，不会删除真实数据",
-                "cannotAddField": "无法添加“{name}”：{reason}",
-                "fieldAlreadyAdded": "字段已添加",
-                "cannotSwitchFieldType": "无法切换字段类型：{reason}",
-                "deleteSectionConfirm": "确认删除该分组吗？分组内字段将一并移除。",
-                "deleteSectionTitle": "删除分组",
-                "sectionDeleted": "分组已删除",
-                "invalidLayoutConfig": "布局配置无效",
-                "layoutSaved": "布局已保存",
-                "saveFailed": "保存失败",
-                "layoutPublished": "布局已发布",
-                "publishFailed": "发布失败",
-                "resetConfirm": "确认将布局重置为系统默认吗？未保存的改动会丢失。",
-                "resetConfirmTitle": "重置确认",
-                "resetToDefaultSuccess": "已重置为系统默认布局",
-                "resetFailedRefresh": "重置失败，请刷新后重试",
-                "switchedToCustomMode": "已切换到自定义模式",
-                "noPreviewLayoutFallback": "未找到可预览布局，已回退到自定义模式。",
-                "switchedToPreviewMode": "已切换到预览模式"
+                "previewSampleUpdated": "棰勮妯″紡锛氭牱渚嬫暟鎹凡鏇存柊锛堜笉浼氫繚瀛樺埌鍚庣锛?,
+                "previewEditCancelled": "棰勮妯″紡锛氬凡鍙栨秷缂栬緫",
+                "previewDeleteDemoOnly": "棰勮妯″紡锛氬垹闄や粎鐢ㄤ簬鐣岄潰婕旂ず锛屼笉浼氬垹闄ょ湡瀹炴暟鎹?,
+                "cannotAddField": "鏃犳硶娣诲姞鈥渰name}鈥濓細{reason}",
+                "fieldAlreadyAdded": "瀛楁宸叉坊鍔?,
+                "cannotSwitchFieldType": "鏃犳硶鍒囨崲瀛楁绫诲瀷锛歿reason}",
+                "deleteSectionConfirm": "纭鍒犻櫎璇ュ垎缁勫悧锛熷垎缁勫唴瀛楁灏嗕竴骞剁Щ闄ゃ€?,
+                "deleteSectionTitle": "鍒犻櫎鍒嗙粍",
+                "sectionDeleted": "鍒嗙粍宸插垹闄?,
+                "invalidLayoutConfig": "甯冨眬閰嶇疆鏃犳晥",
+                "layoutSaved": "甯冨眬宸蹭繚瀛?,
+                "saveFailed": "淇濆瓨澶辫触",
+                "layoutPublished": "甯冨眬宸插彂甯?,
+                "publishFailed": "鍙戝竷澶辫触",
+                "resetConfirm": "纭灏嗗竷灞€閲嶇疆涓虹郴缁熼粯璁ゅ悧锛熸湭淇濆瓨鐨勬敼鍔ㄤ細涓㈠け銆?,
+                "resetConfirmTitle": "閲嶇疆纭",
+                "resetToDefaultSuccess": "宸查噸缃负绯荤粺榛樿甯冨眬",
+                "resetFailedRefresh": "閲嶇疆澶辫触锛岃鍒锋柊鍚庨噸璇?,
+                "switchedToCustomMode": "宸插垏鎹㈠埌鑷畾涔夋ā寮?,
+                "noPreviewLayoutFallback": "鏈壘鍒板彲棰勮甯冨眬锛屽凡鍥為€€鍒拌嚜瀹氫箟妯″紡銆?,
+                "switchedToPreviewMode": "宸插垏鎹㈠埌棰勮妯″紡"
             }
         }
     },
     "fieldDefinition": {
-        "title": "{name} - 字段管理",
-        "create": "添加字段",
-        "createTitle": "添加字段",
-        "editTitle": "编辑字段",
+        "title": "{name} - 瀛楁绠＄悊",
+        "create": "娣诲姞瀛楁",
+        "createTitle": "娣诲姞瀛楁",
+        "editTitle": "缂栬緫瀛楁",
         "groups": {
-            "basic": "基础类型",
-            "datetime": "日期时间",
-            "selection": "选择类型",
-            "reference": "引用类型",
-            "media": "媒体文件",
-            "advanced": "高级类型"
+            "basic": "鍩虹绫诲瀷",
+            "datetime": "鏃ユ湡鏃堕棿",
+            "selection": "閫夋嫨绫诲瀷",
+            "reference": "寮曠敤绫诲瀷",
+            "media": "濯掍綋鏂囦欢",
+            "advanced": "楂樼骇绫诲瀷"
         },
         "types": {
-            "text": "单行文本",
-            "textarea": "多行文本",
-            "number": "数字",
-            "currency": "货币",
-            "percent": "百分比",
-            "date": "日期",
-            "datetime": "日期时间",
-            "time": "时间",
-            "select": "下拉选择",
-            "multi_select": "多选",
-            "radio": "单选",
-            "checkbox": "复选框",
-            "boolean": "开关",
-            "user": "用户选择",
-            "department": "部门选择",
-            "reference": "关联引用",
-            "asset": "资产选择",
-            "location": "位置选择",
-            "file": "文件上传",
-            "image": "图片上传",
-            "qr_code": "二维码",
-            "barcode": "条形码",
-            "formula": "计算公式",
-            "sub_table": "子表",
-            "rich_text": "富文本",
-            "auto_number": "自动编号",
-            "json": "JSON数据"
+            "text": "鍗曡鏂囨湰",
+            "textarea": "澶氳鏂囨湰",
+            "number": "鏁板瓧",
+            "currency": "璐у竵",
+            "percent": "鐧惧垎姣?,
+            "date": "鏃ユ湡",
+            "datetime": "鏃ユ湡鏃堕棿",
+            "time": "鏃堕棿",
+            "select": "涓嬫媺閫夋嫨",
+            "multi_select": "澶氶€?,
+            "radio": "鍗曢€?,
+            "checkbox": "澶嶉€夋",
+            "boolean": "寮€鍏?,
+            "user": "鐢ㄦ埛閫夋嫨",
+            "department": "閮ㄩ棬閫夋嫨",
+            "reference": "鍏宠仈寮曠敤",
+            "asset": "璧勪骇閫夋嫨",
+            "location": "浣嶇疆閫夋嫨",
+            "file": "鏂囦欢涓婁紶",
+            "image": "鍥剧墖涓婁紶",
+            "qr_code": "浜岀淮鐮?,
+            "barcode": "鏉″舰鐮?,
+            "formula": "璁＄畻鍏紡",
+            "sub_table": "瀛愯〃",
+            "rich_text": "瀵屾枃鏈?,
+            "auto_number": "鑷姩缂栧彿",
+            "json": "JSON鏁版嵁"
         },
         "columns": {
-            "sortOrder": "排序",
-            "name": "字段名称",
-            "code": "字段编码",
-            "type": "字段类型",
-            "description": "描述",
-            "required": "必填",
-            "readonly": "只读",
-            "system": "系统字段"
+            "sortOrder": "鎺掑簭",
+            "name": "瀛楁鍚嶇О",
+            "code": "瀛楁缂栫爜",
+            "type": "瀛楁绫诲瀷",
+            "description": "鎻忚堪",
+            "required": "蹇呭～",
+            "readonly": "鍙",
+            "system": "绯荤粺瀛楁"
         },
         "fields": {
-            "code": "字段编码",
-            "name": "字段名称",
-            "type": "字段类型",
-            "referenceObject": "关联对象",
-            "options": "选项配置",
-            "formula": "公式表达式",
-            "sortOrder": "排序号",
-            "defaultValue": "默认值",
-            "placeholder": "占位提示",
-            "description": "描述",
-            "required": "是否必填",
-            "readonly": "是否只读",
-            "unique": "是否唯一",
-            "showInList": "是否列表显示",
-            "listWidth": "列表宽度",
-            "maxLength": "最大长度",
-            "numericRange": "数值范围",
-            "decimalPlaces": "小数位数"
+            "code": "瀛楁缂栫爜",
+            "name": "瀛楁鍚嶇О",
+            "type": "瀛楁绫诲瀷",
+            "referenceObject": "鍏宠仈瀵硅薄",
+            "options": "閫夐」閰嶇疆",
+            "formula": "鍏紡琛ㄨ揪寮?,
+            "sortOrder": "鎺掑簭鍙?,
+            "defaultValue": "榛樿鍊?,
+            "placeholder": "鍗犱綅鎻愮ず",
+            "description": "鎻忚堪",
+            "required": "鏄惁蹇呭～",
+            "readonly": "鏄惁鍙",
+            "unique": "鏄惁鍞竴",
+            "showInList": "鏄惁鍒楄〃鏄剧ず",
+            "listWidth": "鍒楄〃瀹藉害",
+            "maxLength": "鏈€澶ч暱搴?,
+            "numericRange": "鏁板€艰寖鍥?,
+            "decimalPlaces": "灏忔暟浣嶆暟"
         },
         "placeholders": {
-            "code": "请输入字段编码（英文，如：userName）",
-            "name": "请输入字段名称（中文，如：用户名）",
-            "type": "请选择字段类型",
-            "referenceObject": "请选择关联的业务对象",
-            "optionLabel": "选项名称",
-            "optionValue": "选项值",
-            "formula": "如: {quantity} * {price}",
-            "description": "字段描述说明",
-            "placeholder": "输入框的占位提示文字",
-            "minValue": "最小值",
-            "maxValue": "最大值",
+            "code": "璇疯緭鍏ュ瓧娈电紪鐮侊紙鑻辨枃锛屽锛歶serName锛?,
+            "name": "璇疯緭鍏ュ瓧娈靛悕绉帮紙涓枃锛屽锛氱敤鎴峰悕锛?,
+            "type": "璇烽€夋嫨瀛楁绫诲瀷",
+            "referenceObject": "璇烽€夋嫨鍏宠仈鐨勪笟鍔″璞?,
+            "optionLabel": "閫夐」鍚嶇О",
+            "optionValue": "閫夐」鍊?,
+            "formula": "濡? {quantity} * {price}",
+            "description": "瀛楁鎻忚堪璇存槑",
+            "placeholder": "杈撳叆妗嗙殑鍗犱綅鎻愮ず鏂囧瓧",
+            "minValue": "鏈€灏忓€?,
+            "maxValue": "鏈€澶у€?,
             "defaultValue": {
-                "text": "默认文本值",
-                "number": "默认数字值",
-                "date": "如: 2024-01-01",
+                "text": "榛樿鏂囨湰鍊?,
+                "number": "榛樿鏁板瓧鍊?,
+                "date": "濡? 2024-01-01",
                 "switch": "true/false",
-                "select": "选项值"
+                "select": "閫夐」鍊?
             }
         },
         "tips": {
-            "formula": "使用 {fieldCode} 引用其他字段",
-            "showInList": "在列表页默认显示",
-            "listWidth": "列表页列宽度（像素）"
+            "formula": "浣跨敤 {fieldCode} 寮曠敤鍏朵粬瀛楁",
+            "showInList": "鍦ㄥ垪琛ㄩ〉榛樿鏄剧ず",
+            "listWidth": "鍒楄〃椤靛垪瀹藉害锛堝儚绱狅級"
         },
         "tags": {
-            "system": "系统"
+            "system": "绯荤粺"
         },
         "actions": {
-            "addOption": "添加选项",
-            "retry": "重试"
+            "addOption": "娣诲姞閫夐」",
+            "retry": "閲嶈瘯"
         },
         "validation": {
-            "codeRequired": "请输入字段编码",
-            "codePattern": "编码必须以小写字母开头，只能包含字母和数字",
-            "nameRequired": "请输入字段名称",
-            "typeRequired": "请选择字段类型",
-            "referenceObjectRequired": "请选择关联对象"
+            "codeRequired": "璇疯緭鍏ュ瓧娈电紪鐮?,
+            "codePattern": "缂栫爜蹇呴』浠ュ皬鍐欏瓧姣嶅紑澶达紝鍙兘鍖呭惈瀛楁瘝鍜屾暟瀛?,
+            "nameRequired": "璇疯緭鍏ュ瓧娈靛悕绉?,
+            "typeRequired": "璇烽€夋嫨瀛楁绫诲瀷",
+            "referenceObjectRequired": "璇烽€夋嫨鍏宠仈瀵硅薄"
         },
         "messages": {
-            "confirmDelete": "确定删除该字段吗？",
-            "noObjectCode": "未指定业务对象",
-            "noData": "未获取到字段数据",
-            "loadFailed": "加载字段定义失败"
+            "confirmDelete": "纭畾鍒犻櫎璇ュ瓧娈靛悧锛?,
+            "noObjectCode": "鏈寚瀹氫笟鍔″璞?,
+            "noData": "鏈幏鍙栧埌瀛楁鏁版嵁",
+            "loadFailed": "鍔犺浇瀛楁瀹氫箟澶辫触",
+            "systemFieldReadOnly": "绯荤粺瀛楁涓嶅彲缂栬緫鎴栧垹闄ゃ€?,
+            "hardcodedReadonly": "鍐呯疆瀵硅薄瀛楁涓哄彧璇伙紝涓嶅彲缂栬緫鎴栧垹闄ゃ€?,
+            "missingObjectMeta": "缂哄皯瀵硅薄鍏冩暟鎹紝璇峰埛鏂板悗閲嶈瘯銆?,
+            "readOnlySubmitBlocked": "褰撳墠瀛楁涓哄彧璇伙紝涓嶅厑璁告彁浜や慨鏀广€?
         }
     },
     "businessRule": {
-        "title": "业务规则",
-        "create": "新建规则",
-        "editTitle": "编辑规则",
-        "createTitle": "新建规则",
+        "title": "涓氬姟瑙勫垯",
+        "create": "鏂板缓瑙勫垯",
+        "editTitle": "缂栬緫瑙勫垯",
+        "createTitle": "鏂板缓瑙勫垯",
         "types": {
-            "validation": "校验",
-            "visibility": "显示",
-            "computed": "计算",
-            "linkage": "联动",
-            "trigger": "触发",
-            "all": "全部"
+            "validation": "鏍￠獙",
+            "visibility": "鏄剧ず",
+            "computed": "璁＄畻",
+            "linkage": "鑱斿姩",
+            "trigger": "瑙﹀彂",
+            "all": "鍏ㄩ儴"
         },
         "columns": {
-            "code": "规则编码",
-            "name": "规则名称",
-            "type": "类型",
-            "priority": "优先级",
-            "status": "状态"
+            "code": "瑙勫垯缂栫爜",
+            "name": "瑙勫垯鍚嶇О",
+            "type": "绫诲瀷",
+            "priority": "浼樺厛绾?,
+            "status": "鐘舵€?
         },
         "messages": {
-            "confirmDelete": "确定要删除这条规则吗？",
-            "enabled": "规则已启用",
-            "disabled": "规则已禁用",
-            "testTitle": "规则测试",
-            "testData": "测试数据",
-            "testDataPlaceholder": "输入 JSON 格式的测试数据",
-            "testResult": "测试结果",
-            "testPassed": "验证通过",
-            "testFailed": "验证失败",
-            "invalidJson": "测试数据 JSON 格式无效"
+            "confirmDelete": "纭畾瑕佸垹闄よ繖鏉¤鍒欏悧锛?,
+            "enabled": "瑙勫垯宸插惎鐢?,
+            "disabled": "瑙勫垯宸茬鐢?,
+            "testTitle": "瑙勫垯娴嬭瘯",
+            "testData": "娴嬭瘯鏁版嵁",
+            "testDataPlaceholder": "杈撳叆 JSON 鏍煎紡鐨勬祴璇曟暟鎹?,
+            "testResult": "娴嬭瘯缁撴灉",
+            "testPassed": "楠岃瘉閫氳繃",
+            "testFailed": "楠岃瘉澶辫触",
+            "invalidJson": "娴嬭瘯鏁版嵁 JSON 鏍煎紡鏃犳晥"
         },
         "placeholders": {
-            "empty": "暂无业务规则",
-            "emptyType": "暂无{type}规则"
+            "empty": "鏆傛棤涓氬姟瑙勫垯",
+            "emptyType": "鏆傛棤{type}瑙勫垯"
         }
     },
     "sequenceRule": {
-        "title": "序列号规则管理",
-        "create": "新建规则",
-        "editTitle": "编辑序列号规则",
-        "createTitle": "新建序列号规则",
-        "previewTitle": "序列号预览",
+        "title": "搴忓垪鍙疯鍒欑鐞?,
+        "create": "鏂板缓瑙勫垯",
+        "editTitle": "缂栬緫搴忓垪鍙疯鍒?,
+        "createTitle": "鏂板缓搴忓垪鍙疯鍒?,
+        "previewTitle": "搴忓垪鍙烽瑙?,
         "columns": {
-            "code": "规则编码",
-            "name": "规则名称",
-            "pattern": "规则预览",
-            "prefix": "前缀",
-            "seqLength": "序列长度",
-            "currentValue": "当前值",
-            "resetPeriod": "重置周期",
-            "status": "状态",
-            "description": "描述"
+            "code": "瑙勫垯缂栫爜",
+            "name": "瑙勫垯鍚嶇О",
+            "pattern": "瑙勫垯棰勮",
+            "prefix": "鍓嶇紑",
+            "seqLength": "搴忓垪闀垮害",
+            "currentValue": "褰撳墠鍊?,
+            "resetPeriod": "閲嶇疆鍛ㄦ湡",
+            "status": "鐘舵€?,
+            "description": "鎻忚堪"
         },
         "fields": {
-            "code": "规则编码",
-            "name": "规则名称",
-            "prefix": "前缀",
-            "seqLength": "序列长度",
-            "currentValue": "当前值",
-            "resetPeriod": "重置周期",
-            "pattern": "样式预览",
-            "description": "描述",
-            "active": "是否启用"
+            "code": "瑙勫垯缂栫爜",
+            "name": "瑙勫垯鍚嶇О",
+            "prefix": "鍓嶇紑",
+            "seqLength": "搴忓垪闀垮害",
+            "currentValue": "褰撳墠鍊?,
+            "resetPeriod": "閲嶇疆鍛ㄦ湡",
+            "pattern": "鏍峰紡棰勮",
+            "description": "鎻忚堪",
+            "active": "鏄惁鍚敤"
         },
         "placeholders": {
-            "code": "如：ASSET_CODE, ORDER_NO",
-            "name": "如：资产编码, 订单号",
-            "prefix": "如：AST, ORD-",
-            "description": "描述该序列号规则的用途",
-            "statusAll": "全部"
+            "code": "濡傦細ASSET_CODE, ORDER_NO",
+            "name": "濡傦細璧勪骇缂栫爜, 璁㈠崟鍙?,
+            "prefix": "濡傦細AST, ORD-",
+            "description": "鎻忚堪璇ュ簭鍒楀彿瑙勫垯鐨勭敤閫?,
+            "statusAll": "鍏ㄩ儴"
         },
         "tips": {
-            "code": "序列号规则的唯一标识（大写）",
-            "prefix": "生成号码的固定前缀",
-            "seqLength": "序列号部分的数字位数",
-            "currentValue": "序列号的起始值",
-            "resetPeriod": "序列号重置为0的周期",
-            "example": "示例："
+            "code": "搴忓垪鍙疯鍒欑殑鍞竴鏍囪瘑锛堝ぇ鍐欙級",
+            "prefix": "鐢熸垚鍙风爜鐨勫浐瀹氬墠缂€",
+            "seqLength": "搴忓垪鍙烽儴鍒嗙殑鏁板瓧浣嶆暟",
+            "currentValue": "搴忓垪鍙风殑璧峰鍊?,
+            "resetPeriod": "搴忓垪鍙烽噸缃负0鐨勫懆鏈?,
+            "example": "绀轰緥锛?
         },
         "periods": {
-            "never": "从不重置",
-            "yearly": "每年重置",
-            "monthly": "每月重置",
-            "daily": "每日重置"
+            "never": "浠庝笉閲嶇疆",
+            "yearly": "姣忓勾閲嶇疆",
+            "monthly": "姣忔湀閲嶇疆",
+            "daily": "姣忔棩閲嶇疆"
         },
         "actions": {
-            "preview": "预览",
-            "generate": "生成测试",
-            "reset": "重置"
+            "preview": "棰勮",
+            "generate": "鐢熸垚娴嬭瘯",
+            "reset": "閲嶇疆"
         },
         "messages": {
-            "confirmReset": "确定要将规则 \"{name}\" 重置为初始值吗？",
-            "confirmDelete": "确定要删除这条规则吗？",
-            "resetSuccess": "序列号规则重置成功",
-            "resetFailed": "重置失败",
-            "generateSuccess": "生成成功: {number}",
-            "generateFailed": "生成失败",
-            "previewFailed": "获取预览失败"
+            "confirmReset": "纭畾瑕佸皢瑙勫垯 \"{name}\" 閲嶇疆涓哄垵濮嬪€煎悧锛?,
+            "confirmDelete": "纭畾瑕佸垹闄よ繖鏉¤鍒欏悧锛?,
+            "resetSuccess": "搴忓垪鍙疯鍒欓噸缃垚鍔?,
+            "resetFailed": "閲嶇疆澶辫触",
+            "generateSuccess": "鐢熸垚鎴愬姛: {number}",
+            "generateFailed": "鐢熸垚澶辫触",
+            "previewFailed": "鑾峰彇棰勮澶辫触"
         }
     },
     "languages": {
-        "title": "语言管理",
-        "create": "新建语言",
-        "edit": "编辑语言",
-        "delete": "删除语言",
-        "deleteConfirm": "确定删除该语言吗？",
-        "setDefault": "设为默认",
-        "flag": "标志",
-        "code": "语言代码",
-        "name": "语言名称",
-        "nativeName": "本地名称",
-        "locale": "区域设置",
-        "sortOrder": "排序",
-        "isActive": "是否启用",
-        "isDefault": "是否默认",
-        "flagPlaceholder": "选择国旗emoji",
-        "codePlaceholder": "如: zh-CN, en-US",
-        "namePlaceholder": "如: 简体中文",
-        "nativeNamePlaceholder": "如: 中文",
-        "localePlaceholder": "如: zhCN, enUS",
+        "title": "璇█绠＄悊",
+        "create": "鏂板缓璇█",
+        "edit": "缂栬緫璇█",
+        "delete": "鍒犻櫎璇█",
+        "deleteConfirm": "纭畾鍒犻櫎璇ヨ瑷€鍚楋紵",
+        "setDefault": "璁句负榛樿",
+        "flag": "鏍囧織",
+        "code": "璇█浠ｇ爜",
+        "name": "璇█鍚嶇О",
+        "nativeName": "鏈湴鍚嶇О",
+        "locale": "鍖哄煙璁剧疆",
+        "sortOrder": "鎺掑簭",
+        "isActive": "鏄惁鍚敤",
+        "isDefault": "鏄惁榛樿",
+        "flagPlaceholder": "閫夋嫨鍥芥棗emoji",
+        "codePlaceholder": "濡? zh-CN, en-US",
+        "namePlaceholder": "濡? 绠€浣撲腑鏂?,
+        "nativeNamePlaceholder": "濡? 涓枃",
+        "localePlaceholder": "濡? zhCN, enUS",
         "messages": {
-            "setDefaultSuccess": "已将 {name} 设为默认语言",
-            "setDefaultFailed": "设置默认语言失败",
-            "activateSuccess": "语言已启用",
-            "deactivateSuccess": "语言已停用",
-            "updateFailed": "更新语言失败",
-            "deleteSuccess": "语言删除成功",
-            "deleteFailed": "删除语言失败"
+            "setDefaultSuccess": "宸插皢 {name} 璁句负榛樿璇█",
+            "setDefaultFailed": "璁剧疆榛樿璇█澶辫触",
+            "activateSuccess": "璇█宸插惎鐢?,
+            "deactivateSuccess": "璇█宸插仠鐢?,
+            "updateFailed": "鏇存柊璇█澶辫触",
+            "deleteSuccess": "璇█鍒犻櫎鎴愬姛",
+            "deleteFailed": "鍒犻櫎璇█澶辫触"
         }
     },
     "translations": {
-        "title": "翻译管理",
-        "create": "新建翻译",
-        "edit": "编辑翻译",
-        "delete": "删除翻译",
-        "deleteConfirm": "确定删除该翻译吗？",
-        "language": "语言",
-        "namespace": "命名空间",
-        "key": "翻译键",
-        "text": "翻译文本",
-        "type": "类型",
-        "isSystem": "系统翻译",
-        "systemOnly": "仅显示系统翻译",
-        "contentType": "内容类型",
-        "objectId": "对象ID",
-        "fieldName": "字段名",
-        "context": "上下文",
-        "mode": "翻译模式",
+        "title": "缈昏瘧绠＄悊",
+        "create": "鏂板缓缈昏瘧",
+        "edit": "缂栬緫缈昏瘧",
+        "delete": "鍒犻櫎缈昏瘧",
+        "deleteConfirm": "纭畾鍒犻櫎璇ョ炕璇戝悧锛?,
+        "language": "璇█",
+        "namespace": "鍛藉悕绌洪棿",
+        "key": "缈昏瘧閿?,
+        "text": "缈昏瘧鏂囨湰",
+        "type": "绫诲瀷",
+        "isSystem": "绯荤粺缈昏瘧",
+        "systemOnly": "浠呮樉绀虹郴缁熺炕璇?,
+        "contentType": "鍐呭绫诲瀷",
+        "objectId": "瀵硅薄ID",
+        "fieldName": "瀛楁鍚?,
+        "context": "涓婁笅鏂?,
+        "mode": "缈昏瘧妯″紡",
         "modes": {
-            "namespace": "静态翻译",
-            "object": "对象翻译"
+            "namespace": "闈欐€佺炕璇?,
+            "object": "瀵硅薄缈昏瘧"
         },
         "types": {
-            "label": "标签",
-            "message": "消息",
-            "enum": "枚举",
-            "objectField": "对象字段"
+            "label": "鏍囩",
+            "message": "娑堟伅",
+            "enum": "鏋氫妇",
+            "objectField": "瀵硅薄瀛楁"
         },
         "stats": {
-            "total": "总翻译数",
-            "system": "系统翻译",
-            "user": "用户翻译",
-            "coverage": "覆盖率"
+            "total": "鎬荤炕璇戞暟",
+            "system": "绯荤粺缈昏瘧",
+            "user": "鐢ㄦ埛缈昏瘧",
+            "coverage": "瑕嗙洊鐜?
         },
-        "namespacePlaceholder": "如: asset, common",
-        "keyPlaceholder": "如: status.idle, button.save",
-        "textPlaceholder": "输入翻译文本",
-        "contextPlaceholder": "用于消歧义的上下文说明（可选）",
-        "isSystemLabel": "系统翻译（不可被用户编辑）"
+        "namespacePlaceholder": "濡? asset, common",
+        "keyPlaceholder": "濡? status.idle, button.save",
+        "textPlaceholder": "杈撳叆缈昏瘧鏂囨湰",
+        "contextPlaceholder": "鐢ㄤ簬娑堟涔夌殑涓婁笅鏂囪鏄庯紙鍙€夛級",
+        "isSystemLabel": "绯荤粺缈昏瘧锛堜笉鍙鐢ㄦ埛缂栬緫锛?
     },
     "moduleWorkbench": {
-        "title": "模块工作台",
-        "subtitle": "检查后端对象覆盖情况，并快速打开缺失的前端入口。",
+        "title": "妯″潡宸ヤ綔鍙?,
+        "subtitle": "妫€鏌ュ悗绔璞¤鐩栨儏鍐碉紝骞跺揩閫熸墦寮€缂哄け鐨勫墠绔叆鍙ｃ€?,
         "metrics": {
-            "backendObjects": "后端对象数",
-            "menuCovered": "菜单已覆盖",
-            "missingEntries": "缺失入口",
-            "invalidMenuCodes": "无效菜单编码"
+            "backendObjects": "鍚庣瀵硅薄鏁?,
+            "menuCovered": "鑿滃崟宸茶鐩?,
+            "missingEntries": "缂哄け鍏ュ彛",
+            "invalidMenuCodes": "鏃犳晥鑿滃崟缂栫爜"
         },
         "sections": {
-            "missingFrontendEntries": "缺失前端入口",
-            "allObjects": "全部对象",
-            "invalidMenuObjectCodes": "无效菜单对象编码",
-            "brokenMenuUrls": "损坏的菜单 URL"
+            "missingFrontendEntries": "缂哄け鍓嶇鍏ュ彛",
+            "allObjects": "鍏ㄩ儴瀵硅薄",
+            "invalidMenuObjectCodes": "鏃犳晥鑿滃崟瀵硅薄缂栫爜",
+            "brokenMenuUrls": "鎹熷潖鐨勮彍鍗?URL"
         },
         "columns": {
-            "objectCode": "对象编码",
-            "name": "名称",
-            "modelPath": "模型路径",
-            "type": "类型",
-            "readiness": "就绪状态",
-            "actions": "快捷操作",
-            "coverage": "覆盖状态",
-            "menuName": "菜单名称",
-            "code": "编码",
+            "objectCode": "瀵硅薄缂栫爜",
+            "name": "鍚嶇О",
+            "modelPath": "妯″瀷璺緞",
+            "type": "绫诲瀷",
+            "readiness": "灏辩华鐘舵€?,
+            "actions": "蹇嵎鎿嶄綔",
+            "coverage": "瑕嗙洊鐘舵€?,
+            "menuName": "鑿滃崟鍚嶇О",
+            "code": "缂栫爜",
             "url": "URL"
         },
         "type": {
-            "system": "系统",
-            "custom": "自定义"
+            "system": "绯荤粺",
+            "custom": "鑷畾涔?
         },
         "readiness": {
-            "ready": "就绪",
-            "emptyFields": "无业务字段",
-            "checking": "检查中",
-            "unavailable": "不可用"
+            "ready": "灏辩华",
+            "emptyFields": "鏃犱笟鍔″瓧娈?,
+            "checking": "妫€鏌ヤ腑",
+            "unavailable": "涓嶅彲鐢?
         },
         "coverage": {
-            "covered": "已覆盖",
-            "missing": "缺失"
+            "covered": "宸茶鐩?,
+            "missing": "缂哄け"
         },
         "actions": {
-            "list": "列表"
+            "list": "鍒楄〃"
         },
         "empty": {
-            "noMissingEntries": "所有后端对象都已在菜单中覆盖。",
-            "noInvalidMenuCodes": "菜单中未发现无效对象编码。",
-            "noBrokenMenuUrls": "当前前端路由可解析所有菜单 URL。"
+            "noMissingEntries": "鎵€鏈夊悗绔璞￠兘宸插湪鑿滃崟涓鐩栥€?,
+            "noInvalidMenuCodes": "鑿滃崟涓湭鍙戠幇鏃犳晥瀵硅薄缂栫爜銆?,
+            "noBrokenMenuUrls": "褰撳墠鍓嶇璺敱鍙В鏋愭墍鏈夎彍鍗?URL銆?
         },
-        "searchPlaceholder": "按编码或名称搜索",
+        "searchPlaceholder": "鎸夌紪鐮佹垨鍚嶇О鎼滅储",
         "messages": {
-            "loadFailed": "加载模块覆盖数据失败",
-            "metadataUnavailable": "元数据不可用"
+            "loadFailed": "鍔犺浇妯″潡瑕嗙洊鏁版嵁澶辫触",
+            "metadataUnavailable": "鍏冩暟鎹笉鍙敤"
         }
     },
     "permission": {
-        "title": "权限管理",
+        "title": "鏉冮檺绠＄悊",
         "tabs": {
-            "field": "字段权限",
-            "data": "数据权限",
-            "audit": "权限日志"
+            "field": "瀛楁鏉冮檺",
+            "data": "鏁版嵁鏉冮檺",
+            "audit": "鏉冮檺鏃ュ織"
         },
         "data": {
             "toolbar": {
-                "role": "角色",
-                "rolePlaceholder": "选择角色",
-                "createRule": "新增规则"
+                "role": "瑙掕壊",
+                "rolePlaceholder": "閫夋嫨瑙掕壊",
+                "createRule": "鏂板瑙勫垯"
             },
             "columns": {
-                "role": "角色",
-                "object": "业务对象",
-                "type": "权限类型",
-                "scope": "权限范围",
-                "status": "状态",
-                "description": "说明",
-                "operation": "操作"
+                "role": "瑙掕壊",
+                "object": "涓氬姟瀵硅薄",
+                "type": "鏉冮檺绫诲瀷",
+                "scope": "鏉冮檺鑼冨洿",
+                "status": "鐘舵€?,
+                "description": "璇存槑",
+                "operation": "鎿嶄綔"
             },
             "types": {
-                "all": "全部数据",
-                "department": "本部门",
-                "department_and_sub": "本部门及子部门",
-                "self": "仅本人",
-                "custom": "自定义"
+                "all": "鍏ㄩ儴鏁版嵁",
+                "department": "鏈儴闂?,
+                "department_and_sub": "鏈儴闂ㄥ強瀛愰儴闂?,
+                "self": "浠呮湰浜?,
+                "custom": "鑷畾涔?
             },
             "status": {
-                "active": "启用",
-                "inactive": "禁用",
-                "enable": "启用",
-                "disable": "禁用"
+                "active": "鍚敤",
+                "inactive": "绂佺敤",
+                "enable": "鍚敤",
+                "disable": "绂佺敤"
             },
             "dialog": {
-                "createTitle": "新增数据权限规则",
-                "editTitle": "编辑数据权限规则",
-                "role": "角色",
-                "rolePlaceholder": "请选择角色",
-                "object": "业务对象",
-                "objectPlaceholder": "请选择业务对象",
-                "type": "权限类型",
-                "typePlaceholder": "请选择权限类型",
-                "expression": "权限表达式",
-                "expressionPlaceholder": "自定义权限表达式，如: department_id in (1, 2, 3)",
-                "scope": "权限范围",
-                "status": "状态",
-                "description": "说明",
-                "descriptionPlaceholder": "请输入权限规则说明"
+                "createTitle": "鏂板鏁版嵁鏉冮檺瑙勫垯",
+                "editTitle": "缂栬緫鏁版嵁鏉冮檺瑙勫垯",
+                "role": "瑙掕壊",
+                "rolePlaceholder": "璇烽€夋嫨瑙掕壊",
+                "object": "涓氬姟瀵硅薄",
+                "objectPlaceholder": "璇烽€夋嫨涓氬姟瀵硅薄",
+                "type": "鏉冮檺绫诲瀷",
+                "typePlaceholder": "璇烽€夋嫨鏉冮檺绫诲瀷",
+                "expression": "鏉冮檺琛ㄨ揪寮?,
+                "expressionPlaceholder": "鑷畾涔夋潈闄愯〃杈惧紡锛屽: department_id in (1, 2, 3)",
+                "scope": "鏉冮檺鑼冨洿",
+                "status": "鐘舵€?,
+                "description": "璇存槑",
+                "descriptionPlaceholder": "璇疯緭鍏ユ潈闄愯鍒欒鏄?
             },
             "messages": {
-                "enabled": "已启用",
-                "disabled": "已禁用",
-                "createSuccess": "创建成功",
-                "updateSuccess": "更新成功"
+                "enabled": "宸插惎鐢?,
+                "disabled": "宸茬鐢?,
+                "createSuccess": "鍒涘缓鎴愬姛",
+                "updateSuccess": "鏇存柊鎴愬姛"
             }
         },
         "field": {
             "toolbar": {
-                "role": "角色",
-                "rolePlaceholder": "选择角色",
-                "object": "业务对象",
-                "objectPlaceholder": "选择业务对象"
+                "role": "瑙掕壊",
+                "rolePlaceholder": "閫夋嫨瑙掕壊",
+                "object": "涓氬姟瀵硅薄",
+                "objectPlaceholder": "閫夋嫨涓氬姟瀵硅薄"
             },
             "columns": {
-                "role": "角色",
-                "object": "业务对象",
-                "field": "字段名称",
-                "read": "读取权限",
-                "write": "写入权限",
-                "visibility": "可见性",
-                "description": "说明",
-                "operation": "操作"
+                "role": "瑙掕壊",
+                "object": "涓氬姟瀵硅薄",
+                "field": "瀛楁鍚嶇О",
+                "read": "璇诲彇鏉冮檺",
+                "write": "鍐欏叆鏉冮檺",
+                "visibility": "鍙鎬?,
+                "description": "璇存槑",
+                "operation": "鎿嶄綔"
             },
             "status": {
-                "allow": "允许",
-                "deny": "禁止",
-                "show": "显示",
-                "hide": "隐藏"
+                "allow": "鍏佽",
+                "deny": "绂佹",
+                "show": "鏄剧ず",
+                "hide": "闅愯棌"
             },
             "dialog": {
-                "title": "编辑字段权限",
-                "role": "角色",
-                "object": "业务对象",
-                "field": "字段名称",
-                "read": "读取权限",
-                "write": "写入权限",
-                "visibility": "可见性",
-                "description": "说明"
+                "title": "缂栬緫瀛楁鏉冮檺",
+                "role": "瑙掕壊",
+                "object": "涓氬姟瀵硅薄",
+                "field": "瀛楁鍚嶇О",
+                "read": "璇诲彇鏉冮檺",
+                "write": "鍐欏叆鏉冮檺",
+                "visibility": "鍙鎬?,
+                "description": "璇存槑"
             },
             "messages": {
-                "saveSuccess": "保存成功",
-                "saveFailed": "保存失败"
+                "saveSuccess": "淇濆瓨鎴愬姛",
+                "saveFailed": "淇濆瓨澶辫触"
             }
         },
         "audit": {
             "toolbar": {
-                "action": "操作类型",
-                "actionPlaceholder": "全部",
-                "timeRange": "时间范围",
-                "startDate": "开始日期",
-                "endDate": "结束日期"
+                "action": "鎿嶄綔绫诲瀷",
+                "actionPlaceholder": "鍏ㄩ儴",
+                "timeRange": "鏃堕棿鑼冨洿",
+                "startDate": "寮€濮嬫棩鏈?,
+                "endDate": "缁撴潫鏃ユ湡"
             },
             "stats": {
-                "todayGrants": "今日授权",
-                "todayRevokes": "今日撤销",
-                "weekTotal": "本周操作",
-                "activeUsers": "活跃用户"
+                "todayGrants": "浠婃棩鎺堟潈",
+                "todayRevokes": "浠婃棩鎾ら攢",
+                "weekTotal": "鏈懆鎿嶄綔",
+                "activeUsers": "娲昏穬鐢ㄦ埛"
             },
             "columns": {
-                "time": "操作时间",
-                "operator": "操作人",
-                "action": "操作类型",
-                "type": "权限类型",
-                "target": "目标对象",
-                "details": "操作详情",
-                "ip": "IP地址",
-                "operation": "操作"
+                "time": "鎿嶄綔鏃堕棿",
+                "operator": "鎿嶄綔浜?,
+                "action": "鎿嶄綔绫诲瀷",
+                "type": "鏉冮檺绫诲瀷",
+                "target": "鐩爣瀵硅薄",
+                "details": "鎿嶄綔璇︽儏",
+                "ip": "IP鍦板潃",
+                "operation": "鎿嶄綔"
             },
             "actions": {
-                "grant": "授权",
-                "revoke": "撤销",
-                "update": "修改"
+                "grant": "鎺堟潈",
+                "revoke": "鎾ら攢",
+                "update": "淇敼"
             },
             "types": {
-                "field": "字段权限",
-                "data": "数据权限"
+                "field": "瀛楁鏉冮檺",
+                "data": "鏁版嵁鏉冮檺"
             },
             "dialog": {
-                "title": "日志详情",
-                "time": "操作时间",
-                "operator": "操作人",
-                "action": "操作类型",
-                "type": "权限类型",
-                "target": "目标对象",
-                "details": "操作详情",
-                "ip": "IP地址",
-                "userAgent": "用户代理"
+                "title": "鏃ュ織璇︽儏",
+                "time": "鎿嶄綔鏃堕棿",
+                "operator": "鎿嶄綔浜?,
+                "action": "鎿嶄綔绫诲瀷",
+                "type": "鏉冮檺绫诲瀷",
+                "target": "鐩爣瀵硅薄",
+                "details": "鎿嶄綔璇︽儏",
+                "ip": "IP鍦板潃",
+                "userAgent": "鐢ㄦ埛浠ｇ悊"
             }
         }
     },
     "configPackage": {
-        "title": "配置包管理",
-        "description": "导入导出业务对象配置，支持环境迁移和版本备份",
+        "title": "閰嶇疆鍖呯鐞?,
+        "description": "瀵煎叆瀵煎嚭涓氬姟瀵硅薄閰嶇疆锛屾敮鎸佺幆澧冭縼绉诲拰鐗堟湰澶囦唤",
         "actions": {
-            "import": "导入配置",
-            "export": "导出配置",
-            "download": "下载",
-            "diff": "对比",
-            "delete": "删除",
-            "rollback": "回滚"
+            "import": "瀵煎叆閰嶇疆",
+            "export": "瀵煎嚭閰嶇疆",
+            "download": "涓嬭浇",
+            "diff": "瀵规瘮",
+            "delete": "鍒犻櫎",
+            "rollback": "鍥炴粴"
         },
         "tabs": {
-            "packages": "配置包",
-            "history": "导入历史"
+            "packages": "閰嶇疆鍖?,
+            "history": "瀵煎叆鍘嗗彶"
         },
         "columns": {
-            "name": "包名称",
-            "type": "类型",
-            "objects": "包含对象",
-            "source": "来源环境",
-            "exportTime": "导出时间",
-            "status": "状态",
-            "package": "配置包",
-            "strategy": "策略",
-            "result": "结果",
-            "importTime": "导入时间",
-            "operation": "操作"
+            "name": "鍖呭悕绉?,
+            "type": "绫诲瀷",
+            "objects": "鍖呭惈瀵硅薄",
+            "source": "鏉ユ簮鐜",
+            "exportTime": "瀵煎嚭鏃堕棿",
+            "status": "鐘舵€?,
+            "package": "閰嶇疆鍖?,
+            "strategy": "绛栫暐",
+            "result": "缁撴灉",
+            "importTime": "瀵煎叆鏃堕棿",
+            "operation": "鎿嶄綔"
         },
         "types": {
-            "full": "全量",
-            "partial": "增量",
-            "diff": "差异"
+            "full": "鍏ㄩ噺",
+            "partial": "澧為噺",
+            "diff": "宸紓"
         },
         "strategies": {
-            "merge": "合并",
-            "replace": "替换",
-            "skip": "跳过"
+            "merge": "鍚堝苟",
+            "replace": "鏇挎崲",
+            "skip": "璺宠繃"
         },
         "status": {
-            "pending": "等待中",
-            "processing": "处理中",
-            "success": "成功",
-            "failed": "失败",
-            "partial": "部分成功",
-            "rolled_back": "已回滚"
+            "pending": "绛夊緟涓?,
+            "processing": "澶勭悊涓?,
+            "success": "鎴愬姛",
+            "failed": "澶辫触",
+            "partial": "閮ㄥ垎鎴愬姛",
+            "rolled_back": "宸插洖婊?
         },
         "dialog": {
-            "exportTitle": "导出配置",
-            "importTitle": "导入配置",
-            "name": "包名称",
-            "namePlaceholder": "例如: 资产管理配置",
-            "version": "版本号",
-            "versionPlaceholder": "例如: 1.0.0",
-            "description": "描述",
-            "objects": "业务对象",
-            "objectsPlaceholder": "选择要导出的业务对象",
-            "package": "选择包",
-            "packagePlaceholder": "从已有配置包导入",
-            "strategy": "导入策略",
+            "exportTitle": "瀵煎嚭閰嶇疆",
+            "importTitle": "瀵煎叆閰嶇疆",
+            "name": "鍖呭悕绉?,
+            "namePlaceholder": "渚嬪: 璧勪骇绠＄悊閰嶇疆",
+            "version": "鐗堟湰鍙?,
+            "versionPlaceholder": "渚嬪: 1.0.0",
+            "description": "鎻忚堪",
+            "objects": "涓氬姟瀵硅薄",
+            "objectsPlaceholder": "閫夋嫨瑕佸鍑虹殑涓氬姟瀵硅薄",
+            "package": "閫夋嫨鍖?,
+            "packagePlaceholder": "浠庡凡鏈夐厤缃寘瀵煎叆",
+            "strategy": "瀵煎叆绛栫暐",
             "strategies": {
-                "merge": "合并 (更新已存在)",
-                "replace": "替换 (覆盖已存在)",
-                "skip": "跳过 (只创建新的)"
+                "merge": "鍚堝苟 (鏇存柊宸插瓨鍦?",
+                "replace": "鏇挎崲 (瑕嗙洊宸插瓨鍦?",
+                "skip": "璺宠繃 (鍙垱寤烘柊鐨?"
             }
         },
         "messages": {
-            "loadPackagesFailed": "加载配置包失败",
-            "loadLogsFailed": "加载导入记录失败",
-            "exportSuccess": "导出成功：{objects} 对象, {fields} 字段, {layouts} 布局, {rules} 规则",
-            "exportFailed": "导出失败",
-            "importSuccess": "导入成功：创建 {created}, 更新 {updated}, 跳过 {skipped}",
-            "importPartial": "导入部分完成，{failed} 项失败",
-            "importFailed": "导入失败",
-            "downloadStart": "下载已开始",
-            "downloadFailed": "下载失败",
-            "diffDeveloping": "对比功能开发中...",
-            "deleteSuccess": "删除成功",
-            "deleteFailed": "删除失败",
-            "rollbackConfirm": "回滚将撤销此次导入的所有更改，确定继续吗？",
-            "rollbackTitle": "确认回滚",
-            "rollbackSuccess": "回滚成功",
-            "rollbackFailed": "回滚失败",
-            "required": "请填写必填项",
-            "selectPackage": "请选择配置包",
-            "confirmDelete": "确定删除此配置包？"
+            "loadPackagesFailed": "鍔犺浇閰嶇疆鍖呭け璐?,
+            "loadLogsFailed": "鍔犺浇瀵煎叆璁板綍澶辫触",
+            "exportSuccess": "瀵煎嚭鎴愬姛锛歿objects} 瀵硅薄, {fields} 瀛楁, {layouts} 甯冨眬, {rules} 瑙勫垯",
+            "exportFailed": "瀵煎嚭澶辫触",
+            "importSuccess": "瀵煎叆鎴愬姛锛氬垱寤?{created}, 鏇存柊 {updated}, 璺宠繃 {skipped}",
+            "importPartial": "瀵煎叆閮ㄥ垎瀹屾垚锛寋failed} 椤瑰け璐?,
+            "importFailed": "瀵煎叆澶辫触",
+            "downloadStart": "涓嬭浇宸插紑濮?,
+            "downloadFailed": "涓嬭浇澶辫触",
+            "diffDeveloping": "瀵规瘮鍔熻兘寮€鍙戜腑...",
+            "deleteSuccess": "鍒犻櫎鎴愬姛",
+            "deleteFailed": "鍒犻櫎澶辫触",
+            "rollbackConfirm": "鍥炴粴灏嗘挙閿€姝ゆ瀵煎叆鐨勬墍鏈夋洿鏀癸紝纭畾缁х画鍚楋紵",
+            "rollbackTitle": "纭鍥炴粴",
+            "rollbackSuccess": "鍥炴粴鎴愬姛",
+            "rollbackFailed": "鍥炴粴澶辫触",
+            "required": "璇峰～鍐欏繀濉」",
+            "selectPackage": "璇烽€夋嫨閰嶇疆鍖?,
+            "confirmDelete": "纭畾鍒犻櫎姝ら厤缃寘锛?
         }
     },
     "workflow": {
-        "title": "工作流管理",
-        "create": "创建工作流",
-        "createTitle": "创建工作流",
-        "editTitle": "编辑工作流",
+        "title": "宸ヤ綔娴佺鐞?,
+        "create": "鍒涘缓宸ヤ綔娴?,
+        "createTitle": "鍒涘缓宸ヤ綔娴?,
+        "editTitle": "缂栬緫宸ヤ綔娴?,
         "columns": {
-            "name": "名称",
-            "code": "编码",
-            "businessObject": "业务对象",
-            "operation": "操作"
+            "name": "鍚嶇О",
+            "code": "缂栫爜",
+            "businessObject": "涓氬姟瀵硅薄",
+            "operation": "鎿嶄綔"
         },
         "form": {
-            "name": "名称",
-            "code": "编码",
-            "businessObject": "业务对象"
+            "name": "鍚嶇О",
+            "code": "缂栫爜",
+            "businessObject": "涓氬姟瀵硅薄"
         },
         "businessObjects": {
-            "asset_pickup": "资产领用",
-            "asset_transfer": "资产调拨",
-            "asset_return": "资产退库"
+            "asset_pickup": "璧勪骇棰嗙敤",
+            "asset_transfer": "璧勪骇璋冩嫧",
+            "asset_return": "璧勪骇閫€搴?
         },
         "messages": {
-            "saveSuccess": "保存成功",
-            "createSuccess": "创建成功",
-            "updateSuccess": "更新成功",
-            "saveFailed": "保存失败",
-            "required": "请填写名称和编码"
+            "saveSuccess": "淇濆瓨鎴愬姛",
+            "createSuccess": "鍒涘缓鎴愬姛",
+            "updateSuccess": "鏇存柊鎴愬姛",
+            "saveFailed": "淇濆瓨澶辫触",
+            "required": "璇峰～鍐欏悕绉板拰缂栫爜"
         }
     },
     "file": {
-        "title": "系统文件管理",
+        "title": "绯荤粺鏂囦欢绠＄悊",
         "actions": {
-            "upload": "上传文件",
-            "batchDelete": "批量删除",
-            "clearSelection": "取消选择",
-            "selection": "已选择 {count} 个文件"
+            "upload": "涓婁紶鏂囦欢",
+            "batchDelete": "鎵归噺鍒犻櫎",
+            "clearSelection": "鍙栨秷閫夋嫨",
+            "selection": "宸查€夋嫨 {count} 涓枃浠?
         },
         "filter": {
-            "search": "搜索",
-            "searchPlaceholder": "文件名",
-            "fileType": "文件类型",
-            "allTypes": "所有类型",
-            "bizType": "业务类型",
-            "allBizTypes": "全部"
+            "search": "鎼滅储",
+            "searchPlaceholder": "鏂囦欢鍚?,
+            "fileType": "鏂囦欢绫诲瀷",
+            "allTypes": "鎵€鏈夌被鍨?,
+            "bizType": "涓氬姟绫诲瀷",
+            "allBizTypes": "鍏ㄩ儴"
         },
         "types": {
-            "image": "图片",
-            "document": "文档",
-            "video": "视频",
-            "archive": "压缩包",
-            "asset_image": "资产图片",
-            "contract": "合同",
-            "invoice": "发票",
-            "attachment": "附件",
-            "other": "其他",
+            "image": "鍥剧墖",
+            "document": "鏂囨。",
+            "video": "瑙嗛",
+            "archive": "鍘嬬缉鍖?,
+            "asset_image": "璧勪骇鍥剧墖",
+            "contract": "鍚堝悓",
+            "invoice": "鍙戠エ",
+            "attachment": "闄勪欢",
+            "other": "鍏朵粬",
             "pdf": "PDF",
-            "file": "文件"
+            "file": "鏂囦欢"
         },
         "stats": {
-            "totalFiles": "文件总数",
-            "totalSize": "总大小",
-            "todayUploads": "今日上传",
-            "images": "图片数量"
+            "totalFiles": "鏂囦欢鎬绘暟",
+            "totalSize": "鎬诲ぇ灏?,
+            "todayUploads": "浠婃棩涓婁紶",
+            "images": "鍥剧墖鏁伴噺"
         },
         "columns": {
-            "preview": "预览",
-            "fileName": "文件名",
-            "type": "类型",
-            "size": "大小",
-            "bizType": "业务类型",
-            "description": "描述",
-            "uploadDate": "上传时间"
+            "preview": "棰勮",
+            "fileName": "鏂囦欢鍚?,
+            "type": "绫诲瀷",
+            "size": "澶у皬",
+            "bizType": "涓氬姟绫诲瀷",
+            "description": "鎻忚堪",
+            "uploadDate": "涓婁紶鏃堕棿"
         },
         "dialog": {
-            "editTitle": "编辑文件",
-            "fileName": "文件名",
-            "bizType": "业务类型",
-            "description": "描述"
+            "editTitle": "缂栬緫鏂囦欢",
+            "fileName": "鏂囦欢鍚?,
+            "bizType": "涓氬姟绫诲瀷",
+            "description": "鎻忚堪"
         },
         "messages": {
-            "sizeLimit": "文件大小不能超过 {size}",
-            "uploadSuccess": "文件上传成功",
-            "uploadFailed": "上传失败",
-            "updateSuccess": "更新成功",
-            "updateFailed": "更新失败",
-            "deleteSuccess": "删除成功",
-            "deleteFailed": "删除失败",
-            "batchDeleteFailed": "批量删除失败",
-            "confirmDelete": "确定要删除此文件吗？",
-            "batchDeleteSuccess": "已删除 {count} 个文件",
-            "loadFailed": "加载文件失败"
+            "sizeLimit": "鏂囦欢澶у皬涓嶈兘瓒呰繃 {size}",
+            "uploadSuccess": "鏂囦欢涓婁紶鎴愬姛",
+            "uploadFailed": "涓婁紶澶辫触",
+            "updateSuccess": "鏇存柊鎴愬姛",
+            "updateFailed": "鏇存柊澶辫触",
+            "deleteSuccess": "鍒犻櫎鎴愬姛",
+            "deleteFailed": "鍒犻櫎澶辫触",
+            "batchDeleteFailed": "鎵归噺鍒犻櫎澶辫触",
+            "confirmDelete": "纭畾瑕佸垹闄ゆ鏂囦欢鍚楋紵",
+            "batchDeleteSuccess": "宸插垹闄?{count} 涓枃浠?,
+            "loadFailed": "鍔犺浇鏂囦欢澶辫触"
         }
     }
 }

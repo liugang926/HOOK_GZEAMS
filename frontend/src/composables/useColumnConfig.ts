@@ -3,6 +3,7 @@ import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { columnConfigApi, type ColumnConfig as ApiColumnConfig } from '@/api/system'
 import type { ColumnItem } from '@/types/common'
+export type { ColumnItem } from '@/types/common'
 
 /**
  * Column configuration types
@@ -104,7 +105,9 @@ export function useColumnConfig(objectCode: string) {
           fieldCode: (col as any).fieldCode || (col as any).field_code || col.prop,
           field_code: (col as any).field_code || (col as any).fieldCode || col.prop,
           width: col.width || col.defaultWidth || 120,
-          fixed: col.fixed || undefined,
+          fixed: col.fixed === true
+            ? 'left'
+            : (col.fixed === false ? undefined : (col.fixed || undefined)),
           visible: col.visible !== false
         })),
         columnOrder: columns.map((col) => (col as any).field_code || (col as any).fieldCode || col.prop)

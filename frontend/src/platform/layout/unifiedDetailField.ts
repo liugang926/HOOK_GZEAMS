@@ -1,5 +1,6 @@
 import { normalizeFieldType } from '@/utils/fieldType'
 import i18n from '@/locales'
+import { normalizeGridSpan24 } from '@/platform/layout/semanticGrid'
 
 export type UnifiedDetailField = {
   prop: string
@@ -40,6 +41,7 @@ export type UnifiedDetailField = {
   tagType?: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'>
   defaultTagType?: 'success' | 'warning' | 'danger' | 'info' | 'primary'
   span?: number
+  minHeight?: number
   href?: string
   hidden?: boolean
   labelClass?: string
@@ -62,13 +64,18 @@ export function isAuditFieldCode(code: string): boolean {
 }
 
 export function normalizeDetailSpan(rawSpan: any, rawColumns: any): number {
-  const columns = Number(rawColumns) || 2
-  const span = Number(rawSpan)
+  return normalizeGridSpan24(rawSpan, rawColumns)
+}
 
-  if (!Number.isFinite(span) || span <= 0) return Math.max(1, Math.round(24 / columns))
-  if (span <= columns) return Math.max(1, Math.min(24, Math.round((24 / columns) * span)))
-  if (span <= 24) return Math.max(1, Math.min(24, Math.round(span)))
-  return 24
+const resolveMinHeight = (field: Record<string, any>): number | undefined => {
+  const raw = field.minHeight ??
+    field.min_height ??
+    field.componentProps?.minHeight ??
+    field.componentProps?.min_height ??
+    field.component_props?.minHeight ??
+    field.component_props?.min_height
+  const normalized = Number(raw)
+  return Number.isFinite(normalized) && normalized > 0 ? Math.round(normalized) : undefined
 }
 
 export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailField {
@@ -82,6 +89,7 @@ export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailF
     label: field.label || field.name || code,
     editorType: normalizedType,
     span: field.span || 12,
+    minHeight: resolveMinHeight(field),
     options
   }
 

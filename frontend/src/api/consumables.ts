@@ -6,6 +6,7 @@
  */
 
 import request from '@/utils/request'
+import { toData, toPaginated } from '@/api/contract'
 import { BaseApiService } from '@/api/base'
 import type { PaginatedResponse } from '@/types/api'
 import {
@@ -29,7 +30,8 @@ export interface Consumable {
 }
 
 export interface StockOperation {
-    consumableId: string
+    consumableId?: string | number
+    consumable_id?: string | number
     quantity: number
     type: 'in' | 'out'
     remark?: string
@@ -47,57 +49,57 @@ class ConsumableApiService extends BaseApiService<Consumable> {
      * List consumables (delegates to dynamic API)
      */
     async list(params?: any): Promise<PaginatedResponse<Consumable>> {
-        const res = await consumableApi.list(params)
-        return {
-            items: res.data?.results || [],
-            total: res.data?.count || 0,
-            ...params
-        }
+        return toPaginated<Consumable>(await consumableApi.list(params))
     }
 
     /**
      * Get single consumable (delegates to dynamic API)
      */
-    async get(id: string, params?: any): Promise<Consumable> {
-        const res = await consumableApi.get(id, params)
-        return res.data as Consumable
+    async get(id: string | number, params?: any): Promise<Consumable> {
+        return toData<Consumable>(await consumableApi.get(String(id), params))
     }
 
     /**
      * Create consumable (delegates to dynamic API)
      */
     async create(data: Partial<Consumable>): Promise<Consumable> {
-        const res = await consumableApi.create(data)
-        return res.data as Consumable
+        return toData<Consumable>(await consumableApi.create(data))
     }
 
     /**
      * Update consumable (delegates to dynamic API)
      */
-    async update(id: string, data: Partial<Consumable>): Promise<Consumable> {
-        const res = await consumableApi.update(id, data)
-        return res.data as Consumable
+    async update(id: string | number, data: Partial<Consumable>): Promise<Consumable> {
+        return toData<Consumable>(await consumableApi.update(String(id), data))
     }
 
     /**
      * Delete consumable (delegates to dynamic API)
      */
-    async delete(id: string): Promise<void> {
-        await consumableApi.delete(id)
+    async delete(id: string | number): Promise<void> {
+        await consumableApi.delete(String(id))
     }
 
     /**
      * Stock in operation (custom action endpoint)
      */
     stockIn(data: StockOperation): Promise<void> {
-        return request.post(`/system/objects/Consumable/stock-in/`, data)
+        const payload = {
+            ...data,
+            consumable_id: data.consumable_id ?? data.consumableId
+        }
+        return request.post(`/system/objects/Consumable/stock-in/`, payload)
     }
 
     /**
      * Stock out operation (custom action endpoint)
      */
     stockOut(data: StockOperation): Promise<void> {
-        return request.post(`/system/objects/Consumable/stock-out/`, data)
+        const payload = {
+            ...data,
+            consumable_id: data.consumable_id ?? data.consumableId
+        }
+        return request.post(`/system/objects/Consumable/stock-out/`, payload)
     }
 
     /**
@@ -115,23 +117,19 @@ export const consumableApiService = new ConsumableApiService()
  */
 export const consumableCategoryApiService = {
     async list(params?: any): Promise<any[]> {
-        const res = await consumableCategoryApi.list(params)
-        return res.data?.results || []
+        return toPaginated<any>(await consumableCategoryApi.list(params)).results
     },
 
     async get(id: string): Promise<any> {
-        const res = await consumableCategoryApi.get(id)
-        return res.data
+        return toData<any>(await consumableCategoryApi.get(id))
     },
 
     async create(data: any): Promise<any> {
-        const res = await consumableCategoryApi.create(data)
-        return res.data
+        return toData<any>(await consumableCategoryApi.create(data))
     },
 
     async update(id: string, data: any): Promise<any> {
-        const res = await consumableCategoryApi.update(id, data)
-        return res.data
+        return toData<any>(await consumableCategoryApi.update(id, data))
     },
 
     async delete(id: string): Promise<void> {
@@ -144,16 +142,11 @@ export const consumableCategoryApiService = {
  */
 export const consumableStockApiService = {
     async list(params?: any): Promise<PaginatedResponse<any>> {
-        const res = await consumableStockApi.list(params)
-        return {
-            items: res.data?.results || [],
-            total: res.data?.count || 0
-        }
+        return toPaginated<any>(await consumableStockApi.list(params))
     },
 
     async get(id: string): Promise<any> {
-        const res = await consumableStockApi.get(id)
-        return res.data
+        return toData<any>(await consumableStockApi.get(id))
     }
 }
 
@@ -162,21 +155,15 @@ export const consumableStockApiService = {
  */
 export const consumablePurchaseApiService = {
     async list(params?: any): Promise<PaginatedResponse<any>> {
-        const res = await consumablePurchaseApi.list(params)
-        return {
-            items: res.data?.results || [],
-            total: res.data?.count || 0
-        }
+        return toPaginated<any>(await consumablePurchaseApi.list(params))
     },
 
     async get(id: string): Promise<any> {
-        const res = await consumablePurchaseApi.get(id)
-        return res.data
+        return toData<any>(await consumablePurchaseApi.get(id))
     },
 
     async create(data: any): Promise<any> {
-        const res = await consumablePurchaseApi.create(data)
-        return res.data
+        return toData<any>(await consumablePurchaseApi.create(data))
     }
 }
 
@@ -185,21 +172,15 @@ export const consumablePurchaseApiService = {
  */
 export const consumableIssueApiService = {
     async list(params?: any): Promise<PaginatedResponse<any>> {
-        const res = await consumableIssueApi.list(params)
-        return {
-            items: res.data?.results || [],
-            total: res.data?.count || 0
-        }
+        return toPaginated<any>(await consumableIssueApi.list(params))
     },
 
     async get(id: string): Promise<any> {
-        const res = await consumableIssueApi.get(id)
-        return res.data
+        return toData<any>(await consumableIssueApi.get(id))
     },
 
     async create(data: any): Promise<any> {
-        const res = await consumableIssueApi.create(data)
-        return res.data
+        return toData<any>(await consumableIssueApi.create(data))
     }
 }
 

@@ -157,7 +157,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Plus, Delete } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import AssetSelector from './components/AssetSelector.vue'
 import DeptPicker from '@/components/common/DeptPicker.vue'
 import { createPickup, updatePickup, getPickupDetail } from '@/api/assets/pickup'
@@ -261,6 +261,9 @@ const handleSubmitAndApply = async () => {
             const res = await createPickup(payload) as any
             id = res.id
         }
+        if (!id) {
+            throw new Error('Pickup id is required to start workflow')
+        }
 
         // Trigger workflow start
         // Assuming workflowApi.startProcess exists and takes businessKey
@@ -270,7 +273,7 @@ const handleSubmitAndApply = async () => {
         // We will assume a standard start endpoint.
         await workflowInstanceApi.startProcess({
             processKey: 'asset_pickup',
-            businessKey: id,
+            businessKey: String(id),
             variables: {
                 initiator: 'current_user', // Backend should handle this
                 departmentId: form.departmentId

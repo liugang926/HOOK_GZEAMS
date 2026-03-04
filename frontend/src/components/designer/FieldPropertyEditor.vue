@@ -45,7 +45,8 @@
             v-else-if="item.inputType === 'number'"
             :data-testid="`field-prop-${item.key}`"
             :model-value="numberValue(item.key)"
-            :min="item.key.includes('min_') || item.key.includes('max_') ? undefined : 0"
+            :min="getNumberMin(item.key)"
+            :step="getNumberStep(item.key)"
             @change="handleNumberChange(item.key, $event)"
           />
 
@@ -206,6 +207,17 @@ const jsonValue = (key: string): string => {
   } catch {
     return String(value)
   }
+}
+
+const getNumberMin = (key: string): number | undefined => {
+  if (key === 'minHeight') return 44
+  if (key.includes('min_') || key.includes('max_')) return undefined
+  return 0
+}
+
+const getNumberStep = (key: string): number => {
+  if (key === 'minHeight') return 8
+  return 1
 }
 
 const humanizeFieldType = (value: string): string =>

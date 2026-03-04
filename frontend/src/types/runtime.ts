@@ -55,6 +55,7 @@ export interface RuntimeField {
   hidden?: boolean
   visible?: boolean
   span?: number
+  minHeight?: number
   placeholder?: string
   helpText?: string
   defaultValue?: unknown

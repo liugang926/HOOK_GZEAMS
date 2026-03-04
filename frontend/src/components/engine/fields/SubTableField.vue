@@ -126,14 +126,18 @@ const internalValue = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-const columns = computed(() => {
-  return (
-    props.field.related_fields ||
-    props.field.relatedFields ||
-    props.field.componentProps?.relatedFields ||
-    props.field.component_props?.related_fields ||
-    []
-  )
+const columns = computed<ColumnDefinition[]>(() => {
+  if (Array.isArray(props.field.related_fields)) return props.field.related_fields
+  if (Array.isArray(props.field.relatedFields)) return props.field.relatedFields
+
+  const componentProps = (props.field.componentProps || props.field.component_props || {}) as Record<string, unknown>
+  const fromCamel = componentProps.relatedFields
+  if (Array.isArray(fromCamel)) return fromCamel as ColumnDefinition[]
+
+  const fromSnake = componentProps.related_fields
+  if (Array.isArray(fromSnake)) return fromSnake as ColumnDefinition[]
+
+  return [] as ColumnDefinition[]
 })
 
 const currentPage = ref(1)

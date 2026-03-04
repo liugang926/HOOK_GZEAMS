@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { Filter, Plus, FolderAdd } from '@element-plus/icons-vue'
 import ConditionGroup from './ConditionGroup.vue'
 

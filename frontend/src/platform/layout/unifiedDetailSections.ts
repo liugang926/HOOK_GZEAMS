@@ -66,11 +66,20 @@ export const projectUnifiedDetailSectionsFromLayout = (
     fields: model.fields as any[],
     layoutConfig: { sections: model.sections || [] }
   })
+  const knownFieldCodes = new Set(
+    (model.fields || [])
+      .map((field) => String(field?.code || '').trim())
+      .filter(Boolean)
+  )
 
   return projectDetailSectionsFromRenderSchema(renderSchema, model.fields as any[], {
     strictVisibility: model.modePolicy.strictVisibility === true,
     isAuditFieldCode,
     mustSkipField: (field) => {
+      // Runtime metadata field map is the source of truth.
+      // Layout-only injected fields (often system/legacy artifacts) should not
+      // occupy grid slots in detail rendering.
+      if (!knownFieldCodes.has(String(field?.code || '').trim())) return true
       if (isSystemField(field) || isAuditFieldCode(field.code)) return true
       return isHiddenField(field)
     },

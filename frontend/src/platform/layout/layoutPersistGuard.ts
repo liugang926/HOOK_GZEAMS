@@ -21,13 +21,35 @@ const normalizeFieldForPersist = (rawField: any, dropFieldCode?: (code: string) 
   if (!fieldCode) return null
   if (dropFieldCode && dropFieldCode(fieldCode)) return null
 
-  return {
+  const componentProps = {
+    ...(field.component_props || {}),
+    ...(field.componentProps || {})
+  }
+  const rawMinHeight = field.minHeight ?? field.min_height ?? componentProps.minHeight ?? componentProps.min_height
+  const normalizedMinHeight = rawMinHeight === undefined
+    ? undefined
+    : (Number.isFinite(Number(rawMinHeight)) ? Math.round(Number(rawMinHeight)) : rawMinHeight)
+
+  if (normalizedMinHeight === undefined) {
+    delete componentProps.minHeight
+    delete componentProps.min_height
+  } else {
+    componentProps.minHeight = normalizedMinHeight
+    delete componentProps.min_height
+  }
+
+  const normalizedField = {
     ...field,
     id: field.id || generateLayoutElementId('field'),
     fieldCode,
     label: field.label || field.name || fieldCode,
-    span: Number.isFinite(Number(field.span)) ? Number(field.span) : 1
+    span: Number.isFinite(Number(field.span)) ? Number(field.span) : 1,
+    minHeight: normalizedMinHeight,
+    componentProps,
+    component_props: componentProps
   }
+  delete (normalizedField as any).min_height
+  return normalizedField
 }
 
 export const resolveRawLayoutConfig = (raw: any): AnyRecord => {

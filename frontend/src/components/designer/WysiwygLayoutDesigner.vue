@@ -187,6 +187,7 @@
 
       <!-- Center Canvas - Real-time Preview Area -->
       <div
+        ref="canvasAreaRef"
         class="canvas-area"
         data-testid="layout-canvas"
         :class="{ 'drag-over': isDragOverCanvas }"
@@ -236,7 +237,7 @@
           <div class="canvas-render-shell">
             <!-- Render the actual form using real components -->
             <div
-              v-if="layoutConfig.sections && layoutConfig.sections.length > 0"
+              v-if="designerRenderSections.length > 0"
               class="runtime-preview-card detail-mode-preview dynamic-detail-page"
             >
               <BaseDetailPage
@@ -255,61 +256,61 @@
                 @section-click="maybeSelectSection"
               >
                 <template
-                  v-for="(section, sectionIndex) in (layoutConfig.sections || [])"
-                  :key="`slot-${section.id}`"
-                  #[`section-${section.id}`]
+                  v-for="(renderSection, sectionIndex) in designerRenderSections"
+                  :key="`slot-${renderSection.id}`"
+                  #[`section-${renderSection.id}`]
                 >
                   <div
                     class="designer-section-slot layout-section"
                     data-testid="layout-section"
-                    :class="{ 'is-selected': isDesignMode && selectedId === section.id }"
-                    :data-section-id="section.id"
-                    :data-section-position="section.position"
-                    @click.stop="maybeSelectSection(section.id)"
+                    :class="{ 'is-selected': isDesignMode && selectedId === renderSection.id }"
+                    :data-section-id="renderSection.id"
+                    :data-section-position="renderSection.position"
+                    @click.stop="maybeSelectSection(renderSection.id)"
                   >
                     <div
-                      v-if="isDesignMode && selectedId === section.id"
+                      v-if="isDesignMode && selectedId === renderSection.id"
                       class="designer-section-toolbar"
                       @click.stop
                     >
                       <el-button
                         size="small"
                         text
-                        @click="selectSection(section.id)"
+                        @click="selectSection(renderSection.id)"
                       >
                         {{ t('system.pageLayout.designer.actions.editSection') }}
                       </el-button>
                       <el-button
-                        v-if="section.collapsible"
+                        v-if="renderSection.collapsible"
                         size="small"
                         text
-                        @click="toggleSectionCollapse(section.id)"
+                        @click="toggleSectionCollapse(renderSection.id)"
                       >
-                        {{ section.collapsed ? t('common.actions.expand') : t('common.actions.collapse') }}
+                        {{ renderSection.collapsed ? t('common.actions.expand') : t('common.actions.collapse') }}
                       </el-button>
                       <el-button
                         size="small"
                         text
                         type="danger"
-                        @click="deleteSection(section.id)"
+                        @click="deleteSection(renderSection.id)"
                       >
                         {{ t('system.pageLayout.designer.actions.deleteSection') }}
                       </el-button>
                     </div>
 
-                    <template v-if="section.type === 'tab'">
+                    <template v-if="renderSection.type === 'tab'">
                       <el-tabs
-                        v-model="activeTabs[section.id]"
+                        v-model="activeTabs[renderSection.id]"
                         type="card"
                       >
                         <el-tab-pane
-                          v-for="tab in section.tabs"
+                          v-for="tab in renderSection.tabs"
                           :key="tab.id"
                           :label="tab.title"
                           :name="tab.id"
                           class="tab-pane-content"
                           :data-tab-id="tab.id"
-                          :data-section-id="section.id"
+                          :data-section-id="renderSection.id"
                           @drop="handleTabDrop"
                           @dragover="handleSectionDragOver"
                           @dragleave="handleSectionDragLeave"
@@ -318,31 +319,43 @@
                             :gutter="24"
                             class="tab-fields designer-fields-container dynamic-form-section__fields"
                             data-container-kind="tab"
-                            :data-section-id="section.id"
+                            :data-section-id="renderSection.id"
                             :data-tab-id="tab.id"
                           >
                             <el-col
-                              v-for="field in tab.fields"
-                              :key="field.id"
+                              v-for="tabField in tab.fields"
+                              :key="tabField.field.id"
                               class="field-renderer field-col"
-                              :span="getDetailSpan(field, section)"
-                              :data-field-id="field.id"
-                              :data-field-code="field.fieldCode"
+                              :span="tabField.span24"
+                              :data-field-id="tabField.field.id"
+                              :data-field-code="tabField.field.fieldCode"
+                              :data-field-span="tabField.semanticSpan"
+                              v-bind="tabField.placementAttrs"
                             >
                               <DesignerFieldCard
-                                :field="field"
-                                :display-field="fieldToDesignDisplayField(field)"
-                                :value="sampleData[field.fieldCode] ?? getSampleValue(field)"
-                                :selected="isDesignMode && selectedId === field.id"
+                                :field="toCanvasField(tabField.field)"
+                                :display-field="fieldToDesignDisplayField(tabField.field)"
+                                :value="sampleData[tabField.field.fieldCode] ?? getSampleValue(tabField.field)"
+                                :selected="isDesignMode && selectedId === tabField.field.id"
                                 :interactive="isDesignMode"
-                                :section-id="section.id"
+                                :resizable="isDesignMode"
+                                :allow-horizontal-resize="true"
+                                :allow-vertical-resize="true"
+                                :size-feedback-active="sizeFeedbackFieldId === field.id"
+                                :remove-title="designerCardTitles.remove"
+                                :resize-title="designerCardTitles.resize"
+                                :reset-size-title="designerCardTitles.reset"
+                                :sidebar-resize-hint="designerCardTitles.sidebarOnlyHeight"
+                                :section-id="renderSection.id"
                                 :section-index="sectionIndex"
-                                @select="maybeSelectField(field, section)"
+                                @select="maybeSelectField(tabField.field, renderSection.section)"
                                 @remove="removeField"
+                                @reset-size="handleFieldSizeReset"
+                                @resize-start="handleFieldResizeStart"
                               />
                             </el-col>
                             <el-col
-                              v-if="!tab.fields || tab.fields.length === 0"
+                              v-if="tab.fields.length === 0"
                               :span="24"
                               class="empty-column-placeholder compact"
                             >
@@ -353,13 +366,13 @@
                       </el-tabs>
                     </template>
 
-                    <template v-else-if="section.type === 'collapse'">
+                    <template v-else-if="renderSection.type === 'collapse'">
                       <el-collapse
-                        v-model="activeCollapses[section.id]"
+                        v-model="activeCollapses[renderSection.id]"
                         :accordion="false"
                       >
                         <el-collapse-item
-                          v-for="item in section.items"
+                          v-for="item in renderSection.items"
                           :key="item.id"
                           :name="item.id"
                           :data-collapse-id="item.id"
@@ -370,7 +383,7 @@
                           <div
                             class="collapse-fields dynamic-form-section__fields"
                             data-container-kind="collapse"
-                            :data-section-id="section.id"
+                            :data-section-id="renderSection.id"
                             :data-collapse-id="item.id"
                             @drop="handleCollapseDrop"
                             @dragover="handleSectionDragOver"
@@ -380,32 +393,44 @@
                               :gutter="24"
                               class="designer-fields-container"
                               data-container-kind="collapse"
-                              :data-section-id="section.id"
+                              :data-section-id="renderSection.id"
                               :data-collapse-id="item.id"
                             >
                               <el-col
-                                v-for="field in item.fields"
-                                :key="field.id"
+                                v-for="itemField in item.fields"
+                                :key="itemField.field.id"
                                 class="field-renderer field-col"
-                                :span="getDetailSpan(field, section)"
-                                :data-field-id="field.id"
-                                :data-field-code="field.fieldCode"
+                                :span="itemField.span24"
+                                :data-field-id="itemField.field.id"
+                                :data-field-code="itemField.field.fieldCode"
+                                :data-field-span="itemField.semanticSpan"
+                                v-bind="itemField.placementAttrs"
                               >
                                 <DesignerFieldCard
-                                  :field="field"
-                                  :display-field="fieldToDesignDisplayField(field)"
-                                  :value="sampleData[field.fieldCode] ?? getSampleValue(field)"
-                                  :selected="isDesignMode && selectedId === field.id"
+                                  :field="toCanvasField(itemField.field)"
+                                  :display-field="fieldToDesignDisplayField(itemField.field)"
+                                  :value="sampleData[itemField.field.fieldCode] ?? getSampleValue(itemField.field)"
+                                  :selected="isDesignMode && selectedId === itemField.field.id"
                                   :interactive="isDesignMode"
-                                  :section-id="section.id"
+                                  :resizable="isDesignMode"
+                                  :allow-horizontal-resize="renderSection.position !== 'sidebar'"
+                                  :allow-vertical-resize="true"
+                                  :size-feedback-active="sizeFeedbackFieldId === itemField.field.id"
+                                  :remove-title="designerCardTitles.remove"
+                                  :resize-title="designerCardTitles.resize"
+                                  :reset-size-title="designerCardTitles.reset"
+                                  :sidebar-resize-hint="designerCardTitles.sidebarOnlyHeight"
+                                  :section-id="renderSection.id"
                                   :section-index="sectionIndex"
-                                  @select="maybeSelectField(field, section)"
+                                  @select="maybeSelectField(itemField.field, renderSection.section)"
                                   @remove="removeField"
+                                  @reset-size="handleFieldSizeReset"
+                                  @resize-start="handleFieldResizeStart"
                                 />
                               </el-col>
                             </el-row>
                             <el-col
-                              v-if="!item.fields || item.fields.length === 0"
+                              v-if="item.fields.length === 0"
                               :span="24"
                               class="empty-column-placeholder compact"
                             >
@@ -419,39 +444,51 @@
                     <template v-else>
                       <div
                         class="designer-section-body"
-                        :data-section-id="section.id"
+                        :data-section-id="renderSection.id"
                         @drop="handleSectionDrop"
                         @dragover="handleSectionDragOver"
                         @dragleave="handleSectionDragLeave"
                       >
-                        <template v-if="section.position === 'sidebar'">
+                        <template v-if="renderSection.position === 'sidebar'">
                           <div
                             class="section-fields-sidebar designer-fields-container dynamic-form-section__fields"
                             data-container-kind="section"
-                            :data-section-id="section.id"
+                            :data-section-id="renderSection.id"
                           >
                             <div
-                              v-for="field in section.fields"
-                              :key="field.id"
+                              v-for="sectionField in renderSection.fields"
+                              :key="sectionField.field.id"
                               class="field-renderer field-col sidebar-field-col"
-                              :data-field-id="field.id"
-                              :data-field-code="field.fieldCode"
+                              :data-field-id="sectionField.field.id"
+                              :data-field-code="sectionField.field.fieldCode"
+                              :data-field-span="sectionField.semanticSpan"
+                              v-bind="sectionField.placementAttrs"
                             >
                               <DesignerFieldCard
-                                :field="field"
-                                :display-field="fieldToDesignDisplayField(field)"
-                                :value="sampleData[field.fieldCode] ?? getSampleValue(field)"
-                                :selected="isDesignMode && selectedId === field.id"
+                                :field="toCanvasField(sectionField.field)"
+                                :display-field="fieldToDesignDisplayField(sectionField.field)"
+                                :value="sampleData[sectionField.field.fieldCode] ?? getSampleValue(sectionField.field)"
+                                :selected="isDesignMode && selectedId === sectionField.field.id"
                                 :interactive="isDesignMode"
                                 :sidebar="true"
-                                :section-id="section.id"
+                                :resizable="isDesignMode"
+                                :allow-horizontal-resize="false"
+                                :allow-vertical-resize="true"
+                                :size-feedback-active="sizeFeedbackFieldId === sectionField.field.id"
+                                :remove-title="designerCardTitles.remove"
+                                :resize-title="designerCardTitles.resize"
+                                :reset-size-title="designerCardTitles.reset"
+                                :sidebar-resize-hint="designerCardTitles.sidebarOnlyHeight"
+                                :section-id="renderSection.id"
                                 :section-index="sectionIndex"
-                                @select="maybeSelectField(field, section)"
+                                @select="maybeSelectField(sectionField.field, renderSection.section)"
                                 @remove="removeField"
+                                @reset-size="handleFieldSizeReset"
+                                @resize-start="handleFieldResizeStart"
                               />
                             </div>
                             <el-col
-                              v-if="!section.fields || section.fields.length === 0"
+                              v-if="renderSection.fields.length === 0"
                               :span="24"
                               class="empty-column-placeholder compact"
                             >
@@ -464,30 +501,42 @@
                             :gutter="24"
                             class="section-fields designer-fields-container dynamic-form-section__fields"
                             data-container-kind="section"
-                            :data-section-id="section.id"
+                            :data-section-id="renderSection.id"
                           >
                             <el-col
-                              v-for="field in section.fields"
-                              :key="field.id"
+                              v-for="sectionField in renderSection.fields"
+                              :key="sectionField.field.id"
                               class="field-renderer field-col"
-                              :span="getDetailSpan(field, section)"
-                              :data-field-id="field.id"
-                              :data-field-code="field.fieldCode"
+                              :span="sectionField.span24"
+                              :data-field-id="sectionField.field.id"
+                              :data-field-code="sectionField.field.fieldCode"
+                              :data-field-span="sectionField.semanticSpan"
+                              v-bind="sectionField.placementAttrs"
                             >
                               <DesignerFieldCard
-                                :field="field"
-                                :display-field="fieldToDesignDisplayField(field)"
-                                :value="sampleData[field.fieldCode] ?? getSampleValue(field)"
-                                :selected="isDesignMode && selectedId === field.id"
+                                :field="toCanvasField(sectionField.field)"
+                                :display-field="fieldToDesignDisplayField(sectionField.field)"
+                                :value="sampleData[sectionField.field.fieldCode] ?? getSampleValue(sectionField.field)"
+                                :selected="isDesignMode && selectedId === sectionField.field.id"
                                 :interactive="isDesignMode"
-                                :section-id="section.id"
+                                :resizable="isDesignMode"
+                                :allow-horizontal-resize="true"
+                                :allow-vertical-resize="true"
+                                :size-feedback-active="sizeFeedbackFieldId === sectionField.field.id"
+                                :remove-title="designerCardTitles.remove"
+                                :resize-title="designerCardTitles.resize"
+                                :reset-size-title="designerCardTitles.reset"
+                                :sidebar-resize-hint="designerCardTitles.sidebarOnlyHeight"
+                                :section-id="renderSection.id"
                                 :section-index="sectionIndex"
-                                @select="maybeSelectField(field, section)"
+                                @select="maybeSelectField(sectionField.field, renderSection.section)"
                                 @remove="removeField"
+                                @reset-size="handleFieldSizeReset"
+                                @resize-start="handleFieldResizeStart"
                               />
                             </el-col>
                             <div
-                              v-if="!section.fields || section.fields.length === 0"
+                              v-if="renderSection.fields.length === 0"
                               class="empty-column-placeholder compact"
                             >
                               {{ t('system.pageLayout.designer.hints.dropToSection') }}
@@ -517,6 +566,15 @@
               </el-empty>
             </div>
           </div>
+        </div>
+        <div
+          v-if="resizeHint"
+          class="field-resize-hint"
+          data-testid="layout-field-resize-hint"
+          :style="resizeHintStyle"
+        >
+          <span data-testid="layout-field-resize-hint-span">{{ resizeHint.span }} / {{ resizeHint.columns }}</span>
+          <span data-testid="layout-field-resize-hint-height">{{ resizeHint.minHeight }}px</span>
         </div>
       </div>
 
@@ -587,7 +645,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, type CSSProperties } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import Sortable from 'sortablejs'
@@ -606,11 +664,12 @@ import { pageLayoutApi } from '@/api/system'
 import { useLayoutHistory } from '@/composables/useLayoutHistory'
 import { normalizeFieldType } from '@/utils/fieldType'
 import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
-import { normalizeDetailSpan, toUnifiedDetailField } from '@/platform/layout/unifiedDetailField'
+import { toUnifiedDetailField } from '@/platform/layout/unifiedDetailField'
 import { toRuntimeFieldFromLayout } from '@/platform/layout/unifiedRuntimeField'
 import { canAddFieldInDesigner, getFieldDisabledReason } from '@/platform/layout/designerFieldGuard'
 import { ensureLayoutConfigIds as ensurePersistLayoutConfigIds, preparePersistLayoutConfig } from '@/platform/layout/layoutPersistGuard'
 import { mergeFieldSources } from '@/platform/layout/unifiedFieldOrder'
+import { normalizeGridSpan24, placeGridFields } from '@/platform/layout/semanticGrid'
 import {
   getDefaultLayoutConfig,
   cloneLayoutConfig,
@@ -652,6 +711,8 @@ interface FieldDefinition {
 // This local interface is kept for backward compatibility but extends the concept
 interface LayoutField extends Omit<LayoutFieldConfig, 'fieldType'> {
   fieldType?: string // Make fieldType optional for backward compatibility
+  minHeight?: number
+  min_height?: number
   // Additional properties that may come from legacy layouts
   min_length?: number
   max_length?: number
@@ -768,6 +829,7 @@ const previewReverseRelations = ref<ReverseRelationField[]>([])
 
 // Sample data for preview
 const sampleData = ref<Record<string, any>>({})
+const canvasAreaRef = ref<HTMLElement | null>(null)
 const canvasContentRef = ref<HTMLElement | null>(null)
 
 type ContainerKind = 'section' | 'tab' | 'collapse'
@@ -778,7 +840,87 @@ type ContainerMeta = {
   collapseId?: string
 }
 
+type DesignerFieldPlacement = {
+  row: number
+  colStart: number
+  colSpan: number
+  columns: number
+  order: number
+}
+
+type DesignerRenderField = {
+  field: LayoutField
+  span24: number
+  semanticSpan: number
+  placement: DesignerFieldPlacement | null
+  placementAttrs: Record<string, string>
+}
+
+type DesignerRenderTab = {
+  id: string
+  title: string
+  fields: DesignerRenderField[]
+}
+
+type DesignerRenderCollapseItem = {
+  id: string
+  title: string
+  fields: DesignerRenderField[]
+}
+
+type DesignerRenderSection = {
+  id: string
+  title: string
+  type: string
+  position?: 'main' | 'sidebar'
+  collapsible?: boolean
+  collapsed?: boolean
+  section: LayoutSection
+  fields: DesignerRenderField[]
+  tabs: DesignerRenderTab[]
+  items: DesignerRenderCollapseItem[]
+}
+
+type ResizeAxis = 'x' | 'y' | 'xy'
+type ResizeStartPayload = {
+  fieldId: string
+  axis: ResizeAxis
+  startX: number
+  startY: number
+  cardWidth: number
+  cardHeight: number
+}
+
+type ActiveFieldResize = {
+  fieldId: string
+  fieldCode: string
+  axis: ResizeAxis
+  startX: number
+  startY: number
+  startSpan: number
+  startMinHeight: number
+  spanUnitPx: number
+  columns: number
+  allowHorizontal: boolean
+  allowVertical: boolean
+  initialConfig: LayoutConfig
+  previousUserSelect: string
+  previousCursor: string
+}
+
+type ResizeHintState = {
+  span: number
+  columns: number
+  minHeight: number
+  clientX: number
+  clientY: number
+}
+
 let sortableInstances: Sortable[] = []
+const activeFieldResize = ref<ActiveFieldResize | null>(null)
+const resizeHint = ref<ResizeHintState | null>(null)
+const sizeFeedbackFieldId = ref<string>('')
+let sizeFeedbackTimer: ReturnType<typeof setTimeout> | null = null
 
 const destroySortables = () => {
   for (const inst of sortableInstances) inst.destroy()
@@ -832,6 +974,150 @@ const getFieldArrayRef = (config: LayoutConfig, meta: ContainerMeta): LayoutFiel
   return null
 }
 
+const normalizeFieldMinHeight = (value: unknown): number | undefined => {
+  const raw = Number(value)
+  if (!Number.isFinite(raw) || raw <= 0) return undefined
+  return Math.round(raw)
+}
+
+const FIELD_MIN_HEIGHT_MIN = 44
+const FIELD_MIN_HEIGHT_MAX = 720
+const FIELD_MIN_HEIGHT_STEP = 8
+
+const clampFieldMinHeight = (value: number): number => {
+  if (!Number.isFinite(value)) return FIELD_MIN_HEIGHT_MIN
+  const rounded = Math.round(value / FIELD_MIN_HEIGHT_STEP) * FIELD_MIN_HEIGHT_STEP
+  return Math.max(FIELD_MIN_HEIGHT_MIN, Math.min(FIELD_MIN_HEIGHT_MAX, rounded))
+}
+
+const resolveLayoutFieldMinHeight = (field: LayoutField | null | undefined): number | undefined => {
+  if (!field) return undefined
+  const componentMinHeight = (field.componentProps as any)?.minHeight
+  const legacyComponentMinHeight = (field as any)?.component_props?.minHeight ?? (field as any)?.component_props?.min_height
+  const raw = componentMinHeight ?? legacyComponentMinHeight ?? field.minHeight ?? field.min_height
+  const normalized = normalizeFieldMinHeight(raw)
+  return normalized ? clampFieldMinHeight(normalized) : undefined
+}
+
+const setLayoutFieldMinHeight = (field: LayoutField, value: number | undefined) => {
+  const normalized = normalizeFieldMinHeight(value)
+  const next = normalized ? clampFieldMinHeight(normalized) : undefined
+
+  const componentProps = {
+    ...((field.componentProps || {}) as Record<string, any>),
+    ...((field as any).component_props || {})
+  }
+
+  if (next === undefined) {
+    delete componentProps.minHeight
+    delete componentProps.min_height
+  } else {
+    componentProps.minHeight = next
+    delete componentProps.min_height
+  }
+
+  field.componentProps = componentProps
+  ;(field as any).component_props = componentProps
+  // Keep legacy direct keys in sync for backend compatibility.
+  if (next === undefined) {
+    delete (field as any).minHeight
+    delete (field as any).min_height
+  } else {
+    (field as any).minHeight = next
+    ;(field as any).min_height = next
+  }
+}
+
+const toCanvasField = (field: LayoutField): LayoutField => {
+  const minHeight = resolveLayoutFieldMinHeight(field)
+  return {
+    ...field,
+    minHeight,
+    min_height: minHeight
+  }
+}
+
+const findSectionByFieldId = (config: LayoutConfig, fieldId: string): LayoutSection | null => {
+  for (const section of config.sections || []) {
+    if (section.type === 'tab') {
+      for (const tab of section.tabs || []) {
+        if ((tab.fields || []).some((field) => field?.id === fieldId)) return section
+      }
+      continue
+    }
+    if (section.type === 'collapse') {
+      for (const item of section.items || []) {
+        if ((item.fields || []).some((field) => field?.id === fieldId)) return section
+      }
+      continue
+    }
+    if ((section.fields || []).some((field) => field?.id === fieldId)) return section
+  }
+  return null
+}
+
+const findLayoutFieldById = (config: LayoutConfig, fieldId: string): LayoutField | null => {
+  const item = findItemById(config, fieldId)
+  if (!item || !('fieldCode' in item)) return null
+  return item as LayoutField
+}
+
+const resizeHintStyle = computed<CSSProperties>(() => {
+  if (!resizeHint.value || !canvasAreaRef.value) return { display: 'none' }
+  const rect = canvasAreaRef.value.getBoundingClientRect()
+  const left = Math.max(8, Math.min(rect.width - 220, resizeHint.value.clientX - rect.left + 14))
+  const top = Math.max(8, Math.min(rect.height - 56, resizeHint.value.clientY - rect.top + 14))
+  return {
+    left: `${left}px`,
+    top: `${top}px`
+  }
+})
+
+function clearPropertySizeFeedback(clearHint = true) {
+  if (sizeFeedbackTimer) {
+    clearTimeout(sizeFeedbackTimer)
+    sizeFeedbackTimer = null
+  }
+  sizeFeedbackFieldId.value = ''
+  if (clearHint && !activeFieldResize.value) {
+    resizeHint.value = null
+  }
+}
+
+async function showPropertySizeFeedback(fieldId: string) {
+  if (!fieldId || !isDesignMode.value || activeFieldResize.value) return
+  const field = findLayoutFieldById(layoutConfig.value, fieldId)
+  const section = findSectionByFieldId(layoutConfig.value, fieldId)
+  if (!field || !section) return
+
+  await nextTick()
+
+  const card = canvasContentRef.value?.querySelector<HTMLElement>(
+    `[data-testid="layout-canvas-field"][data-field-id="${fieldId}"]`
+  ) || null
+  const cardRect = card?.getBoundingClientRect()
+  const span = Math.max(1, Math.min(getColumns(section), Number(field.span || 1)))
+  const minHeight = resolveLayoutFieldMinHeight(field) ?? clampFieldMinHeight(cardRect?.height || FIELD_MIN_HEIGHT_MIN)
+
+  resizeHint.value = {
+    span,
+    columns: getColumns(section),
+    minHeight,
+    clientX: cardRect ? cardRect.left + cardRect.width / 2 : 0,
+    clientY: cardRect ? cardRect.top + cardRect.height / 2 : 0
+  }
+  sizeFeedbackFieldId.value = fieldId
+
+  if (sizeFeedbackTimer) clearTimeout(sizeFeedbackTimer)
+  sizeFeedbackTimer = setTimeout(() => {
+    sizeFeedbackFieldId.value = ''
+    if (!activeFieldResize.value) {
+      resizeHint.value = null
+    }
+    sizeFeedbackTimer = null
+  }, 1100)
+}
+
 const applySortableMove = (evt: any) => {
   const fromMeta = parseContainerMeta(evt?.from as HTMLElement)
   const toMeta = parseContainerMeta(evt?.to as HTMLElement)
@@ -882,7 +1168,7 @@ const initSortables = async () => {
       animation: 180,
       draggable: '.field-renderer',
       // Avoid grabbing from inputs; drag from labels/empty area instead.
-      filter: 'input, textarea, button, select, option, .el-input, .el-textarea, .el-select, .el-date-editor',
+      filter: 'input, textarea, button, select, option, .el-input, .el-textarea, .el-select, .el-date-editor, .field-resize-handle',
       preventOnFilter: true,
       onEnd: applySortableMove
     })
@@ -894,8 +1180,37 @@ function getColumns(section: any): number {
   return Number(section?.columns || section?.columnCount || section?.column || 2) || 2
 }
 
-function getDetailSpan(field: any, section: any): number {
-  return normalizeDetailSpan(field?.span ?? 1, getColumns(section))
+function getRenderColumns(section: any): number {
+  if (section?.position === 'sidebar') return 1
+  return getColumns(section)
+}
+
+function getDesignerPlacementAttrs(placement: DesignerFieldPlacement | null): Record<string, string> {
+  if (!placement) return {}
+  return {
+    'data-grid-row': String(placement.row),
+    'data-grid-col-start': String(placement.colStart),
+    'data-grid-col-span': String(placement.colSpan),
+    'data-grid-columns': String(placement.columns),
+    'data-grid-order': String(placement.order)
+  }
+}
+
+function buildDesignerRenderFields(fields: LayoutField[], columns: number): DesignerRenderField[] {
+  const placementSeed = (fields || []).map((field) => ({ span: field?.span ?? 1 }))
+  const placed = placeGridFields(placementSeed, columns)
+  return (fields || []).map((field, index) => {
+    const placement = (placed[index]?.placement || null) as DesignerFieldPlacement | null
+    const semanticSpan = placement?.colSpan || 1
+    const span24 = normalizeGridSpan24(semanticSpan, placement?.columns || columns)
+    return {
+      field,
+      span24,
+      semanticSpan,
+      placement,
+      placementAttrs: getDesignerPlacementAttrs(placement)
+    }
+  })
 }
 
 // Active tabs and collapses state
@@ -931,6 +1246,18 @@ const modeLabel = computed(() => {
   }
   return labels[props.mode] || String(props.mode)
 })
+
+const fallbackText = (key: string, fallback: string): string => {
+  const value = t(key)
+  return typeof value === 'string' && value !== key ? value : fallback
+}
+
+const designerCardTitles = computed(() => ({
+  remove: fallbackText('system.pageLayout.designer.actions.removeField', 'Remove field'),
+  reset: fallbackText('system.pageLayout.designer.actions.resetSize', 'Reset size'),
+  resize: fallbackText('system.pageLayout.designer.hints.dragToResize', 'Drag to resize field size'),
+  sidebarOnlyHeight: fallbackText('system.pageLayout.designer.hints.sidebarHeightOnly', 'Sidebar field supports height resize only')
+}))
 
 const selectedItem = computed(() => {
   if (!selectedId.value) return null
@@ -1231,15 +1558,75 @@ const previewFieldDefinitions = computed<RuntimeFieldDefinition[]>(() => {
   return Array.from(map.values())
 })
 
+const designerRenderSections = computed<DesignerRenderSection[]>(() => {
+  return (layoutConfig.value.sections || []).map((section: LayoutSection) => {
+    const type = section.type || 'section'
+    const renderColumns = getRenderColumns(section)
+
+    if (type === 'tab') {
+      const tabs = (section.tabs || []).map((tab) => ({
+        id: tab.id,
+        title: tab.title,
+        fields: buildDesignerRenderFields((tab.fields || []) as LayoutField[], renderColumns)
+      }))
+      return {
+        id: section.id,
+        title: section.title || 'Untitled Section',
+        type,
+        position: section.position,
+        collapsible: section.collapsible === true,
+        collapsed: section.collapsed === true,
+        section,
+        fields: [],
+        tabs,
+        items: []
+      }
+    }
+
+    if (type === 'collapse') {
+      const items = (section.items || []).map((item) => ({
+        id: item.id,
+        title: item.title,
+        fields: buildDesignerRenderFields((item.fields || []) as LayoutField[], renderColumns)
+      }))
+      return {
+        id: section.id,
+        title: section.title || 'Untitled Section',
+        type,
+        position: section.position,
+        collapsible: section.collapsible === true,
+        collapsed: section.collapsed === true,
+        section,
+        fields: [],
+        tabs: [],
+        items
+      }
+    }
+
+    return {
+      id: section.id,
+      title: section.title || 'Untitled Section',
+      type,
+      position: section.position,
+      collapsible: section.collapsible === true,
+      collapsed: section.collapsed === true,
+      section,
+      fields: buildDesignerRenderFields((section.fields || []) as LayoutField[], renderColumns),
+      tabs: [],
+      items: []
+    }
+  })
+})
+
 const designerCanvasSections = computed<DetailSection[]>(() => {
-  return (layoutConfig.value.sections || []).map((section: LayoutSection) => ({
-    name: section.id,
-    title: section.title || 'Untitled Section',
-    type: section.type || 'section',
-    position: section.position,
+  return designerRenderSections.value.map((renderSection) => ({
+    name: renderSection.id,
+    title: renderSection.title,
+    type: renderSection.type,
+    position: renderSection.position,
     fields: [],
-    collapsible: section.collapsible === true,
-    collapsed: section.collapsed === true
+    collapsible: renderSection.collapsible === true,
+    collapsed: renderSection.collapsed === true
   }))
 })
 
@@ -1426,7 +1813,10 @@ function handleFieldClick(field: FieldDefinition) {
 function selectField(field: LayoutField, section: LayoutSection) {
   selectedId.value = field.id
   selectedSection.value = section
-  fieldProps.value = { ...field }
+  fieldProps.value = {
+    ...field,
+    minHeight: resolveLayoutFieldMinHeight(field)
+  }
 }
 
 function maybeSelectField(field: LayoutField, section: LayoutSection) {
@@ -1447,10 +1837,144 @@ function maybeSelectSection(id: string) {
 }
 
 function deselect() {
+  clearPropertySizeFeedback()
   selectedId.value = ''
   selectedSection.value = null
   fieldProps.value = {}
   sectionProps.value = {}
+}
+
+function handleFieldResizeStart(payload: ResizeStartPayload) {
+  if (!isDesignMode.value) return
+  clearPropertySizeFeedback(false)
+
+  const field = findLayoutFieldById(layoutConfig.value, payload.fieldId)
+  const section = findSectionByFieldId(layoutConfig.value, payload.fieldId)
+  if (!field || !section) return
+
+  const columns = getColumns(section)
+  const allowHorizontal = section.position !== 'sidebar' && payload.axis !== 'y'
+  const allowVertical = payload.axis !== 'x'
+  if (!allowHorizontal && !allowVertical) return
+
+  if (selectedId.value !== payload.fieldId) {
+    selectField(field, section)
+  }
+
+  if (activeFieldResize.value) {
+    handleFieldResizeEnd()
+  }
+
+  const startSpan = Math.max(1, Math.min(columns, Number(field.span || 1)))
+  const inferredHeight = resolveLayoutFieldMinHeight(field) ?? clampFieldMinHeight(payload.cardHeight || 44)
+  const spanUnitPx = payload.cardWidth > 0 ? payload.cardWidth / startSpan : 180
+
+  const bodyStyle = document.body.style
+  const previousUserSelect = bodyStyle.userSelect
+  const previousCursor = bodyStyle.cursor
+  bodyStyle.userSelect = 'none'
+  bodyStyle.cursor = payload.axis === 'x' ? 'ew-resize' : payload.axis === 'y' ? 'ns-resize' : 'nwse-resize'
+
+  activeFieldResize.value = {
+    fieldId: payload.fieldId,
+    fieldCode: field.fieldCode || payload.fieldId,
+    axis: payload.axis,
+    startX: payload.startX,
+    startY: payload.startY,
+    startSpan,
+    startMinHeight: inferredHeight,
+    spanUnitPx: Math.max(24, spanUnitPx),
+    columns,
+    allowHorizontal,
+    allowVertical,
+    initialConfig: cloneLayoutConfig(layoutConfig.value) as LayoutConfig,
+    previousUserSelect,
+    previousCursor
+  }
+  resizeHint.value = {
+    span: startSpan,
+    columns,
+    minHeight: inferredHeight,
+    clientX: payload.startX,
+    clientY: payload.startY
+  }
+
+  window.addEventListener('pointermove', handleFieldResizeMove)
+  window.addEventListener('pointerup', handleFieldResizeEnd)
+  window.addEventListener('pointercancel', handleFieldResizeEnd)
+}
+
+function handleFieldResizeMove(event: PointerEvent) {
+  const state = activeFieldResize.value
+  if (!state) return
+  event.preventDefault()
+
+  const field = findLayoutFieldById(layoutConfig.value, state.fieldId)
+  if (!field) return
+
+  let nextSpan = Number(field.span || 1)
+  let nextMinHeight = resolveLayoutFieldMinHeight(field) ?? state.startMinHeight
+
+  if (state.allowHorizontal) {
+    const dx = event.clientX - state.startX
+    const delta = Math.round(dx / state.spanUnitPx)
+    nextSpan = Math.max(1, Math.min(state.columns, state.startSpan + delta))
+  }
+
+  if (state.allowVertical) {
+    const dy = event.clientY - state.startY
+    nextMinHeight = clampFieldMinHeight(state.startMinHeight + dy)
+  }
+
+  if (state.allowHorizontal) {
+    field.span = nextSpan
+  }
+  if (state.allowVertical) {
+    setLayoutFieldMinHeight(field, nextMinHeight)
+  }
+
+  if (selectedId.value === state.fieldId) {
+    fieldProps.value = {
+      ...fieldProps.value,
+      span: field.span,
+      minHeight: resolveLayoutFieldMinHeight(field)
+    }
+  }
+
+  resizeHint.value = {
+    span: nextSpan,
+    columns: state.columns,
+    minHeight: nextMinHeight,
+    clientX: event.clientX,
+    clientY: event.clientY
+  }
+}
+
+function handleFieldResizeEnd() {
+  const state = activeFieldResize.value
+  if (!state) return
+
+  window.removeEventListener('pointermove', handleFieldResizeMove)
+  window.removeEventListener('pointerup', handleFieldResizeEnd)
+  window.removeEventListener('pointercancel', handleFieldResizeEnd)
+
+  const bodyStyle = document.body.style
+  bodyStyle.userSelect = state.previousUserSelect
+  bodyStyle.cursor = state.previousCursor
+
+  const currentField = findLayoutFieldById(layoutConfig.value, state.fieldId)
+  const currentSpan = Math.max(1, Number(currentField?.span || 1))
+  const currentMinHeight = resolveLayoutFieldMinHeight(currentField || undefined) ?? state.startMinHeight
+  const spanChanged = state.allowHorizontal && currentSpan !== state.startSpan
+  const heightChanged = state.allowVertical && currentMinHeight !== state.startMinHeight
+
+  activeFieldResize.value = null
+  resizeHint.value = null
+
+  if (!spanChanged && !heightChanged) return
+
+  const finalConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
+  commitLayoutChange(finalConfig, `Resize field ${state.fieldCode}`, state.initialConfig)
 }
 
 // Drag handlers
@@ -1589,13 +2113,48 @@ function updateField(key: string, value: any) {
   const newConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
   const item = findItemById(newConfig, selectedId.value)
   if (item) {
-    item[key] = key === 'fieldType' ? normalizeFieldType(value || 'text') : value
+    if (key === 'fieldType') {
+      item[key] = normalizeFieldType(value || 'text')
+    } else if (key === 'span') {
+      const columns = selectedSection.value ? getColumns(selectedSection.value) : 2
+      const nextSpan = Math.max(1, Math.min(columns, Number(value || 1)))
+      item[key] = nextSpan
+    } else if (key === 'minHeight') {
+      setLayoutFieldMinHeight(item as LayoutField, value)
+    } else {
+      item[key] = value
+    }
     commitLayoutChange(newConfig, `Update field ${key}`, previousConfig)
+    if (key === 'span' || key === 'minHeight') {
+      void showPropertySizeFeedback(selectedId.value)
+    }
   }
 }
 
 function handleFieldPropertyUpdate(payload: { key: string; value: any }) {
   updateField(payload.key, payload.value)
+}
+
+function handleFieldSizeReset(fieldId: string) {
+  if (!fieldId) return
+  const previousConfig = cloneLayoutConfig(layoutConfig.value)
+  const newConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
+  const item = findItemById(newConfig, fieldId)
+  if (!item || !('fieldCode' in item)) return
+
+  const field = item as LayoutField
+  field.span = 1
+  setLayoutFieldMinHeight(field, undefined)
+  commitLayoutChange(newConfig, `Reset field size ${field.fieldCode || fieldId}`, previousConfig)
+
+  if (selectedId.value === fieldId) {
+    fieldProps.value = {
+      ...fieldProps.value,
+      span: 1,
+      minHeight: undefined
+    }
+  }
+  void showPropertySizeFeedback(fieldId)
 }
 
 function updateSection(key: string, value: any) {
@@ -2292,9 +2851,11 @@ watch(selectedId, () => {
   }
 
   if (elementType.value === 'field') {
+    const field = item as LayoutField
     fieldProps.value = {
-      ...item,
-      fieldType: normalizeFieldType((item as any).fieldType || (item as any).field_type || 'text')
+      ...field,
+      fieldType: normalizeFieldType((field as any).fieldType || (field as any).field_type || 'text'),
+      minHeight: resolveLayoutFieldMinHeight(field)
     }
   } else if (elementType.value === 'section') {
     sectionProps.value = { ...item }
@@ -2381,6 +2942,11 @@ watch(
 
 watch(renderMode, (mode) => {
   if (mode !== 'design') {
+    clearPropertySizeFeedback()
+    if (activeFieldResize.value) {
+      handleFieldResizeEnd()
+    }
+    resizeHint.value = null
     deselect()
     isDragOverCanvas.value = false
     dragOverSection.value = null
@@ -2399,6 +2965,10 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  clearPropertySizeFeedback()
+  if (activeFieldResize.value) {
+    handleFieldResizeEnd()
+  }
   destroySortables()
 })
 
@@ -2570,6 +3140,7 @@ watch(() => props.mode, (newType) => {
 
 // Center Canvas
 .canvas-area {
+  position: relative;
   flex: 1;
   background: #f5f7fa;
   display: flex;
@@ -2609,6 +3180,22 @@ watch(() => props.mode, (newType) => {
   &.drag-over {
     background: #ecf5ff;
   }
+}
+
+.field-resize-hint {
+  position: absolute;
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: rgba(48, 49, 51, 0.92);
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .empty-column-placeholder {
@@ -2728,5 +3315,3 @@ watch(() => props.mode, (newType) => {
   }
 }
 </style>
-
-

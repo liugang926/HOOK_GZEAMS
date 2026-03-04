@@ -107,7 +107,7 @@ const getSoftwareTypeColor = (type: string) => {
 }
 
 const handleRowClick = (row: any) => {
-  // Navigate to detail or edit
+  handleEdit(row)
 }
 
 const handleCreate = () => {

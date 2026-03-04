@@ -170,7 +170,7 @@ const removeTab = (index: number) => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/variables.scss';
+@use '@/styles/variables.scss' as *;
 
 .section-property-editor {
   .tabs-manager {

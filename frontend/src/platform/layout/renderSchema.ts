@@ -10,6 +10,7 @@ export interface RenderField {
   label: string
   fieldType: string
   span: number
+  minHeight?: number
   required: boolean
   readonly: boolean
   visible: boolean
@@ -112,15 +113,29 @@ const buildRenderField = (
   if (!code) return null
 
   const meta = fieldMap.get(code)
+  const mergedComponentProps = {
+    ...(meta?.component_props || {}),
+    ...(meta?.componentProps || {}),
+    ...(layoutField?.component_props || {}),
+    ...(layoutField?.componentProps || {})
+  }
   const rawType = layoutField?.fieldType || layoutField?.field_type || meta?.fieldType || meta?.field_type || 'text'
   const label = String(layoutField?.label || layoutField?.name || meta?.label || meta?.name || code)
   const span = normalizeSpan(layoutField?.span ?? meta?.span ?? 1, columns)
+  const rawMinHeight = layoutField?.minHeight ??
+    layoutField?.min_height ??
+    mergedComponentProps?.minHeight ??
+    mergedComponentProps?.min_height ??
+    meta?.minHeight ??
+    meta?.min_height
+  const minHeight = Number.isFinite(Number(rawMinHeight)) && Number(rawMinHeight) > 0 ? Math.round(Number(rawMinHeight)) : undefined
 
   return {
     code,
     label,
     fieldType: normalizeFieldType(rawType),
     span,
+    minHeight,
     required: Boolean(layoutField?.required ?? meta?.required ?? meta?.isRequired ?? meta?.is_required ?? false),
     readonly: normalizeReadonly(layoutField, meta, mode),
     visible: layoutField?.visible !== false && meta?.isHidden !== true && meta?.is_hidden !== true,

@@ -1,6 +1,6 @@
-<template>
+﻿<template>
   <div class="workflow-designer">
-    <!-- 工具栏 -->
+    <!-- 宸ュ叿鏍?-->
     <div class="toolbar">
       <el-button-group>
         <el-button
@@ -37,7 +37,7 @@
       </el-button>
     </div>
 
-    <!-- 节点面板 -->
+    <!-- 鑺傜偣闈㈡澘 -->
     <div class="node-panel">
       <div class="panel-section">
         <div class="section-title">
@@ -96,13 +96,13 @@
       </div>
     </div>
 
-    <!-- 画布区域 -->
+    <!-- 鐢诲竷鍖哄煙 -->
     <div
       ref="containerRef"
       class="canvas-container"
     />
 
-    <!-- 属性面板 -->
+    <!-- 灞炴€ч潰鏉?-->
     <div
       v-if="selectedNode"
       class="property-panel"
@@ -160,7 +160,7 @@
       </el-tabs>
     </div>
 
-    <!-- 导入弹窗 -->
+    <!-- 瀵煎叆寮圭獥 -->
     <el-dialog
       v-model="importDialogVisible"
       :title="t('workflow.designer.importProcess')"
@@ -215,6 +215,7 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  businessObject: '',
   readonly: false
 })
 
@@ -227,7 +228,7 @@ const activeTab = ref('basic')
 const importDialogVisible = ref(false)
 const importJson = ref('')
 
-// 流程定义数据
+// 娴佺▼瀹氫箟鏁版嵁
 const flowData = ref(props.modelValue || {
   nodes: [],
   edges: []
@@ -264,15 +265,14 @@ const initLogicFlow = () => {
     }
   })
 
-  // 注册自定义节点
   registerCustomNodes()
 
-  // 设置数据
+  // 璁剧疆鏁版嵁
   if (flowData.value.nodes.length > 0) {
     lf.value.render(flowData.value)
   }
 
-  // 监听事件
+  // 鐩戝惉浜嬩欢
   lf.value.on('node:click', handleNodeClick)
   lf.value.on('edge:click', handleEdgeClick)
   lf.value.on('blank:click', handleBlankClick)
@@ -281,18 +281,14 @@ const initLogicFlow = () => {
   lf.value.on('edge:add', handleEdgeAdd)
   lf.value.on('history:change', handleHistoryChange)
 
-  // 设置拖拽面板
+  // 璁剧疆鎷栨嫿闈㈡澘
   setupDndPanel()
 }
 
-// 注册自定义节点
 const registerCustomNodes = () => {
   if (!lf.value) return
 
-  const { RectNode, RectNodeModel, h } = lf.value
-
-  // 开始节点
-  lf.value.register('start', ({ RectNode, RectNodeModel, h }) => {
+  lf.value.register('start', ({ RectNode, RectNodeModel, h }: any) => {
     class StartNode extends RectNode {
       getShape() {
         const { model } = this.props
@@ -327,7 +323,7 @@ const registerCustomNodes = () => {
     class StartNodeModel extends RectNodeModel {
       initNodeData(data: any) {
         super.initNodeData(data)
-        this.width = 100
+        ;(this as any).width = 100
         this.height = 40
         this.radius = 20
       }
@@ -345,20 +341,20 @@ const registerCustomNodes = () => {
     }
   })
 
-  // 审批节点
-  lf.value.register('approval', ({ RectNode, RectNodeModel, h }) => {
+  // 瀹℃壒鑺傜偣
+  lf.value.register('approval', ({ RectNode, RectNodeModel, h }: any) => {
     class ApprovalNode extends RectNode {
       getShape() {
         const { model } = this.props
         const { x, y, width, height } = model
         const properties = model.getProperties() || {}
-        const approveType = properties.approveType || 'or'
+        const approveType = String(properties.approveType || 'or')
 
-        // 审批类型标识
+        // 瀹℃壒绫诲瀷鏍囪瘑
         const typeLabel = {
-          'or': '或签',
-          'and': '会签',
-          'seq': '依次'
+          'or': '鎴栫',
+          'and': '浼氱',
+          'seq': '渚濇'
         }[approveType] || ''
 
         return h('g', {}, [
@@ -380,7 +376,7 @@ const registerCustomNodes = () => {
             fontWeight: 'bold',
             textAnchor: 'middle',
             dominantBaseline: 'middle'
-          }, model.text.value || '审批'),
+          }, model.text.value || '瀹℃壒'),
           h('text', {
             x: x,
             y: y + 12,
@@ -407,8 +403,8 @@ const registerCustomNodes = () => {
     }
   })
 
-  // 条件节点
-  lf.value.register('condition', ({ PolygonNode, PolygonNodeModel, h }) => {
+  // 鏉′欢鑺傜偣
+  lf.value.register('condition', ({ PolygonNode, PolygonNodeModel, h }: any) => {
     class ConditionNode extends PolygonNode {
       getShape() {
         const { model } = this.props
@@ -435,7 +431,7 @@ const registerCustomNodes = () => {
             fontWeight: 'bold',
             textAnchor: 'middle',
             dominantBaseline: 'middle'
-          }, model.text.value || '条件')
+          }, model.text.value || 'CC')
         ])
       }
     }
@@ -443,8 +439,8 @@ const registerCustomNodes = () => {
     class ConditionNodeModel extends PolygonNodeModel {
       initNodeData(data: any) {
         super.initNodeData(data)
-        this.width = 100
-        this.height = 100
+        ;(this as any).width = 100
+        ;(this as any).height = 100
       }
 
       getPoints() {
@@ -464,8 +460,7 @@ const registerCustomNodes = () => {
     }
   })
 
-  // 抄送节点
-  lf.value.register('cc', ({ RectNode, RectNodeModel, h }) => {
+  lf.value.register('cc', ({ RectNode, RectNodeModel, h }: any) => {
     class CcNode extends RectNode {
       getShape() {
         const { model } = this.props
@@ -489,7 +484,7 @@ const registerCustomNodes = () => {
             fontWeight: 'bold',
             textAnchor: 'middle',
             dominantBaseline: 'middle'
-          }, model.text.value || '抄送')
+          }, model.text.value || 'CC')
         ])
       }
     }
@@ -508,8 +503,8 @@ const registerCustomNodes = () => {
     }
   })
 
-  // 结束节点
-  lf.value.register('end', ({ RectNode, RectNodeModel, h }) => {
+  // 缁撴潫鑺傜偣
+  lf.value.register('end', ({ RectNode, RectNodeModel, h }: any) => {
     class EndNode extends RectNode {
       getShape() {
         const { model } = this.props
@@ -534,7 +529,7 @@ const registerCustomNodes = () => {
             fontWeight: 'bold',
             textAnchor: 'middle',
             dominantBaseline: 'middle'
-          }, model.text.value || '结束')
+          }, model.text.value || 'CC')
         ])
       }
     }
@@ -542,7 +537,7 @@ const registerCustomNodes = () => {
     class EndNodeModel extends RectNodeModel {
       initNodeData(data: any) {
         super.initNodeData(data)
-        this.width = 100
+        ;(this as any).width = 100
         this.height = 40
         this.radius = 20
       }
@@ -561,7 +556,7 @@ const registerCustomNodes = () => {
   })
 }
 
-// 设置拖拽面板
+// 璁剧疆鎷栨嫿闈㈡澘
 const setupDndPanel = () => {
   if (!lf.value) return
 
@@ -577,7 +572,7 @@ const setupDndPanel = () => {
   })
 }
 
-// 事件处理
+// 浜嬩欢澶勭悊
 const handleNodeClick = ({ data }: any) => {
   selectedNode.value = {
     id: data.id,
@@ -588,8 +583,8 @@ const handleNodeClick = ({ data }: any) => {
   activeTab.value = 'basic'
 }
 
-const handleEdgeClick = ({ data }: any) => {
-  // 可以添加连线选择逻辑
+const handleEdgeClick = (_payload: any) => {
+  // 鍙互娣诲姞杩炵嚎閫夋嫨閫昏緫
 }
 
 const handleBlankClick = () => {
@@ -597,7 +592,6 @@ const handleBlankClick = () => {
 }
 
 const handleNodeDrop = ({ data }: any) => {
-  // 拖拽节点到画布时自动添加默认属性
   if (data.type === 'approval') {
     data.properties = {
       approvers: [],
@@ -632,11 +626,10 @@ const handleNodeAdd = ({ data }: any) => {
 }
 
 const handleEdgeAdd = ({ data }: any) => {
-  // 验证连线规则
+  // 楠岃瘉杩炵嚎瑙勫垯
   const sourceNode = lf.value?.getNodeModelById(data.sourceNodeId)
   const targetNode = lf.value?.getNodeModelById(data.targetNodeId)
 
-  // 不允许开始节点作为目标
   if (targetNode?.type === 'start') {
     ElMessage.warning(t('workflow.designer.errors.cannotConnectToStart'))
     // Remove unsupported edge if needed (LogicFlow usually blocks? Need to implement validation logic properly or use hook)
@@ -644,7 +637,7 @@ const handleEdgeAdd = ({ data }: any) => {
     return false
   }
 
-  // 不允许结束节点作为源
+  // 涓嶅厑璁哥粨鏉熻妭鐐逛綔涓烘簮
   if (sourceNode?.type === 'end') {
     ElMessage.warning(t('workflow.designer.errors.endNodeCannotBeSource'))
     lf.value?.deleteEdge(data.id)
@@ -653,7 +646,6 @@ const handleEdgeAdd = ({ data }: any) => {
 }
 
 const handleHistoryChange = () => {
-  // 流程变化时同步数据
   const graphData = lf.value?.getGraphData()
   if (graphData) {
     flowData.value = graphData
@@ -670,7 +662,7 @@ const updateNodeName = () => {
   }
 }
 
-// 缩放控制
+// 缂╂斁鎺у埗
 const handleZoomIn = () => {
   lf.value?.zoom(true)
 }
@@ -683,7 +675,7 @@ const handleZoomReset = () => {
   lf.value?.resetZoom()
 }
 
-// 导出/导入
+// 瀵煎嚭/瀵煎叆
 const handleExport = () => {
   const data = lf.value?.getGraphData()
   if (!data) return
@@ -713,7 +705,7 @@ const handleImportConfirm = () => {
   }
 }
 
-// 保存
+// 淇濆瓨
 const handleSave = () => {
   const data = lf.value?.getGraphData()
   if (!data) {
@@ -721,7 +713,7 @@ const handleSave = () => {
     return
   }
 
-  // 验证流程
+  // 楠岃瘉娴佺▼
   if (!validateFlow(data)) {
     return
   }
@@ -729,12 +721,12 @@ const handleSave = () => {
   emit('save', data)
 }
 
-// 验证流程
+// 楠岃瘉娴佺▼
 const validateFlow = (data: any) => {
   const nodes = data.nodes || []
   const edges = data.edges || []
 
-  // 必须有开始和结束节点
+  // 蹇呴』鏈夊紑濮嬪拰缁撴潫鑺傜偣
   const hasStart = nodes.some((n: any) => n.type === 'start')
   const hasEnd = nodes.some((n: any) => n.type === 'end')
 
@@ -748,7 +740,6 @@ const validateFlow = (data: any) => {
     return false
   }
 
-  // 检查所有节点是否连通
   if (nodes.length > 1 && edges.length === 0) {
     ElMessage.error(t('workflow.designer.errors.connectNodes'))
     return false
@@ -765,7 +756,7 @@ const needPermissionConfig = computed(() => {
   return ['approval', 'start'].includes(selectedNode.value?.type)
 })
 
-// 监听外部数据变化
+// 鐩戝惉澶栭儴鏁版嵁鍙樺寲
 watch(() => props.modelValue, (newVal) => {
   if (newVal && lf.value && JSON.stringify(newVal) !== JSON.stringify(flowData.value)) {
     flowData.value = newVal
@@ -887,3 +878,5 @@ watch(() => props.modelValue, (newVal) => {
   line-height: 40px;
 }
 </style>
+
+

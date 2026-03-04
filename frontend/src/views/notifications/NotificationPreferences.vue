@@ -223,7 +223,7 @@ const formModel = reactive({
 })
 
 const isAdmin = computed(() => {
-  const userInfo = userStore.userInfo || {}
+  const userInfo = (userStore.userInfo || {}) as Record<string, any>
   const roleCodes = Array.isArray(userStore.roles) ? userStore.roles.map((r: any) => String(r).toLowerCase()) : []
   return Boolean(
     userInfo.isStaff ||

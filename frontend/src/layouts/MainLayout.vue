@@ -104,7 +104,7 @@
             <span
               v-if="!isCollapsed"
               class="collapse-label"
-            >{{ $t('common.actions.collapse') || '收起菜单' }}</span>
+            >{{ $t('common.actions.collapse') }}</span>
           </transition>
         </div>
       </el-aside>
@@ -605,7 +605,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/variables.scss';
+@use '@/styles/variables.scss' as *;
 /* ====================================================================
    Layout Shell
    ==================================================================== */

@@ -53,4 +53,31 @@ describe('unifiedDetailSections', () => {
     expect(shouldSkipUnifiedDetailField(field, 'form')).toBe(false)
     expect(shouldSkipUnifiedDetailField(field, 'detail')).toBe(true)
   })
+
+  it('skips layout-only injected fields that are missing from runtime metadata', () => {
+    const sections = projectUnifiedDetailSectionsFromLayout({
+      layoutSections: [
+        {
+          id: 'basic',
+          type: 'section',
+          title: 'Basic',
+          columns: 2,
+          fields: [
+            { fieldCode: 'left_field', label: 'Left Field', span: 1 },
+            { fieldCode: 'runtime_shadow_field', label: 'Runtime Shadow', span: 1 },
+            { fieldCode: 'right_field', label: 'Right Field', span: 1 }
+          ]
+        }
+      ],
+      fields: [
+        { code: 'left_field', name: 'Left Field', fieldType: 'text', showInForm: true } as any,
+        { code: 'right_field', name: 'Right Field', fieldType: 'text', showInForm: true } as any
+      ],
+      metadataContext: 'form',
+      strictVisibility: false
+    })
+
+    expect(sections).toHaveLength(1)
+    expect(sections[0].fields.map((field) => field.prop)).toEqual(['left_field', 'right_field'])
+  })
 })

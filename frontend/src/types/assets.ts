@@ -31,40 +31,57 @@ export enum DepreciationMethod {
  * Asset Category Interface
  */
 export interface AssetCategory {
-  id: string
+  id: string | null
   code: string
   name: string
   parentId?: string
+  parent_id?: string
   level: number
   path?: string
   depreciationMethod?: DepreciationMethod
+  depreciation_method?: DepreciationMethod | string
   usefulLifeMonths?: number
+  useful_life?: number
   residualRate?: number
+  salvage_rate?: number
   isActive?: boolean
+  is_active?: boolean
   children?: AssetCategory[]
+  [key: string]: any
 }
 
 /**
  * Location Interface
  */
 export interface AssetLocation {
-  id: string
+  id: string | null
   name: string
   code: string
   parentId?: string
+  parent_id?: string
   level: number
+  [key: string]: any
 }
 
 /**
  * Supplier Interface
  */
 export interface AssetSupplier {
-  id: string
+  id: string | null
   name: string
   code: string
   contact?: string
+  contactPerson?: string
+  contact_person?: string
   phone?: string
+  contactPhone?: string
+  contact_phone?: string
   email?: string
+  address?: string
+  remark?: string
+  isActive?: boolean
+  is_active?: boolean
+  [key: string]: any
 }
 
 /**
@@ -75,19 +92,27 @@ export interface Asset extends BaseModel {
   name: string
   categoryId?: string
   category?: AssetCategory
+  categoryName?: string
   status: AssetStatus
   purchasePrice: number
   purchaseDate: string
   supplierId?: string
-  supplier?: AssetSupplier
+  supplier?: AssetSupplier | string
+  supplierName?: string
   locationId?: string
   location?: AssetLocation
+  locationName?: string
   custodianId?: string
   custodian?: User
+  custodianName?: string
+  departmentName?: string
+  user?: User
   description?: string
   images?: string[]
   qrCode?: string
   specifications?: Record<string, any>
+  specification?: string
+  [key: string]: any
 }
 
 /**

@@ -179,7 +179,7 @@ const loadData = async () => {
     }
   } catch (error: any) {
     loadError.value = error.message || t('common.messages.operationFailed') || 'Operation Failed'
-    if (!error?.isHandled) ElMessage.error(loadError.value)
+    if (!error?.isHandled) ElMessage.error(loadError.value || t('common.messages.operationFailed') || 'Operation Failed')
   } finally {
     loading.value = false
   }

@@ -37,15 +37,6 @@
         </el-button>
       </template>
 
-      <template #batch-actions="{ selectedRows }">
-        <span
-          v-if="(selectedRows as any[]).length > 0"
-          class="selection-info"
-        >
-          {{ $t('assets.list.selected', { count: (selectedRows as any[]).length }) }}
-        </span>
-      </template>
-
       <template #actions="{ row }">
         <el-button
           link
@@ -120,8 +111,8 @@ const {
   name: t('assets.detail.title'), // Use a generic name or "Asset"
   api: {
     list: assetApi.list,
-    delete: assetApi.delete,
-    batchDelete: assetApi.batchDelete,
+    delete: (id: string | number) => assetApi.delete(String(id)),
+    batchDelete: (ids: (string | number)[]) => assetApi.batchDelete(ids.map((id) => String(id))),
     export: (params: any) => {
       // Adapter for assetApi.export which expects assetIds for batch
       if (params && params.ids) {
@@ -133,7 +124,7 @@ const {
 })
 
 // Wrappers or Direct usage
-const handleDelete = (row: Asset) => crudDelete(row.id as any).then((success) => {
+const handleDelete = (row: Asset) => crudDelete(row).then((success) => {
   if (success) refreshList()
 })
 

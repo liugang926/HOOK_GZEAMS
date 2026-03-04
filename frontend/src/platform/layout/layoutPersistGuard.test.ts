@@ -97,5 +97,48 @@ describe('layoutPersistGuard', () => {
       )
     ).toThrow('Layout contains unknown fields: ghostField')
   })
+
+  it('normalizes field minHeight alias during persist prepare', () => {
+    const prepared = ensureLayoutConfigIds({
+      sections: [
+        {
+          id: 'section-basic',
+          type: 'section',
+          fields: [
+            { id: 'field-name', fieldCode: 'assetName', label: 'Asset Name', span: 1, min_height: '120' }
+          ]
+        }
+      ]
+    })
+
+    expect(prepared.sections[0].fields[0].minHeight).toBe(120)
+    expect(prepared.sections[0].fields[0].min_height).toBeUndefined()
+    expect(prepared.sections[0].fields[0].componentProps.minHeight).toBe(120)
+    expect(prepared.sections[0].fields[0].component_props.minHeight).toBe(120)
+  })
+
+  it('normalizes componentProps minHeight alias during persist prepare', () => {
+    const prepared = ensureLayoutConfigIds({
+      sections: [
+        {
+          id: 'section-basic',
+          type: 'section',
+          fields: [
+            {
+              id: 'field-name',
+              fieldCode: 'assetName',
+              label: 'Asset Name',
+              span: 1,
+              component_props: { min_height: '168' }
+            }
+          ]
+        }
+      ]
+    })
+
+    expect(prepared.sections[0].fields[0].minHeight).toBe(168)
+    expect(prepared.sections[0].fields[0].componentProps.minHeight).toBe(168)
+    expect(prepared.sections[0].fields[0].componentProps.min_height).toBeUndefined()
+  })
 })
 

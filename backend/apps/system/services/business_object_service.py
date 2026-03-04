@@ -255,7 +255,10 @@ class BusinessObjectService:
     def get_object_fields(
         self,
         object_code: str,
-        organization_id: Optional[str] = None
+        organization_id: Optional[str] = None,
+        *,
+        context: str = 'form',
+        include_relations: bool = False,
     ) -> Dict[str, Any]:
         """
         Get field definitions for a specific business object.
@@ -269,12 +272,20 @@ class BusinessObjectService:
         """
         # Check if it's a hardcoded model
         if object_code in CORE_HARDcoded_MODELS:
-            return self._get_hardcoded_object_fields(object_code)
+            return self._get_hardcoded_object_fields(
+                object_code,
+                context=context,
+                include_relations=include_relations,
+            )
 
         # Otherwise, it's a custom low-code object
         try:
             obj = BusinessObject.objects.get(code=object_code, is_deleted=False)
-            return self._get_custom_object_fields(obj)
+            return self._get_custom_object_fields(
+                obj,
+                context=context,
+                include_relations=include_relations,
+            )
         except BusinessObject.DoesNotExist:
             return {
                 'error': f'Business object "{object_code}" not found'
@@ -488,7 +499,27 @@ class BusinessObjectService:
             'enable_workflow': obj.enable_workflow,
         } for obj in queryset]
 
-    def _get_hardcoded_object_fields(self, object_code: str) -> Dict[str, Any]:
+    def _should_show_model_field_in_context(self, field_def: ModelFieldDefinition, context: str) -> bool:
+        if context == 'list':
+            return bool(getattr(field_def, 'show_in_list', True))
+        if context == 'detail':
+            return bool(getattr(field_def, 'show_in_detail', True))
+        return bool(getattr(field_def, 'show_in_form', True))
+
+    def _should_show_custom_field_in_context(self, field_def: FieldDefinition, context: str) -> bool:
+        if context == 'list':
+            return bool(getattr(field_def, 'show_in_list', False))
+        if context == 'detail':
+            return bool(getattr(field_def, 'show_in_detail', True))
+        return bool(getattr(field_def, 'show_in_form', True))
+
+    def _get_hardcoded_object_fields(
+        self,
+        object_code: str,
+        *,
+        context: str = 'form',
+        include_relations: bool = False,
+    ) -> Dict[str, Any]:
         """Get fields for a hardcoded object."""
         # Get BusinessObject metadata
         try:
@@ -505,19 +536,52 @@ class BusinessObjectService:
                 'error': f'Django model not found for: {object_code}'
             }
 
+        normalized_context = context if context in {'form', 'detail', 'list'} else 'form'
+
         # Generate field definitions directly from Django model (real-time)
         # This ensures field type detection fixes are applied immediately
         fields = []
         for field in model_class._meta.get_fields():
-            # Skip reverse relations and auto-generated fields
-            if field.auto_created:
-                if not field.one_to_many and not field.many_to_one:
+            # Skip auto-generated relations unless explicitly requested.
+            is_reverse_relation = bool(field.auto_created and getattr(field, 'one_to_many', False))
+            if field.auto_created and not is_reverse_relation:
+                continue
+            if is_reverse_relation:
+                if not include_relations:
                     continue
+                relation_code = getattr(field, 'get_accessor_name', lambda: field.name)() or field.name
+                fields.append({
+                    'fieldName': relation_code,
+                    'displayName': relation_code,
+                    'displayNameEn': relation_code,
+                    'fieldType': 'sub_table',
+                    'djangoFieldType': field.__class__.__name__,
+                    'isRequired': False,
+                    'isReadonly': True,
+                    'isEditable': False,
+                    'isUnique': False,
+                    'showInList': False,
+                    'showInDetail': True,
+                    'showInForm': False,
+                    'sortOrder': 0,
+                    'referenceModelPath': '',
+                    'maxLength': None,
+                    'decimalPlaces': None,
+                    'isReverseRelation': True,
+                    'reverseRelationModel': '',
+                    'reverseRelationField': '',
+                    'relationDisplayMode': 'tab_readonly',
+                })
+                continue
+
             if field.is_relation and not field.many_to_one and not field.one_to_many:
                 continue
 
             # Use ModelFieldDefinition.from_django_field to get correct field type
             field_def = ModelFieldDefinition.from_django_field(obj, field)
+
+            if not self._should_show_model_field_in_context(field_def, normalized_context):
+                continue
 
             fields.append({
                 'fieldName': field_def.field_name,
@@ -536,6 +600,7 @@ class BusinessObjectService:
                 'referenceModelPath': field_def.reference_model_path,
                 'maxLength': field_def.max_length,
                 'decimalPlaces': field_def.decimal_places,
+                'isReverseRelation': False,
             })
 
         return {
@@ -547,15 +612,23 @@ class BusinessObjectService:
             'fields': fields
         }
 
-    def _get_custom_object_fields(self, obj: BusinessObject) -> Dict[str, Any]:
+    def _get_custom_object_fields(
+        self,
+        obj: BusinessObject,
+        *,
+        context: str = 'form',
+        include_relations: bool = False,
+    ) -> Dict[str, Any]:
         """Get fields for a custom low-code object."""
-        return {
-            'object_code': obj.code,
-            'object_name': obj.name,
-            'object_name_en': obj.name_en or '',
-            'is_hardcoded': False,
-            'table_name': obj.table_name,
-            'fields': [
+        normalized_context = context if context in {'form', 'detail', 'list'} else 'form'
+        rows = []
+        queryset = obj.field_definitions.filter(is_deleted=False).order_by('sort_order')
+        for f in queryset:
+            if getattr(f, 'is_reverse_relation', False) and not include_relations:
+                continue
+            if not self._should_show_custom_field_in_context(f, normalized_context):
+                continue
+            rows.append(
                 {
                     'field_name': f.code,
                     'display_name': f.name,
@@ -565,13 +638,25 @@ class BusinessObjectService:
                     'is_unique': f.is_unique,
                     'show_in_list': f.show_in_list,
                     'show_in_detail': f.show_in_detail,
+                    'show_in_form': f.show_in_form,
                     'sort_order': f.sort_order,
                     'options': f.options,
                     'reference_object': f.reference_object,
                     'formula': f.formula,
+                    'is_reverse_relation': getattr(f, 'is_reverse_relation', False),
+                    'reverse_relation_model': getattr(f, 'reverse_relation_model', ''),
+                    'reverse_relation_field': getattr(f, 'reverse_relation_field', ''),
+                    'relation_display_mode': getattr(f, 'relation_display_mode', 'tab_readonly'),
                 }
-                for f in obj.field_definitions.filter(is_deleted=False).order_by('sort_order')
-            ]
+            )
+
+        return {
+            'object_code': obj.code,
+            'object_name': obj.name,
+            'object_name_en': obj.name_en or '',
+            'is_hardcoded': False,
+            'table_name': obj.table_name,
+            'fields': rows
         }
 
     def _get_object_icon(self, code: str) -> str:

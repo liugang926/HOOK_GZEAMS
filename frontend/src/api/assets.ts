@@ -7,19 +7,19 @@
  */
 
 import request from '@/utils/request'
+import { toData, toPaginated } from '@/api/contract'
 import type { PaginatedResponse } from '@/types/api'
 import type { Asset, AssetCategory, AssetLocation, AssetTransfer } from '@/types/assets'
 import { BaseApiService } from '@/api/base'
 import {
   assetApi as dynamicAssetApi,
-  assetCategoryApi,
-  assetPickupApi,
   assetTransferApi,
-  assetReturnApi,
-  assetLoanApi,
-  supplierApi,
-  locationApi as dynamicLocationApi
 } from '@/api/dynamic'
+
+type LegacyPaginatedResponse<T> = PaginatedResponse<T> & {
+  items: T[]
+  total: number
+}
 
 /**
  * Asset API service object
@@ -41,9 +41,8 @@ class AssetApiService extends BaseApiService<Asset> {
   /**
    * Restore deleted asset (delegates to dynamic API)
    */
-  async restore(id: string): Promise<Asset> {
-    const res = await dynamicAssetApi.restore(id)
-    return res.data as Asset
+  async restore(id: string): Promise<void> {
+    await dynamicAssetApi.restore(id)
   }
 
   /**
@@ -63,38 +62,28 @@ class AssetApiService extends BaseApiService<Asset> {
    * List assets (delegates to dynamic API)
    */
   async list(params?: any): Promise<PaginatedResponse<Asset>> {
-    const res = await dynamicAssetApi.list(params)
-    // Response interceptor already unwraps {success: true, data: {...}}
-    // So res is the data object directly with results and count
-    return {
-      results: (res as any)?.results || [],
-      count: (res as any)?.count || 0,
-      ...params
-    }
+    return toPaginated<Asset>(await dynamicAssetApi.list(params))
   }
 
   /**
    * Get single asset (delegates to dynamic API)
    */
   async get(id: string, params?: any): Promise<Asset> {
-    const res = await dynamicAssetApi.get(id, params)
-    return res as Asset
+    return toData<Asset>(await dynamicAssetApi.get(id, params))
   }
 
   /**
    * Create asset (delegates to dynamic API)
    */
   async create(data: Partial<Asset>): Promise<Asset> {
-    const res = await dynamicAssetApi.create(data)
-    return res as Asset
+    return toData<Asset>(await dynamicAssetApi.create(data))
   }
 
   /**
    * Update asset (delegates to dynamic API)
    */
   async update(id: string, data: Partial<Asset>): Promise<Asset> {
-    const res = await dynamicAssetApi.update(id, data)
-    return res as Asset
+    return toData<Asset>(await dynamicAssetApi.update(id, data))
   }
 
   /**
@@ -202,12 +191,12 @@ export const transferApi = {
     pageSize?: number
     assetId?: string
     status?: string
-  }): Promise<PaginatedResponse<AssetTransfer>> {
-    const res = await assetTransferApi.list(params)
+  }): Promise<LegacyPaginatedResponse<AssetTransfer>> {
+    const paginated = toPaginated<AssetTransfer>(await assetTransferApi.list(params))
     return {
-      items: res.data?.results || [],
-      total: res.data?.count || 0,
-      ...params
+      ...paginated,
+      items: paginated.results,
+      total: paginated.count
     }
   },
 
@@ -220,24 +209,21 @@ export const transferApi = {
     toUserId?: string
     reason?: string
   }): Promise<AssetTransfer> {
-    const res = await assetTransferApi.create(data)
-    return res.data as AssetTransfer
+    return toData<AssetTransfer>(await assetTransferApi.create(data))
   },
 
   /**
    * Get single transfer (delegates to dynamic API)
    */
   async get(id: string): Promise<AssetTransfer> {
-    const res = await assetTransferApi.get(id)
-    return res.data as AssetTransfer
+    return toData<AssetTransfer>(await assetTransferApi.get(id))
   },
 
   /**
    * Update transfer (delegates to dynamic API)
    */
   async update(id: string, data: Partial<AssetTransfer>): Promise<AssetTransfer> {
-    const res = await assetTransferApi.update(id, data)
-    return res.data as AssetTransfer
+    return toData<AssetTransfer>(await assetTransferApi.update(id, data))
   },
 
   /**

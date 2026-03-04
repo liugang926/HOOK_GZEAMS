@@ -68,7 +68,7 @@
           <van-tag
             type="primary"
             plain
-            size="small"
+            size="medium"
           >
             {{ asset.categoryName }}
           </van-tag>
@@ -512,7 +512,7 @@ const handleDelete = async () => {
     showCancelButton: true,
     confirmButtonText: t('common.actions.confirm'),
     cancelButtonText: t('common.actions.cancel')
-  }).then(async (action: string) => {
+  }).then(async (action?: string) => {
     if (action === 'confirm') {
       try {
         await assetApi.delete(asset.value!.id)

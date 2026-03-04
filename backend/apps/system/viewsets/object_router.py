@@ -55,6 +55,21 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         self._feature_flag_cache = {}
         self._legacy_field_code_warned = False
 
+    _IMMUTABLE_SYSTEM_FIELD_CODES = {
+        'id',
+        'created_at',
+        'created_by',
+        'updated_at',
+        'updated_by',
+        'deleted_at',
+        'deleted_by',
+        'is_deleted',
+        'version',
+        'organization',
+        'organization_id',
+        'tenant_id',
+    }
+
     def initial(self, request, *args, **kwargs):
         """
         Initialize ViewSet by loading object metadata and creating delegate.
@@ -1061,7 +1076,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         Query Parameters:
             context: Rendering context - 'form' | 'detail' | 'list' (default: 'form')
-            include_relations: Include reverse relations - 'true' | 'false' (default: 'true')
+            include_relations: Include reverse relations - 'true' | 'false' (default: 'false')
 
         Response structure:
         {
@@ -1084,7 +1099,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         # Get query parameters
         context = request.query_params.get('context', 'form')
-        include_relations = request.query_params.get('include_relations', 'true').lower() == 'true'
+        include_relations = request.query_params.get('include_relations', 'false').lower() == 'true'
         request_locale = self._get_request_locale(request)
         runtime_i18n_enabled = self._is_feature_enabled(
             'runtime_i18n_enabled',
@@ -1586,6 +1601,18 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         return True
 
+    @classmethod
+    def _is_builtin_system_field_code(cls, code: str) -> bool:
+        normalized = str(code or '').strip().lower()
+        if not normalized:
+            return False
+        if normalized in cls._IMMUTABLE_SYSTEM_FIELD_CODES:
+            return True
+        # camelCase compatibility
+        if normalized in {'createdat', 'createdby', 'createdbyid', 'updatedat', 'updatedby', 'updatedbyid', 'deletedat', 'deletedby', 'deletedbyid'}:
+            return True
+        return False
+
     def _format_field_definition(
         self,
         fd,
@@ -1668,6 +1695,11 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         else:
             localized_display_name = fd.display_name or fd.field_name
 
+        is_system_field = bool(
+            not getattr(fd, 'is_editable', True)
+            or self._is_builtin_system_field_code(getattr(fd, 'field_name', ''))
+        )
+
         return {
             **self._build_field_identifier_payload(fd.field_name, force_strict=strict_identifier),
             'name': localized_display_name,
@@ -1675,7 +1707,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             'field_type': field_type,
             'is_required': fd.is_required,
             'is_readonly': fd.is_readonly,
-            'is_system': False,
+            'is_system': is_system_field,
             'is_searchable': True,
             'sortable': True,
             'show_in_filter': False,

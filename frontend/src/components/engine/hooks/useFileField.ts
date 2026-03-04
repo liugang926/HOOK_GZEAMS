@@ -19,7 +19,7 @@
 import { ref, computed, watch, type Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { systemFileApi, type SystemFile, validateFile, validateFiles } from '@/api/systemFile'
+import { systemFileApi, type SystemFile, validateFiles } from '@/api/systemFile'
 
 /**
  * File upload context options
@@ -97,7 +97,7 @@ export interface UseFileFieldReturn {
   validateUpload: (file: File, options?: FileUploadOptions) => { valid: boolean; error?: string }
 
   // Sync methods
-  syncFromFileIds: (fileIds: string[] | string | null) => Promise<void>
+  syncFromFileIds: (fileIds: unknown) => Promise<void>
   getFileIds: () => string[]
   clearFiles: () => void
 }
@@ -125,7 +125,7 @@ export interface UseFileFieldReturn {
  * ```
  */
 export function useFileField(
-  initialValue: Ref<string[] | string | null> = ref(null),
+  initialValue: Ref<unknown> = ref(null),
   uploadOptions: FileUploadOptions = {},
   uploadContext: FileUploadContext = {}
 ): UseFileFieldReturn {
@@ -151,18 +151,31 @@ export function useFileField(
     files.value.filter(f => !isImageFile(f))
   )
 
-  // Upload URL (computed from API base)
-  const uploadUrl = computed(() => {
-    return `${import.meta.env.VITE_API_BASE_URL || '/api'}/system/system-files/upload/`
-  })
+  const extractFileId = (raw: unknown): string | null => {
+    if (!raw) return null
+    if (typeof raw === 'string') return raw
+    if (typeof raw !== 'object') return null
 
-  // Upload headers with auth token
-  const uploadHeaders = computed(() => {
-    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token')
-    return {
-      'Authorization': token ? `Bearer ${token}` : ''
-    }
-  })
+    const source = raw as Record<string, unknown>
+    const candidate = source.id || source.fileId || source.value
+    return typeof candidate === 'string' && candidate ? candidate : null
+  }
+
+  const normalizeFileIds = (raw: unknown): string[] => {
+    if (!raw) return []
+    const values = Array.isArray(raw) ? raw : [raw]
+    const seen = new Set<string>()
+    const ids: string[] = []
+
+    values.forEach((item) => {
+      const id = extractFileId(item)
+      if (!id || seen.has(id)) return
+      seen.add(id)
+      ids.push(id)
+    })
+
+    return ids
+  }
 
   /**
    * Load file metadata from API
@@ -392,7 +405,6 @@ export function useFileField(
     const opts = options || uploadOptions
 
     if (opts.maxSize && file.size > opts.maxSize) {
-      const maxSizeMB = Math.round(opts.maxSize / 1024 / 1024 * 100) / 100
       return {
         valid: false,
         error: t('common.messages.operationFailed')
@@ -425,14 +437,12 @@ export function useFileField(
   /**
    * Sync files from file IDs
    */
-  const syncFromFileIds = async (fileIds: string[] | string | null): Promise<void> => {
-    if (!fileIds) {
+  const syncFromFileIds = async (fileIds: unknown): Promise<void> => {
+    const validIds = normalizeFileIds(fileIds)
+    if (!validIds.length) {
       files.value = []
       return
     }
-
-    const ids = Array.isArray(fileIds) ? fileIds : [fileIds]
-    const validIds = ids.filter(id => typeof id === 'string' && id)
 
     await loadFileMetadata(validIds)
   }

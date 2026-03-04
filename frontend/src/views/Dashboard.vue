@@ -106,9 +106,9 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import * as echarts from 'echarts'
 import { assetApi } from '@/api/assets'
 import { workflowNodeApi } from '@/api/workflow'
+import { init, type EChartsType } from '@/utils/echarts'
 
 const { t } = useI18n()
 
@@ -121,8 +121,8 @@ const metrics = reactive({
 
 const statusChartRef = ref<HTMLElement | null>(null)
 const categoryChartRef = ref<HTMLElement | null>(null)
-let statusChart: any = null
-let categoryChart: any = null
+let statusChart: EChartsType | null = null
+let categoryChart: EChartsType | null = null
 
 onMounted(() => {
     initCharts()
@@ -210,7 +210,7 @@ const updateCategoryChart = (data: Record<string, number>) => {
 
 const initCharts = () => {
     if (statusChartRef.value) {
-        statusChart = echarts.init(statusChartRef.value)
+        statusChart = init(statusChartRef.value)
         statusChart.setOption({
             tooltip: { trigger: 'item' },
             legend: { top: '5%', left: 'center' },
@@ -230,7 +230,7 @@ const initCharts = () => {
     }
 
     if (categoryChartRef.value) {
-        categoryChart = echarts.init(categoryChartRef.value)
+        categoryChart = init(categoryChartRef.value)
         categoryChart.setOption({
             tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
             grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },

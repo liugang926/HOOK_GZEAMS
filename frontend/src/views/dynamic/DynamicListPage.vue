@@ -716,7 +716,7 @@ const loadMetadata = async () => {
     }
   } catch (error: any) {
     loadError.value = error.message || t('system.businessObject.messages.loadMetadataFailed')
-    ElMessage.error(loadError.value)
+    ElMessage.error(loadError.value || t('system.businessObject.messages.loadMetadataFailed'))
   } finally {
     loading.value = false
   }

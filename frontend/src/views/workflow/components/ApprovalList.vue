@@ -173,7 +173,7 @@ interface Props {
   readOnly?: boolean
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   readOnly: false
 })
 
@@ -249,21 +249,21 @@ const formatDate = (dateStr: string): string => {
 }
 
 // Handle emit with dialog
-const handleApproveWithDialog = (taskId: string, comment?: string) => {
+const handleApproveWithDialog = (_taskId: string, comment?: string) => {
   dialogAction.value = 'approve'
   dialogTitle.value = t('workflow.approvalList.approveApproval')
   dialogForm.value.comment = comment || ''
   dialogVisible.value = true
 }
 
-const handleRejectWithDialog = (taskId: string) => {
+const handleRejectWithDialog = (_taskId: string) => {
   dialogAction.value = 'reject'
   dialogTitle.value = t('workflow.myApprovals.rejectApproval')
   dialogForm.value.comment = ''
   dialogVisible.value = true
 }
 
-const handleReturnWithDialog = (taskId: string) => {
+const handleReturnWithDialog = (_taskId: string) => {
   dialogAction.value = 'return'
   dialogTitle.value = t('workflow.myApprovals.returnApproval')
   dialogForm.value.comment = ''

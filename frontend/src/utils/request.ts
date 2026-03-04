@@ -15,16 +15,29 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import type { ApiResponse } from '@/types/api'
 import { handleApiError } from '@/utils/errorHandler'
 
+type RequestInstance = AxiosInstance & {
+  <T = any>(config: AxiosRequestConfig): Promise<T>
+  <T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  request<T = any>(config: AxiosRequestConfig): Promise<T>
+  get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  head<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  options<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+  post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+  patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+}
+
 /**
  * Create base axios instance
  */
-const request: AxiosInstance = axios.create({
+const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
   }
-})
+}) as RequestInstance
 
 /**
  * Request interceptor
@@ -39,6 +52,16 @@ request.interceptors.request.use(
     // Since axios `baseURL` already includes `/api`, passing `/api/...` would become `/api/api/...` and 404.
     if (typeof config.url === 'string' && config.url.startsWith('/api/')) {
       config.url = config.url.slice('/api'.length)
+    }
+
+    // Let the browser/axios set multipart boundaries automatically.
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData && config.headers) {
+      if (typeof (config.headers as any).set === 'function') {
+        ;(config.headers as any).set('Content-Type', undefined)
+        ;(config.headers as any).set('content-type', undefined)
+      }
+      delete (config.headers as any)['Content-Type']
+      delete (config.headers as any)['content-type']
     }
 
     const noAuth = (config as any).noAuth === true

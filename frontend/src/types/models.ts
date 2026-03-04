@@ -1,7 +1,27 @@
 export interface FormField {
     prop: string
     label: string
-    type: 'input' | 'select' | 'date' | 'number' | 'switch' | 'textarea' | 'tree-select' | 'slot' | 'divider'
+    type:
+        | 'input'
+        | 'select'
+        | 'date'
+        | 'datetime'
+        | 'time'
+        | 'number'
+        | 'percent'
+        | 'switch'
+        | 'textarea'
+        | 'rich_text'
+        | 'tree-select'
+        | 'file'
+        | 'attachment'
+        | 'image'
+        | 'qr_code'
+        | 'qrcode'
+        | 'barcode'
+        | 'location'
+        | 'slot'
+        | 'divider'
     placeholder?: string
     rules?: any[]
     options?: Array<{ label: string; value: any }>

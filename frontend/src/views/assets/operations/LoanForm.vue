@@ -310,11 +310,14 @@ const handleSubmitAndApprove = async () => {
             const res = await createLoan(payload) as any
             id = res.id
         }
+        if (!id) {
+            throw new Error('Loan id is required to start workflow')
+        }
 
         // Trigger workflow start
         await workflowInstanceApi.startProcess({
             processKey: 'asset_loan',
-            businessKey: id,
+            businessKey: String(id),
             variables: {
                 initiator: 'current_user',
                 borrowerId: form.borrowerId || ''

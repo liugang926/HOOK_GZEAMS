@@ -216,7 +216,7 @@ const parseModelIdentifier = (input: string) => {
 }
 
 const mapScopeTypeToUiType = (scopeType: DataPermissionRecord['scopeType']): DataPermissionViewRow['permissionType'] => {
-  const map: Record<string, string> = {
+  const map: Record<string, DataPermissionViewRow['permissionType']> = {
     all: 'all',
     self_dept: 'department',
     self_and_sub: 'department_and_sub',

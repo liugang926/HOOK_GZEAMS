@@ -7,6 +7,7 @@ Handles file validation, storage path generation, and deduplication.
 
 import os
 import hashlib
+from io import BytesIO
 from datetime import datetime
 from typing import Optional, Dict, Any, BinaryIO
 from django.conf import settings
@@ -278,7 +279,6 @@ class FileStorageService:
 
                 # If image was compressed, use compressed data
                 if image_result.get('is_compressed'):
-                    from io import BytesIO
                     compressed_data = image_result.get('compressed_data')
                     if compressed_data:
                         # Create a new file-like object with compressed data
@@ -364,8 +364,8 @@ class FileStorageService:
             'field_code': field_code or '',
             'description': description or '',
             'organization_id': organization_id,
-            'thumbnail_path': thumbnail_path,
-            'watermarked_path': watermarked_path,
+            'thumbnail_path': thumbnail_path or '',
+            'watermarked_path': watermarked_path or '',
         }
 
         # Add image-specific fields

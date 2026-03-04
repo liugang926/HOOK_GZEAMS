@@ -222,8 +222,13 @@ onMounted(async () => {
   await fetchDetail()
 })
 
+const getRouteId = (): string => {
+  const { id } = route.params
+  return Array.isArray(id) ? (id[0] || '') : (id || '')
+}
+
 const fetchDetail = async () => {
-  const id = route.params.id
+  const id = getRouteId()
   if (!id) return
 
   loading.value = true
@@ -243,22 +248,18 @@ const fetchDetail = async () => {
   }
 }
 
-// Alternative fetch function for DynamicDetailPage
-const fetchAssetRecord = async (id: string) => {
-  return await assetApi.get(id)
-}
-
-const handleAssetLoaded = (record: any) => {
-  assetData.value = record
-}
-
 const handleEdit = () => {
-  router.push(`/assets/${route.params.id}?action=edit`)
+  const id = getRouteId()
+  if (!id) return
+  router.push(`/assets/${id}?action=edit`)
 }
 
 const handleDelete = async () => {
+  const id = getRouteId()
+  if (!id) return
+
   try {
-    await assetApi.delete(route.params.id as string)
+    await assetApi.delete(id)
     ElMessage.success(t('common.messages.deleteSuccess'))
     goBack()
   } catch (error) {

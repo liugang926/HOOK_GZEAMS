@@ -1,4 +1,4 @@
-﻿import { ref, computed, watch } from 'vue'
+﻿import { ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
@@ -6,12 +6,7 @@ import { toRuntimeMode } from '@/utils/layoutMode'
 import type {
   FieldDefinition,
   BusinessObject,
-  PageLayout,
-  LayoutConfig,
-  LayoutSection,
-  LayoutField,
-  LayoutAction,
-  ValidationRule
+  PageLayout
 } from '@/types'
 
 /**
@@ -450,7 +445,7 @@ export function createObjectMetadataHook(objectCode: string) {
 
       // Separate layouts by mode - use camelCase property name
       layouts.forEach((layout: PageLayout) => {
-        if (layout.mode === 'edit' || layout.layoutType === 'form') {
+        if (layout.mode === 'edit' || layout.layoutType === 'edit') {
           formLayout.value = layout
         } else if (layout.mode === 'search' || layout.layoutType === 'search') {
           // Search layouts are handled separately
@@ -490,3 +485,4 @@ export function createObjectMetadataHook(objectCode: string) {
     clearCache: clearObjectCache
   }
 }
+

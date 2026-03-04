@@ -161,7 +161,7 @@ const handleStockOut = () => {
     stockVisible.value = true
 }
 
-const handleHistory = (row: any) => {
+const handleHistory = (_row: any) => {
     // Navigate to history or show dialog (TODO)
     ElMessage.info(t('messages.comingSoon'))
 }

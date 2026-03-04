@@ -32,8 +32,14 @@ const projectRuntimeField = (field: AnyRecord): RuntimeField => {
   )
   const componentProps = {
     ...(metadata.component_props || {}),
-    ...(metadata.componentProps || {})
+    ...(metadata.componentProps || {}),
+    ...(field.component_props || {}),
+    ...(field.componentProps || {})
   }
+  const rawMinHeight = field.minHeight ?? componentProps.minHeight ?? componentProps.min_height ?? metadata.minHeight ?? metadata.min_height
+  const minHeight = Number.isFinite(Number(rawMinHeight)) && Number(rawMinHeight) > 0
+    ? Math.round(Number(rawMinHeight))
+    : undefined
 
   return {
     code,
@@ -41,6 +47,7 @@ const projectRuntimeField = (field: AnyRecord): RuntimeField => {
     label: String(field.label || metadata.label || metadata.name || code),
     fieldType,
     span: Number(field.span || metadata.span || 1),
+    minHeight,
     required: field.required === true || metadata.required === true || metadata.isRequired === true || metadata.is_required === true,
     readonly: field.readonly === true || metadata.readonly === true || metadata.isReadonly === true || metadata.is_readonly === true,
     hidden: metadata.hidden === true || metadata.isHidden === true || metadata.is_hidden === true,
@@ -175,7 +182,7 @@ export const projectListLayoutConfigForRenderSchema = (
               visible: column?.visible !== false
             }
           })
-          .filter((item): item is AnyRecord => !!item)
+          .filter((item): item is { fieldCode: string; label: any; visible: boolean } => !!item)
       }
     ]
   }

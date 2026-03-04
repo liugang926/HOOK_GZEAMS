@@ -1,6 +1,7 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { RenderSchema } from '@/platform/layout/renderSchema'
 import { projectDetailSectionsFromRenderSchema } from '@/platform/layout/detailSchemaProjector'
+import { isSystemField } from '@/utils/transform'
 
 describe('detailSchemaProjector', () => {
   it('projects render schema into detail sections with span normalization', () => {
@@ -16,7 +17,7 @@ describe('detailSchemaProjector', () => {
           collapsible: true,
           collapsed: false,
           fields: [
-            { code: 'assetName', label: 'Asset Name', fieldType: 'text', span: 1, required: false, readonly: true, visible: true },
+            { code: 'assetName', label: 'Asset Name', fieldType: 'text', span: 1, minHeight: 120, required: false, readonly: true, visible: true },
             { code: 'status', label: 'Status', fieldType: 'select', span: 2, required: false, readonly: true, visible: true }
           ]
         }
@@ -44,6 +45,14 @@ describe('detailSchemaProjector', () => {
     expect(sections[0].name).toBe('basic')
     expect(sections[0].fields.map((field) => field.prop)).toEqual(['assetName', 'status'])
     expect(sections[0].fields[0].span).toBe(12)
+    expect((sections[0].fields[0] as any).placement).toEqual({
+      row: 1,
+      colStart: 1,
+      colSpan: 1,
+      columns: 2,
+      order: 1
+    })
+    expect((sections[0].fields[0] as any).minHeight).toBe(120)
     expect(sections[0].fields[1].span).toBe(24)
     expect(sections[0].fields[0].readonly).toBe(true)
     expect(sections[0].fields[1].readonly).toBe(true)
@@ -84,5 +93,42 @@ describe('detailSchemaProjector', () => {
     )
 
     expect(sections).toHaveLength(0)
+  })
+
+  it('skips unknown system fields injected only in layout schema', () => {
+    const schema: RenderSchema = {
+      mode: 'readonly',
+      fieldOrder: ['id', 'assetName'],
+      sections: [
+        {
+          id: 'basic',
+          title: 'Basic',
+          kind: 'section',
+          columns: 2,
+          collapsible: false,
+          collapsed: false,
+          fields: [
+            { code: 'id', label: 'ID', fieldType: 'text', span: 1, required: false, readonly: true, visible: true },
+            { code: 'assetName', label: 'Asset Name', fieldType: 'text', span: 1, required: false, readonly: true, visible: true }
+          ]
+        }
+      ]
+    }
+
+    const sections = projectDetailSectionsFromRenderSchema(
+      schema,
+      [{ code: 'assetName', name: 'Asset Name', fieldType: 'text' } as any],
+      {
+        fieldToDetailField: (field: any) => ({
+          prop: field.code,
+          label: field.name,
+          type: 'text'
+        }),
+        mustSkipField: (field: any) => isSystemField(field)
+      }
+    )
+
+    expect(sections).toHaveLength(1)
+    expect(sections[0].fields.map((field) => field.prop)).toEqual(['assetName'])
   })
 })

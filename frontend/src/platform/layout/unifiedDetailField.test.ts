@@ -129,6 +129,24 @@ describe('unifiedDetailField', () => {
     })
     expect(jsonField.type).toBe('json')
     expect(jsonField.span).toBe(24)
+
+    const sizedField = toUnifiedDetailField({
+      code: 'asset_name',
+      label: 'Asset Name',
+      fieldType: 'text',
+      minHeight: 148
+    })
+    expect((sizedField as any).minHeight).toBe(148)
+
+    const sizedFromComponentProps = toUnifiedDetailField({
+      code: 'asset_code',
+      label: 'Asset Code',
+      fieldType: 'text',
+      component_props: {
+        min_height: 164
+      }
+    })
+    expect((sizedFromComponentProps as any).minHeight).toBe(164)
   })
 
   it('builds required form rules from field metadata', () => {

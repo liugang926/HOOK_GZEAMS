@@ -259,7 +259,7 @@ const formatCpu = (row: ITAssetInfo) => {
   return '-'
 }
 
-const formatCapacity = (value?: number, unit = 'GB') => {
+const formatCapacity = (value?: number | string | null, unit = 'GB') => {
   if (value === null || value === undefined || value === '') return '-'
   return `${value} ${unit}`
 }

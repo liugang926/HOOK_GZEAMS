@@ -8,6 +8,79 @@
  */
 
 import request from '@/utils/request'
+import type { AxiosProgressEvent } from 'axios'
+
+const requestAs = async <T>(config: Record<string, any>): Promise<T> => {
+    const payload = await request(config as any)
+    return payload as T
+}
+
+const resolveApiBaseUrl = (): string => {
+    return ((import.meta as any).env?.VITE_API_BASE_URL as string) || '/api'
+}
+
+const isAbsoluteHttpUrl = (value: string): boolean => /^https?:\/\//i.test(value)
+
+const resolveBackendOrigin = (): string => {
+    const explicit = ((import.meta as any).env?.VITE_BACKEND_ORIGIN as string) || ''
+    if (explicit.trim()) {
+        return explicit.trim().replace(/\/+$/, '')
+    }
+
+    const apiBase = ((import.meta as any).env?.VITE_API_BASE_URL as string) || ''
+    if (isAbsoluteHttpUrl(apiBase)) {
+        try {
+            const parsed = new URL(apiBase)
+            return parsed.origin
+        } catch {
+            // Ignore malformed URL and continue with fallback.
+        }
+    }
+
+    if (typeof window !== 'undefined' && window.location) {
+        const { protocol, hostname, origin } = window.location
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            return `${protocol}//${hostname}:8000`
+        }
+        return origin
+    }
+    return ''
+}
+
+/**
+ * Resolve media/file URL from backend payload to an accessable URL in Vite dev mode.
+ * Backend commonly returns `/media/...` relative URLs.
+ */
+export const resolveSystemFileUrl = (raw?: string | null): string => {
+    const value = String(raw || '').trim()
+    if (!value) return ''
+    if (
+        value.startsWith('blob:') ||
+        value.startsWith('data:') ||
+        isAbsoluteHttpUrl(value)
+    ) {
+        return value
+    }
+
+    const normalized = value.startsWith('/') ? value : `/${value}`
+    if (normalized.startsWith('/media/')) {
+        const origin = resolveBackendOrigin()
+        return origin ? `${origin}${normalized}` : normalized
+    }
+    return normalized
+}
+
+const normalizeSystemFile = (file: SystemFile): SystemFile => {
+    const normalizedUrl = resolveSystemFileUrl(file.url)
+    const normalizedThumbnail = resolveSystemFileUrl(file.thumbnailUrl || normalizedUrl)
+    const normalizedWatermarked = resolveSystemFileUrl(file.watermarkedUrl)
+    return {
+        ...file,
+        url: normalizedUrl || file.url,
+        thumbnailUrl: normalizedThumbnail || undefined,
+        watermarkedUrl: normalizedWatermarked || undefined
+    }
+}
 
 // =============================================================================
 // Type Definitions
@@ -109,20 +182,17 @@ export const systemFileApi = {
             formData.append('description', options.description)
         }
 
-        return request<SystemFile>({
+        return requestAs<SystemFile>({
             url: '/system/system-files/upload/',
             method: 'post',
             data: formData,
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            },
-            onUploadProgress: (progressEvent) => {
+            onUploadProgress: (progressEvent: AxiosProgressEvent) => {
                 if (options?.onProgress && progressEvent.total) {
                     const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
                     options.onProgress(percent)
                 }
             }
-        })
+        }).then(normalizeSystemFile)
     },
 
     /**
@@ -139,10 +209,10 @@ export const systemFileApi = {
      * GET /api/system/system-files/{id}/
      */
     get: (id: string): Promise<SystemFile> => {
-        return request<SystemFile>({
+        return requestAs<SystemFile>({
             url: `/system/system-files/${id}/`,
             method: 'get'
-        })
+        }).then(normalizeSystemFile)
     },
 
     /**
@@ -155,13 +225,13 @@ export const systemFileApi = {
      * GET /api/system/system-files/metadata/?ids=xxx,yyy
      */
     getMetadata: (ids: string[]): Promise<SystemFile[]> => {
-        return request<SystemFile[]>({
+        return requestAs<SystemFile[]>({
             url: '/system/system-files/metadata/',
             method: 'get',
             params: {
                 ids: ids.join(',')
             }
-        })
+        }).then((files) => (files || []).map(normalizeSystemFile))
     },
 
     /**
@@ -181,11 +251,21 @@ export const systemFileApi = {
         previous: string | null
         results: SystemFile[]
     }> => {
-        return request({
+        return requestAs<{
+            count: number
+            next: string | null
+            previous: string | null
+            results: SystemFile[]
+        }>({
             url: '/system/system-files/',
             method: 'get',
             params
-        })
+        }).then((payload) => ({
+            ...payload,
+            results: Array.isArray(payload?.results)
+                ? payload.results.map(normalizeSystemFile)
+                : []
+        }))
     },
 
     /**
@@ -194,7 +274,7 @@ export const systemFileApi = {
      * Returns a blob URL for download
      */
     download: (id: string): string => {
-        return `${import.meta.env.VITE_API_BASE_URL || '/api'}/system/system-files/${id}/download/`
+        return `${resolveApiBaseUrl()}/system/system-files/${id}/download/`
     },
 
     /**
@@ -209,7 +289,7 @@ export const systemFileApi = {
      * Uses the download endpoint (thumbnail is provided as metadata field, not a separate API action).
      */
     getThumbnailUrl: (id: string): string => {
-        const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
+        const apiBase = resolveApiBaseUrl()
         return `${apiBase}/system/system-files/${id}/download/`
     },
 
@@ -218,7 +298,7 @@ export const systemFileApi = {
      * Uses thumbnail for images, regular download for other files
      */
     getFileUrl: (id: string): string => {
-        const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
+        const apiBase = resolveApiBaseUrl()
         return `${apiBase}/system/system-files/${id}/download/`
     },
 
@@ -227,7 +307,7 @@ export const systemFileApi = {
      * DELETE /api/system/system-files/{id}/
      */
     delete: (id: string): Promise<void> => {
-        return request({
+        return requestAs<void>({
             url: `/system/system-files/${id}/`,
             method: 'delete'
         })
@@ -238,7 +318,7 @@ export const systemFileApi = {
      * POST /api/system/system-files/batch_delete/
      */
     batchDelete: (ids: string[]): Promise<BatchOperationResponse> => {
-        return request<BatchOperationResponse>({
+        return requestAs<BatchOperationResponse>({
             url: '/system/system-files/batch_delete/',
             method: 'post',
             data: { ids }
@@ -266,7 +346,16 @@ export const systemFileApi = {
             file?: SystemFile
         }
     }> => {
-        return request({
+        return requestAs<{
+            success: boolean
+            data: {
+                fileId: string
+                watermarkedPath: string
+                width: number
+                height: number
+                file?: SystemFile
+            }
+        }>({
             url: `/system/system-files/${id}/add_watermark/`,
             method: 'post',
             data: {
@@ -283,7 +372,7 @@ export const systemFileApi = {
      * Returns a blob URL for download
      */
     downloadWatermarked: (id: string): string => {
-        return `${import.meta.env.VITE_API_BASE_URL || '/api'}/system/system-files/${id}/download_watermarked/`
+        return `${resolveApiBaseUrl()}/system/system-files/${id}/download_watermarked/`
     },
 
     /**
@@ -292,7 +381,7 @@ export const systemFileApi = {
      * Returns a blob URL for download
      */
     batchDownload: (ids: string[], zipName?: string): Promise<Blob> => {
-        return request<Blob>({
+        return requestAs<Blob>({
             url: '/system/system-files/batch_download/',
             method: 'post',
             data: { ids, zip_name: zipName },
@@ -304,7 +393,7 @@ export const systemFileApi = {
      * Get batch download URL (for direct download via hidden iframe)
      */
     getBatchDownloadUrl: (ids: string[], zipName?: string): string => {
-        const apiBase = import.meta.env.VITE_API_BASE_URL || '/api'
+        const apiBase = resolveApiBaseUrl()
         const params = new URLSearchParams()
         params.append('ids', ids.join(','))
         if (zipName) {

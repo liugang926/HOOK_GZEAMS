@@ -23,11 +23,9 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { getUsers } from '@/api/system'
+import { toPaginated } from '@/api/contract'
 import { referenceResolver } from '@/platform/reference/referenceResolver'
-
-const { t } = useI18n()
 
 const props = defineProps({
   modelValue: {
@@ -72,8 +70,7 @@ const selectedUsers = computed({
 const searchUsers = async (query: string) => {
   loading.value = true
   try {
-    const res = await getUsers({ search: query || '' })
-    options.value = res.results || res.items || []
+    options.value = toPaginated<any>(await getUsers({ search: query || '' })).results
   } catch (e) {
     console.error(e)
   } finally {

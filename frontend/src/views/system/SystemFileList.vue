@@ -501,7 +501,7 @@ const beforeUpload = (file: File) => {
   return true
 }
 
-const handleUploadSuccess = (response: any) => {
+const handleUploadSuccess = (_response: any) => {
   ElMessage.success(t('system.file.messages.uploadSuccess'))
   fetchData()
 }

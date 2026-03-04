@@ -1,4 +1,5 @@
-﻿import type { LayoutMode } from '@/types/layout'
+import type { LayoutMode } from '@/types/layout'
+import request from '@/utils/request'
 
 // =============================================================================
 // Field Definition & Layout Types
@@ -44,7 +45,9 @@ export interface AvailableField extends FieldDefinition {
     showInList?: boolean
     showInDetail?: boolean
     isHidden?: boolean
+    isEditable?: boolean
     relationDisplayMode?: 'inline' | 'tab' | 'dialog'
+    relatedObject?: string
     width?: string
     visible?: boolean
 }
@@ -67,7 +70,9 @@ export interface FieldGroup {
 export interface PageLayout {
     id: string
     layoutCode: string
+    layout_code?: string
     layoutName: string
+    layout_name?: string
     /** @deprecated Use mode instead */
     layoutType?: 'form' | 'list' | 'detail' | 'search'
     layoutTypeDisplay?: string
@@ -111,8 +116,11 @@ export interface PageLayout {
     version: string
     parentVersion?: string
     isDefault: boolean
+    is_default?: boolean
     isActive: boolean
+    is_active?: boolean
     isSystem?: boolean
+    is_system?: boolean
     publishedAt?: string
     publishedBy?: string
     publishedByInfo?: {
@@ -120,7 +128,9 @@ export interface PageLayout {
         username: string
     }
     businessObject?: string
+    business_object?: string
     businessObjectName?: string
+    business_object_name?: string
     historyCount?: number
 }
 
@@ -143,3 +153,89 @@ export interface LayoutHistory {
     }
     createdAt: string
 }
+// =============================================================================
+// Field Definition API
+// =============================================================================
+
+export interface FieldDefinitionPayload {
+    businessObject?: string
+    code?: string
+    name?: string
+    fieldType?: string
+    isRequired?: boolean
+    isUnique?: boolean
+    isReadonly?: boolean
+    isSearchable?: boolean
+    showInList?: boolean
+    showInDetail?: boolean
+    showInFilter?: boolean
+    showInForm?: boolean
+    sortOrder?: number
+    defaultValue?: any
+    options?: Array<{ label: string; value: string; color?: string }>
+    referenceObject?: string
+    referenceDisplayField?: string
+    decimalPlaces?: number
+    minValue?: number | null
+    maxValue?: number | null
+    maxLength?: number
+    placeholder?: string
+    formula?: string
+    description?: string
+}
+
+export const fieldDefinitionApi = {
+    list(params?: Record<string, any>) {
+        return request({
+            url: '/system/field-definitions/',
+            method: 'get',
+            params
+        })
+    },
+
+    byObject(objectCode: string) {
+        return request({
+            url: `/system/field-definitions/by-object/${objectCode}/`,
+            method: 'get'
+        })
+    },
+
+    detail(id: string) {
+        return request({
+            url: `/system/field-definitions/${id}/`,
+            method: 'get'
+        })
+    },
+
+    create(data: FieldDefinitionPayload) {
+        return request({
+            url: '/system/field-definitions/',
+            method: 'post',
+            data
+        })
+    },
+
+    update(id: string, data: FieldDefinitionPayload) {
+        return request({
+            url: `/system/field-definitions/${id}/`,
+            method: 'put',
+            data
+        })
+    },
+
+    partialUpdate(id: string, data: FieldDefinitionPayload) {
+        return request({
+            url: `/system/field-definitions/${id}/`,
+            method: 'patch',
+            data
+        })
+    },
+
+    delete(id: string) {
+        return request({
+            url: `/system/field-definitions/${id}/`,
+            method: 'delete'
+        })
+    }
+}
+

@@ -44,4 +44,16 @@ describe('unifiedRuntimeField', () => {
     expect((runtime.componentProps as any).filterable).toBe(true)
     expect((runtime.componentProps as any).clearable).toBe(true)
   })
+
+  it('resolves minHeight from componentProps aliases', () => {
+    const runtime = toRuntimeFieldFromLayout({
+      fieldCode: 'assetName',
+      label: 'Asset Name',
+      fieldType: 'text',
+      component_props: { min_height: '176' }
+    } as any)
+
+    expect(runtime.minHeight).toBe(176)
+    expect((runtime.componentProps as any).minHeight).toBe(176)
+  })
 })

@@ -1,5 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
+﻿import { createRouter, createWebHistory } from 'vue-router'
 
 // Layouts
 const MainLayout = () => import('@/layouts/MainLayout.vue')
@@ -39,16 +38,16 @@ export const ADDITIONAL_BUSINESS_OBJECT_ROUTES: Record<string, string> = {
   'leasing/extensions': 'LeaseExtension',
 }
 
-export const buildLegacyObjectAliasRoutes = (routeMap: Record<string, string>): RouteRecordRaw[] => {
+export const buildLegacyObjectAliasRoutes = (routeMap: Record<string, string>): any[] => {
   return Object.entries(routeMap).flatMap(([legacyPath, objectCode]) => ([
     { path: legacyPath, redirect: `/objects/${objectCode}` },
     { path: `${legacyPath}/create`, redirect: `/objects/${objectCode}/create` },
-    { path: `${legacyPath}/:id`, redirect: (to) => `/objects/${objectCode}/${to.params.id}` },
-    { path: `${legacyPath}/:id/edit`, redirect: (to) => `/objects/${objectCode}/${to.params.id}/edit` },
+    { path: `${legacyPath}/:id`, redirect: (to: any) => `/objects/${objectCode}/${to.params.id}` },
+    { path: `${legacyPath}/:id/edit`, redirect: (to: any) => `/objects/${objectCode}/${to.params.id}/edit` },
   ]))
 }
 
-export const routes: RouteRecordRaw[] = [
+export const routes: any[] = [
   {
     path: '/login',
     component: AuthLayout,
@@ -96,7 +95,7 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'objects/:code/:id/edit',
         name: 'DynamicObjectEdit',
-        redirect: to => ({
+        redirect: (to: any) => ({
           name: 'DynamicObjectDetail',
           params: { code: to.params.code, id: to.params.id },
           query: { ...to.query, action: 'edit' }
@@ -121,11 +120,11 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'assets/:id/edit',
-        redirect: to => `/objects/Asset/${to.params.id}/edit`
+        redirect: (to: any) => `/objects/Asset/${to.params.id}/edit`
       },
       {
         path: 'assets/:id',
-        redirect: to => `/objects/Asset/${to.params.id}`
+        redirect: (to: any) => `/objects/Asset/${to.params.id}`
       },
       {
         path: 'assets/settings/categories',
@@ -145,11 +144,11 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'assets/settings/suppliers/:id',
-        redirect: to => `/objects/Supplier/${to.params.id}`
+        redirect: (to: any) => `/objects/Supplier/${to.params.id}`
       },
       {
         path: 'assets/settings/suppliers/:id/edit',
-        redirect: to => `/objects/Supplier/${to.params.id}/edit`
+        redirect: (to: any) => `/objects/Supplier/${to.params.id}/edit`
       },
       {
         path: 'assets/settings/locations',
@@ -161,11 +160,11 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'assets/settings/locations/:id',
-        redirect: to => `/objects/Location/${to.params.id}`
+        redirect: (to: any) => `/objects/Location/${to.params.id}`
       },
       {
         path: 'assets/settings/locations/:id/edit',
-        redirect: to => `/objects/Location/${to.params.id}/edit`
+        redirect: (to: any) => `/objects/Location/${to.params.id}/edit`
       },
       {
         path: 'assets/status-logs',
@@ -181,11 +180,11 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'assets/operations/pickup/:id',
-        redirect: to => `/objects/AssetPickup/${to.params.id}`
+        redirect: (to: any) => `/objects/AssetPickup/${to.params.id}`
       },
       {
         path: 'assets/operations/pickup/:id/edit',
-        redirect: to => `/objects/AssetPickup/${to.params.id}/edit`
+        redirect: (to: any) => `/objects/AssetPickup/${to.params.id}/edit`
       },
       {
         path: 'assets/operations/transfer',
@@ -197,11 +196,11 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'assets/operations/transfer/:id',
-        redirect: to => `/objects/AssetTransfer/${to.params.id}`
+        redirect: (to: any) => `/objects/AssetTransfer/${to.params.id}`
       },
       {
         path: 'assets/operations/transfer/:id/edit',
-        redirect: to => `/objects/AssetTransfer/${to.params.id}/edit`
+        redirect: (to: any) => `/objects/AssetTransfer/${to.params.id}/edit`
       },
       {
         path: 'assets/operations/return',
@@ -213,11 +212,11 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'assets/operations/return/:id',
-        redirect: to => `/objects/AssetReturn/${to.params.id}`
+        redirect: (to: any) => `/objects/AssetReturn/${to.params.id}`
       },
       {
         path: 'assets/operations/return/:id/edit',
-        redirect: to => `/objects/AssetReturn/${to.params.id}/edit`
+        redirect: (to: any) => `/objects/AssetReturn/${to.params.id}/edit`
       },
       {
         path: 'assets/operations/loans',
@@ -229,11 +228,11 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'assets/operations/loans/:id',
-        redirect: to => `/objects/AssetLoan/${to.params.id}`
+        redirect: (to: any) => `/objects/AssetLoan/${to.params.id}`
       },
       {
         path: 'assets/operations/loans/:id/edit',
-        redirect: to => `/objects/AssetLoan/${to.params.id}/edit`
+        redirect: (to: any) => `/objects/AssetLoan/${to.params.id}/edit`
       },
 
       // Consumable Routes
@@ -367,7 +366,7 @@ export const routes: RouteRecordRaw[] = [
         path: 'system/module-workbench',
         name: 'ModuleWorkbench',
         component: () => import('@/views/system/ModuleWorkbench.vue'),
-        meta: { title: 'Module Workbench' }
+        meta: { title: 'menu.routes.moduleWorkbench' }
       },
 
       // Workflow Management
@@ -511,6 +510,7 @@ export const routes: RouteRecordRaw[] = [
 ]
 
 export default createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory((import.meta as any).env.BASE_URL),
   routes
 })
+

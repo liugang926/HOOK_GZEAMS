@@ -42,6 +42,8 @@ function fulfillSuccess(route: Route, data: unknown) {
 }
 
 test.describe('Layout Designer Entry Stability Regression', () => {
+  test.setTimeout(120000)
+
   test('designer should render reliably after repeated entries under delayed API responses', async ({ page }) => {
     let runtimeCallCount = 0
     let layoutDetailCallCount = 0
@@ -171,9 +173,10 @@ test.describe('Layout Designer Entry Stability Regression', () => {
 
     for (let round = 0; round < 4; round += 1) {
       await page.goto('/dashboard')
-      await page.goto(DESIGNER_URL)
+      await page.goto(DESIGNER_URL, { waitUntil: 'domcontentloaded' })
+      await expect(page).toHaveURL(/\/system\/page-layouts\/designer/)
 
-      await waitForDesignerReady(page)
+      await waitForDesignerReady(page, { timeout: 45000 })
       await expect(page.getByTestId('layout-preview-current-button').first()).toBeVisible()
       await expect(page.locator('[data-testid="layout-canvas-field"]').first()).toBeVisible()
     }

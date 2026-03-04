@@ -216,7 +216,7 @@ const loadComplianceReport = async () => {
 }
 
 const handleRowClick = (row: any) => {
-  // Navigate to detail or edit
+  handleEdit(row)
 }
 
 const handleCreate = () => {

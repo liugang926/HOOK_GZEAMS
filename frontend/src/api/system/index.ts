@@ -18,6 +18,7 @@ export { businessObjectApi } from './businessObject'
 export type { BusinessObject, FieldTypeGroup, FieldTypeOption, FieldTypeConfig } from './businessObject'
 
 // Field Definition & Layout Types
+export { fieldDefinitionApi } from './fieldDefinition'
 export type {
     FieldDefinition,
     AvailableField,

@@ -4,7 +4,7 @@
     :model-value="modelValue"
     :form-data="formData"
     :disabled="disabled"
-    @update:model-value="(val) => emit('update:modelValue', val)"
+    @update:model-value="(val: any) => emit('update:modelValue', val)"
   />
 </template>
 

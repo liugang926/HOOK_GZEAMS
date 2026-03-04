@@ -97,6 +97,8 @@
         "policyRenewal": "Policy Renewal",
         "notificationCenter": "Notification Center",
         "notificationPreferences": "Notification Preferences",
+        "moduleWorkbench": "Module Workbench",
+        "integrationConfigs": "Integration Configs",
         "location": "Locations",
         "supplier": "Suppliers",
         "assetStatusLog": "Asset Status Logs",

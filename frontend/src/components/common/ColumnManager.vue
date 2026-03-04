@@ -110,7 +110,7 @@
                 :model-value="(col.fixed || '') as string"
                 size="small"
                 style="width: 75px"
-                @update:model-value="(val) => handleFixedChange(col, val)"
+                @update:model-value="(val: string) => handleFixedChange(col, val)"
               >
                 <el-option
                   :label="$t('column.fixed.none')"

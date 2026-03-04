@@ -125,23 +125,20 @@ export const businessObjectApi = {
     // Frontend uses this to ensure field type selector matches backend capabilities.
     getFieldTypes() {
         return request<{
-            success: boolean
-            data: {
-                field_type_groups: Array<{
+            field_type_groups: Array<{
+                label: string
+                icon: string
+                types: Array<{
+                    value: string
                     label: string
-                    icon: string
-                    types: Array<{
-                        value: string
-                        label: string
-                        icon?: string
-                        description?: string
-                        requires_reference?: boolean
-                        supports_options?: boolean
-                        component?: string
-                        default_props?: Record<string, any>
-                    }>
+                    icon?: string
+                    description?: string
+                    requires_reference?: boolean
+                    supports_options?: boolean
+                    component?: string
+                    default_props?: Record<string, any>
                 }>
-            }
+            }>
         }>({
             url: '/system/business-objects/field-types/',
             method: 'get'

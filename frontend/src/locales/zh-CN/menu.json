@@ -101,6 +101,8 @@
         "claimRecord": "理赔记录",
         "policyRenewal": "保单续保",
         "notificationCenter": "通知中心",
-        "notificationPreferences": "通知偏好设置"
+        "notificationPreferences": "通知偏好设置",
+        "moduleWorkbench": "模块工作台",
+        "integrationConfigs": "集成配置管理"
     }
 }

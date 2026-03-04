@@ -35,6 +35,26 @@ describe('renderSchemaProjector', () => {
     expect(runtime.sections[0].fields?.[0].code).toBe('assetName')
   })
 
+  it('keeps render field minHeight in runtime projection', () => {
+    const schema: RenderSchema = {
+      ...baseSchema,
+      sections: [
+        {
+          ...baseSchema.sections[0],
+          fields: [
+            {
+              ...baseSchema.sections[0].fields[0],
+              minHeight: 172
+            }
+          ]
+        }
+      ]
+    }
+
+    const runtime = projectRuntimeLayoutFromRenderSchema(schema)
+    expect(runtime.sections[0].fields?.[0].minHeight).toBe(172)
+  })
+
   it('projects ordered list columns', () => {
     const fields = [
       { code: 'assetCode', name: 'Asset Code' },

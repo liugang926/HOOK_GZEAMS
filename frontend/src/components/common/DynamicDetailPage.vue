@@ -227,7 +227,9 @@ const detailSections = computed<DetailSection[]>(() => {
       sourceFields,
       { strictVisibility: false }
     )
-    if (runtimeSections.length > 0) return runtimeSections
+    // Respect runtime layout as single source of truth even when
+    // visibility policy projects to zero visible fields.
+    return runtimeSections
   }
 
   const sections: DetailSection[] = []
@@ -697,8 +699,8 @@ defineExpose({
   <div class="dynamic-detail-page">
     <BaseDetailPage
       ref="baseDetailRef"
-      :title="pageTitle"
       v-model:form-data="formData"
+      :title="pageTitle"
       :object-name="objectName"
       :object-icon="objectIcon"
       :sections="detailSections"

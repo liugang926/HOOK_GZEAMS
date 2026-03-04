@@ -132,9 +132,20 @@ const router = useRouter()
 
 const formRef = ref()
 const submitting = ref(false)
-const locationTree = ref([])
+const locationTree = ref<any[]>([])
 
-const form = reactive({
+interface LocationFormModel {
+    id: string | null
+    code: string
+    name: string
+    parentId: string | null
+    description: string
+    remark: string
+    isActive: boolean
+    sortOrder: number
+}
+
+const form = reactive<LocationFormModel>({
     id: null,
     code: '',
     name: '',

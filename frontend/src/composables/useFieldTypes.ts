@@ -22,6 +22,10 @@ import i18n from '@/locales'
 
 const { t } = i18n.global
 
+type ApiFieldTypesPayload = Awaited<ReturnType<typeof businessObjectApi.getFieldTypes>>
+type ApiFieldTypeGroup = ApiFieldTypesPayload['field_type_groups'][number]
+type ApiFieldTypeOption = ApiFieldTypeGroup['types'][number]
+
 const getStaticFieldTypes = (): FieldTypeGroup[] => [
   {
     label: t('system.fieldDefinition.groups.basic'),
@@ -192,14 +196,41 @@ export function useFieldTypes() {
 
     try {
       const response = await businessObjectApi.getFieldTypes()
-      if (response.success && response.data) {
-        cache.value = {
-          data: response.data,
-          timestamp: Date.now()
-        }
-        // Save to localStorage for future use
-        saveToCache(response.data)
+      const rawGroups = Array.isArray(response?.field_type_groups) ? response.field_type_groups : []
+
+      const mappedGroups: FieldTypeGroup[] = rawGroups.map((group: ApiFieldTypeGroup) => ({
+        label: group.label,
+        icon: group.icon,
+        types: (group.types || []).map((type: ApiFieldTypeOption) => ({
+          value: type.value,
+          label: type.label
+        }))
+      }))
+
+      const mappedConfig: Record<string, FieldTypeConfig> = {}
+      rawGroups.forEach((group: ApiFieldTypeGroup) => {
+        (group.types || []).forEach((type: ApiFieldTypeOption) => {
+          mappedConfig[type.value] = {
+            component: type.component || 'text',
+            defaultProps: type.default_props || {}
+          }
+        })
+      })
+
+      const normalizedData = {
+        groups: mappedGroups.length > 0 ? mappedGroups : getStaticFieldTypes(),
+        allTypes: mappedGroups.length > 0
+          ? flattenGroups(mappedGroups).map((t) => t.value)
+          : flattenGroups(getStaticFieldTypes()).map((t) => t.value),
+        typeConfig: mappedConfig
       }
+
+      cache.value = {
+        data: normalizedData,
+        timestamp: Date.now()
+      }
+      // Save to localStorage for future use
+      saveToCache(normalizedData)
     } catch (err) {
       error.value = err instanceof Error ? err.message : t('system.fieldDefinition.messages.loadFailed')
       // Use static fallback on error

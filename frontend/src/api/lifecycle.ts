@@ -6,39 +6,32 @@
  */
 
 import request from '@/utils/request'
+import { toData, toPaginated } from '@/api/contract'
 import type { PaginatedResponse } from '@/types/api'
 import {
-  purchaseRequestApi,
-  assetReceiptApi,
-  maintenanceApi,
-  maintenancePlanApi,
-  disposalRequestApi
+  purchaseRequestApi as dynamicPurchaseRequestApi,
+  assetReceiptApi as dynamicAssetReceiptApi,
+  maintenanceApi as dynamicMaintenanceApi,
+  maintenancePlanApi as dynamicMaintenancePlanApi,
+  disposalRequestApi as dynamicDisposalRequestApi
 } from '@/api/dynamic'
 
 // Purchase Requests (using dynamic API)
 export const purchaseRequestApi = {
   async list(params?: any): Promise<PaginatedResponse<any>> {
-    const res = await purchaseRequestApi.list(params)
-    return {
-      items: res.data?.results || [],
-      total: res.data?.count || 0,
-      ...params
-    }
+    return toPaginated<any>(await dynamicPurchaseRequestApi.list(params))
   },
 
   async detail(id: string): Promise<any> {
-    const res = await purchaseRequestApi.get(id)
-    return res.data
+    return toData<any>(await dynamicPurchaseRequestApi.get(id))
   },
 
   async create(data: any): Promise<any> {
-    const res = await purchaseRequestApi.create(data)
-    return res.data
+    return toData<any>(await dynamicPurchaseRequestApi.create(data))
   },
 
   async update(id: string, data: any): Promise<any> {
-    const res = await purchaseRequestApi.update(id, data)
-    return res.data
+    return toData<any>(await dynamicPurchaseRequestApi.update(id, data))
   },
 
   /**
@@ -66,21 +59,15 @@ export const purchaseRequestApi = {
 // Asset Receipts (using dynamic API)
 export const assetReceiptApi = {
   async list(params?: any): Promise<PaginatedResponse<any>> {
-    const res = await assetReceiptApi.list(params)
-    return {
-      items: res.data?.results || [],
-      total: res.data?.count || 0
-    }
+    return toPaginated<any>(await dynamicAssetReceiptApi.list(params))
   },
 
   async detail(id: string): Promise<any> {
-    const res = await assetReceiptApi.get(id)
-    return res.data
+    return toData<any>(await dynamicAssetReceiptApi.get(id))
   },
 
   async create(data: any): Promise<any> {
-    const res = await assetReceiptApi.create(data)
-    return res.data
+    return toData<any>(await dynamicAssetReceiptApi.create(data))
   },
 
   /**
@@ -94,26 +81,19 @@ export const assetReceiptApi = {
 // Maintenance Records (using dynamic API)
 export const maintenanceApi = {
   async list(params?: any): Promise<PaginatedResponse<any>> {
-    const res = await maintenanceApi.list(params)
-    return {
-      items: res.data?.results || [],
-      total: res.data?.count || 0
-    }
+    return toPaginated<any>(await dynamicMaintenanceApi.list(params))
   },
 
   async detail(id: string): Promise<any> {
-    const res = await maintenanceApi.get(id)
-    return res.data
+    return toData<any>(await dynamicMaintenanceApi.get(id))
   },
 
   async create(data: any): Promise<any> {
-    const res = await maintenanceApi.create(data)
-    return res.data
+    return toData<any>(await dynamicMaintenanceApi.create(data))
   },
 
   async update(id: string, data: any): Promise<any> {
-    const res = await maintenanceApi.update(id, data)
-    return res.data
+    return toData<any>(await dynamicMaintenanceApi.update(id, data))
   },
 
   /**
@@ -127,26 +107,19 @@ export const maintenanceApi = {
 // Maintenance Plans (using dynamic API)
 export const maintenancePlanApi = {
   async list(params?: any): Promise<PaginatedResponse<any>> {
-    const res = await maintenancePlanApi.list(params)
-    return {
-      items: res.data?.results || [],
-      total: res.data?.count || 0
-    }
+    return toPaginated<any>(await dynamicMaintenancePlanApi.list(params))
   },
 
   async detail(id: string): Promise<any> {
-    const res = await maintenancePlanApi.get(id)
-    return res.data
+    return toData<any>(await dynamicMaintenancePlanApi.get(id))
   },
 
   async create(data: any): Promise<any> {
-    const res = await maintenancePlanApi.create(data)
-    return res.data
+    return toData<any>(await dynamicMaintenancePlanApi.create(data))
   },
 
   async update(id: string, data: any): Promise<any> {
-    const res = await maintenancePlanApi.update(id, data)
-    return res.data
+    return toData<any>(await dynamicMaintenancePlanApi.update(id, data))
   },
 
   /**
@@ -167,26 +140,19 @@ export const maintenancePlanApi = {
 // Disposal Requests (using dynamic API)
 export const disposalRequestApi = {
   async list(params?: any): Promise<PaginatedResponse<any>> {
-    const res = await disposalRequestApi.list(params)
-    return {
-      items: res.data?.results || [],
-      total: res.data?.count || 0
-    }
+    return toPaginated<any>(await dynamicDisposalRequestApi.list(params))
   },
 
   async detail(id: string): Promise<any> {
-    const res = await disposalRequestApi.get(id)
-    return res.data
+    return toData<any>(await dynamicDisposalRequestApi.get(id))
   },
 
   async create(data: any): Promise<any> {
-    const res = await disposalRequestApi.create(data)
-    return res.data
+    return toData<any>(await dynamicDisposalRequestApi.create(data))
   },
 
   async update(id: string, data: any): Promise<any> {
-    const res = await disposalRequestApi.update(id, data)
-    return res.data
+    return toData<any>(await dynamicDisposalRequestApi.update(id, data))
   },
 
   /**

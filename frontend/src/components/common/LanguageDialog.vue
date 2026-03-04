@@ -110,7 +110,6 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { FormInstance, FormRules } from 'element-plus'
 import { languageApi } from '@/api/translations'
 import type { Language } from '@/api/translations'
 
@@ -127,7 +126,7 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const formRef = ref<FormInstance>()
+const formRef = ref<any>()
 const saving = ref(false)
 
 // Form data
@@ -152,7 +151,7 @@ const formData = reactive<{
 })
 
 // Validation rules
-const rules: FormRules = {
+const rules = {
   code: [
     { required: true, message: 'Language code is required', trigger: 'blur' },
     { pattern: /^[a-z]{2}-[A-Z]{2}$/, message: 'Format: xx-XX (e.g., zh-CN)', trigger: 'blur' }

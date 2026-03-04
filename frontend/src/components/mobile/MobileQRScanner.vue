@@ -25,7 +25,10 @@
       />
 
       <!-- Scan Overlay -->
-      <div class="scan-overlay">
+      <div
+        v-if="hasStarted"
+        class="scan-overlay"
+      >
         <div class="scan-frame">
           <div class="scan-line" />
           <div class="scan-corner top-left" />
@@ -36,6 +39,21 @@
         <p class="scan-hint">
           {{ t('mobile.scanner.scanQR') }}
         </p>
+      </div>
+
+      <div
+        v-else
+        class="start-overlay"
+      >
+        <van-button
+          type="primary"
+          round
+          size="large"
+          :loading="isInitializing"
+          @click="startFromUserAction"
+        >
+          {{ t('mobile.scanner.startScan') }}
+        </van-button>
       </div>
 
       <!-- Top Controls -->
@@ -118,8 +136,6 @@
 
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { showToast } from 'vant'
-import { BrowserMultiFormatReader } from '@zxing/library'
 import { qrScanApi } from '@/api/inventory'
 
 // ============================================================================
@@ -136,11 +152,13 @@ interface Props {
   taskId?: string
   autoSubmit?: boolean
   showPreview?: boolean
+  autoStart?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   autoSubmit: false,
-  showPreview: true
+  showPreview: true,
+  autoStart: true
 })
 
 const emit = defineEmits<{
@@ -154,7 +172,7 @@ const emit = defineEmits<{
 
 const containerRef = ref<HTMLElement>()
 const videoRef = ref<HTMLVideoElement>()
-const codeReader = new BrowserMultiFormatReader()
+let codeReader: any = null
 const stream = ref<MediaStream | null>(null)
 const torchOn = ref(false)
 const hasTorch = ref(false)
@@ -172,6 +190,8 @@ const scannedCodes = ref<Set<string>>(new Set())
 
 const inputVisible = ref(false)
 const manualCode = ref('')
+const hasStarted = ref(false)
+const isInitializing = ref(false)
 
 let isScanning = false
 let lastScanTime = 0
@@ -181,6 +201,27 @@ let statusTimeout: ReturnType<typeof setTimeout> | null = null
 // ============================================================================
 // Methods
 // ============================================================================
+
+const ensureCodeReader = async () => {
+  if (codeReader) return codeReader
+  const { BrowserMultiFormatReader } = await import('@zxing/library')
+  codeReader = new BrowserMultiFormatReader()
+  return codeReader
+}
+
+/**
+ * Start scanner lazily on user action.
+ */
+const startFromUserAction = async () => {
+  if (hasStarted.value || isInitializing.value) return
+  isInitializing.value = true
+  try {
+    await initScanner()
+    hasStarted.value = isScanning
+  } finally {
+    isInitializing.value = false
+  }
+}
 
 /**
  * Initialize scanner
@@ -205,11 +246,10 @@ const initScanner = async () => {
     }
 
     // Select back camera by default
-    const backCamera = cameras.value.find(c =>
-      c.label.toLowerCase().includes('back') ||
-      c.label.toLowerCase().includes('environment') ||
-      c.label.toLowerCase().includes('后')
-    )
+    const backCamera = cameras.value.find(c => {
+      const label = c.label.toLowerCase()
+      return label.includes('back') || label.includes('environment')
+    })
     selectedCameraId.value = backCamera?.id || cameras.value[0].id
 
     await startScanner()
@@ -242,12 +282,14 @@ const startScanner = async () => {
       videoRef.value.play()
 
       isScanning = true
-      codeReader.decodeFromVideoDevice(
+      hasStarted.value = true
+      const reader = await ensureCodeReader()
+      reader.decodeFromVideoDevice(
         null,
         videoRef.value,
-        (result, error) => {
+        (result: any, _error: any) => {
           if (result && isScanning) {
-            handleScanResult(result.text)
+            handleScanResult(result.getText())
           }
         }
       )
@@ -269,7 +311,8 @@ const startScanner = async () => {
  */
 const stopScanner = () => {
   isScanning = false
-  codeReader.reset()
+  hasStarted.value = false
+  codeReader?.reset()
   stream.value?.getTracks().forEach(track => track.stop())
   stream.value = null
 }
@@ -409,11 +452,14 @@ const reset = () => {
 // ============================================================================
 
 onMounted(() => {
-  initScanner()
+  if (props.autoStart) {
+    startFromUserAction()
+  }
 })
 
 onUnmounted(() => {
   stopScanner()
+  hasStarted.value = false
   if (statusTimeout) {
     clearTimeout(statusTimeout)
   }
@@ -426,6 +472,7 @@ onUnmounted(() => {
 defineExpose({
   setTotalCount,
   reset,
+  startFromUserAction,
   startScanner,
   stopScanner,
   switchCamera,
@@ -465,6 +512,16 @@ defineExpose({
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.2);
+}
+
+.start-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 8;
 }
 
 .scan-frame {

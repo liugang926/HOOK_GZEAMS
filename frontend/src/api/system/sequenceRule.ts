@@ -15,11 +15,16 @@ export interface SequenceRule {
     prefix?: string
     pattern: string
     seqLength: number
+    seq_length?: number
     currentValue: number
+    current_value?: number
     resetPeriod: 'never' | 'yearly' | 'monthly' | 'daily'
+    reset_period?: 'never' | 'yearly' | 'monthly' | 'daily'
     lastResetDate?: string
+    last_reset_date?: string
     description?: string
     isActive: boolean
+    is_active?: boolean
 }
 
 export const sequenceRuleApi = {
@@ -65,6 +70,13 @@ export const sequenceRuleApi = {
         return request({
             url: `/system/sequence-rules/${code}/preview/`,
             method: 'get'
+        })
+    },
+
+    generate(code: string) {
+        return request({
+            url: `/system/sequence-rules/${code}/generate/`,
+            method: 'post'
         })
     },
 

@@ -84,12 +84,12 @@ export interface TableColumn {
   type?: string // Legacy field type (text, user, status, etc.)
   fieldType?: string // Preferred field type for rendering
   options?: SelectOption[]
-  width?: number
-  defaultWidth?: number
-  minWidth?: number
-  align?: 'left' | 'center' | 'right'
+  width?: number | string
+  defaultWidth?: number | string
+  minWidth?: number | string
+  align?: 'left' | 'center' | 'right' | string
   fixed?: boolean | 'left' | 'right'
-  slot?: string
+  slot?: string | boolean
   visible?: boolean
   sortable?: boolean | 'custom'
   // Custom render helpers
@@ -105,7 +105,7 @@ export interface SearchField {
   prop?: string
   field?: string
   label: string
-  type?: 'text' | 'input' | 'select' | 'date' | 'dateRange' | 'daterange' | 'month' | 'year' | 'numberRange' | 'boolean' | 'slot'
+  type?: 'text' | 'input' | 'select' | 'date' | 'dateRange' | 'daterange' | 'month' | 'year' | 'numberRange' | 'boolean' | 'slot' | string
   placeholder?: string
   options?: SelectOption[]
   multiple?: boolean
@@ -181,17 +181,25 @@ export interface TabConfig {
  * Note: Backend returns camelCase directly via djangorestframework-camel-case
  */
 export interface ColumnItem {
-  fieldCode: string
+  fieldCode?: string
+  field_code?: string
   prop?: string  // Legacy support
   label: string
   labelOverride?: string
-  width?: number
-  defaultWidth?: number
-  fixed?: 'left' | 'right' | '' | null
-  sortable?: boolean
+  label_override?: string
+  width?: number | string
+  defaultWidth?: number | string
+  minWidth?: number | string
+  align?: 'left' | 'center' | 'right' | string
+  className?: string
+  showOverflowTooltip?: boolean
+  fixed?: boolean | 'left' | 'right' | '' | null
+  sortable?: boolean | 'custom'
   visible?: boolean
   defaultVisible?: boolean
+  required_in_list?: boolean
   requiredInList?: boolean
+  field_type?: string
   fieldType?: string
 }
 

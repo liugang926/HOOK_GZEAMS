@@ -43,6 +43,8 @@ interface UserOption extends User {
   label?: string
   /** Value for selection */
   value?: string
+  /** Optional department display name from backend list DTO */
+  departmentName?: string
 }
 
 interface Props {

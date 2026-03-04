@@ -16,6 +16,7 @@
 
 import request from '@/utils/request'
 import type { ObjectMetadata } from '@/types'
+export type { ObjectMetadata } from '@/types'
 import { checkRuntimeContract, type RuntimeMode } from '@/contracts/runtimeContract'
 
 /**
@@ -224,7 +225,7 @@ class DynamicAPI {
      * Get object metadata for dynamic rendering
      * GET /api/system/objects/{code}/metadata/
      */
-    getMetadata(code: string): Promise<ApiResponse<ObjectMetadata>> {
+    getMetadata(code: string): Promise<ObjectMetadata> {
         return request({
             url: `${this.baseUrl}/${code}/metadata/`,
             method: 'get'
@@ -289,7 +290,7 @@ export interface ObjectClient {
     batchUpdate(data: Record<string, any>): Promise<ApiResponse<any>>
     listDeleted<T = any>(params?: Record<string, any>): Promise<ListResponse<T>>
     restore(id: string): Promise<ApiResponse<void>>
-    getMetadata(): Promise<ApiResponse<ObjectMetadata>>
+    getMetadata(): Promise<ObjectMetadata>
     getSchema(): Promise<ApiResponse<any>>
     getRuntime(mode?: 'edit' | 'readonly' | 'list' | 'search', params?: Record<string, any>): Promise<any>
 }

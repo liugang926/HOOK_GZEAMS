@@ -118,6 +118,9 @@ export interface FieldDefinition {
   /** Grid span (24-column grid) */
   span?: number
 
+  /** Minimum rendered field block height (px) */
+  minHeight?: number
+
   // ========================================
   // Validation Rules
   // ========================================

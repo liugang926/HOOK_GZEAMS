@@ -13,8 +13,8 @@ export interface ColumnItem {
     prop?: string  // Legacy support
     label?: string
     labelOverride?: string
-    width?: number
-    defaultWidth?: number
+    width?: number | string
+    defaultWidth?: number | string
     fixed?: 'left' | 'right' | '' | null
     sortable?: boolean
     visible?: boolean

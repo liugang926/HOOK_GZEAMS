@@ -85,7 +85,7 @@
               :column="col"
               :index="$index"
             >
-              <span>{{ getCellValue(row, column.prop) }}</span>
+              <span>{{ getCellValue(row, column.prop || '') }}</span>
             </slot>
           </template>
         </el-table-column>
@@ -140,7 +140,7 @@
       <ColumnManager
         v-model="internalColumns"
         :object-code="objectCode"
-        :columns="columns"
+        :columns="columnManagerSourceColumns"
         @save="handleColumnSave"
       />
     </div>
@@ -152,22 +152,7 @@ import { ref, computed, watch } from 'vue'
 import type { ElTable } from 'element-plus'
 import ColumnManager from './ColumnManager.vue'
 import type { ColumnItem } from '@/composables/useColumnConfig'
-
-/**
- * Column definition
- */
-export interface TableColumn {
-  prop: string
-  label: string
-  width?: number
-  minWidth?: number
-  fixed?: 'left' | 'right' | false
-  sortable?: boolean | 'custom'
-  align?: 'left' | 'center' | 'right'
-  className?: string
-  showOverflowTooltip?: boolean
-  visible?: boolean
-}
+import type { TableColumn } from '@/types/common'
 
 interface Props {
   data: any[]
@@ -239,6 +224,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const tableRef = ref<InstanceType<typeof ElTable>>()
+const columnManagerSourceColumns = computed<ColumnItem[]>(() => (props.columns as any) || [])
 
 // Internal columns state
 const internalColumns = ref<ColumnItem[]>([])

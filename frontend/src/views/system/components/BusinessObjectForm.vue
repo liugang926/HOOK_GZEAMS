@@ -104,7 +104,7 @@
           :rows="15"
           :model-value="JSON.stringify(formData.actions || [], null, 2)"
           placeholder="[{&quot;code&quot;: &quot;...&quot;, &quot;label&quot;: &quot;...&quot;}]"
-          @change="(val) => {
+          @change="(val: string) => {
             try {
               formData.actions = JSON.parse(val)
             } catch (e) {

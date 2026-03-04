@@ -69,7 +69,7 @@ const searchFields = computed<SearchField[]>(() => [
 ])
 
 const handleRowClick = (row: any) => {
-  // Show detail dialog
+  router.push(`/software-licenses/allocations/${row.id}`)
 }
 
 const handleCreate = () => {

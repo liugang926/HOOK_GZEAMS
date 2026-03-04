@@ -56,6 +56,7 @@
           <div class="scanner-wrapper">
             <MobileQRScanner 
               ref="scannerRef"
+              :auto-start="false"
               :auto-submit="true"
               :show-preview="false"
               @scan="handleScan"
@@ -204,21 +205,51 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { inventoryApi } from '@/api/inventory'
 import MobileQRScanner from '@/components/mobile/MobileQRScanner.vue'
 import { ElMessage } from 'element-plus'
-import { Check, Warning, ArrowLeft } from '@element-plus/icons-vue'
+import { Check, Warning } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
 const route = useRoute()
-const router = useRouter()
 const taskId = route.params.id as string
+
+type ListFilter = 'all' | 'unscanned' | 'scanned'
+type ScanStatus = 'success' | 'warning' | 'error'
+
+interface TaskSnapshotItem {
+  id: string | number
+  asset_name: string
+  asset_code: string
+  is_scanned: boolean
+  result_display?: string
+}
+
+interface LastScannedResult {
+  status: ScanStatus
+  asset_name?: string
+  asset_code?: string
+  message: string
+}
 
 const task = ref<any>(null)
 const activeTab = ref('scan')
-const scannerRef = ref()
+const scannerRef = ref<InstanceType<typeof MobileQRScanner> | null>(null)
+const loadingList = ref(false)
+const listFilter = ref<ListFilter>('all')
+const snapshots = ref<TaskSnapshotItem[]>([])
+const diffSnapshots = ref<TaskSnapshotItem[]>([])
+const lastScanned = ref<LastScannedResult | null>(null)
+
+const normalizeSnapshot = (item: any): TaskSnapshotItem => ({
+  id: item?.id ?? item?.assetId ?? item?.asset_id ?? `${item?.asset_code || item?.assetCode || Date.now()}`,
+  asset_name: item?.asset_name || item?.assetName || '-',
+  asset_code: item?.asset_code || item?.assetCode || '-',
+  is_scanned: Boolean(item?.is_scanned ?? item?.scanned),
+  result_display: item?.result_display || item?.resultDisplay
+})
 
 const fetchTask = async () => {
   try {
@@ -234,10 +265,11 @@ const fetchSnapshots = async () => {
   try {
     const res = await inventoryApi.getSnapshots(taskId, {
       page: 1,
-      pageSize: 1000, // For simple list, get all or implement scroll load
-      filter: listFilter.value as any
+      pageSize: 1000,
+      filter: listFilter.value
     })
-    snapshots.value = res.results || []
+    const items = Array.isArray(res.results) ? res.results : []
+    snapshots.value = items.map(normalizeSnapshot)
   } catch (e) {
     console.error(e)
   } finally {
@@ -246,66 +278,67 @@ const fetchSnapshots = async () => {
 }
 
 const fetchDiffs = async () => {
-    try {
-        const res = await inventoryApi.getSnapshots(taskId, {
-            page: 1,
-            pageSize: 100,
-            filter: 'abnormal'
-        })
-        diffSnapshots.value = res.results || []
-    } catch (e) { console.error(e) }
+  try {
+    const res = await inventoryApi.getSnapshots(taskId, {
+      page: 1,
+      pageSize: 100,
+      filter: 'abnormal'
+    })
+    const items = Array.isArray(res.results) ? res.results : []
+    diffSnapshots.value = items.map(normalizeSnapshot)
+  } catch (e) {
+    console.error(e)
+  }
 }
 
 const refreshData = () => {
-    fetchTask()
-    fetchSnapshots()
-    fetchDiffs()
+  fetchTask()
+  fetchSnapshots()
+  fetchDiffs()
 }
 
 // Handle Scan
 const handleScan = async (code: string) => {
-   try {
-     // 1. Submit Scan
-     const res : any = await inventoryApi.scanAsset(taskId, { qrCode: code })
-     
-     // 2. Update Local State
-     const resultType = res.result // 'match', 'surplus', 'location_mismatch', etc.
-     
-     if (resultType === 'match') {
-        lastScanned.value = {
-            status: 'success',
-            asset_name: res.asset_name,
-            asset_code: res.asset_code,
-            message: t('common.messages.operationSuccess')
-        }
-     } else {
-        lastScanned.value = {
-            status: 'warning',
-            asset_name: res.asset_name,
-            asset_code: res.asset_code,
-            message: res.result_display || `${t('common.status.warning')}: ${resultType}`
-        }
-        // Refresh diff list if abnormal
-        fetchDiffs()
-     }
-     
-     // 3. Refresh Task Stats (e.g. progress)
-     // Debounced or simple refresh
-     fetchTask()
-     
-   } catch (e: any) {
-      console.error(e)
+  try {
+    const res: any = await inventoryApi.scanAsset(taskId, { qrCode: code })
+    const resultType = res?.result
+
+    if (resultType === 'match') {
       lastScanned.value = {
-          status: 'error',
-          message: e.message || t('common.messages.operationFailed'),
-          asset_code: code
+        status: 'success',
+        asset_name: res?.asset_name || res?.assetName,
+        asset_code: res?.asset_code || res?.assetCode || code,
+        message: t('common.messages.operationSuccess')
       }
-   }
+    } else {
+      lastScanned.value = {
+        status: 'warning',
+        asset_name: res?.asset_name || res?.assetName,
+        asset_code: res?.asset_code || res?.assetCode || code,
+        message: res?.result_display || `${t('common.status.warning')}: ${resultType || 'unknown'}`
+      }
+      fetchDiffs()
+    }
+
+    fetchTask()
+    fetchSnapshots()
+  } catch (e: any) {
+    console.error(e)
+    lastScanned.value = {
+      status: 'error',
+      message: e?.message || t('common.messages.operationFailed'),
+      asset_code: code
+    }
+  }
 }
 
 const handleScanError = (msg: string) => {
-    ElMessage.warning(msg)
+  ElMessage.warning(msg)
 }
+
+onMounted(() => {
+  refreshData()
+})
 
 </script>
 

@@ -280,7 +280,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { Download, Upload, Plus } from '@element-plus/icons-vue'
 import SectionBlock from '@/components/common/SectionBlock.vue'
 import TranslationDialog from '@/components/common/TranslationDialog.vue'

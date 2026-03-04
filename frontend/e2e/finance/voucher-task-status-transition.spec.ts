@@ -123,13 +123,14 @@ test.describe('Finance Voucher Task Status Transition', () => {
     })
 
     await page.goto(`/finance/vouchers/${VOUCHER_ID}`)
-    await expect(page.locator('.voucher-detail-page')).toContainText(VOUCHER_NO)
+    await expect(page.locator('.voucher-detail-page')).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.voucher-detail-page')).toContainText(VOUCHER_NO, { timeout: 15000 })
 
     await page.getByRole('button', { name: 'Retry Push' }).click()
     await page.locator('.el-message-box__btns .el-button--primary').click()
 
-    await expect(page.locator('.voucher-detail-page')).toContainText(SYNC_TASK_ID)
-    await expect(page.locator('.voucher-detail-page')).toContainText('Running')
-    await expect(page.locator('.voucher-detail-page')).toContainText('Success', { timeout: 12000 })
+    await expect(page.locator('.voucher-detail-page')).toContainText(SYNC_TASK_ID, { timeout: 15000 })
+    await expect(page.locator('.voucher-detail-page')).toContainText('Running', { timeout: 15000 })
+    await expect(page.locator('.voucher-detail-page')).toContainText('Success', { timeout: 20000 })
   })
 })

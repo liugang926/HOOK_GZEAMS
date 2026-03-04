@@ -31,6 +31,7 @@
       <MobileQRScanner
         ref="scannerRef"
         :task-id="taskId"
+        :auto-start="false"
         :show-preview="true"
         @scan="handleScan"
         @error="handleScanError"
@@ -71,7 +72,7 @@
           <template #right-icon>
             <van-tag
               :type="item.result === 'success' ? 'success' : 'danger'"
-              size="small"
+              size="medium"
             >
               {{ item.result === 'success' ? '成功' : '异常' }}
             </van-tag>
@@ -180,7 +181,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { showToast, showDialog } from 'vant'
 import MobileQRScanner from '@/components/mobile/MobileQRScanner.vue'
 import { qrScanApi } from '@/api/inventory'
-import { assetApi } from '@/api/assets'
 import type { AssetStatus } from '@/types/assets'
 
 const router = useRouter()
@@ -314,7 +314,7 @@ const clearHistory = () => {
     title: '清空记录',
     message: '确定要清空扫描历史吗？',
     showCancelButton: true
-  }).then((action: string) => {
+  }).then((action?: string) => {
     if (action === 'confirm') {
       recentScans.value = []
       saveScanHistory()

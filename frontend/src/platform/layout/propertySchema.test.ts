@@ -9,7 +9,7 @@ describe('propertySchema contract', () => {
   it('keeps shared field properties and type-specific additions', () => {
     const textKeys = getFieldPropertyKeys('text')
     expect(textKeys).toEqual(
-      expect.arrayContaining(['fieldType', 'label', 'placeholder', 'span', 'required', 'readonly', 'visible', 'regex_pattern'])
+      expect.arrayContaining(['fieldType', 'label', 'placeholder', 'span', 'minHeight', 'required', 'readonly', 'visible', 'regex_pattern'])
     )
   })
 

@@ -7,8 +7,8 @@
     >
       <el-upload
         ref="uploadRef"
-        :action="uploadUrl"
-        :headers="uploadHeaders"
+        action="#"
+        :http-request="httpRequest"
         :show-file-list="false"
         :before-upload="beforeUpload"
         :on-success="handleSuccess"
@@ -170,10 +170,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import type { UploadInstance } from 'element-plus'
+import type { UploadInstance, UploadRequestOptions } from 'element-plus'
 import {
   Picture,
   Upload,
@@ -181,9 +181,9 @@ import {
   Edit,
   Delete
 } from '@element-plus/icons-vue'
-import { systemFileApi, type SystemFile } from '@/api/systemFile'
+import type { SystemFile } from '@/api/systemFile'
 import VueCropper from 'vue-cropperjs'
-import { useFileField, type FileDisplayItem, type FileUploadContext } from '@/composables'
+import { useFileField, type FileUploadContext } from '../hooks/useFileField'
 
 const { t } = useI18n()
 
@@ -236,10 +236,20 @@ const uploadContext: FileUploadContext = {
 }
 
 // Use the common useFileField composable for file handling
+const resolveSingleFileId = (value: unknown): string | null => {
+  if (!value) return null
+  if (Array.isArray(value)) return resolveSingleFileId(value[0])
+  if (typeof value === 'string') return value
+  if (typeof value === 'object') {
+    const source = value as Record<string, unknown>
+    const candidate = source.id || source.fileId || source.value
+    if (typeof candidate === 'string' && candidate) return candidate
+  }
+  return null
+}
+
 const initialValue = computed(() => {
-  if (!props.modelValue) return null
-  // Convert string to array for composable, then back to single string for image
-  const id = Array.isArray(props.modelValue) ? props.modelValue[0] : props.modelValue
+  const id = resolveSingleFileId(props.modelValue)
   return id ? [id] : null
 })
 
@@ -250,8 +260,7 @@ const {
   loadFileMetadata,
   formatFileSize,
   getThumbnailUrl,
-  getFileUrl,
-  uploadState
+  getFileUrl
 } = useFileField(initialValue, { maxSize: props.maxSize }, uploadContext)
 
 // Current image (single file from files array)
@@ -278,35 +287,28 @@ const fullImageUrl = computed(() => {
   return ''
 })
 
-// Upload URL (for el-upload component)
-const uploadUrl = computed(() => {
-  return `${import.meta.env.VITE_API_BASE_URL || '/api'}/system/system-files/upload/`
-})
+const resolveFieldCode = (): string => {
+  if (props.fieldCode) return props.fieldCode
+  const fromField = props.field?.code || props.field?.fieldCode
+  return typeof fromField === 'string' ? fromField : ''
+}
 
-// Upload headers with auth token (for el-upload component)
-const uploadHeaders = computed(() => {
-  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token')
-  return {
-    'Authorization': token ? `Bearer ${token}` : ''
+const httpRequest = async (options: UploadRequestOptions) => {
+  const rawFile = options.file as File
+  try {
+    const result = await uploadFile(rawFile, {
+      objectCode: props.objectCode,
+      instanceId: props.instanceId,
+      fieldCode: resolveFieldCode()
+    })
+    if (!result) {
+      throw new Error(t('fields.uploadFailed'))
+    }
+    options.onSuccess?.({ success: true, data: result })
+  } catch (error: any) {
+    options.onError?.(error)
   }
-})
-
-// Load image from model value using the composable
-watch(
-  () => props.modelValue,
-  async (val) => {
-    if (!val) {
-      // Clear files
-      return
-    }
-
-    const id = Array.isArray(val) ? val[0] : val
-    if (id && typeof id === 'string') {
-      await loadFileMetadata([id])
-    }
-  },
-  { immediate: true }
-)
+}
 
 // Before upload validation (for el-upload component)
 function beforeUpload(file: File): boolean {
@@ -330,9 +332,9 @@ function beforeUpload(file: File): boolean {
 function handleSuccess(response: any): void {
   if (response.success && response.data) {
     const fileData: SystemFile = response.data
+    loadFileMetadata([fileData.id])
     emit('update:modelValue', fileData.id)
     emit('change', fileData.id, fileData)
-    // File is already added to files array by useFileField composable
   } else {
     ElMessage.error(response.message || t('fields.uploadFailed'))
   }
@@ -340,7 +342,8 @@ function handleSuccess(response: any): void {
 
 // Handle upload error
 function handleError(error: any): void {
-  console.error('Upload error:', error)
+  const normalized = error as Error
+  console.error('Upload error:', normalized)
   ElMessage.error(t('fields.uploadFailed'))
 }
 
@@ -373,7 +376,7 @@ async function applyCrop(): Promise<void> {
   }
 
   // Convert to blob and upload
-  canvas.toBlob(async (blob) => {
+  canvas.toBlob(async (blob: Blob | null) => {
     if (!blob) return
 
     const file = new File([blob], currentImage.value?.fileName || 'cropped-image.jpg', {
@@ -412,7 +415,10 @@ defineExpose({
   previewImage,
   editImage,
   removeImage,
-  triggerUpload: () => uploadRef.value?.handleClick(),
+  triggerUpload: () => {
+    const root = (uploadRef.value as any)?.$el as HTMLElement | undefined
+    root?.querySelector<HTMLInputElement>('input[type="file"]')?.click()
+  },
   // Expose composable methods for external use
   files,
   uploadFile,

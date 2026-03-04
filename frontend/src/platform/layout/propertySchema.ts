@@ -27,6 +27,7 @@ const FIELD_COMMON_SCHEMA: FieldPropertySchemaItem[] = [
   { key: 'defaultValue', label: 'Default Value', inputType: 'text', section: 'basic' },
   { key: 'helpText', label: 'Help Text', inputType: 'textarea', section: 'basic' },
   { key: 'span', label: 'Span', inputType: 'number', section: 'display' },
+  { key: 'minHeight', label: 'Min Height', inputType: 'number', section: 'display' },
   { key: 'required', label: 'Required', inputType: 'switch', section: 'display' },
   { key: 'readonly', label: 'Readonly', inputType: 'switch', section: 'display' },
   { key: 'visible', label: 'Visible', inputType: 'switch', section: 'display' },

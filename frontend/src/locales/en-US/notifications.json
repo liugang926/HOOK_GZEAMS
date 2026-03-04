@@ -75,5 +75,10 @@
   },
   "fallback": {
     "untitled": "Untitled Notification"
+  },
+  "bell": {
+    "tooltip": "Notifications",
+    "noMore": "No more notifications",
+    "viewAll": "View All Notifications"
   }
 }

@@ -1,6 +1,7 @@
 ﻿import { normalizeFieldType } from '@/utils/fieldType'
 import type { FieldDefinition } from '@/types'
 import type { RenderSchema } from '@/platform/layout/renderSchema'
+import { normalizeGridSpan24, placeGridFields } from '@/platform/layout/semanticGrid'
 
 export interface ProjectedDetailField {
   prop: string
@@ -41,11 +42,19 @@ export interface ProjectedDetailField {
   tagType?: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'>
   defaultTagType?: 'success' | 'warning' | 'danger' | 'info' | 'primary'
   span?: number
+  minHeight?: number
   href?: string
   hidden?: boolean
   readonly?: boolean
   labelClass?: string
   valueClass?: string
+  placement?: {
+    row: number
+    colStart: number
+    colSpan: number
+    columns: number
+    order: number
+  }
 }
 
 export interface ProjectedDetailTab {
@@ -78,13 +87,7 @@ export interface DetailSchemaProjectorOptions {
 }
 
 const defaultNormalizeDetailSpan = (rawSpan: unknown, rawColumns: unknown): number => {
-  const columns = Number(rawColumns) || 2
-  const span = Number(rawSpan)
-
-  if (!Number.isFinite(span) || span <= 0) return Math.max(1, Math.round(24 / columns))
-  if (span <= columns) return Math.max(1, Math.min(24, Math.round((24 / columns) * span)))
-  if (span <= 24) return Math.max(1, Math.min(24, Math.round(span)))
-  return 24
+  return normalizeGridSpan24(rawSpan, rawColumns)
 }
 
 export function projectDetailSectionsFromRenderSchema(
@@ -121,16 +124,35 @@ export function projectDetailSectionsFromRenderSchema(
       if (isAuditFieldCode?.(code)) continue
 
       const metaField = (renderField.metadata as FieldDefinition | undefined) || fieldMap.get(code)
-      if (metaField) {
-        if (mustSkipField?.(metaField)) continue
-        if (strictVisibility && shouldSkipField?.(metaField)) continue
+      const policyField = {
+        ...(metaField || ({} as FieldDefinition)),
+        code,
+        name: String(renderField.label || (metaField as any)?.name || code),
+        label: String(renderField.label || (metaField as any)?.label || code),
+        fieldType: normalizeFieldType(renderField.fieldType || (metaField as any)?.fieldType || 'text'),
+        isHidden:
+          renderField.visible === false ||
+          (metaField as any)?.isHidden === true ||
+          (metaField as any)?.is_hidden === true
+      } as FieldDefinition
 
+      if (mustSkipField?.(policyField)) continue
+      if (strictVisibility && shouldSkipField?.(policyField)) continue
+
+      if (metaField) {
         const detailField = fieldToDetailField(metaField)
         detailField.editorType = detailField.editorType || normalizeFieldType(renderField.fieldType || metaField.fieldType || 'text')
         detailField.label = renderField.label || detailField.label
         detailField.hidden = renderField.visible === false
         detailField.readonly = renderField.readonly === true
         detailField.span = normalizeSpan(renderField.span ?? detailField.span ?? 1, section.columns)
+        detailField.minHeight = Number.isFinite(Number(renderField.minHeight)) && Number(renderField.minHeight) > 0
+          ? Math.round(Number(renderField.minHeight))
+          : (
+              Number.isFinite(Number((detailField as any).minHeight)) && Number((detailField as any).minHeight) > 0
+                ? Math.round(Number((detailField as any).minHeight))
+                : undefined
+            )
         detailFields.push(detailField)
         continue
       }
@@ -141,10 +163,15 @@ export function projectDetailSectionsFromRenderSchema(
         editorType: normalizeFieldType(renderField.fieldType || 'text'),
         type: normalizeFieldType(renderField.fieldType || 'text') as ProjectedDetailField['type'],
         span: normalizeSpan(renderField.span ?? 1, section.columns),
+        minHeight: Number.isFinite(Number(renderField.minHeight)) && Number(renderField.minHeight) > 0
+          ? Math.round(Number(renderField.minHeight))
+          : undefined,
         hidden: renderField.visible === false,
         readonly: renderField.readonly === true
       })
     }
+
+    const placedDetailFields = placeGridFields(detailFields, section.columns)
 
     if (section.kind === 'tab' && section.containerId) {
       let container = tabContainers.get(section.containerId)
@@ -165,12 +192,12 @@ export function projectDetailSectionsFromRenderSchema(
       container.tabs?.push({
         id: tabId,
         title: section.itemTitle || section.title,
-        fields: detailFields
+        fields: placedDetailFields
       })
       continue
     }
 
-    if (detailFields.length === 0 && section.kind !== 'tab') continue
+    if (placedDetailFields.length === 0 && section.kind !== 'tab') continue
 
     const sectionName = String(section.id || `section_${sections.length + 1}`)
     sections.push({
@@ -181,9 +208,10 @@ export function projectDetailSectionsFromRenderSchema(
       icon: getSectionIcon?.(sectionName),
       collapsible: section.collapsible === true,
       collapsed: section.collapsed === true,
-      fields: detailFields
+      fields: placedDetailFields
     })
   }
 
   return sections
 }
+

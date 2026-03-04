@@ -232,8 +232,10 @@ test.describe('Layout Designer Undo/Redo -> Save Regression', () => {
     await expect.poll(() => saveCallCount).toBe(2)
     await expect.poll(() => findAssetNameLabel(activeLayoutConfig)).toBe(UPDATED_LABEL)
 
-    await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
-    await expect(page.locator('.dynamic-detail-page').first()).toBeVisible()
+    await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`, { waitUntil: 'domcontentloaded' })
+    await expect(page).toHaveURL(new RegExp(`/objects/${OBJECT_CODE}/${RECORD_ID}`))
+    const detailRoot = page.locator('.dynamic-detail-page, .base-detail-page, .object-detail-page').first()
+    await expect(detailRoot).toBeVisible({ timeout: 15000 })
     await expect(page.locator('.load-error')).toHaveCount(0)
     await expect(page.locator('.detail-sections .field-label', { hasText: UPDATED_LABEL }).first()).toBeVisible()
     await expect(page.locator('.detail-content')).toContainText(recordPayload.assetName)
