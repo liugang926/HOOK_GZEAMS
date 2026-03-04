@@ -17,10 +17,11 @@ import { normalizeFieldType } from '@/utils/fieldType'
 import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
 import { resolveFieldValue } from '@/utils/fieldKey'
 import { isCreateRuntimeContext } from '@/platform/layout/runtimeFieldPolicy'
-import { buildRenderSchema, type RenderSchema } from '@/platform/layout/renderSchema'
+import type { RenderSchema } from '@/platform/layout/renderSchema'
 import { projectRuntimeLayoutFromRenderSchema } from '@/platform/layout/renderSchemaProjector'
 import type { RuntimeMode } from '@/contracts/runtimeContract'
 import { buildAndOrderFields } from '@/platform/layout/unifiedFieldOrder'
+import { compileLayoutSchema } from '@/platform/layout/layoutCompiler'
 
 // ============================================================================
 // Type Definitions
@@ -116,11 +117,11 @@ export function useDynamicForm(
   }
 
   const renderSchema = computed<RenderSchema>(() => {
-    return buildRenderSchema({
+    return compileLayoutSchema({
       layoutConfig: layoutConfigState.value,
       fields: fieldDefinitions.value as unknown as Record<string, unknown>[],
       mode: toRuntimeMode(layoutCode)
-    })
+    }).renderSchema
   })
 
   /** Runtime layout projected from shared RenderSchema */

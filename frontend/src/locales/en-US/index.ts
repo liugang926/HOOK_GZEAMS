@@ -12,6 +12,8 @@ import softwareLicenses from './softwareLicenses.json'
 import form from './form.json'
 import mobile from './mobile.json'
 import notifications from './notifications.json'
+import integration from './integration.json'
+import reports from './reports.json'
 
 export default {
     common,
@@ -27,5 +29,7 @@ export default {
     softwareLicenses,
     form,
     mobile,
-    notifications
+    notifications,
+    integration,
+    reports
 }

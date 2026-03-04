@@ -36,10 +36,10 @@ import { resolveFieldValue } from '@/utils/fieldKey'
 import { createObjectClient } from '@/api/dynamic'
 import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
 import { orderFieldsWithSchema } from '@/platform/layout/unifiedFieldOrder'
-import { buildRenderSchema } from '@/platform/layout/renderSchema'
 import { projectUnifiedDetailSectionsFromLayout, shouldSkipUnifiedDetailField } from '@/platform/layout/unifiedDetailSections'
 import { createModePolicyForContext } from '@/platform/layout/layoutRenderModel'
 import { toUnifiedDetailField, buildRequiredFormRules } from '@/platform/layout/unifiedDetailField'
+import { compileLayoutSchema } from '@/platform/layout/layoutCompiler'
 
 const { t } = useI18n()
 const slots = useSlots()
@@ -363,10 +363,6 @@ async function loadRuntimeLayout(): Promise<void> {
     const runtime = await resolveRuntimeLayout(props.objectCode, 'edit', { includeRelations: true })
     metadataSourceContext.value = 'form'
     const layoutConfig = runtime.layoutConfig || null
-    const sections = layoutConfig?.sections
-    if (Array.isArray(sections) && sections.length > 0) {
-      runtimeLayoutSections.value = sections
-    }
     const editable = (runtime.editableFields || []) as any[]
     if (editable.length > 0) {
       const normalizedEditable = editable.map((field: any) => ({
@@ -380,16 +376,31 @@ async function loadRuntimeLayout(): Promise<void> {
         showInForm: field.showInForm ?? field.show_in_form ?? true
       }))
 
-      const runtimeSchema = buildRenderSchema({
+      const compiled = compileLayoutSchema({
         mode: 'edit',
         fields: normalizedEditable as any[],
         layoutConfig: layoutConfig || null
       })
+      const sections = compiled.layoutConfig?.sections
+      if (Array.isArray(sections) && sections.length > 0) {
+        runtimeLayoutSections.value = sections
+      }
 
       runtimeEditableFields.value = orderFieldsWithSchema(
         normalizedEditable as any[],
-        runtimeSchema
+        compiled.renderSchema
       ) as FieldDefinition[]
+    } else {
+      const compiled = compileLayoutSchema({
+        mode: 'edit',
+        fields: [],
+        layoutConfig: layoutConfig || null,
+        keepUnknownFields: true
+      })
+      const sections = compiled.layoutConfig?.sections
+      if (Array.isArray(sections) && sections.length > 0) {
+        runtimeLayoutSections.value = sections
+      }
     }
     const reverse = (runtime.reverseRelations || []) as any[]
     if (reverse.length > 0) {

@@ -57,7 +57,7 @@ request.interceptors.request.use(
     // Let the browser/axios set multipart boundaries automatically.
     if (typeof FormData !== 'undefined' && config.data instanceof FormData && config.headers) {
       if (typeof (config.headers as any).set === 'function') {
-        ;(config.headers as any).set('Content-Type', undefined)
+        (config.headers as any).set('Content-Type', undefined)
         ;(config.headers as any).set('content-type', undefined)
       }
       delete (config.headers as any)['Content-Type']

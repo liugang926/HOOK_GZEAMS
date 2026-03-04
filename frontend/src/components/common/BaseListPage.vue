@@ -32,6 +32,7 @@
 
 import { ref, computed, onMounted, onUnmounted, watch, useSlots } from 'vue'
 import { useRoute } from 'vue-router'
+import { ElMessageBox } from 'element-plus'
 import type { TableColumn, SearchField, ColumnItem } from '@/types/common'
 import { formatDate } from '@/utils/dateFormat'
 import { normalizeFieldType } from '@/utils/fieldType'
@@ -482,9 +483,19 @@ const handleBatchAction = async (action: BatchAction) => {
 
   // Show confirmation if required
   if (action.confirm && action.confirmMessage) {
-    // TODO: Use ElMessageBox for confirmation
-    const confirmed = confirm(action.confirmMessage)
-    if (!confirmed) return
+    try {
+      await ElMessageBox.confirm(
+        action.confirmMessage,
+        action.label || 'Confirm',
+        {
+          type: 'warning',
+          confirmButtonText: 'Confirm',
+          cancelButtonText: 'Cancel'
+        }
+      )
+    } catch {
+      return
+    }
   }
 
   try {

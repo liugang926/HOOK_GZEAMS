@@ -55,6 +55,39 @@ describe('renderSchemaProjector', () => {
     expect(runtime.sections[0].fields?.[0].minHeight).toBe(172)
   })
 
+  it('prefers persisted layout placement snapshot for runtime fields', () => {
+    const schema: RenderSchema = {
+      ...baseSchema,
+      sections: [
+        {
+          ...baseSchema.sections[0],
+          fields: [
+            {
+              ...baseSchema.sections[0].fields[0],
+              layoutPlacement: {
+                row: 1,
+                colStart: 2,
+                colSpan: 1,
+                rowSpan: 1,
+                columns: 2,
+                totalRows: 1,
+                order: 1,
+                canvas: { x: 0.5, y: 0, width: 0.5, height: 1 }
+              }
+            },
+            {
+              ...baseSchema.sections[0].fields[1]
+            }
+          ]
+        }
+      ]
+    }
+
+    const runtime = projectRuntimeLayoutFromRenderSchema(schema)
+    expect(runtime.sections[0].fields?.[0].placement?.colStart).toBe(2)
+    expect(runtime.sections[0].fields?.[1].placement?.colStart).toBe(1)
+  })
+
   it('projects ordered list columns', () => {
     const fields = [
       { code: 'assetCode', name: 'Asset Code' },
@@ -146,5 +179,38 @@ describe('renderSchemaProjector', () => {
     expect(runtime.sections[1].tabs?.[0].title).toBe('Main')
     expect(runtime.sections[2].type).toBe('collapse')
     expect(runtime.sections[2].items?.[0].title).toBe('Memo')
+  })
+
+  it('preserves section position from render schema', () => {
+    const schema: RenderSchema = {
+      mode: 'edit',
+      fieldOrder: ['left_field', 'right_field'],
+      sections: [
+        {
+          id: 'main_section',
+          title: 'Main',
+          kind: 'section',
+          position: 'main',
+          columns: 2,
+          collapsible: false,
+          collapsed: false,
+          fields: [{ code: 'left_field', label: 'Left', fieldType: 'text', span: 1, required: false, readonly: false, visible: true }]
+        },
+        {
+          id: 'sidebar_section',
+          title: 'Sidebar',
+          kind: 'section',
+          position: 'sidebar',
+          columns: 1,
+          collapsible: false,
+          collapsed: false,
+          fields: [{ code: 'right_field', label: 'Right', fieldType: 'text', span: 1, required: false, readonly: false, visible: true }]
+        }
+      ]
+    }
+
+    const runtime = projectRuntimeLayoutFromRenderSchema(schema)
+    expect(runtime.sections[0].position).toBe('main')
+    expect(runtime.sections[1].position).toBe('sidebar')
   })
 })

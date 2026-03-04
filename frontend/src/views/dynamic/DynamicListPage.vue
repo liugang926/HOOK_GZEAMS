@@ -175,13 +175,14 @@ import { extractRuntimeListColumns } from '@/adapters/runtimeListLayoutAdapter'
 import { buildSearchFields } from '@/platform/layout/searchFieldBuilder'
 import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
 import type { RuntimePermissions } from '@/platform/layout/runtimeLayoutResolver'
-import { buildRenderSchema } from '@/platform/layout/renderSchema'
+import type { RenderSchema } from '@/platform/layout/renderSchema'
 import { resolveFieldType } from '@/utils/fieldType'
 import {
   projectListLayoutConfigForRenderSchema,
   projectSearchFieldsFromRenderSchema,
 } from '@/platform/layout/renderSchemaProjector'
 import { mergeFieldSources, orderFieldsWithSchema } from '@/platform/layout/unifiedFieldOrder'
+import { compileLayoutSchema } from '@/platform/layout/layoutCompiler'
 
 interface BatchAction {
   label: string
@@ -315,11 +316,11 @@ const schemaLayoutConfig = computed<Record<string, any> | null>(() => {
 
 const listRenderSchema = computed(() => {
   if (!visibleFieldsSource.value.length) return null
-  return buildRenderSchema({
+  return compileLayoutSchema({
     layoutConfig: schemaLayoutConfig.value,
     fields: visibleFieldsSource.value as Record<string, unknown>[],
     mode: 'list'
-  })
+  }).renderSchema
 })
 
 const orderedVisibleFieldsSource = computed<any[]>(() => {
@@ -394,7 +395,7 @@ const selectDefaultVisibleFieldCodes = (fields: any[], maxVisible = 8): Set<stri
  */
 const buildAllFieldColumns = (
   fields: any[],
-  schema: ReturnType<typeof buildRenderSchema> | null
+  schema: RenderSchema | null
 ): TableColumn[] => {
   const businessFields = filterSystemFields(fields || [])
   if (!businessFields.length) return []

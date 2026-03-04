@@ -1,0 +1,119 @@
+{
+    "center": {
+        "title": "报表中心",
+        "tabs": {
+            "assets": "资产报表",
+            "lifecycle": "生命周期",
+            "insurance": "保险报表",
+            "leasing": "租赁报表"
+        },
+        "downloadXlsx": "下载 Excel"
+    },
+    "export": {
+        "currentPageXlsx": "导出当前页（Excel）",
+        "currentPageCsv": "导出当前页（CSV）",
+        "allPagesXlsx": "导出全部数据（Excel）",
+        "allPagesCsv": "导出全部数据（CSV）",
+        "successMessage": "导出成功",
+        "errorMessage": "导出失败，请重试"
+    },
+    "import": {
+        "downloadTemplate": "下载导入模板",
+        "selectFile": "选择文件导入",
+        "errorTitle": "导入检查结果",
+        "unknownHeaders": "文件中存在未识别的列",
+        "missingHeaders": "以下必填列在文件中缺失",
+        "errorRow": "行号",
+        "errorCol": "列名",
+        "errorMsg": "错误信息",
+        "noErrors": "校验通过，可以导入",
+        "confirmImport": "确认导入 {count} 条记录",
+        "emptyFile": "文件中没有读取到数据",
+        "parseError": "文件解析失败，请检查格式",
+        "readyMessage": "已准备好导入 {count} 条数据"
+    },
+    "presets": {
+        "assetList": {
+            "name": "资产清单",
+            "desc": "导出全部资产的基础信息",
+            "cols": {
+                "assetNo": "资产编号",
+                "name": "资产名称",
+                "category": "资产分类",
+                "status": "状态",
+                "location": "存放地点",
+                "department": "使用部门",
+                "purchaseDate": "购入日期",
+                "originalValue": "原值",
+                "netValue": "净值"
+            }
+        },
+        "depreciation": {
+            "name": "折旧明细",
+            "desc": "导出资产折旧计算明细",
+            "cols": {
+                "accumulated": "累计折旧",
+                "rate": "折旧率",
+                "usefulLife": "使用年限"
+            }
+        },
+        "purchaseRequests": {
+            "name": "采购申请",
+            "desc": "导出全部采购申请记录",
+            "cols": {
+                "requestNo": "申请单号",
+                "title": "申请标题",
+                "status": "状态",
+                "requestedBy": "申请人",
+                "totalAmount": "合计金额",
+                "createdAt": "创建时间"
+            }
+        },
+        "maintenance": {
+            "name": "维修工单",
+            "desc": "导出全部维修工单记录",
+            "cols": {
+                "maintenanceNo": "工单编号",
+                "asset": "资产名称",
+                "type": "维修类型",
+                "status": "状态",
+                "reportedDate": "报修日期",
+                "completedDate": "完成日期",
+                "cost": "实际费用"
+            }
+        },
+        "disposal": {
+            "name": "报废申请",
+            "desc": "导出全部报废申请记录",
+            "cols": {
+                "requestNo": "申请单号",
+                "asset": "资产名称",
+                "type": "报废方式",
+                "status": "状态",
+                "expectedValue": "预估残值",
+                "actualValue": "实际残值",
+                "createdAt": "创建时间"
+            }
+        },
+        "insurancePolicies": {
+            "name": "保险保单",
+            "desc": "导出全部保险保单记录",
+            "cols": {
+                "status": "状态",
+                "insuredAmount": "保险金额"
+            }
+        },
+        "claimRecords": {
+            "name": "理赔记录",
+            "desc": "导出全部理赔申请记录"
+        },
+        "leaseContracts": {
+            "name": "租赁合同",
+            "desc": "导出全部租赁合同"
+        },
+        "rentPayments": {
+            "name": "租金记录",
+            "desc": "导出全部租金支付记录"
+        }
+    }
+}

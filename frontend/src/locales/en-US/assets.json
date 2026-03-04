@@ -358,5 +358,468 @@
     },
     "selector": {
         "selectAsset": "Please select asset"
+    },
+    "lifecycle": {
+        "title": "Asset Lifecycle",
+        "tabs": {
+            "purchaseRequest": "Purchase Requests",
+            "maintenance": "Maintenance Orders",
+            "disposalRequest": "Disposal Requests"
+        },
+        "purchaseRequest": {
+            "title": "Purchase Request",
+            "createButton": "New Purchase Request",
+            "createTitle": "New Purchase Request",
+            "editTitle": "Edit Purchase Request",
+            "detailTitle": "Purchase Request Detail",
+            "columns": {
+                "requestNo": "Request No",
+                "requester": "Requester",
+                "department": "Department",
+                "totalAmount": "Total Amount",
+                "status": "Status",
+                "createdAt": "Request Date"
+            },
+            "form": {
+                "reason": "Purchase Reason",
+                "reasonPlaceholder": "Enter purchase reason",
+                "itemsTitle": "Purchase Items",
+                "addItem": "Add Item",
+                "assetName": "Asset Name",
+                "assetNamePlaceholder": "Enter asset name",
+                "specification": "Specification",
+                "quantity": "Quantity",
+                "estimatedUnitPrice": "Est. Unit Price",
+                "supplier": "Supplier",
+                "remark": "Remark"
+            },
+            "status": {
+                "draft": "Draft",
+                "submitted": "Pending Approval",
+                "approved": "Approved",
+                "rejected": "Rejected",
+                "processing": "Processing",
+                "completed": "Completed",
+                "cancelled": "Cancelled"
+            },
+            "actions": {
+                "submit": "Submit for Approval",
+                "approve": "Approve",
+                "reject": "Reject",
+                "cancel": "Cancel",
+                "complete": "Mark Complete"
+            },
+            "dialog": {
+                "approveTitle": "Confirm Approval",
+                "rejectTitle": "Confirm Rejection",
+                "commentLabel": "Comment",
+                "commentPlaceholder": "Enter comment (optional)",
+                "rejectCommentPlaceholder": "Enter rejection reason (required)"
+            },
+            "messages": {
+                "submitSuccess": "Submitted for approval",
+                "submitFailed": "Failed to submit",
+                "approveSuccess": "Approved",
+                "rejectSuccess": "Rejected",
+                "cancelSuccess": "Cancelled",
+                "cancelConfirm": "Are you sure to cancel this purchase request?",
+                "noItems": "Please add at least one purchase item",
+                "loadFailed": "Failed to load purchase requests"
+            }
+        },
+        "maintenance": {
+            "title": "Maintenance Order",
+            "createButton": "New Maintenance Order",
+            "createTitle": "New Maintenance Order",
+            "detailTitle": "Maintenance Order Detail",
+            "columns": {
+                "maintenanceNo": "Order No",
+                "assetDisplay": "Asset",
+                "faultDescription": "Fault Description",
+                "priority": "Priority",
+                "status": "Status",
+                "technicianDisplay": "Technician",
+                "createdAt": "Created At"
+            },
+            "form": {
+                "asset": "Asset",
+                "assetPlaceholder": "Select asset",
+                "faultDescription": "Fault Description",
+                "faultDescriptionPlaceholder": "Describe the fault",
+                "priority": "Priority",
+                "remark": "Remark"
+            },
+            "priority": {
+                "low": "Low",
+                "normal": "Normal",
+                "high": "High",
+                "urgent": "Urgent"
+            },
+            "status": {
+                "pending": "Pending Assignment",
+                "assigned": "Assigned",
+                "in_progress": "In Progress",
+                "completed": "Pending Verification",
+                "verified": "Verified",
+                "cancelled": "Cancelled"
+            },
+            "actions": {
+                "assign": "Assign Technician",
+                "startWork": "Start Work",
+                "completeWork": "Complete Work",
+                "verify": "Verify",
+                "cancel": "Cancel Order"
+            },
+            "dialog": {
+                "assignTitle": "Assign Technician",
+                "technicianLabel": "Technician",
+                "technicianPlaceholder": "Select technician",
+                "completeTitle": "Complete Work",
+                "costLabel": "Maintenance Cost",
+                "resultLabel": "Work Result",
+                "resultPlaceholder": "Describe repair result",
+                "verifyTitle": "Verify Maintenance",
+                "verifyResultPlaceholder": "Enter verification result"
+            },
+            "messages": {
+                "assignSuccess": "Technician assigned",
+                "startWorkSuccess": "Work started",
+                "completeWorkSuccess": "Work completed, pending verification",
+                "verifySuccess": "Verified successfully",
+                "cancelSuccess": "Order cancelled",
+                "cancelConfirm": "Are you sure to cancel this maintenance order?",
+                "loadFailed": "Failed to load maintenance orders"
+            }
+        },
+        "disposalRequest": {
+            "title": "Disposal Request",
+            "createButton": "New Disposal Request",
+            "createTitle": "New Disposal Request",
+            "detailTitle": "Disposal Request Detail",
+            "columns": {
+                "requestNo": "Request No",
+                "requesterDisplay": "Requester",
+                "disposalReason": "Disposal Reason",
+                "itemsCount": "Asset Count",
+                "status": "Status",
+                "createdAt": "Request Date"
+            },
+            "form": {
+                "disposalReason": "Disposal Reason",
+                "disposalReasonPlaceholder": "Enter disposal reason",
+                "itemsTitle": "Assets to Dispose",
+                "addItem": "Add Asset",
+                "assetLabel": "Asset",
+                "assetPlaceholder": "Select asset"
+            },
+            "status": {
+                "draft": "Draft",
+                "submitted": "Pending Approval",
+                "appraising": "Under Appraisal",
+                "approved": "Approved",
+                "rejected": "Rejected",
+                "executing": "Executing",
+                "completed": "Completed",
+                "cancelled": "Cancelled"
+            },
+            "actions": {
+                "submit": "Submit for Approval",
+                "startAppraisal": "Start Appraisal",
+                "approve": "Approve Disposal",
+                "reject": "Reject",
+                "cancel": "Cancel"
+            },
+            "messages": {
+                "submitSuccess": "Submitted for approval",
+                "approveSuccess": "Disposal approved",
+                "rejectSuccess": "Rejected",
+                "cancelSuccess": "Cancelled",
+                "cancelConfirm": "Are you sure to cancel this disposal request?",
+                "noItems": "Please add at least one asset to dispose",
+                "loadFailed": "Failed to load disposal requests"
+            }
+        },
+        "assetReceipt": {
+            "title": "Asset Receipt",
+            "createButton": "New Receipt",
+            "createTitle": "New Asset Receipt",
+            "detailTitle": "Receipt Detail",
+            "columns": {
+                "receiptNo": "Receipt No",
+                "supplier": "Supplier",
+                "deliveryNo": "Delivery No",
+                "receiptDate": "Receipt Date",
+                "status": "Status",
+                "createdAt": "Created At"
+            },
+            "form": {
+                "receiptDate": "Receipt Date",
+                "inspectionResult": "Inspection Result",
+                "inspectionResultPlaceholder": "Enter inspection conclusion",
+                "itemsTitle": "Receipt Items",
+                "itemName": "Item Name",
+                "specification": "Specification",
+                "orderedQuantity": "Ordered Qty",
+                "receivedQuantity": "Received Qty",
+                "qualifiedQuantity": "Qualified Qty",
+                "unitPrice": "Unit Price",
+                "totalAmount": "Total Amount",
+                "assetGenerated": "Asset Card"
+            },
+            "status": {
+                "draft": "Draft",
+                "submitted": "Pending Inspection",
+                "inspecting": "Inspecting",
+                "passed": "Passed",
+                "rejected": "Rejected",
+                "cancelled": "Cancelled"
+            },
+            "actions": {
+                "submitInspection": "Submit for Inspection",
+                "inspect": "Record Inspection",
+                "generateAssets": "Generate Asset Cards",
+                "cancel": "Cancel"
+            },
+            "dialog": {
+                "inspectTitle": "Record Inspection Result",
+                "inspectionResultPlaceholder": "Describe inspection findings",
+                "passed": "Result",
+                "passedYes": "Passed",
+                "passedNo": "Failed"
+            },
+            "messages": {
+                "submitInspectionConfirm": "Submit for inspection?",
+                "submitInspectionSuccess": "Submitted for inspection",
+                "inspectPassSuccess": "Inspection passed, receipt recorded",
+                "inspectFailSuccess": "Recorded as failed inspection",
+                "generateAssetsConfirm": "Generate asset cards for qualified items?",
+                "generateAssetsSuccess": "Asset cards generated",
+                "cancelConfirm": "Are you sure to cancel this receipt?",
+                "cancelSuccess": "Receipt cancelled",
+                "loadFailed": "Failed to load asset receipts"
+            }
+        },
+        "maintenancePlan": {
+            "title": "Maintenance Plan",
+            "createButton": "New Plan",
+            "createTitle": "New Maintenance Plan",
+            "detailTitle": "Maintenance Plan Detail",
+            "columns": {
+                "planCode": "Plan Code",
+                "planName": "Plan Name",
+                "cycleType": "Cycle",
+                "startDate": "Start Date",
+                "estimatedHours": "Est. Hours (h)",
+                "status": "Status"
+            },
+            "form": {
+                "endDate": "End Date",
+                "maintenanceContent": "Maintenance Content",
+                "remark": "Remark",
+                "remindDaysBefore": "Remind Before",
+                "daysBefore": "{days} day(s) before"
+            },
+            "cycle": {
+                "daily": "Daily",
+                "weekly": "Weekly",
+                "monthly": "Monthly",
+                "quarterly": "Quarterly",
+                "yearly": "Yearly",
+                "custom": "Custom"
+            },
+            "status": {
+                "active": "Active",
+                "paused": "Paused",
+                "archived": "Archived"
+            },
+            "actions": {
+                "activate": "Activate",
+                "pause": "Pause",
+                "archive": "Archive",
+                "generateTasks": "Generate Tasks"
+            },
+            "messages": {
+                "activateSuccess": "Plan activated",
+                "pauseSuccess": "Plan paused",
+                "archiveConfirm": "Archiving will stop task generation. Confirm?",
+                "archiveSuccess": "Plan archived",
+                "generateTasksConfirm": "Generate maintenance tasks now?",
+                "generateTasksSuccess": "{count} task(s) generated",
+                "loadFailed": "Failed to load maintenance plans"
+            }
+        },
+        "maintenanceTask": {
+            "title": "Maintenance Task",
+            "createTitle": "New Maintenance Task",
+            "detailTitle": "Maintenance Task Detail",
+            "columns": {
+                "taskNo": "Task No",
+                "asset": "Asset",
+                "maintenanceContent": "Maintenance Content",
+                "scheduledDate": "Scheduled Date",
+                "status": "Status"
+            },
+            "filter": {
+                "all": "All",
+                "overdue": "Overdue",
+                "today": "Today"
+            },
+            "form": {
+                "executionResult": "Execution Result",
+                "actualHours": "Actual Hours (h)",
+                "verifyResult": "Verification Result"
+            },
+            "status": {
+                "pending": "Pending",
+                "in_progress": "In Progress",
+                "completed": "Pending Verification",
+                "verified": "Verified",
+                "skipped": "Skipped"
+            },
+            "actions": {
+                "execute": "Execute",
+                "verify": "Verify",
+                "skip": "Skip"
+            },
+            "dialog": {
+                "executeTitle": "Execute Maintenance",
+                "executionResultPlaceholder": "Describe what was done",
+                "verifyTitle": "Verify Maintenance",
+                "verifyResultPlaceholder": "Enter verification result",
+                "skipReasonPlaceholder": "Enter reason for skipping"
+            },
+            "messages": {
+                "executeSuccess": "Maintenance executed",
+                "verifySuccess": "Verified successfully",
+                "skipSuccess": "Task skipped",
+                "loadFailed": "Failed to load maintenance tasks"
+            }
+        },
+        "insurance": {
+            "dashboard": {
+                "title": "Insurance Overview",
+                "expiring30": "Expiring in 30 Days",
+                "expiring90": "Expiring in 90 Days",
+                "pendingClaims": "Pending Claims",
+                "activePolicies": "Active Policies",
+                "days30": "Next 30 Days",
+                "days60": "Next 60 Days",
+                "days90": "Next 90 Days",
+                "viewClaims": "View Claims",
+                "totalActive": "Currently Active",
+                "expiringPolicies": "Expiring Policies",
+                "allPolicies": "All Policies"
+            },
+            "columns": {
+                "policyNo": "Policy No",
+                "insuredObject": "Insured Asset",
+                "insuranceCompany": "Insurer",
+                "expiryDate": "Expiry Date",
+                "daysLeft": "Days Left",
+                "premium": "Premium"
+            },
+            "claim": {
+                "title": "Claim Management",
+                "createButton": "New Claim",
+                "columns": {
+                    "claimNo": "Claim No",
+                    "policy": "Policy",
+                    "incidentDate": "Incident Date",
+                    "claimAmount": "Claim Amount",
+                    "approvedAmount": "Approved Amount",
+                    "status": "Status"
+                },
+                "status": {
+                    "draft": "Draft",
+                    "reported": "Reported",
+                    "under_review": "Under Review",
+                    "approved": "Approved",
+                    "rejected": "Rejected",
+                    "paid": "Paid"
+                },
+                "actions": {
+                    "submit": "Submit Claim",
+                    "approve": "Approve"
+                },
+                "form": {
+                    "approvedAmount": "Approved Amount",
+                    "approveComment": "Resolution Notes"
+                },
+                "dialog": {
+                    "approveTitle": "Approve Claim"
+                },
+                "messages": {
+                    "submitConfirm": "Submit this claim report?",
+                    "submitSuccess": "Claim submitted",
+                    "approveSuccess": "Claim approved"
+                }
+            }
+        },
+        "leasing": {
+            "dashboard": {
+                "title": "Leasing Management",
+                "newContract": "New Contract",
+                "activeContracts": "Active Contracts",
+                "expiringContracts": "Expiring Soon",
+                "pendingPayments": "Pending Payments",
+                "monthlyRent": "Monthly Rent Total",
+                "within30": "Within 30 Days",
+                "viewAll": "View All",
+                "contractList": "Contract List"
+            },
+            "columns": {
+                "contractNo": "Contract No",
+                "lessor": "Lessor",
+                "startDate": "Start Date",
+                "endDate": "End Date",
+                "monthlyRent": "Monthly Rent",
+                "status": "Status"
+            },
+            "status": {
+                "draft": "Draft",
+                "active": "Active",
+                "expiring": "Expiring",
+                "terminated": "Terminated",
+                "expired": "Expired"
+            },
+            "actions": {
+                "terminate": "Terminate"
+            },
+            "messages": {
+                "terminateReason": "Enter reason for termination",
+                "terminateSuccess": "Contract terminated"
+            },
+            "payment": {
+                "title": "Rent Payments",
+                "columns": {
+                    "contract": "Contract",
+                    "dueDate": "Due Date",
+                    "amount": "Amount",
+                    "period": "Period",
+                    "status": "Status"
+                },
+                "status": {
+                    "pending": "Pending",
+                    "paid": "Paid",
+                    "overdue": "Overdue",
+                    "partial": "Partial"
+                },
+                "actions": {
+                    "confirm": "Confirm Payment"
+                },
+                "form": {
+                    "actualAmount": "Actual Amount",
+                    "paymentDate": "Payment Date",
+                    "paymentMethod": "Payment Method",
+                    "remark": "Remark"
+                },
+                "dialog": {
+                    "confirmTitle": "Confirm Rent Payment"
+                },
+                "messages": {
+                    "confirmSuccess": "Payment recorded"
+                }
+            }
+        }
     }
 }

@@ -195,6 +195,23 @@ export interface LayoutField {
 
   /** Field-specific props */
   props?: Record<string, any>
+
+  /** Optional persisted canvas placement snapshot */
+  layoutPlacement?: {
+    row?: number
+    colStart?: number
+    colSpan?: number
+    rowSpan?: number
+    columns?: number
+    totalRows?: number
+    order?: number
+    canvas?: {
+      x?: number
+      y?: number
+      width?: number
+      height?: number
+    }
+  }
 }
 
 /**

@@ -140,5 +140,52 @@ describe('layoutPersistGuard', () => {
     expect(prepared.sections[0].fields[0].componentProps.minHeight).toBe(168)
     expect(prepared.sections[0].fields[0].componentProps.min_height).toBeUndefined()
   })
+
+  it('preserves and normalizes layout placement snapshot', () => {
+    const prepared = ensureLayoutConfigIds({
+      sections: [
+        {
+          id: 'section-basic',
+          type: 'section',
+          fields: [
+            {
+              id: 'field-name',
+              fieldCode: 'assetName',
+              label: 'Asset Name',
+              span: 1,
+              layout_placement: {
+                row: '1',
+                col_start: '2',
+                col_span: '1',
+                row_span: '2',
+                columns: '2',
+                total_rows: '3',
+                order: '1'
+              }
+            }
+          ]
+        }
+      ]
+    })
+
+    expect(prepared.sections[0].fields[0].layoutPlacement).toMatchObject({
+      row: 1,
+      colStart: 2,
+      colSpan: 1,
+      rowSpan: 2,
+      columns: 2,
+      totalRows: 3,
+      order: 1
+    })
+    expect(prepared.sections[0].fields[0].layout_placement).toMatchObject({
+      row: 1,
+      col_start: 2,
+      col_span: 1,
+      row_span: 2,
+      columns: 2,
+      total_rows: 3,
+      order: 1
+    })
+  })
 })
 

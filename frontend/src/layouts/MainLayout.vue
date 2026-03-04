@@ -299,6 +299,18 @@ const breadcrumbs = computed(() => {
         crumbs.push({ label: t('common.actions.create') || '新建', path })
       }
     }
+  } else if (path.startsWith('/assets/lifecycle/')) {
+    // Lifecycle pages: /assets/lifecycle/purchase-requests, etc.
+    crumbs.push({
+      label: t('menu.menu.lifecycle'),
+      path: '/assets/lifecycle/purchase-requests',
+      to: { path: '/assets/lifecycle/purchase-requests' }
+    })
+    if (route.meta?.title) {
+      const titleKey = route.meta.title as string
+      const label = te(titleKey) ? t(titleKey) : titleKey
+      crumbs.push({ label, path })
+    }
   } else if (route.meta?.title) {
     // Static routes with meta.title
     const titleKey = route.meta.title as string
@@ -331,6 +343,9 @@ const getGroupLabel = (group: LocalMenuGroup) => {
       dashboard: 'dashboard',
       asset: 'assets',
       asset_operation: 'assetOperations',
+      lifecycle: 'lifecycle',
+      insurance: 'insurance',
+      leasing: 'leasing',
       consumable: 'consumables',
       purchase: 'procurement',
       maintenance: 'maintenance',

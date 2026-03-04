@@ -45,11 +45,13 @@ describe('detailSchemaProjector', () => {
     expect(sections[0].name).toBe('basic')
     expect(sections[0].fields.map((field) => field.prop)).toEqual(['assetName', 'status'])
     expect(sections[0].fields[0].span).toBe(12)
-    expect((sections[0].fields[0] as any).placement).toEqual({
+    expect((sections[0].fields[0] as any).placement).toMatchObject({
       row: 1,
       colStart: 1,
       colSpan: 1,
+      rowSpan: 3,
       columns: 2,
+      totalRows: 4,
       order: 1
     })
     expect((sections[0].fields[0] as any).minHeight).toBe(120)

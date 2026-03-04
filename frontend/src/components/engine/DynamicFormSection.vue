@@ -152,6 +152,7 @@ import RuntimeFieldControl from '@/components/engine/RuntimeFieldControl.vue'
 import type { RuntimeField, RuntimeSection } from '@/types/runtime'
 import { getFieldValue, setFieldValue } from '@/components/engine/valueAccessor'
 import { normalizeSpan } from '@/adapters/layoutNormalizer'
+import { placeCanvasFields, toCanvasGridStyle, type CanvasPlacement } from '@/platform/layout/canvasLayout'
 
 interface Props {
   section: RuntimeSection
@@ -180,6 +181,7 @@ const emit = defineEmits<{
 const sectionKey = computed(() => props.section.id || props.section.name || 'section')
 
 const getSectionColumns = (section: RuntimeSection) => {
+  if ((section as any).position === 'sidebar') return 1
   return Number((section as any).columns || (section as any).columnCount || (section as any).column || 2) || 2
 }
 
@@ -208,8 +210,20 @@ const enrichField = (field: RuntimeField): RuntimeField => {
 }
 
 const getFieldItems = (fields: RuntimeField[] = []) => {
-  return fields.map((field) => {
-    const enriched = enrichField(field)
+  const columns = getSectionColumns(props.section)
+  const placedFields = placeCanvasFields(
+    fields.map((field) => ({
+      ...field,
+      span: field.span ?? 1,
+      minHeight: field.minHeight
+    })),
+    columns,
+    { preferSavedPlacement: true }
+  )
+
+  return placedFields.map((field) => {
+    const enriched = enrichField(field as RuntimeField)
+    const placement = ((enriched as any).placement || (field as any).placement || null) as CanvasPlacement | null
     return {
       code: enriched.code,
       field: enriched,
@@ -218,16 +232,21 @@ const getFieldItems = (fields: RuntimeField[] = []) => {
       visible: resolveFieldVisibility(enriched),
       readonly: resolveFieldReadonly(enriched),
       span: enriched.span || 1,
+      placement,
       value: getFieldValue(enriched, props.modelValue)
     }
   })
 }
 
-const getGridStyle = (item: { span?: number }, section: RuntimeSection) => {
+const getGridStyle = (item: { span?: number; placement?: CanvasPlacement | null }, section: RuntimeSection) => {
+  if (item.placement) {
+    return toCanvasGridStyle(item.placement)
+  }
+
   const columns = getSectionColumns(section)
   const span = normalizeSpan(item.span ?? 1, columns)
   return {
-    gridColumn: `span ${span} / ${columns}`
+    gridColumn: `span ${span}`
   }
 }
 
@@ -271,6 +290,8 @@ watch(
 .dynamic-form-section__fields {
   display: grid;
   gap: 12px;
+  grid-auto-flow: row dense;
+  grid-auto-rows: minmax(56px, auto);
 }
 
 .dynamic-form-section__field {

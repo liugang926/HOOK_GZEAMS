@@ -1,5 +1,7 @@
 ﻿import { createRouter, createWebHistory } from 'vue-router'
 
+import type { RouteRecordRaw } from 'vue-router'
+
 // Layouts
 const MainLayout = () => import('@/layouts/MainLayout.vue')
 const AuthLayout = () => import('@/layouts/AuthLayout.vue')
@@ -18,9 +20,16 @@ const DynamicListPage = () => import('@/views/dynamic/DynamicListPage.vue')
 const DynamicFormPage = () => import('@/views/dynamic/DynamicFormPage.vue')
 const DynamicDetailPage = () => import('@/views/dynamic/DynamicDetailPage.vue')
 
+type LegacyRouteMap = Record<string, string>
+
+const toObjectListPath = (objectCode: string): string => `/objects/${objectCode}`
+const toObjectCreatePath = (objectCode: string): string => `/objects/${objectCode}/create`
+const toObjectDetailPath = (objectCode: string, id: string): string => `/objects/${objectCode}/${id}`
+const toObjectEditPath = (objectCode: string, id: string): string => `/objects/${objectCode}/${id}/edit`
+
 // Additional legacy module routes that now resolve through the metadata-driven object engine.
 // These modules exist on backend but may still expose legacy menu URLs or bookmarks.
-export const ADDITIONAL_BUSINESS_OBJECT_ROUTES: Record<string, string> = {
+export const ADDITIONAL_BUSINESS_OBJECT_ROUTES: LegacyRouteMap = {
   // Inventory
   'inventory/items': 'InventoryItem',
   // Insurance
@@ -38,16 +47,53 @@ export const ADDITIONAL_BUSINESS_OBJECT_ROUTES: Record<string, string> = {
   'leasing/extensions': 'LeaseExtension',
 }
 
-export const buildLegacyObjectAliasRoutes = (routeMap: Record<string, string>): any[] => {
+const LEGACY_OBJECT_FULL_CRUD_ROUTES: LegacyRouteMap = {
+  assets: 'Asset',
+  'assets/settings/suppliers': 'Supplier',
+  'assets/settings/locations': 'Location',
+  'assets/operations/pickup': 'AssetPickup',
+  'assets/operations/transfer': 'AssetTransfer',
+  'assets/operations/return': 'AssetReturn',
+  'assets/operations/loans': 'AssetLoan'
+}
+
+const LEGACY_OBJECT_LIST_CREATE_ROUTES: LegacyRouteMap = {
+  'assets/settings/categories': 'AssetCategory',
+  consumables: 'Consumable'
+}
+
+const LEGACY_OBJECT_LIST_ONLY_ROUTES: LegacyRouteMap = {
+  'assets/status-logs': 'AssetStatusLog',
+  'consumables/categories': 'ConsumableCategory',
+  'consumables/stock': 'ConsumableStock',
+  inventory: 'InventoryTask',
+  'system/departments': 'Department'
+}
+
+export const buildLegacyObjectAliasRoutes = (routeMap: LegacyRouteMap): RouteRecordRaw[] => {
   return Object.entries(routeMap).flatMap(([legacyPath, objectCode]) => ([
-    { path: legacyPath, redirect: `/objects/${objectCode}` },
-    { path: `${legacyPath}/create`, redirect: `/objects/${objectCode}/create` },
-    { path: `${legacyPath}/:id`, redirect: (to: any) => `/objects/${objectCode}/${to.params.id}` },
-    { path: `${legacyPath}/:id/edit`, redirect: (to: any) => `/objects/${objectCode}/${to.params.id}/edit` },
+    { path: legacyPath, redirect: toObjectListPath(objectCode) },
+    { path: `${legacyPath}/create`, redirect: toObjectCreatePath(objectCode) },
+    { path: `${legacyPath}/:id`, redirect: (to) => toObjectDetailPath(objectCode, String(to.params.id)) },
+    { path: `${legacyPath}/:id/edit`, redirect: (to) => toObjectEditPath(objectCode, String(to.params.id)) },
   ]))
 }
 
-export const routes: any[] = [
+const buildLegacyObjectListCreateAliasRoutes = (routeMap: LegacyRouteMap): RouteRecordRaw[] => {
+  return Object.entries(routeMap).flatMap(([legacyPath, objectCode]) => ([
+    { path: legacyPath, redirect: toObjectListPath(objectCode) },
+    { path: `${legacyPath}/create`, redirect: toObjectCreatePath(objectCode) }
+  ]))
+}
+
+const buildLegacyObjectListAliasRoutes = (routeMap: LegacyRouteMap): RouteRecordRaw[] => {
+  return Object.entries(routeMap).map(([legacyPath, objectCode]) => ({
+    path: legacyPath,
+    redirect: toObjectListPath(objectCode)
+  }))
+}
+
+export const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     component: AuthLayout,
@@ -95,7 +141,7 @@ export const routes: any[] = [
       {
         path: 'objects/:code/:id/edit',
         name: 'DynamicObjectEdit',
-        redirect: (to: any) => ({
+        redirect: (to) => ({
           name: 'DynamicObjectDetail',
           params: { code: to.params.code, id: to.params.id },
           query: { ...to.query, action: 'edit' }
@@ -109,155 +155,125 @@ export const routes: any[] = [
       // These routes redirect to the unified /objects/{code} pattern
       // They are kept for backward compatibility with existing bookmarks/links
 
-      // Asset Routes
+      ...buildLegacyObjectAliasRoutes(LEGACY_OBJECT_FULL_CRUD_ROUTES),
+      ...buildLegacyObjectListCreateAliasRoutes(LEGACY_OBJECT_LIST_CREATE_ROUTES),
+      ...buildLegacyObjectListAliasRoutes(LEGACY_OBJECT_LIST_ONLY_ROUTES),
+
+      // ============================================================
+      // LIFECYCLE ROUTES (Purchase Request / Maintenance / Disposal)
+      // ============================================================
       {
-        path: 'assets',
-        redirect: '/objects/Asset'
+        path: 'assets/lifecycle/purchase-requests',
+        name: 'PurchaseRequestList',
+        component: () => import('@/views/lifecycle/PurchaseRequestList.vue'),
+        meta: { title: 'assets.lifecycle.purchaseRequest.title' }
       },
       {
-        path: 'assets/create',
-        redirect: '/objects/Asset/create'
+        path: 'assets/lifecycle/purchase-requests/create',
+        name: 'PurchaseRequestCreate',
+        component: () => import('@/views/lifecycle/PurchaseRequestDetail.vue'),
+        meta: { title: 'assets.lifecycle.purchaseRequest.createTitle' }
       },
       {
-        path: 'assets/:id/edit',
-        redirect: (to: any) => `/objects/Asset/${to.params.id}/edit`
+        path: 'assets/lifecycle/purchase-requests/:id',
+        name: 'PurchaseRequestDetail',
+        component: () => import('@/views/lifecycle/PurchaseRequestDetail.vue'),
+        meta: { title: 'assets.lifecycle.purchaseRequest.detailTitle' }
       },
       {
-        path: 'assets/:id',
-        redirect: (to: any) => `/objects/Asset/${to.params.id}`
+        path: 'assets/lifecycle/maintenance',
+        name: 'MaintenanceList',
+        component: () => import('@/views/lifecycle/MaintenanceList.vue'),
+        meta: { title: 'assets.lifecycle.maintenance.title' }
       },
       {
-        path: 'assets/settings/categories',
-        redirect: '/objects/AssetCategory'
+        path: 'assets/lifecycle/maintenance/create',
+        name: 'MaintenanceCreate',
+        component: () => import('@/views/lifecycle/MaintenanceDetail.vue'),
+        meta: { title: 'assets.lifecycle.maintenance.createTitle' }
       },
       {
-        path: 'assets/settings/categories/create',
-        redirect: '/objects/AssetCategory/create'
+        path: 'assets/lifecycle/maintenance/:id',
+        name: 'MaintenanceDetail',
+        component: () => import('@/views/lifecycle/MaintenanceDetail.vue'),
+        meta: { title: 'assets.lifecycle.maintenance.detailTitle' }
       },
       {
-        path: 'assets/settings/suppliers',
-        redirect: '/objects/Supplier'
+        path: 'assets/lifecycle/disposal-requests',
+        name: 'DisposalRequestList',
+        component: () => import('@/views/lifecycle/DisposalRequestList.vue'),
+        meta: { title: 'assets.lifecycle.disposalRequest.title' }
       },
       {
-        path: 'assets/settings/suppliers/create',
-        redirect: '/objects/Supplier/create'
+        path: 'assets/lifecycle/disposal-requests/create',
+        name: 'DisposalRequestCreate',
+        component: () => import('@/views/lifecycle/DisposalRequestDetail.vue'),
+        meta: { title: 'assets.lifecycle.disposalRequest.createTitle' }
       },
       {
-        path: 'assets/settings/suppliers/:id',
-        redirect: (to: any) => `/objects/Supplier/${to.params.id}`
-      },
-      {
-        path: 'assets/settings/suppliers/:id/edit',
-        redirect: (to: any) => `/objects/Supplier/${to.params.id}/edit`
-      },
-      {
-        path: 'assets/settings/locations',
-        redirect: '/objects/Location'
-      },
-      {
-        path: 'assets/settings/locations/create',
-        redirect: '/objects/Location/create'
-      },
-      {
-        path: 'assets/settings/locations/:id',
-        redirect: (to: any) => `/objects/Location/${to.params.id}`
-      },
-      {
-        path: 'assets/settings/locations/:id/edit',
-        redirect: (to: any) => `/objects/Location/${to.params.id}/edit`
-      },
-      {
-        path: 'assets/status-logs',
-        redirect: '/objects/AssetStatusLog'
-      },
-      {
-        path: 'assets/operations/pickup',
-        redirect: '/objects/AssetPickup'
-      },
-      {
-        path: 'assets/operations/pickup/create',
-        redirect: '/objects/AssetPickup/create'
-      },
-      {
-        path: 'assets/operations/pickup/:id',
-        redirect: (to: any) => `/objects/AssetPickup/${to.params.id}`
-      },
-      {
-        path: 'assets/operations/pickup/:id/edit',
-        redirect: (to: any) => `/objects/AssetPickup/${to.params.id}/edit`
-      },
-      {
-        path: 'assets/operations/transfer',
-        redirect: '/objects/AssetTransfer'
-      },
-      {
-        path: 'assets/operations/transfer/create',
-        redirect: '/objects/AssetTransfer/create'
-      },
-      {
-        path: 'assets/operations/transfer/:id',
-        redirect: (to: any) => `/objects/AssetTransfer/${to.params.id}`
-      },
-      {
-        path: 'assets/operations/transfer/:id/edit',
-        redirect: (to: any) => `/objects/AssetTransfer/${to.params.id}/edit`
-      },
-      {
-        path: 'assets/operations/return',
-        redirect: '/objects/AssetReturn'
-      },
-      {
-        path: 'assets/operations/return/create',
-        redirect: '/objects/AssetReturn/create'
-      },
-      {
-        path: 'assets/operations/return/:id',
-        redirect: (to: any) => `/objects/AssetReturn/${to.params.id}`
-      },
-      {
-        path: 'assets/operations/return/:id/edit',
-        redirect: (to: any) => `/objects/AssetReturn/${to.params.id}/edit`
-      },
-      {
-        path: 'assets/operations/loans',
-        redirect: '/objects/AssetLoan'
-      },
-      {
-        path: 'assets/operations/loans/create',
-        redirect: '/objects/AssetLoan/create'
-      },
-      {
-        path: 'assets/operations/loans/:id',
-        redirect: (to: any) => `/objects/AssetLoan/${to.params.id}`
-      },
-      {
-        path: 'assets/operations/loans/:id/edit',
-        redirect: (to: any) => `/objects/AssetLoan/${to.params.id}/edit`
+        path: 'assets/lifecycle/disposal-requests/:id',
+        name: 'DisposalRequestDetail',
+        component: () => import('@/views/lifecycle/DisposalRequestDetail.vue'),
+        meta: { title: 'assets.lifecycle.disposalRequest.detailTitle' }
       },
 
-      // Consumable Routes
+      // ── P3 Lifecycle Routes ──────────────────────────────────────────────
       {
-        path: 'consumables',
-        redirect: '/objects/Consumable'
+        path: 'assets/lifecycle/asset-receipts',
+        name: 'AssetReceiptList',
+        component: () => import('@/views/lifecycle/AssetReceiptList.vue'),
+        meta: { title: 'assets.lifecycle.assetReceipt.title' }
       },
       {
-        path: 'consumables/create',
-        redirect: '/objects/Consumable/create'
+        path: 'assets/lifecycle/asset-receipts/create',
+        name: 'AssetReceiptCreate',
+        component: () => import('@/views/lifecycle/AssetReceiptDetail.vue'),
+        meta: { title: 'assets.lifecycle.assetReceipt.createTitle' }
       },
       {
-        path: 'consumables/categories',
-        redirect: '/objects/ConsumableCategory'
+        path: 'assets/lifecycle/asset-receipts/:id',
+        name: 'AssetReceiptDetail',
+        component: () => import('@/views/lifecycle/AssetReceiptDetail.vue'),
+        meta: { title: 'assets.lifecycle.assetReceipt.detailTitle' }
       },
       {
-        path: 'consumables/stock',
-        redirect: '/objects/ConsumableStock'
+        path: 'assets/lifecycle/maintenance-plans',
+        name: 'MaintenancePlanList',
+        component: () => import('@/views/lifecycle/MaintenancePlanList.vue'),
+        meta: { title: 'assets.lifecycle.maintenancePlan.title' }
+      },
+      {
+        path: 'assets/lifecycle/maintenance-plans/create',
+        name: 'MaintenancePlanCreate',
+        component: () => import('@/views/lifecycle/MaintenancePlanDetail.vue'),
+        meta: { title: 'assets.lifecycle.maintenancePlan.createTitle' }
+      },
+      {
+        path: 'assets/lifecycle/maintenance-plans/:id',
+        name: 'MaintenancePlanDetail',
+        component: () => import('@/views/lifecycle/MaintenancePlanDetail.vue'),
+        meta: { title: 'assets.lifecycle.maintenancePlan.detailTitle' }
+      },
+      {
+        path: 'assets/lifecycle/maintenance-tasks',
+        name: 'MaintenanceTaskList',
+        component: () => import('@/views/lifecycle/MaintenanceTaskList.vue'),
+        meta: { title: 'assets.lifecycle.maintenanceTask.title' }
+      },
+      {
+        path: 'assets/lifecycle/maintenance-tasks/create',
+        name: 'MaintenanceTaskCreate',
+        component: () => import('@/views/lifecycle/MaintenanceTaskDetail.vue'),
+        meta: { title: 'assets.lifecycle.maintenanceTask.createTitle' }
+      },
+      {
+        path: 'assets/lifecycle/maintenance-tasks/:id',
+        name: 'MaintenanceTaskDetail',
+        component: () => import('@/views/lifecycle/MaintenanceTaskDetail.vue'),
+        meta: { title: 'assets.lifecycle.maintenanceTask.detailTitle' }
       },
 
       // Inventory Routes
-      {
-        path: 'inventory',
-        redirect: '/objects/InventoryTask'
-      },
       {
         path: 'inventory/task/:id/execute',
         name: 'TaskExecute',
@@ -285,11 +301,44 @@ export const routes: any[] = [
         meta: { title: 'menu.routes.depreciation' }
       },
 
-      // System Routes (Special system pages that are not business objects)
+      // Insurance Routes  (specialized pages beyond dynamic object engine)
       {
-        path: 'system/departments',
-        redirect: '/objects/Department'
+        path: 'insurance/dashboard',
+        name: 'InsuranceDashboard',
+        component: () => import('@/views/insurance/InsuranceDashboard.vue'),
+        meta: { title: 'menu.routes.insuranceDashboard' }
       },
+      {
+        path: 'insurance/claims',
+        name: 'ClaimList',
+        component: () => import('@/views/insurance/ClaimList.vue'),
+        meta: { title: 'menu.routes.claimList' }
+      },
+
+      // Leasing Routes (specialized pages beyond dynamic object engine)
+      {
+        path: 'leasing/dashboard',
+        name: 'LeasingDashboard',
+        component: () => import('@/views/leasing/LeasingDashboard.vue'),
+        meta: { title: 'menu.routes.leasingDashboard' }
+      },
+      {
+        path: 'leasing/payments',
+        name: 'RentPaymentList',
+        component: () => import('@/views/leasing/RentPaymentList.vue'),
+        meta: { title: 'menu.routes.rentPayments' }
+      },
+
+      // Reports
+      {
+        path: 'reports/center',
+        name: 'ReportCenter',
+        component: () => import('@/views/reports/ReportCenter.vue'),
+        meta: { title: 'menu.routes.reportCenter' }
+      },
+
+      // System Routes (Special system pages that are not business objects)
+
       {
         path: 'system/business-objects',
         name: 'BusinessObjectList',
@@ -510,7 +559,6 @@ export const routes: any[] = [
 ]
 
 export default createRouter({
-  history: createWebHistory((import.meta as any).env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
-

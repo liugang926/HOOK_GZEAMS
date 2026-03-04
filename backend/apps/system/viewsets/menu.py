@@ -133,10 +133,224 @@ class MenuViewSet(viewsets.GenericViewSet):
             key=lambda x: x['order']
         )
 
+        # ── Static Lifecycle Group ──────────────────────────────────────────
+        # These pages use custom /assets/lifecycle/ URLs and are not
+        # represented as BusinessObjects, so they are injected statically.
+        lifecycle_group = {
+            'code': 'lifecycle',
+            'name': '资产生命周期',
+            'name_en': 'Asset Lifecycle',
+            'order': 25,
+            'icon': 'Refresh',
+            'items': [
+                {
+                    'code': 'PurchaseRequest',
+                    'name': '采购申请',
+                    'name_en': 'Purchase Requests',
+                    'url': '/assets/lifecycle/purchase-requests',
+                    'icon': 'ShoppingCart',
+                    'order': 1,
+                    'group': '资产生命周期',
+                    'group_code': 'lifecycle',
+                    'badge': None,
+                },
+                {
+                    'code': 'AssetReceipt',
+                    'name': '入库验收',
+                    'name_en': 'Asset Receipts',
+                    'url': '/assets/lifecycle/asset-receipts',
+                    'icon': 'Box',
+                    'order': 2,
+                    'group': '资产生命周期',
+                    'group_code': 'lifecycle',
+                    'badge': None,
+                },
+                {
+                    'code': 'MaintenanceOrder',
+                    'name': '维修工单',
+                    'name_en': 'Maintenance Orders',
+                    'url': '/assets/lifecycle/maintenance',
+                    'icon': 'Tools',
+                    'order': 3,
+                    'group': '资产生命周期',
+                    'group_code': 'lifecycle',
+                    'badge': None,
+                },
+                {
+                    'code': 'MaintenancePlan',
+                    'name': '维保计划',
+                    'name_en': 'Maintenance Plans',
+                    'url': '/assets/lifecycle/maintenance-plans',
+                    'icon': 'Calendar',
+                    'order': 4,
+                    'group': '资产生命周期',
+                    'group_code': 'lifecycle',
+                    'badge': None,
+                },
+                {
+                    'code': 'MaintenanceTask',
+                    'name': '维保任务',
+                    'name_en': 'Maintenance Tasks',
+                    'url': '/assets/lifecycle/maintenance-tasks',
+                    'icon': 'Finished',
+                    'order': 5,
+                    'group': '资产生命周期',
+                    'group_code': 'lifecycle',
+                    'badge': None,
+                },
+                {
+                    'code': 'DisposalRequest',
+                    'name': '报废申请',
+                    'name_en': 'Disposal Requests',
+                    'url': '/assets/lifecycle/disposal-requests',
+                    'icon': 'Delete',
+                    'order': 6,
+                    'group': '资产生命周期',
+                    'group_code': 'lifecycle',
+                    'badge': None,
+                },
+            ]
+        }
+
+        # Insert lifecycle group at the correct position (after asset operations)
+        grouped_list_with_lifecycle = []
+        lifecycle_inserted = False
+        insurance_inserted = False
+        leasing_inserted = False
+
+        insurance_group = {
+            'code': 'insurance',
+            'name': '保险管理',
+            'name_en': 'Insurance',
+            'order': 35,
+            'icon': 'Umbrella',
+            'items': [
+                {
+                    'code': 'InsuranceDashboard',
+                    'name': '保险概览',
+                    'name_en': 'Insurance Overview',
+                    'url': '/insurance/dashboard',
+                    'icon': 'DataLine',
+                    'order': 1,
+                    'group': '保险管理',
+                    'group_code': 'insurance',
+                    'badge': None,
+                },
+                {
+                    'code': 'InsurancePolicy',
+                    'name': '保险保单',
+                    'name_en': 'Insurance Policies',
+                    'url': '/objects/InsurancePolicy',
+                    'icon': 'Document',
+                    'order': 2,
+                    'group': '保险管理',
+                    'group_code': 'insurance',
+                    'badge': None,
+                },
+                {
+                    'code': 'ClaimRecord',
+                    'name': '理赔管理',
+                    'name_en': 'Claim Management',
+                    'url': '/insurance/claims',
+                    'icon': 'Tickets',
+                    'order': 3,
+                    'group': '保险管理',
+                    'group_code': 'insurance',
+                    'badge': None,
+                },
+            ]
+        }
+
+        leasing_group = {
+            'code': 'leasing',
+            'name': '租赁管理',
+            'name_en': 'Leasing',
+            'order': 45,
+            'icon': 'Key',
+            'items': [
+                {
+                    'code': 'LeasingDashboard',
+                    'name': '租赁概览',
+                    'name_en': 'Leasing Overview',
+                    'url': '/leasing/dashboard',
+                    'icon': 'DataLine',
+                    'order': 1,
+                    'group': '租赁管理',
+                    'group_code': 'leasing',
+                    'badge': None,
+                },
+                {
+                    'code': 'LeasingContract',
+                    'name': '租赁合同',
+                    'name_en': 'Lease Contracts',
+                    'url': '/objects/LeasingContract',
+                    'icon': 'Document',
+                    'order': 2,
+                    'group': '租赁管理',
+                    'group_code': 'leasing',
+                    'badge': None,
+                },
+                {
+                    'code': 'RentPayment',
+                    'name': '租金管理',
+                    'name_en': 'Rent Payments',
+                    'url': '/leasing/payments',
+                    'icon': 'Wallet',
+                    'order': 3,
+                    'group': '租赁管理',
+                    'group_code': 'leasing',
+                    'badge': None,
+                },
+            ]
+        }
+
+        for group in grouped_list:
+            if not lifecycle_inserted and group.get('order', 0) >= 25:
+                grouped_list_with_lifecycle.append(lifecycle_group)
+                lifecycle_inserted = True
+            if not insurance_inserted and group.get('order', 0) >= 35:
+                grouped_list_with_lifecycle.append(insurance_group)
+                insurance_inserted = True
+            if not leasing_inserted and group.get('order', 0) >= 45:
+                grouped_list_with_lifecycle.append(leasing_group)
+                leasing_inserted = True
+            grouped_list_with_lifecycle.append(group)
+
+        if not lifecycle_inserted:
+            grouped_list_with_lifecycle.append(lifecycle_group)
+        if not insurance_inserted:
+            grouped_list_with_lifecycle.append(insurance_group)
+        if not leasing_inserted:
+            grouped_list_with_lifecycle.append(leasing_group)
+
+        # Reports group — always appended at the end
+        reports_group = {
+            'code': 'reports',
+            'name': '报表中心',
+            'name_en': 'Reports',
+            'order': 90,
+            'icon': 'DataAnalysis',
+            'items': [
+                {
+                    'code': 'ReportCenter',
+                    'name': '报表中心',
+                    'name_en': 'Report Center',
+                    'url': '/reports/center',
+                    'icon': 'DataAnalysis',
+                    'order': 1,
+                    'group': '报表中心',
+                    'group_code': 'reports',
+                    'badge': None,
+                },
+            ]
+        }
+        grouped_list_with_lifecycle.append(reports_group)
+
         return BaseResponse.success({
-            'groups': grouped_list,
+            'groups': grouped_list_with_lifecycle,
             'items': flat_items
         })
+
 
     @action(detail=False, methods=['get'], url_path='flat')
     def flat(self, request, *args, **kwargs):

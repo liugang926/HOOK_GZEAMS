@@ -7,62 +7,130 @@
       <el-empty :description="emptyText" />
     </div>
 
-    <template
-      v-for="section in visibleSections"
+    <div
       v-else
-      :key="sectionKey(section)"
+      class="dynamic-form-renderer__layout"
+      :class="{ 'has-sidebar': sidebarSections.length > 0 }"
     >
-      <el-card
-        v-if="shouldRenderSectionCard(section)"
-        :shadow="section.shadow || 'never'"
-        class="dynamic-form-renderer__section-card"
-      >
+      <div class="dynamic-form-renderer__main">
         <template
-          v-if="showSectionTitle(section)"
-          #header
+          v-for="section in mainSections"
+          :key="sectionKey(section)"
         >
-          <span>{{ section.title }}</span>
+          <el-card
+            v-if="shouldRenderSectionCard(section)"
+            :shadow="section.shadow || 'never'"
+            class="dynamic-form-renderer__section-card"
+          >
+            <template
+              v-if="showSectionTitle(section)"
+              #header
+            >
+              <span>{{ section.title }}</span>
+            </template>
+            <div class="dynamic-form-renderer__section-body">
+              <DynamicFormSection
+                :section="section"
+                :model-value="modelValue"
+                :readonly="readonly"
+                :field-permissions="fieldPermissions"
+                :business-object="businessObject"
+                :instance-id="instanceId"
+                :use-form-item="useFormItem"
+                :label-width="labelWidth"
+                :label-position="labelPosition"
+                @update:model-value="(val) => emit('update:modelValue', val)"
+              />
+            </div>
+          </el-card>
+
+          <div
+            v-else
+            class="dynamic-form-renderer__section"
+          >
+            <div
+              v-if="showSectionTitle(section)"
+              class="dynamic-form-renderer__section-title"
+            >
+              {{ section.title }}
+            </div>
+            <DynamicFormSection
+              :section="section"
+              :model-value="modelValue"
+              :readonly="readonly"
+              :field-permissions="fieldPermissions"
+              :business-object="businessObject"
+              :instance-id="instanceId"
+              :use-form-item="useFormItem"
+              :label-width="labelWidth"
+              :label-position="labelPosition"
+              @update:model-value="(val) => emit('update:modelValue', val)"
+            />
+          </div>
         </template>
-        <div class="dynamic-form-renderer__section-body">
-          <DynamicFormSection
-            :section="section"
-            :model-value="modelValue"
-            :readonly="readonly"
-            :field-permissions="fieldPermissions"
-            :business-object="businessObject"
-            :instance-id="instanceId"
-            :use-form-item="useFormItem"
-            :label-width="labelWidth"
-            :label-position="labelPosition"
-            @update:model-value="(val) => emit('update:modelValue', val)"
-          />
-        </div>
-      </el-card>
+      </div>
 
       <div
-        v-else
-        class="dynamic-form-renderer__section"
+        v-if="sidebarSections.length > 0"
+        class="dynamic-form-renderer__sidebar"
       >
-        <div
-          v-if="showSectionTitle(section)"
-          class="dynamic-form-renderer__section-title"
+        <template
+          v-for="section in sidebarSections"
+          :key="sectionKey(section)"
         >
-          {{ section.title }}
-        </div>
-        <DynamicFormSection
-          :section="section"
-          :model-value="modelValue"
-          :readonly="readonly"
-          :field-permissions="fieldPermissions"
-          :business-object="businessObject"
-          :instance-id="instanceId"
-          :use-form-item="useFormItem"
-          :label-width="labelWidth"
-          :label-position="labelPosition"
-          @update:model-value="(val) => emit('update:modelValue', val)"
-        />
+          <el-card
+            v-if="shouldRenderSectionCard(section)"
+            :shadow="section.shadow || 'never'"
+            class="dynamic-form-renderer__section-card"
+          >
+            <template
+              v-if="showSectionTitle(section)"
+              #header
+            >
+              <span>{{ section.title }}</span>
+            </template>
+            <div class="dynamic-form-renderer__section-body">
+              <DynamicFormSection
+                :section="section"
+                :model-value="modelValue"
+                :readonly="readonly"
+                :field-permissions="fieldPermissions"
+                :business-object="businessObject"
+                :instance-id="instanceId"
+                :use-form-item="useFormItem"
+                :label-width="labelWidth"
+                :label-position="labelPosition"
+                @update:model-value="(val) => emit('update:modelValue', val)"
+              />
+            </div>
+          </el-card>
+
+          <div
+            v-else
+            class="dynamic-form-renderer__section"
+          >
+            <div
+              v-if="showSectionTitle(section)"
+              class="dynamic-form-renderer__section-title"
+            >
+              {{ section.title }}
+            </div>
+            <DynamicFormSection
+              :section="section"
+              :model-value="modelValue"
+              :readonly="readonly"
+              :field-permissions="fieldPermissions"
+              :business-object="businessObject"
+              :instance-id="instanceId"
+              :use-form-item="useFormItem"
+              :label-width="labelWidth"
+              :label-position="labelPosition"
+              @update:model-value="(val) => emit('update:modelValue', val)"
+            />
+          </div>
+        </template>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -95,7 +163,7 @@ const props = withDefaults(defineProps<Props>(), {
   useFormItem: true,
   labelWidth: '120px',
   labelPosition: 'right',
-  emptyText: '���޿��ò���'
+  emptyText: 'No layout fields available'
 })
 
 const emit = defineEmits<{
@@ -112,6 +180,14 @@ const effectiveLayout = computed<RuntimeLayoutConfig>(() => {
 const visibleSections = computed<RuntimeSection[]>(() => {
   const sections = effectiveLayout.value.sections || []
   return sections.filter((section) => section.visible !== false)
+})
+
+const mainSections = computed<RuntimeSection[]>(() => {
+  return visibleSections.value.filter((section) => section.position !== 'sidebar')
+})
+
+const sidebarSections = computed<RuntimeSection[]>(() => {
+  return visibleSections.value.filter((section) => section.position === 'sidebar')
 })
 
 const hasRenderableFields = computed(() => {
@@ -141,6 +217,25 @@ const shouldRenderSectionCard = (section: RuntimeSection) => {
 .dynamic-form-renderer {
   width: 100%;
 
+  &__layout {
+    display: block;
+
+    &.has-sidebar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 20px;
+      align-items: start;
+    }
+  }
+
+  &__main {
+    min-width: 0;
+  }
+
+  &__sidebar {
+    min-width: 0;
+  }
+
   &__section {
     margin-bottom: 20px;
   }
@@ -160,6 +255,16 @@ const shouldRenderSectionCard = (section: RuntimeSection) => {
 
   &__empty {
     padding: 32px 0;
+  }
+}
+
+@media (max-width: 1200px) {
+  .dynamic-form-renderer {
+    &__layout {
+      &.has-sidebar {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
   }
 }
 </style>

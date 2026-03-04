@@ -134,3 +134,12 @@ class TestConnectionSerializer(serializers.Serializer):
     message = serializers.CharField(read_only=True)
     response_time_ms = serializers.IntegerField(read_only=True, allow_null=True)
     details = serializers.JSONField(read_only=True, allow_null=True)
+
+
+class IntegrationConfigStatsSerializer(serializers.Serializer):
+    """Serializer for integration config aggregated statistics."""
+
+    total = serializers.IntegerField(read_only=True)
+    healthy = serializers.IntegerField(read_only=True)
+    degraded = serializers.IntegerField(read_only=True)
+    unhealthy = serializers.IntegerField(read_only=True)

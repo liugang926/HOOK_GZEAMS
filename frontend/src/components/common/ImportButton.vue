@@ -1,0 +1,193 @@
+<!--
+  ImportButton.vue
+
+  Drop-in import button for any list/management page. Handles:
+  - Download blank import template (with i18n header labels)
+  - Select and parse Excel file
+  - Map Excel column headers (labels) → prop keys via column config
+  - Report unknown/missing headers and row-level validation errors
+  - Emit parsed rows for the parent to handle
+
+  Usage:
+    <ImportButton
+      :columns="importColumns"
+      :required="['assetNo', 'name']"
+      filename="资产"
+      @import="handleImport"
+    />
+
+  Parent handler:
+    const handleImport = async ({ data, errors }) => {
+      if (errors.length) { /* show errors */ return }
+      for (const row of data) {
+        await myApi.create(row)  // row.assetNo, row.name, etc. (not "资产编号")
+      }
+      listRef.value?.refresh()
+    }
+-->
+<template>
+  <el-dropdown trigger="click" :disabled="importing" @command="handleCommand">
+    <el-button :loading="importing" :icon="Upload">
+      {{ $t('common.actions.import') }}
+      <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+    </el-button>
+    <template #dropdown>
+      <el-dropdown-menu>
+        <el-dropdown-item command="template">
+          {{ $t('reports.import.downloadTemplate') }}
+        </el-dropdown-item>
+        <el-dropdown-item command="upload" divided>
+          {{ $t('reports.import.selectFile') }}
+        </el-dropdown-item>
+      </el-dropdown-menu>
+    </template>
+  </el-dropdown>
+
+  <!-- Hidden file picker -->
+  <input
+    ref="fileInputRef"
+    type="file"
+    accept=".xlsx,.xls,.csv"
+    style="display:none"
+    @change="handleFileChange"
+  />
+
+  <!-- Error dialog -->
+  <el-dialog
+    v-model="errorDialog"
+    :title="$t('reports.import.errorTitle')"
+    width="600px"
+    destroy-on-close
+  >
+    <el-alert
+      v-if="parseResult.unknownHeaders.length"
+      type="warning"
+      :closable="false"
+      style="margin-bottom:12px"
+    >
+      {{ $t('reports.import.unknownHeaders') }}：{{ parseResult.unknownHeaders.join('、') }}
+    </el-alert>
+    <el-alert
+      v-if="parseResult.missingHeaders.length"
+      type="info"
+      :closable="false"
+      style="margin-bottom:12px"
+    >
+      {{ $t('reports.import.missingHeaders') }}：{{ parseResult.missingHeaders.join('、') }}
+    </el-alert>
+
+    <el-table
+      v-if="parseResult.errors.length"
+      :data="parseResult.errors"
+      border
+      size="small"
+      max-height="300"
+    >
+      <el-table-column :label="$t('reports.import.errorRow')" prop="row" width="80" />
+      <el-table-column :label="$t('reports.import.errorCol')" prop="col" width="120" />
+      <el-table-column :label="$t('reports.import.errorMsg')" prop="message" />
+    </el-table>
+
+    <div v-if="parseResult.errors.length === 0" style="color:#67C23A">
+      {{ $t('reports.import.noErrors') }}
+    </div>
+
+    <template #footer>
+      <el-button @click="errorDialog = false">{{ $t('common.actions.cancel') }}</el-button>
+      <el-button
+        v-if="parseResult.errors.length === 0 && parseResult.data.length > 0"
+        type="primary"
+        :loading="importing"
+        @click="confirmImport"
+      >
+        {{ $t('reports.import.confirmImport', { count: parseResult.data.length }) }}
+      </el-button>
+    </template>
+  </el-dialog>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive } from 'vue'
+import { Upload, ArrowDown } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+import { parseExcelFile, downloadImportTemplate, type ImportResult } from '@/utils/importService'
+import type { ExportColumn } from '@/utils/exportService'
+
+const { t } = useI18n()
+
+// ─── Props ───────────────────────────────────────────────────────────────────
+interface Props {
+  /** Column definitions (same config as ExportButton) */
+  columns: ExportColumn[]
+  /** Props that must have a value in every imported row */
+  required?: string[]
+  /** Used for the template filename */
+  filename?: string
+  /** Optional example data row for the template */
+  exampleRow?: Record<string, any>
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  required: () => [],
+  filename: 'import'
+})
+
+// ─── Emits ────────────────────────────────────────────────────────────────────
+const emit = defineEmits<{
+  (e: 'import', result: ImportResult): void
+}>()
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const importing = ref(false)
+const errorDialog = ref(false)
+const fileInputRef = ref<HTMLInputElement>()
+const parseResult = reactive<ImportResult>({
+  data: [],
+  errors: [],
+  unknownHeaders: [],
+  missingHeaders: []
+})
+
+// ─── Handlers ─────────────────────────────────────────────────────────────────
+const handleCommand = (command: string) => {
+  if (command === 'template') {
+    downloadImportTemplate(props.filename, props.columns, props.exampleRow)
+  } else if (command === 'upload') {
+    fileInputRef.value?.click()
+  }
+}
+
+const handleFileChange = async (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  // Reset input so the same file can be re-selected
+  ;(e.target as HTMLInputElement).value = ''
+
+  importing.value = true
+  try {
+    const result = await parseExcelFile(file, props.columns, { required: props.required })
+    Object.assign(parseResult, result)
+
+    if (result.errors.length > 0 || result.unknownHeaders.length > 0 || result.missingHeaders.length > 0) {
+      errorDialog.value = true
+    } else if (result.data.length === 0) {
+      ElMessage.warning(t('reports.import.emptyFile'))
+    } else {
+      // No errors — confirm immediately
+      confirmImport()
+    }
+  } catch (err: any) {
+    ElMessage.error(t('reports.import.parseError'))
+    console.error('Import parse error:', err)
+  } finally {
+    importing.value = false
+  }
+}
+
+const confirmImport = () => {
+  errorDialog.value = false
+  emit('import', { ...parseResult })
+  ElMessage.success(t('reports.import.readyMessage', { count: parseResult.data.length }))
+}
+</script>

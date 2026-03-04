@@ -25,7 +25,7 @@ describe('router coverage', () => {
     expect(router.currentRoute.value.fullPath).toBe('/objects/Asset/create')
 
     await router.push('/assets/123/edit')
-    expect(router.currentRoute.value.fullPath).toBe('/objects/Asset/123/edit')
+    expect(router.currentRoute.value.fullPath).toBe('/objects/Asset/123?action=edit')
 
     await router.push('/inventory/items')
     expect(router.currentRoute.value.fullPath).toBe('/objects/InventoryItem')

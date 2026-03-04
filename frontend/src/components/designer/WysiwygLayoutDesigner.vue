@@ -341,7 +341,7 @@
                                 :resizable="isDesignMode"
                                 :allow-horizontal-resize="true"
                                 :allow-vertical-resize="true"
-                                :size-feedback-active="sizeFeedbackFieldId === field.id"
+                                :size-feedback-active="sizeFeedbackFieldId === tabField.field.id"
                                 :remove-title="designerCardTitles.remove"
                                 :resize-title="designerCardTitles.resize"
                                 :reset-size-title="designerCardTitles.reset"
@@ -667,9 +667,11 @@ import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
 import { toUnifiedDetailField } from '@/platform/layout/unifiedDetailField'
 import { toRuntimeFieldFromLayout } from '@/platform/layout/unifiedRuntimeField'
 import { canAddFieldInDesigner, getFieldDisabledReason } from '@/platform/layout/designerFieldGuard'
-import { ensureLayoutConfigIds as ensurePersistLayoutConfigIds, preparePersistLayoutConfig } from '@/platform/layout/layoutPersistGuard'
+import { preparePersistLayoutConfig } from '@/platform/layout/layoutPersistGuard'
 import { mergeFieldSources } from '@/platform/layout/unifiedFieldOrder'
-import { normalizeGridSpan24, placeGridFields } from '@/platform/layout/semanticGrid'
+import { normalizeGridSpan24 } from '@/platform/layout/semanticGrid'
+import { getCanvasPlacementAttrs, placeCanvasFields, type CanvasPlacement } from '@/platform/layout/canvasLayout'
+import { buildLayoutFieldDropper, compileLayoutSchema } from '@/platform/layout/layoutCompiler'
 import {
   getDefaultLayoutConfig,
   cloneLayoutConfig,
@@ -680,6 +682,7 @@ import { normalizeLayoutType } from '@/utils/layoutMode'
 import type { LayoutFieldConfig } from '@/types/metadata'
 import type { LayoutMode } from '@/types/layout'
 import type { FieldDefinition as RuntimeFieldDefinition } from '@/types'
+import type { RuntimeMode } from '@/contracts/runtimeContract'
 
 // ============================================================================
 // Types
@@ -713,6 +716,30 @@ interface LayoutField extends Omit<LayoutFieldConfig, 'fieldType'> {
   fieldType?: string // Make fieldType optional for backward compatibility
   minHeight?: number
   min_height?: number
+  layoutPlacement?: {
+    row?: number
+    colStart?: number
+    colSpan?: number
+    rowSpan?: number
+    columns?: number
+    totalRows?: number
+    order?: number
+    canvas?: {
+      x?: number
+      y?: number
+      width?: number
+      height?: number
+    }
+  }
+  layout_placement?: {
+    row?: number
+    col_start?: number
+    col_span?: number
+    row_span?: number
+    columns?: number
+    total_rows?: number
+    order?: number
+  }
   // Additional properties that may come from legacy layouts
   min_length?: number
   max_length?: number
@@ -798,6 +825,10 @@ const { t } = useI18n()
 // State
 // ============================================================================
 
+// Available fields
+const availableFields = ref<FieldDefinition[]>([])
+const previewReverseRelations = ref<ReverseRelationField[]>([])
+
 const layoutConfig = ref<LayoutConfig>(
   normalizeAndEnsureLayoutConfig(getDefaultLayoutConfig(props.mode) as LayoutConfig)
 )
@@ -823,10 +854,6 @@ const draggedField = ref<FieldDefinition | null>(null)
 const isDragOverCanvas = ref(false)
 const dragOverSection = ref<string | null>(null)
 
-// Available fields
-const availableFields = ref<FieldDefinition[]>([])
-const previewReverseRelations = ref<ReverseRelationField[]>([])
-
 // Sample data for preview
 const sampleData = ref<Record<string, any>>({})
 const canvasAreaRef = ref<HTMLElement | null>(null)
@@ -844,8 +871,16 @@ type DesignerFieldPlacement = {
   row: number
   colStart: number
   colSpan: number
+  rowSpan: number
   columns: number
+  totalRows: number
   order: number
+  canvas: {
+    x: number
+    y: number
+    width: number
+    height: number
+  }
 }
 
 type DesignerRenderField = {
@@ -1186,19 +1221,18 @@ function getRenderColumns(section: any): number {
 }
 
 function getDesignerPlacementAttrs(placement: DesignerFieldPlacement | null): Record<string, string> {
-  if (!placement) return {}
-  return {
-    'data-grid-row': String(placement.row),
-    'data-grid-col-start': String(placement.colStart),
-    'data-grid-col-span': String(placement.colSpan),
-    'data-grid-columns': String(placement.columns),
-    'data-grid-order': String(placement.order)
-  }
+  return getCanvasPlacementAttrs(placement as CanvasPlacement | null)
 }
 
 function buildDesignerRenderFields(fields: LayoutField[], columns: number): DesignerRenderField[] {
-  const placementSeed = (fields || []).map((field) => ({ span: field?.span ?? 1 }))
-  const placed = placeGridFields(placementSeed, columns)
+  const placementSeed = (fields || []).map((field) => ({
+    span: field?.span ?? 1,
+    minHeight: resolveLayoutFieldMinHeight(field),
+    layoutPlacement: (field as any)?.layoutPlacement || (field as any)?.layout_placement || null
+  }))
+  const placed = placeCanvasFields(placementSeed, columns, {
+    preferSavedPlacement: true
+  })
   return (fields || []).map((field, index) => {
     const placement = (placed[index]?.placement || null) as DesignerFieldPlacement | null
     const semanticSpan = placement?.colSpan || 1
@@ -1211,6 +1245,89 @@ function buildDesignerRenderFields(fields: LayoutField[], columns: number): Desi
       placementAttrs: getDesignerPlacementAttrs(placement)
     }
   })
+}
+
+const toPersistedLayoutPlacement = (placement: CanvasPlacement | null): LayoutField['layoutPlacement'] | undefined => {
+  if (!placement) return undefined
+  return {
+    row: placement.row,
+    colStart: placement.colStart,
+    colSpan: placement.colSpan,
+    rowSpan: placement.rowSpan,
+    columns: placement.columns,
+    totalRows: placement.totalRows,
+    order: placement.order,
+    canvas: {
+      x: placement.canvas.x,
+      y: placement.canvas.y,
+      width: placement.canvas.width,
+      height: placement.canvas.height
+    }
+  }
+}
+
+const applyPlacementSnapshotToFieldList = (
+  fields: LayoutField[],
+  columns: number
+): LayoutField[] => {
+  const placementSeed = (fields || []).map((field) => ({
+    span: field?.span ?? 1,
+    minHeight: resolveLayoutFieldMinHeight(field)
+  }))
+  const placed = placeCanvasFields(placementSeed, columns, {
+    // Persist canonical placement from current order/size state.
+    preferSavedPlacement: false
+  })
+
+  return (fields || []).map((field, index) => {
+    const next = { ...field }
+    setLayoutFieldMinHeight(next, resolveLayoutFieldMinHeight(next))
+    const placement = (placed[index]?.placement || null) as CanvasPlacement | null
+    const persisted = toPersistedLayoutPlacement(placement)
+    if (persisted) {
+      next.layoutPlacement = persisted
+      ;(next as any).layout_placement = {
+        row: persisted.row,
+        col_start: persisted.colStart,
+        col_span: persisted.colSpan,
+        row_span: persisted.rowSpan,
+        columns: persisted.columns,
+        total_rows: persisted.totalRows,
+        order: persisted.order
+      }
+    } else {
+      delete (next as any).layoutPlacement
+      delete (next as any).layout_placement
+    }
+    return next
+  })
+}
+
+const buildLayoutConfigWithPlacementSnapshot = (rawConfig: LayoutConfig): LayoutConfig => {
+  const next = cloneLayoutConfig(rawConfig || { sections: [] }) as LayoutConfig
+  next.sections = (next.sections || []).map((rawSection) => {
+    const section = { ...(rawSection || {}) }
+    const columns = getRenderColumns(section)
+    if (section.type === 'tab') {
+      section.tabs = (section.tabs || []).map((tab) => ({
+        ...(tab || {}),
+        fields: applyPlacementSnapshotToFieldList(tab.fields || [], columns)
+      }))
+      return section
+    }
+
+    if (section.type === 'collapse') {
+      section.items = (section.items || []).map((item) => ({
+        ...(item || {}),
+        fields: applyPlacementSnapshotToFieldList(item.fields || [], columns)
+      }))
+      return section
+    }
+
+    section.fields = applyPlacementSnapshotToFieldList(section.fields || [], columns)
+    return section
+  })
+  return next
 }
 
 // Active tabs and collapses state
@@ -2263,10 +2380,21 @@ const resolveLayoutType = (): LayoutType => {
   return normalizeLayoutType(props.mode) as LayoutType
 }
 
+function resolveDesignerRuntimeMode(): RuntimeMode {
+  if (props.mode === 'readonly') return 'readonly'
+  if (props.mode === 'search') return 'search'
+  return 'edit'
+}
+
 const isReadonlyMode = computed(() => props.mode === 'readonly')
 
 function normalizeAndEnsureLayoutConfig(rawConfig: LayoutConfig): LayoutConfig {
-  return ensurePersistLayoutConfigIds(rawConfig || { sections: [] }) as LayoutConfig
+  return compileLayoutSchema({
+    mode: resolveDesignerRuntimeMode(),
+    fields: availableFields.value as unknown as Record<string, any>[],
+    layoutConfig: rawConfig || { sections: [] },
+    ensureIds: true
+  }).layoutConfig as LayoutConfig
 }
 
 function extractConfigPayload(raw: any): LayoutConfig {
@@ -2393,9 +2521,14 @@ async function saveReadonlyToSharedLayout(readonlyConfig: LayoutConfig, publish 
 const prepareLayoutConfig = (): LayoutConfig | null => {
   try {
     const availableFieldCodes = availableFields.value.map((item) => String(item.code || '').trim()).filter(Boolean)
-    const prepared = preparePersistLayoutConfig(layoutConfig.value || { sections: [] }, {
+    const dropFieldCode = buildLayoutFieldDropper({
+      knownFieldCodes: availableFieldCodes
+    })
+    const snapshotConfig = buildLayoutConfigWithPlacementSnapshot(layoutConfig.value || { sections: [] } as LayoutConfig)
+    const prepared = preparePersistLayoutConfig(snapshotConfig, {
       layoutType: resolveLayoutType(),
-      availableFieldCodes
+      availableFieldCodes,
+      dropFieldCode
     }) as LayoutConfig
     layoutConfig.value = prepared
     return prepared
@@ -2821,6 +2954,7 @@ async function loadAvailableFields() {
     const combined = mergeFieldSources(runtimeFields, metadataFields)
     if (combined.length > 0) {
       availableFields.value = normalizeAvailableFields(combined)
+      layoutConfig.value = normalizeAndEnsureLayoutConfig(layoutConfig.value)
       return
     }
 
@@ -2837,6 +2971,7 @@ async function loadAvailableFields() {
         { code: 'status', name: 'Status', fieldType: 'select', isRequired: false },
         { code: 'description', name: 'Description', fieldType: 'textarea', isRequired: false }
       ]
+      layoutConfig.value = normalizeAndEnsureLayoutConfig(layoutConfig.value)
     }
   }
 }

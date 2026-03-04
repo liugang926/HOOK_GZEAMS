@@ -1,7 +1,8 @@
 ﻿import { normalizeFieldType } from '@/utils/fieldType'
 import type { FieldDefinition } from '@/types'
 import type { RenderSchema } from '@/platform/layout/renderSchema'
-import { normalizeGridSpan24, placeGridFields } from '@/platform/layout/semanticGrid'
+import { normalizeGridSpan24 } from '@/platform/layout/semanticGrid'
+import { placeCanvasFields } from '@/platform/layout/canvasLayout'
 
 export interface ProjectedDetailField {
   prop: string
@@ -48,12 +49,35 @@ export interface ProjectedDetailField {
   readonly?: boolean
   labelClass?: string
   valueClass?: string
+  layoutPlacement?: {
+    row?: number
+    colStart?: number
+    colSpan?: number
+    rowSpan?: number
+    columns?: number
+    totalRows?: number
+    order?: number
+    canvas?: {
+      x?: number
+      y?: number
+      width?: number
+      height?: number
+    }
+  }
   placement?: {
     row: number
     colStart: number
     colSpan: number
+    rowSpan: number
     columns: number
+    totalRows: number
     order: number
+    canvas: {
+      x: number
+      y: number
+      width: number
+      height: number
+    }
   }
 }
 
@@ -153,6 +177,7 @@ export function projectDetailSectionsFromRenderSchema(
                 ? Math.round(Number((detailField as any).minHeight))
                 : undefined
             )
+        ;(detailField as any).layoutPlacement = (renderField as any).layoutPlacement || undefined
         detailFields.push(detailField)
         continue
       }
@@ -166,12 +191,15 @@ export function projectDetailSectionsFromRenderSchema(
         minHeight: Number.isFinite(Number(renderField.minHeight)) && Number(renderField.minHeight) > 0
           ? Math.round(Number(renderField.minHeight))
           : undefined,
+        layoutPlacement: (renderField as any).layoutPlacement || undefined,
         hidden: renderField.visible === false,
         readonly: renderField.readonly === true
-      })
+      } as ProjectedDetailField)
     }
 
-    const placedDetailFields = placeGridFields(detailFields, section.columns)
+    const placedDetailFields = placeCanvasFields(detailFields, section.columns, {
+      preferSavedPlacement: true
+    })
 
     if (section.kind === 'tab' && section.containerId) {
       let container = tabContainers.get(section.containerId)

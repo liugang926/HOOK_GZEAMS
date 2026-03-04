@@ -174,4 +174,40 @@ describe('renderSchema', () => {
 
     expect(schema.sections[0].fields[0].minHeight).toBe(168)
   })
+
+  it('keeps persisted layoutPlacement in render fields', () => {
+    const schema = buildRenderSchema({
+      mode: 'edit',
+      fields: [{ code: 'assetName', fieldType: 'text', name: 'Asset Name' }],
+      layoutConfig: {
+        sections: [
+          {
+            id: 'basic',
+            type: 'section',
+            fields: [
+              {
+                fieldCode: 'assetName',
+                layoutPlacement: {
+                  row: 1,
+                  colStart: 2,
+                  colSpan: 1,
+                  rowSpan: 1,
+                  columns: 2,
+                  totalRows: 1,
+                  order: 1,
+                  canvas: { x: 0.5, y: 0, width: 0.5, height: 1 }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    })
+
+    expect((schema.sections[0].fields[0] as any).layoutPlacement).toMatchObject({
+      row: 1,
+      colStart: 2,
+      colSpan: 1
+    })
+  })
 })

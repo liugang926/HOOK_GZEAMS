@@ -11,5 +11,15 @@
         "categoryStatistics": "Asset Category Statistics",
         "assetStatus": "Asset Status",
         "quantity": "Quantity"
+    },
+    "lifecycle": {
+        "title": "Asset Lifecycle Overview",
+        "pendingPurchases": "Pending Purchases",
+        "activeMaintenance": "Active Maintenance",
+        "overdueTasks": "Overdue Tasks",
+        "pendingDisposals": "Pending Disposals",
+        "viewAll": "View All",
+        "maintenanceStatusChart": "Lifecycle Status Distribution",
+        "recentActivity": "Recent Activity"
     }
 }

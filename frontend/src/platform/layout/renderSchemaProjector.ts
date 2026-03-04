@@ -5,6 +5,7 @@ import { filterSystemFields } from '@/utils/transform'
 import type { RenderSchema, RenderSection } from '@/platform/layout/renderSchema'
 import { snakeToCamel } from '@/utils/case'
 import { normalizeFieldType } from '@/utils/fieldType'
+import { placeCanvasFields, type CanvasPlacement } from '@/platform/layout/canvasLayout'
 
 type AnyRecord = Record<string, any>
 
@@ -40,6 +41,14 @@ const projectRuntimeField = (field: AnyRecord): RuntimeField => {
   const minHeight = Number.isFinite(Number(rawMinHeight)) && Number(rawMinHeight) > 0
     ? Math.round(Number(rawMinHeight))
     : undefined
+  const layoutPlacement = (
+    field.layoutPlacement ||
+    field.layout_placement ||
+    field.placement ||
+    metadata.layoutPlacement ||
+    metadata.layout_placement ||
+    null
+  ) as Partial<CanvasPlacement> | null
 
   return {
     code,
@@ -59,8 +68,26 @@ const projectRuntimeField = (field: AnyRecord): RuntimeField => {
     objectCode: metadata.objectCode || metadata.object_code,
     instanceId: metadata.instanceId || metadata.instance_id,
     componentProps,
+    placement: layoutPlacement ? (layoutPlacement as RuntimeField['placement']) : undefined,
+    layoutPlacement: layoutPlacement || undefined,
     metadata
   }
+}
+
+const projectRuntimeFieldsWithCanvas = (
+  fields: AnyRecord[],
+  columns: number
+): RuntimeField[] => {
+  const runtimeFields = (fields || []).map(projectRuntimeField)
+  const placed = placeCanvasFields(
+    runtimeFields as Array<RuntimeField & { span?: number; minHeight?: number }>,
+    columns,
+    { preferSavedPlacement: true }
+  )
+  return placed.map((field) => ({
+    ...field,
+    placement: field.placement
+  }))
 }
 
 const projectRuntimeSection = (section: RenderSection): RuntimeSection => ({
@@ -68,12 +95,13 @@ const projectRuntimeSection = (section: RenderSection): RuntimeSection => ({
   name: section.id,
   title: section.title,
   type: 'section',
+  position: section.position,
   columns: section.columns,
   visible: true,
   collapsible: section.collapsible === true,
   collapsed: section.collapsed === true,
   showTitle: !!section.title,
-  fields: section.fields.map(projectRuntimeField)
+  fields: projectRuntimeFieldsWithCanvas(section.fields, Number(section.columns || 2) || 2)
 })
 
 const projectTabSection = (group: RenderSection[]): RuntimeSection => {
@@ -86,6 +114,7 @@ const projectTabSection = (group: RenderSection[]): RuntimeSection => {
     name: sectionId,
     title: sectionTitle,
     type: 'tab',
+    position: seed.position,
     columns: Number(seed.columns || 2) || 2,
     visible: true,
     collapsible: seed.collapsible === true,
@@ -97,7 +126,7 @@ const projectTabSection = (group: RenderSection[]): RuntimeSection => {
         id: tabId,
         name: tabId,
         title: String(item.itemTitle || item.title || tabId),
-        fields: item.fields.map(projectRuntimeField)
+        fields: projectRuntimeFieldsWithCanvas(item.fields, Number(seed.columns || 2) || 2)
       }
     })
   }
@@ -113,6 +142,7 @@ const projectCollapseSection = (group: RenderSection[]): RuntimeSection => {
     name: sectionId,
     title: sectionTitle,
     type: 'collapse',
+    position: seed.position,
     columns: Number(seed.columns || 2) || 2,
     visible: true,
     collapsible: seed.collapsible === true,
@@ -125,7 +155,7 @@ const projectCollapseSection = (group: RenderSection[]): RuntimeSection => {
         name: itemId,
         title: String(item.itemTitle || item.title || itemId),
         collapsed: item.collapsed === true,
-        fields: item.fields.map(projectRuntimeField)
+        fields: projectRuntimeFieldsWithCanvas(item.fields, Number(seed.columns || 2) || 2)
       }
     })
   }

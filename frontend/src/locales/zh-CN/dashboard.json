@@ -11,5 +11,15 @@
         "categoryStatistics": "资产分类统计",
         "assetStatus": "资产状态",
         "quantity": "数量"
+    },
+    "lifecycle": {
+        "title": "资产生命周期概览",
+        "pendingPurchases": "待审批采购申请",
+        "activeMaintenance": "进行中维修工单",
+        "overdueTasks": "逾期维保任务",
+        "pendingDisposals": "待审批报废申请",
+        "viewAll": "查看全部",
+        "maintenanceStatusChart": "生命周期状态分布",
+        "recentActivity": "最近动态"
     }
 }

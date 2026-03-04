@@ -1,5 +1,13 @@
 import request from '@/utils/request'
 import type { PaginatedResponse } from '@/types/api'
+import type {
+  IntegrationConfig,
+  IntegrationConfigListParams,
+  IntegrationFormData,
+  IntegrationLog,
+  IntegrationLogListParams,
+  IntegrationStats,
+} from '@/types/integration'
 import {
   normalizeQueryParams,
   toActionResult,
@@ -14,9 +22,17 @@ import {
  * Handles third-party integrations, sync tasks, logs, and data mappings
  */
 
+type IntegrationLooseRecord = Record<string, unknown>
+type IntegrationLooseParams = Record<string, unknown>
+type SyncTaskDetail = IntegrationLooseRecord & {
+  status?: string
+  statusDisplay?: string
+  status_display?: string
+}
+
 // Integration Configs
 export const integrationConfigApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
+  list(params?: IntegrationConfigListParams): Promise<PaginatedResponse<IntegrationConfig>> {
     return request
       .get('/integration/configs/', {
         params: normalizeQueryParams(params, { preserveKeys: ['page', 'page_size'] }),
@@ -25,35 +41,43 @@ export const integrationConfigApi = {
         const page = toPaginated(res)
         return {
           ...page,
-          results: toCamelDeep(page.results),
+          results: toCamelDeep(page.results) as IntegrationConfig[],
         }
       })
   },
 
-  detail(id: string): Promise<any> {
-    return request.get(`/integration/configs/${id}/`).then((res) => toCamelDeep(toData(res)))
+  stats(params?: Omit<IntegrationConfigListParams, 'page' | 'page_size'>): Promise<IntegrationStats> {
+    return request
+      .get('/integration/configs/stats/', {
+        params: normalizeQueryParams(params),
+      })
+      .then((res) => toCamelDeep(toData(res)) as IntegrationStats)
   },
 
-  create(data: any): Promise<ApiActionResult<any>> {
+  detail(id: string): Promise<IntegrationConfig> {
+    return request.get(`/integration/configs/${id}/`).then((res) => toCamelDeep(toData(res)) as IntegrationConfig)
+  },
+
+  create(data: IntegrationFormData): Promise<ApiActionResult<IntegrationConfig>> {
     return request
       .post('/integration/configs/', data, { unwrap: 'none' })
       .then((res) => {
         const result = toActionResult(res)
         return {
           ...result,
-          data: toCamelDeep(result.data),
+          data: toCamelDeep(result.data) as IntegrationConfig | undefined,
         }
       })
   },
 
-  update(id: string, data: any): Promise<ApiActionResult<any>> {
+  update(id: string, data: IntegrationFormData): Promise<ApiActionResult<IntegrationConfig>> {
     return request
       .put(`/integration/configs/${id}/`, data, { unwrap: 'none' })
       .then((res) => {
         const result = toActionResult(res)
         return {
           ...result,
-          data: toCamelDeep(result.data),
+          data: toCamelDeep(result.data) as IntegrationConfig | undefined,
         }
       })
   },
@@ -62,26 +86,26 @@ export const integrationConfigApi = {
     return request.delete(`/integration/configs/${id}/`, { unwrap: 'none' }).then((res) => toActionResult(res))
   },
 
-  test(id: string): Promise<ApiActionResult<any>> {
+  test(id: string): Promise<ApiActionResult<Record<string, unknown>>> {
     return request
       .post(`/integration/configs/${id}/test/`, undefined, { unwrap: 'none' })
       .then((res) => {
         const result = toActionResult(res)
         return {
           ...result,
-          data: toCamelDeep(result.data),
+          data: toCamelDeep(result.data) as Record<string, unknown> | undefined,
         }
       })
   },
 
-  sync(id: string): Promise<ApiActionResult<any>> {
+  sync(id: string): Promise<ApiActionResult<Record<string, unknown>>> {
     return request
       .post(`/integration/configs/${id}/sync/`, undefined, { unwrap: 'none' })
       .then((res) => {
         const result = toActionResult(res)
         return {
           ...result,
-          data: toCamelDeep(result.data),
+          data: toCamelDeep(result.data) as Record<string, unknown> | undefined,
         }
       })
   }
@@ -89,7 +113,7 @@ export const integrationConfigApi = {
 
 // Sync Tasks
 export const syncTaskApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
+  list(params?: IntegrationLooseParams): Promise<PaginatedResponse<IntegrationLooseRecord>> {
     return request
       .get('/integration/sync-tasks/', {
         params: normalizeQueryParams(params, { preserveKeys: ['page', 'page_size'] }),
@@ -98,35 +122,37 @@ export const syncTaskApi = {
         const page = toPaginated(res)
         return {
           ...page,
-          results: toCamelDeep(page.results),
+          results: toCamelDeep(page.results) as IntegrationLooseRecord[],
         }
       })
   },
 
-  detail(id: string): Promise<any> {
-    return request.get(`/integration/sync-tasks/${id}/`).then((res) => toCamelDeep(toData(res)))
+  detail(id: string): Promise<SyncTaskDetail> {
+    return request
+      .get(`/integration/sync-tasks/${id}/`)
+      .then((res) => toCamelDeep(toData(res)) as SyncTaskDetail)
   },
 
-  execute(id: string): Promise<ApiActionResult<any>> {
+  execute(id: string): Promise<ApiActionResult<IntegrationLooseRecord>> {
     return request
       .post(`/integration/sync-tasks/${id}/execute/`, undefined, { unwrap: 'none' })
       .then((res) => {
         const result = toActionResult(res)
         return {
           ...result,
-          data: toCamelDeep(result.data),
+          data: toCamelDeep(result.data) as IntegrationLooseRecord | undefined,
         }
       })
   },
 
-  cancel(id: string): Promise<ApiActionResult<any>> {
+  cancel(id: string): Promise<ApiActionResult<IntegrationLooseRecord>> {
     return request
       .post(`/integration/sync-tasks/${id}/cancel/`, undefined, { unwrap: 'none' })
       .then((res) => {
         const result = toActionResult(res)
         return {
           ...result,
-          data: toCamelDeep(result.data),
+          data: toCamelDeep(result.data) as IntegrationLooseRecord | undefined,
         }
       })
   }
@@ -134,7 +160,7 @@ export const syncTaskApi = {
 
 // Integration Logs
 export const integrationLogApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
+  list(params?: IntegrationLogListParams): Promise<PaginatedResponse<IntegrationLog>> {
     return request
       .get('/integration/logs/', {
         params: normalizeQueryParams(params, { preserveKeys: ['page', 'page_size'] }),
@@ -143,23 +169,23 @@ export const integrationLogApi = {
         const page = toPaginated(res)
         return {
           ...page,
-          results: toCamelDeep(page.results),
+          results: toCamelDeep(page.results) as IntegrationLog[],
         }
       })
   },
 
-  detail(id: string): Promise<any> {
-    return request.get(`/integration/logs/${id}/`).then((res) => toCamelDeep(toData(res)))
+  detail(id: string): Promise<IntegrationLog> {
+    return request.get(`/integration/logs/${id}/`).then((res) => toCamelDeep(toData(res)) as IntegrationLog)
   },
 
-  retry(id: string): Promise<ApiActionResult<any>> {
+  retry(id: string): Promise<ApiActionResult<Record<string, unknown>>> {
     return request
       .post(`/integration/logs/${id}/retry/`, undefined, { unwrap: 'none' })
       .then((res) => {
         const result = toActionResult(res)
         return {
           ...result,
-          data: toCamelDeep(result.data),
+          data: toCamelDeep(result.data) as Record<string, unknown> | undefined,
         }
       })
   }
@@ -167,7 +193,7 @@ export const integrationLogApi = {
 
 // Data Mapping Templates
 export const dataMappingApi = {
-  list(params?: any): Promise<PaginatedResponse<any>> {
+  list(params?: IntegrationLooseParams): Promise<PaginatedResponse<IntegrationLooseRecord>> {
     return request
       .get('/integration/mappings/', {
         params: normalizeQueryParams(params, { preserveKeys: ['page', 'page_size'] }),
@@ -176,35 +202,35 @@ export const dataMappingApi = {
         const page = toPaginated(res)
         return {
           ...page,
-          results: toCamelDeep(page.results),
+          results: toCamelDeep(page.results) as IntegrationLooseRecord[],
         }
       })
   },
 
-  detail(id: string): Promise<any> {
-    return request.get(`/integration/mappings/${id}/`).then((res) => toCamelDeep(toData(res)))
+  detail(id: string): Promise<IntegrationLooseRecord> {
+    return request.get(`/integration/mappings/${id}/`).then((res) => toCamelDeep(toData(res)) as IntegrationLooseRecord)
   },
 
-  create(data: any): Promise<ApiActionResult<any>> {
+  create(data: IntegrationLooseRecord): Promise<ApiActionResult<IntegrationLooseRecord>> {
     return request
       .post('/integration/mappings/', data, { unwrap: 'none' })
       .then((res) => {
         const result = toActionResult(res)
         return {
           ...result,
-          data: toCamelDeep(result.data),
+          data: toCamelDeep(result.data) as IntegrationLooseRecord | undefined,
         }
       })
   },
 
-  update(id: string, data: any): Promise<ApiActionResult<any>> {
+  update(id: string, data: IntegrationLooseRecord): Promise<ApiActionResult<IntegrationLooseRecord>> {
     return request
       .put(`/integration/mappings/${id}/`, data, { unwrap: 'none' })
       .then((res) => {
         const result = toActionResult(res)
         return {
           ...result,
-          data: toCamelDeep(result.data),
+          data: toCamelDeep(result.data) as IntegrationLooseRecord | undefined,
         }
       })
   },
@@ -213,14 +239,14 @@ export const dataMappingApi = {
     return request.delete(`/integration/mappings/${id}/`, { unwrap: 'none' }).then((res) => toActionResult(res))
   },
 
-  test(id: string, data: any): Promise<ApiActionResult<any>> {
+  test(id: string, data: IntegrationLooseRecord): Promise<ApiActionResult<IntegrationLooseRecord>> {
     return request
       .post(`/integration/mappings/${id}/test/`, data, { unwrap: 'none' })
       .then((res) => {
         const result = toActionResult(res)
         return {
           ...result,
-          data: toCamelDeep(result.data),
+          data: toCamelDeep(result.data) as IntegrationLooseRecord | undefined,
         }
       })
   }
@@ -228,6 +254,7 @@ export const dataMappingApi = {
 
 // Legacy function exports for backward compatibility
 export const getIntegrationConfigList = integrationConfigApi.list
+export const getIntegrationConfigStats = integrationConfigApi.stats
 export const getIntegrationConfigDetail = integrationConfigApi.detail
 export const createIntegrationConfig = integrationConfigApi.create
 export const updateIntegrationConfig = integrationConfigApi.update

@@ -2,6 +2,7 @@
 import { normalizeSpan } from '@/adapters/layoutNormalizer'
 import { sortFieldsByRuntimeOrder } from '@/platform/layout/runtimeFieldPolicy'
 import type { RuntimeMode } from '@/contracts/runtimeContract'
+import type { CanvasPlacement } from '@/platform/layout/canvasLayout'
 
 type AnyRecord = Record<string, any>
 
@@ -11,6 +12,7 @@ export interface RenderField {
   fieldType: string
   span: number
   minHeight?: number
+  layoutPlacement?: Partial<CanvasPlacement>
   required: boolean
   readonly: boolean
   visible: boolean
@@ -129,6 +131,13 @@ const buildRenderField = (
     meta?.minHeight ??
     meta?.min_height
   const minHeight = Number.isFinite(Number(rawMinHeight)) && Number(rawMinHeight) > 0 ? Math.round(Number(rawMinHeight)) : undefined
+  const layoutPlacement = (
+    layoutField?.layoutPlacement ||
+    layoutField?.layout_placement ||
+    layoutField?.placement ||
+    layoutField?.canvasPlacement ||
+    null
+  ) as Partial<CanvasPlacement> | null
 
   return {
     code,
@@ -136,6 +145,7 @@ const buildRenderField = (
     fieldType: normalizeFieldType(rawType),
     span,
     minHeight,
+    layoutPlacement: layoutPlacement || undefined,
     required: Boolean(layoutField?.required ?? meta?.required ?? meta?.isRequired ?? meta?.is_required ?? false),
     readonly: normalizeReadonly(layoutField, meta, mode),
     visible: layoutField?.visible !== false && meta?.isHidden !== true && meta?.is_hidden !== true,

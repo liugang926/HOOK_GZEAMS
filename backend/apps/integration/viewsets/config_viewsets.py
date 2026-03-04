@@ -5,6 +5,7 @@ Provides ViewSets for IntegrationConfig model following BaseModelViewSet pattern
 """
 from rest_framework import status
 from rest_framework.decorators import action
+from django.db.models import Count, Q
 
 from apps.common.viewsets.base import BaseModelViewSetWithBatch
 from apps.common.responses.base import BaseResponse
@@ -30,8 +31,15 @@ class IntegrationConfigViewSet(BaseModelViewSetWithBatch):
     - health_check: Perform health check
     """
 
-    queryset = IntegrationConfig.objects.filter(is_deleted=False)
+    queryset = IntegrationConfig.objects.none()
     filterset_class = IntegrationConfigFilter
+
+    def get_queryset(self):
+        """
+        Resolve queryset at request time so TenantManager can apply
+        current organization filtering from thread-local context.
+        """
+        return IntegrationConfig.objects.filter(is_deleted=False)
 
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
@@ -205,3 +213,19 @@ class IntegrationConfigViewSet(BaseModelViewSetWithBatch):
             data=IntegrationSyncTaskDetailSerializer(task).data,
             message='Sync task created successfully',
         )
+
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """
+        Return aggregated stats for integration configs (with current filters).
+
+        GET /api/integration/configs/stats/?system_type=sap&is_enabled=true
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        summary = queryset.aggregate(
+            total=Count('id'),
+            healthy=Count('id', filter=Q(health_status='healthy')),
+            degraded=Count('id', filter=Q(health_status='degraded')),
+            unhealthy=Count('id', filter=Q(health_status='unhealthy')),
+        )
+        return BaseResponse.success(data=summary)

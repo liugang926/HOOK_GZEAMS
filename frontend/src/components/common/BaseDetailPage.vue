@@ -36,6 +36,7 @@
 
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ElMessageBox } from 'element-plus'
 import { ArrowLeft, ArrowDown } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/dateFormat'
 import { camelToSnake, snakeToCamel } from '@/utils/case'
@@ -45,6 +46,8 @@ import FieldDisplay from './FieldDisplay.vue'
 import ObjectAvatar from './ObjectAvatar.vue'
 import FieldRenderer from '@/components/engine/FieldRenderer.vue'
 import type { FieldDefinition } from '@/types'
+import { normalizeColumnSpan } from '@/platform/layout/semanticGrid'
+import { getCanvasPlacementAttrs, toCanvasGridStyle, type CanvasPlacement } from '@/platform/layout/canvasLayout'
 
 // ============================================================================
 // Types
@@ -118,8 +121,16 @@ export interface DetailField {
     row: number
     colStart: number
     colSpan: number
+    rowSpan: number
     columns: number
+    totalRows: number
     order: number
+    canvas?: {
+      x: number
+      y: number
+      width: number
+      height: number
+    }
   }
 }
 
@@ -472,30 +483,49 @@ const getFieldItemStyle = (field: DetailField): Record<string, string> => {
   return { minHeight: `${Math.round(minHeight)}px` }
 }
 
-const getFieldPlacementAttrs = (field: DetailField): Record<string, string> => {
-  const placement = field?.placement as DetailField['placement'] | undefined
-  if (!placement) return {}
-  const row = Number(placement.row)
-  const colStart = Number(placement.colStart)
-  const colSpan = Number(placement.colSpan)
-  const columns = Number(placement.columns)
-  const order = Number(placement.order)
-  if (
-    !Number.isFinite(row) ||
-    !Number.isFinite(colStart) ||
-    !Number.isFinite(colSpan) ||
-    !Number.isFinite(columns) ||
-    !Number.isFinite(order)
-  ) {
-    return {}
+const getDetailSectionColumns = (section: DetailSection): number => {
+  if (section.position === 'sidebar') return 1
+
+  const candidates: DetailField[] = []
+  candidates.push(...(section.fields || []))
+  for (const tab of section.tabs || []) candidates.push(...(tab.fields || []))
+
+  for (const field of candidates) {
+    const placement = field?.placement as DetailField['placement'] | undefined
+    const columns = Number(placement?.columns)
+    if (Number.isFinite(columns) && columns > 0) {
+      return Math.round(columns)
+    }
   }
+  return 2
+}
+
+const getSectionCanvasStyle = (section: DetailSection): Record<string, string> => {
   return {
-    'data-grid-row': String(Math.round(row)),
-    'data-grid-col-start': String(Math.round(colStart)),
-    'data-grid-col-span': String(Math.round(colSpan)),
-    'data-grid-columns': String(Math.round(columns)),
-    'data-grid-order': String(Math.round(order))
+    '--detail-section-columns': String(getDetailSectionColumns(section))
   }
+}
+
+const getFieldColStyle = (
+  field: DetailField,
+  section: DetailSection
+): Record<string, string> => {
+  const placement = field?.placement as CanvasPlacement | undefined
+  if (placement) {
+    return toCanvasGridStyle(placement)
+  }
+
+  const columns = getDetailSectionColumns(section)
+  const colSpan = section.position === 'sidebar'
+    ? 1
+    : normalizeColumnSpan(field?.span ?? props.fieldSpan, columns)
+  return {
+    gridColumn: `span ${colSpan}`
+  }
+}
+
+const getFieldPlacementAttrs = (field: DetailField): Record<string, string> => {
+  return getCanvasPlacementAttrs(field?.placement as CanvasPlacement | undefined)
 }
 
 /**
@@ -527,9 +557,19 @@ const isSectionCollapsed = (section: DetailSection) => {
  * Handle delete action
  */
 const handleDelete = async () => {
-  const confirmed = confirm(props.deleteConfirmMessage || t('common.messages.confirmDelete', { count: 1 }))
-  if (confirmed) {
+  try {
+    await ElMessageBox.confirm(
+      props.deleteConfirmMessage || t('common.messages.confirmDelete', { count: 1 }),
+      t('common.actions.confirm'),
+      {
+        type: 'warning',
+        confirmButtonText: t('common.actions.confirm'),
+        cancelButtonText: t('common.actions.cancel')
+      }
+    )
     emit('delete')
+  } catch {
+    // user cancelled
   }
 }
 
@@ -777,12 +817,15 @@ defineExpose({
                           :label="tab.title"
                           :name="tab.id"
                         >
-                          <el-row :gutter="24">
-                            <el-col
+                          <div
+                            class="detail-canvas-grid"
+                            :style="getSectionCanvasStyle(section)"
+                          >
+                            <div
                               v-for="field in tab.fields.filter(f => !f.hidden)"
                               :key="field.prop"
-                              :span="field.span || fieldSpan"
                               class="field-col"
+                              :style="getFieldColStyle(field, section)"
                             >
                               <!-- Slot field -->
                               <div
@@ -828,20 +871,23 @@ defineExpose({
                                   </template>
                                 </div>
                               </div>
-                            </el-col>
-                          </el-row>
+                            </div>
+                          </div>
                         </el-tab-pane>
                       </el-tabs>
                     </template>
 
                     <!-- Standard Flow Layout -->
                     <template v-else>
-                      <el-row :gutter="24">
-                        <el-col
+                      <div
+                        class="detail-canvas-grid"
+                        :style="getSectionCanvasStyle(section)"
+                      >
+                        <div
                           v-for="field in section.fields.filter(f => !f.hidden)"
                           :key="field.prop"
-                          :span="field.span || fieldSpan"
                           class="field-col"
+                          :style="getFieldColStyle(field, section)"
                         >
                           <!-- Slot field -->
                           <div
@@ -887,8 +933,8 @@ defineExpose({
                               </template>
                             </div>
                           </div>
-                        </el-col>
-                      </el-row>
+                        </div>
+                      </div>
                     </template>
                   </template>
                 </div>
@@ -945,12 +991,15 @@ defineExpose({
 
                   <template v-else>
                     <!-- In the sidebar, fields typically stack linearly with full width -->
-                    <el-row :gutter="0">
-                      <el-col
+                    <div
+                      class="detail-canvas-grid sidebar-canvas-grid"
+                      :style="getSectionCanvasStyle(section)"
+                    >
+                      <div
                         v-for="field in section.fields.filter(f => !f.hidden)"
                         :key="field.prop"
-                        :span="24"
                         class="field-col sidebar-field-col"
+                        :style="getFieldColStyle(field, section)"
                       >
                         <!-- Slot field -->
                         <div
@@ -996,8 +1045,8 @@ defineExpose({
                             </template>
                           </div>
                         </div>
-                      </el-col>
-                    </el-row>
+                      </div>
+                    </div>
                   </template>
                 </div>
               </div>
@@ -1241,11 +1290,7 @@ defineExpose({
             padding: 16px;
 
             .sidebar-field-col {
-              margin-bottom: 12px;
-
-              &:last-child {
-                margin-bottom: 0;
-              }
+              min-width: 0;
             }
 
             .sidebar-field-item {
@@ -1338,8 +1383,21 @@ defineExpose({
     .section-content {
       padding: 20px;
 
+      .detail-canvas-grid {
+        display: grid;
+        grid-template-columns: repeat(var(--detail-section-columns, 2), minmax(0, 1fr));
+        gap: 16px 24px;
+        align-items: start;
+        grid-auto-flow: row dense;
+      }
+
+      .detail-canvas-grid.sidebar-canvas-grid {
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 12px 0;
+      }
+
       .field-col {
-        margin-bottom: 16px;
+        min-width: 0;
       }
 
       .field-item {
@@ -1512,16 +1570,17 @@ defineExpose({
         .section-content {
           padding: 12px;
 
-          .field-col {
-            margin-bottom: 12px;
+          .detail-canvas-grid {
+            grid-template-columns: 1fr !important;
+            gap: 12px;
+          }
 
-            .field-item {
-              grid-template-columns: 1fr;
-              row-gap: 4px;
+          .field-item {
+            grid-template-columns: 1fr;
+            row-gap: 4px;
 
-              .field-label {
-                margin-bottom: 0;
-              }
+            .field-label {
+              margin-bottom: 0;
             }
           }
         }

@@ -64,6 +64,36 @@ export interface RuntimeField {
   componentProps?: Record<string, unknown>
   objectCode?: string
   instanceId?: string | null
+  placement?: {
+    row: number
+    colStart: number
+    colSpan: number
+    rowSpan: number
+    columns: number
+    totalRows: number
+    order: number
+    canvas: {
+      x: number
+      y: number
+      width: number
+      height: number
+    }
+  }
+  layoutPlacement?: {
+    row?: number
+    colStart?: number
+    colSpan?: number
+    rowSpan?: number
+    columns?: number
+    totalRows?: number
+    order?: number
+    canvas?: {
+      x?: number
+      y?: number
+      width?: number
+      height?: number
+    }
+  }
   metadata?: Record<string, unknown>
 }
 

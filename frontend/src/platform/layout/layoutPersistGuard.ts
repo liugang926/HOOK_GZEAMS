@@ -13,6 +13,52 @@ const generateLayoutElementId = (prefix: string): string => {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 }
 
+const normalizePlacementSnapshot = (rawPlacement: any) => {
+  if (!rawPlacement || typeof rawPlacement !== 'object') return undefined
+
+  const toInt = (value: unknown): number | undefined => {
+    const num = Number(value)
+    if (!Number.isFinite(num) || num <= 0) return undefined
+    return Math.round(num)
+  }
+
+  const toRatio = (value: unknown): number | undefined => {
+    const num = Number(value)
+    if (!Number.isFinite(num) || num < 0) return undefined
+    return Math.round(num * 1000000) / 1000000
+  }
+
+  const normalized = {
+    row: toInt(rawPlacement.row),
+    colStart: toInt(rawPlacement.colStart ?? rawPlacement.col_start),
+    colSpan: toInt(rawPlacement.colSpan ?? rawPlacement.col_span),
+    rowSpan: toInt(rawPlacement.rowSpan ?? rawPlacement.row_span),
+    columns: toInt(rawPlacement.columns),
+    totalRows: toInt(rawPlacement.totalRows ?? rawPlacement.total_rows),
+    order: toInt(rawPlacement.order),
+    canvas: {
+      x: toRatio(rawPlacement.canvas?.x),
+      y: toRatio(rawPlacement.canvas?.y),
+      width: toRatio(rawPlacement.canvas?.width),
+      height: toRatio(rawPlacement.canvas?.height)
+    }
+  }
+
+  if (!normalized.row || !normalized.colStart || !normalized.colSpan || !normalized.columns) {
+    return undefined
+  }
+
+  if (!normalized.rowSpan) normalized.rowSpan = 1
+  if (!normalized.totalRows) normalized.totalRows = normalized.row
+  if (!normalized.order) normalized.order = 1
+  if (!normalized.canvas.width) normalized.canvas.width = Math.round((normalized.colSpan / normalized.columns) * 1000000) / 1000000
+  if (!normalized.canvas.height) normalized.canvas.height = 1
+  if (normalized.canvas.x === undefined) normalized.canvas.x = Math.round(((normalized.colStart - 1) / normalized.columns) * 1000000) / 1000000
+  if (normalized.canvas.y === undefined) normalized.canvas.y = Math.round(((normalized.row - 1) / normalized.totalRows) * 1000000) / 1000000
+
+  return normalized
+}
+
 const normalizeFieldForPersist = (rawField: any, dropFieldCode?: (code: string) => boolean) => {
   const field = { ...(rawField || {}) }
   const fieldCode = String(
@@ -47,6 +93,27 @@ const normalizeFieldForPersist = (rawField: any, dropFieldCode?: (code: string) 
     minHeight: normalizedMinHeight,
     componentProps,
     component_props: componentProps
+  }
+  const normalizedPlacement = normalizePlacementSnapshot(
+    field.layoutPlacement ||
+    field.layout_placement ||
+    field.placement ||
+    field.canvasPlacement
+  )
+  if (normalizedPlacement) {
+    ;(normalizedField as any).layoutPlacement = normalizedPlacement
+    ;(normalizedField as any).layout_placement = {
+      row: normalizedPlacement.row,
+      col_start: normalizedPlacement.colStart,
+      col_span: normalizedPlacement.colSpan,
+      row_span: normalizedPlacement.rowSpan,
+      columns: normalizedPlacement.columns,
+      total_rows: normalizedPlacement.totalRows,
+      order: normalizedPlacement.order
+    }
+  } else {
+    delete (normalizedField as any).layoutPlacement
+    delete (normalizedField as any).layout_placement
   }
   delete (normalizedField as any).min_height
   return normalizedField
