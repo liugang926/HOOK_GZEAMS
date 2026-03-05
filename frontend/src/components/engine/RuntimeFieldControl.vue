@@ -5,6 +5,7 @@
     :form-data="formData"
     :disabled="disabled"
     @update:model-value="(val: any) => emit('update:modelValue', val)"
+    @request-save="emit('request-save')"
   />
 </template>
 
@@ -23,5 +24,6 @@ defineProps<Props>()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: any): void
+  (e: 'request-save'): void
 }>()
 </script>

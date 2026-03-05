@@ -1,0 +1,39 @@
+{
+  "form": {
+    "titleCreate": "新建耗材",
+    "titleEdit": "编辑耗材",
+    "fields": {
+      "name": "名称",
+      "code": "编码",
+      "category": "类别",
+      "spec": "规格",
+      "unit": "单位",
+      "warningQuantity": "预警阈值",
+      "description": "描述"
+    },
+    "category": {
+      "office": "办公用品",
+      "it": "IT耗材"
+    },
+    "messages": {
+      "saveSuccess": "保存成功",
+      "saveFailed": "保存失败"
+    }
+  },
+  "stockDialog": {
+    "titleIn": "耗材入库",
+    "titleOut": "领用出库",
+    "fields": {
+      "consumable": "耗材",
+      "quantity": "数量",
+      "remark": "备注"
+    },
+    "placeholders": {
+      "searchConsumable": "搜索耗材"
+    },
+    "messages": {
+      "operationSuccess": "操作成功",
+      "operationFailed": "操作失败"
+    }
+  }
+}

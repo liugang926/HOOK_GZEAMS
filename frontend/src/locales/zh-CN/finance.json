@@ -35,6 +35,21 @@
             "detail": "详情",
             "post": "入账",
             "calculateDepreciation": "计提折旧"
+        },
+        "depreciationDialog": {
+            "title": "计提折旧",
+            "period": "计提期间",
+            "periodPlaceholder": "选择月份",
+            "calculating": "正在计算中...",
+            "start": "开始计算",
+            "messages": {
+                "startFailed": "启动计算失败",
+                "completed": "计算完成",
+                "failed": "计算失败"
+            },
+            "validation": {
+                "periodRequired": "请选择期间"
+            }
         }
     }
 }

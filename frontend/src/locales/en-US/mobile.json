@@ -36,5 +36,40 @@
     "assetNotFound": "Asset not found",
     "operationSuccess": "Operation successful",
     "operationFailed": "Operation failed"
+  },
+  "unifiedScan": {
+    "title": "Scan",
+    "recentScans": "Recent Scans",
+    "result": {
+      "success": "Success",
+      "error": "Error"
+    },
+    "manualInputButton": "Enter Asset Code Manually",
+    "manualInputTitle": "Manual Input",
+    "manualInputPlaceholder": "Enter asset code or QR content",
+    "preview": {
+      "assetCode": "Asset Code",
+      "assetCategory": "Category",
+      "assetStatus": "Status",
+      "assetLocation": "Location",
+      "assetCustodian": "Custodian"
+    },
+    "moreActions": {
+      "history": "View Scan History",
+      "camera": "Switch Camera",
+      "torch": "Toggle Torch"
+    },
+    "messages": {
+      "clearHistoryTitle": "Clear History",
+      "clearHistoryConfirm": "Are you sure you want to clear scan history?",
+      "historyCleared": "History cleared",
+      "historyOpened": "Viewing scan history"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{count} min ago",
+      "hoursAgo": "{count} hr ago",
+      "daysAgo": "{count} day(s) ago"
+    }
   }
 }

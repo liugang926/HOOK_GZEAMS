@@ -78,6 +78,7 @@ urlpatterns = [
     path('objects/<str:code>/', ObjectRouterViewSet.as_view({'get': 'list', 'post': 'create'}), name='object-router-list'),
     path('objects/<str:code>/metadata/', ObjectRouterViewSet.as_view({'get': 'metadata'}), name='object-router-metadata'),
     path('objects/<str:code>/fields/', ObjectRouterViewSet.as_view({'get': 'fields'}), name='object-router-fields'),
+    path('objects/<str:code>/relations/', ObjectRouterViewSet.as_view({'get': 'relations'}), name='object-router-relations'),
     path('objects/<str:code>/runtime/', ObjectRouterViewSet.as_view({'get': 'runtime'}), name='object-router-runtime'),
     path('objects/<str:code>/schema/', ObjectRouterViewSet.as_view({'get': 'schema'}), name='object-router-schema'),
     path('objects/<str:code>/deleted/', ObjectRouterViewSet.as_view({'get': 'deleted'}), name='object-router-deleted'),
@@ -96,6 +97,11 @@ urlpatterns = [
         'delete': 'destroy'
     }), name='object-router-detail'),
     path('objects/<str:code>/<uuid:id>/restore/', ObjectRouterViewSet.as_view({'post': 'restore'}), name='object-router-restore'),
+    path(
+        'objects/<str:code>/<uuid:id>/related/<str:relation_code>/',
+        ObjectRouterViewSet.as_view({'get': 'related'}),
+        name='object-router-related',
+    ),
     # Generic custom-action pass-through (kept at the end to avoid shadowing standard routes)
     path('objects/<str:code>/<uuid:id>/<path:action_path>/', ObjectRouterViewSet.as_view({
         'get': 'detail_action',

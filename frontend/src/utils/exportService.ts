@@ -16,6 +16,7 @@
  */
 
 import * as XLSX from 'xlsx'
+import i18n from '@/locales'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -56,7 +57,11 @@ function resolveProp(row: any, prop: string): any {
 function formatCell(value: any, row: any, col: ExportColumn): string | number {
     if (col.format) return col.format(value, row)
     if (value === null || value === undefined) return ''
-    if (typeof value === 'boolean') return value ? '是' : '否'
+    if (typeof value === 'boolean') {
+        return value
+            ? (i18n.global.t('common.units.yes') as string)
+            : (i18n.global.t('common.units.no') as string)
+    }
     if (Array.isArray(value)) return value.join(', ')
     if (typeof value === 'object') {
         // Try common display fields
@@ -165,7 +170,7 @@ export async function exportAllPages(
     options: ExportOptions = {}
 ): Promise<void> {
     const PAGE_SIZE = 200
-    let page = 1
+    const page = 1
     let allData: any[] = []
 
     // First page to get total count

@@ -29,34 +29,37 @@
     "submit": "提交",
     "submitApprove": "提交审批",
     "test": "测试",
-    "view": "查看"
+    "view": "查看",
+    "selectAll": "全选",
+    "columns": "列"
   },
-  "addChange": "addChange",
-  "addRecord": "addRecord",
+  "addChange": "Add Change",
+  "addRecord": "Add Record",
   "all": "全部",
-  "asset": "asset",
-  "basicInfo": "basicInfo",
-  "change": "change",
-  "changedBy": "changedBy",
+  "asset": "Asset",
+  "basicInfo": "Basic Info",
+  "change": "Change",
+  "changedBy": "Changed By",
   "columns": {
-    "actions": "actions",
-    "createdAt": "createdAt",
-    "name": "name",
-    "status": "status"
+    "actions": "Actions",
+    "createdAt": "Created At",
+    "name": "Name",
+    "status": "Status",
+    "code": "编码"
   },
   "cost": "费用",
   "date": "日期",
   "description": "描述",
-  "detailInfo": "detailInfo",
+  "detailInfo": "Detail Info",
   "detailPage": {
-    "attachments": "attachments",
-    "deleteFailed": "deleteFailed",
-    "deleteSuccess": "deleteSuccess",
-    "images": "images",
-    "loadFailed": "loadFailed",
-    "recordIdNotExists": "recordIdNotExists",
-    "statusInfo": "statusInfo",
-    "title": "title",
+    "attachments": "Attachments",
+    "deleteFailed": "Delete Failed",
+    "deleteSuccess": "Delete Success",
+    "images": "Images",
+    "loadFailed": "Load Failed",
+    "recordIdNotExists": "Record Id Not Exists",
+    "statusInfo": "Status Info",
+    "title": "Title",
     "saveSuccess": "保存成功",
     "saveFailed": "保存失败"
   },
@@ -66,28 +69,53 @@
     "confirmTitle": "确认"
   },
   "filters": {
-    "all": "all"
+    "all": "All"
   },
   "item": "项目",
   "json": "JSON",
   "labels": {
-    "assetForSearch": "assetForSearch",
+    "assetForSearch": "Asset For Search",
     "auditInfo": "系统信息",
-    "contact": "contact",
+    "contact": "Contact",
     "createdAt": "创建时间",
     "createdBy": "创建人",
-    "description": "description",
-    "operation": "operation",
+    "description": "Description",
+    "operation": "Operation",
     "relatedObjects": "相关对象",
-    "remark": "remark",
-    "status": "status",
+    "remark": "Remark",
+    "status": "Status",
     "system": "系统",
-    "totalItems": "totalItems",
+    "totalItems": "Total Items",
     "updatedAt": "最后更新时间",
     "updatedBy": "最后更新人",
-    "record": "记录"
+    "record": "记录",
+    "advancedLookup": "高级查找",
+    "standard": "标准",
+    "compact": "精简",
+    "custom": "自定义",
+    "recentRecords": "最近记录",
+    "searchResults": "搜索结果"
   },
-  "locationInfo": "locationInfo",
+  "hotkeys": {
+    "title": "键盘快捷键",
+    "subtable": {
+      "toggleHelp": "切换快捷键帮助面板",
+      "togglePin": "固定/取消固定快捷键帮助面板",
+      "pinned": "已固定",
+      "nextCell": "移动到下一个单元格",
+      "previousCell": "移动到上一个单元格",
+      "rowBoundary": "跳转到当前行首/行尾单元格",
+      "verticalMove": "在同列内上下移动",
+      "pageJump": "在同列按分页步长跳转",
+      "addRowBelow": "在末尾新增一行并聚焦首列",
+      "insertRowAbove": "在当前行上方插入新行",
+      "deleteRow": "删除当前行并保持逻辑焦点",
+      "duplicateBelow": "在下方复制当前行",
+      "duplicateAbove": "在上方复制当前行",
+      "requestSave": "触发表单保存请求"
+    }
+  },
+  "locationInfo": "Location Info",
   "localeSwitcher": {
     "title": "语言偏好",
     "actions": {
@@ -104,7 +132,7 @@
     }
   },
   "messages": {
-    "addSuccess": "addSuccess",
+    "addSuccess": "Add Success",
     "cancelSuccess": "取消成功",
     "confirmDelete": "确认删除吗？",
     "confirmTitle": "确认",
@@ -121,82 +149,115 @@
     "uploadPendingCount": "上传 {count} 个文件",
     "fileValidationFailed": "文件校验失败",
     "unknownError": "未知错误",
+    "badRequest": "请求参数错误",
+    "sessionExpired": "登录已过期",
+    "reloginPrompt": "登录已过期，是否重新登录？",
+    "resourceNotFound": "请求的资源不存在",
+    "resourceGone": "资源已被删除",
+    "tooManyRequests": "请求过于频繁，请稍后再试",
+    "serverError": "服务器错误，请稍后再试",
     "noData": "暂无数据",
+    "permissionDenied": "无权限访问",
+    "permissionDeniedHint": "您没有访问此页面的权限。",
     "operationFailed": "操作失败",
     "operationSuccess": "操作成功",
     "pleaseSelectData": "请选择数据",
     "saveSuccess": "保存成功",
     "selected": "已选择 {count} 项",
     "tips": "提示",
+    "moduleNotEnabledRedirect": "该模块后端接口尚未启用，已跳转到工作台。",
+    "actionCancelled": "操作已取消",
+    "unknownActionType": "未知动作类型：{type}",
     "updateFailed": "更新失败",
     "updateSuccess": "更新成功",
     "noSearchResults": "未找到匹配项",
     "records": "条记录",
     "emptyHint": "暂无数据，请尝试创建一条新记录",
+    "requestTimeout": "请求超时",
     "systemError": "系统出错",
     "formValidationFailed": "表单校验失败，请检查输入内容",
-    "maxFileCountExceeded": "最多允许上传 {count} 个文件"
+    "maxFileCountExceeded": "最多允许上传 {count} 个文件",
+    "lookupCompactKeysHint": "用于查找弹窗的精简视图，系统锁定列会始终保留。",
+    "lookupProfileStandardHint": "显示默认列与默认宽度。",
+    "lookupProfileCompactHint": "聚焦关键列，便于快速浏览。",
+    "lookupProfileCustomHint": "使用你手动设置的列显示、顺序和宽度。",
+    "subtableShortcutHelpHint": "用于查找弹窗的精简视图，系统锁定列会始终保留。",
+    "subtableShortcutPinnedHint": "聚焦关键列，便于快速浏览。",
+    "subtableShortcutPinnedRequiresHelpHint": "显示默认列与默认宽度。"
   },
   "no": "否",
-  "notes": "notes",
-  "performedBy": "performedBy",
+  "notes": "Notes",
+  "performedBy": "Performed By",
   "placeholders": {
     "endDate": "结束日期",
     "input": "请输入",
     "maxValue": "最大值",
     "minValue": "最小值",
-    "search": "\u8bf7\u8f93\u5165\u641c\u7d22\u5173\u952e\u8bcd",
+    "search": "请输入搜索关键词",
     "select": "请选择",
     "startDate": "开始日期"
   },
   "reason": "原因",
+  "relatedGroup": {
+    "business": "业务单据",
+    "workflow": "流程协同",
+    "finance": "财务",
+    "inventory": "盘点库存",
+    "consumables": "耗材",
+    "it_assets": "IT资产",
+    "insurance": "保险",
+    "leasing": "租赁",
+    "organization": "组织与人员",
+    "master_data": "主数据",
+    "other": "其他"
+  },
   "relatedObject": {
-    "code": "code",
-    "createdAt": "createdAt",
-    "id": "id",
-    "loadFailed": "loadFailed",
+    "code": "Code",
+    "createdAt": "Created At",
+    "id": "Id",
+    "loadFailed": "Load Failed",
     "loan": {
-      "loanDate": "loanDate",
-      "loanUser": "loanUser",
-      "returnDate": "returnDate"
+      "loanDate": "Loan Date",
+      "loanUser": "Loan User",
+      "returnDate": "Return Date"
     },
-    "location": "location",
+    "location": "Location",
     "maintenance": {
-      "cost": "cost",
-      "date": "date"
+      "cost": "Cost",
+      "date": "Date"
     },
-    "name": "name",
+    "name": "Name",
     "pickup": {
-      "pickupDate": "pickupDate",
-      "pickupUser": "pickupUser"
+      "pickupDate": "Pickup Date",
+      "pickupUser": "Pickup User"
     },
-    "quantity": "quantity",
+    "quantity": "Quantity",
     "return": {
-      "condition": "condition",
-      "returnDate": "returnDate",
-      "returnUser": "returnUser"
+      "condition": "Condition",
+      "returnDate": "Return Date",
+      "returnUser": "Return User"
     },
-    "status": "status",
-    "type": "type"
+    "status": "Status",
+    "type": "Type"
   },
   "rules": {
-    "required": "required"
+    "required": "Required"
   },
   "searchConfigPlaceholder": "搜索配置",
   "searchMaintenancePlaceholder": "搜索维保记录",
   "select": "请选择",
   "selectors": {
-    "assetAdmin": "assetAdmin",
-    "deptManager": "deptManager",
-    "filterByDept": "filterByDept",
-    "noMatchUser": "noMatchUser",
-    "normalUser": "normalUser",
-    "searchKeyword": "searchKeyword",
-    "searchUser": "searchUser",
-    "selectDept": "selectDept",
-    "selectRole": "selectRole",
-    "selectUser": "selectUser",
-    "systemAdmin": "systemAdmin",
+    "assetAdmin": "Asset Admin",
+    "deptManager": "Dept Manager",
+    "filterByDept": "Filter By Dept",
+    "noMatchUser": "No Match User",
+    "normalUser": "Normal User",
+    "searchKeyword": "Search Keyword",
+    "searchUser": "Search User",
+    "selectDept": "Select Dept",
+    "selectRole": "Select Role",
+    "selectUser": "Select User",
+    "systemAdmin": "System Admin",
     "allFields": "全部字段"
   },
   "status": {
@@ -209,7 +270,7 @@
     "processing": "处理中",
     "warning": "警告"
   },
-  "supplierInfo": "supplierInfo",
+  "supplierInfo": "Supplier Info",
   "table": {
     "index": "序号",
     "noData": "暂无数据",
@@ -220,25 +281,96 @@
   },
   "title": "标题",
   "units": {
-    "hours": "hours",
-    "item": "item",
-    "level": "level",
-    "no": "no",
-    "pending": "pending",
-    "people": "people",
-    "piece": "piece",
-    "year": "year",
-    "yes": "yes",
-    "yuan": "yuan"
+    "hours": "Hours",
+    "item": "Item",
+    "level": "Level",
+    "no": "No",
+    "pending": "Pending",
+    "people": "People",
+    "piece": "Piece",
+    "year": "Year",
+    "yes": "Yes",
+    "yuan": "Yuan"
   },
-  "usageInfo": "usageInfo",
+  "usageInfo": "Usage Info",
   "validation": {
     "phone": "请输入有效手机号",
     "required": "此项为必填",
-    "requiredWithField": "{field}不能为空"
+    "requiredWithField": "{field}不能为空",
+    "lowercaseNumberUnderscore": "仅允许小写字母、数字和下划线"
   },
-  "valueInfo": "valueInfo",
-  "vendor": "vendor",
-  "warrantyInfo": "warrantyInfo",
-  "yes": "是"
+  "valueInfo": "Value Info",
+  "vendor": "Vendor",
+  "warrantyInfo": "Warranty Info",
+  "yes": "是",
+  "import": {
+    "invalidSheet": "文件不包含有效工作表",
+    "requiredCell": "\"{label}\" 不能为空（第 {row} 行）",
+    "templateSheetName": "导入模板",
+    "templateSuffix": "导入模板"
+  },
+  "layoutValidation": {
+    "configurationMustBeObject": "配置必须是 JSON 对象",
+    "missingOrInvalidArray": "缺少或无效的必填字段：{field}（必须是数组）",
+    "cannotBeEmpty": "{field} 不能为空",
+    "mustBeArray": "{field} 必须是数组",
+    "missingRequiredField": "缺少必填字段：{field}",
+    "invalidType": "类型无效：{type}。有效类型：{types}",
+    "sectionMustBeObject": "分区配置必须是对象",
+    "tabMustBeObject": "标签配置必须是对象",
+    "collapseItemMustBeObject": "折叠项必须是对象",
+    "columnItemMustBeObject": "列项必须是对象",
+    "columnMustBeObject": "列配置必须是对象",
+    "fieldMustBeObject": "字段配置必须是对象",
+    "spanMustBeOneOf": "span 必须是以下值之一：{options}",
+    "spanMustBeIntegerRange": "span 必须是 1-24 的整数，推荐值：{options}",
+    "widthMustBePositiveInteger": "width 必须是正整数",
+    "minHeightMustBeIntegerRange": "minHeight 必须是 {min}-{max} 之间的整数",
+    "unknownLayoutTypeFallback": "未知布局类型：{type}，已回退到表单布局"
+  },
+  "layoutDefaults": {
+    "formSectionTitle": "基本信息",
+    "detailSectionTitle": "详细信息",
+    "submitActionLabel": "提交",
+    "cancelActionLabel": "取消",
+    "createActionLabel": "新建",
+    "deleteActionLabel": "删除"
+  },
+  "layoutSchema": {
+    "sectionIdRequired": "分区 ID 不能为空",
+    "sectionTitleRequired": "分区标题不能为空",
+    "sectionFieldsArray": "分区 fields 必须是数组",
+    "unknownFieldCode": "未知字段编码：{code}",
+    "sectionColumnsRange": "分区 columns 必须是 1 到 4 的数字",
+    "tabIdRequired": "标签 ID 不能为空",
+    "tabTitleRequired": "标签标题不能为空",
+    "tabFieldsArray": "标签 fields 必须是数组",
+    "tabRelationsArray": "标签 relations 必须是数组",
+    "fieldOrderArray": "fieldOrder 必须是数组",
+    "duplicateFieldCode": "字段编码重复：{code}",
+    "fieldOverridesObject": "fieldOverrides 必须是对象",
+    "fieldOverrideMustBeObject": "{code} 的字段覆盖配置必须是对象",
+    "spanRange": "{code} 的 span 必须是 1 到 24 的数字",
+    "sectionsArray": "sections 必须是数组",
+    "duplicateSectionId": "分区 ID 重复：{id}",
+    "tabsArray": "tabs 必须是数组",
+    "duplicateTabId": "标签 ID 重复：{id}",
+    "containersArray": "containers 必须是数组",
+    "containerTypeRequired": "容器类型不能为空",
+    "invalidContainerType": "无效的容器类型：{type}，必须是：{types}",
+    "containerIdRequired": "容器 ID 不能为空",
+    "duplicateContainerId": "容器 ID 重复：{id}",
+    "validationPassed": "校验通过"
+  },
+  "brand": {
+    "icon": "G",
+    "name": "GZEAMS"
+  },
+  "formula": {
+    "errors": {
+      "emptyExpression": "表单校验失败，请检查输入内容",
+      "unknownFieldReferences": "请求参数错误: {fields}",
+      "syntax": "请求参数错误: {detail}"
+    }
+  }
 }

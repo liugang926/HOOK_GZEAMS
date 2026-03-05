@@ -32,6 +32,7 @@
 
 import { ref, computed, onMounted, onUnmounted, watch, useSlots } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessageBox } from 'element-plus'
 import type { TableColumn, SearchField, ColumnItem } from '@/types/common'
 import { formatDate } from '@/utils/dateFormat'
@@ -110,6 +111,7 @@ const emit = defineEmits<Emits>()
 
 // Get current route for watching navigation changes
 const route = useRoute()
+const { t } = useI18n()
 
 /** Table loading state */
 const loading = ref(false)
@@ -486,11 +488,11 @@ const handleBatchAction = async (action: BatchAction) => {
     try {
       await ElMessageBox.confirm(
         action.confirmMessage,
-        action.label || 'Confirm',
+        action.label || t('common.actions.confirm'),
         {
           type: 'warning',
-          confirmButtonText: 'Confirm',
-          cancelButtonText: 'Cancel'
+          confirmButtonText: t('common.actions.confirm'),
+          cancelButtonText: t('common.actions.cancel')
         }
       )
     } catch {
@@ -1294,22 +1296,6 @@ defineExpose({
           @current-change="handleCurrentChange"
         />
       </div>
-
-      <!-- Empty State -->
-      <div
-        v-if="!loading && tableData.length === 0"
-        class="empty-state"
-      >
-        <el-empty :description="$t('common.messages.noData')">
-          <template #default>
-            <slot name="empty-action">
-              <p class="empty-hint">
-                {{ $t('common.messages.emptyHint') }}
-              </p>
-            </slot>
-          </template>
-        </el-empty>
-      </div>
     </div><!-- end .list-card -->
   </div>
 </template>
@@ -1449,7 +1435,6 @@ defineExpose({
       color: $text-main;
       font-weight: 600;
       font-size: 13px;
-      text-transform: uppercase;
       letter-spacing: 0.3px;
       padding: 10px 0;
       border-bottom: 2px solid $border-color;
@@ -1479,25 +1464,6 @@ defineExpose({
   justify-content: flex-end;
   padding: $spacing-md $spacing-lg;
   border-top: 1px solid $border-light;
-}
-
-/* ==== Empty State ==== */
-.empty-state {
-  padding: 80px $spacing-lg;
-
-  :deep(.el-empty__description) {
-    margin-top: $spacing-md;
-  }
-
-  .empty-hint {
-    margin-top: $spacing-sm;
-    color: $text-secondary;
-    font-size: 14px;
-    
-    .el-button {
-      margin-top: $spacing-md;
-    }
-  }
 }
 
 /* ==== Mobile Cards ==== */

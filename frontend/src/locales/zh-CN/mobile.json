@@ -36,5 +36,40 @@
     "assetNotFound": "未找到该资产",
     "operationSuccess": "操作成功",
     "operationFailed": "操作失败"
+  },
+  "unifiedScan": {
+    "title": "扫码",
+    "recentScans": "最近扫描",
+    "result": {
+      "success": "成功",
+      "error": "异常"
+    },
+    "manualInputButton": "手动输入资产编码",
+    "manualInputTitle": "手动输入",
+    "manualInputPlaceholder": "请输入资产编码或二维码内容",
+    "preview": {
+      "assetCode": "资产编码",
+      "assetCategory": "资产分类",
+      "assetStatus": "资产状态",
+      "assetLocation": "存放位置",
+      "assetCustodian": "使用人"
+    },
+    "moreActions": {
+      "history": "查看扫描历史",
+      "camera": "切换摄像头",
+      "torch": "开启/关闭闪光灯"
+    },
+    "messages": {
+      "clearHistoryTitle": "清空记录",
+      "clearHistoryConfirm": "确定要清空扫描历史吗？",
+      "historyCleared": "已清空",
+      "historyOpened": "查看扫描历史"
+    },
+    "time": {
+      "justNow": "刚刚",
+      "minutesAgo": "{count}分钟前",
+      "hoursAgo": "{count}小时前",
+      "daysAgo": "{count}天前"
+    }
   }
 }

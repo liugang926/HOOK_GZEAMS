@@ -1,9 +1,7 @@
-<!-- frontend/src/components/softwareLicenses/AllocationDialog.vue -->
-
-<template>
+﻿<template>
   <el-dialog
     v-model="visible"
-    :title="`分配许可证 - ${license?.softwareName}`"
+    :title="t('softwareLicenses.allocationDialog.title', { name: license?.softwareName || '' })"
     width="600px"
     @close="handleClose"
   >
@@ -13,12 +11,12 @@
       :rules="rules"
       label-width="120px"
     >
-      <el-form-item label="可用数量">
+      <el-form-item :label="t('softwareLicenses.allocationDialog.availableUnits')">
         <el-text>{{ license?.availableUnits }} / {{ license?.totalUnits }}</el-text>
       </el-form-item>
 
       <el-form-item
-        label="资产"
+        :label="t('softwareLicenses.allocationDialog.asset')"
         prop="asset"
       >
         <el-select
@@ -26,7 +24,7 @@
           filterable
           remote
           :remote-method="searchAssets"
-          placeholder="搜索资产编码或名称"
+          :placeholder="t('softwareLicenses.allocationDialog.placeholders.assetSearch')"
           style="width: 100%"
           :loading="searching"
         >
@@ -39,35 +37,35 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="分配密钥">
+      <el-form-item :label="t('softwareLicenses.allocationDialog.allocationKey')">
         <el-input
           v-model="formData.allocationKey"
           type="password"
           show-password
-          placeholder="可选，特定于此分配的密钥"
+          :placeholder="t('softwareLicenses.allocationDialog.placeholders.allocationKey')"
         />
       </el-form-item>
 
-      <el-form-item label="备注">
+      <el-form-item :label="t('softwareLicenses.allocationDialog.notes')">
         <el-input
           v-model="formData.notes"
           type="textarea"
           :rows="3"
-          placeholder="分配备注"
+          :placeholder="t('softwareLicenses.allocationDialog.placeholders.notes')"
         />
       </el-form-item>
     </el-form>
 
     <template #footer>
       <el-button @click="handleClose">
-        取消
+        {{ t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="submitting"
         @click="handleSubmit"
       >
-        分配
+        {{ t('softwareLicenses.allocationDialog.actions.allocate') }}
       </el-button>
     </template>
   </el-dialog>
@@ -75,6 +73,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { licenseAllocationApi } from '@/api/softwareLicenses'
 import { assetApi } from '@/api/assets'
@@ -92,6 +91,7 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 const formRef = ref<any>()
 const submitting = ref(false)
@@ -111,7 +111,7 @@ const formData = ref({
 
 const rules = {
   asset: [
-    { required: true, message: '请选择资产', trigger: 'change' }
+    { required: true, message: t('softwareLicenses.allocationDialog.validation.assetRequired'), trigger: 'change' }
   ]
 }
 
@@ -133,26 +133,25 @@ const handleSubmit = async () => {
   const currentLicense = props.license
   if (!formRef.value || !currentLicense) return
 
-  await formRef.value.validate(async (valid: boolean) => {
-    if (!valid) return
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
 
-    submitting.value = true
-    try {
-      await licenseAllocationApi.create({
-        license: currentLicense.id,
-        asset: formData.value.asset,
-        allocationKey: formData.value.allocationKey || undefined,
-        notes: formData.value.notes || undefined
-      })
-      ElMessage.success('分配成功')
-      emit('allocated')
-      handleClose()
-    } catch (error: any) {
-      ElMessage.error(error.message || '分配失败')
-    } finally {
-      submitting.value = false
-    }
-  })
+  submitting.value = true
+  try {
+    await licenseAllocationApi.create({
+      license: currentLicense.id,
+      asset: formData.value.asset,
+      allocationKey: formData.value.allocationKey || undefined,
+      notes: formData.value.notes || undefined
+    })
+    ElMessage.success(t('softwareLicenses.allocationDialog.messages.allocateSuccess'))
+    emit('allocated')
+    handleClose()
+  } catch (error: any) {
+    ElMessage.error(error.message || t('softwareLicenses.allocationDialog.messages.allocateFailed'))
+  } finally {
+    submitting.value = false
+  }
 }
 
 const handleClose = () => {

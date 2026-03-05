@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="department-list">
     <div class="page-header">
       <h3>{{ $t('system.department.title') }}</h3>
@@ -156,18 +156,18 @@ const loadData = async () => {
     tableData.value = [
       {
         id: '1',
-        name: '总公司',
+        name: 'Headquarters',
         code: 'HQ',
-        managerName: '张三',
+        managerName: 'Manager A',
         phone: '010-12345678',
         sortOrder: 0,
         isActive: true,
         children: [
           {
             id: '2',
-            name: '技术部',
+            name: 'Engineering',
             code: 'TECH',
-            managerName: '李四',
+            managerName: 'Manager B',
             phone: '010-12345679',
             sortOrder: 0,
             isActive: true,
@@ -232,3 +232,4 @@ onMounted(() => {
   font-size: 18px;
 }
 </style>
+

@@ -1,42 +1,40 @@
 <!--
   ImportButton.vue
 
-  Drop-in import button for any list/management page. Handles:
-  - Download blank import template (with i18n header labels)
-  - Select and parse Excel file
-  - Map Excel column headers (labels) → prop keys via column config
-  - Report unknown/missing headers and row-level validation errors
-  - Emit parsed rows for the parent to handle
+  Drop-in import button for list/management pages.
 
   Usage:
     <ImportButton
       :columns="importColumns"
       :required="['assetNo', 'name']"
-      filename="资产"
+      filename="asset"
       @import="handleImport"
     />
-
-  Parent handler:
-    const handleImport = async ({ data, errors }) => {
-      if (errors.length) { /* show errors */ return }
-      for (const row of data) {
-        await myApi.create(row)  // row.assetNo, row.name, etc. (not "资产编号")
-      }
-      listRef.value?.refresh()
-    }
 -->
 <template>
-  <el-dropdown trigger="click" :disabled="importing" @command="handleCommand">
-    <el-button :loading="importing" :icon="Upload">
+  <el-dropdown
+    trigger="click"
+    :disabled="importing"
+    @command="handleCommand"
+  >
+    <el-button
+      :loading="importing"
+      :icon="Upload"
+    >
       {{ $t('common.actions.import') }}
-      <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+      <el-icon class="el-icon--right">
+        <ArrowDown />
+      </el-icon>
     </el-button>
     <template #dropdown>
       <el-dropdown-menu>
         <el-dropdown-item command="template">
           {{ $t('reports.import.downloadTemplate') }}
         </el-dropdown-item>
-        <el-dropdown-item command="upload" divided>
+        <el-dropdown-item
+          command="upload"
+          divided
+        >
           {{ $t('reports.import.selectFile') }}
         </el-dropdown-item>
       </el-dropdown-menu>
@@ -50,7 +48,7 @@
     accept=".xlsx,.xls,.csv"
     style="display:none"
     @change="handleFileChange"
-  />
+  >
 
   <!-- Error dialog -->
   <el-dialog
@@ -65,7 +63,7 @@
       :closable="false"
       style="margin-bottom:12px"
     >
-      {{ $t('reports.import.unknownHeaders') }}：{{ parseResult.unknownHeaders.join('、') }}
+      {{ $t('reports.import.unknownHeaders') }}: {{ parseResult.unknownHeaders.join(', ') }}
     </el-alert>
     <el-alert
       v-if="parseResult.missingHeaders.length"
@@ -73,7 +71,7 @@
       :closable="false"
       style="margin-bottom:12px"
     >
-      {{ $t('reports.import.missingHeaders') }}：{{ parseResult.missingHeaders.join('、') }}
+      {{ $t('reports.import.missingHeaders') }}: {{ parseResult.missingHeaders.join(', ') }}
     </el-alert>
 
     <el-table
@@ -83,17 +81,33 @@
       size="small"
       max-height="300"
     >
-      <el-table-column :label="$t('reports.import.errorRow')" prop="row" width="80" />
-      <el-table-column :label="$t('reports.import.errorCol')" prop="col" width="120" />
-      <el-table-column :label="$t('reports.import.errorMsg')" prop="message" />
+      <el-table-column
+        :label="$t('reports.import.errorRow')"
+        prop="row"
+        width="80"
+      />
+      <el-table-column
+        :label="$t('reports.import.errorCol')"
+        prop="col"
+        width="120"
+      />
+      <el-table-column
+        :label="$t('reports.import.errorMsg')"
+        prop="message"
+      />
     </el-table>
 
-    <div v-if="parseResult.errors.length === 0" style="color:#67C23A">
+    <div
+      v-if="parseResult.errors.length === 0"
+      style="color:#67C23A"
+    >
       {{ $t('reports.import.noErrors') }}
     </div>
 
     <template #footer>
-      <el-button @click="errorDialog = false">{{ $t('common.actions.cancel') }}</el-button>
+      <el-button @click="errorDialog = false">
+        {{ $t('common.actions.cancel') }}
+      </el-button>
       <el-button
         v-if="parseResult.errors.length === 0 && parseResult.data.length > 0"
         type="primary"
@@ -116,7 +130,7 @@ import type { ExportColumn } from '@/utils/exportService'
 
 const { t } = useI18n()
 
-// ─── Props ───────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Props 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 interface Props {
   /** Column definitions (same config as ExportButton) */
   columns: ExportColumn[]
@@ -133,12 +147,12 @@ const props = withDefaults(defineProps<Props>(), {
   filename: 'import'
 })
 
-// ─── Emits ────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Emits 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const emit = defineEmits<{
   (e: 'import', result: ImportResult): void
 }>()
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ State 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const importing = ref(false)
 const errorDialog = ref(false)
 const fileInputRef = ref<HTMLInputElement>()
@@ -149,7 +163,7 @@ const parseResult = reactive<ImportResult>({
   missingHeaders: []
 })
 
-// ─── Handlers ─────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Handlers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const handleCommand = (command: string) => {
   if (command === 'template') {
     downloadImportTemplate(props.filename, props.columns, props.exampleRow)
@@ -174,7 +188,7 @@ const handleFileChange = async (e: Event) => {
     } else if (result.data.length === 0) {
       ElMessage.warning(t('reports.import.emptyFile'))
     } else {
-      // No errors — confirm immediately
+      // No errors 鈥?confirm immediately
       confirmImport()
     }
   } catch (err: any) {
@@ -191,3 +205,4 @@ const confirmImport = () => {
   ElMessage.success(t('reports.import.readyMessage', { count: parseResult.data.length }))
 }
 </script>
+

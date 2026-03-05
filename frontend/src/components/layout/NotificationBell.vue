@@ -39,14 +39,14 @@
             <el-link
               v-if="store.hasUnread"
               type="primary"
-              :underline="false"
+              underline="never"
               @click="handleMarkAllAsRead"
             >
               {{ $t('notifications.actions.markAllRead') }}
             </el-link>
             <el-link
               type="primary"
-              :underline="false"
+              underline="never"
               @click="viewAll"
             >
               {{ $t('notifications.actions.viewAll') }}

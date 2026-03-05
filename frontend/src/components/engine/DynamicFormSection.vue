@@ -36,6 +36,7 @@
                     :form-data="modelValue"
                     :disabled="item.readonly"
                     @update:model-value="(val) => handleFieldChange(item.field, val)"
+                    @request-save="emit('request-save')"
                   />
                 </el-form-item>
                 <RuntimeFieldControl
@@ -45,6 +46,7 @@
                   :form-data="modelValue"
                   :disabled="item.readonly"
                   @update:model-value="(val) => handleFieldChange(item.field, val)"
+                  @request-save="emit('request-save')"
                 />
               </template>
             </div>
@@ -86,6 +88,7 @@
                     :form-data="modelValue"
                     :disabled="fieldItem.readonly"
                     @update:model-value="(val) => handleFieldChange(fieldItem.field, val)"
+                    @request-save="emit('request-save')"
                   />
                 </el-form-item>
                 <RuntimeFieldControl
@@ -95,6 +98,7 @@
                   :form-data="modelValue"
                   :disabled="fieldItem.readonly"
                   @update:model-value="(val) => handleFieldChange(fieldItem.field, val)"
+                  @request-save="emit('request-save')"
                 />
               </template>
             </div>
@@ -129,6 +133,7 @@
                 :form-data="modelValue"
                 :disabled="item.readonly"
                 @update:model-value="(val) => handleFieldChange(item.field, val)"
+                @request-save="emit('request-save')"
               />
             </el-form-item>
             <RuntimeFieldControl
@@ -138,6 +143,7 @@
               :form-data="modelValue"
               :disabled="item.readonly"
               @update:model-value="(val) => handleFieldChange(item.field, val)"
+              @request-save="emit('request-save')"
             />
           </template>
         </div>
@@ -176,6 +182,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: Record<string, any>): void
+  (e: 'request-save'): void
 }>()
 
 const sectionKey = computed(() => props.section.id || props.section.name || 'section')

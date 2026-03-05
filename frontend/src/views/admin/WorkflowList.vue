@@ -1,14 +1,15 @@
-<template>
+﻿<template>
   <div class="workflow-list">
     <div class="page-header">
-      <h3>工作流管理</h3>
+      <h3>{{ t('workflow.title') }}</h3>
       <el-button
         type="primary"
         @click="$router.push('/admin/workflows/create')"
       >
-        创建工作流
+        {{ t('common.actions.create') }}
       </el-button>
     </div>
+
     <el-table
       v-loading="loading"
       :data="tableData"
@@ -16,24 +17,24 @@
     >
       <el-table-column
         prop="name"
-        label="名称"
+        :label="t('workflow.fields.processName')"
       />
       <el-table-column
         prop="code"
-        label="编码"
+        :label="t('workflow.fields.processCode')"
       />
       <el-table-column
         prop="business_object"
-        label="业务对象"
+        :label="t('workflow.columns.processType')"
       />
-      <el-table-column label="操作">
+      <el-table-column :label="t('workflow.columns.operation')">
         <template #default="{ row }">
           <el-button
             link
             type="primary"
             @click="$router.push(`/admin/workflows/${row.id}/edit`)"
           >
-            编辑
+            {{ t('common.actions.edit') }}
           </el-button>
         </template>
       </el-table-column>
@@ -42,24 +43,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getWorkflows } from '@/api/workflows'
+
+const { t } = useI18n()
 
 const tableData = ref([])
 const loading = ref(false)
 
 onMounted(async () => {
-    loading.value = true
-    try {
-        const res = await getWorkflows()
-        tableData.value = res.results || res.items || []
-    } finally {
-        loading.value = false
-    }
+  loading.value = true
+  try {
+    const res = await getWorkflows()
+    tableData.value = res.results || res.items || []
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
 <style scoped>
-.workflow-list { padding: 20px; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.workflow-list {
+  padding: 20px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
 </style>

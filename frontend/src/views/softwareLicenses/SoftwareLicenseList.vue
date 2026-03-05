@@ -1,4 +1,4 @@
-<!-- frontend/src/views/softwareLicenses/SoftwareLicenseList.vue -->
+﻿<!-- frontend/src/views/softwareLicenses/SoftwareLicenseList.vue -->
 
 <template>
   <div class="software-license-page">
@@ -144,7 +144,7 @@ const columns = computed<TableColumn[]>(() => [
     }
   },
   { prop: 'status', label: t('softwareLicenses.licenses.fields.status'), width: 100, tagType: (row: any) => getStatusColor(row.status), format: (value: any) => getStatusLabel(value) },
-  { prop: 'actions', label: t('common.labels.operation', '操作'), width: 150, slot: true, fixed: 'right' }
+  { prop: 'actions', label: t('common.labels.operation'), width: 150, slot: true, fixed: 'right' }
 ])
 
 const searchFields = computed<SearchField[]>(() => [
@@ -160,7 +160,7 @@ const searchFields = computed<SearchField[]>(() => [
 
 const batchActions = computed(() => [
   {
-    label: t('common.actions.batchDelete', '批量删除'),
+    label: t('common.actions.batchDelete'),
     type: 'danger' as const,
     action: async (selectedRows: any[]) => {
       const ids = selectedRows.map(row => row.id)
@@ -181,7 +181,7 @@ const allocationDialogVisible = ref(false)
 const selectedLicense = ref<SoftwareLicense | null>(null)
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString(t('common.locale', 'zh-CN'))
+  return new Date(date).toLocaleDateString(t('common.locale'))
 }
 
 const isExpiringSoon = (date: string) => {
@@ -267,3 +267,4 @@ onMounted(() => {
   margin: 5px 5px 5px 0;
 }
 </style>
+

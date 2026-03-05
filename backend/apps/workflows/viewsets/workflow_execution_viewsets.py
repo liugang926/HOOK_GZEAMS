@@ -585,6 +585,30 @@ class WorkflowTaskViewSet(BaseModelViewSetWithBatch):
             , http_status=status.HTTP_400_BAD_REQUEST)
 
 
+# === WorkflowApproval ViewSet ===
+
+class WorkflowApprovalViewSet(BaseModelViewSetWithBatch):
+    """
+    ViewSet for WorkflowApproval records.
+
+    Provides read access for approval history with basic filtering.
+    """
+
+    queryset = WorkflowApproval.objects.filter(is_deleted=False)
+    permission_classes = [IsAuthenticated]
+    serializer_class = WorkflowApprovalSerializer
+    filterset_fields = ['action', 'task', 'approver']
+    search_fields = ['comment']
+
+    def get_queryset(self):
+        """Filter queryset based on user permissions."""
+        qs = super().get_queryset().select_related('task', 'task__instance', 'approver')
+        user = self.request.user
+        if not user.is_superuser and not user.is_staff:
+            qs = qs.filter(task__assignee=user)
+        return qs
+
+
 # === Statistics ViewSet ===
 
 class WorkflowStatisticsViewSet(viewsets.ViewSet):

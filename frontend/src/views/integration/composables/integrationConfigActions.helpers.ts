@@ -1,56 +1,26 @@
 import type { Ref } from 'vue'
 import type { IntegrationConfig, IntegrationFormData } from '@/types/integration'
+import {
+  emitActionResultMessage,
+  runAction,
+  runFlagAction,
+  runRowAction,
+  withFlagLoading as withFlagLoadingBase,
+  withRowLoading as withRowLoadingBase,
+  type ActionMessageOptions,
+  type ActionOutcome,
+  type ActionResultLike,
+  type RunActionOptions,
+  type RunFlagActionOptions,
+  type RunRowActionOptions
+} from '@/composables/actionRunner'
 
-interface IntegrationActionResult {
-  success: boolean
-  message?: string
-}
-
-interface LoadingGuardOptions {
-  skipIfLoading?: boolean
-}
-
-type IntegrationActionOutcome = 'success' | 'failure' | 'error' | 'skipped'
-
-interface IntegrationActionMessages {
-  successFallback: string
-  failureFallback: string
-  errorFallback: string
-}
-
-interface IntegrationActionNotifier {
-  success: (message: string) => void
-  warning: (message: string) => void
-  error: (message: string) => void
-}
-
-interface RunIntegrationActionOptions<T extends IntegrationActionResult> {
-  invoke: () => Promise<T>
-  messages: IntegrationActionMessages
-  notifier: IntegrationActionNotifier
-  onSuccess?: () => void
-  onFailure?: () => void
-  onError?: () => void
-}
-
-interface RunFlagIntegrationActionOptions<T extends IntegrationActionResult> extends RunIntegrationActionOptions<T> {
-  loadingFlag: Ref<boolean>
-  loadingOptions?: LoadingGuardOptions
-}
-
-interface RunRowIntegrationActionOptions<T extends IntegrationActionResult> extends RunIntegrationActionOptions<T> {
-  loadingMap: Ref<Record<string, boolean>>
-  rowId: string
-  loadingOptions?: LoadingGuardOptions
-}
-
-interface IntegrationActionMessageOptions {
-  result: IntegrationActionResult
-  successFallback: string
-  failureFallback: string
-  onSuccess: (message: string) => void
-  onFailure: (message: string) => void
-}
+type IntegrationActionResult = ActionResultLike
+type IntegrationActionMessageOptions = ActionMessageOptions<IntegrationActionResult>
+type RunIntegrationActionOptions<T extends IntegrationActionResult> = RunActionOptions<T>
+type RunFlagIntegrationActionOptions<T extends IntegrationActionResult> = RunFlagActionOptions<T>
+type RunRowIntegrationActionOptions<T extends IntegrationActionResult> = RunRowActionOptions<T>
+type IntegrationActionOutcome = ActionOutcome
 
 export const buildIntegrationFormDataFromConfig = (row: IntegrationConfig): IntegrationFormData => ({
   systemType: row.systemType,
@@ -74,110 +44,28 @@ export const buildIntegrationFormDataFromConfig = (row: IntegrationConfig): Inte
 export const withFlagLoading = async <T>(
   flag: Ref<boolean>,
   runner: () => Promise<T>,
-  options: LoadingGuardOptions = {}
-): Promise<T | undefined> => {
-  const { skipIfLoading = true } = options
-  if (skipIfLoading && flag.value) {
-    return undefined
-  }
-
-  flag.value = true
-  try {
-    return await runner()
-  } finally {
-    flag.value = false
-  }
-}
+  options?: { skipIfLoading?: boolean }
+): Promise<T | undefined> => withFlagLoadingBase<T>(flag, runner, options)
 
 export const withRowLoading = async <T>(
   loadingMap: Ref<Record<string, boolean>>,
   rowId: string,
   runner: () => Promise<T>,
-  options: LoadingGuardOptions = {}
-): Promise<T | undefined> => {
-  const { skipIfLoading = true } = options
-  if (skipIfLoading && loadingMap.value[rowId]) {
-    return undefined
-  }
+  options?: { skipIfLoading?: boolean }
+): Promise<T | undefined> => withRowLoadingBase<T>(loadingMap, rowId, runner, options)
 
-  loadingMap.value[rowId] = true
-  try {
-    return await runner()
-  } finally {
-    loadingMap.value[rowId] = false
-  }
-}
+export const emitIntegrationActionMessage = (
+  options: IntegrationActionMessageOptions
+): boolean => emitActionResultMessage(options)
 
-export const emitIntegrationActionMessage = ({
-  result,
-  successFallback,
-  failureFallback,
-  onSuccess,
-  onFailure
-}: IntegrationActionMessageOptions): boolean => {
-  if (result.success) {
-    onSuccess(result.message || successFallback)
-    return true
-  }
+export const runIntegrationAction = async <T extends IntegrationActionResult>(
+  options: RunIntegrationActionOptions<T>
+): Promise<IntegrationActionOutcome> => runAction(options)
 
-  onFailure(result.message || failureFallback)
-  return false
-}
+export const runFlagIntegrationAction = async <T extends IntegrationActionResult>(
+  options: RunFlagIntegrationActionOptions<T>
+): Promise<IntegrationActionOutcome> => runFlagAction(options)
 
-export const runIntegrationAction = async <T extends IntegrationActionResult>({
-  invoke,
-  messages,
-  notifier,
-  onSuccess,
-  onFailure,
-  onError
-}: RunIntegrationActionOptions<T>): Promise<IntegrationActionOutcome> => {
-  try {
-    const result = await invoke()
-    const succeeded = emitIntegrationActionMessage({
-      result,
-      successFallback: messages.successFallback,
-      failureFallback: messages.failureFallback,
-      onSuccess: notifier.success,
-      onFailure: notifier.warning
-    })
-    if (succeeded) {
-      onSuccess?.()
-      return 'success'
-    }
-    onFailure?.()
-    return 'failure'
-  } catch {
-    notifier.error(messages.errorFallback)
-    onError?.()
-    return 'error'
-  }
-}
-
-export const runFlagIntegrationAction = async <T extends IntegrationActionResult>({
-  loadingFlag,
-  loadingOptions,
-  ...options
-}: RunFlagIntegrationActionOptions<T>): Promise<IntegrationActionOutcome> => {
-  const result = await withFlagLoading(
-    loadingFlag,
-    async () => runIntegrationAction(options),
-    loadingOptions
-  )
-  return result ?? 'skipped'
-}
-
-export const runRowIntegrationAction = async <T extends IntegrationActionResult>({
-  loadingMap,
-  rowId,
-  loadingOptions,
-  ...options
-}: RunRowIntegrationActionOptions<T>): Promise<IntegrationActionOutcome> => {
-  const result = await withRowLoading(
-    loadingMap,
-    rowId,
-    async () => runIntegrationAction(options),
-    loadingOptions
-  )
-  return result ?? 'skipped'
-}
+export const runRowIntegrationAction = async <T extends IntegrationActionResult>(
+  options: RunRowIntegrationActionOptions<T>
+): Promise<IntegrationActionOutcome> => runRowAction(options)

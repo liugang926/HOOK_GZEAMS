@@ -7,7 +7,23 @@
 
 import { ElMessage, ElMessageBox } from 'element-plus'
 import router from '@/router'
+import i18n from '@/locales'
 import { ErrorCode, ErrorCodeMessages } from '@/types/error'
+
+const I18N_KEY_PATTERN = /^[a-zA-Z0-9_-]+(\.[a-zA-Z0-9_-]+)+$/
+
+const resolveBackendMessage = (raw: unknown, fallback: string): string => {
+  if (typeof raw !== 'string' || !raw.trim()) return fallback
+  const candidate = raw.trim()
+  const composer = i18n.global
+  const te = (composer as any)?.te
+  const t = (composer as any)?.t
+
+  if (I18N_KEY_PATTERN.test(candidate) && typeof te === 'function' && te(candidate) && typeof t === 'function') {
+    return t(candidate)
+  }
+  return candidate
+}
 
 /**
  * Handle API errors with standardized behavior
@@ -19,40 +35,39 @@ export function handleApiError(error: any): Promise<never> {
   const status = error.response?.status
   const data = error.response?.data
   const silent = error?.config?.silent === true
+  const t = i18n.global.t
 
   // Extract error information
   let errorCode: ErrorCode = ErrorCode.SERVER_ERROR
-  let message = '服务器错误，请稍后再试'
+  let message = t('common.messages.serverError')
   let details: Record<string, string[]> | undefined
 
   if (data?.error) {
     if (Object.values(ErrorCode).includes(data.error.code as ErrorCode)) {
       errorCode = data.error.code as ErrorCode
     }
-    message = data.error.message || ErrorCodeMessages[errorCode] || message
+    message = resolveBackendMessage(data.error.message, t(ErrorCodeMessages[errorCode]) || message)
     details = data.error.details
   } else if (status) {
-    // Prefer status-based messaging over axios' generic `error.message` (e.g. "Request failed with status code 404").
     const statusMessages: Record<number, string> = {
-      400: '请求参数错误',
-      401: '登录已过期，请重新登录',
-      403: '权限不足',
-      404: '请求的资源不存在',
-      410: '资源已被删除',
-      429: '请求过于频繁，请稍后再试',
-      500: '服务器错误，请稍后再试'
+      400: t('common.messages.badRequest'),
+      401: t('common.messages.sessionExpired'),
+      403: t('common.messages.permissionDenied'),
+      404: t('common.messages.resourceNotFound'),
+      410: t('common.messages.resourceGone'),
+      429: t('common.messages.tooManyRequests'),
+      500: t('common.messages.serverError')
     }
     message = statusMessages[status] || message
   } else if (error.code) {
     if (Object.values(ErrorCode).includes(error.code as ErrorCode)) {
       errorCode = error.code as ErrorCode
     }
-    message = error.message || ErrorCodeMessages[errorCode] || message
+    message = error.message || t(ErrorCodeMessages[errorCode]) || message
     details = error.details
   }
 
-  // Normalize the error message so callers that do `ElMessage.error(error.message)`
-  // don't surface axios' generic "Request failed with status code ..." text.
+  // Normalize downstream error.message consumers
   if (typeof error === 'object' && error !== null) {
     try {
       error.message = message
@@ -61,17 +76,15 @@ export function handleApiError(error: any): Promise<never> {
     }
   }
 
-  // Handle specific status codes
   switch (status) {
     case 401:
-      // Unauthorized - redirect to login
       if (silent) return Promise.reject(error)
       ElMessageBox.confirm(
-        '登录已过期，是否重新登录？',
-        '提示',
+        t('common.messages.reloginPrompt'),
+        t('common.messages.tips'),
         {
-          confirmButtonText: '重新登录',
-          cancelButtonText: '取消',
+          confirmButtonText: t('common.actions.confirm'),
+          cancelButtonText: t('common.actions.cancel'),
           type: 'warning'
         }
       ).then(() => {
@@ -83,41 +96,23 @@ export function handleApiError(error: any): Promise<never> {
       return Promise.reject(error)
 
     case 403:
-      // Permission denied
-      if (silent) return Promise.reject(error)
-      ElMessage.error(message || '权限不足')
-      return Promise.reject(error)
-
     case 404:
-      // Not found
-      if (silent) return Promise.reject(error)
-      ElMessage.error(message || '请求的资源不存在')
-      return Promise.reject(error)
-
     case 410:
-      // Soft deleted
-      if (silent) return Promise.reject(error)
-      ElMessage.error(message || '资源已被删除')
-      return Promise.reject(error)
-
     case 429:
-      // Rate limit exceeded
       if (silent) return Promise.reject(error)
-      ElMessage.error(message || '请求过于频繁，请稍后再试')
+      ElMessage.error(message)
       return Promise.reject(error)
 
     default:
-      // Show error message
       if (silent) return Promise.reject(error)
       if (details) {
-        // Show validation errors - use first error message
         const firstError = Object.values(details)[0]?.[0]
         ElMessage.error(firstError || message)
       } else {
         ElMessage.error(message)
       }
   }
-  // Mark error as handled so downstream catch blocks don't show it again
+
   if (typeof error === 'object' && error !== null) {
     error.isHandled = true
   }
@@ -126,9 +121,6 @@ export function handleApiError(error: any): Promise<never> {
 
 /**
  * Extract error message from error object
- *
- * @param error - The error object
- * @returns The error message string
  */
 export function getErrorMessage(error: any): string {
   if (error?.response?.data?.error?.message) {
@@ -140,41 +132,21 @@ export function getErrorMessage(error: any): string {
   if (error?.message) {
     return error.message
   }
-  return '操作失败，请稍后重试'
+  return i18n.global.t('common.messages.operationFailed')
 }
 
-/**
- * Show success message
- *
- * @param message - The success message
- */
 export function showSuccess(message: string): void {
   ElMessage.success(message)
 }
 
-/**
- * Show error message directly
- *
- * @param message - The error message
- */
 export function showError(message: string): void {
   ElMessage.error(message)
 }
 
-/**
- * Show warning message
- *
- * @param message - The warning message
- */
 export function showWarning(message: string): void {
   ElMessage.warning(message)
 }
 
-/**
- * Show info message
- *
- * @param message - The info message
- */
 export function showInfo(message: string): void {
   ElMessage.info(message)
 }

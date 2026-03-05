@@ -17,7 +17,6 @@
       :loading="loading"
       :audit-info="auditInfo"
       object-code="Asset"
-      :reverse-relations="reverseRelations"
       :show-related-objects="true"
       @edit="handleEdit"
       @delete="handleDelete"
@@ -89,8 +88,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import BaseDetailPage from '@/components/common/BaseDetailPage.vue'
-import type { ReverseRelationField } from '@/components/common/BaseDetailPage.vue'
 import { assetApi } from '@/api/assets'
+import { deriveObjectCodeFromRelationCode } from '@/platform/reference/relationObjectCode'
 
 const route = useRoute()
 const router = useRouter()
@@ -107,51 +106,6 @@ const auditInfo = computed(() => ({
   updatedBy: assetData.value.updatedBy?.username || assetData.value.updatedBy || 'System',
   updatedAt: assetData.value.updatedAt || assetData.value.updated_at
 }))
-
-// Define reverse relations for Asset
-// These will be displayed as related objects sections
-const reverseRelations = computed<ReverseRelationField[]>(() => [
-  {
-    code: 'maintenance_records',
-    label: t('assets.relations.maintenanceRecords'),
-    displayMode: 'inline_readonly',
-    relatedObjectCode: 'Maintenance',
-    reverseRelationField: 'asset',
-    reverseRelationModel: 'apps.lifecycle.models.Maintenance',
-    title: t('assets.relations.maintenanceRecords'),
-    showCreate: true
-  },
-  {
-    code: 'loan_records',
-    label: t('assets.relations.loanRecords'),
-    displayMode: 'inline_readonly',
-    relatedObjectCode: 'AssetLoan',
-    reverseRelationField: 'asset',
-    reverseRelationModel: 'apps.assets.models.AssetLoan',
-    title: t('assets.relations.loanRecords'),
-    showCreate: false
-  },
-  {
-    code: 'pickup_records',
-    label: t('assets.relations.pickupRecords'),
-    displayMode: 'inline_readonly',
-    relatedObjectCode: 'AssetPickup',
-    reverseRelationField: 'asset',
-    reverseRelationModel: 'apps.assets.models.AssetPickup',
-    title: t('assets.relations.pickupRecords'),
-    showCreate: false
-  },
-  {
-    code: 'return_records',
-    label: t('assets.relations.returnRecords'),
-    displayMode: 'inline_readonly',
-    relatedObjectCode: 'AssetReturn',
-    reverseRelationField: 'asset',
-    reverseRelationModel: 'apps.assets.models.AssetReturn',
-    title: t('assets.relations.returnRecords'),
-    showCreate: false
-  }
-])
 
 // Define sections - using computed to react to language changes
 const detailSections = computed(() => [
@@ -272,33 +226,23 @@ const goBack = () => {
   router.push('/assets/list')
 }
 
-const handleRelatedRecordClick = (relationCode: string, record: any) => {
-  console.log('Related record clicked:', relationCode, record)
-  // Navigate to related record detail
-  const objectMap: Record<string, string> = {
-    maintenance_records: 'Maintenance',
-    loan_records: 'AssetLoan',
-    pickup_records: 'AssetPickup',
-    return_records: 'AssetReturn'
-  }
-  const objectCode = objectMap[relationCode]
+const resolveRelationObjectCode = (relationCode: string, targetObjectCode?: string): string => {
+  const explicitTarget = String(targetObjectCode || '').trim()
+  if (explicitTarget) return explicitTarget
+  return deriveObjectCodeFromRelationCode(relationCode)
+}
+
+const handleRelatedRecordClick = (relationCode: string, record: any, targetObjectCode?: string) => {
+  const objectCode = resolveRelationObjectCode(relationCode, targetObjectCode)
   if (objectCode && record.id) {
-    router.push(`/${objectCode.toLowerCase()}/detail/${record.id}`)
+    router.push(`/objects/${encodeURIComponent(objectCode)}/${encodeURIComponent(String(record.id))}`)
   }
 }
 
-const handleRelatedRecordEdit = (relationCode: string, record: any) => {
-  console.log('Related record edit:', relationCode, record)
-  // Navigate to related record edit
-  const objectMap: Record<string, string> = {
-    maintenance_records: 'Maintenance',
-    loan_records: 'AssetLoan',
-    pickup_records: 'AssetPickup',
-    return_records: 'AssetReturn'
-  }
-  const objectCode = objectMap[relationCode]
+const handleRelatedRecordEdit = (relationCode: string, record: any, targetObjectCode?: string) => {
+  const objectCode = resolveRelationObjectCode(relationCode, targetObjectCode)
   if (objectCode && record.id) {
-    router.push(`/${objectCode.toLowerCase()}/${record.id}?action=edit`)
+    router.push(`/objects/${encodeURIComponent(objectCode)}/${encodeURIComponent(String(record.id))}/edit`)
   }
 }
 </script>

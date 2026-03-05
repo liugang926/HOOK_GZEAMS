@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="field-permission-config">
     <el-table
       :data="fields"
@@ -101,7 +101,7 @@ onMounted(async () => {
       permission: props.modelValue?.[field.code] || 'editable'
     }))
   } catch (error) {
-    console.error('获取字段定义失败', error)
+    console.error(t('common.messages.loadFailed'), error)
   }
 })
 
@@ -131,3 +131,4 @@ watch(fields, (newVal) => {
   gap: 8px;
 }
 </style>
+

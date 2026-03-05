@@ -1,44 +1,68 @@
 <!--
-  UserPortal.vue — 用户门户
+  UserPortal.vue
 
-  三个 Tab，面向普通员工的"我的"入口：
-    1. 我的资产   — 分配给当前用户的资产清单（responsible_user 过滤）
-    2. 我的申请   — 本用户发起的采购/维修/报废申请，含状态流转快速操作
-    3. 我的待办   — 来自工作流引擎的待审批任务列表
+  User-facing portal with three tabs:
+  1. My Assets
+  2. My Requests
+  3. My Tasks
 -->
 <template>
   <div class="user-portal">
-    <!-- ── Page Header ───────────────────────────────────────── -->
+    <!-- 鈹€鈹€ Page Header 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ -->
     <div class="portal-header">
       <div class="header-left">
-        <el-avatar :size="48" class="user-avatar">
+        <el-avatar
+          :size="48"
+          class="user-avatar"
+        >
           {{ userInitial }}
         </el-avatar>
         <div class="header-info">
-          <h2 class="portal-title">{{ $t('portal.greeting', { name: displayName }) }}</h2>
-          <p class="portal-subtitle">{{ $t('portal.subtitle') }}</p>
+          <h2 class="portal-title">
+            {{ $t('portal.greeting', { name: displayName }) }}
+          </h2>
+          <p class="portal-subtitle">
+            {{ $t('portal.subtitle') }}
+          </p>
         </div>
       </div>
       <div class="header-stats">
         <div class="stat-item">
-          <div class="stat-num">{{ myAssetCount }}</div>
-          <div class="stat-label">{{ $t('portal.stats.assets') }}</div>
+          <div class="stat-num">
+            {{ myAssetCount }}
+          </div>
+          <div class="stat-label">
+            {{ $t('portal.stats.assets') }}
+          </div>
         </div>
         <div class="stat-item">
-          <div class="stat-num">{{ pendingRequestCount }}</div>
-          <div class="stat-label">{{ $t('portal.stats.pendingRequests') }}</div>
+          <div class="stat-num">
+            {{ pendingRequestCount }}
+          </div>
+          <div class="stat-label">
+            {{ $t('portal.stats.pendingRequests') }}
+          </div>
         </div>
         <div class="stat-item danger">
-          <div class="stat-num">{{ pendingTaskCount }}</div>
-          <div class="stat-label">{{ $t('portal.stats.pendingTasks') }}</div>
+          <div class="stat-num">
+            {{ pendingTaskCount }}
+          </div>
+          <div class="stat-label">
+            {{ $t('portal.stats.pendingTasks') }}
+          </div>
         </div>
       </div>
     </div>
 
-    <el-tabs v-model="activeTab" class="portal-tabs">
-
-      <!-- ── Tab 1: My Assets ──────────────────────────────── -->
-      <el-tab-pane :label="$t('portal.tabs.myAssets')" name="assets">
+    <el-tabs
+      v-model="activeTab"
+      class="portal-tabs"
+    >
+      <!-- 鈹€鈹€ Tab 1: My Assets 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ -->
+      <el-tab-pane
+        :label="$t('portal.tabs.myAssets')"
+        name="assets"
+      >
         <div class="tab-toolbar">
           <el-input
             v-model="assetSearch"
@@ -54,28 +78,76 @@
             style="width:140px"
             @change="loadMyAssets"
           >
-            <el-option v-for="s in assetStatuses" :key="s.value" :label="s.label" :value="s.value" />
+            <el-option
+              v-for="s in assetStatuses"
+              :key="s.value"
+              :label="s.label"
+              :value="s.value"
+            />
           </el-select>
         </div>
 
-        <el-table v-loading="loadingAssets" :data="myAssets" border stripe @row-click="goToAsset">
-          <el-table-column :label="$t('portal.assets.cols.code')" prop="assetCode" width="130" />
-          <el-table-column :label="$t('portal.assets.cols.name')" prop="name" min-width="160" />
-          <el-table-column :label="$t('portal.assets.cols.category')" prop="categoryDisplay" width="130" />
-          <el-table-column :label="$t('portal.assets.cols.status')" prop="statusDisplay" width="100">
+        <el-table
+          v-loading="loadingAssets"
+          :data="myAssets"
+          border
+          stripe
+          @row-click="goToAsset"
+        >
+          <el-table-column
+            :label="$t('portal.assets.cols.code')"
+            prop="assetCode"
+            width="130"
+          />
+          <el-table-column
+            :label="$t('portal.assets.cols.name')"
+            prop="name"
+            min-width="160"
+          />
+          <el-table-column
+            :label="$t('portal.assets.cols.category')"
+            prop="categoryDisplay"
+            width="130"
+          />
+          <el-table-column
+            :label="$t('portal.assets.cols.status')"
+            prop="statusDisplay"
+            width="100"
+          >
             <template #default="{ row }">
-              <el-tag :type="statusTagType(row.status)" size="small">{{ row.statusDisplay || row.status }}</el-tag>
+              <el-tag
+                :type="statusTagType(row.status)"
+                size="small"
+              >
+                {{ row.statusDisplay || row.status }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column :label="$t('portal.assets.cols.location')" prop="locationDisplay" width="140" />
-          <el-table-column :label="$t('portal.assets.cols.value')" prop="currentValue" width="120">
+          <el-table-column
+            :label="$t('portal.assets.cols.location')"
+            prop="locationDisplay"
+            width="140"
+          />
+          <el-table-column
+            :label="$t('portal.assets.cols.value')"
+            prop="currentValue"
+            width="120"
+          >
             <template #default="{ row }">
-              {{ row.currentValue != null ? `¥${Number(row.currentValue).toLocaleString()}` : '-' }}
+              {{ row.currentValue != null ? `${$t('common.units.yuan')} ${Number(row.currentValue).toLocaleString()}` : '-' }}
             </template>
           </el-table-column>
-          <el-table-column :label="$t('portal.assets.cols.actions')" width="120">
+          <el-table-column
+            :label="$t('portal.assets.cols.actions')"
+            width="120"
+          >
             <template #default="{ row }">
-              <el-button size="small" @click.stop="goToAsset(row)">{{ $t('common.actions.view') }}</el-button>
+              <el-button
+                size="small"
+                @click.stop="goToAsset(row)"
+              >
+                {{ $t('common.actions.view') }}
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -90,49 +162,122 @@
         />
       </el-tab-pane>
 
-      <!-- ── Tab 2: My Requests ────────────────────────────── -->
+      <!-- 鈹€鈹€ Tab 2: My Requests 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ -->
       <el-tab-pane name="requests">
         <template #label>
           <span>{{ $t('portal.tabs.myRequests') }}</span>
-          <el-badge v-if="pendingRequestCount > 0" :value="pendingRequestCount" type="warning" class="tab-badge" />
+          <el-badge
+            v-if="pendingRequestCount > 0"
+            :value="pendingRequestCount"
+            type="warning"
+            class="tab-badge"
+          />
         </template>
 
         <div class="tab-toolbar">
-          <el-radio-group v-model="requestType" @change="loadMyRequests">
-            <el-radio-button value="purchase">{{ $t('portal.requests.type.purchase') }}</el-radio-button>
-            <el-radio-button value="maintenance">{{ $t('portal.requests.type.maintenance') }}</el-radio-button>
-            <el-radio-button value="disposal">{{ $t('portal.requests.type.disposal') }}</el-radio-button>
+          <el-radio-group
+            v-model="requestType"
+            @change="loadMyRequests"
+          >
+            <el-radio-button value="purchase">
+              {{ $t('portal.requests.type.purchase') }}
+            </el-radio-button>
+            <el-radio-button value="maintenance">
+              {{ $t('portal.requests.type.maintenance') }}
+            </el-radio-button>
+            <el-radio-button value="disposal">
+              {{ $t('portal.requests.type.disposal') }}
+            </el-radio-button>
           </el-radio-group>
-          <el-select v-model="requestStatusFilter" :placeholder="$t('portal.requests.allStatus')" clearable style="width:130px" @change="loadMyRequests">
-            <el-option v-for="s in requestStatuses" :key="s.value" :label="s.label" :value="s.value" />
+          <el-select
+            v-model="requestStatusFilter"
+            :placeholder="$t('portal.requests.allStatus')"
+            clearable
+            style="width:130px"
+            @change="loadMyRequests"
+          >
+            <el-option
+              v-for="s in requestStatuses"
+              :key="s.value"
+              :label="s.label"
+              :value="s.value"
+            />
           </el-select>
-          <el-button type="primary" :icon="Plus" @click="createNewRequest">{{ $t('portal.requests.new') }}</el-button>
+          <el-button
+            type="primary"
+            :icon="Plus"
+            @click="createNewRequest"
+          >
+            {{ $t('portal.requests.new') }}
+          </el-button>
         </div>
 
-        <el-table v-loading="loadingRequests" :data="myRequests" border stripe>
-          <el-table-column :label="$t('portal.requests.cols.code')" prop="code" width="140" />
-          <el-table-column :label="$t('portal.requests.cols.title')" prop="title" min-width="160" />
-          <el-table-column :label="$t('portal.requests.cols.status')" prop="statusDisplay" width="110">
+        <el-table
+          v-loading="loadingRequests"
+          :data="myRequests"
+          border
+          stripe
+        >
+          <el-table-column
+            :label="$t('portal.requests.cols.code')"
+            prop="code"
+            width="140"
+          />
+          <el-table-column
+            :label="$t('portal.requests.cols.title')"
+            prop="title"
+            min-width="160"
+          />
+          <el-table-column
+            :label="$t('portal.requests.cols.status')"
+            prop="statusDisplay"
+            width="110"
+          >
             <template #default="{ row }">
-              <el-tag :type="requestStatusTagType(row.status)" size="small">{{ row.statusDisplay || row.status }}</el-tag>
+              <el-tag
+                :type="requestStatusTagType(row.status)"
+                size="small"
+              >
+                {{ row.statusDisplay || row.status }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column :label="$t('portal.requests.cols.createdAt')" prop="createdAt" width="155">
-            <template #default="{ row }">{{ formatDate(row.createdAt) }}</template>
-          </el-table-column>
-          <el-table-column :label="$t('portal.requests.cols.actions')" width="160">
+          <el-table-column
+            :label="$t('portal.requests.cols.createdAt')"
+            prop="createdAt"
+            width="155"
+          >
             <template #default="{ row }">
-              <el-button size="small" @click="viewRequest(row)">{{ $t('common.actions.view') }}</el-button>
+              {{ formatDate(row.createdAt) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            :label="$t('portal.requests.cols.actions')"
+            width="160"
+          >
+            <template #default="{ row }">
+              <el-button
+                size="small"
+                @click="viewRequest(row)"
+              >
+                {{ $t('common.actions.view') }}
+              </el-button>
               <el-button
                 v-if="row.status === 'draft'"
-                size="small" type="primary"
+                size="small"
+                type="primary"
                 @click="submitRequest(row)"
-              >{{ $t('portal.requests.submit') }}</el-button>
+              >
+                {{ $t('portal.requests.submit') }}
+              </el-button>
               <el-button
                 v-if="['draft','pending'].includes(row.status)"
-                size="small" type="danger"
+                size="small"
+                type="danger"
                 @click="cancelRequest(row)"
-              >{{ $t('portal.requests.cancel') }}</el-button>
+              >
+                {{ $t('portal.requests.cancel') }}
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -147,22 +292,38 @@
         />
       </el-tab-pane>
 
-      <!-- ── Tab 3: My Pending Tasks ───────────────────────── -->
+      <!-- 鈹€鈹€ Tab 3: My Pending Tasks 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ -->
       <el-tab-pane name="tasks">
         <template #label>
           <span>{{ $t('portal.tabs.myTasks') }}</span>
-          <el-badge v-if="pendingTaskCount > 0" :value="pendingTaskCount" type="danger" class="tab-badge" />
+          <el-badge
+            v-if="pendingTaskCount > 0"
+            :value="pendingTaskCount"
+            type="danger"
+            class="tab-badge"
+          />
         </template>
 
         <div class="tab-toolbar">
-          <el-button :icon="Refresh" @click="loadMyTasks">{{ $t('common.actions.refresh') }}</el-button>
+          <el-button
+            :icon="Refresh"
+            @click="loadMyTasks"
+          >
+            {{ $t('common.actions.refresh') }}
+          </el-button>
         </div>
 
-        <div v-if="myTasks.length === 0 && !loadingTasks" class="no-tasks">
+        <div
+          v-if="myTasks.length === 0 && !loadingTasks"
+          class="no-tasks"
+        >
           <el-empty :description="$t('portal.tasks.empty')" />
         </div>
 
-        <div v-loading="loadingTasks" class="task-cards">
+        <div
+          v-loading="loadingTasks"
+          class="task-cards"
+        >
           <div
             v-for="task in myTasks"
             :key="task.id"
@@ -170,19 +331,35 @@
             @click="openTask(task)"
           >
             <div class="task-card-left">
-              <el-tag type="warning" size="small" class="task-type">{{ task.taskName || task.nodeName || $t('portal.tasks.approvalTask') }}</el-tag>
-              <div class="task-title">{{ task.title || task.businessTitle || task.instanceTitle || '-' }}</div>
+              <el-tag
+                type="warning"
+                size="small"
+                class="task-type"
+              >
+                {{ task.taskName || task.nodeName || $t('portal.tasks.approvalTask') }}
+              </el-tag>
+              <div class="task-title">
+                {{ task.title || task.businessTitle || task.instanceTitle || '-' }}
+              </div>
               <div class="task-meta">
-                <span>{{ $t('portal.tasks.initiator') }}：{{ task.initiatorDisplay || task.createdBy || '-' }}</span>
-                <span class="meta-sep">·</span>
+                <span>{{ $t('portal.tasks.initiator') }}: {{ task.initiatorDisplay || task.createdBy || '-' }}</span>
+                <span class="meta-sep">•</span>
                 <span>{{ formatDate(task.createdAt || task.assignedAt) }}</span>
               </div>
             </div>
             <div class="task-card-right">
-              <el-button type="success" size="small" @click.stop="quickApprove(task)">
+              <el-button
+                type="success"
+                size="small"
+                @click.stop="quickApprove(task)"
+              >
                 {{ $t('portal.tasks.approve') }}
               </el-button>
-              <el-button type="danger" size="small" @click.stop="openRejectDialog(task)">
+              <el-button
+                type="danger"
+                size="small"
+                @click.stop="openRejectDialog(task)"
+              >
                 {{ $t('portal.tasks.reject') }}
               </el-button>
             </div>
@@ -200,7 +377,7 @@
       </el-tab-pane>
     </el-tabs>
 
-    <!-- ── Reject Comment Dialog ─────────────────────────── -->
+    <!-- 鈹€鈹€ Reject Comment Dialog 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ -->
     <el-dialog
       v-model="rejectDialog"
       :title="$t('portal.tasks.rejectTitle')"
@@ -209,12 +386,24 @@
     >
       <el-form>
         <el-form-item :label="$t('portal.tasks.rejectComment')">
-          <el-input v-model="rejectComment" type="textarea" :rows="3" />
+          <el-input
+            v-model="rejectComment"
+            type="textarea"
+            :rows="3"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="rejectDialog = false">{{ $t('common.actions.cancel') }}</el-button>
-        <el-button type="danger" :loading="processingTask" @click="confirmReject">{{ $t('portal.tasks.confirm') }}</el-button>
+        <el-button @click="rejectDialog = false">
+          {{ $t('common.actions.cancel') }}
+        </el-button>
+        <el-button
+          type="danger"
+          :loading="processingTask"
+          @click="confirmReject"
+        >
+          {{ $t('portal.tasks.confirm') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -226,22 +415,28 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Plus, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useAuthStore } from '@/stores/auth'
+import { useUserStore } from '@/stores/user'
 import { assetApi } from '@/api/assets'
 import { purchaseRequestApi, maintenanceApi, disposalRequestApi } from '@/api/lifecycle'
 import { workflowNodeApi, taskApi } from '@/api/workflow'
+import { runAction, runFlagAction } from '@/composables'
 import { formatDate } from '@/utils/dateFormat'
 
 const { t } = useI18n()
 const router = useRouter()
-const authStore = useAuthStore()
+const userStore = useUserStore()
 
-// ── User Info ────────────────────────────────────────────────────
-const displayName = computed(() => authStore.user?.fullName || authStore.user?.username || '')
+// 鈹€鈹€ User Info 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+const displayName = computed(() => userStore.userInfo?.fullName || userStore.userInfo?.username || '')
 const userInitial = computed(() => displayName.value.charAt(0).toUpperCase() || 'U')
 const activeTab = ref('assets')
+const actionNotifier = {
+  success: (message: string) => ElMessage.success(message),
+  warning: (message: string) => ElMessage.warning(message),
+  error: (message: string) => ElMessage.error(message)
+}
 
-// ── Status options ───────────────────────────────────────────────
+// 鈹€鈹€ Status options 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const assetStatuses = [
   { value: 'in_use', label: t('portal.assets.status.inUse') },
   { value: 'idle', label: t('portal.assets.status.idle') },
@@ -265,7 +460,7 @@ const requestStatusTagType = (s: string) => {
   return m[s] || 'info'
 }
 
-// ── My Assets ────────────────────────────────────────────────────
+// 鈹€鈹€ My Assets 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const loadingAssets = ref(false)
 const myAssets = ref<any[]>([])
 const assetSearch = ref('')
@@ -283,7 +478,7 @@ const loadMyAssets = async () => {
       page_size: assetPageSize.value,
       search: assetSearch.value || undefined,
       status: assetStatusFilter.value || undefined,
-      responsible_user_id: authStore.user?.id
+      responsible_user_id: userStore.userInfo?.id
     })
     myAssets.value = res?.results ?? res?.items ?? []
     assetTotal.value = res?.count ?? res?.total ?? 0
@@ -295,7 +490,7 @@ const loadMyAssets = async () => {
 
 const goToAsset = (row: any) => router.push(`/assets/${row.id}`)
 
-// ── My Requests ──────────────────────────────────────────────────
+// 鈹€鈹€ My Requests 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const loadingRequests = ref(false)
 const myRequests = ref<any[]>([])
 const requestType = ref<'purchase' | 'maintenance' | 'disposal'>('purchase')
@@ -304,16 +499,16 @@ const requestPage = ref(1)
 const requestPageSize = ref(15)
 const requestTotal = ref(0)
 const pendingRequestCount = ref(0)
+const requestApiMap: Record<'purchase' | 'maintenance' | 'disposal', any> = {
+  purchase: purchaseRequestApi,
+  maintenance: maintenanceApi,
+  disposal: disposalRequestApi
+}
 
 const loadMyRequests = async () => {
   loadingRequests.value = true
   try {
-    const apiMap = {
-      purchase: purchaseRequestApi,
-      maintenance: maintenanceApi,
-      disposal: disposalRequestApi
-    }
-    const api = apiMap[requestType.value]
+    const api = requestApiMap[requestType.value]
     const res: any = await api.list({
       page: requestPage.value,
       page_size: requestPageSize.value,
@@ -346,28 +541,56 @@ const createNewRequest = () => {
 }
 
 const submitRequest = async (row: any) => {
-  await ElMessageBox.confirm(t('portal.requests.submitConfirm'), { type: 'info' })
   try {
-    await purchaseRequestApi.submit(row.id)
-    ElMessage.success(t('portal.requests.submitSuccess'))
-    loadMyRequests()
+    await ElMessageBox.confirm(t('portal.requests.submitConfirm'), { type: 'info' })
   } catch {
-    ElMessage.error(t('portal.requests.submitFailed'))
+    return
   }
+
+  const api = requestApiMap[requestType.value]
+  await runAction({
+    notifier: actionNotifier,
+    messages: {
+      successFallback: t('portal.requests.submitSuccess'),
+      failureFallback: t('portal.requests.submitFailed'),
+      errorFallback: t('portal.requests.submitFailed')
+    },
+    invoke: async () => {
+      await api.submit(row.id)
+      return { success: true }
+    },
+    onSuccess: async () => {
+      await loadMyRequests()
+    }
+  })
 }
 
 const cancelRequest = async (row: any) => {
-  await ElMessageBox.confirm(t('portal.requests.cancelConfirm'), { type: 'warning' })
   try {
-    await purchaseRequestApi.cancel(row.id)
-    ElMessage.success(t('common.messages.operationSuccess'))
-    loadMyRequests()
+    await ElMessageBox.confirm(t('portal.requests.cancelConfirm'), { type: 'warning' })
   } catch {
-    ElMessage.error(t('common.messages.operationFailed'))
+    return
   }
+
+  const api = requestApiMap[requestType.value]
+  await runAction({
+    notifier: actionNotifier,
+    messages: {
+      successFallback: t('common.messages.operationSuccess'),
+      failureFallback: t('common.messages.operationFailed'),
+      errorFallback: t('common.messages.operationFailed')
+    },
+    invoke: async () => {
+      await api.cancel(row.id)
+      return { success: true }
+    },
+    onSuccess: async () => {
+      await loadMyRequests()
+    }
+  })
 }
 
-// ── My Tasks (workflow) ──────────────────────────────────────────
+// 鈹€鈹€ My Tasks (workflow) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const loadingTasks = ref(false)
 const myTasks = ref<any[]>([])
 const taskPage = ref(1)
@@ -392,16 +615,22 @@ const openTask = (task: any) => router.push(`/workflow/tasks/${task.id}`)
 // Quick approve
 const processingTask = ref(false)
 const quickApprove = async (task: any) => {
-  processingTask.value = true
-  try {
-    await taskApi.approveTask(task.id, { comment: '' })
-    ElMessage.success(t('portal.tasks.approveSuccess'))
-    await loadMyTasks()
-  } catch {
-    ElMessage.error(t('portal.tasks.approveFailed'))
-  } finally {
-    processingTask.value = false
-  }
+  await runFlagAction({
+    loadingFlag: processingTask,
+    notifier: actionNotifier,
+    messages: {
+      successFallback: t('portal.tasks.approveSuccess'),
+      failureFallback: t('portal.tasks.approveFailed'),
+      errorFallback: t('portal.tasks.approveFailed')
+    },
+    invoke: async () => {
+      await taskApi.approveTask(task.id, { comment: '' })
+      return { success: true }
+    },
+    onSuccess: async () => {
+      await loadMyTasks()
+    }
+  })
 }
 
 // Reject
@@ -417,17 +646,23 @@ const openRejectDialog = (task: any) => {
 
 const confirmReject = async () => {
   if (!rejectTargetTask) return
-  processingTask.value = true
-  try {
-    await taskApi.rejectTask(rejectTargetTask.id, { comment: rejectComment.value })
-    ElMessage.success(t('portal.tasks.rejectSuccess'))
-    rejectDialog.value = false
-    await loadMyTasks()
-  } catch {
-    ElMessage.error(t('portal.tasks.rejectFailed'))
-  } finally {
-    processingTask.value = false
-  }
+  await runFlagAction({
+    loadingFlag: processingTask,
+    notifier: actionNotifier,
+    messages: {
+      successFallback: t('portal.tasks.rejectSuccess'),
+      failureFallback: t('portal.tasks.rejectFailed'),
+      errorFallback: t('portal.tasks.rejectFailed')
+    },
+    invoke: async () => {
+      await taskApi.rejectTask(rejectTargetTask.id, { comment: rejectComment.value })
+      return { success: true }
+    },
+    onSuccess: async () => {
+      rejectDialog.value = false
+      await loadMyTasks()
+    }
+  })
 }
 
 onMounted(async () => {
@@ -440,7 +675,7 @@ onMounted(async () => {
 <style scoped>
 .user-portal { padding: 20px; }
 
-/* ── Header ── */
+/* 鈹€鈹€ Header 鈹€鈹€ */
 .portal-header {
   display: flex;
   justify-content: space-between;
@@ -467,13 +702,13 @@ onMounted(async () => {
 .stat-num { font-size: 28px; font-weight: 700; line-height: 1; }
 .stat-label { font-size: 12px; opacity: 0.8; margin-top: 4px; }
 
-/* ── Tabs ── */
+/* 鈹€鈹€ Tabs 鈹€鈹€ */
 .portal-tabs { background: #fff; border-radius: 8px; padding: 0; }
 .tab-toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
 .tab-badge { margin-left: 4px; }
 .mt-16 { margin-top: 16px; }
 
-/* ── Task cards ── */
+/* 鈹€鈹€ Task cards 鈹€鈹€ */
 .no-tasks { padding: 40px 0; }
 .task-cards { display: flex; flex-direction: column; gap: 10px; }
 .task-card {
@@ -503,6 +738,7 @@ onMounted(async () => {
 .meta-sep { margin: 0 6px; }
 .task-card-right { display: flex; gap: 6px; flex-shrink: 0; margin-left: 16px; }
 
-/* ── Row click style ── */
+/* 鈹€鈹€ Row click style 鈹€鈹€ */
 :deep(.el-table__row) { cursor: pointer; }
 </style>
+

@@ -59,6 +59,7 @@
     <!-- Asset Detail Drawer -->
     <el-drawer
       v-model="detailDrawerVisible"
+      v-focus-trap.autofocus="detailDrawerVisible"
       :title="$t('itAssets.detail.title')"
       size="600px"
     >

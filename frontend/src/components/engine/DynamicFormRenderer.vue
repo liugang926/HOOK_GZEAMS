@@ -40,6 +40,7 @@
                 :label-width="labelWidth"
                 :label-position="labelPosition"
                 @update:model-value="(val) => emit('update:modelValue', val)"
+                @request-save="emit('request-save')"
               />
             </div>
           </el-card>
@@ -65,6 +66,7 @@
               :label-width="labelWidth"
               :label-position="labelPosition"
               @update:model-value="(val) => emit('update:modelValue', val)"
+              @request-save="emit('request-save')"
             />
           </div>
         </template>
@@ -101,6 +103,7 @@
                 :label-width="labelWidth"
                 :label-position="labelPosition"
                 @update:model-value="(val) => emit('update:modelValue', val)"
+                @request-save="emit('request-save')"
               />
             </div>
           </el-card>
@@ -126,6 +129,7 @@
               :label-width="labelWidth"
               :label-position="labelPosition"
               @update:model-value="(val) => emit('update:modelValue', val)"
+              @request-save="emit('request-save')"
             />
           </div>
         </template>
@@ -168,6 +172,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: Record<string, any>): void
+  (e: 'request-save'): void
 }>()
 
 const effectiveLayout = computed<RuntimeLayoutConfig>(() => {

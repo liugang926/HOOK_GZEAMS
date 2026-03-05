@@ -8,12 +8,14 @@
 // Authentication layout - simple container for login/register pages
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '@/styles/variables.scss' as *;
+
 .auth-layout {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(180deg, #f8fafc 0%, $bg-body 55%, #e9eef5 100%);
 }
 </style>

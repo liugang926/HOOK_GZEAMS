@@ -1,4 +1,4 @@
-<!-- frontend/src/views/softwareLicenses/AllocationList.vue -->
+﻿<!-- frontend/src/views/softwareLicenses/AllocationList.vue -->
 
 <template>
   <BaseListPage
@@ -57,7 +57,7 @@ const columns = computed<TableColumn[]>(() => [
   { prop: 'allocatedDate', label: t('softwareLicenses.allocations.fields.allocatedDate'), width: 120 },
   { prop: 'allocatedByName', label: t('softwareLicenses.allocations.fields.allocatedBy'), width: 100 },
   { prop: 'isActive', label: t('softwareLicenses.allocations.fields.status'), width: 100, tagType: (row: any) => (row.isActive ? 'success' : 'info'), format: (value: any) => (value ? t('softwareLicenses.allocations.status.allocated') : t('softwareLicenses.allocations.status.revoked')) },
-  { prop: 'actions', label: t('common.labels.operation', '操作'), width: 120, slot: true, fixed: 'right' }
+  { prop: 'actions', label: t('common.labels.operation'), width: 120, slot: true, fixed: 'right' }
 ])
 
 const searchFields = computed<SearchField[]>(() => [
@@ -80,10 +80,10 @@ const handleDeallocate = async (row: any) => {
   try {
     await ElMessageBox.confirm(
       t('softwareLicenses.allocations.messages.deallocateConfirm', { software: row.softwareName, asset: row.assetName }),
-      t('common.messages.confirmTitle', '确认'),
+      t('common.messages.confirmTitle'),
       {
-        confirmButtonText: t('common.actions.confirm', '确定'),
-        cancelButtonText: t('common.actions.cancel', '取消'),
+        confirmButtonText: t('common.actions.confirm'),
+        cancelButtonText: t('common.actions.cancel'),
         type: 'warning'
       }
     )
@@ -100,3 +100,4 @@ const handleDeallocate = async (row: any) => {
   }
 }
 </script>
+

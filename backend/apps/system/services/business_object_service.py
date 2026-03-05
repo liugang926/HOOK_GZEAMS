@@ -50,7 +50,11 @@ HARDCODED_OBJECT_NAMES = {
     'Department': ('部门', 'Department'),
     'User': ('用户', 'User'),
     'WorkflowDefinition': ('工作流定义', 'Workflow Definition'),
+    'WorkflowTemplate': ('工作流模板', 'Workflow Template'),
     'WorkflowInstance': ('工作流实例', 'Workflow Instance'),
+    'WorkflowTask': ('工作流任务', 'Workflow Task'),
+    'WorkflowApproval': ('工作流审批记录', 'Workflow Approval'),
+    'WorkflowOperationLog': ('工作流操作日志', 'Workflow Operation Log'),
     'FinanceVoucher': ('财务凭证', 'Finance Voucher'),
     'VoucherTemplate': ('凭证模板', 'Voucher Template'),
     'DepreciationConfig': ('折旧配置', 'Depreciation Config'),
@@ -122,7 +126,11 @@ CORE_HARDcoded_MODELS = {
 
     # Workflows Module
     'WorkflowDefinition': 'apps.workflows.models.WorkflowDefinition',
+    'WorkflowTemplate': 'apps.workflows.models.WorkflowTemplate',
     'WorkflowInstance': 'apps.workflows.models.WorkflowInstance',
+    'WorkflowTask': 'apps.workflows.models.WorkflowTask',
+    'WorkflowApproval': 'apps.workflows.models.WorkflowApproval',
+    'WorkflowOperationLog': 'apps.workflows.models.WorkflowOperationLog',
 
     # Finance / Depreciation Module
     'FinanceVoucher': 'apps.finance.models.FinanceVoucher',

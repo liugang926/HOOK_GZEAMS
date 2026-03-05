@@ -16,6 +16,7 @@ import integration from './integration.json'
 import reports from './reports.json'
 import sso from './sso.json'
 import org from './org.json'
+import consumables from './consumables.json'
 
 export default {
     common,
@@ -35,5 +36,6 @@ export default {
     integration,
     reports,
     sso,
-    org
+    org,
+    consumables
 }

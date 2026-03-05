@@ -124,6 +124,10 @@
             "confirmDelete": "确定要删除吗？"
         }
     },
+    "messages": {
+        "unsavedChanges": "您有未保存的更改",
+        "validationFailed": "校验失败，请检查带有红字的必填项或输入格式。"
+    },
     "config": {
         "title": "系统配置",
         "addConfig": "添加配置",
@@ -624,6 +628,107 @@
         "placeholders": {
             "empty": "暂无业务规则",
             "emptyType": "暂无{type}规则"
+        },
+        "designer": {
+            "triggerConfig": "触发配置",
+            "triggerEvents": "触发事件",
+            "watchFields": "监听字段",
+            "watchFieldsPlaceholder": "选择要监听变更的字段",
+            "triggerCondition": "触发条件",
+            "conditionExpression": "条件表达式",
+            "ruleActions": "规则动作",
+            "events": {
+                "update": "更新",
+                "submit": "提交",
+                "approve": "审批",
+                "fieldChange": "字段变更"
+            },
+            "placeholders": {
+                "ruleCode": "如：validate_amount_limit",
+                "ruleName": "请输入规则名称",
+                "description": "可选：描述规则用途和范围"
+            },
+            "actionConfigurator": {
+                "title": "规则动作",
+                "labels": {
+                    "errorMessageLocal": "验证失败",
+                    "errorMessageEnglish": "验证失败 EN",
+                    "severity": "状态",
+                    "targetFields": "监听字段",
+                    "visibility": "显示",
+                    "targetField": "字段",
+                    "formula": "条件表达式",
+                    "linkageType": "联动",
+                    "targetValue": "值",
+                    "actionType": "类型",
+                    "apiEndpoint": "地址",
+                    "apiMethod": "节点类型",
+                    "ruleConfigJson": "触发配置"
+                },
+                "placeholders": {
+                    "errorMessageLocal": "输入 JSON 格式的测试数据",
+                    "errorMessageEnglish": "输入 JSON 格式的测试数据 EN",
+                    "targetFields": "选择要监听变更的字段",
+                    "computedTargetField": "选择要监听变更的字段",
+                    "formula": "e.g., {amount} * 1.13",
+                    "linkageTargetField": "选择字段",
+                    "targetValue": "条件值",
+                    "apiEndpoint": "https://example.com/hooks/rule"
+                },
+                "severity": {
+                    "error": "验证失败",
+                    "warning": "操作失败",
+                    "info": "保存成功"
+                },
+                "visibility": {
+                    "show": "显示",
+                    "hide": "隐藏"
+                },
+                "linkageTypes": {
+                    "setValue": "值",
+                    "loadOptions": "包含",
+                    "clear": "取消选择"
+                },
+                "actionTypes": {
+                    "webhook": "Webhook",
+                    "notify": "详情"
+                },
+                "formulaHint": "条件表达式: {field_code}",
+                "unknownRule": "业务规则"
+            },
+            "conditionBuilder": {
+                "defaultTitle": "条件配置",
+                "conditionCount": "{count} 条件",
+                "emptyState": "暂无业务规则",
+                "addCondition": "添加条件",
+                "addGroup": "添加分支",
+                "previewJson": "JSON",
+                "operators": {
+                    "equals": "等于",
+                    "notEquals": "不等于",
+                    "greaterThan": "大于",
+                    "greaterThanOrEqual": "大于等于",
+                    "lessThan": "小于",
+                    "lessThanOrEqual": "小于等于",
+                    "in": "包含",
+                    "empty": "默认分支",
+                    "notEmpty": "不包含",
+                    "startsWith": "开始",
+                    "endsWith": "结束"
+                }
+            },
+            "singleCondition": {
+                "placeholders": {
+                    "field": "选择字段",
+                    "operator": "运算符",
+                    "value": "请输入值",
+                    "date": "请选择日期"
+                },
+                "boolean": {
+                    "true": "是",
+                    "false": "否"
+                }
+            }
         }
     },
     "sequenceRule": {
@@ -710,7 +815,14 @@
         "namePlaceholder": "如: 简体中文",
         "nativeNamePlaceholder": "如: 中文",
         "localePlaceholder": "如: zhCN, enUS",
+        "validation": {
+            "codeFormat": "格式：xx-XX（如 zh-CN）",
+            "localeFormat": "格式：xxXX（如 zhCN）"
+        },
         "messages": {
+            "createSuccess": "语言创建成功",
+            "updateSuccess": "语言更新成功",
+            "saveFailed": "保存语言失败",
             "setDefaultSuccess": "已将 {name} 设为默认语言",
             "setDefaultFailed": "设置默认语言失败",
             "activateSuccess": "语言已启用",
@@ -742,6 +854,12 @@
             "namespace": "静态翻译",
             "object": "对象翻译"
         },
+        "contentTypes": {
+            "businessObject": "业务对象",
+            "dictionaryType": "字典类型",
+            "dictionaryItem": "字典项",
+            "modelFieldDefinition": "模型字段定义"
+        },
         "types": {
             "label": "标签",
             "message": "消息",
@@ -757,8 +875,21 @@
         "namespacePlaceholder": "如: asset, common",
         "keyPlaceholder": "如: status.idle, button.save",
         "textPlaceholder": "输入翻译文本",
+        "objectIdPlaceholder": "输入对象ID",
+        "fieldNamePlaceholder": "输入字段名",
         "contextPlaceholder": "用于消歧义的上下文说明（可选）",
-        "isSystemLabel": "系统翻译（不可被用户编辑）"
+        "isSystemLabel": "系统翻译（不可被用户编辑）",
+        "messages": {
+            "createSuccess": "翻译创建成功",
+            "updateSuccess": "翻译更新成功",
+            "saveFailed": "保存翻译失败",
+            "deleteSuccess": "翻译删除成功",
+            "deleteFailed": "删除翻译失败",
+            "exportSuccess": "翻译导出成功",
+            "exportFailed": "翻译导出失败",
+            "importFailed": "翻译导入失败",
+            "importSummary": "导入完成：创建 {created}，更新 {updated}，失败 {failed}"
+        }
     },
     "moduleWorkbench": {
         "title": "模块工作台",

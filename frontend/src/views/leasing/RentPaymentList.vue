@@ -69,15 +69,15 @@
             style="width:100%"
           >
             <el-option
-              label="閾惰杞处"
+              :label="$t('assets.leasing.payment.methods.bankTransfer')"
               value="bank_transfer"
             />
             <el-option
-              label="鏀エ"
+              :label="$t('assets.leasing.payment.methods.check')"
               value="check"
             />
             <el-option
-              label="鐜伴噾"
+              :label="$t('assets.leasing.payment.methods.cash')"
               value="cash"
             />
           </el-select>

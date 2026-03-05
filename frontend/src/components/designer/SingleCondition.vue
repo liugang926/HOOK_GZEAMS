@@ -1,4 +1,4 @@
-<!--
+﻿<!--
   SingleCondition.vue - Single condition row
   Field selector, operator, and value input
 -->
@@ -7,7 +7,7 @@
   <div class="single-condition">
     <el-select
       :model-value="fieldCode"
-      placeholder="选择字段"
+      :placeholder="t('system.businessRule.designer.singleCondition.placeholders.field')"
       size="small"
       class="field-select"
       filterable
@@ -26,7 +26,7 @@
 
     <el-select
       :model-value="operator"
-      placeholder="运算符"
+      :placeholder="t('system.businessRule.designer.singleCondition.placeholders.operator')"
       size="small"
       class="operator-select"
       @update:model-value="updateOperator"
@@ -43,7 +43,7 @@
       <el-input
         v-if="fieldType === 'string'"
         :model-value="value"
-        placeholder="输入值"
+        :placeholder="t('system.businessRule.designer.singleCondition.placeholders.value')"
         size="small"
         class="value-input"
         @update:model-value="updateValue"
@@ -59,7 +59,7 @@
         v-else-if="fieldType === 'date'"
         :model-value="value"
         type="date"
-        placeholder="选择日期"
+        :placeholder="t('system.businessRule.designer.singleCondition.placeholders.date')"
         size="small"
         class="value-input"
         @update:model-value="updateValue"
@@ -73,17 +73,17 @@
       >
         <el-option
           :value="true"
-          label="是"
+          :label="t('system.businessRule.designer.singleCondition.boolean.true')"
         />
         <el-option
           :value="false"
-          label="否"
+          :label="t('system.businessRule.designer.singleCondition.boolean.false')"
         />
       </el-select>
       <el-input
         v-else
         :model-value="value"
-        placeholder="输入值"
+        :placeholder="t('system.businessRule.designer.singleCondition.placeholders.value')"
         size="small"
         class="value-input"
         @update:model-value="updateValue"
@@ -104,6 +104,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Delete } from '@element-plus/icons-vue'
 
 interface FieldOption {
@@ -130,6 +131,8 @@ const emit = defineEmits<{
   update: [value: Record<string, unknown>]
   remove: []
 }>()
+
+const { t } = useI18n()
 
 const operator = computed(() => {
   const keys = Object.keys(props.condition || {})

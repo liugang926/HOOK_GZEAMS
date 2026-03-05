@@ -101,7 +101,7 @@ const normalizeFieldForPersist = (rawField: any, dropFieldCode?: (code: string) 
     field.canvasPlacement
   )
   if (normalizedPlacement) {
-    ;(normalizedField as any).layoutPlacement = normalizedPlacement
+    (normalizedField as any).layoutPlacement = normalizedPlacement
     ;(normalizedField as any).layout_placement = {
       row: normalizedPlacement.row,
       col_start: normalizedPlacement.colStart,

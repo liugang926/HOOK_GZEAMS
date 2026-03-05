@@ -695,6 +695,136 @@ class ModelFieldDefinition(BaseModel):
         )
 
 
+class ObjectRelationDefinition(BaseModel):
+    """
+    Object Relation Definition - unified relation contract for runtime pages.
+
+    Supports:
+    - direct_fk: target object has a direct FK/OneToOne to parent object
+    - through_line_item: target object is connected through an intermediate object
+    - derived_query: target object is resolved by comparing two key fields
+    """
+
+    objects = GlobalMetadataManager()
+    all_objects = models.Manager()
+
+    RELATION_KIND_CHOICES = [
+        ('direct_fk', 'Direct FK'),
+        ('through_line_item', 'Through Line Item'),
+        ('derived_query', 'Derived Query'),
+    ]
+
+    DISPLAY_MODE_CHOICES = [
+        ('inline_editable', 'Inline Editable'),
+        ('inline_readonly', 'Inline Readonly'),
+        ('tab_readonly', 'Tab Readonly'),
+        ('hidden', 'Hidden'),
+    ]
+
+    relation_code = models.CharField(
+        max_length=80,
+        db_comment='Stable relation code (unique within parent object)'
+    )
+    parent_object_code = models.CharField(
+        max_length=50,
+        db_index=True,
+        db_comment='Parent business object code'
+    )
+    target_object_code = models.CharField(
+        max_length=50,
+        db_index=True,
+        db_comment='Target business object code'
+    )
+    relation_kind = models.CharField(
+        max_length=30,
+        choices=RELATION_KIND_CHOICES,
+        default='direct_fk',
+        db_comment='Relation strategy kind'
+    )
+
+    # direct_fk
+    target_fk_field = models.CharField(
+        max_length=100,
+        blank=True,
+        db_comment='FK field on target model for direct_fk'
+    )
+
+    # through_line_item
+    through_object_code = models.CharField(
+        max_length=50,
+        blank=True,
+        db_comment='Intermediate business object code for through relation'
+    )
+    through_parent_fk_field = models.CharField(
+        max_length=100,
+        blank=True,
+        db_comment='FK field on through model pointing to parent object'
+    )
+    through_target_fk_field = models.CharField(
+        max_length=100,
+        blank=True,
+        db_comment='FK field on through model pointing to target object'
+    )
+
+    # derived_query
+    derived_parent_key_field = models.CharField(
+        max_length=100,
+        blank=True,
+        db_comment='Field on parent object used as derived query key'
+    )
+    derived_target_key_field = models.CharField(
+        max_length=100,
+        blank=True,
+        db_comment='Field on target object used as derived query key'
+    )
+
+    # display metadata (localizable through existing translation framework)
+    relation_name = models.CharField(
+        max_length=120,
+        blank=True,
+        db_comment='Display name override'
+    )
+    relation_name_en = models.CharField(
+        max_length=120,
+        blank=True,
+        db_comment='English display name override'
+    )
+    display_mode = models.CharField(
+        max_length=20,
+        choices=DISPLAY_MODE_CHOICES,
+        default='inline_readonly',
+        db_comment='Runtime display mode'
+    )
+    sort_order = models.IntegerField(
+        default=0,
+        db_comment='Display order within parent object'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_comment='Whether relation is active'
+    )
+    extra_config = models.JSONField(
+        default=dict,
+        blank=True,
+        db_comment='Additional relation options'
+    )
+
+    class Meta:
+        db_table = 'object_relation_definitions'
+        verbose_name = 'Object Relation Definition'
+        verbose_name_plural = 'Object Relation Definitions'
+        unique_together = [['parent_object_code', 'relation_code']]
+        indexes = [
+            models.Index(fields=['parent_object_code', 'sort_order']),
+            models.Index(fields=['parent_object_code', 'is_active']),
+            models.Index(fields=['target_object_code']),
+            models.Index(fields=['relation_kind']),
+        ]
+
+    def __str__(self):
+        return f"{self.parent_object_code}.{self.relation_code} -> {self.target_object_code}"
+
+
 class PageLayout(BaseModel):
     """
     Page Layout - defines UI layout for forms and lists.
@@ -2494,4 +2624,3 @@ class Translation(BaseModel):
         elif self.content_object:
             return f"{self.content_type}:{self.object_id}.{self.field_name}[{self.language_code}]"
         return f"Translation[{self.language_code}]"
-

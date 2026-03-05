@@ -9,7 +9,7 @@
     >
       <el-result
         icon="error"
-        :title="t('common.messages.loadFailed') || 'Load Failed'"
+        :title="t('common.messages.loadFailed')"
         :sub-title="loadError"
       >
         <template #extra>
@@ -19,6 +19,23 @@
           >
             {{ t('common.actions.refresh') }}
           </el-button>
+          <el-button @click="$router.back()">
+            {{ t('common.actions.back') }}
+          </el-button>
+        </template>
+      </el-result>
+    </div>
+
+    <div
+      v-else-if="showPermissionDenied"
+      class="load-error"
+    >
+      <el-result
+        icon="warning"
+        :title="t('common.messages.permissionDenied')"
+        :sub-title="t('common.messages.permissionDeniedHint')"
+      >
+        <template #extra>
           <el-button @click="$router.back()">
             {{ t('common.actions.back') }}
           </el-button>
@@ -36,6 +53,7 @@
         :show-actions="false"
         :instance-id="recordId || null"
         @update:model-value="handleModelUpdate"
+        @request-save="handleFormRequestSave"
       />
 
       <div class="form-actions">
@@ -100,6 +118,18 @@ const canEdit = computed(() => {
     : effectivePermissions.value.add
 })
 
+const canView = computed(() => {
+  return effectivePermissions.value.view !== false
+})
+
+const canAccessForm = computed(() => {
+  return isEdit.value ? canView.value : effectivePermissions.value.add !== false
+})
+
+const showPermissionDenied = computed(() => {
+  return !loadError.value && !canAccessForm.value
+})
+
 const buildFallbackMetadata = (): ObjectMetadata => ({
   code: objectCode.value,
   name: objectCode.value,
@@ -134,18 +164,23 @@ const handleSubmit = async () => {
 
     if (isEdit.value) {
       await apiClient.value.update(recordId.value, payload)
-      ElMessage.success(t('common.messages.updateSuccess') || 'Update Success')
+      ElMessage.success(t('common.messages.updateSuccess'))
     } else {
       await apiClient.value.create(payload)
-      ElMessage.success(t('common.messages.createSuccess') || 'Create Success')
+      ElMessage.success(t('common.messages.createSuccess'))
     }
 
     router.push(`/objects/${objectCode.value}`)
   } catch (error: any) {
-    ElMessage.error(error.message || t('common.messages.operationFailed') || 'Operation Failed')
+    ElMessage.error(error.message || t('common.messages.operationFailed'))
   } finally {
     submitting.value = false
   }
+}
+
+const handleFormRequestSave = () => {
+  if (submitting.value || !canEdit.value || !!loadError.value) return
+  void handleSubmit()
 }
 
 const handleCancel = () => {
@@ -173,13 +208,20 @@ const loadData = async () => {
       console.warn('[DynamicFormPage] Metadata load failed, runtime permissions remain active')
     }
 
-    if (isEdit.value) {
+    if (runtimeResult.status === 'rejected' && metadataResult.status === 'rejected') {
+      const runtimeError = runtimeResult.reason instanceof Error ? runtimeResult.reason.message : ''
+      const metadataError = metadataResult.reason instanceof Error ? metadataResult.reason.message : ''
+      loadError.value = metadataError || runtimeError || t('system.businessObject.messages.loadMetadataFailed')
+      return
+    }
+
+    if (isEdit.value && canView.value) {
       const recordResponse = await apiClient.value.get(recordId.value)
       formData.value = recordResponse || {}
     }
   } catch (error: any) {
-    loadError.value = error.message || t('common.messages.operationFailed') || 'Operation Failed'
-    if (!error?.isHandled) ElMessage.error(loadError.value || t('common.messages.operationFailed') || 'Operation Failed')
+    loadError.value = error.message || t('common.messages.operationFailed')
+    if (!error?.isHandled) ElMessage.error(loadError.value || t('common.messages.operationFailed'))
   } finally {
     loading.value = false
   }
@@ -195,9 +237,11 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+@use '@/styles/variables.scss' as *;
+
 .dynamic-form-page {
   height: 100%;
-  background-color: #f5f7fa;
+  background-color: $bg-body;
 }
 
 .form-actions {

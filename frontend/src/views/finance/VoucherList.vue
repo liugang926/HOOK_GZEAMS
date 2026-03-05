@@ -43,6 +43,7 @@
           v-if="row.status === 'approved'"
           link
           type="success"
+          :loading="!!posting[row.id]"
           @click="handlePost(row)"
         >
           {{ t('finance.actions.post') }}
@@ -51,6 +52,7 @@
           v-if="['approved', 'posted'].includes(row.status)"
           link
           type="warning"
+          :loading="!!retrying[row.id]"
           @click="handleRetry(row)"
         >
           Retry Push
@@ -144,6 +146,7 @@ import { useRouter } from 'vue-router'
 import BaseListPage from '@/components/common/BaseListPage.vue'
 import SyncTaskStatusBadge from '@/components/finance/SyncTaskStatusBadge.vue'
 import { financeApi, integrationApi } from '@/api/finance'
+import { runAction, runFlagAction, runRowAction } from '@/composables'
 import { useSyncTaskPolling } from '@/composables/useSyncTaskPolling'
 import { formatMoney } from '@/utils/numberFormat'
 import type { SearchField, TableColumn } from '@/types/common'
@@ -155,6 +158,14 @@ const logsLoading = ref(false)
 const currentVoucherId = ref('')
 const currentVoucherNo = ref('')
 const integrationLogs = ref<any[]>([])
+const posting = ref<Record<string, boolean>>({})
+const retrying = ref<Record<string, boolean>>({})
+const batchPushing = ref(false)
+const actionNotifier = {
+  success: (message: string) => ElMessage.success(message),
+  warning: (message: string) => ElMessage.warning(message),
+  error: (message: string) => ElMessage.error(message)
+}
 const {
   stateByKey: _taskStateByVoucher,
   getState: getTaskState,
@@ -250,6 +261,16 @@ const resolveSyncTaskId = (payload: any) => {
   return String(payload?.syncTaskId || payload?.sync_task_id || '')
 }
 
+const dispatchListRefresh = () => {
+  window.dispatchEvent(new CustomEvent('refresh-base-list'))
+}
+
+const refreshLogsIfOpen = async (voucherId: string) => {
+  if (logsDialogVisible.value && currentVoucherId.value === voucherId) {
+    await loadIntegrationLogs(voucherId)
+  }
+}
+
 const handleCreate = () => {
   ElMessage.info(t('common.messages.functionUnderDevelopment') || 'Feature under development')
 }
@@ -291,12 +312,25 @@ const handleDelete = async (row: any) => {
       t('common.messages.tips'),
       { type: 'warning' }
     )
-    await financeApi.deleteVoucher(row.id)
-    ElMessage.success(t('common.messages.deleteSuccess'))
-    window.dispatchEvent(new CustomEvent('refresh-base-list'))
-  } catch (_e) {
-    // cancelled
+  } catch {
+    return
   }
+
+  await runAction({
+    notifier: actionNotifier,
+    messages: {
+      successFallback: t('common.messages.deleteSuccess'),
+      failureFallback: t('common.messages.operationFailed'),
+      errorFallback: t('common.messages.operationFailed')
+    },
+    invoke: async () => {
+      await financeApi.deleteVoucher(row.id)
+      return { success: true as const }
+    },
+    onSuccess: () => {
+      dispatchListRefresh()
+    }
+  })
 }
 
 const handlePost = async (row: any) => {
@@ -306,12 +340,27 @@ const handlePost = async (row: any) => {
       t('common.messages.tips'),
       { type: 'warning' }
     )
-    await financeApi.postVoucher(row.id)
-    ElMessage.success(t('common.messages.operationSuccess'))
-    window.dispatchEvent(new CustomEvent('refresh-base-list'))
-  } catch (e: any) {
-    if (e !== 'cancel') ElMessage.error(e.message || t('common.messages.operationFailed'))
+  } catch {
+    return
   }
+
+  await runRowAction({
+    loadingMap: posting,
+    rowId: String(row.id),
+    notifier: actionNotifier,
+    messages: {
+      successFallback: t('common.messages.operationSuccess'),
+      failureFallback: t('common.messages.operationFailed'),
+      errorFallback: t('common.messages.operationFailed')
+    },
+    invoke: async () => {
+      await financeApi.postVoucher(row.id)
+      return { success: true as const }
+    },
+    onSuccess: () => {
+      dispatchListRefresh()
+    }
+  })
 }
 
 const handleRetry = async (row: any) => {
@@ -321,26 +370,44 @@ const handleRetry = async (row: any) => {
       t('common.messages.tips'),
       { type: 'warning' }
     )
-    const result = await integrationApi.retry(row.id)
-    const syncTaskId = resolveSyncTaskId(result)
-    if (syncTaskId) {
-      startTaskPolling(String(row.id), syncTaskId, {
-        onDone: async () => {
-          window.dispatchEvent(new CustomEvent('refresh-base-list'))
-          if (logsDialogVisible.value && currentVoucherId.value === row.id) {
-            await loadIntegrationLogs(row.id)
-          }
-        }
-      })
-    }
-    ElMessage.success(t('common.messages.operationSuccess'))
-    window.dispatchEvent(new CustomEvent('refresh-base-list'))
-    if (logsDialogVisible.value && currentVoucherId.value === row.id) {
-      await loadIntegrationLogs(row.id)
-    }
-  } catch (e: any) {
-    if (e !== 'cancel') ElMessage.error(e?.message || t('common.messages.operationFailed'))
+  } catch {
+    return
   }
+
+  await runRowAction({
+    loadingMap: retrying,
+    rowId: String(row.id),
+    notifier: actionNotifier,
+    messages: {
+      successFallback: t('common.messages.operationSuccess'),
+      failureFallback: t('common.messages.operationFailed'),
+      errorFallback: t('common.messages.operationFailed')
+    },
+    invoke: async () => {
+      const result = await integrationApi.retry(row.id)
+      return {
+        ...result,
+        success: result?.success !== false
+      }
+    },
+    onSuccess: async (result) => {
+      const syncTaskId = resolveSyncTaskId(result)
+      if (syncTaskId) {
+        startTaskPolling(String(row.id), syncTaskId, {
+          onDone: async () => {
+            dispatchListRefresh()
+            await refreshLogsIfOpen(String(row.id))
+          }
+        })
+      }
+      dispatchListRefresh()
+      await refreshLogsIfOpen(String(row.id))
+    },
+    onFailure: async () => {
+      dispatchListRefresh()
+      await refreshLogsIfOpen(String(row.id))
+    }
+  })
 }
 
 const handlePushBatch = () => {
@@ -348,28 +415,39 @@ const handlePushBatch = () => {
 }
 
 const handleBatchPush = async (rows: any[]) => {
-  try {
-    const ids = rows.map(r => r.id)
-    const result = await financeApi.batchPushVouchers(ids)
-    const taskRows = Array.isArray((result as any)?.results) ? (result as any).results : []
-    taskRows.forEach((item: any) => {
-      if (!item?.success) return
-      const syncTaskId = resolveSyncTaskId(item)
-      if (syncTaskId && item?.id) {
-        startTaskPolling(String(item.id), syncTaskId, {
-          onDone: async () => {
-            window.dispatchEvent(new CustomEvent('refresh-base-list'))
-            if (logsDialogVisible.value && currentVoucherId.value === String(item.id)) {
-              await loadIntegrationLogs(String(item.id))
-            }
-          }
-        })
+  await runFlagAction({
+    loadingFlag: batchPushing,
+    notifier: actionNotifier,
+    messages: {
+      successFallback: t('common.messages.operationSuccess'),
+      failureFallback: t('common.messages.operationFailed'),
+      errorFallback: t('common.messages.operationFailed')
+    },
+    invoke: async () => {
+      const ids = rows.map(r => r.id)
+      const result = await financeApi.batchPushVouchers(ids)
+      return {
+        ...result,
+        success: true as const
       }
-    })
-    ElMessage.success(t('common.messages.operationSuccess'))
-  } catch (_e: any) {
-    ElMessage.error(t('common.messages.operationFailed'))
-  }
+    },
+    onSuccess: async (result) => {
+      const taskRows = Array.isArray(result?.results) ? result.results : []
+      taskRows.forEach((item: any) => {
+        if (!item?.success) return
+        const syncTaskId = resolveSyncTaskId(item)
+        if (syncTaskId && item?.id) {
+          startTaskPolling(String(item.id), syncTaskId, {
+            onDone: async () => {
+              dispatchListRefresh()
+              await refreshLogsIfOpen(String(item.id))
+            }
+          })
+        }
+      })
+      dispatchListRefresh()
+    }
+  })
 }
 
 onUnmounted(() => {

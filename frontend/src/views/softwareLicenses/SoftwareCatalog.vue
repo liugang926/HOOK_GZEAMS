@@ -1,4 +1,4 @@
-<!-- frontend/src/views/softwareLicenses/SoftwareCatalog.vue -->
+﻿<!-- frontend/src/views/softwareLicenses/SoftwareCatalog.vue -->
 
 <template>
   <BaseListPage
@@ -56,7 +56,7 @@ const columns = computed<TableColumn[]>(() => [
   { prop: 'vendor', label: t('softwareLicenses.catalog.fields.vendor'), width: 150 },
   { prop: 'softwareType', label: t('softwareLicenses.catalog.fields.type'), width: 120, tagType: (row: any) => getSoftwareTypeColor(row.softwareType), format: (value: any) => getSoftwareTypeLabel(value) },
   { prop: 'isActive', label: t('softwareLicenses.catalog.fields.status'), width: 100, tagType: (row: any) => (row.isActive ? 'success' : 'info'), format: (value: any) => (value ? t('common.status.active') : t('common.status.inactive')) },
-  { prop: 'actions', label: t('common.labels.operation', '操作'), width: 150, slot: true, fixed: 'right' }
+  { prop: 'actions', label: t('common.labels.operation'), width: 150, slot: true, fixed: 'right' }
 ])
 
 const searchFields = computed<SearchField[]>(() => [
@@ -78,7 +78,7 @@ const searchFields = computed<SearchField[]>(() => [
 
 const batchActions = computed(() => [
   {
-    label: t('common.actions.batchDelete', '批量删除'),
+    label: t('common.actions.batchDelete'),
     type: 'danger' as const,
     action: async (selectedRows: any[]) => {
       const ids = selectedRows.map(row => row.id)
@@ -122,3 +122,4 @@ const handleViewLicenses = (row: any) => {
   router.push(`/software-licenses/licenses?software=${row.code}`)
 }
 </script>
+

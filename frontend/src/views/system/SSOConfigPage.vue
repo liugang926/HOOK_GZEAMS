@@ -3,9 +3,9 @@
 
   Single-Sign-On configuration management.
   Three tabs:
-    1. SSO Providers — list/create/edit WeWork, DingTalk, Feishu configs
-    2. User Mappings — map local users ↔ third-party platform users
-    3. Sync Logs    — view sync history, trigger manual sync
+    1. SSO Providers 鈥?list/create/edit WeWork, DingTalk, Feishu configs
+    2. User Mappings 鈥?map local users 鈫?third-party platform users
+    3. Sync Logs    鈥?view sync history, trigger manual sync
 
   Uses ssoConfigApi / userMappingApi / ssoSyncApi from @/api/sso.ts
 -->
@@ -13,77 +13,189 @@
   <div class="sso-page">
     <div class="page-header">
       <div class="header-left">
-        <h2 class="page-title">{{ $t('sso.title') }}</h2>
-        <el-tag type="info" class="ml-8">{{ $t('sso.subtitle') }}</el-tag>
+        <h2 class="page-title">
+          {{ $t('sso.title') }}
+        </h2>
+        <el-tag
+          type="info"
+          class="ml-8"
+        >
+          {{ $t('sso.subtitle') }}
+        </el-tag>
       </div>
     </div>
 
-    <el-tabs v-model="activeTab" type="border-card">
-      <!-- ── Tab 1: SSO Providers ─────────────────────────────── -->
-      <el-tab-pane :label="$t('sso.tabs.providers')" name="providers">
+    <el-tabs
+      v-model="activeTab"
+      type="border-card"
+    >
+      <!-- 鈹€鈹€ Tab 1: SSO Providers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ -->
+      <el-tab-pane
+        :label="$t('sso.tabs.providers')"
+        name="providers"
+      >
         <div class="tab-toolbar">
-          <el-button type="primary" :icon="Plus" @click="openProviderDialog()">
+          <el-button
+            type="primary"
+            :icon="Plus"
+            @click="openProviderDialog()"
+          >
             {{ $t('sso.providers.add') }}
           </el-button>
         </div>
 
-        <el-table v-loading="loadingProviders" :data="providers" border stripe>
-          <el-table-column :label="$t('sso.providers.cols.platform')" prop="platform" width="120">
+        <el-table
+          v-loading="loadingProviders"
+          :data="providers"
+          border
+          stripe
+        >
+          <el-table-column
+            :label="$t('sso.providers.cols.platform')"
+            prop="platform"
+            width="120"
+          >
             <template #default="{ row }">
-              <el-tag :type="platformTagType(row.platform)">{{ row.platform }}</el-tag>
+              <el-tag :type="platformTagType(row.platform)">
+                {{ row.platform }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column :label="$t('sso.providers.cols.name')" prop="name" />
-          <el-table-column :label="$t('sso.providers.cols.appId')" prop="appId" />
-          <el-table-column :label="$t('sso.providers.cols.enabled')" prop="isEnabled" width="90">
+          <el-table-column
+            :label="$t('sso.providers.cols.name')"
+            prop="name"
+          />
+          <el-table-column
+            :label="$t('sso.providers.cols.appId')"
+            prop="appId"
+          />
+          <el-table-column
+            :label="$t('sso.providers.cols.enabled')"
+            prop="isEnabled"
+            width="90"
+          >
             <template #default="{ row }">
-              <el-switch :model-value="row.isEnabled" @change="toggleProvider(row)" />
+              <el-switch
+                :model-value="row.isEnabled"
+                @change="toggleProvider(row)"
+              />
             </template>
           </el-table-column>
-          <el-table-column :label="$t('sso.providers.cols.actions')" width="160">
+          <el-table-column
+            :label="$t('sso.providers.cols.actions')"
+            width="160"
+          >
             <template #default="{ row }">
-              <el-button size="small" @click="openProviderDialog(row)">{{ $t('common.actions.edit') }}</el-button>
-              <el-button size="small" type="success" @click="testConnection(row)">{{ $t('sso.providers.test') }}</el-button>
-              <el-button size="small" type="danger" @click="deleteProvider(row)">{{ $t('common.actions.delete') }}</el-button>
+              <el-button
+                size="small"
+                @click="openProviderDialog(row)"
+              >
+                {{ $t('common.actions.edit') }}
+              </el-button>
+              <el-button
+                size="small"
+                type="success"
+                @click="testConnection(row)"
+              >
+                {{ $t('sso.providers.test') }}
+              </el-button>
+              <el-button
+                size="small"
+                type="danger"
+                @click="deleteProvider(row)"
+              >
+                {{ $t('common.actions.delete') }}
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
       </el-tab-pane>
 
-      <!-- ── Tab 2: User Mappings ────────────────────────────── -->
-      <el-tab-pane :label="$t('sso.tabs.mappings')" name="mappings">
+      <!-- 鈹€鈹€ Tab 2: User Mappings 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ -->
+      <el-tab-pane
+        :label="$t('sso.tabs.mappings')"
+        name="mappings"
+      >
         <div class="tab-toolbar">
           <el-input
             v-model="mappingSearch"
             :placeholder="$t('sso.mappings.searchPlaceholder')"
-            clearable style="width:260px"
+            clearable
+            style="width:260px"
             @input="loadMappings"
           />
-          <el-button type="primary" :icon="Refresh" @click="triggerSync">
+          <el-button
+            type="primary"
+            :icon="Refresh"
+            @click="triggerSync"
+          >
             {{ $t('sso.mappings.triggerSync') }}
           </el-button>
         </div>
 
-        <el-table v-loading="loadingMappings" :data="mappings" border stripe>
-          <el-table-column :label="$t('sso.mappings.cols.localUser')" prop="localUserDisplay" />
-          <el-table-column :label="$t('sso.mappings.cols.platform')" prop="platform" width="100">
+        <el-table
+          v-loading="loadingMappings"
+          :data="mappings"
+          border
+          stripe
+        >
+          <el-table-column
+            :label="$t('sso.mappings.cols.localUser')"
+            prop="localUserDisplay"
+          />
+          <el-table-column
+            :label="$t('sso.mappings.cols.platform')"
+            prop="platform"
+            width="100"
+          >
             <template #default="{ row }">
-              <el-tag size="small" :type="platformTagType(row.platform)">{{ row.platform }}</el-tag>
+              <el-tag
+                size="small"
+                :type="platformTagType(row.platform)"
+              >
+                {{ row.platform }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column :label="$t('sso.mappings.cols.externalId')" prop="externalId" />
-          <el-table-column :label="$t('sso.mappings.cols.externalName')" prop="externalName" />
-          <el-table-column :label="$t('sso.mappings.cols.syncStatus')" prop="syncStatus" width="100">
+          <el-table-column
+            :label="$t('sso.mappings.cols.externalId')"
+            prop="externalId"
+          />
+          <el-table-column
+            :label="$t('sso.mappings.cols.externalName')"
+            prop="externalName"
+          />
+          <el-table-column
+            :label="$t('sso.mappings.cols.syncStatus')"
+            prop="syncStatus"
+            width="100"
+          >
             <template #default="{ row }">
-              <el-tag :type="row.syncStatus === 'synced' ? 'success' : 'warning'" size="small">
+              <el-tag
+                :type="row.syncStatus === 'synced' ? 'success' : 'warning'"
+                size="small"
+              >
                 {{ row.syncStatus }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column :label="$t('sso.mappings.cols.lastSyncAt')" prop="lastSyncAt" width="160" />
-          <el-table-column :label="$t('sso.mappings.cols.actions')" width="100">
+          <el-table-column
+            :label="$t('sso.mappings.cols.lastSyncAt')"
+            prop="lastSyncAt"
+            width="160"
+          />
+          <el-table-column
+            :label="$t('sso.mappings.cols.actions')"
+            width="100"
+          >
             <template #default="{ row }">
-              <el-button size="small" type="danger" @click="deleteMapping(row)">{{ $t('common.actions.delete') }}</el-button>
+              <el-button
+                size="small"
+                type="danger"
+                @click="deleteMapping(row)"
+              >
+                {{ $t('common.actions.delete') }}
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -97,36 +209,104 @@
         />
       </el-tab-pane>
 
-      <!-- ── Tab 3: Sync Logs ────────────────────────────────── -->
-      <el-tab-pane :label="$t('sso.tabs.syncLogs')" name="syncLogs">
+      <!-- 鈹€鈹€ Tab 3: Sync Logs 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ -->
+      <el-tab-pane
+        :label="$t('sso.tabs.syncLogs')"
+        name="syncLogs"
+      >
         <div class="tab-toolbar">
-          <el-select v-model="syncLogPlatform" :placeholder="$t('sso.syncLogs.allPlatforms')" clearable style="width:160px" @change="loadSyncLogs">
-            <el-option value="wework" label="企业微信" />
-            <el-option value="dingtalk" label="钉钉" />
-            <el-option value="feishu" label="飞书" />
+          <el-select
+            v-model="syncLogPlatform"
+            :placeholder="$t('sso.syncLogs.allPlatforms')"
+            clearable
+            style="width:160px"
+            @change="loadSyncLogs"
+          >
+            <el-option
+              value="wework"
+              :label="$t('sso.platforms.wework')"
+            />
+            <el-option
+              value="dingtalk"
+              :label="$t('sso.platforms.dingtalk')"
+            />
+            <el-option
+              value="feishu"
+              :label="$t('sso.platforms.feishu')"
+            />
           </el-select>
-          <el-button :icon="Refresh" @click="loadSyncLogs">{{ $t('common.actions.refresh') }}</el-button>
+          <el-button
+            :icon="Refresh"
+            @click="loadSyncLogs"
+          >
+            {{ $t('common.actions.refresh') }}
+          </el-button>
         </div>
 
-        <el-table v-loading="loadingSyncLogs" :data="syncLogs" border stripe>
-          <el-table-column :label="$t('sso.syncLogs.cols.platform')" prop="platform" width="100">
+        <el-table
+          v-loading="loadingSyncLogs"
+          :data="syncLogs"
+          border
+          stripe
+        >
+          <el-table-column
+            :label="$t('sso.syncLogs.cols.platform')"
+            prop="platform"
+            width="100"
+          >
             <template #default="{ row }">
-              <el-tag size="small" :type="platformTagType(row.platform)">{{ row.platform }}</el-tag>
+              <el-tag
+                size="small"
+                :type="platformTagType(row.platform)"
+              >
+                {{ row.platform }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column :label="$t('sso.syncLogs.cols.syncType')" prop="syncType" width="100" />
-          <el-table-column :label="$t('sso.syncLogs.cols.status')" prop="status" width="100">
+          <el-table-column
+            :label="$t('sso.syncLogs.cols.syncType')"
+            prop="syncType"
+            width="100"
+          />
+          <el-table-column
+            :label="$t('sso.syncLogs.cols.status')"
+            prop="status"
+            width="100"
+          >
             <template #default="{ row }">
-              <el-tag :type="row.status === 'success' ? 'success' : row.status === 'running' ? 'warning' : 'danger'" size="small">
+              <el-tag
+                :type="row.status === 'success' ? 'success' : row.status === 'running' ? 'warning' : 'danger'"
+                size="small"
+              >
                 {{ row.status }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column :label="$t('sso.syncLogs.cols.totalCount')" prop="totalCount" width="90" />
-          <el-table-column :label="$t('sso.syncLogs.cols.successCount')" prop="successCount" width="90" />
-          <el-table-column :label="$t('sso.syncLogs.cols.failedCount')" prop="failedCount" width="90" />
-          <el-table-column :label="$t('sso.syncLogs.cols.startTime')" prop="startTime" width="160" />
-          <el-table-column :label="$t('sso.syncLogs.cols.errorMsg')" prop="errorMessage" show-overflow-tooltip />
+          <el-table-column
+            :label="$t('sso.syncLogs.cols.totalCount')"
+            prop="totalCount"
+            width="90"
+          />
+          <el-table-column
+            :label="$t('sso.syncLogs.cols.successCount')"
+            prop="successCount"
+            width="90"
+          />
+          <el-table-column
+            :label="$t('sso.syncLogs.cols.failedCount')"
+            prop="failedCount"
+            width="90"
+          />
+          <el-table-column
+            :label="$t('sso.syncLogs.cols.startTime')"
+            prop="startTime"
+            width="160"
+          />
+          <el-table-column
+            :label="$t('sso.syncLogs.cols.errorMsg')"
+            prop="errorMessage"
+            show-overflow-tooltip
+          />
         </el-table>
         <el-pagination
           v-model:current-page="syncLogPage"
@@ -139,29 +319,62 @@
       </el-tab-pane>
     </el-tabs>
 
-    <!-- ── Provider Create/Edit Dialog ────────────────────────── -->
+    <!-- 鈹€鈹€ Provider Create/Edit Dialog 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€ -->
     <el-dialog
       v-model="providerDialog"
       :title="editingProvider ? $t('sso.providers.editTitle') : $t('sso.providers.createTitle')"
       width="520px"
       destroy-on-close
     >
-      <el-form ref="providerFormRef" :model="providerForm" :rules="providerRules" label-width="120px">
-        <el-form-item :label="$t('sso.providers.form.platform')" prop="platform">
-          <el-select v-model="providerForm.platform" :disabled="!!editingProvider">
-            <el-option value="wework" label="企业微信 (WeWork)" />
-            <el-option value="dingtalk" label="钉钉 (DingTalk)" />
-            <el-option value="feishu" label="飞书 (Feishu)" />
+      <el-form
+        ref="providerFormRef"
+        :model="providerForm"
+        :rules="providerRules"
+        label-width="120px"
+      >
+        <el-form-item
+          :label="$t('sso.providers.form.platform')"
+          prop="platform"
+        >
+          <el-select
+            v-model="providerForm.platform"
+            :disabled="!!editingProvider"
+          >
+            <el-option
+              value="wework"
+              :label="$t('sso.platforms.wework')"
+            />
+            <el-option
+              value="dingtalk"
+              :label="$t('sso.platforms.dingtalk')"
+            />
+            <el-option
+              value="feishu"
+              :label="$t('sso.platforms.feishu')"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item :label="$t('sso.providers.form.name')" prop="name">
+        <el-form-item
+          :label="$t('sso.providers.form.name')"
+          prop="name"
+        >
           <el-input v-model="providerForm.name" />
         </el-form-item>
-        <el-form-item :label="$t('sso.providers.form.appId')" prop="appId">
+        <el-form-item
+          :label="$t('sso.providers.form.appId')"
+          prop="appId"
+        >
           <el-input v-model="providerForm.appId" />
         </el-form-item>
-        <el-form-item :label="$t('sso.providers.form.appSecret')" prop="appSecret">
-          <el-input v-model="providerForm.appSecret" type="password" show-password />
+        <el-form-item
+          :label="$t('sso.providers.form.appSecret')"
+          prop="appSecret"
+        >
+          <el-input
+            v-model="providerForm.appSecret"
+            type="password"
+            show-password
+          />
         </el-form-item>
         <el-form-item :label="$t('sso.providers.form.redirectUri')">
           <el-input v-model="providerForm.redirectUri" />
@@ -171,8 +384,16 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="providerDialog = false">{{ $t('common.actions.cancel') }}</el-button>
-        <el-button type="primary" :loading="savingProvider" @click="saveProvider">{{ $t('common.actions.save') }}</el-button>
+        <el-button @click="providerDialog = false">
+          {{ $t('common.actions.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="savingProvider"
+          @click="saveProvider"
+        >
+          {{ $t('common.actions.save') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -188,7 +409,7 @@ import { ssoConfigApi, userMappingApi, ssoSyncApi } from '@/api/sso'
 const { t } = useI18n()
 const activeTab = ref('providers')
 
-// ── Providers ──────────────────────────────────────────────────
+// 鈹€鈹€ Providers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const loadingProviders = ref(false)
 const providers = ref<any[]>([])
 
@@ -274,7 +495,7 @@ const deleteProvider = async (row: any) => {
   loadProviders()
 }
 
-// ── User Mappings ───────────────────────────────────────────────
+// 鈹€鈹€ User Mappings 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const loadingMappings = ref(false)
 const mappings = ref<any[]>([])
 const mappingSearch = ref('')
@@ -309,7 +530,7 @@ const deleteMapping = async (row: any) => {
   loadMappings()
 }
 
-// ── Sync Logs ───────────────────────────────────────────────────
+// 鈹€鈹€ Sync Logs 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const loadingSyncLogs = ref(false)
 const syncLogs = ref<any[]>([])
 const syncLogPlatform = ref('')
@@ -344,3 +565,4 @@ onMounted(() => {
 .tab-toolbar { display: flex; gap: 10px; margin-bottom: 16px; }
 .mt-16 { margin-top: 16px; }
 </style>
+

@@ -56,6 +56,12 @@
         </el-button-group>
       </div>
       <div class="toolbar-right">
+        <el-switch
+          v-model="translationMode"
+          :active-text="t('system.pageLayout.designer.actions.translationMode', 'Trans Mode')"
+          inline-prompt
+          style="margin-right: 12px"
+        />
         <el-button
           data-testid="layout-reset-button"
           @click="handleReset"
@@ -118,6 +124,7 @@
       >
         <div class="panel-header">
           <el-input
+            ref="searchInputRef"
             v-model="searchQuery"
             :placeholder="t('system.pageLayout.designer.placeholders.searchField')"
             :prefix-icon="Search"
@@ -616,6 +623,7 @@
               data-testid="layout-field-property-editor"
               :field-type="fieldProps.fieldType"
               :mode="mode"
+              :translation-mode="translationMode"
               :available-spans="availableSpans"
               :available-span-columns="availableSpanColumns"
               @update-property="handleFieldPropertyUpdate"
@@ -672,6 +680,7 @@ import { mergeFieldSources } from '@/platform/layout/unifiedFieldOrder'
 import { normalizeGridSpan24 } from '@/platform/layout/semanticGrid'
 import { getCanvasPlacementAttrs, placeCanvasFields, type CanvasPlacement } from '@/platform/layout/canvasLayout'
 import { buildLayoutFieldDropper, compileLayoutSchema } from '@/platform/layout/layoutCompiler'
+import { resolveRelationTargetObjectCode } from '@/platform/reference/relationObjectCode'
 import {
   getDefaultLayoutConfig,
   cloneLayoutConfig,
@@ -679,6 +688,9 @@ import {
   type LayoutType
 } from '@/utils/layoutValidation'
 import { normalizeLayoutType } from '@/utils/layoutMode'
+import { useHotkey } from '@/composables/useHotkeys'
+import { storage } from '@/utils/storage'
+import { debounce } from 'lodash-es'
 import type { LayoutFieldConfig } from '@/types/metadata'
 import type { LayoutMode } from '@/types/layout'
 import type { FieldDefinition as RuntimeFieldDefinition } from '@/types'
@@ -802,7 +814,11 @@ interface Props {
   businessObjectId?: string
   initialPreviewMode?: 'current' | 'active'
   layoutConfig?: LayoutConfig
+  translationMode?: boolean
+  isDefault?: boolean
 }
+
+const translationMode = ref(false)
 
 const props = withDefaults(defineProps<Props>(), {
   layoutId: '',
@@ -841,8 +857,22 @@ const previewLoading = ref(false)
 const selectedSection = ref<LayoutSection | null>(null)
 const saving = ref(false)
 const publishing = ref(false)
+const searchInputRef = ref()
 const searchQuery = ref('')
-const expandedGroups = ref<Set<string>>(new Set(['text', 'number', 'select']))
+const expandedGroups = ref<Set<string>>(new Set())
+
+// Hotkeys
+useHotkey('ctrl+s', () => {
+  if (previewMode.value !== 'active') {
+    handleSave()
+  }
+}, { preventDefault: true, allowInInputs: true })
+
+useHotkey('ctrl+f', () => {
+  if (renderMode.value === 'design') {
+    searchInputRef.value?.focus()
+  }
+}, { preventDefault: true })
 
 const isDefault = ref(false)
 const isPublished = ref(false)
@@ -1338,6 +1368,14 @@ const activeCollapses = ref<Record<string, string[]>>({})
 const history = useLayoutHistory(layoutConfig, { maxHistory: 50 })
 const { canUndo, canRedo, undo, redo, historyLength } = history
 
+const debouncedSaveLayoutState = debounce(async (key: string, config: any) => {
+  try {
+    await storage.set(key, config)
+  } catch (e) {
+    console.error('Failed to auto-save layout state:', e)
+  }
+}, 800)
+
 function commitLayoutChange(newConfig: LayoutConfig, description: string, previousConfig?: LayoutConfig) {
   if (historyLength.value === 0) {
     const baseline = cloneLayoutConfig(previousConfig || layoutConfig.value) as Record<string, unknown>
@@ -1345,6 +1383,12 @@ function commitLayoutChange(newConfig: LayoutConfig, description: string, previo
   }
   layoutConfig.value = newConfig
   history.push(newConfig as unknown as Record<string, unknown>, description)
+
+  // Auto-save to IndexedDB via storage.ts (debounced)
+  if (props.objectCode && props.mode) {
+    const autoSaveKey = `layout_autosave_${props.objectCode}_${props.mode}`
+    debouncedSaveLayoutState(autoSaveKey, newConfig)
+  }
 }
 
 // Property form state
@@ -1816,14 +1860,11 @@ function notifyUnsupportedField(field: FieldDefinition): void {
 }
 
 function extractRelatedObjectCode(field: Record<string, any>): string {
-  const direct = field.relatedObjectCode || field.related_object_code || field.referenceObject
-  if (direct) return String(direct)
-  if (field.reverseRelationModel || field.reverse_relation_model) {
-    const model = String(field.reverseRelationModel || field.reverse_relation_model)
-    const parts = model.split('.')
-    return parts[parts.length - 1]
-  }
-  return String(field.code || '').replace(/(_?record|_?items|s?)$/, '')
+  return resolveRelationTargetObjectCode({
+    explicitTarget: field.relatedObjectCode || field.related_object_code || field.referenceObject,
+    reverseRelationModel: field.reverseRelationModel || field.reverse_relation_model,
+    relationCode: field.code
+  })
 }
 
 function mapPreviewReverseRelations(fields: any[]): ReverseRelationField[] {
@@ -2206,6 +2247,42 @@ function handleCollapseDrop(e: DragEvent) {
   addFieldToContainer(field, { kind: 'collapse', sectionId, collapseId })
 }
 
+const DESIGNER_COMPONENT_PROP_KEYS = new Set<string>([
+  'lookupCompactKeys'
+])
+
+const normalizeLookupCompactKeys = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+}
+
+const normalizeLookupColumns = (value: unknown): Array<{ key: string; label?: string; minWidth?: number; width?: number }> => {
+  if (!Array.isArray(value)) return []
+  const out: Array<{ key: string; label?: string; minWidth?: number; width?: number }> = []
+  const seen = new Set<string>()
+  for (const item of value) {
+    const key = typeof item === 'string'
+      ? String(item || '').trim()
+      : String((item as Record<string, any>)?.key || '').trim()
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    const next: { key: string; label?: string; minWidth?: number; width?: number } = { key }
+    if (typeof item === 'object' && item) {
+      const raw = item as Record<string, any>
+      const label = String(raw.label || '').trim()
+      if (label) next.label = label
+      const minWidth = Number(raw.minWidth ?? raw.min_width)
+      const width = Number(raw.width)
+      if (Number.isFinite(minWidth) && minWidth > 0) next.minWidth = minWidth
+      if (Number.isFinite(width) && width > 0) next.width = width
+    }
+    out.push(next)
+  }
+  return out
+}
+
 // Field update
 function updateField(key: string, value: any) {
   if (!selectedId.value || elementType.value !== 'field') return
@@ -2238,6 +2315,21 @@ function updateField(key: string, value: any) {
       item[key] = nextSpan
     } else if (key === 'minHeight') {
       setLayoutFieldMinHeight(item as LayoutField, value)
+    } else if (DESIGNER_COMPONENT_PROP_KEYS.has(key)) {
+      const fieldItem = item as LayoutField
+      const componentProps = {
+        ...((fieldItem.componentProps || {}) as Record<string, any>),
+        ...((fieldItem as any).component_props || {})
+      }
+      if (key === 'lookupCompactKeys') {
+        componentProps.lookupCompactKeys = normalizeLookupCompactKeys(value)
+        componentProps.lookup_compact_keys = [...componentProps.lookupCompactKeys]
+      } else {
+        componentProps[key] = value
+      }
+      fieldItem.componentProps = componentProps
+      ;(fieldItem as any).component_props = componentProps
+      delete (fieldItem as any)[key]
     } else {
       item[key] = value
     }
@@ -2575,6 +2667,9 @@ async function handleSave() {
       } as any)
     }
 
+    if (props.objectCode && props.mode) {
+      storage.remove(`layout_autosave_${props.objectCode}_${props.mode}`)
+    }
     ElMessage.success(t('system.pageLayout.designer.messages.layoutSaved'))
     emit('save', data)
   } catch (error: any) {
@@ -2634,6 +2729,9 @@ async function handlePublish() {
     }
 
     isPublished.value = true
+    if (props.objectCode && props.mode) {
+      storage.remove(`layout_autosave_${props.objectCode}_${props.mode}`)
+    }
     ElMessage.success(t('system.pageLayout.designer.messages.layoutPublished'))
     emit('published', layoutConfig.value)
   } catch (error: any) {
@@ -2987,11 +3085,27 @@ watch(selectedId, () => {
 
   if (elementType.value === 'field') {
     const field = item as LayoutField
-    fieldProps.value = {
+    const componentProps = {
+      ...((field.componentProps || {}) as Record<string, any>),
+      ...((field as any).component_props || {})
+    }
+    const nextFieldProps: Record<string, any> = {
       ...field,
       fieldType: normalizeFieldType((field as any).fieldType || (field as any).field_type || 'text'),
       minHeight: resolveLayoutFieldMinHeight(field)
     }
+    nextFieldProps.lookupCompactKeys = normalizeLookupCompactKeys(
+      (field as any).lookupCompactKeys ??
+      componentProps.lookupCompactKeys ??
+      componentProps.lookup_compact_keys
+    )
+    nextFieldProps.lookupColumns = normalizeLookupColumns(
+      (field as any).lookupColumns ??
+      (field as any).lookup_columns ??
+      componentProps.lookupColumns ??
+      componentProps.lookup_columns
+    )
+    fieldProps.value = nextFieldProps
   } else if (elementType.value === 'section') {
     sectionProps.value = { ...item }
   }
@@ -3090,13 +3204,49 @@ watch(renderMode, (mode) => {
 
 // Lifecycle
 onMounted(() => {
-  loadLayout().finally(() => {
-    if (props.initialPreviewMode === 'active') {
-      void setPreviewMode('active')
-    }
-  })
-  // Expand first group by default
-  expandedGroups.value.add('text')
+  const proceedWithNormalLoad = () => {
+    loadLayout().finally(() => {
+      if (props.initialPreviewMode === 'active') {
+        void setPreviewMode('active')
+      }
+    })
+    // Expand first group by default
+    expandedGroups.value.add('text')
+  }
+
+  const autoSaveKey = props.objectCode && props.mode ? `layout_autosave_${props.objectCode}_${props.mode}` : null
+  
+  if (autoSaveKey) {
+    storage.get<any>(autoSaveKey).then((savedState) => {
+      if (savedState) {
+        ElMessageBox.confirm(
+          t('system.pageLayout.designer.messages.recoverDirtySchema', 'An unsaved layout state was found. Do you want to recover it?'),
+          t('system.pageLayout.designer.messages.recoverTitle', 'Recover Layout'),
+          { type: 'info', confirmButtonText: t('common.actions.confirm', 'Recover'), cancelButtonText: t('common.actions.cancel', 'Discard') }
+        ).then(() => {
+          try {
+            layoutConfig.value = normalizeAndEnsureLayoutConfig(savedState)
+            populateSampleData()
+            history.push(layoutConfig.value as unknown as Record<string, unknown>, 'Recovered state')
+          } catch (e) {
+            console.error('Failed to parse auto-saved layout', e)
+            storage.remove(autoSaveKey)
+            proceedWithNormalLoad()
+          }
+        }).catch(() => {
+          storage.remove(autoSaveKey)
+          proceedWithNormalLoad()
+        })
+      } else {
+        proceedWithNormalLoad()
+      }
+    }).catch((e) => {
+      console.error('Failed to read from local storage:', e)
+      proceedWithNormalLoad()
+    })
+  } else {
+    proceedWithNormalLoad()
+  }
 })
 
 onUnmounted(() => {

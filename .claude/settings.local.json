@@ -9,7 +9,19 @@
       "Bash(git add:*)",
       "Bash(findstr:*)",
       "Bash(git push:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(gh run list:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run typecheck:app:*)",
+      "Bash(1)",
+      "Bash(npm run i18n:check:*)",
+      "Bash(npm run i18n:coverage:all:strict:*)",
+      "Bash(npm run i18n:parity:all:strict:*)",
+      "Bash(npm run i18n:defects:p1:strict:*)",
+      "Bash(npm run related:metadata:audit:all:strict:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

@@ -84,7 +84,7 @@ const searchFields = computed<SearchField[]>(() => [
     field: 'search',
     label: t('common.actions.search'),
     type: 'text',
-    placeholder: `${t('inventory.columns.taskNo')}/${t('inventory.columns.name')}`
+    placeholder: t('inventory.placeholders.taskSearch')
   },
   {
     field: 'status',

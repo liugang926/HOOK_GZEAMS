@@ -113,5 +113,27 @@
         "messages": {
             "deallocateConfirm": "确定要解除 {software} 在 {asset} 上的分配吗？"
         }
+    },
+    "allocationDialog": {
+        "title": "分配许可证 - {name}",
+        "availableUnits": "可用数量",
+        "asset": "资产",
+        "allocationKey": "分配密钥",
+        "notes": "备注",
+        "placeholders": {
+            "assetSearch": "搜索资产编码或名称",
+            "allocationKey": "可选，此分配专用密钥",
+            "notes": "分配备注"
+        },
+        "actions": {
+            "allocate": "分配"
+        },
+        "messages": {
+            "allocateSuccess": "分配成功",
+            "allocateFailed": "分配失败"
+        },
+        "validation": {
+            "assetRequired": "请选择资产"
+        }
     }
 }

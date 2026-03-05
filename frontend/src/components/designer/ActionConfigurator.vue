@@ -1,11 +1,11 @@
-<!--
+﻿<!--
   ActionConfigurator.vue - Configure rule actions based on rule type
 -->
 
 <template>
   <div class="action-configurator">
     <div class="config-header">
-      <span class="header-title">动作配置</span>
+      <span class="header-title">{{ t('system.businessRule.designer.actionConfigurator.title') }}</span>
       <el-tag
         :type="ruleTypeTag.type"
         size="small"
@@ -16,45 +16,45 @@
 
     <div class="config-content">
       <template v-if="ruleType === 'validation'">
-        <el-form-item label="错误消息 (中文)">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.errorMessageLocal')">
           <el-input
             :model-value="action.error_message"
-            placeholder="请输入验证失败时显示的中文消息"
+            :placeholder="t('system.businessRule.designer.actionConfigurator.placeholders.errorMessageLocal')"
             @update:model-value="updateAction('error_message', $event)"
           />
         </el-form-item>
-        <el-form-item label="错误消息 (英文)">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.errorMessageEnglish')">
           <el-input
             :model-value="action.error_message_en"
-            placeholder="Enter English message for validation failure"
+            :placeholder="t('system.businessRule.designer.actionConfigurator.placeholders.errorMessageEnglish')"
             @update:model-value="updateAction('error_message_en', $event)"
           />
         </el-form-item>
-        <el-form-item label="严重程度">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.severity')">
           <el-radio-group
             :model-value="action.severity || 'error'"
             @update:model-value="updateAction('severity', $event)"
           >
             <el-radio value="error">
-              错误
+              {{ t('system.businessRule.designer.actionConfigurator.severity.error') }}
             </el-radio>
             <el-radio value="warning">
-              警告
+              {{ t('system.businessRule.designer.actionConfigurator.severity.warning') }}
             </el-radio>
             <el-radio value="info">
-              提示
+              {{ t('system.businessRule.designer.actionConfigurator.severity.info') }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
       </template>
 
       <template v-else-if="ruleType === 'visibility'">
-        <el-form-item label="目标字段">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.targetFields')">
           <el-select
             :model-value="action.target_fields"
             multiple
             filterable
-            placeholder="选择要控制显示/隐藏的字段"
+            :placeholder="t('system.businessRule.designer.actionConfigurator.placeholders.targetFields')"
             @update:model-value="updateAction('target_fields', $event)"
           >
             <el-option
@@ -65,27 +65,27 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="显示状态">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.visibility')">
           <el-radio-group
             :model-value="action.visible ?? true"
             @update:model-value="updateAction('visible', $event)"
           >
             <el-radio :value="true">
-              显示
+              {{ t('system.businessRule.designer.actionConfigurator.visibility.show') }}
             </el-radio>
             <el-radio :value="false">
-              隐藏
+              {{ t('system.businessRule.designer.actionConfigurator.visibility.hide') }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
       </template>
 
       <template v-else-if="ruleType === 'computed'">
-        <el-form-item label="目标字段">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.targetField')">
           <el-select
             :model-value="action.target_field"
             filterable
-            placeholder="选择计算结果存储字段"
+            :placeholder="t('system.businessRule.designer.actionConfigurator.placeholders.computedTargetField')"
             @update:model-value="updateAction('target_field', $event)"
           >
             <el-option
@@ -96,12 +96,12 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="计算表达式">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.formula')">
           <el-input
             :model-value="action.formula"
             type="textarea"
             :rows="4"
-            placeholder="例如: {amount} * 1.13"
+            :placeholder="t('system.businessRule.designer.actionConfigurator.placeholders.formula')"
             @update:model-value="updateAction('formula', $event)"
           />
           <el-text
@@ -109,33 +109,33 @@
             type="info"
             class="formula-hint"
           >
-            可用 {field_code} 引用字段值
+            {{ t('system.businessRule.designer.actionConfigurator.formulaHint') }}
           </el-text>
         </el-form-item>
       </template>
 
       <template v-else-if="ruleType === 'linkage'">
-        <el-form-item label="联动类型">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.linkageType')">
           <el-radio-group
             :model-value="action.linkage_type || 'set_value'"
             @update:model-value="updateAction('linkage_type', $event)"
           >
             <el-radio value="set_value">
-              设置值
+              {{ t('system.businessRule.designer.actionConfigurator.linkageTypes.setValue') }}
             </el-radio>
             <el-radio value="load_options">
-              加载选项
+              {{ t('system.businessRule.designer.actionConfigurator.linkageTypes.loadOptions') }}
             </el-radio>
             <el-radio value="clear">
-              清空
+              {{ t('system.businessRule.designer.actionConfigurator.linkageTypes.clear') }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="目标字段">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.targetField')">
           <el-select
             :model-value="action.target_field"
             filterable
-            placeholder="选择被联动字段"
+            :placeholder="t('system.businessRule.designer.actionConfigurator.placeholders.linkageTargetField')"
             @update:model-value="updateAction('target_field', $event)"
           >
             <el-option
@@ -146,39 +146,39 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="目标值">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.targetValue')">
           <el-input
             :model-value="action.value"
-            placeholder="设置字段的新值（可选）"
+            :placeholder="t('system.businessRule.designer.actionConfigurator.placeholders.targetValue')"
             @update:model-value="updateAction('value', $event)"
           />
         </el-form-item>
       </template>
 
       <template v-else-if="ruleType === 'trigger'">
-        <el-form-item label="动作类型">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.actionType')">
           <el-select
             :model-value="action.type || 'webhook'"
             @update:model-value="updateAction('type', $event)"
           >
             <el-option
-              label="Webhook"
+              :label="t('system.businessRule.designer.actionConfigurator.actionTypes.webhook')"
               value="webhook"
             />
             <el-option
-              label="消息通知"
+              :label="t('system.businessRule.designer.actionConfigurator.actionTypes.notify')"
               value="notify"
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="接口地址">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.apiEndpoint')">
           <el-input
             :model-value="action.api_endpoint"
-            placeholder="https://example.com/hooks/rule"
+            :placeholder="t('system.businessRule.designer.actionConfigurator.placeholders.apiEndpoint')"
             @update:model-value="updateAction('api_endpoint', $event)"
           />
         </el-form-item>
-        <el-form-item label="请求方法">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.apiMethod')">
           <el-select
             :model-value="action.api_method || 'POST'"
             @update:model-value="updateAction('api_method', $event)"
@@ -196,7 +196,7 @@
       </template>
 
       <template v-else>
-        <el-form-item label="规则配置(JSON)">
+        <el-form-item :label="t('system.businessRule.designer.actionConfigurator.labels.ruleConfigJson')">
           <el-input
             :model-value="JSON.stringify(action, null, 2)"
             type="textarea"
@@ -211,6 +211,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 type TagType = 'primary' | 'success' | 'info' | 'warning' | 'danger'
 
@@ -250,17 +251,30 @@ const emit = defineEmits<{
   'update:modelValue': [value: RuleAction]
 }>()
 
+const { t } = useI18n()
+
 const action = computed<RuleAction>(() => props.modelValue || {})
 
+const ruleTypeTagMap: Record<string, { type: TagType; labelKey: string }> = {
+  validation: { type: 'danger', labelKey: 'system.businessRule.types.validation' },
+  visibility: { type: 'warning', labelKey: 'system.businessRule.types.visibility' },
+  computed: { type: 'info', labelKey: 'system.businessRule.types.computed' },
+  linkage: { type: 'success', labelKey: 'system.businessRule.types.linkage' },
+  trigger: { type: 'primary', labelKey: 'system.businessRule.types.trigger' }
+}
+
 const ruleTypeTag = computed(() => {
-  const types: Record<string, { type: TagType; label: string }> = {
-    validation: { type: 'danger', label: '校验规则' },
-    visibility: { type: 'warning', label: '显示规则' },
-    computed: { type: 'info', label: '计算规则' },
-    linkage: { type: 'success', label: '联动规则' },
-    trigger: { type: 'primary', label: '触发规则' }
+  const typeConfig = ruleTypeTagMap[props.ruleType]
+  if (typeConfig) {
+    return {
+      type: typeConfig.type,
+      label: t(typeConfig.labelKey)
+    }
   }
-  return types[props.ruleType] || { type: 'info' as TagType, label: props.ruleType || '规则' }
+  return {
+    type: 'info' as TagType,
+    label: props.ruleType || t('system.businessRule.designer.actionConfigurator.unknownRule')
+  }
 })
 
 function updateAction(key: string, value: unknown) {

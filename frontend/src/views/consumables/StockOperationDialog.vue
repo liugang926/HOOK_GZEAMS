@@ -1,6 +1,6 @@
-<template>
+﻿<template>
   <el-dialog
-    :title="type === 'in' ? '耗材入库' : '领用出库'"
+    :title="type === 'in' ? t('consumables.stockDialog.titleIn') : t('consumables.stockDialog.titleOut')"
     :model-value="modelValue"
     width="500px"
     @close="handleClose"
@@ -12,7 +12,7 @@
       label-width="80px"
     >
       <el-form-item
-        label="耗材"
+        :label="t('consumables.stockDialog.fields.consumable')"
         prop="consumable_id"
       >
         <el-select
@@ -20,7 +20,7 @@
           filterable
           remote
           :remote-method="searchConsumables"
-          placeholder="搜索耗材"
+          :placeholder="t('consumables.stockDialog.placeholders.searchConsumable')"
           style="width: 100%"
           :loading="loading"
         >
@@ -36,7 +36,7 @@
         </el-select>
       </el-form-item>
       <el-form-item
-        label="数量"
+        :label="t('consumables.stockDialog.fields.quantity')"
         prop="quantity"
       >
         <el-input-number
@@ -46,7 +46,7 @@
         />
       </el-form-item>
       <el-form-item
-        label="备注"
+        :label="t('consumables.stockDialog.fields.remark')"
         prop="remark"
       >
         <el-input
@@ -57,14 +57,14 @@
     </el-form>
     <template #footer>
       <el-button @click="handleClose">
-        取消
+        {{ t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="submitting"
         @click="submit"
       >
-        确认
+        {{ t('common.actions.confirm') }}
       </el-button>
     </template>
   </el-dialog>
@@ -72,17 +72,19 @@
 
 <script setup lang="ts">
 import { ref, reactive, defineProps, defineEmits } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { stockIn, stockOut, getConsumables } from '@/api/consumables'
 import { ElMessage } from 'element-plus'
 
 const props = defineProps({
-    modelValue: Boolean,
-    type: {
-        type: String,
-        default: 'in' // 'in' or 'out'
-    }
+  modelValue: Boolean,
+  type: {
+    type: String,
+    default: 'in'
+  }
 })
 const emit = defineEmits(['update:modelValue', 'success'])
+const { t } = useI18n()
 
 const formRef = ref()
 const submitting = ref(false)
@@ -90,59 +92,60 @@ const loading = ref(false)
 const options = ref<any[]>([])
 
 const form = reactive({
-    consumable_id: undefined,
-    quantity: 1,
-    remark: ''
+  consumable_id: undefined,
+  quantity: 1,
+  remark: ''
 })
 
 const rules = {
-    consumable_id: [{ required: true, message: '请选择耗材', trigger: 'change' }],
-    quantity: [{ required: true, message: '请输入数量', trigger: 'blur' }]
+  consumable_id: [{ required: true, message: t('common.validation.requiredWithField', { field: t('consumables.stockDialog.fields.consumable') }), trigger: 'change' }],
+  quantity: [{ required: true, message: t('common.validation.requiredWithField', { field: t('consumables.stockDialog.fields.quantity') }), trigger: 'blur' }]
 }
 
 const searchConsumables = async (query: string) => {
-    if (query) {
-        loading.value = true
-        try {
-            const res = await getConsumables({ search: query })
-            options.value = res.results || []
-        } finally {
-            loading.value = false
-        }
-    } else {
-        options.value = []
-    }
+  if (!query) {
+    options.value = []
+    return
+  }
+
+  loading.value = true
+  try {
+    const res = await getConsumables({ search: query })
+    options.value = res.results || []
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleClose = () => {
-    emit('update:modelValue', false)
-    form.consumable_id = undefined
-    form.quantity = 1
-    form.remark = ''
-    options.value = []
+  emit('update:modelValue', false)
+  form.consumable_id = undefined
+  form.quantity = 1
+  form.remark = ''
+  options.value = []
 }
 
 const submit = async () => {
-    if (!formRef.value) return
-    await formRef.value.validate(async (valid: boolean) => {
-        if (valid) {
-            submitting.value = true
-            try {
-                const payload = { ...form, type: props.type as 'in' | 'out' }
-                if (props.type === 'in') {
-                    await stockIn(payload)
-                } else {
-                    await stockOut(payload)
-                }
-                ElMessage.success('操作成功')
-                emit('success')
-                handleClose()
-            } catch (e: any) {
-                ElMessage.error(e.message || '操作失败')
-            } finally {
-                submitting.value = false
-            }
-        }
-    })
+  if (!formRef.value) return
+
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  submitting.value = true
+  try {
+    const payload = { ...form, type: props.type as 'in' | 'out' }
+    if (props.type === 'in') {
+      await stockIn(payload)
+    } else {
+      await stockOut(payload)
+    }
+    ElMessage.success(t('consumables.stockDialog.messages.operationSuccess'))
+    emit('success')
+    handleClose()
+  } catch (e: any) {
+    ElMessage.error(e.message || t('consumables.stockDialog.messages.operationFailed'))
+  } finally {
+    submitting.value = false
+  }
 }
 </script>

@@ -13,6 +13,7 @@ from apps.workflows.viewsets.workflow_operation_log_viewsets import (
 from apps.workflows.viewsets.workflow_execution_viewsets import (
     WorkflowInstanceViewSet,
     WorkflowTaskViewSet,
+    WorkflowApprovalViewSet,
     WorkflowStatisticsViewSet,
 )
 
@@ -22,5 +23,6 @@ __all__ = [
     'WorkflowOperationLogViewSet',
     'WorkflowInstanceViewSet',
     'WorkflowTaskViewSet',
+    'WorkflowApprovalViewSet',
     'WorkflowStatisticsViewSet',
 ]

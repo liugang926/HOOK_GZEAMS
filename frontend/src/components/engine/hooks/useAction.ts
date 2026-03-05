@@ -15,6 +15,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import request from '@/utils/request'
 import { getErrorMessage } from '@/utils/errorHandler'
+import i18n from '@/locales'
 
 // ============================================================================
 // Type Definitions
@@ -79,6 +80,7 @@ async function executeActionApi(
   method: string = 'POST',
   data: Record<string, any> = {}
 ): Promise<ActionResult> {
+  const t = i18n.global.t
   try {
     const verb = String(method || 'POST').toLowerCase()
     const url = String(endpoint || '').trim()
@@ -98,7 +100,7 @@ async function executeActionApi(
   } catch (error: any) {
     return {
       success: false,
-      error: getErrorMessage(error) || 'Action execution failed'
+      error: getErrorMessage(error) || t('common.messages.operationFailed')
     }
   }
 }
@@ -114,6 +116,7 @@ async function executeActionApi(
  */
 export function useAction() {
   const router = useRouter()
+  const t = i18n.global.t
 
   // Loading state for action execution
   const executing = ref(false)
@@ -135,16 +138,16 @@ export function useAction() {
       try {
         await ElMessageBox.confirm(
           action.confirmMessage,
-          'Confirm Action',
+          t('common.dialog.confirmTitle'),
           {
-            confirmButtonText: 'Confirm',
-            cancelButtonText: 'Cancel',
+            confirmButtonText: t('common.actions.confirm'),
+            cancelButtonText: t('common.actions.cancel'),
             type: 'warning'
           }
         )
       } catch {
         // User cancelled
-        return { success: false, error: 'User cancelled' }
+        return { success: false, error: t('common.messages.actionCancelled') }
       }
     }
 
@@ -176,7 +179,7 @@ export function useAction() {
           break
 
         default:
-          result = { success: false, error: `Unknown action type: ${action.actionType}` }
+          result = { success: false, error: t('common.messages.unknownActionType', { type: action.actionType }) }
       }
 
       // Show feedback
@@ -185,7 +188,7 @@ export function useAction() {
           ElMessage.success(action.successMessage)
         }
       } else {
-        const msg = action.errorMessage || result.error || 'Action failed'
+        const msg = action.errorMessage || result.error || t('common.messages.operationFailed')
         ElMessage.error(msg)
       }
 
@@ -197,7 +200,7 @@ export function useAction() {
       return result
 
     } catch (error: any) {
-      const errorMsg = action.errorMessage || error.message || 'Action execution failed'
+      const errorMsg = action.errorMessage || error.message || t('common.messages.operationFailed')
       ElMessage.error(errorMsg)
 
       return {
@@ -223,10 +226,10 @@ export function useAction() {
       try {
         const isValid = await context.formRef.validate()
         if (!isValid) {
-          return { success: false, error: 'Form validation failed' }
+          return { success: false, error: t('common.messages.formValidationFailed') }
         }
       } catch (validationError) {
-        return { success: false, error: 'Form validation failed' }
+        return { success: false, error: t('common.messages.formValidationFailed') }
       }
     }
 
@@ -281,7 +284,7 @@ export function useAction() {
     context: ActionContext
   ): Promise<ActionResult> {
     if (!action.apiEndpoint) {
-      return { success: false, error: 'API endpoint not specified' }
+      return { success: false, error: t('common.messages.operationFailed') }
     }
 
     // Merge form data with action params

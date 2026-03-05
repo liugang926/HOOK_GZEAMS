@@ -40,6 +40,7 @@ import { projectUnifiedDetailSectionsFromLayout, shouldSkipUnifiedDetailField } 
 import { createModePolicyForContext } from '@/platform/layout/layoutRenderModel'
 import { toUnifiedDetailField, buildRequiredFormRules } from '@/platform/layout/unifiedDetailField'
 import { compileLayoutSchema } from '@/platform/layout/layoutCompiler'
+import { resolveRelationTargetObjectCode } from '@/platform/reference/relationObjectCode'
 
 const { t } = useI18n()
 const slots = useSlots()
@@ -93,8 +94,8 @@ interface Emits {
   (e: 'delete', record: any): void
   (e: 'back'): void
   (e: 'loaded', record: any): void
-  (e: 'related-record-click', relationCode: string, record: any): void
-  (e: 'related-record-edit', relationCode: string, record: any): void
+  (e: 'related-record-click', relationCode: string, record: any, targetObjectCode?: string): void
+  (e: 'related-record-edit', relationCode: string, record: any, targetObjectCode?: string): void
 }
 
 // ============================================================================
@@ -261,6 +262,11 @@ const visibleReverseRelations = computed<ReverseRelationField[]>(() => {
       relatedObjectCode: extractObjectCode(rel),
       reverseRelationField: rel.reverseRelationField || rel.reverse_relation_field,
       reverseRelationModel: rel.reverseRelationModel || rel.reverse_relation_model,
+      sortOrder: Number(rel.sortOrder || rel.sort_order || 0) || 0,
+      groupKey: rel.groupKey || rel.group_key || '',
+      groupName: rel.groupName || rel.group_name || '',
+      groupOrder: Number(rel.groupOrder || rel.group_order || 0) || undefined,
+      defaultExpanded: rel.defaultExpanded ?? rel.default_expanded,
       title: rel.label || rel.name,
       showCreate: (rel.relationDisplayMode || rel.relation_display_mode) === 'inline_editable',
       position: rel.position
@@ -278,6 +284,11 @@ const visibleReverseRelations = computed<ReverseRelationField[]>(() => {
     relatedObjectCode: extractObjectCode(rel),
     reverseRelationField: rel.reverseRelationField || rel.reverse_relation_field,
     reverseRelationModel: rel.reverseRelationModel || rel.reverse_relation_model,
+    sortOrder: Number((rel as any).sortOrder || (rel as any).sort_order || 0) || 0,
+    groupKey: (rel as any).groupKey || (rel as any).group_key || '',
+    groupName: (rel as any).groupName || (rel as any).group_name || '',
+    groupOrder: Number((rel as any).groupOrder || (rel as any).group_order || 0) || undefined,
+    defaultExpanded: (rel as any).defaultExpanded ?? (rel as any).default_expanded,
     title: rel.label || rel.name,
     showCreate: (rel.relationDisplayMode || rel.relation_display_mode) === 'inline_editable',
     position: rel.position
@@ -506,11 +517,12 @@ function buildInlineEditFormSeed(record: Record<string, any>, sections: DetailSe
  * Extract object code from reverse relation
  */
 function extractObjectCode(field: FieldDefinition): string {
-  if (field.reverseRelationModel) {
-    const parts = field.reverseRelationModel.split('.')
-    return parts[parts.length - 1]
-  }
-  return field.code.replace(/(_?record|_?items|s?)$/, '')
+  const fieldAny = field as unknown as Record<string, unknown>
+  return resolveRelationTargetObjectCode({
+    explicitTarget: fieldAny.relatedObjectCode || fieldAny.related_object_code || fieldAny.targetObjectCode || fieldAny.target_object_code,
+    reverseRelationModel: field.reverseRelationModel || fieldAny.reverse_relation_model,
+    relationCode: field.code
+  })
 }
 
 /**
@@ -635,15 +647,15 @@ function handleBack() {
 /**
  * Handle related record click
  */
-function handleRelatedRecordClick(relationCode: string, record: any) {
-  emit('related-record-click', relationCode, record)
+function handleRelatedRecordClick(relationCode: string, record: any, targetObjectCode?: string) {
+  emit('related-record-click', relationCode, record, targetObjectCode)
 }
 
 /**
  * Handle related record edit
  */
-function handleRelatedRecordEdit(relationCode: string, record: any) {
-  emit('related-record-edit', relationCode, record)
+function handleRelatedRecordEdit(relationCode: string, record: any, targetObjectCode?: string) {
+  emit('related-record-edit', relationCode, record, targetObjectCode)
 }
 
 /**

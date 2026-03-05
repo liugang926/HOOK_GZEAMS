@@ -1,4 +1,4 @@
-<!--
+﻿<!--
   UserPicker Component
 
   A user selection component with:
@@ -13,7 +13,7 @@
     v-model="selectedUser"
     :multiple="false"
     :filter-dept="true"
-    placeholder="请选择用户"
+    placeholder="Select user"
     @change="handleUserChange"
   />
 -->
@@ -435,3 +435,4 @@ defineExpose({
   }
 }
 </style>
+

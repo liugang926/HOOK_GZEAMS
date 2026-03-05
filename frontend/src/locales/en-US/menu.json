@@ -16,6 +16,7 @@
         "insurance": "Insurance",
         "leasing": "Leasing",
         "workflowManagement": "Workflow Management",
+        "dynamicObjects": "Dynamic Objects",
         "other": "Other"
     },
     "routes": {

@@ -6,12 +6,12 @@
 <template>
   <div class="condition-builder">
     <div class="builder-header">
-      <span class="header-title">{{ title }}</span>
+      <span class="header-title">{{ displayTitle }}</span>
       <el-tag
         type="info"
         size="small"
       >
-        {{ conditionCount }} 条件
+        {{ t('system.businessRule.designer.conditionBuilder.conditionCount', { count: conditionCount }) }}
       </el-tag>
     </div>
 
@@ -23,14 +23,14 @@
       <el-icon class="empty-icon">
         <Filter />
       </el-icon>
-      <p>暂无条件</p>
+      <p>{{ t('system.businessRule.designer.conditionBuilder.emptyState') }}</p>
       <el-button
         type="primary"
         size="small"
         @click="addCondition"
       >
         <el-icon><Plus /></el-icon>
-        添加条件组
+        {{ t('system.businessRule.designer.conditionBuilder.addCondition') }}
       </el-button>
     </div>
 
@@ -54,14 +54,14 @@
           @click="addCondition"
         >
           <el-icon><Plus /></el-icon>
-          添加条件组
+          {{ t('system.businessRule.designer.conditionBuilder.addCondition') }}
         </el-button>
         <el-button
           size="small"
           @click="addGroup"
         >
           <el-icon><FolderAdd /></el-icon>
-          添加条件组
+          {{ t('system.businessRule.designer.conditionBuilder.addGroup') }}
         </el-button>
       </div>
     </div>
@@ -72,7 +72,7 @@
       class="json-preview"
     >
       <el-collapse-item
-        title="查看 JSON"
+        :title="t('system.businessRule.designer.conditionBuilder.previewJson')"
         name="preview"
       >
         <pre class="json-code">{{ formattedJson }}</pre>
@@ -82,8 +82,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Filter, Plus, FolderAdd } from '@element-plus/icons-vue'
+import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { Filter, FolderAdd, Plus } from '@element-plus/icons-vue'
 import ConditionGroup from './ConditionGroup.vue'
 
 interface FieldOption {
@@ -98,13 +99,15 @@ interface Props {
   title?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  title: '条件配置'
-})
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: Record<string, any>]
 }>()
+
+const { t } = useI18n()
+
+const displayTitle = computed(() => props.title || t('system.businessRule.designer.conditionBuilder.defaultTitle'))
 
 // Internal model
 const conditionModel = computed({
@@ -116,19 +119,19 @@ const conditionModel = computed({
 const showPreview = ref<string[]>([])
 
 // Operators available for conditions
-const operators = [
-  { value: '==', label: '等于', types: ['all'] },
-  { value: '!=', label: '不等于', types: ['all'] },
-  { value: '>', label: '大于', types: ['number', 'date'] },
-  { value: '>=', label: '大于等于', types: ['number', 'date'] },
-  { value: '<', label: '小于', types: ['number', 'date'] },
-  { value: '<=', label: '小于等于', types: ['number', 'date'] },
-  { value: 'in', label: '包含于', types: ['all'] },
-  { value: '!', label: '为空', types: ['all'] },
-  { value: '!!', label: '不为空', types: ['all'] },
-  { value: 'startsWith', label: '开头是', types: ['string'] },
-  { value: 'endsWith', label: '结尾是', types: ['string'] },
-]
+const operators = computed(() => [
+  { value: '==', label: t('system.businessRule.designer.conditionBuilder.operators.equals'), types: ['all'] },
+  { value: '!=', label: t('system.businessRule.designer.conditionBuilder.operators.notEquals'), types: ['all'] },
+  { value: '>', label: t('system.businessRule.designer.conditionBuilder.operators.greaterThan'), types: ['number', 'date'] },
+  { value: '>=', label: t('system.businessRule.designer.conditionBuilder.operators.greaterThanOrEqual'), types: ['number', 'date'] },
+  { value: '<', label: t('system.businessRule.designer.conditionBuilder.operators.lessThan'), types: ['number', 'date'] },
+  { value: '<=', label: t('system.businessRule.designer.conditionBuilder.operators.lessThanOrEqual'), types: ['number', 'date'] },
+  { value: 'in', label: t('system.businessRule.designer.conditionBuilder.operators.in'), types: ['all'] },
+  { value: '!', label: t('system.businessRule.designer.conditionBuilder.operators.empty'), types: ['all'] },
+  { value: '!!', label: t('system.businessRule.designer.conditionBuilder.operators.notEmpty'), types: ['all'] },
+  { value: 'startsWith', label: t('system.businessRule.designer.conditionBuilder.operators.startsWith'), types: ['string'] },
+  { value: 'endsWith', label: t('system.businessRule.designer.conditionBuilder.operators.endsWith'), types: ['string'] }
+])
 
 // Computed
 const hasConditions = computed(() => {
@@ -146,7 +149,7 @@ const formattedJson = computed(() => {
 // Helper to count conditions
 function countConditions(obj: Record<string, any>): number {
   if (!obj || typeof obj !== 'object') return 0
-  
+
   let count = 0
   for (const key in obj) {
     if (['and', 'or'].includes(key)) {
@@ -163,7 +166,7 @@ function addCondition() {
   const newCondition = {
     '==': [{ var: '' }, '']
   }
-  
+
   if (!hasConditions.value) {
     emit('update:modelValue', newCondition)
   } else if (props.modelValue.and) {
@@ -186,7 +189,7 @@ function addGroup() {
   const newGroup = {
     and: [{ '==': [{ var: '' }, ''] }]
   }
-  
+
   if (!hasConditions.value) {
     emit('update:modelValue', newGroup)
   } else if (props.modelValue.and) {

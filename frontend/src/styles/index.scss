@@ -1,41 +1,15 @@
 @use 'sass:color';
 @use './variables.scss' as *;
+@use './tokens.scss' as *;
 
 // Global Reset & Typography
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: $bg-body;
-    color: $text-main;
+    background-color: var(--sys-color-bg-base);
+    color: var(--sys-color-text-main);
     font-size: 13px; // Modern crisp baseline
-}
-
-// Element Plus Overrides
-:root {
-    --el-color-primary: #{$primary-color};
-    --el-color-success: #{$success-color};
-    --el-color-warning: #{$warning-color};
-    --el-color-danger: #{$danger-color};
-    --el-color-info: #{$info-color};
-
-    // Core structural resets
-    --el-border-radius-base: #{$radius-base};
-    --el-border-radius-small: calc(#{$radius-base} - 2px);
-    --el-border-color: #{$border-color};
-    --el-border-color-light: #{$border-color};
-    --el-border-color-lighter: #{$border-light};
-    --el-box-shadow-light: #{$shadow-md};
-
-    // Text overrides
-    --el-text-color-primary: #{$text-main};
-    --el-text-color-regular: #{$text-regular};
-    --el-text-color-secondary: #{$text-secondary};
-    --el-font-size-base: 13px;
-
-    // Detail layout tokens
-    --gzeams-detail-label-width: 120px;
-    --gzeams-detail-field-gap: 16px;
 }
 
 /* ====================================================================
@@ -72,12 +46,26 @@ body {
         background-color: var(--el-table-header-bg-color) !important;
         border-bottom: none !important; // Absolute flat header
         font-weight: 500 !important;
-        height: 44px;
+        height: $density-table-row-height;
     }
 
     td.el-table__cell {
         border-bottom: 1px solid #f1f5f9 !important; // Whisper thin row dividers
         transition: background-color 0.2s;
+        height: $density-table-row-height;
+    }
+}
+
+// Global Compact Mode Applicator
+html.is-compact {
+    --gzeams-density-scale: 0.8;
+    --gzeams-density-table-row: 32px;
+    --gzeams-density-input: 28px;
+    --gzeams-density-font: 12px;
+    --gzeams-density-filter: 28px;
+
+    body {
+        font-size: var(--gzeams-density-font);
     }
 }
 
@@ -87,6 +75,7 @@ body {
 .el-select__wrapper {
     box-shadow: 0 0 0 1px $border-color inset !important;
     transition: all 0.2s ease !important;
+    min-height: $density-input-height;
 
     &:hover {
         box-shadow: 0 0 0 1px #cbd5e1 inset !important;
@@ -97,6 +86,15 @@ body {
         // Thick semi-transparent ring
         box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1), 0 0 0 1px $primary-color inset !important;
     }
+}
+
+// Adjust Element Plus form sizes dynamically
+.el-form-item {
+    margin-bottom: calc(18px * $density-scale);
+}
+
+.el-input__inner {
+    font-size: $density-font-size;
 }
 
 // Buttons: Crisp geometry

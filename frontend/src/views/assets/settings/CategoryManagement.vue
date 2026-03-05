@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="category-management">
     <el-container style="height: 100%;">
       <el-aside width="300px">
@@ -10,14 +10,14 @@
           @delete="handleDelete"
         />
       </el-aside>
-      
+
       <el-main>
         <div
           v-if="mode === 'view' && currentCategory"
           class="category-detail"
         >
           <el-descriptions
-            title="分类详情"
+            :title="`${t('assets.category.title')} ${t('common.actions.detail')}`"
             :column="1"
             border
           >
@@ -26,35 +26,35 @@
                 type="primary"
                 @click="handleEdit"
               >
-                编辑
+                {{ t('common.actions.edit') }}
               </el-button>
             </template>
-            <el-descriptions-item label="编码">
+            <el-descriptions-item :label="t('assets.category.code')">
               {{ currentCategory.code }}
             </el-descriptions-item>
-            <el-descriptions-item label="名称">
+            <el-descriptions-item :label="t('assets.category.name')">
               {{ currentCategory.name }}
             </el-descriptions-item>
-            <el-descriptions-item label="上级分类ID">
+            <el-descriptions-item :label="t('assets.category.parent')">
               {{ currentCategory.parent_id || '-' }}
             </el-descriptions-item>
-            <el-descriptions-item label="折旧方法">
+            <el-descriptions-item :label="t('assets.category.method')">
               {{ formatDepreciationMethod(currentCategory.depreciation_method) }}
             </el-descriptions-item>
-            <el-descriptions-item label="预计使用年限">
-              {{ currentCategory.useful_life }} 月
+            <el-descriptions-item :label="t('assets.category.usefulLife')">
+              {{ currentCategory.useful_life }} {{ t('assets.category.months') }}
             </el-descriptions-item>
-            <el-descriptions-item label="残值率">
+            <el-descriptions-item :label="t('assets.category.salvageRate')">
               {{ currentCategory.salvage_rate }}%
             </el-descriptions-item>
           </el-descriptions>
-          
+
           <div
             v-if="!currentCategory.id"
             class="empty-tip"
             style="text-align: center; margin-top: 100px; color: #909399;"
           >
-            请点击左侧添加或选择分类
+            {{ t('common.messages.noData') }}
           </div>
         </div>
 
@@ -62,7 +62,7 @@
           v-else-if="mode === 'view' && !currentCategory"
           class="empty-state"
         >
-          <el-empty description="请选择左侧分类或新增分类" />
+          <el-empty :description="t('common.messages.noData')" />
         </div>
 
         <CategoryForm
@@ -80,8 +80,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import CategoryTree from './components/CategoryTree.vue'
 import CategoryForm from './components/CategoryForm.vue'
+
+const { t } = useI18n()
 
 const treeRef = ref()
 const mode = ref<'view' | 'edit' | 'create'>('view')
@@ -92,7 +95,7 @@ const parentName = ref<string>('')
 
 const handleSelectCategory = (category: any) => {
   if (mode.value === 'edit' || mode.value === 'create') {
-    // Confirm if unsaved changes? Skipped for simplicity
+    // Keep current behavior: skip dirty-check confirmation for now.
   }
   mode.value = 'view'
   currentCategory.value = category
@@ -116,13 +119,11 @@ const handleEdit = () => {
   mode.value = 'edit'
   editData.value = { ...currentCategory.value }
   parentId.value = currentCategory.value.parent_id
-  // parentName logic is tricky if we don't have the parent object loaded.
-  // For now we might ignore parent name in edit, or better, Tree could provide it.
 }
 
 const handleSuccess = () => {
   mode.value = 'view'
-  currentCategory.value = null // Reset view or auto-select the new one?
+  currentCategory.value = null
   treeRef.value.fetchTree()
 }
 
@@ -137,10 +138,10 @@ const handleDelete = () => {
 
 const formatDepreciationMethod = (val: string) => {
   const map: Record<string, string> = {
-    'straight_line': '年限平均法',
-    'double_declining': '双倍余额递减法',
-    'sum_of_years': '年数总和法',
-    'none': '不计提折旧'
+    straight_line: t('assets.depreciation.straightLine'),
+    double_declining: t('assets.depreciation.doubleDeclining'),
+    sum_of_years: t('assets.depreciation.sumOfYears'),
+    none: t('assets.depreciation.noDepreciation')
   }
   return map[val] || val
 }
@@ -148,7 +149,7 @@ const formatDepreciationMethod = (val: string) => {
 
 <style scoped>
 .category-management {
-  height: calc(100vh - 84px); /* Adjust based on layout header */
+  height: calc(100vh - 84px);
   background: #fff;
   border-radius: 4px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);

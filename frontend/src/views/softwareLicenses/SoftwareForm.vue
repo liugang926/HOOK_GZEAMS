@@ -1,4 +1,4 @@
-<!-- frontend/src/views/softwareLicenses/SoftwareForm.vue -->
+﻿<!-- frontend/src/views/softwareLicenses/SoftwareForm.vue -->
 
 <template>
   <el-card>
@@ -180,7 +180,7 @@ const loadSoftware = async () => {
     const data = await softwareApi.get(id)
     formData.value = data
   } catch (error) {
-    ElMessage.error(t('common.messages.loadFailed', '加载失败'))
+    ElMessage.error(t('common.messages.loadFailed'))
   }
 }
 
@@ -226,3 +226,4 @@ onMounted(() => {
   align-items: center;
 }
 </style>
+

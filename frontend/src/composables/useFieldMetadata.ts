@@ -13,6 +13,7 @@ import { ref, type Ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { businessObjectApi } from '@/api/system'
+import i18n from '@/locales'
 import type { FieldMetadataResponse, RelationDisplayMode } from '@/types'
 import { sortFieldsByRuntimeOrder } from '@/platform/layout/runtimeFieldPolicy'
 import { localizeMultilingualObject } from '@/utils/localeText'
@@ -232,7 +233,7 @@ export function useFieldMetadata(
       return data
     } catch (err) {
       error.value = err as Error
-      ElMessage.error(`Failed to load field metadata: ${(err as Error).message}`)
+      ElMessage.error(i18n.global.t('common.messages.loadFailed'))
       return null
     } finally {
       loading.value = false

@@ -136,12 +136,18 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import BaseDetailPage from '@/components/common/BaseDetailPage.vue'
 import SyncTaskStatusBadge from '@/components/finance/SyncTaskStatusBadge.vue'
 import { financeApi, integrationApi } from '@/api/finance'
+import { runAction } from '@/composables'
 import { useSyncTaskPolling } from '@/composables/useSyncTaskPolling'
 import { formatMoney } from '@/utils/numberFormat'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const actionNotifier = {
+  success: (message: string) => ElMessage.success(message),
+  warning: (message: string) => ElMessage.warning(message),
+  error: (message: string) => ElMessage.error(message)
+}
 
 const loading = ref(false)
 const logsLoading = ref(false)
@@ -308,15 +314,26 @@ const handlePost = async () => {
       t('common.messages.tips'),
       { type: 'warning' }
     )
-    await financeApi.postVoucher(voucherId.value)
-    ElMessage.success(t('common.messages.operationSuccess'))
-    await fetchVoucher()
-    await loadIntegrationLogs()
-  } catch (e: any) {
-    if (e !== 'cancel') {
-      ElMessage.error(e?.message || t('common.messages.operationFailed'))
-    }
+  } catch {
+    return
   }
+
+  await runAction({
+    notifier: actionNotifier,
+    messages: {
+      successFallback: t('common.messages.operationSuccess'),
+      failureFallback: t('common.messages.operationFailed'),
+      errorFallback: t('common.messages.operationFailed')
+    },
+    invoke: async () => {
+      await financeApi.postVoucher(voucherId.value)
+      return { success: true as const }
+    },
+    onSuccess: async () => {
+      await fetchVoucher()
+      await loadIntegrationLogs()
+    }
+  })
 }
 
 const handleRetry = async () => {
@@ -326,24 +343,42 @@ const handleRetry = async () => {
       t('common.messages.tips'),
       { type: 'warning' }
     )
-    const result = await integrationApi.retry(voucherId.value)
-    const syncTaskId = resolveSyncTaskId(result)
-    if (syncTaskId) {
-      startTaskPolling(taskStateKey.value, syncTaskId, {
-        onDone: async () => {
-          await fetchVoucher()
-          await loadIntegrationLogs()
-        }
-      })
-    }
-    ElMessage.success(t('common.messages.operationSuccess'))
-    await fetchVoucher()
-    await loadIntegrationLogs()
-  } catch (e: any) {
-    if (e !== 'cancel') {
-      ElMessage.error(e?.message || t('common.messages.operationFailed'))
-    }
+  } catch {
+    return
   }
+
+  await runAction({
+    notifier: actionNotifier,
+    messages: {
+      successFallback: t('common.messages.operationSuccess'),
+      failureFallback: t('common.messages.operationFailed'),
+      errorFallback: t('common.messages.operationFailed')
+    },
+    invoke: async () => {
+      const result = await integrationApi.retry(voucherId.value)
+      return {
+        ...result,
+        success: result?.success !== false
+      }
+    },
+    onSuccess: async (result) => {
+      const syncTaskId = resolveSyncTaskId(result)
+      if (syncTaskId) {
+        startTaskPolling(taskStateKey.value, syncTaskId, {
+          onDone: async () => {
+            await fetchVoucher()
+            await loadIntegrationLogs()
+          }
+        })
+      }
+      await fetchVoucher()
+      await loadIntegrationLogs()
+    },
+    onFailure: async () => {
+      await fetchVoucher()
+      await loadIntegrationLogs()
+    }
+  })
 }
 
 const goBack = () => {

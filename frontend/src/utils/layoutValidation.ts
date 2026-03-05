@@ -1,9 +1,8 @@
 /**
  * Layout Schema Validation Utilities
- *
- * Provides validation functions for layout configurations.
- * Mirrors the backend validators in backend/apps/system/validators.py
  */
+
+import i18n from '@/locales'
 
 export interface LayoutValidationError {
   path: string
@@ -15,27 +14,31 @@ export interface ValidationResult {
   errors: LayoutValidationError[]
 }
 
-// Valid section types
 const VALID_SECTION_TYPES = ['section', 'tab', 'divider', 'collapse', 'column'] as const
-
-// Valid span values (1-24, divisible by common grid systems)
 const VALID_SPANS = [1, 2, 3, 4, 6, 8, 12, 24] as const
 const FIELD_MIN_HEIGHT_MIN = 44
 const FIELD_MIN_HEIGHT_MAX = 720
 
-// Layout types
 export type LayoutType = 'form' | 'list' | 'detail' | 'search'
 
-/**
- * Validate layout configuration structure
- */
+const lt = (key: string, params?: Record<string, unknown>) => i18n.global.t(key, params || {}) as string
+
+const missingArrayMessage = (field: string) =>
+  lt('common.layoutValidation.missingOrInvalidArray', { field })
+
+const cannotBeEmptyMessage = (field: string) =>
+  lt('common.layoutValidation.cannotBeEmpty', { field })
+
+const missingRequiredFieldMessage = (field: string) =>
+  lt('common.layoutValidation.missingRequiredField', { field })
+
 export function validateLayoutConfig(config: unknown, layoutType: LayoutType): ValidationResult {
   const errors: LayoutValidationError[] = []
 
   if (!config || typeof config !== 'object') {
     return {
       valid: false,
-      errors: [{ path: '', message: 'Configuration must be a JSON object' }]
+      errors: [{ path: '', message: lt('common.layoutValidation.configurationMustBeObject') }]
     }
   }
 
@@ -57,7 +60,7 @@ function validateFormLayout(config: any, errors: LayoutValidationError[]): void 
   if (!Array.isArray(config.sections)) {
     errors.push({
       path: 'sections',
-      message: 'Missing or invalid required field: sections (must be an array)'
+      message: missingArrayMessage('sections')
     })
     return
   }
@@ -65,7 +68,7 @@ function validateFormLayout(config: any, errors: LayoutValidationError[]): void 
   if (config.sections.length === 0) {
     errors.push({
       path: 'sections',
-      message: 'sections cannot be empty'
+      message: cannotBeEmptyMessage('sections')
     })
   }
 
@@ -78,7 +81,7 @@ function validateListLayout(config: any, errors: LayoutValidationError[]): void 
   if (!Array.isArray(config.columns)) {
     errors.push({
       path: 'columns',
-      message: 'Missing or invalid required field: columns (must be an array)'
+      message: missingArrayMessage('columns')
     })
     return
   }
@@ -86,7 +89,7 @@ function validateListLayout(config: any, errors: LayoutValidationError[]): void 
   if (config.columns.length === 0) {
     errors.push({
       path: 'columns',
-      message: 'columns cannot be empty'
+      message: cannotBeEmptyMessage('columns')
     })
   }
 
@@ -99,30 +102,33 @@ function validateSearchLayout(config: any, errors: LayoutValidationError[]): voi
   if (config.fields !== undefined && !Array.isArray(config.fields)) {
     errors.push({
       path: 'fields',
-      message: 'fields must be an array'
+      message: lt('common.layoutValidation.mustBeArray', { field: 'fields' })
     })
   }
 }
 
 function validateSection(section: any, path: string, errors: LayoutValidationError[]): void {
   if (!section || typeof section !== 'object') {
-    errors.push({ path, message: 'Section must be an object' })
+    errors.push({ path, message: lt('common.layoutValidation.sectionMustBeObject') })
     return
   }
 
   if (!section.id) {
-    errors.push({ path, message: 'Missing required field: id' })
+    errors.push({ path, message: missingRequiredFieldMessage('id') })
   }
 
   if (!section.type) {
-    errors.push({ path, message: 'Missing required field: type' })
+    errors.push({ path, message: missingRequiredFieldMessage('type') })
     return
   }
 
   if (!VALID_SECTION_TYPES.includes(section.type)) {
     errors.push({
       path,
-      message: `Invalid type: ${section.type}. Valid types: ${VALID_SECTION_TYPES.join(', ')}`
+      message: lt('common.layoutValidation.invalidType', {
+        type: section.type,
+        types: VALID_SECTION_TYPES.join(', ')
+      })
     })
   }
 
@@ -134,7 +140,6 @@ function validateSection(section: any, path: string, errors: LayoutValidationErr
       validateTabSection(section, path, errors)
       break
     case 'divider':
-      // Divider only needs id and type, already validated
       break
     case 'collapse':
       validateCollapseSection(section, path, errors)
@@ -148,7 +153,7 @@ function validateSection(section: any, path: string, errors: LayoutValidationErr
 function validateBasicSection(section: any, path: string, errors: LayoutValidationError[]): void {
   if (section.fields !== undefined) {
     if (!Array.isArray(section.fields)) {
-      errors.push({ path: `${path}.fields`, message: 'fields must be an array' })
+      errors.push({ path: `${path}.fields`, message: lt('common.layoutValidation.mustBeArray', { field: 'fields' }) })
     } else {
       section.fields.forEach((field: any, index: number) => {
         validateField(field, `${path}.fields[${index}]`, errors)
@@ -159,12 +164,12 @@ function validateBasicSection(section: any, path: string, errors: LayoutValidati
 
 function validateTabSection(section: any, path: string, errors: LayoutValidationError[]): void {
   if (!Array.isArray(section.tabs)) {
-    errors.push({ path: `${path}.tabs`, message: 'Missing required field: tabs (must be an array)' })
+    errors.push({ path: `${path}.tabs`, message: missingArrayMessage('tabs') })
     return
   }
 
   if (section.tabs.length === 0) {
-    errors.push({ path: `${path}.tabs`, message: 'tabs cannot be empty' })
+    errors.push({ path: `${path}.tabs`, message: cannotBeEmptyMessage('tabs') })
   }
 
   section.tabs.forEach((tab: any, index: number) => {
@@ -174,21 +179,21 @@ function validateTabSection(section: any, path: string, errors: LayoutValidation
 
 function validateTab(tab: any, path: string, errors: LayoutValidationError[]): void {
   if (!tab || typeof tab !== 'object') {
-    errors.push({ path, message: 'Tab must be an object' })
+    errors.push({ path, message: lt('common.layoutValidation.tabMustBeObject') })
     return
   }
 
   if (!tab.id) {
-    errors.push({ path, message: 'Missing required field: id' })
+    errors.push({ path, message: missingRequiredFieldMessage('id') })
   }
 
   if (!tab.title) {
-    errors.push({ path, message: 'Missing required field: title' })
+    errors.push({ path, message: missingRequiredFieldMessage('title') })
   }
 
   if (tab.fields !== undefined) {
     if (!Array.isArray(tab.fields)) {
-      errors.push({ path: `${path}.fields`, message: 'fields must be an array' })
+      errors.push({ path: `${path}.fields`, message: lt('common.layoutValidation.mustBeArray', { field: 'fields' }) })
     } else {
       tab.fields.forEach((field: any, index: number) => {
         validateField(field, `${path}.fields[${index}]`, errors)
@@ -199,12 +204,12 @@ function validateTab(tab: any, path: string, errors: LayoutValidationError[]): v
 
 function validateCollapseSection(section: any, path: string, errors: LayoutValidationError[]): void {
   if (!Array.isArray(section.items)) {
-    errors.push({ path: `${path}.items`, message: 'Missing required field: items (must be an array)' })
+    errors.push({ path: `${path}.items`, message: missingArrayMessage('items') })
     return
   }
 
   if (section.items.length === 0) {
-    errors.push({ path: `${path}.items`, message: 'items cannot be empty' })
+    errors.push({ path: `${path}.items`, message: cannotBeEmptyMessage('items') })
   }
 
   section.items.forEach((item: any, index: number) => {
@@ -214,21 +219,21 @@ function validateCollapseSection(section: any, path: string, errors: LayoutValid
 
 function validateCollapseItem(item: any, path: string, errors: LayoutValidationError[]): void {
   if (!item || typeof item !== 'object') {
-    errors.push({ path, message: 'Collapse item must be an object' })
+    errors.push({ path, message: lt('common.layoutValidation.collapseItemMustBeObject') })
     return
   }
 
   if (!item.id) {
-    errors.push({ path, message: 'Missing required field: id' })
+    errors.push({ path, message: missingRequiredFieldMessage('id') })
   }
 
   if (!item.title) {
-    errors.push({ path, message: 'Missing required field: title' })
+    errors.push({ path, message: missingRequiredFieldMessage('title') })
   }
 
   if (item.fields !== undefined) {
     if (!Array.isArray(item.fields)) {
-      errors.push({ path: `${path}.fields`, message: 'fields must be an array' })
+      errors.push({ path: `${path}.fields`, message: lt('common.layoutValidation.mustBeArray', { field: 'fields' }) })
     } else {
       item.fields.forEach((field: any, index: number) => {
         validateField(field, `${path}.fields[${index}]`, errors)
@@ -239,12 +244,12 @@ function validateCollapseItem(item: any, path: string, errors: LayoutValidationE
 
 function validateColumnSection(section: any, path: string, errors: LayoutValidationError[]): void {
   if (!Array.isArray(section.columns)) {
-    errors.push({ path: `${path}.columns`, message: 'Missing required field: columns (must be an array)' })
+    errors.push({ path: `${path}.columns`, message: missingArrayMessage('columns') })
     return
   }
 
   if (section.columns.length === 0) {
-    errors.push({ path: `${path}.columns`, message: 'columns cannot be empty' })
+    errors.push({ path: `${path}.columns`, message: cannotBeEmptyMessage('columns') })
   }
 
   section.columns.forEach((column: any, index: number) => {
@@ -254,22 +259,20 @@ function validateColumnSection(section: any, path: string, errors: LayoutValidat
 
 function validateColumnItem(column: any, path: string, errors: LayoutValidationError[]): void {
   if (!column || typeof column !== 'object') {
-    errors.push({ path, message: 'Column item must be an object' })
+    errors.push({ path, message: lt('common.layoutValidation.columnItemMustBeObject') })
     return
   }
 
-  if (column.span !== undefined) {
-    if (!VALID_SPANS.includes(column.span)) {
-      errors.push({
-        path: `${path}.span`,
-        message: `span must be one of ${VALID_SPANS.join(', ')}`
-      })
-    }
+  if (column.span !== undefined && !VALID_SPANS.includes(column.span)) {
+    errors.push({
+      path: `${path}.span`,
+      message: lt('common.layoutValidation.spanMustBeOneOf', { options: VALID_SPANS.join(', ') })
+    })
   }
 
   if (column.fields !== undefined) {
     if (!Array.isArray(column.fields)) {
-      errors.push({ path: `${path}.fields`, message: 'fields must be an array' })
+      errors.push({ path: `${path}.fields`, message: lt('common.layoutValidation.mustBeArray', { field: 'fields' }) })
     } else {
       column.fields.forEach((field: any, index: number) => {
         validateField(field, `${path}.fields[${index}]`, errors)
@@ -280,7 +283,7 @@ function validateColumnItem(column: any, path: string, errors: LayoutValidationE
 
 function validateListColumn(column: any, path: string, errors: LayoutValidationError[]): void {
   if (!column || typeof column !== 'object') {
-    errors.push({ path, message: 'Column must be an object' })
+    errors.push({ path, message: lt('common.layoutValidation.columnMustBeObject') })
     return
   }
 
@@ -288,53 +291,50 @@ function validateListColumn(column: any, path: string, errors: LayoutValidationE
   const label = column.label || column.title || column.name
 
   if (!fieldCode) {
-    errors.push({ path, message: 'Missing required field: fieldCode' })
+    errors.push({ path, message: missingRequiredFieldMessage('fieldCode') })
   }
 
   if (!label) {
-    errors.push({ path, message: 'Missing required field: label' })
+    errors.push({ path, message: missingRequiredFieldMessage('label') })
   }
 
   if (column.width !== undefined) {
     const width = Number(column.width)
     if (isNaN(width) || width <= 0) {
-      errors.push({ path: `${path}.width`, message: 'width must be a positive integer' })
+      errors.push({ path: `${path}.width`, message: lt('common.layoutValidation.widthMustBePositiveInteger') })
     }
   }
 }
 
 function validateField(field: any, path: string, errors: LayoutValidationError[]): void {
   if (!field || typeof field !== 'object') {
-    errors.push({ path, message: 'Field must be an object' })
+    errors.push({ path, message: lt('common.layoutValidation.fieldMustBeObject') })
     return
   }
 
   if (!field.id) {
-    errors.push({ path, message: 'Missing required field: id' })
+    errors.push({ path, message: missingRequiredFieldMessage('id') })
   }
 
   const fieldCode = field.field_code || field.fieldCode || field.code || field.field || field.prop || field.name
   if (!fieldCode) {
-    errors.push({ path, message: 'Missing required field: fieldCode' })
+    errors.push({ path, message: missingRequiredFieldMessage('fieldCode') })
   }
 
   const label = field.label || field.name || field.title
   if (!label) {
-    errors.push({ path, message: 'Missing required field: label' })
+    errors.push({ path, message: missingRequiredFieldMessage('label') })
   }
 
   if (field.span === undefined || field.span === null) {
-    errors.push({ path, message: 'Missing required field: span' })
+    errors.push({ path, message: missingRequiredFieldMessage('span') })
   }
 
-  // Validate span
-  if (field.span !== undefined) {
-    if (!VALID_SPANS.includes(field.span)) {
-      errors.push({
-        path: `${path}.span`,
-        message: `span must be an integer between 1-24, preferably one of ${VALID_SPANS.join(', ')}`
-      })
-    }
+  if (field.span !== undefined && !VALID_SPANS.includes(field.span)) {
+    errors.push({
+      path: `${path}.span`,
+      message: lt('common.layoutValidation.spanMustBeIntegerRange', { options: VALID_SPANS.join(', ') })
+    })
   }
 
   const componentProps = {
@@ -348,18 +348,16 @@ function validateField(field: any, path: string, errors: LayoutValidationError[]
     if (!Number.isFinite(minHeight) || !isInteger || minHeight < FIELD_MIN_HEIGHT_MIN || minHeight > FIELD_MIN_HEIGHT_MAX) {
       errors.push({
         path: `${path}.minHeight`,
-        message: `minHeight must be an integer between ${FIELD_MIN_HEIGHT_MIN}-${FIELD_MIN_HEIGHT_MAX}`
+        message: lt('common.layoutValidation.minHeightMustBeIntegerRange', {
+          min: FIELD_MIN_HEIGHT_MIN,
+          max: FIELD_MIN_HEIGHT_MAX
+        })
       })
     }
   }
 }
 
-/**
- * Get default layout configuration for a given layout type
- * Supports both legacy layout types (form/detail) and new modes (edit/readonly)
- */
 export function getDefaultLayoutConfig(layoutType: LayoutType | 'edit' | 'readonly'): Record<string, unknown> {
-  // Map new modes to legacy types for backward compatibility
   const normalizedType = layoutType === 'edit' ? 'form'
     : layoutType === 'readonly' ? 'detail'
       : layoutType
@@ -370,7 +368,7 @@ export function getDefaultLayoutConfig(layoutType: LayoutType | 'edit' | 'readon
         {
           id: `section-${Date.now()}`,
           type: 'section',
-          title: '基本信息',
+          title: lt('common.layoutDefaults.formSectionTitle'),
           collapsible: true,
           collapsed: false,
           columns: 2,
@@ -380,8 +378,8 @@ export function getDefaultLayoutConfig(layoutType: LayoutType | 'edit' | 'readon
         }
       ],
       actions: [
-        { code: 'submit', label: '提交', type: 'primary', position: 'bottom-right' },
-        { code: 'cancel', label: '取消', type: 'default', position: 'bottom-right' }
+        { code: 'submit', label: lt('common.layoutDefaults.submitActionLabel'), type: 'primary', position: 'bottom-right' },
+        { code: 'cancel', label: lt('common.layoutDefaults.cancelActionLabel'), type: 'default', position: 'bottom-right' }
       ]
     }
   }
@@ -390,8 +388,8 @@ export function getDefaultLayoutConfig(layoutType: LayoutType | 'edit' | 'readon
     return {
       columns: [],
       actions: [
-        { code: 'create', label: '新建', type: 'primary', position: 'top-right' },
-        { code: 'delete', label: '删除', type: 'danger', position: 'toolbar' }
+        { code: 'create', label: lt('common.layoutDefaults.createActionLabel'), type: 'primary', position: 'top-right' },
+        { code: 'delete', label: lt('common.layoutDefaults.deleteActionLabel'), type: 'danger', position: 'toolbar' }
       ],
       page_size: 20,
       show_pagination: true
@@ -404,7 +402,7 @@ export function getDefaultLayoutConfig(layoutType: LayoutType | 'edit' | 'readon
         {
           id: `section-detail-${Date.now()}`,
           type: 'section',
-          title: '详细信息',
+          title: lt('common.layoutDefaults.detailSectionTitle'),
           collapsible: true,
           collapsed: false,
           columns: 2,
@@ -424,14 +422,13 @@ export function getDefaultLayoutConfig(layoutType: LayoutType | 'edit' | 'readon
     }
   }
 
-  // Fallback: return a minimal valid form layout instead of empty object
-  console.warn(`Unknown layout type: ${layoutType}, falling back to form layout`)
+  console.warn(lt('common.layoutValidation.unknownLayoutTypeFallback', { type: layoutType }))
   return {
     sections: [
       {
         id: `section-${Date.now()}`,
         type: 'section',
-        title: '基本信息',
+        title: lt('common.layoutDefaults.formSectionTitle'),
         collapsible: true,
         collapsed: false,
         columns: 2,
@@ -442,9 +439,6 @@ export function getDefaultLayoutConfig(layoutType: LayoutType | 'edit' | 'readon
   }
 }
 
-/**
- * Validate and sanitize layout configuration
- */
 export function validateAndSanitizeLayoutConfig(config: unknown, layoutType: LayoutType): {
   valid: boolean
   errors: LayoutValidationError[]
@@ -456,13 +450,10 @@ export function validateAndSanitizeLayoutConfig(config: unknown, layoutType: Lay
     return result
   }
 
-  // Add defaults for optional fields
   const sanitized = JSON.parse(JSON.stringify(config)) as Record<string, unknown>
 
-  if (layoutType === 'form') {
-    if (!sanitized.actions) {
-      sanitized.actions = []
-    }
+  if (layoutType === 'form' && !sanitized.actions) {
+    sanitized.actions = []
   }
 
   return {
@@ -472,23 +463,14 @@ export function validateAndSanitizeLayoutConfig(config: unknown, layoutType: Lay
   }
 }
 
-/**
- * Generate unique ID for layout elements
- */
 export function generateId(prefix: string = 'element'): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 }
 
-/**
- * Deep clone a layout configuration
- */
 export function cloneLayoutConfig(config: unknown): Record<string, unknown> {
   return JSON.parse(JSON.stringify(config)) as Record<string, unknown>
 }
 
-/**
- * Check if a layout config is empty (no fields configured)
- */
 export function isLayoutConfigEmpty(config: Record<string, unknown>, layoutType: LayoutType): boolean {
   if (layoutType === 'form' || layoutType === 'detail') {
     const sections = (config.sections as any[]) || []
@@ -508,8 +490,8 @@ export function isLayoutConfigEmpty(config: Record<string, unknown>, layoutType:
         for (const column of columns) {
           if (column.fields && column.fields.length > 0) return false
         }
-      } else {
-        if (section.fields && section.fields.length > 0) return false
+      } else if (section.fields && section.fields.length > 0) {
+        return false
       }
     }
     return true

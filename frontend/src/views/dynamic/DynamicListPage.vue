@@ -13,7 +13,7 @@
     />
 
     <div
-      v-if="showListTitleProxy"
+      v-if="showListTitleProxy && canView && !loadError"
       class="base-list-page list-title-loading-proxy"
     >
       <h2 class="page-title">
@@ -22,7 +22,7 @@
     </div>
 
     <BaseListPage
-      v-if="!loadError"
+      v-if="!loadError && canView"
       ref="tableRef"
       :title="objectDisplayName || t('common.status.loading') || '...'"
       :api="fetchData"
@@ -130,6 +130,19 @@
       </template>
     </BaseListPage>
 
+    <el-result
+      v-else-if="!loadError && !canView"
+      icon="warning"
+      :title="t('common.messages.permissionDenied')"
+      :sub-title="t('common.messages.permissionDeniedHint')"
+    >
+      <template #extra>
+        <el-button @click="$router.back()">
+          {{ t('common.actions.back') }}
+        </el-button>
+      </template>
+    </el-result>
+
     <!-- Error state for failed metadata loads -->
     <el-result
       v-else-if="loadError"
@@ -156,6 +169,14 @@
       :rows="5"
       animated
     />
+    
+    <!-- Context Drawer for Create/Edit -->
+    <ContextDrawer
+      v-model="drawerVisible"
+      :object-code="objectCode"
+      :record-id="activeRecordId"
+      @success="handleDrawerSuccess"
+    />
   </div>
 </template>
 
@@ -166,6 +187,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import BaseListPage from '@/components/common/BaseListPage.vue'
 import FieldRenderer from '@/components/engine/FieldRenderer.vue'
+import ContextDrawer from '@/components/common/ContextDrawer.vue'
 import type { ObjectMetadata } from '@/types'
 import { createObjectClient } from '@/api/dynamic'
 import { resolveObjectDisplayName } from '@/utils/objectDisplay'
@@ -209,6 +231,10 @@ const loadError = ref<string | null>(null)
 const tableRef = ref()
 const showListTitleProxy = computed(() => !tableRef.value)
 
+// Drawer State
+const drawerVisible = ref(false)
+const activeRecordId = ref('')
+
 const objectDisplayName = computed(() => {
   return resolveObjectDisplayName(
     objectCode.value,
@@ -249,7 +275,7 @@ const withTimeout = async <T>(promise: Promise<T>, timeoutMs = 2500): Promise<T>
     return await Promise.race([
       promise,
       new Promise<T>((_, reject) => {
-        timer = setTimeout(() => reject(new Error('timeout')), timeoutMs)
+        timer = setTimeout(() => reject(new Error(t('common.messages.requestTimeout'))), timeoutMs)
       })
     ])
   } finally {
@@ -294,6 +320,7 @@ const effectivePermissions = computed<RuntimePermissions>(() => {
   }
 })
 
+const canView = computed(() => effectivePermissions.value.view !== false)
 const canAdd = computed(() => effectivePermissions.value.add !== false)
 const canChange = computed(() => effectivePermissions.value.change !== false)
 const canDelete = computed(() => effectivePermissions.value.delete !== false)
@@ -595,7 +622,8 @@ const handleView = (row: any) => {
 }
 
 const handleCreate = () => {
-  router.push(`/objects/${objectCode.value}/create`)
+  activeRecordId.value = ''
+  drawerVisible.value = true
 }
 
 const handleLayoutSettings = () => {
@@ -609,7 +637,8 @@ const handleLayoutSettings = () => {
 }
 
 const handleEdit = (row: any) => {
-  router.push(`/objects/${objectCode.value}/${row.id || row.id}?action=edit`)
+  activeRecordId.value = row.id || row._id
+  drawerVisible.value = true
 }
 
 const handleDelete = async (row: any) => {
@@ -630,6 +659,10 @@ const handleDelete = async (row: any) => {
   }
 }
 
+const handleDrawerSuccess = () => {
+  tableRef.value?.refresh()
+}
+
 // Status helper methods
 const getStatusType = (status: string) => {
   const typeMap: Record<string, any> = {
@@ -644,8 +677,10 @@ const getStatusType = (status: string) => {
 }
 
 const getStatusLabel = (status: string) => {
-  // Capitalize first letter
-  return status ? status.charAt(0).toUpperCase() + status.slice(1) : ''
+  const normalized = String(status || '').trim().toLowerCase()
+  if (!normalized) return ''
+  const statusKey = `common.status.${normalized}`
+  return te(statusKey) ? t(statusKey) : normalized
 }
 
 // Helper to get full field definition for FieldRenderer

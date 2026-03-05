@@ -95,6 +95,9 @@
         },
         "messages": {
             "exportDeveloping": "导出 {count} 项盘点任务 - 功能开发中"
+        },
+        "placeholders": {
+            "taskSearch": "按任务编号或名称搜索"
         }
     }
 }

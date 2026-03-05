@@ -17,7 +17,7 @@
       >
         <el-select
           v-model="formData.asset"
-          placeholder="Select asset"
+          :placeholder="$t('itAssets.form.placeholders.selectAsset')"
           filterable
           remote
           :remote-method="searchAssets"
@@ -79,7 +79,7 @@
       >
         <el-input
           v-model="formData.title"
-          placeholder="Brief title of the maintenance activity"
+          :placeholder="$t('itAssets.form.maintenance.placeholders.title')"
         />
       </el-form-item>
 
@@ -91,7 +91,7 @@
           v-model="formData.description"
           type="textarea"
           :rows="4"
-          placeholder="Detailed description of work performed"
+          :placeholder="$t('itAssets.form.maintenance.placeholders.description')"
         />
       </el-form-item>
 
@@ -104,7 +104,7 @@
             <el-date-picker
               v-model="formData.maintenance_date"
               type="date"
-              placeholder="Select date"
+              :placeholder="$t('common.placeholders.select')"
               style="width: 100%"
             />
           </el-form-item>
@@ -130,7 +130,7 @@
       >
         <el-input
           v-model="formData.vendor"
-          placeholder="External vendor (if applicable)"
+          :placeholder="$t('itAssets.form.maintenance.placeholders.vendor')"
         />
       </el-form-item>
 
@@ -142,7 +142,7 @@
           v-model="formData.notes"
           type="textarea"
           :rows="2"
-          placeholder="Additional notes"
+          :placeholder="$t('itAssets.form.maintenance.placeholders.notes')"
         />
       </el-form-item>
     </el-form>
@@ -206,16 +206,16 @@ const formData = ref({
 
 const rules: FormRules = {
   asset: [
-    { required: true, message: 'Please select asset', trigger: 'change' }
+    { required: true, message: t('itAssets.form.validation.selectAsset'), trigger: 'change' }
   ],
   maintenance_type: [
-    { required: true, message: 'Please select maintenance type', trigger: 'change' }
+    { required: true, message: t('itAssets.form.maintenance.validation.selectType'), trigger: 'change' }
   ],
   title: [
-    { required: true, message: 'Please enter title', trigger: 'blur' }
+    { required: true, message: t('itAssets.form.maintenance.validation.enterTitle'), trigger: 'blur' }
   ],
   maintenance_date: [
-    { required: true, message: 'Please select maintenance date', trigger: 'change' }
+    { required: true, message: t('itAssets.form.maintenance.validation.selectDate'), trigger: 'change' }
   ]
 }
 

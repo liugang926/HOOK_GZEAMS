@@ -1,4 +1,4 @@
-<!--
+﻿<!--
   DeptPicker Component
 
   A department selection component with:
@@ -12,7 +12,7 @@
     v-model="selectedDept"
     :multiple="false"
     :check-strictly="false"
-    placeholder="请选择部门"
+    placeholder="Select department"
     @change="handleDeptChange"
   />
 -->
@@ -414,3 +414,4 @@ defineExpose({
   }
 }
 </style>
+

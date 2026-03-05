@@ -10,6 +10,7 @@
       <el-form
         :model="form"
         label-width="0"
+        @submit.prevent="handleLogin"
       >
         <el-form-item>
           <el-input
@@ -33,9 +34,9 @@
           <el-button
             type="primary"
             size="large"
-            style="width: 100%"
+            class="login-submit-button"
+            native-type="submit"
             :loading="loading"
-            @click="handleLogin"
           >
             {{ $t('login.loginButton') }}
           </el-button>
@@ -91,6 +92,10 @@ const handleLogin = async () => {
 .login-card {
   width: 100%;
   padding: 40px;
+}
+
+.login-submit-button {
+  width: 100%;
 }
 
 .login-title {

@@ -1,7 +1,8 @@
-﻿import { ref, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 import { columnConfigApi, type ColumnConfig as ApiColumnConfig } from '@/api/system'
+import i18n from '@/locales'
 import type { ColumnItem } from '@/types/common'
 export type { ColumnItem } from '@/types/common'
 
@@ -30,6 +31,7 @@ const columnConfigCache = new Map<string, ColumnConfig>()
  * - Cache configurations for performance
  */
 export function useColumnConfig(objectCode: string) {
+  const t = i18n.global.t
   const userStore = useUserStore()
   const config = ref<ColumnConfig | null>(null)
   const loading = ref(false)
@@ -124,11 +126,11 @@ export function useColumnConfig(objectCode: string) {
       }
       config.value = newConfig
       columnConfigCache.set(cacheKey, newConfig)
-      ElMessage.success('Column configuration saved')
+      ElMessage.success(t('common.messages.saveSuccess'))
     } catch (err) {
       console.error('Save API error', err)
       error.value = err as Error
-      ElMessage.warning('Failed to save column configuration')
+      ElMessage.warning(t('common.messages.operationFailed'))
     } finally {
       loading.value = false
     }
@@ -151,11 +153,11 @@ export function useColumnConfig(objectCode: string) {
       // Clear cache and config
       columnConfigCache.delete(cacheKey)
       config.value = null
-      ElMessage.success('Column configuration reset to default')
+      ElMessage.success(t('common.messages.operationSuccess'))
     } catch (err) {
       console.error('Reset API error', err)
       error.value = err as Error
-      ElMessage.warning('Failed to reset column configuration')
+      ElMessage.warning(t('common.messages.operationFailed'))
     } finally {
       loading.value = false
     }

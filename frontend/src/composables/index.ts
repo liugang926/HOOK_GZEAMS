@@ -26,6 +26,8 @@ export * from './useColumnConfig'
 
 // Loading composables
 export * from './useLoading'
+export * from './actionRunner'
+export * from './useShortcutPopover'
 
 // Field metadata composables
 export * from './useFieldMetadata'

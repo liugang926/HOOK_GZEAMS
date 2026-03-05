@@ -123,6 +123,13 @@ class ObjectRegistry:
         'DepreciationRun': 'apps.depreciation.viewsets.DepreciationRunViewSet',
         'FinanceVoucher': 'apps.finance.viewsets.FinanceVoucherViewSet',
         'VoucherTemplate': 'apps.finance.viewsets.VoucherTemplateViewSet',
+        # Workflows
+        'WorkflowDefinition': 'apps.workflows.viewsets.WorkflowDefinitionViewSet',
+        'WorkflowTemplate': 'apps.workflows.viewsets.WorkflowTemplateViewSet',
+        'WorkflowInstance': 'apps.workflows.viewsets.WorkflowInstanceViewSet',
+        'WorkflowTask': 'apps.workflows.viewsets.WorkflowTaskViewSet',
+        'WorkflowApproval': 'apps.workflows.viewsets.WorkflowApprovalViewSet',
+        'WorkflowOperationLog': 'apps.workflows.viewsets.WorkflowOperationLogViewSet',
         # Organizations
         'Department': 'apps.organizations.viewsets.DepartmentViewSet',
         'Organization': 'apps.organizations.viewsets.OrganizationViewSet',
@@ -337,6 +344,13 @@ class ObjectRegistry:
             {'code': 'DepreciationRun', 'name': '折旧运行', 'model': 'apps.depreciation.models.DepreciationRun'},
             {'code': 'FinanceVoucher', 'name': '财务凭证', 'model': 'apps.finance.models.FinanceVoucher'},
             {'code': 'VoucherTemplate', 'name': '凭证模板', 'model': 'apps.finance.models.VoucherTemplate'},
+            # Workflows
+            {'code': 'WorkflowDefinition', 'name': '工作流定义', 'model': 'apps.workflows.models.WorkflowDefinition'},
+            {'code': 'WorkflowTemplate', 'name': '工作流模板', 'model': 'apps.workflows.models.WorkflowTemplate'},
+            {'code': 'WorkflowInstance', 'name': '工作流实例', 'model': 'apps.workflows.models.WorkflowInstance'},
+            {'code': 'WorkflowTask', 'name': '工作流任务', 'model': 'apps.workflows.models.WorkflowTask'},
+            {'code': 'WorkflowApproval', 'name': '工作流审批记录', 'model': 'apps.workflows.models.WorkflowApproval'},
+            {'code': 'WorkflowOperationLog', 'name': '工作流操作日志', 'model': 'apps.workflows.models.WorkflowOperationLog'},
             # Organizations
             {'code': 'Department', 'name': '部门', 'model': 'apps.organizations.models.Department'},
             {'code': 'Organization', 'name': '组织', 'model': 'apps.organizations.models.Organization'},

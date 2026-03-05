@@ -64,6 +64,49 @@ export interface BatchOperationSummary {
     failed: number
 }
 
+export interface ObjectRelationDefinition {
+    relationCode: string
+    relationName: string
+    targetObjectCode: string
+    relationKind: 'direct_fk' | 'through_line_item' | 'derived_query' | string
+    displayMode: 'inline_editable' | 'inline_readonly' | 'tab_readonly' | 'hidden' | string
+    sortOrder: number
+    targetFkField?: string
+    throughObjectCode?: string
+    throughParentFkField?: string
+    throughTargetFkField?: string
+    derivedParentKeyField?: string
+    derivedTargetKeyField?: string
+    extraConfig?: Record<string, any>
+    groupKey?: string
+    groupName?: string
+    groupOrder?: number
+    defaultExpanded?: boolean
+}
+
+export interface ObjectRelationsResponse {
+    objectCode: string
+    locale: string
+    relations: ObjectRelationDefinition[]
+}
+
+export interface RelatedRecordsResponse<T = any> {
+    count: number
+    next: string | null
+    previous: string | null
+    results: T[]
+    relation: {
+        relationCode: string
+        relationKind: string
+        targetObjectCode: string
+        displayMode: string
+        sortOrder: number
+    }
+    parentObjectCode: string
+    parentId: string
+    targetObjectCode: string
+}
+
 /**
  * Dynamic API class - handles all CRUD operations for business objects
  *
@@ -268,6 +311,34 @@ class DynamicAPI {
 
         return payload
     }
+
+    /**
+     * Get relation definitions for an object.
+     * GET /api/system/objects/{code}/relations/
+     */
+    getRelations(code: string): Promise<ObjectRelationsResponse> {
+        return request({
+            url: `${this.baseUrl}/${code}/relations/`,
+            method: 'get'
+        })
+    }
+
+    /**
+     * Get related records for a parent record by relation code.
+     * GET /api/system/objects/{code}/{id}/related/{relationCode}/
+     */
+    getRelated<T = any>(
+        code: string,
+        id: string,
+        relationCode: string,
+        params?: Record<string, any>
+    ): Promise<RelatedRecordsResponse<T>> {
+        return request({
+            url: `${this.baseUrl}/${code}/${id}/related/${relationCode}/`,
+            method: 'get',
+            params
+        })
+    }
 }
 
 /**
@@ -293,6 +364,8 @@ export interface ObjectClient {
     getMetadata(): Promise<ObjectMetadata>
     getSchema(): Promise<ApiResponse<any>>
     getRuntime(mode?: 'edit' | 'readonly' | 'list' | 'search', params?: Record<string, any>): Promise<any>
+    getRelations(): Promise<ObjectRelationsResponse>
+    getRelated<T = any>(id: string, relationCode: string, params?: Record<string, any>): Promise<RelatedRecordsResponse<T>>
 }
 
 /**
@@ -323,7 +396,10 @@ export function createObjectClient(code: string): ObjectClient {
         getMetadata: () => dynamicApi.getMetadata(code),
         getSchema: () => dynamicApi.getSchema(code),
         getRuntime: (mode: 'edit' | 'readonly' | 'list' | 'search' = 'edit', params?: Record<string, any>) =>
-            dynamicApi.getRuntime(code, mode, params)
+            dynamicApi.getRuntime(code, mode, params),
+        getRelations: () => dynamicApi.getRelations(code),
+        getRelated: <T = any>(id: string, relationCode: string, params?: Record<string, any>) =>
+            dynamicApi.getRelated<T>(code, id, relationCode, params)
     }
 }
 

@@ -16,6 +16,7 @@
         "insurance": "保险管理",
         "leasing": "租赁管理",
         "workflowManagement": "流程管理",
+        "dynamicObjects": "动态对象",
         "other": "其他"
     },
     "routes": {

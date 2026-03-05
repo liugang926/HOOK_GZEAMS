@@ -95,6 +95,9 @@
         },
         "messages": {
             "exportDeveloping": "Export {count} inventory tasks - Feature in development"
+        },
+        "placeholders": {
+            "taskSearch": "Search by task no or name"
         }
     }
 }

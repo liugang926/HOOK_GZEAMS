@@ -109,6 +109,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { languageApi } from '@/api/translations'
 import type { Language } from '@/api/translations'
@@ -125,6 +126,7 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 const formRef = ref<any>()
 const saving = ref(false)
@@ -151,15 +153,19 @@ const formData = reactive<{
 })
 
 // Validation rules
+const requiredWithField = (fieldKey: string) => {
+  return t('common.validation.requiredWithField', { field: t(fieldKey) })
+}
+
 const rules = {
   code: [
-    { required: true, message: 'Language code is required', trigger: 'blur' },
-    { pattern: /^[a-z]{2}-[A-Z]{2}$/, message: 'Format: xx-XX (e.g., zh-CN)', trigger: 'blur' }
+    { required: true, message: requiredWithField('system.languages.code'), trigger: 'blur' },
+    { pattern: /^[a-z]{2}-[A-Z]{2}$/, message: t('system.languages.validation.codeFormat'), trigger: 'blur' }
   ],
-  name: [{ required: true, message: 'Language name is required', trigger: 'blur' }],
-  nativeName: [{ required: true, message: 'Native name is required', trigger: 'blur' }],
+  name: [{ required: true, message: requiredWithField('system.languages.name'), trigger: 'blur' }],
+  nativeName: [{ required: true, message: requiredWithField('system.languages.nativeName'), trigger: 'blur' }],
   locale: [
-    { pattern: /^[a-z]{2}[A-Z]{2}$/, message: 'Format: xxXX (e.g., zhCN)', trigger: 'blur' }
+    { pattern: /^[a-z]{2}[A-Z]{2}$/, message: t('system.languages.validation.localeFormat'), trigger: 'blur' }
   ]
 }
 
@@ -213,16 +219,16 @@ const handleSave = async () => {
   try {
     if (isEdit.value && props.language?.id) {
       await languageApi.update(props.language.id, formData)
-      ElMessage.success('Language updated successfully')
+      ElMessage.success(t('system.languages.messages.updateSuccess'))
     } else {
       await languageApi.create(formData)
-      ElMessage.success('Language created successfully')
+      ElMessage.success(t('system.languages.messages.createSuccess'))
     }
 
     emit('success')
     handleClose()
   } catch (error: any) {
-    ElMessage.error(error.message || 'Failed to save language')
+    ElMessage.error(error.message || t('system.languages.messages.saveFailed'))
   } finally {
     saving.value = false
   }

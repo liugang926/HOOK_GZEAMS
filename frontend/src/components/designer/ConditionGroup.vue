@@ -19,10 +19,10 @@
         @update:model-value="toggleLogic"
       >
         <el-radio-button value="and">
-          �?(AND)
+          {{ t('form.actions.logicAnd') }}
         </el-radio-button>
         <el-radio-button value="or">
-          �?(OR)
+          {{ t('form.actions.logicOr') }}
         </el-radio-button>
       </el-radio-group>
       <el-button
@@ -33,7 +33,7 @@
         @click="$emit('remove')"
       >
         <el-icon><Delete /></el-icon>
-        移除�?
+        {{ t('form.actions.removeGroup') }}
       </el-button>
     </div>
 
@@ -91,7 +91,7 @@
         @click="addConditionToGroup"
       >
         <el-icon><Plus /></el-icon>
-        添加条件
+        {{ t('form.actions.addCondition') }}
       </el-button>
     </div>
   </div>
@@ -99,6 +99,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Delete, Plus } from '@element-plus/icons-vue'
 import SingleCondition from './SingleCondition.vue'
 
@@ -122,6 +123,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const { t } = useI18n()
 
 const emit = defineEmits<{
   'update:modelValue': [value: Record<string, any>]

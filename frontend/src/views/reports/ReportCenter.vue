@@ -13,25 +13,63 @@
 <template>
   <div class="page-container">
     <div class="page-title-row mb-20">
-      <h2 class="page-title">{{ $t('reports.center.title') }}</h2>
+      <h2 class="page-title">
+        {{ $t('reports.center.title') }}
+      </h2>
     </div>
 
     <!-- ── Module selector tabs ────────────────────────────────── -->
-    <el-tabs v-model="activeTab" type="border-card">
-
+    <el-tabs
+      v-model="activeTab"
+      type="border-card"
+    >
       <!-- Asset Reports -->
-      <el-tab-pane :label="$t('reports.center.tabs.assets')" name="assets">
-        <el-row :gutter="20" class="report-grid">
-          <el-col v-for="report in assetReports" :key="report.key" :span="8">
-            <el-card shadow="hover" class="report-card">
-              <div class="report-icon"><el-icon :size="32" :color="report.color"><component :is="report.icon" /></el-icon></div>
-              <div class="report-name">{{ report.name }}</div>
-              <div class="report-desc">{{ report.desc }}</div>
+      <el-tab-pane
+        :label="$t('reports.center.tabs.assets')"
+        name="assets"
+      >
+        <el-row
+          :gutter="20"
+          class="report-grid"
+        >
+          <el-col
+            v-for="report in assetReports"
+            :key="report.key"
+            :span="8"
+          >
+            <el-card
+              shadow="hover"
+              class="report-card"
+            >
+              <div class="report-icon">
+                <el-icon
+                  :size="32"
+                  :color="report.color"
+                >
+                  <component :is="report.icon" />
+                </el-icon>
+              </div>
+              <div class="report-name">
+                {{ report.name }}
+              </div>
+              <div class="report-desc">
+                {{ report.desc }}
+              </div>
               <div class="report-actions">
-                <el-button size="small" type="primary" :loading="loadingKey === report.key" @click="runReport(report)">
+                <el-button
+                  size="small"
+                  type="primary"
+                  :loading="loadingKey === report.key"
+                  @click="runReport(report)"
+                >
                   <el-icon><Download /></el-icon>{{ $t('reports.center.downloadXlsx') }}
                 </el-button>
-                <el-button size="small" @click="runReport(report, 'csv')">CSV</el-button>
+                <el-button
+                  size="small"
+                  @click="runReport(report, 'csv')"
+                >
+                  CSV
+                </el-button>
               </div>
             </el-card>
           </el-col>
@@ -39,18 +77,52 @@
       </el-tab-pane>
 
       <!-- Lifecycle Reports -->
-      <el-tab-pane :label="$t('reports.center.tabs.lifecycle')" name="lifecycle">
-        <el-row :gutter="20" class="report-grid">
-          <el-col v-for="report in lifecycleReports" :key="report.key" :span="8">
-            <el-card shadow="hover" class="report-card">
-              <div class="report-icon"><el-icon :size="32" :color="report.color"><component :is="report.icon" /></el-icon></div>
-              <div class="report-name">{{ report.name }}</div>
-              <div class="report-desc">{{ report.desc }}</div>
+      <el-tab-pane
+        :label="$t('reports.center.tabs.lifecycle')"
+        name="lifecycle"
+      >
+        <el-row
+          :gutter="20"
+          class="report-grid"
+        >
+          <el-col
+            v-for="report in lifecycleReports"
+            :key="report.key"
+            :span="8"
+          >
+            <el-card
+              shadow="hover"
+              class="report-card"
+            >
+              <div class="report-icon">
+                <el-icon
+                  :size="32"
+                  :color="report.color"
+                >
+                  <component :is="report.icon" />
+                </el-icon>
+              </div>
+              <div class="report-name">
+                {{ report.name }}
+              </div>
+              <div class="report-desc">
+                {{ report.desc }}
+              </div>
               <div class="report-actions">
-                <el-button size="small" type="primary" :loading="loadingKey === report.key" @click="runReport(report)">
+                <el-button
+                  size="small"
+                  type="primary"
+                  :loading="loadingKey === report.key"
+                  @click="runReport(report)"
+                >
                   <el-icon><Download /></el-icon>{{ $t('reports.center.downloadXlsx') }}
                 </el-button>
-                <el-button size="small" @click="runReport(report, 'csv')">CSV</el-button>
+                <el-button
+                  size="small"
+                  @click="runReport(report, 'csv')"
+                >
+                  CSV
+                </el-button>
               </div>
             </el-card>
           </el-col>
@@ -58,18 +130,52 @@
       </el-tab-pane>
 
       <!-- Insurance Reports -->
-      <el-tab-pane :label="$t('reports.center.tabs.insurance')" name="insurance">
-        <el-row :gutter="20" class="report-grid">
-          <el-col v-for="report in insuranceReports" :key="report.key" :span="8">
-            <el-card shadow="hover" class="report-card">
-              <div class="report-icon"><el-icon :size="32" :color="report.color"><component :is="report.icon" /></el-icon></div>
-              <div class="report-name">{{ report.name }}</div>
-              <div class="report-desc">{{ report.desc }}</div>
+      <el-tab-pane
+        :label="$t('reports.center.tabs.insurance')"
+        name="insurance"
+      >
+        <el-row
+          :gutter="20"
+          class="report-grid"
+        >
+          <el-col
+            v-for="report in insuranceReports"
+            :key="report.key"
+            :span="8"
+          >
+            <el-card
+              shadow="hover"
+              class="report-card"
+            >
+              <div class="report-icon">
+                <el-icon
+                  :size="32"
+                  :color="report.color"
+                >
+                  <component :is="report.icon" />
+                </el-icon>
+              </div>
+              <div class="report-name">
+                {{ report.name }}
+              </div>
+              <div class="report-desc">
+                {{ report.desc }}
+              </div>
               <div class="report-actions">
-                <el-button size="small" type="primary" :loading="loadingKey === report.key" @click="runReport(report)">
+                <el-button
+                  size="small"
+                  type="primary"
+                  :loading="loadingKey === report.key"
+                  @click="runReport(report)"
+                >
                   <el-icon><Download /></el-icon>{{ $t('reports.center.downloadXlsx') }}
                 </el-button>
-                <el-button size="small" @click="runReport(report, 'csv')">CSV</el-button>
+                <el-button
+                  size="small"
+                  @click="runReport(report, 'csv')"
+                >
+                  CSV
+                </el-button>
               </div>
             </el-card>
           </el-col>
@@ -77,24 +183,57 @@
       </el-tab-pane>
 
       <!-- Leasing Reports -->
-      <el-tab-pane :label="$t('reports.center.tabs.leasing')" name="leasing">
-        <el-row :gutter="20" class="report-grid">
-          <el-col v-for="report in leasingReports" :key="report.key" :span="8">
-            <el-card shadow="hover" class="report-card">
-              <div class="report-icon"><el-icon :size="32" :color="report.color"><component :is="report.icon" /></el-icon></div>
-              <div class="report-name">{{ report.name }}</div>
-              <div class="report-desc">{{ report.desc }}</div>
+      <el-tab-pane
+        :label="$t('reports.center.tabs.leasing')"
+        name="leasing"
+      >
+        <el-row
+          :gutter="20"
+          class="report-grid"
+        >
+          <el-col
+            v-for="report in leasingReports"
+            :key="report.key"
+            :span="8"
+          >
+            <el-card
+              shadow="hover"
+              class="report-card"
+            >
+              <div class="report-icon">
+                <el-icon
+                  :size="32"
+                  :color="report.color"
+                >
+                  <component :is="report.icon" />
+                </el-icon>
+              </div>
+              <div class="report-name">
+                {{ report.name }}
+              </div>
+              <div class="report-desc">
+                {{ report.desc }}
+              </div>
               <div class="report-actions">
-                <el-button size="small" type="primary" :loading="loadingKey === report.key" @click="runReport(report)">
+                <el-button
+                  size="small"
+                  type="primary"
+                  :loading="loadingKey === report.key"
+                  @click="runReport(report)"
+                >
                   <el-icon><Download /></el-icon>{{ $t('reports.center.downloadXlsx') }}
                 </el-button>
-                <el-button size="small" @click="runReport(report, 'csv')">CSV</el-button>
+                <el-button
+                  size="small"
+                  @click="runReport(report, 'csv')"
+                >
+                  CSV
+                </el-button>
               </div>
             </el-card>
           </el-col>
         </el-row>
       </el-tab-pane>
-
     </el-tabs>
   </div>
 </template>

@@ -1,8 +1,10 @@
 import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import i18n from '@/locales'
 import type { CrudOptions } from '@/types/models'
 
 export function useCrud(options: CrudOptions) {
+    const t = i18n.global.t
     const loading = ref(false)
     const listData = ref<any[]>([])
     const total = ref(0)
@@ -32,22 +34,22 @@ export function useCrud(options: CrudOptions) {
 
         try {
             await ElMessageBox.confirm(
-                `Confirm to delete ${options.name} "${row.name || row.code || ''}"?`,
-                'Confirm Delete',
+                t('common.messages.confirmDelete'),
+                t('common.dialog.confirmTitle'),
                 {
                     type: 'warning',
-                    confirmButtonText: 'Confirm',
-                    cancelButtonText: 'Cancel'
+                    confirmButtonText: t('common.actions.confirm'),
+                    cancelButtonText: t('common.actions.cancel')
                 }
             )
 
             await options.api.delete(row.id)
-            ElMessage.success('Delete successful')
+            ElMessage.success(t('common.messages.deleteSuccess'))
             // Recommend caller to refresh list
             return true
         } catch (error: any) {
             if (error !== 'cancel') {
-                ElMessage.error('Delete failed')
+                ElMessage.error(t('common.messages.deleteFailed'))
                 console.error(error)
             }
             return false
@@ -60,22 +62,22 @@ export function useCrud(options: CrudOptions) {
 
         try {
             await ElMessageBox.confirm(
-                `Confirm to delete selected ${rows.length} items?`,
-                'Confirm Batch Delete',
+                t('common.dialog.confirmDeleteMessage'),
+                t('common.dialog.confirmTitle'),
                 {
                     type: 'warning',
-                    confirmButtonText: 'Confirm',
-                    cancelButtonText: 'Cancel'
+                    confirmButtonText: t('common.actions.confirm'),
+                    cancelButtonText: t('common.actions.cancel')
                 }
             )
 
             const ids = rows.map(r => r.id)
             await options.api.batchDelete(ids)
-            ElMessage.success(`Successfully deleted ${rows.length} items`)
+            ElMessage.success(t('common.messages.deleteSuccess'))
             return true
         } catch (error: any) {
             if (error !== 'cancel') {
-                ElMessage.error('Batch delete failed')
+                ElMessage.error(t('common.messages.deleteFailed'))
                 console.error(error)
             }
             return false
@@ -91,12 +93,12 @@ export function useCrud(options: CrudOptions) {
             const url = window.URL.createObjectURL(blob)
             const link = document.createElement('a')
             link.href = url
-            link.download = `${options.name}_Export_${new Date().toLocaleDateString()}.xlsx`
+            link.download = `${options.name}_${t('common.actions.export')}_${new Date().toLocaleDateString()}.xlsx`
             link.click()
             window.URL.revokeObjectURL(url)
-            ElMessage.success('Export successful')
+            ElMessage.success(t('common.messages.operationSuccess'))
         } catch (error) {
-            ElMessage.error('Export failed')
+            ElMessage.error(t('common.messages.operationFailed'))
             console.error(error)
         }
     }
@@ -104,7 +106,7 @@ export function useCrud(options: CrudOptions) {
     // Batch Export
     const handleBatchExport = async (rows: any[]) => {
         if (!options.api.export || rows.length === 0) {
-            ElMessage.warning('Please select items to export')
+            ElMessage.warning(t('common.messages.pleaseSelectData'))
             return
         }
 

@@ -6,6 +6,11 @@
         "mappings": "User Mappings",
         "syncLogs": "Sync Logs"
     },
+    "platforms": {
+        "wework": "WeWork",
+        "dingtalk": "DingTalk",
+        "feishu": "Feishu"
+    },
     "providers": {
         "add": "Add Provider",
         "createTitle": "Add SSO Provider",

@@ -35,6 +35,21 @@
             "detail": "Detail",
             "post": "Post",
             "calculateDepreciation": "Calculate Depreciation"
+        },
+        "depreciationDialog": {
+            "title": "Calculate Depreciation",
+            "period": "Period",
+            "periodPlaceholder": "Select month",
+            "calculating": "Calculating...",
+            "start": "Start Calculation",
+            "messages": {
+                "startFailed": "Failed to start calculation",
+                "completed": "Calculation completed",
+                "failed": "Calculation failed"
+            },
+            "validation": {
+                "periodRequired": "Please select period"
+            }
         }
     }
 }

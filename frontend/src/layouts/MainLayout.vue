@@ -12,12 +12,12 @@
       >
         <div class="sidebar-header">
           <h1 class="logo">
-            <span class="logo-icon">📦</span>
+            <span class="logo-icon">{{ $t('common.brand.icon') }}</span>
             <transition name="fade">
               <span
                 v-if="!isCollapsed"
                 class="logo-text"
-              >GZEAMS</span>
+              >{{ $t('common.brand.name') }}</span>
             </transition>
           </h1>
         </div>
@@ -44,13 +44,13 @@
             </el-menu-item>
 
             <template
-              v-for="group in menuGroups"
-              :key="group.name"
+              v-for="(group, groupIdx) in menuGroups"
+              :key="getMenuGroupIdentity(group, groupIdx)"
             >
-              <!-- Multi-item group → sub-menu -->
+              <!-- Multi-item group to sub-menu -->
               <el-sub-menu
                 v-if="group.items.length > 1"
-                :index="group.name"
+                :index="getMenuGroupIdentity(group, groupIdx)"
                 class="sidebar-sub-menu"
               >
                 <template #title>
@@ -73,7 +73,7 @@
                 </el-menu-item>
               </el-sub-menu>
 
-              <!-- Single-item group → direct menu item -->
+              <!-- Single-item group to direct menu item -->
               <el-menu-item
                 v-else-if="group.items.length === 1"
                 :key="group.items[0].code"
@@ -112,6 +112,7 @@
       <!-- Mobile Drawer -->
       <el-drawer
         v-model="drawerVisible"
+        v-focus-trap.autofocus="drawerVisible"
         direction="ltr"
         size="240px"
         :with-header="false"
@@ -119,7 +120,7 @@
       >
         <div class="drawer-menu-container">
           <div class="drawer-logo">
-            <span class="logo-icon">📦</span> GZEAMS
+            <span class="logo-icon">{{ $t('common.brand.icon') }}</span> {{ $t('common.brand.name') }}
           </div>
           <el-menu
             :default-active="activeMenu"
@@ -132,12 +133,12 @@
               <span>{{ $t('menu.menu.dashboard') }}</span>
             </el-menu-item>
             <template
-              v-for="group in menuGroups"
-              :key="group.name"
+              v-for="(group, groupIdx) in menuGroups"
+              :key="getMenuGroupIdentity(group, groupIdx)"
             >
               <el-sub-menu
                 v-if="group.items.length > 1"
-                :index="group.name"
+                :index="getMenuGroupIdentity(group, groupIdx)"
               >
                 <template #title>
                   {{ getGroupLabel(group) }}
@@ -291,12 +292,12 @@ const breadcrumbs = computed(() => {
       const id = route.params.id as string
       if (id) {
         if (path.endsWith('/edit')) {
-          crumbs.push({ label: t('common.actions.edit') || '编辑', path })
+          crumbs.push({ label: t('common.actions.edit'), path })
         } else {
-          crumbs.push({ label: t('common.actions.detail') || '详情', path })
+          crumbs.push({ label: t('common.actions.detail'), path })
         }
       } else if (path.endsWith('/create')) {
-        crumbs.push({ label: t('common.actions.create') || '新建', path })
+        crumbs.push({ label: t('common.actions.create'), path })
       }
     }
   } else if (path.startsWith('/assets/lifecycle/')) {
@@ -354,7 +355,7 @@ const getGroupLabel = (group: LocalMenuGroup) => {
       finance: 'finance',
       workflow: 'workflowManagement',
       system: 'system',
-      other: 'other'
+      dynamicobjects: 'dynamicObjects'
     }
 
     const mappedByCode = groupCodeToKeyMap[normalizedCode] || groupCode
@@ -362,41 +363,6 @@ const getGroupLabel = (group: LocalMenuGroup) => {
     if (te(translationKey)) {
       return t(translationKey)
     }
-  }
-
-  const normalizedGroupName = groupName.toLowerCase()
-  const groupNameToKeyMap: Record<string, string> = {
-    '资产管理': 'assets',
-    '耗材管理': 'consumables',
-    '盘点管理': 'inventory',
-    '工作流': 'workflow',
-    '系统管理': 'system',
-    '管理员': 'admin',
-    '采购管理': 'procurement',
-    '维保管理': 'maintenance',
-    '组织管理': 'organization',
-    '资产作业': 'assetOperations',
-    '财务管理': 'finance',
-    '流程管理': 'workflowManagement',
-    '其他': 'other',
-    'asset management': 'assets',
-    'asset operations': 'assetOperations',
-    'consumables': 'consumables',
-    'inventory': 'inventory',
-    'workflow': 'workflow',
-    'system': 'system',
-    'admin': 'admin',
-    'procurement': 'procurement',
-    'maintenance': 'maintenance',
-    'organization': 'organization',
-    'finance': 'finance',
-    'workflow management': 'workflowManagement',
-    'other': 'other'
-  }
-
-  const mappedKey = groupNameToKeyMap[normalizedGroupName]
-  if (mappedKey && te(`menu.menu.${mappedKey}`)) {
-    return t(`menu.menu.${mappedKey}`)
   }
 
   return groupName
@@ -423,66 +389,17 @@ const getItemLabel = (item: LocalMenuItem) => {
     }
   }
 
-  const normalizedName = itemName.toLowerCase()
-  const itemNameToKeyMap: Record<string, string> = {
-    '业务对象': 'businessObjects',
-    '用户': 'users',
-    '字段定义': 'fieldDefinitions',
-    '页面布局': 'pageLayouts',
-    '字典类型': 'dictionaryTypes',
-    '编号规则': 'sequenceRules',
-    '业务规则': 'businessRules',
-    '配置包': 'configPackages',
-    '系统配置': 'systemConfig',
-    '文件管理': 'systemFiles',
-    '权限管理': 'permissions',
-    '工作流定义': 'workflowDefinitions',
-    '工作流实例': 'workflowInstances',
-    '资产卡片': 'assetList',
-    '资产分类': 'assetCategory',
-    '存放地点': 'location',
-    '供应商': 'supplier',
-    '资产状态日志': 'assetStatusLog',
-    'it资产管理': 'itAssets',
-    'it维护记录': 'itMaintenance',
-    '配置变更记录': 'configChanges',
-    '软件目录': 'softwareCatalog',
-    '软件许可证': 'softwareLicenses',
-    '分配记录': 'licenseAllocations',
-    '集成配置管理': 'integrationConfigs',
-    'business objects': 'businessObjects',
-    'users': 'users',
-    'field definitions': 'fieldDefinitions',
-    'page layouts': 'pageLayouts',
-    'dictionary types': 'dictionaryTypes',
-    'sequence rules': 'sequenceRules',
-    'business rules': 'businessRules',
-    'config packages': 'configPackages',
-    'system config': 'systemConfig',
-    'system files': 'systemFiles',
-    'permissions': 'permissions',
-    'workflow definitions': 'workflowDefinitions',
-    'workflow instances': 'workflowInstances',
-    'asset list': 'assetList',
-    'asset categories': 'assetCategory',
-    'locations': 'location',
-    'suppliers': 'supplier',
-    'asset status logs': 'assetStatusLog',
-    'it assets': 'itAssets',
-    'it maintenance': 'itMaintenance',
-    'config changes': 'configChanges',
-    'software catalog': 'softwareCatalog',
-    'software licenses': 'softwareLicenses',
-    'license allocations': 'licenseAllocations',
-    'integration configs': 'integrationConfigs'
-  }
-
-  const mappedKey = itemNameToKeyMap[normalizedName]
-  if (mappedKey && te(`menu.routes.${mappedKey}`)) {
-    return t(`menu.routes.${mappedKey}`)
-  }
-
   return itemName
+}
+
+const getMenuGroupIdentity = (group: LocalMenuGroup, index: number): string => {
+  const code = String(group.code || '').trim()
+  if (code) return code
+
+  const name = String(group.name || '').trim()
+  if (name) return `${name}-${index}`
+
+  return `group-${index}`
 }
 
 // ============================================================================
@@ -569,7 +486,7 @@ const buildMissingObjectGroup = (objects: BusinessObject[], menuGroupsData: Loca
   if (!missingObjects.length) return null
 
   return {
-    name: 'Dynamic Objects',
+    name: '',
     code: 'dynamicObjects',
     icon: 'Grid',
     order: 999,
@@ -580,7 +497,7 @@ const buildMissingObjectGroup = (objects: BusinessObject[], menuGroupsData: Loca
       url: `/objects/${obj.code}`,
       icon: 'Document',
       order: index + 1,
-      group: 'Dynamic Objects',
+      group: '',
       badge: null
     }))
   }
@@ -601,7 +518,7 @@ const fetchMenu = async () => {
     const missingGroup = buildMissingObjectGroup(objects, baseGroups)
     menuGroups.value = missingGroup ? [...baseGroups, missingGroup] : baseGroups
   } catch (error) {
-    console.error('Failed to fetch menu:', error)
+    console.error(error)
     menuGroups.value = []
   } finally {
     isLoading.value = false
@@ -854,3 +771,4 @@ onUnmounted(() => {
   }
 }
 </style>
+

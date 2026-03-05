@@ -124,6 +124,10 @@
             "confirmDelete": "Are you sure you want to delete this?"
         }
     },
+    "messages": {
+        "unsavedChanges": "You have unsaved changes",
+        "validationFailed": "Validation failed, please check required fields or input format."
+    },
     "config": {
         "title": "System Configuration",
         "addConfig": "Add Config",
@@ -624,6 +628,107 @@
         "placeholders": {
             "empty": "No business rules",
             "emptyType": "No {type} rules"
+        },
+        "designer": {
+            "triggerConfig": "Trigger Configuration",
+            "triggerEvents": "Trigger Events",
+            "watchFields": "Watch Fields",
+            "watchFieldsPlaceholder": "Select fields to watch",
+            "triggerCondition": "Trigger Conditions",
+            "conditionExpression": "Condition Expression",
+            "ruleActions": "Rule Actions",
+            "events": {
+                "update": "Update",
+                "submit": "Submit",
+                "approve": "Approve",
+                "fieldChange": "Field Change"
+            },
+            "placeholders": {
+                "ruleCode": "e.g., validate_amount_limit",
+                "ruleName": "Please enter rule name",
+                "description": "Optional: describe rule purpose and scope"
+            },
+            "actionConfigurator": {
+                "title": "Action Configuration",
+                "labels": {
+                    "errorMessageLocal": "Error Message (Local)",
+                    "errorMessageEnglish": "Error Message (English)",
+                    "severity": "Severity",
+                    "targetFields": "Target Fields",
+                    "visibility": "Visibility",
+                    "targetField": "Target Field",
+                    "formula": "Formula",
+                    "linkageType": "Linkage Type",
+                    "targetValue": "Target Value",
+                    "actionType": "Action Type",
+                    "apiEndpoint": "API Endpoint",
+                    "apiMethod": "Request Method",
+                    "ruleConfigJson": "Rule Config (JSON)"
+                },
+                "placeholders": {
+                    "errorMessageLocal": "Enter localized message for validation failure",
+                    "errorMessageEnglish": "Enter English message for validation failure",
+                    "targetFields": "Select fields to control visibility",
+                    "computedTargetField": "Select field to store computed result",
+                    "formula": "e.g., {amount} * 1.13",
+                    "linkageTargetField": "Select linkage target field",
+                    "targetValue": "Set a new value for target field (optional)",
+                    "apiEndpoint": "https://example.com/hooks/rule"
+                },
+                "severity": {
+                    "error": "Error",
+                    "warning": "Warning",
+                    "info": "Info"
+                },
+                "visibility": {
+                    "show": "Show",
+                    "hide": "Hide"
+                },
+                "linkageTypes": {
+                    "setValue": "Set Value",
+                    "loadOptions": "Load Options",
+                    "clear": "Clear"
+                },
+                "actionTypes": {
+                    "webhook": "Webhook",
+                    "notify": "Notification"
+                },
+                "formulaHint": "Use {field_code} to reference field values.",
+                "unknownRule": "Rule"
+            },
+            "conditionBuilder": {
+                "defaultTitle": "Condition Configuration",
+                "conditionCount": "{count} Conditions",
+                "emptyState": "No conditions",
+                "addCondition": "Add Condition",
+                "addGroup": "Add Group",
+                "previewJson": "View JSON",
+                "operators": {
+                    "equals": "Equals",
+                    "notEquals": "Not Equals",
+                    "greaterThan": "Greater Than",
+                    "greaterThanOrEqual": "Greater Than Or Equal",
+                    "lessThan": "Less Than",
+                    "lessThanOrEqual": "Less Than Or Equal",
+                    "in": "In",
+                    "empty": "Is Empty",
+                    "notEmpty": "Is Not Empty",
+                    "startsWith": "Starts With",
+                    "endsWith": "Ends With"
+                }
+            },
+            "singleCondition": {
+                "placeholders": {
+                    "field": "Select Field",
+                    "operator": "Operator",
+                    "value": "Enter Value",
+                    "date": "Select Date"
+                },
+                "boolean": {
+                    "true": "Yes",
+                    "false": "No"
+                }
+            }
         }
     },
     "sequenceRule": {
@@ -1032,7 +1137,14 @@
         "namePlaceholder": "e.g., Chinese (Simplified)",
         "nativeNamePlaceholder": "e.g., 中文",
         "localePlaceholder": "e.g., zhCN, enUS",
+        "validation": {
+            "codeFormat": "Format: xx-XX (e.g., zh-CN)",
+            "localeFormat": "Format: xxXX (e.g., zhCN)"
+        },
         "messages": {
+            "createSuccess": "Language created successfully",
+            "updateSuccess": "Language updated successfully",
+            "saveFailed": "Failed to save language",
             "setDefaultSuccess": "{name} is set as the default language",
             "setDefaultFailed": "Failed to set default language",
             "activateSuccess": "Language activated",
@@ -1064,6 +1176,12 @@
             "namespace": "Static Translation",
             "object": "Object Translation"
         },
+        "contentTypes": {
+            "businessObject": "Business Object",
+            "dictionaryType": "Dictionary Type",
+            "dictionaryItem": "Dictionary Item",
+            "modelFieldDefinition": "Model Field Definition"
+        },
         "types": {
             "label": "Label",
             "message": "Message",
@@ -1079,8 +1197,21 @@
         "namespacePlaceholder": "e.g., asset, common",
         "keyPlaceholder": "e.g., status.idle, button.save",
         "textPlaceholder": "Enter translation text",
+        "objectIdPlaceholder": "Enter object ID",
+        "fieldNamePlaceholder": "Enter field name",
         "contextPlaceholder": "Context for disambiguation (optional)",
-        "isSystemLabel": "System translation (read-only)"
+        "isSystemLabel": "System translation (read-only)",
+        "messages": {
+            "createSuccess": "Translation created successfully",
+            "updateSuccess": "Translation updated successfully",
+            "saveFailed": "Failed to save translation",
+            "deleteSuccess": "Translation deleted successfully",
+            "deleteFailed": "Failed to delete translation",
+            "exportSuccess": "Translations exported successfully",
+            "exportFailed": "Failed to export translations",
+            "importFailed": "Failed to import translations",
+            "importSummary": "Import completed: {created} created, {updated} updated, {failed} failed"
+        }
     },
     "moduleWorkbench": {
         "title": "Module Workbench",

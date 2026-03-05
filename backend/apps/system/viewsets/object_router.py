@@ -14,9 +14,11 @@ import inspect
 import re
 import logging
 from django.db.models import Q
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 from apps.system.services.object_registry import ObjectRegistry
 from apps.system.services.layout_runtime_normalizer import normalize_layout_config_for_runtime
+from apps.system.services.relation_query_service import RelationQueryService
 from apps.common.viewsets.metadata_driven import MetadataDrivenViewSet
 from apps.common.responses.base import BaseResponse
 from apps.common.services.i18n_service import TranslationService, get_current_language
@@ -1199,6 +1201,160 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             'context': context,
             'locale': request_locale,
         })
+
+    def relations(self, request, *args, **kwargs):
+        """
+        Get relation definitions for current object.
+
+        GET /api/system/objects/{code}/relations/
+        """
+        if not self._object_meta:
+            object_code = kwargs.get('code')
+            if not object_code:
+                return BaseResponse.error(
+                    'VALIDATION_ERROR',
+                    'common.messages.badRequest',
+                    http_status=status.HTTP_400_BAD_REQUEST
+                )
+
+            self._object_meta = ObjectRegistry.get_or_create_from_db(object_code)
+            if not self._object_meta:
+                return BaseResponse.error(
+                    code='NOT_FOUND',
+                    message='common.messages.resourceNotFound',
+                    http_status=status.HTTP_404_NOT_FOUND,
+                )
+
+        request_locale = self._get_request_locale(request)
+        service = RelationQueryService()
+        relations = service.list_relations(self._object_meta.code, locale=request_locale)
+        return Response(
+            {
+                'success': True,
+                'data': {
+                    'object_code': self._object_meta.code,
+                    'relations': relations,
+                    'locale': request_locale,
+                }
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def related(self, request, *args, **kwargs):
+        """
+        Get related object records by relation code.
+
+        GET /api/system/objects/{code}/{id}/related/{relation_code}/
+        """
+        if not self._object_meta:
+            object_code = kwargs.get('code')
+            if not object_code:
+                return BaseResponse.error(
+                    'VALIDATION_ERROR',
+                    'common.messages.badRequest',
+                    http_status=status.HTTP_400_BAD_REQUEST
+                )
+
+            self._object_meta = ObjectRegistry.get_or_create_from_db(object_code)
+            if not self._object_meta:
+                return BaseResponse.error(
+                    code='NOT_FOUND',
+                    message='common.messages.resourceNotFound',
+                    http_status=status.HTTP_404_NOT_FOUND,
+                )
+
+        parent_id = kwargs.get('id')
+        relation_code = kwargs.get('relation_code')
+        if not parent_id:
+            return BaseResponse.error(
+                'VALIDATION_ERROR',
+                'common.messages.badRequest',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+        if not relation_code:
+            return BaseResponse.error(
+                'VALIDATION_ERROR',
+                'common.messages.badRequest',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+
+        service = RelationQueryService()
+        try:
+            resolution = service.resolve_related_queryset(
+                parent_object_code=self._object_meta.code,
+                parent_id=str(parent_id),
+                relation_code=str(relation_code),
+                organization_id=str(getattr(request, 'organization_id', '') or '') or None,
+            )
+        except (ValidationError, DjangoValidationError):
+            return BaseResponse.error(
+                code='VALIDATION_ERROR',
+                message='common.messages.badRequest',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+
+        target_meta = ObjectRegistry.get_or_create_from_db(resolution.target_object_code)
+        if not target_meta:
+            return BaseResponse.error(
+                code='NOT_FOUND',
+                message='common.messages.resourceNotFound',
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        delegate = self._create_delegate_viewset(target_meta, request)
+        delegate.action = 'list'
+        delegate.kwargs = {'code': resolution.target_object_code}
+        delegate.request = request
+
+        queryset = resolution.target_queryset
+        if hasattr(delegate, 'filter_queryset'):
+            queryset = delegate.filter_queryset(queryset)
+
+        page = delegate.paginate_queryset(queryset) if hasattr(delegate, 'paginate_queryset') else None
+        if page is not None:
+            serializer = delegate.get_serializer(page, many=True)
+            page_response = delegate.get_paginated_response(serializer.data)
+            page_payload = page_response.data
+            if isinstance(page_payload, dict) and page_payload.get('success') is True:
+                page_payload = page_payload.get('data', {}) or {}
+            if not isinstance(page_payload, dict) or 'results' not in page_payload:
+                page_payload = {
+                    'count': len(serializer.data),
+                    'next': None,
+                    'previous': None,
+                    'results': serializer.data,
+                }
+        else:
+            serializer = delegate.get_serializer(queryset, many=True)
+            page_payload = {
+                'count': len(serializer.data),
+                'next': None,
+                'previous': None,
+                'results': serializer.data,
+            }
+
+        relation = resolution.relation
+        relation_payload = {
+            'relation_code': relation.relation_code,
+            'relation_kind': relation.relation_kind,
+            'target_object_code': relation.target_object_code,
+            'display_mode': relation.display_mode,
+            'sort_order': relation.sort_order,
+        }
+
+        return Response(
+            {
+                'success': True,
+                'data': {
+                    **page_payload,
+                    'relation': relation_payload,
+                    'parent_object_code': self._object_meta.code,
+                    'parent_id': str(parent_id),
+                    'target_object_code': resolution.target_object_code,
+                }
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, methods=['get'], url_path='runtime')
     def runtime(self, request, *args, **kwargs):

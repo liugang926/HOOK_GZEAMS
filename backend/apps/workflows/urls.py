@@ -12,6 +12,7 @@ from apps.workflows.viewsets.workflow_operation_log_viewsets import WorkflowOper
 from apps.workflows.viewsets.workflow_execution_viewsets import (
     WorkflowInstanceViewSet,
     WorkflowTaskViewSet,
+    WorkflowApprovalViewSet,
     WorkflowStatisticsViewSet,
 )
 
@@ -23,6 +24,7 @@ router.register(r'templates', WorkflowTemplateViewSet, basename='workflow-templa
 router.register(r'logs', WorkflowOperationLogViewSet, basename='workflow-operation-log')
 router.register(r'instances', WorkflowInstanceViewSet, basename='workflow-instance')
 router.register(r'tasks', WorkflowTaskViewSet, basename='workflow-task')
+router.register(r'approvals', WorkflowApprovalViewSet, basename='workflow-approval')
 router.register(r'statistics', WorkflowStatisticsViewSet, basename='workflow-statistics')
 
 app_name = 'workflows'

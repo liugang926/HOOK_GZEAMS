@@ -19,6 +19,13 @@ describe('useFieldPropertySchema', () => {
     expect(getFieldPropertyKeys('multiselect')).toContain('options')
     expect(getFieldPropertyKeys('richtext')).toContain('toolbar')
     expect(getFieldPropertyKeys('subtable')).toContain('relatedFields')
+    expect(getFieldPropertyKeys('subtable')).toContain('showShortcutHelp')
+    expect(getFieldPropertyKeys('subtable')).toContain('defaultShortcutHelpPinned')
+  })
+
+  it('includes reference lookup compact key configuration', () => {
+    const keys = getFieldPropertyKeys('reference')
+    expect(keys).toContain('lookupCompactKeys')
   })
 
   it('avoids duplicate property keys', () => {

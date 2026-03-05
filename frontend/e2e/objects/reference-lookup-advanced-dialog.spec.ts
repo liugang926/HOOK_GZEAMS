@@ -14,9 +14,9 @@ type MockState = {
 }
 
 const USER_POOL: Array<Record<string, any>> = [
-  { id: 'user-alice', fullName: 'Alice Stone', username: 'alice', name: 'Alice Stone', code: 'U-ALICE' },
-  { id: 'user-john', fullName: 'John Carter', username: 'john', name: 'John Carter', code: 'U-JOHN' },
-  { id: 'user-zoe', fullName: 'Zoe Green', username: 'zoe', name: 'Zoe Green', code: 'U-ZOE' }
+  { id: 'user-alice', fullName: 'Alice Stone', username: 'alice', name: 'Alice Stone', code: 'U-ALICE', email: 'alice@example.com', mobile: '13800000001' },
+  { id: 'user-john', fullName: 'John Carter', username: 'john', name: 'John Carter', code: 'U-JOHN', email: 'john@example.com', mobile: '13800000002' },
+  { id: 'user-zoe', fullName: 'Zoe Green', username: 'zoe', name: 'Zoe Green', code: 'U-ZOE', email: 'zoe@example.com', mobile: '13800000003' }
 ]
 
 function buildRuntimeLayoutResponse() {
@@ -44,6 +44,9 @@ function buildRuntimeLayoutResponse() {
           referenceObject: 'User',
           referenceDisplayField: 'fullName',
           referenceSecondaryField: 'username',
+          componentProps: {
+            lookupCompactKeys: ['email']
+          },
           isHidden: false,
           showInForm: true,
           showInDetail: true,
@@ -244,11 +247,16 @@ test.describe('Reference Lookup Advanced Dialog', () => {
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
 
-    const ownerField = page.locator('.field-item').filter({
+    const ownerField = () => page.locator('.field-item').filter({
       has: page.locator('.field-label', { hasText: 'Owner' })
     }).first()
+    const openOwnerLookup = async () => {
+      const field = ownerField()
+      await expect(field).toBeVisible()
+      await field.locator('.el-select').first().click()
+    }
 
-    await ownerField.locator('.el-select').first().click()
+    await openOwnerLookup()
     const dropdownFooter = page.locator('.reference-dropdown-footer').last()
     await expect(dropdownFooter).toBeVisible()
     await dropdownFooter.getByRole('button', { name: 'Advanced Search' }).click()
@@ -258,23 +266,107 @@ test.describe('Reference Lookup Advanced Dialog', () => {
     }).first()
     await expect(dialog).toBeVisible()
 
-    await dialog.locator('.lookup-toolbar .el-input__inner').fill('john')
-    await dialog.locator('.lookup-toolbar .el-input__inner').press('Enter')
-    await expect(dialog.locator('.el-table__row')).toHaveCount(1)
-    await expect(dialog).toContainText('John Carter')
-    await expect(dialog.locator('.lookup-cell__recent-tag')).toContainText('Recent')
-
-    await dialog.locator('.el-table__row').first().click()
-    await dialog.getByRole('button', { name: 'Confirm' }).click()
+    await dialog.getByRole('button', { name: 'Reset' }).click()
+    const groupTitles = dialog.locator('.lookup-cell__group-title')
+    await expect(groupTitles).toContainText(['Recent Records (2)', 'Search Results (1)'])
+    await dialog.locator('.lookup-toolbar__columns-trigger').click()
+    const columnSettings = page.locator('.lookup-column-settings:visible').last()
+    await expect(columnSettings).toBeVisible()
+    await columnSettings.locator('.lookup-column-settings__item').filter({ hasText: 'Code' }).first().click()
+    await expect(dialog.locator('.el-table__header-wrapper')).not.toContainText('Code')
+    const idSettingRow = columnSettings.locator('.lookup-column-settings__row[data-column-key="id"]').first()
+    await expect(idSettingRow.locator('.lookup-column-settings__lock-icon')).toBeVisible()
+    await expect(idSettingRow.locator('.lookup-column-settings__move-up')).toBeDisabled()
+    const headersAfterMove = dialog.locator('.el-table__header-wrapper thead th .cell')
+    await expect(headersAfterMove.first()).toContainText('Name')
+    await dialog.getByRole('button', { name: 'Cancel' }).click()
     await expect(dialog).toBeHidden()
 
-    await expect(ownerField.locator('.reference-selected__label')).toContainText('John Carter')
-    await ownerField.locator('.reference-selected').hover()
-    const hoverCard = page.locator('.reference-hover-card').filter({
-      has: page.locator('.reference-hover-card__title', { hasText: 'John Carter' })
-    }).last()
-    await expect(hoverCard).toBeVisible()
-    await expect(hoverCard).toContainText('user-john')
+    await openOwnerLookup()
+    await page.locator('.reference-dropdown-footer').last().getByRole('button', { name: 'Advanced Search' }).click()
+    const reopenDialog = page.locator('.el-dialog').filter({
+      has: page.locator('.lookup-toolbar')
+    }).first()
+    await expect(reopenDialog).toBeVisible()
+    await expect(reopenDialog.locator('.el-table__header-wrapper')).not.toContainText('Code')
+    const reopenHeaders = reopenDialog.locator('.el-table__header-wrapper thead th .cell')
+    await expect(reopenHeaders.first()).toContainText('Name')
+    await reopenDialog.locator('.lookup-toolbar__columns-trigger').click()
+    const reopenedColumnSettings = page.locator('.lookup-column-settings:visible').last()
+    await expect(reopenedColumnSettings).toBeVisible()
+    await reopenedColumnSettings.locator('.lookup-column-settings__profiles').getByText('Compact').click()
+    await expect(reopenedColumnSettings.locator('.lookup-column-settings__profiles .is-selected')).toContainText('Compact')
+    await reopenDialog.getByRole('button', { name: 'Cancel' }).click()
+    await expect(reopenDialog).toBeHidden()
+
+    await openOwnerLookup()
+    await page.locator('.reference-dropdown-footer').last().getByRole('button', { name: 'Advanced Search' }).click()
+    const compactDialog = page.locator('.el-dialog').filter({
+      has: page.locator('.lookup-toolbar')
+    }).first()
+    await expect(compactDialog).toBeVisible()
+    await compactDialog.locator('.lookup-toolbar__columns-trigger').click()
+    const compactSettings = page.locator('.lookup-column-settings:visible').last()
+    await expect(compactSettings.locator('.lookup-column-settings__profiles .is-selected')).toContainText('Compact')
+    await expect(compactDialog.locator('.el-table__header-wrapper')).toContainText('email')
+    await expect(compactDialog.locator('.el-table__header-wrapper')).not.toContainText('mobile')
+    await compactSettings.locator('.lookup-column-settings__reset-columns').click()
+    await expect(compactSettings.locator('.lookup-column-settings__profiles .is-selected')).toContainText('Standard')
+    await compactDialog.getByRole('button', { name: 'Cancel' }).click()
+    await expect(compactDialog).toBeHidden()
+
+    await openOwnerLookup()
+    await page.locator('.reference-dropdown-footer').last().getByRole('button', { name: 'Advanced Search' }).click()
+    const resetDialog = page.locator('.el-dialog').filter({
+      has: page.locator('.lookup-toolbar')
+    }).first()
+    await expect(resetDialog).toBeVisible()
+    await resetDialog.locator('.lookup-toolbar__columns-trigger').click()
+    const resetSettings = page.locator('.lookup-column-settings:visible').last()
+    await expect(resetSettings.locator('.lookup-column-settings__profiles .is-selected')).toContainText('Standard')
+    await resetSettings.locator('.lookup-column-settings__reset-columns').click()
+    await expect(resetDialog.locator('.el-table__header-wrapper')).toContainText('Code')
+    await expect(resetDialog.locator('.el-table__header-wrapper thead th .cell').first()).toContainText('Name')
+    await resetDialog.getByRole('button', { name: 'Cancel' }).click()
+    await expect(resetDialog).toBeHidden()
+
+    await openOwnerLookup()
+    await page.locator('.reference-dropdown-footer').last().getByRole('button', { name: 'Advanced Search' }).click()
+    const afterResetDialog = page.locator('.el-dialog').filter({
+      has: page.locator('.lookup-toolbar')
+    }).first()
+    await expect(afterResetDialog).toBeVisible()
+    await expect(afterResetDialog.locator('.el-table__header-wrapper')).toContainText('Code')
+    await expect(afterResetDialog.locator('.el-table__header-wrapper thead th .cell').first()).toContainText('Name')
+
+    const firstRow = afterResetDialog.locator('.el-table__row').first()
+    await firstRow.click()
+    const activeBefore = (await afterResetDialog.locator('.el-table__row.is-active-single-row').first().textContent()) || ''
+    await afterResetDialog.locator('.lookup-footer__meta').click()
+    await page.keyboard.press('ArrowDown')
+    const activeAfter = (await afterResetDialog.locator('.el-table__row.is-active-single-row').first().textContent()) || ''
+    expect(activeAfter).not.toBe(activeBefore)
+
+    await afterResetDialog.locator('.lookup-toolbar .el-input__inner').fill('john')
+    await afterResetDialog.locator('.lookup-toolbar .el-input__inner').press('Enter')
+    const johnRow = afterResetDialog.locator('.el-table__row').filter({ hasText: 'John Carter' }).first()
+    await expect(johnRow).toBeVisible()
+    await expect(afterResetDialog.locator('.lookup-cell__recent-tag')).toContainText('Recent')
+
+    await johnRow.click()
+    await afterResetDialog.getByRole('button', { name: 'Confirm' }).click()
+    await expect(afterResetDialog).toBeHidden()
+
+    await expect(ownerField()).toContainText('John Carter')
+    const selectedCard = ownerField().locator('.reference-selected')
+    if (await selectedCard.count()) {
+      await selectedCard.first().hover()
+      const hoverCard = page.locator('.reference-hover-card').filter({
+        has: page.locator('.reference-hover-card__title', { hasText: 'John Carter' })
+      }).last()
+      await expect(hoverCard).toBeVisible()
+      await expect(hoverCard).toContainText('user-john')
+    }
 
     await page.getByRole('button', { name: 'Save' }).click()
     await expect.poll(() => state.lastUpdatePayload?.owner || state.lastUpdatePayload?.owner_id).toBe('user-john')

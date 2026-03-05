@@ -48,7 +48,7 @@
   <template v-else-if="isReferenceDisplay">
     <div
       v-if="referenceEntries.length > 0"
-      class="reference-display"
+      class="reference-read-view"
     >
       <el-popover
         v-for="(entry, index) in referenceEntries"
@@ -58,31 +58,23 @@
         :width="300"
       >
         <template #reference>
-          <div class="reference-chip">
-            <ObjectAvatar
-              :object-code="referenceObjectCode || 'Ref'"
-              size="xs"
-            />
-            <div class="reference-chip__content">
-              <el-link
-                v-if="entry.href"
-                :href="entry.href"
-                type="primary"
-                class="reference-chip__label"
-              >
-                {{ entry.label }}
-              </el-link>
-              <span
-                v-else
-                class="reference-chip__label"
-              >{{ entry.label }}</span>
-              <span
-                v-if="entry.secondary"
-                class="reference-secondary"
-              >
-                {{ entry.secondary }}
-              </span>
-            </div>
+          <div class="reference-read-item">
+            <el-link
+              v-if="entry.href"
+              :href="entry.href"
+              target="_blank"
+              type="primary"
+              class="reference-link"
+              :underline="false"
+            >
+              {{ entry.label }}
+            </el-link>
+            <span
+              v-else
+              class="reference-link"
+            >
+              {{ entry.label }}
+            </span>
           </div>
         </template>
         <div class="reference-hover-card">
@@ -119,23 +111,27 @@
             v-if="entry.href"
             class="reference-hover-card__actions"
           >
-            <el-link
+            <el-button
+              tag="a"
               :href="entry.href"
               target="_blank"
               type="primary"
+              size="small"
+              plain
             >
               {{ openActionText }}
-            </el-link>
+            </el-button>
+            <el-button
+              v-if="referenceObjectCode === 'User' || referenceObjectCode === 'system_user'"
+              type="success"
+              size="small"
+              plain
+            >
+              Contact
+            </el-button>
           </div>
         </div>
       </el-popover>
-      <el-tag
-        v-if="referenceObjectCode"
-        size="small"
-        effect="plain"
-      >
-        {{ referenceObjectCode }}
-      </el-tag>
     </div>
     <span v-else>-</span>
   </template>
@@ -959,50 +955,30 @@ const codeImageUrl = computed(() => {
   line-height: 1.5;
 }
 
-.reference-display {
+.reference-read-view {
+  min-height: 24px;
   display: inline-flex;
+  align-items: center;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-}
-
-.reference-chip {
-  display: inline-flex;
-  align-items: center;
-  min-width: 0;
-  max-width: 100%;
   gap: 8px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 10px;
-  padding: 4px 8px 4px 6px;
-  background: var(--el-fill-color-blank);
 }
 
-.reference-chip__content {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
+.reference-read-item {
+  display: inline-flex;
 }
 
-.reference-chip__label {
-  min-width: 0;
-  max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
+.reference-link {
+  font-size: 14px;
+  line-height: inherit;
+  color: var(--el-color-primary);
+  word-break: break-all;
+  white-space: normal;
+  text-align: left;
+  display: inline-block;
 }
 
-.reference-secondary {
-  min-width: 0;
-  max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  font-family: 'Consolas', 'Monaco', monospace;
+.reference-link:hover {
+  text-decoration: underline;
 }
 
 .reference-hover-card {

@@ -9,11 +9,19 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import quarterOfYear from 'dayjs/plugin/quarterOfYear'
+import customParseFormat from 'dayjs/plugin/customParseFormat'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+import localizedFormat from 'dayjs/plugin/localizedFormat'
 
 // Configure dayjs
 dayjs.locale('zh-cn')
 dayjs.extend(relativeTime)
 dayjs.extend(quarterOfYear)
+dayjs.extend(customParseFormat)
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.extend(localizedFormat)
 
 /**
  * Format date to specified format string
@@ -26,8 +34,27 @@ dayjs.extend(quarterOfYear)
  * formatDate('2023-01-15') // '2023-01-15'
  * formatDate(new Date(), 'YYYY/MM/DD') // '2023/01/15'
  */
-export function formatDate(date: string | Date, format = 'YYYY-MM-DD'): string {
-  return dayjs(date).format(format)
+export function formatDate(date: string | Date, format = 'YYYY-MM-DD', strict = false): string {
+  if (!date) return ''
+  return strict && typeof date === 'string'
+    ? dayjs(date, format, true).format(format)
+    : dayjs(date).format(format)
+}
+
+/**
+ * Parses a date string using strict mode matching the given format.
+ * Returns a dayjs instance.
+ */
+export function parseStrict(dateStr: string, format: string): dayjs.Dayjs {
+  return dayjs(dateStr, format, true)
+}
+
+/**
+ * Formats a date localized to a specific timezone.
+ */
+export function formatWithTimezone(date: string | Date | number, targetTimezone: string, format = 'YYYY-MM-DD HH:mm:ss'): string {
+  if (!date) return ''
+  return dayjs(date).tz(targetTimezone).format(format)
 }
 
 /**

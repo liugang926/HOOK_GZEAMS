@@ -821,5 +821,14 @@
                 }
             }
         }
+    },
+    "leasing": {
+        "payment": {
+            "methods": {
+                "bankTransfer": "银行转账",
+                "check": "支票",
+                "cash": "现金"
+            }
+        }
     }
 }

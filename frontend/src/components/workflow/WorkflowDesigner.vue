@@ -352,9 +352,9 @@ const registerCustomNodes = () => {
 
         // 瀹℃壒绫诲瀷鏍囪瘑
         const typeLabel = {
-          'or': '鎴栫',
-          'and': '浼氱',
-          'seq': '渚濇'
+          or: t('workflow.approvalType.or'),
+          and: t('workflow.approvalType.and'),
+          seq: t('workflow.approvalType.seq')
         }[approveType] || ''
 
         return h('g', {}, [
@@ -376,7 +376,7 @@ const registerCustomNodes = () => {
             fontWeight: 'bold',
             textAnchor: 'middle',
             dominantBaseline: 'middle'
-          }, model.text.value || '瀹℃壒'),
+          }, model.text.value || t('workflow.nodeType.approval')),
           h('text', {
             x: x,
             y: y + 12,

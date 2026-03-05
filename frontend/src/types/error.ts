@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Error Code Type Definitions
  *
  * Standard error codes matching backend definition.
@@ -41,17 +41,17 @@ export const ErrorCodeStatusMap: Record<ErrorCode, number> = {
 }
 
 /**
- * Error code to user message mapping (i18n support)
+ * Error code to i18n key mapping
  */
 export const ErrorCodeMessages: Record<ErrorCode, string> = {
-  [ErrorCode.VALIDATION_ERROR]: '请求数据验证失败',
-  [ErrorCode.UNAUTHORIZED]: '未授权访问，请重新登录',
-  [ErrorCode.PERMISSION_DENIED]: '权限不足',
-  [ErrorCode.NOT_FOUND]: '请求的资源不存在',
-  [ErrorCode.METHOD_NOT_ALLOWED]: '请求方法不允许',
-  [ErrorCode.CONFLICT]: '数据冲突，请刷新后重试',
-  [ErrorCode.ORGANIZATION_MISMATCH]: '组织不匹配',
-  [ErrorCode.SOFT_DELETED]: '资源已被删除',
-  [ErrorCode.RATE_LIMIT_EXCEEDED]: '请求过于频繁，请稍后再试',
-  [ErrorCode.SERVER_ERROR]: '服务器错误，请稍后再试'
+  [ErrorCode.VALIDATION_ERROR]: 'common.messages.badRequest',
+  [ErrorCode.UNAUTHORIZED]: 'common.messages.sessionExpired',
+  [ErrorCode.PERMISSION_DENIED]: 'common.messages.permissionDenied',
+  [ErrorCode.NOT_FOUND]: 'common.messages.resourceNotFound',
+  [ErrorCode.METHOD_NOT_ALLOWED]: 'common.messages.operationFailed',
+  [ErrorCode.CONFLICT]: 'common.messages.operationFailed',
+  [ErrorCode.ORGANIZATION_MISMATCH]: 'common.messages.operationFailed',
+  [ErrorCode.SOFT_DELETED]: 'common.messages.resourceGone',
+  [ErrorCode.RATE_LIMIT_EXCEEDED]: 'common.messages.tooManyRequests',
+  [ErrorCode.SERVER_ERROR]: 'common.messages.serverError'
 }

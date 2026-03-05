@@ -23,6 +23,7 @@
         label-width="120px"
         label-position="right"
         @update:model-value="handleModelUpdate"
+        @request-save="emit('request-save')"
       />
     </el-form>
   </div>
@@ -63,6 +64,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: Record<string, any>): void
+  (e: 'dirty-change', isDirty: boolean): void
+  (e: 'request-save'): void
 }>()
 
 const isSchemaMode = computed(() => !!props.schema)
@@ -71,7 +74,6 @@ const schemaFormData = ref<Record<string, any>>({})
 const schemaLayout = ref<RuntimeLayoutConfig>({ sections: [] })
 
 const {
-  formRef,
   formData,
   formRules,
   runtimeLayout,
@@ -223,18 +225,37 @@ const ensureCanonicalKeys = (model: Record<string, any>, layout: RuntimeLayoutCo
   return next
 }
 
+// Keep a snapshot of original data to check dirty state
+const originalSnapshot = ref<string>('{}')
+const isDirty = ref(false)
+
 const getSubmitData = () => {
   if (isSchemaMode.value) return { ...(schemaFormData.value || {}) }
   return buildSubmitPayload(flattenLayoutFields(activeLayout.value), activeFormData.value || {})
 }
 
+const checkDirtyState = (currentData: Record<string, any>) => {
+  // Simple JSON stringify comparison for deep objects. In a production app with Dates/Functions, 
+  // a deepEqual from lodash would be safer, but this is sufficient for standard JSON forms.
+  const currentSnapshot = JSON.stringify(currentData || {})
+  const dirty = currentSnapshot !== originalSnapshot.value
+  if (dirty !== isDirty.value) {
+    isDirty.value = dirty
+    emit('dirty-change', dirty)
+  }
+}
+
 const handleModelUpdate = (value: Record<string, any>) => {
+  let nextVal
   if (isSchemaMode.value) {
-    schemaFormData.value = { ...schemaFormData.value, ...value }
+    nextVal = { ...schemaFormData.value, ...value }
+    schemaFormData.value = nextVal
   } else {
-    formData.value = ensureCanonicalKeys({ ...formData.value, ...value }, activeLayout.value)
+    nextVal = ensureCanonicalKeys({ ...formData.value, ...value }, activeLayout.value)
+    formData.value = nextVal
   }
   emit('update:modelValue', { ...activeFormData.value })
+  checkDirtyState(nextVal)
 }
 
 const buildFieldsFromSchema = (schema: Record<string, any>): RuntimeField[] => {
@@ -381,11 +402,20 @@ const buildSectionsFromSchema = (schema: Record<string, any>, fields: RuntimeFie
   }]
 }
 
-const applyExternalModel = (value: Record<string, any> | null | undefined) => {
+const applyExternalModel = (value: Record<string, any> | null | undefined, isInitial = false) => {
   if (!value || typeof value !== 'object') return
   const target = isSchemaMode.value ? schemaFormData : formData
   const merged = { ...target.value, ...value }
-  target.value = isSchemaMode.value ? merged : ensureCanonicalKeys(merged, activeLayout.value)
+  const finalVal = isSchemaMode.value ? merged : ensureCanonicalKeys(merged, activeLayout.value)
+  target.value = finalVal
+  
+  if (isInitial) {
+    originalSnapshot.value = JSON.stringify(finalVal)
+    isDirty.value = false
+    emit('dirty-change', false)
+  } else {
+    checkDirtyState(finalVal)
+  }
 }
 
 watch(
@@ -408,7 +438,9 @@ watch(
 watch(
   () => props.modelValue,
   (value) => {
-    if (value) applyExternalModel(value)
+    // Only treat as initial if original doesn't exist yet
+    const isInitial = originalSnapshot.value === '{}' || Boolean(props.instanceId && !loading.value && Object.keys(value || {}).length > 0)
+    if (value) applyExternalModel(value, isInitial)
   },
   { immediate: true, deep: true }
 )
@@ -416,7 +448,8 @@ watch(
 watch(
   () => props.data,
   (value) => {
-    if (value) applyExternalModel(value)
+    const isInitial = originalSnapshot.value === '{}'
+    if (value) applyExternalModel(value, isInitial)
   },
   { immediate: true, deep: true }
 )
@@ -449,7 +482,8 @@ defineExpose({
   resetFields,
   clearValidation,
   formData: activeFormData,
-  getSubmitData
+  getSubmitData,
+  isDirty
 })
 </script>
 

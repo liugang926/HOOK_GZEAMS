@@ -77,8 +77,16 @@ const FIELD_TYPE_SPECIFIC_SCHEMA: Record<string, FieldPropertySchemaItem[]> = {
   radio: [{ key: 'options', label: 'Options', inputType: 'json', section: 'advanced' }],
   checkbox: [{ key: 'options', label: 'Options', inputType: 'json', section: 'advanced' }],
   dictionary: [{ key: 'dictionaryType', label: 'Dictionary Type', inputType: 'text', section: 'advanced' }],
-  reference: [{ key: 'referenceObject', label: 'Reference Object', inputType: 'text', section: 'advanced' }],
-  sub_table: [{ key: 'relatedFields', label: 'Related Fields', inputType: 'json', section: 'advanced' }],
+  reference: [
+    { key: 'referenceObject', label: 'Reference Object', inputType: 'text', section: 'advanced' },
+    { key: 'lookupCompactKeys', label: 'Lookup Compact Keys', inputType: 'json', section: 'advanced' }
+  ],
+  sub_table: [
+    { key: 'relatedFields', label: 'Related Fields', inputType: 'json', section: 'advanced' },
+    { key: 'paginationPageSize', label: 'Pagination Page Size', inputType: 'number', section: 'display' },
+    { key: 'showShortcutHelp', label: 'Show Shortcut Help', inputType: 'switch', section: 'advanced' },
+    { key: 'defaultShortcutHelpPinned', label: 'Default Shortcut Help Pinned', inputType: 'switch', section: 'advanced' }
+  ],
   file: [
     { key: 'accept', label: 'Accept', inputType: 'text', section: 'advanced' },
     { key: 'maxSize', label: 'Max Size', inputType: 'number', section: 'validation' },

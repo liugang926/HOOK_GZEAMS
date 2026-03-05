@@ -17,7 +17,7 @@
       >
         <el-select
           v-model="formData.asset"
-          placeholder="Select asset"
+          :placeholder="$t('itAssets.form.placeholders.selectAsset')"
           filterable
           remote
           :remote-method="searchAssets"
@@ -39,7 +39,7 @@
       >
         <el-select
           v-model="formData.field_name"
-          :placeholder="$t('itAssets.common.select')"
+          :placeholder="$t('common.placeholders.select')"
           allow-create
           filterable
           style="width: 100%"
@@ -134,7 +134,7 @@
         <el-date-picker
           v-model="formData.change_date"
           type="date"
-          placeholder="Select date"
+          :placeholder="$t('common.placeholders.select')"
           style="width: 100%"
         />
       </el-form-item>
@@ -147,7 +147,7 @@
           v-model="formData.change_reason"
           type="textarea"
           :rows="3"
-          placeholder="Explain why this change was made"
+          :placeholder="$t('itAssets.form.configChange.placeholders.changeReason')"
         />
       </el-form-item>
     </el-form>
@@ -209,13 +209,13 @@ const formData = ref({
 
 const rules: FormRules = {
   asset: [
-    { required: true, message: 'Please select asset', trigger: 'change' }
+    { required: true, message: t('itAssets.form.validation.selectAsset'), trigger: 'change' }
   ],
   field_name: [
-    { required: true, message: 'Please enter field name', trigger: 'blur' }
+    { required: true, message: t('itAssets.form.configChange.validation.enterFieldName'), trigger: 'blur' }
   ],
   change_date: [
-    { required: true, message: 'Please select change date', trigger: 'change' }
+    { required: true, message: t('itAssets.form.configChange.validation.selectDate'), trigger: 'change' }
   ]
 }
 

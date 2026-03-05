@@ -1,6 +1,6 @@
-<template>
+﻿<template>
   <el-dialog
-    :title="id ? '编辑耗材' : '新建耗材'"
+    :title="id ? t('consumables.form.titleEdit') : t('consumables.form.titleCreate')"
     :model-value="modelValue"
     width="500px"
     @close="handleClose"
@@ -9,22 +9,22 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="80px"
+      label-width="90px"
     >
       <el-form-item
-        label="名称"
+        :label="t('consumables.form.fields.name')"
         prop="name"
       >
         <el-input v-model="form.name" />
       </el-form-item>
       <el-form-item
-        label="编码"
+        :label="t('consumables.form.fields.code')"
         prop="code"
       >
         <el-input v-model="form.code" />
       </el-form-item>
       <el-form-item
-        label="类别"
+        :label="t('consumables.form.fields.category')"
         prop="category"
       >
         <el-select
@@ -32,29 +32,29 @@
           style="width: 100%"
         >
           <el-option
-            label="办公用品"
+            :label="t('consumables.form.category.office')"
             value="office"
           />
           <el-option
-            label="IT耗材"
+            :label="t('consumables.form.category.it')"
             value="it"
           />
         </el-select>
       </el-form-item>
       <el-form-item
-        label="规格"
+        :label="t('consumables.form.fields.spec')"
         prop="spec"
       >
         <el-input v-model="form.spec" />
       </el-form-item>
       <el-form-item
-        label="单位"
+        :label="t('consumables.form.fields.unit')"
         prop="unit"
       >
         <el-input v-model="form.unit" />
       </el-form-item>
       <el-form-item
-        label="预警阈值"
+        :label="t('consumables.form.fields.warningQuantity')"
         prop="warning_quantity"
       >
         <el-input-number
@@ -63,7 +63,7 @@
         />
       </el-form-item>
       <el-form-item
-        label="描述"
+        :label="t('consumables.form.fields.description')"
         prop="description"
       >
         <el-input
@@ -74,14 +74,14 @@
     </el-form>
     <template #footer>
       <el-button @click="handleClose">
-        取消
+        {{ t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="submitting"
         @click="submit"
       >
-        保存
+        {{ t('common.actions.save') }}
       </el-button>
     </template>
   </el-dialog>
@@ -89,82 +89,89 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, defineProps, defineEmits } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { createConsumable, updateConsumable, getConsumable } from '@/api/consumables'
 import { ElMessage } from 'element-plus'
 
 const props = defineProps({
-    modelValue: Boolean,
-    id: Number
+  modelValue: Boolean,
+  id: [Number, String]
 })
 const emit = defineEmits(['update:modelValue', 'success'])
+const { t } = useI18n()
 
 const formRef = ref()
 const submitting = ref(false)
 const form = reactive({
+  name: '',
+  code: '',
+  category: 'office',
+  spec: '',
+  unit: 'pcs',
+  warning_quantity: 10,
+  description: ''
+})
+
+const resetFormData = () => {
+  Object.assign(form, {
     name: '',
     code: '',
     category: 'office',
     spec: '',
-    unit: '个',
+    unit: 'pcs',
     warning_quantity: 10,
     description: ''
-})
-
-const rules = {
-    name: [{ required: true, message: '请输入名称', trigger: 'blur' }],
-    code: [{ required: true, message: '请输入编码', trigger: 'blur' }],
-    unit: [{ required: true, message: '请输入单位', trigger: 'blur' }]
+  })
 }
 
-watch(() => props.modelValue, async (val) => {
-    if (val) {
-        if (props.id) {
-            try {
-                const res = await getConsumable(props.id)
-                Object.assign(form, res)
-            } catch (e) {
-                console.error(e)
-            }
-        } else {
-            // Reset
-            Object.assign(form, {
-                name: '',
-                code: '',
-                category: 'office',
-                spec: '',
-                unit: '个',
-                warning_quantity: 10,
-                description: ''
-            })
-        }
+const rules = {
+  name: [{ required: true, message: t('common.validation.requiredWithField', { field: t('consumables.form.fields.name') }), trigger: 'blur' }],
+  code: [{ required: true, message: t('common.validation.requiredWithField', { field: t('consumables.form.fields.code') }), trigger: 'blur' }],
+  unit: [{ required: true, message: t('common.validation.requiredWithField', { field: t('consumables.form.fields.unit') }), trigger: 'blur' }]
+}
+
+watch(
+  () => props.modelValue,
+  async (val) => {
+    if (!val) return
+
+    if (props.id) {
+      try {
+        const res = await getConsumable(props.id)
+        Object.assign(form, res)
+      } catch (e) {
+        console.error(e)
+      }
+    } else {
+      resetFormData()
     }
-})
+  }
+)
 
 const handleClose = () => {
-    emit('update:modelValue', false)
+  emit('update:modelValue', false)
 }
 
 const submit = async () => {
-    if (!formRef.value) return
-    await formRef.value.validate(async (valid: boolean) => {
-        if (valid) {
-            submitting.value = true
-            try {
-                if (props.id) {
-                    await updateConsumable(props.id, form)
-                } else {
-                    await createConsumable(form)
-                }
-                ElMessage.success('保存成功')
-                emit('success')
-                handleClose()
-            } catch (e) {
-                ElMessage.error('保存失败')
-                console.error(e)
-            } finally {
-                submitting.value = false
-            }
-        }
-    })
+  if (!formRef.value) return
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  submitting.value = true
+  try {
+    if (props.id) {
+      await updateConsumable(props.id, form)
+    } else {
+      await createConsumable(form)
+    }
+    ElMessage.success(t('consumables.form.messages.saveSuccess'))
+    emit('success')
+    handleClose()
+  } catch (e: any) {
+    ElMessage.error(e?.message || t('consumables.form.messages.saveFailed'))
+    console.error(e)
+  } finally {
+    submitting.value = false
+  }
 }
 </script>

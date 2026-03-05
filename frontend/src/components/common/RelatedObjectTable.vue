@@ -22,6 +22,8 @@ import { Plus, Refresh } from '@element-plus/icons-vue'
 import BaseTable from './BaseTable.vue'
 import type { FieldDefinition, TableColumn } from '@/types'
 import request from '@/utils/request'
+import { dynamicApi } from '@/api/dynamic'
+import { resolveRelationTargetObjectCode } from '@/platform/reference/relationObjectCode'
 
 const { t, locale } = useI18n()
 
@@ -44,6 +46,8 @@ export interface RelatedObjectTableProps {
   showCreate?: boolean
   /** Default page size */
   pageSize?: number
+  /** Explicit target object code (recommended for stable routing) */
+  targetObjectCode?: string
 }
 
 interface RelatedRecord {
@@ -81,19 +85,24 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(props.pageSize)
 const metadataColumns = ref<TableColumn[] | null>(null)
+const relationTargetObjectCode = ref('')
 
-// Extract related object info from field definition
+const relationCode = computed(() => {
+  return String(props.field.code || '').trim()
+})
+
+// Extract related object info from relation/field metadata
 const relatedObjectCode = computed(() => {
-  // Extract object code from reverse relation model path
-  // e.g., "apps.lifecycle.models.Maintenance" -> "Maintenance"
-  if (props.field.reverseRelationModel) {
-    const parts = props.field.reverseRelationModel.split('.')
-    return parts[parts.length - 1]
-  }
-  // Fallback: try to derive from field code
-  // e.g., "maintenance_records" -> "Maintenance"
-  const singular = props.field.code.replace(/(_?record|_?items|s?)$/, '')
-  return singular.charAt(0).toUpperCase() + singular.slice(1)
+  const fieldAny = props.field as unknown as AnyRecord
+  return resolveRelationTargetObjectCode({
+    explicitTarget:
+      props.targetObjectCode ||
+      fieldAny.targetObjectCode ||
+      fieldAny.target_object_code ||
+      relationTargetObjectCode.value,
+    reverseRelationModel: props.field.reverseRelationModel,
+    relationCode: props.field.code
+  })
 })
 
 const relatedObjectDisplay = computed(() => {
@@ -220,9 +229,13 @@ function extractFieldsFromResponse(payload: unknown): AnyRecord[] {
   })
 }
 
-function extractRecordPageFromResponse(payload: unknown): { results: RelatedRecord[]; count: number } {
+function extractRecordPageFromResponse(payload: unknown): {
+  results: RelatedRecord[]
+  count: number
+  targetObjectCode: string
+} {
   if (!payload || typeof payload !== 'object') {
-    return { results: [], count: 0 }
+    return { results: [], count: 0, targetObjectCode: '' }
   }
   const unwrapped = payload as AnyRecord
   const source =
@@ -231,9 +244,17 @@ function extractRecordPageFromResponse(payload: unknown): { results: RelatedReco
       : unwrapped
   const results = Array.isArray(source.results) ? (source.results as RelatedRecord[]) : []
   const count = Number(source.count)
+  const targetObjectCode = String(
+    source.targetObjectCode ||
+    source.target_object_code ||
+    ((source.relation as AnyRecord | undefined)?.targetObjectCode) ||
+    ((source.relation as AnyRecord | undefined)?.target_object_code) ||
+    ''
+  ).trim()
   return {
     results,
-    count: Number.isFinite(count) ? count : results.length
+    count: Number.isFinite(count) ? count : results.length,
+    targetObjectCode
   }
 }
 
@@ -267,24 +288,30 @@ const fetchRelatedColumns = async () => {
  */
 const fetchRecords = async () => {
   if (props.mode === 'hidden') return
+  if (!props.parentObjectCode || !props.parentId || !relationCode.value) {
+    records.value = []
+    total.value = 0
+    return
+  }
 
   loading.value = true
   try {
-    // Query related object records filtered by parent
-    const response = await request({
-      url: `/system/objects/${relatedObjectCode.value}/`,
-      method: 'get',
-      params: {
+    const response = await dynamicApi.getRelated(
+      props.parentObjectCode,
+      props.parentId,
+      relationCode.value,
+      {
         page: currentPage.value,
-        page_size: pageSize.value,
-        // Filter by the FK field pointing to parent
-        [props.field.reverseRelationField || props.parentObjectCode.toLowerCase()]: props.parentId
+        page_size: pageSize.value
       }
-    })
+    )
 
     const page = extractRecordPageFromResponse(response)
     records.value = page.results
     total.value = page.count
+    if (page.targetObjectCode && page.targetObjectCode !== relationTargetObjectCode.value) {
+      relationTargetObjectCode.value = page.targetObjectCode
+    }
   } catch (error: unknown) {
     ElMessage.error(toErrorMessage(error) || t('common.relatedObject.loadFailed'))
     records.value = []
@@ -316,9 +343,12 @@ const handleEdit = (row: RelatedRecord) => {
  * Handle create new record
  */
 const handleCreate = () => {
-  // Navigate to create page with parent pre-filled
+  const objectCode = relatedObjectCode.value
+  if (!objectCode) return
+
+  // Navigate via unified dynamic route and keep legacy prefill query key.
   router.push({
-    name: `${relatedObjectCode.value}Create`,
+    path: `/objects/${objectCode}/create`,
     query: {
       [props.field.reverseRelationField || props.parentObjectCode.toLowerCase()]: props.parentId
     }
@@ -364,10 +394,17 @@ watch(() => props.parentId, () => {
 
 watch(relatedObjectCode, () => {
   metadataColumns.value = null
-  currentPage.value = 1
   fetchRelatedColumns()
-  fetchRecords()
 }, { immediate: true })
+
+watch(
+  () => [props.parentObjectCode, props.parentId, relationCode.value] as const,
+  () => {
+    currentPage.value = 1
+    fetchRecords()
+  },
+  { immediate: true }
+)
 
 watch(locale, () => {
   fetchRelatedColumns()

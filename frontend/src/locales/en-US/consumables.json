@@ -1,0 +1,39 @@
+{
+  "form": {
+    "titleCreate": "Create Consumable",
+    "titleEdit": "Edit Consumable",
+    "fields": {
+      "name": "Name",
+      "code": "Code",
+      "category": "Category",
+      "spec": "Specification",
+      "unit": "Unit",
+      "warningQuantity": "Warning Quantity",
+      "description": "Description"
+    },
+    "category": {
+      "office": "Office Supplies",
+      "it": "IT Supplies"
+    },
+    "messages": {
+      "saveSuccess": "Saved successfully",
+      "saveFailed": "Save failed"
+    }
+  },
+  "stockDialog": {
+    "titleIn": "Stock In",
+    "titleOut": "Stock Out",
+    "fields": {
+      "consumable": "Consumable",
+      "quantity": "Quantity",
+      "remark": "Remark"
+    },
+    "placeholders": {
+      "searchConsumable": "Search consumable"
+    },
+    "messages": {
+      "operationSuccess": "Operation succeeded",
+      "operationFailed": "Operation failed"
+    }
+  }
+}

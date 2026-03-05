@@ -12,16 +12,16 @@
           @click="$emit('back')"
         >
           <el-icon><ArrowLeft /></el-icon>
-          返回
+          {{ t('common.actions.back') }}
         </el-button>
         <h3 class="title">
-          {{ isEdit ? '编辑规则' : '创建规则' }}
+          {{ isEdit ? t('system.businessRule.editTitle') : t('system.businessRule.createTitle') }}
         </h3>
       </div>
       <div class="header-right">
         <el-button @click="handleTest">
           <el-icon><VideoPlay /></el-icon>
-          测试规则
+          {{ t('common.actions.test') }}
         </el-button>
         <el-button
           type="primary"
@@ -29,7 +29,7 @@
           @click="handleSave"
         >
           <el-icon><Check /></el-icon>
-          保存
+          {{ t('common.actions.save') }}
         </el-button>
       </div>
     </div>
@@ -49,36 +49,36 @@
           <template #header>
             <div class="card-header">
               <el-icon><InfoFilled /></el-icon>
-              <span>基本信息</span>
+              <span>{{ t('common.basicInfo') }}</span>
             </div>
           </template>
 
           <el-row :gutter="24">
             <el-col :span="12">
               <el-form-item
-                label="规则编码"
+                :label="t('system.businessRule.columns.code')"
                 prop="rule_code"
               >
                 <el-input
                   v-model="formData.rule_code"
-                  placeholder="如: validate_amount_limit"
+                  :placeholder="t('system.businessRule.designer.placeholders.ruleCode')"
                 />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item
-                label="规则名称"
+                :label="t('system.businessRule.columns.name')"
                 prop="rule_name"
               >
                 <el-input
                   v-model="formData.rule_name"
-                  placeholder="请输入规则名称"
+                  :placeholder="t('system.businessRule.designer.placeholders.ruleName')"
                 />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item
-                label="规则类型"
+                :label="t('system.businessRule.columns.type')"
                 prop="rule_type"
               >
                 <el-select
@@ -86,30 +86,30 @@
                   class="full-width"
                 >
                   <el-option
-                    label="校验规则"
+                    :label="t('system.businessRule.types.validation')"
                     value="validation"
                   />
                   <el-option
-                    label="显示规则"
+                    :label="t('system.businessRule.types.visibility')"
                     value="visibility"
                   />
                   <el-option
-                    label="计算规则"
+                    :label="t('system.businessRule.types.computed')"
                     value="computed"
                   />
                   <el-option
-                    label="联动规则"
+                    :label="t('system.businessRule.types.linkage')"
                     value="linkage"
                   />
                   <el-option
-                    label="触发规则"
+                    :label="t('system.businessRule.types.trigger')"
                     value="trigger"
                   />
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="优先级">
+              <el-form-item :label="t('system.businessRule.columns.priority')">
                 <el-input-number
                   v-model="formData.priority"
                   :min="0"
@@ -118,21 +118,21 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="启用状态">
+              <el-form-item :label="t('system.businessRule.columns.status')">
                 <el-switch
                   v-model="formData.is_active"
-                  active-text="启用"
-                  inactive-text="停用"
+                  :active-text="t('common.status.active')"
+                  :inactive-text="t('common.status.inactive')"
                 />
               </el-form-item>
             </el-col>
             <el-col :span="24">
-              <el-form-item label="描述">
+              <el-form-item :label="t('common.description')">
                 <el-input
                   v-model="formData.description"
                   type="textarea"
                   :rows="3"
-                  placeholder="可选，描述规则用途和范围"
+                  :placeholder="t('system.businessRule.designer.placeholders.description')"
                 />
               </el-form-item>
             </el-col>
@@ -146,26 +146,26 @@
           <template #header>
             <div class="card-header">
               <el-icon><Timer /></el-icon>
-              <span>触发配置</span>
+              <span>{{ t('system.businessRule.designer.triggerConfig') }}</span>
             </div>
           </template>
 
-          <el-form-item label="触发事件">
+          <el-form-item :label="t('system.businessRule.designer.triggerEvents')">
             <el-checkbox-group v-model="formData.trigger_events">
               <el-checkbox label="create">
-                新建
+                {{ t('common.actions.create') }}
               </el-checkbox>
               <el-checkbox label="update">
-                更新
+                {{ t('system.businessRule.designer.events.update') }}
               </el-checkbox>
               <el-checkbox label="submit">
-                提交
+                {{ t('system.businessRule.designer.events.submit') }}
               </el-checkbox>
               <el-checkbox label="approve">
-                审批
+                {{ t('system.businessRule.designer.events.approve') }}
               </el-checkbox>
               <el-checkbox label="field_change">
-                字段变更
+                {{ t('system.businessRule.designer.events.fieldChange') }}
               </el-checkbox>
             </el-checkbox-group>
           </el-form-item>
@@ -174,13 +174,13 @@
             v-if="formData.trigger_events.includes('field_change')"
             class="field-trigger"
           >
-            <el-form-item label="监听字段">
+            <el-form-item :label="t('system.businessRule.designer.watchFields')">
               <el-select
                 v-model="formData.watch_fields"
                 multiple
                 filterable
                 class="full-width"
-                placeholder="选择要监听变化的字段"
+                :placeholder="t('system.businessRule.designer.watchFieldsPlaceholder')"
               >
                 <el-option
                   v-for="field in fields"
@@ -200,13 +200,13 @@
           <template #header>
             <div class="card-header">
               <el-icon><Filter /></el-icon>
-              <span>触发条件</span>
+              <span>{{ t('system.businessRule.designer.triggerCondition') }}</span>
             </div>
           </template>
           <ConditionBuilder
             v-model="formData.condition"
             :fields="fields"
-            title="条件表达式"
+            :title="t('system.businessRule.designer.conditionExpression')"
           />
         </el-card>
 
@@ -217,7 +217,7 @@
           <template #header>
             <div class="card-header">
               <el-icon><Operation /></el-icon>
-              <span>规则动作</span>
+              <span>{{ t('system.businessRule.designer.ruleActions') }}</span>
             </div>
           </template>
           <ActionConfigurator
@@ -231,17 +231,17 @@
 
     <el-dialog
       v-model="testDialogVisible"
-      title="规则测试"
+      :title="t('system.businessRule.messages.testTitle')"
       width="600px"
     >
       <div class="test-content">
         <el-form label-width="80px">
-          <el-form-item label="测试数据">
+          <el-form-item :label="t('system.businessRule.messages.testData')">
             <el-input
               v-model="testData"
               type="textarea"
               :rows="8"
-              placeholder="输入 JSON 格式的测试数据"
+              :placeholder="t('system.businessRule.messages.testDataPlaceholder')"
             />
           </el-form-item>
         </el-form>
@@ -251,10 +251,10 @@
           class="test-result"
         >
           <el-divider content-position="left">
-            测试结果
+            {{ t('system.businessRule.messages.testResult') }}
           </el-divider>
           <el-alert
-            :title="testResult.is_valid ? '条件满足' : '条件不满足'"
+            :title="testResult.is_valid ? t('system.businessRule.messages.testPassed') : t('system.businessRule.messages.testFailed')"
             :type="testResult.is_valid ? 'success' : 'warning'"
             show-icon
             :closable="false"
@@ -265,13 +265,13 @@
 
       <template #footer>
         <el-button @click="testDialogVisible = false">
-          关闭
+          {{ t('common.actions.close') }}
         </el-button>
         <el-button
           type="primary"
           @click="runTest"
         >
-          执行测试
+          {{ t('common.actions.test') }}
         </el-button>
       </template>
     </el-dialog>
@@ -280,6 +280,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   ArrowLeft,
@@ -317,6 +318,7 @@ const emit = defineEmits<{
   saved: [rule: BusinessRule]
 }>()
 
+const { t } = useI18n()
 const { getRuleById, createRule, updateRule, evaluateRule } = useBusinessRulesApi()
 
 interface RuleFormData {
@@ -341,26 +343,42 @@ const testResult = ref<RuleEvaluationResult | null>(null)
 const formData = reactive<RuleFormData>({
   rule_code: '',
   rule_name: '',
-  rule_type: 'validation' as 'validation' | 'visibility' | 'computed' | 'linkage' | 'trigger',
+  rule_type: 'validation',
   priority: 0,
   is_active: true,
   description: '',
-  trigger_events: ['update'] as string[],
-  watch_fields: [] as string[],
-  condition: {} as Record<string, unknown>,
-  action: {} as Record<string, unknown>
+  trigger_events: ['update'],
+  watch_fields: [],
+  condition: {},
+  action: {}
 })
 
 const formRules = {
   rule_code: [
-    { required: true, message: '请输入规则编码', trigger: 'blur' },
-    { pattern: /^[a-z][a-z0-9_]*$/, message: '只允许小写字母、数字和下划线', trigger: 'blur' }
+    {
+      required: true,
+      message: t('common.validation.requiredWithField', { field: t('system.businessRule.columns.code') }),
+      trigger: 'blur'
+    },
+    {
+      pattern: /^[a-z][a-z0-9_]*$/,
+      message: t('common.validation.lowercaseNumberUnderscore'),
+      trigger: 'blur'
+    }
   ],
   rule_name: [
-    { required: true, message: '请输入规则名称', trigger: 'blur' }
+    {
+      required: true,
+      message: t('common.validation.requiredWithField', { field: t('system.businessRule.columns.name') }),
+      trigger: 'blur'
+    }
   ],
   rule_type: [
-    { required: true, message: '请选择规则类型', trigger: 'change' }
+    {
+      required: true,
+      message: t('common.validation.requiredWithField', { field: t('system.businessRule.columns.type') }),
+      trigger: 'change'
+    }
   ]
 }
 
@@ -372,7 +390,7 @@ onMounted(async () => {
     const rule = await getRuleById(props.ruleId)
     Object.assign(formData, rule)
   } catch {
-    ElMessage.error('加载规则失败')
+    ElMessage.error(t('common.messages.loadFailed'))
   }
 })
 
@@ -402,10 +420,10 @@ async function handleSave() {
       ? await updateRule(props.ruleId!, payload)
       : await createRule(payload)
 
-    ElMessage.success(isEdit.value ? '规则已更新' : '规则已创建')
+    ElMessage.success(isEdit.value ? t('common.messages.updateSuccess') : t('common.messages.createSuccess'))
     emit('saved', result)
   } catch (error: unknown) {
-    ElMessage.error(getErrorMessage(error, '保存失败'))
+    ElMessage.error(getErrorMessage(error, t('common.messages.operationFailed')))
   } finally {
     saving.value = false
   }
@@ -433,9 +451,9 @@ async function runTest() {
     testResult.value = result
   } catch (error: unknown) {
     if (error instanceof SyntaxError) {
-      ElMessage.error('测试数据 JSON 格式无效')
+      ElMessage.error(t('system.businessRule.messages.invalidJson'))
     } else {
-      ElMessage.error(getErrorMessage(error, '测试失败'))
+      ElMessage.error(getErrorMessage(error, t('system.businessRule.messages.testFailed')))
     }
   }
 }

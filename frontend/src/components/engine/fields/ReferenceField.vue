@@ -1,11 +1,15 @@
 <template>
-  <div class="reference-field">
+  <div
+    class="reference-field"
+    :class="{ 'is-readonly': disabled }"
+  >
+    <!-- ── Edit Mode ──────────────────────────────────────────────────────── -->
     <el-select
+      v-if="!disabled"
       ref="selectRef"
       :model-value="normalizedValue"
       :multiple="isMultiple"
       :placeholder="placeholder"
-      :disabled="disabled"
       :remote="true"
       :reserve-keyword="false"
       :remote-method="debouncedSearch"
@@ -14,7 +18,7 @@
       filterable
       clearable
       value-key="id"
-      style="width: 100%"
+      class="reference-select"
       @visible-change="handleVisibleChange"
       @update:model-value="handleUpdate"
     >
@@ -39,7 +43,6 @@
                 {{ getItemSecondary(item) || item.id }}
               </span>
             </div>
-            <span class="reference-option__flag">{{ recentItemFlag }}</span>
           </div>
         </el-option>
       </el-option-group>
@@ -65,7 +68,6 @@
                 {{ getItemSecondary(item) || item.id }}
               </span>
             </div>
-            <span class="reference-option__flag">{{ searchItemFlag }}</span>
           </div>
         </el-option>
       </el-option-group>
@@ -77,106 +79,148 @@
       </template>
 
       <template #footer>
-        <div
-          v-if="!disabled"
-          class="reference-dropdown-footer"
-          @mousedown.prevent
-        >
+        <div class="reference-dropdown-footer">
           <button
             type="button"
             class="reference-dropdown-footer__action is-primary"
-            @click.stop="handleDropdownAdvancedLookup"
+            @mousedown.prevent="handleDropdownAdvancedLookup"
           >
-            {{ advancedLookupText }}
+            <!-- {{ advancedLookupText }} -->
+            <el-icon><Search /></el-icon> {{ advancedLookupText }}
           </button>
           <button
             v-if="allowCreateRecord"
             type="button"
             class="reference-dropdown-footer__action"
-            @click.stop="handleDropdownCreateRecord"
+            @mousedown.prevent="handleDropdownCreateRecord"
           >
-            {{ createRecordText }}
+            <el-icon><Plus /></el-icon> {{ createRecordText }}
           </button>
         </div>
       </template>
     </el-select>
 
-    <el-popover
-      v-if="selectedSingleOption && !isMultiple"
-      trigger="hover"
-      placement="top-start"
-      :width="320"
+    <!-- ── Read Mode ──────────────────────────────────────────────────────── -->
+    <div
+      v-else
+      class="reference-read-view"
     >
-      <template #reference>
-        <div class="reference-selected">
-          <ObjectAvatar
-            :object-code="referenceObjectCode || 'Ref'"
-            size="xs"
-          />
-          <div class="reference-selected__content">
-            <span class="reference-selected__label">{{ getItemLabel(selectedSingleOption) }}</span>
-            <span class="reference-selected__secondary">
-              {{ getItemSecondary(selectedSingleOption) || selectedSingleOption.id }}
-            </span>
-          </div>
+      <template v-if="isMultiple">
+        <div
+          v-for="item in currentValueObjects"
+          :key="item.id"
+          class="reference-read-item"
+        >
           <el-link
-            v-if="selectedSingleHref"
-            :href="selectedSingleHref"
+            :href="`/objects/${referenceObjectCode}/${encodeURIComponent(item.id)}`"
             target="_blank"
             type="primary"
+            class="reference-link"
+            :underline="false"
           >
-            {{ openActionText }}
+            {{ getItemLabel(item) }}
           </el-link>
         </div>
+        <span
+          v-if="currentValueObjects.length === 0"
+          class="reference-empty-text"
+        >-</span>
       </template>
-      <div class="reference-hover-card">
-        <div class="reference-hover-card__header">
-          <ObjectAvatar
-            :object-code="referenceObjectCode || 'Ref'"
-            size="sm"
-          />
-          <div class="reference-hover-card__content">
-            <span class="reference-hover-card__title">{{ getItemLabel(selectedSingleOption) }}</span>
-            <span class="reference-hover-card__subtitle">
-              {{ getItemSecondary(selectedSingleOption) || selectedSingleOption.id }}
-            </span>
+      <template v-else>
+        <el-popover
+          v-if="selectedSingleOption"
+          trigger="hover"
+          placement="top-start"
+          :width="360"
+          :hide-after="100"
+          popper-class="reference-popover"
+          @show="handleHoverShow(selectedSingleOption)"
+        >
+          <template #reference>
+            <el-link
+              :href="selectedSingleHref"
+              target="_blank"
+              type="primary"
+              class="reference-link"
+              :underline="false"
+            >
+              {{ getItemLabel(selectedSingleOption) }}
+            </el-link>
+          </template>
+          
+          <!-- Hover Card Content -->
+          <div class="reference-hover-card">
+            <!-- Header section -->
+            <div class="reference-hover-card__header">
+              <ObjectAvatar
+                :object-code="referenceObjectCode || 'Ref'"
+                size="md"
+              />
+              <div class="reference-hover-card__content">
+                <span class="reference-hover-card__title">{{ getItemLabel(selectedSingleOption) }}</span>
+                <span class="reference-hover-card__subtitle">
+                  {{ getItemSecondary(selectedSingleOption) || selectedSingleOption.id }}
+                </span>
+              </div>
+            </div>
+            
+            <el-divider class="reference-hover-card__divider" />
+            
+            <!-- Skeleton or Data section -->
+            <div
+              v-if="hoverLoading"
+              class="reference-hover-card__body is-loading"
+            >
+              <el-skeleton
+                animated
+                :rows="3"
+              />
+            </div>
+            <div
+              v-else-if="hoverData"
+              class="reference-hover-card__body"
+            >
+              <div class="reference-meta-grid">
+                <div 
+                  v-for="key in displayCompactKeys" 
+                  :key="key" 
+                  class="reference-meta-item"
+                >
+                  <span class="reference-meta-item__label">{{ getFieldLabel(key) }}</span>
+                  <span class="reference-meta-item__value">{{ getFieldValue(hoverData, key) }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="reference-hover-card__footer">
+              <el-tag
+                v-if="referenceObjectCode"
+                size="small"
+                effect="plain"
+                type="info"
+              >
+                {{ referenceObjectCode }}
+              </el-tag>
+              <span class="reference-hover-card__meta-value">ID: {{ selectedSingleOption.id }}</span>
+            </div>
           </div>
-          <el-tag
-            v-if="referenceObjectCode"
-            size="small"
-            effect="plain"
-          >
-            {{ referenceObjectCode }}
-          </el-tag>
-        </div>
-        <div class="reference-hover-card__meta">
-          <span class="reference-hover-card__meta-label">{{ idLabel }}</span>
-          <span class="reference-hover-card__meta-value">{{ selectedSingleOption.id }}</span>
-        </div>
-        <div class="reference-hover-card__actions">
-          <el-link
-            v-if="selectedSingleHref"
-            :href="selectedSingleHref"
-            target="_blank"
-            type="primary"
-          >
-            {{ openActionText }}
-          </el-link>
-          <el-link
-            type="primary"
-            @click.prevent="openLookupDialog"
-          >
-            {{ advancedLookupText }}
-          </el-link>
-        </div>
-      </div>
-    </el-popover>
+        </el-popover>
+        <span
+          v-else
+          class="reference-empty-text"
+        >-</span>
+      </template>
+    </div>
 
     <ReferenceLookupDialog
       v-model="lookupDialogVisible"
       :object-code="referenceObjectCode"
       :display-field="displayField"
       :secondary-field="secondaryField"
+      :columns="lookupColumns"
+      :preference-key="lookupPreferenceKey"
+      :user-scope="lookupUserScope"
+      :compact-keys="lookupCompactKeys"
       :multiple="isMultiple"
       :selected-ids="selectedIdsForDialog"
       :allow-create="allowCreateRecord"
@@ -188,10 +232,13 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Search, Plus } from '@element-plus/icons-vue'
 import { searchReferenceData } from '@/api/system'
+import { createObjectClient } from '@/api/dynamic'
 import { debounce } from 'lodash-es'
 import ObjectAvatar from '@/components/common/ObjectAvatar.vue'
 import ReferenceLookupDialog from './ReferenceLookupDialog.vue'
+import { useUserStore } from '@/stores/user'
 import { referenceResolver } from '@/platform/reference/referenceResolver'
 import {
   extractReferenceIds,
@@ -202,8 +249,13 @@ import {
   resolveReferenceSecondaryText
 } from '@/platform/reference/referenceFieldMeta'
 import { loadRecentReferenceIds, saveRecentReferenceIds } from '@/platform/reference/referenceLookupRecent'
+import {
+  resolveReferenceLookupDefaultColumns,
+  type ReferenceLookupColumnConfig
+} from '@/platform/reference/referenceLookupColumnPresets'
 
 type AnyRecord = Record<string, any>
+type LookupColumnConfig = ReferenceLookupColumnConfig
 
 const props = defineProps({
   field: Object,
@@ -215,6 +267,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'change'])
 const { t } = useI18n()
+const userStore = useUserStore()
 
 const selectRef = ref<any>(null)
 const loadingSearch = ref(false)
@@ -224,6 +277,11 @@ const recentOptions = ref<AnyRecord[]>([])
 const currentValueObjects = ref<AnyRecord[]>([])
 const searchKeyword = ref('')
 const lookupDialogVisible = ref(false)
+
+// Hover card state
+const hoverLoading = ref(false)
+const hoverData = ref<AnyRecord | null>(null)
+const preloadedHoverIds = new Set<string>()
 
 const tr = (key: string, fallback: string, params?: Record<string, any>) => {
   const text = t(key, params || {})
@@ -267,10 +325,6 @@ const searchGroupLabel = computed(() => {
   return tr('common.labels.searchResults', 'Search Results')
 })
 
-const recentItemFlag = computed(() => tr('common.recent', 'Recent'))
-const searchItemFlag = computed(() => tr('common.labels.searchResult', 'Result'))
-const idLabel = computed(() => tr('common.columns.id', 'ID'))
-const openActionText = computed(() => tr('common.actions.open', 'Open'))
 const advancedLookupText = computed(() => tr('common.actions.advancedSearch', 'Advanced Search'))
 const createRecordText = computed(() => tr('common.actions.newRecord', 'New Record'))
 
@@ -290,6 +344,63 @@ const emptyText = computed(() => {
 const allowCreateRecord = computed(() => {
   const componentProps = (referenceField.value?.componentProps || referenceField.value?.component_props || {}) as AnyRecord
   return componentProps.allowCreate !== false && componentProps.allow_create !== false
+})
+
+const defaultLookupColumns = computed<LookupColumnConfig[]>(() => {
+  return resolveReferenceLookupDefaultColumns({
+    objectCode: referenceObjectCode.value,
+    displayField: displayField.value,
+    secondaryField: secondaryField.value
+  })
+})
+
+const lookupColumns = computed<LookupColumnConfig[]>(() => {
+  const componentProps = (referenceField.value?.componentProps || referenceField.value?.component_props || {}) as AnyRecord
+  const raw = componentProps.lookupColumns || componentProps.lookup_columns || []
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return defaultLookupColumns.value
+  }
+  const normalized = raw
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null
+      const key = String((item as AnyRecord).key || '').trim()
+      if (!key) return null
+      const normalized: LookupColumnConfig = { key }
+      const label = String((item as AnyRecord).label || '').trim()
+      if (label) normalized.label = label
+      const minWidth = Number((item as AnyRecord).minWidth ?? (item as AnyRecord).min_width)
+      const width = Number((item as AnyRecord).width)
+      if (Number.isFinite(minWidth) && minWidth > 0) normalized.minWidth = minWidth
+      if (Number.isFinite(width) && width > 0) normalized.width = width
+      return normalized
+    })
+    .filter((item): item is LookupColumnConfig => !!item)
+  return normalized.length > 0 ? normalized : defaultLookupColumns.value
+})
+
+const lookupPreferenceKey = computed(() => {
+  const field = referenceField.value
+  return String(
+    field.code ||
+    field.fieldCode ||
+    field.field_code ||
+    field.prop ||
+    field.name ||
+    ''
+  ).trim()
+})
+
+const lookupUserScope = computed(() => {
+  return String(userStore.userInfo?.id || 'anonymous').trim() || 'anonymous'
+})
+
+const lookupCompactKeys = computed<string[]>(() => {
+  const componentProps = (referenceField.value?.componentProps || referenceField.value?.component_props || {}) as AnyRecord
+  const raw = componentProps.lookupCompactKeys || componentProps.lookup_compact_keys || []
+  if (!Array.isArray(raw)) return []
+  return raw
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
 })
 
 const normalizedValue = computed(() => {
@@ -525,17 +636,69 @@ watch(
     searchOptions.value = []
     recentOptions.value = []
     searchKeyword.value = ''
+    preloadedHoverIds.clear()
   }
 )
+
+// -- Hover Card Logic --
+const displayCompactKeys = computed(() => {
+  if (lookupCompactKeys.value.length > 0) return lookupCompactKeys.value
+  // Fallback generic keys if none specified in compact keys
+  return ['status', 'created_at', 'department_id', 'user_id']
+})
+
+const getFieldLabel = (key: string) => {
+  // Ideally resolved from metadata, for now use generic formatting
+  return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+}
+
+const getFieldValue = (data: AnyRecord, key: string) => {
+  const val = data[key]
+  if (val === null || val === undefined) return '-'
+  if (typeof val === 'object') {
+    return val.name || val.label || val.id || JSON.stringify(val)
+  }
+  return String(val)
+}
+
+const handleHoverShow = async (option: AnyRecord) => {
+  if (!referenceObjectCode.value || !option?.id) return
+  if (preloadedHoverIds.has(option.id) && hoverData.value?.id === option.id) return
+
+  hoverLoading.value = true
+  hoverData.value = null
+  
+  try {
+    const client = createObjectClient(referenceObjectCode.value)
+    const data = await client.get(option.id)
+    if (data) {
+      hoverData.value = data
+      preloadedHoverIds.add(option.id)
+    }
+  } catch (err) {
+    console.warn('Failed to load deep reference data for hover card', err)
+    // Fallback to basic shallow data
+    hoverData.value = { ...option }
+  } finally {
+    hoverLoading.value = false
+  }
+}
 </script>
 
 <style scoped lang="scss">
+.reference-field {
+  width: 100%;
+}
+.reference-select {
+  width: 100%;
+}
+
+/* Edit Mode Dropdown Option */
 .reference-option {
   display: flex;
   align-items: flex-start;
   gap: 12px;
 }
-
 .reference-option__content {
   min-width: 0;
   flex: 1;
@@ -543,116 +706,107 @@ watch(
   flex-direction: column;
   gap: 2px;
 }
-
 .reference-option__label {
-  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--el-text-color-primary);
   font-weight: 500;
+  line-height: 1.4;
 }
-
 .reference-option__secondary {
   color: var(--el-text-color-secondary);
   font-size: 12px;
-  font-family: 'Consolas', 'Monaco', monospace;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
-.reference-option__flag {
-  color: var(--el-text-color-placeholder);
-  font-size: 11px;
-  line-height: 18px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 10px;
-  padding: 0 8px;
-  white-space: nowrap;
-}
-
+/* Dropdown Footer Actions */
 .reference-empty {
   padding: 10px 12px;
   color: var(--el-text-color-secondary);
   font-size: 12px;
+  text-align: center;
 }
-
 .reference-dropdown-footer {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 12px;
+  padding: 8px 12px;
   border-top: 1px solid var(--el-border-color-lighter);
+  background: var(--el-fill-color-blank);
 }
-
 .reference-dropdown-footer__action {
   border: 0;
   background: transparent;
   color: var(--el-text-color-regular);
-  font-size: 12px;
-  line-height: 18px;
-  padding: 2px 4px;
+  font-size: 13px;
+  line-height: 1;
+  padding: 4px 6px;
   cursor: pointer;
-}
-
-.reference-dropdown-footer__action:hover {
-  color: var(--el-color-primary);
-}
-
-.reference-dropdown-footer__action.is-primary {
-  color: var(--el-color-primary);
-  font-weight: 500;
-}
-
-.reference-selected {
-  margin-top: 8px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  padding: 8px 10px;
-  background: var(--el-fill-color-blank);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.reference-dropdown-footer__action:hover {
+  color: var(--el-color-primary);
+  background: var(--el-fill-color-light);
+}
+.reference-dropdown-footer__action.is-primary {
+  color: var(--el-color-primary);
 }
 
-.reference-selected__content {
-  min-width: 0;
+/* Read Mode (Salesforce Style Salesforce Lightning) */
+.reference-read-view {
+  min-height: 32px;
   display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-
-.reference-selected__label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--el-text-color-primary);
-  font-weight: 500;
+.reference-read-item {
+  display: inline-flex;
 }
-
-.reference-selected__secondary {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.reference-link {
+  font-size: 14px;
+  line-height: inherit;
+  color: var(--el-color-primary);
+  word-break: break-all;
+  white-space: normal;
+  text-align: left;
+  display: inline-block;
+}
+.reference-link:hover {
+  text-decoration: underline;
+}
+.reference-empty-text {
   color: var(--el-text-color-secondary);
-  font-size: 12px;
-  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 14px;
+}
+
+/* Popover Hover Card Professional Styling */
+:global(.reference-popover) {
+  padding: 0 !important;
+  border-radius: var(--sys-radius-large) !important;
+  box-shadow: var(--el-box-shadow-light) !important;
+  border: 1px solid var(--sys-border-color) !important;
+  overflow: hidden;
 }
 
 .reference-hover-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
 }
 
 .reference-hover-card__header {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 16px 0;
 }
 
 .reference-hover-card__content {
@@ -660,52 +814,83 @@ watch(
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .reference-hover-card__title {
-  color: var(--el-text-color-primary);
-  font-size: 14px;
+  color: var(--sys-color-text-main);
+  font-size: 16px;
   font-weight: 600;
-  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.3;
 }
 
 .reference-hover-card__subtitle {
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  min-width: 0;
+  color: var(--sys-color-text-secondary);
+  font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.reference-hover-card__meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.reference-hover-card__divider {
+  margin: 12px 0 0 !important;
+  border-color: var(--sys-border-light);
 }
 
-.reference-hover-card__meta-label {
-  color: var(--el-text-color-secondary);
+.reference-hover-card__body {
+  padding: 12px 16px;
+  background-color: var(--sys-color-bg-base);
+  min-height: 80px;
+
+  &.is-loading {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.reference-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.reference-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reference-meta-item__label {
+  color: var(--sys-color-text-secondary);
   font-size: 12px;
+}
+
+.reference-meta-item__value {
+  color: var(--sys-color-text-regular);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reference-hover-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 12px;
+  background-color: var(--sys-color-bg-base);
 }
 
 .reference-hover-card__meta-value {
-  color: var(--el-text-color-regular);
-  font-size: 12px;
+  color: var(--sys-color-text-secondary);
+  font-size: 11px;
   font-family: 'Consolas', 'Monaco', monospace;
-  background: var(--el-fill-color-light);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 4px;
-  padding: 1px 6px;
-}
-
-.reference-hover-card__actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 </style>

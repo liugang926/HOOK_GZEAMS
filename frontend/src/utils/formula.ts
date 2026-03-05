@@ -481,12 +481,12 @@ export const validateFormula = (
   availableFields: string[]
 ): { valid: boolean; error?: string } => {
   if (!expression || typeof expression !== 'string') {
-    return { valid: false, error: '表达式不能为空' }
+    return { valid: false, error: 'formula.errors.emptyExpression' }
   }
 
   const trimmed = expression.trim()
   if (!trimmed) {
-    return { valid: false, error: '表达式不能为空' }
+    return { valid: false, error: 'formula.errors.emptyExpression' }
   }
 
   try {
@@ -498,7 +498,7 @@ export const validateFormula = (
     if (unknownFields.length > 0) {
       return {
         valid: false,
-        error: `未知的字段引用: ${unknownFields.join(', ')}`
+        error: 'formula.errors.unknownFieldReferences'
       }
     }
 
@@ -509,7 +509,7 @@ export const validateFormula = (
   } catch (error) {
     return {
       valid: false,
-      error: `表达式语法错误: ${error instanceof Error ? error.message : String(error)}`
+      error: 'formula.errors.syntax'
     }
   }
 }

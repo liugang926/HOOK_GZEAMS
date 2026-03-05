@@ -15,7 +15,12 @@
     <div class="tree-panel">
       <div class="tree-header">
         <span class="tree-title">{{ $t('org.tree.title') }}</span>
-        <el-button :icon="Plus" type="primary" size="small" @click="addNode(null)">
+        <el-button
+          :icon="Plus"
+          type="primary"
+          size="small"
+          @click="addNode(null)"
+        >
           {{ $t('org.tree.addRoot') }}
         </el-button>
       </div>
@@ -28,7 +33,10 @@
         :prefix-icon="Search"
       />
 
-      <div v-loading="loadingTree" class="tree-scroll">
+      <div
+        v-loading="loadingTree"
+        class="tree-scroll"
+      >
         <el-tree
           ref="treeRef"
           :data="filteredTree"
@@ -42,15 +50,35 @@
         >
           <template #default="{ data }">
             <div class="tree-node">
-              <el-icon class="node-icon"><OfficeBuilding /></el-icon>
+              <el-icon class="node-icon">
+                <OfficeBuilding />
+              </el-icon>
               <span class="node-label">{{ data.name }}</span>
-              <span class="node-count" v-if="data.memberCount !== undefined">
+              <span
+                v-if="data.memberCount !== undefined"
+                class="node-count"
+              >
                 ({{ data.memberCount }})
               </span>
               <div class="node-actions">
-                <el-icon class="action-icon" @click.stop="addNode(data)"><Plus /></el-icon>
-                <el-icon class="action-icon" @click.stop="editNode(data)"><Edit /></el-icon>
-                <el-icon class="action-icon danger" @click.stop="deleteNode(data)"><Delete /></el-icon>
+                <el-icon
+                  class="action-icon"
+                  @click.stop="addNode(data)"
+                >
+                  <Plus />
+                </el-icon>
+                <el-icon
+                  class="action-icon"
+                  @click.stop="editNode(data)"
+                >
+                  <Edit />
+                </el-icon>
+                <el-icon
+                  class="action-icon danger"
+                  @click.stop="deleteNode(data)"
+                >
+                  <Delete />
+                </el-icon>
               </div>
             </div>
           </template>
@@ -60,7 +88,10 @@
 
     <!-- ── Right: Detail Panel ───────────────────────────────── -->
     <div class="detail-panel">
-      <div v-if="!selectedNode" class="empty-state">
+      <div
+        v-if="!selectedNode"
+        class="empty-state"
+      >
         <el-empty :description="$t('org.tree.selectPrompt')" />
       </div>
 
@@ -68,16 +99,45 @@
         <!-- Dept info header -->
         <div class="detail-header">
           <div class="detail-title-row">
-            <h3 class="detail-title">{{ selectedNode.name }}</h3>
+            <h3 class="detail-title">
+              {{ selectedNode.name }}
+            </h3>
             <div class="detail-actions">
-              <el-button size="small" :icon="Edit" @click="editNode(selectedNode)">{{ $t('common.actions.edit') }}</el-button>
-              <el-button size="small" type="primary" :icon="Plus" @click="addNode(selectedNode)">{{ $t('org.tree.addChild') }}</el-button>
+              <el-button
+                size="small"
+                :icon="Edit"
+                @click="editNode(selectedNode)"
+              >
+                {{ $t('common.actions.edit') }}
+              </el-button>
+              <el-button
+                size="small"
+                type="primary"
+                :icon="Plus"
+                @click="addNode(selectedNode)"
+              >
+                {{ $t('org.tree.addChild') }}
+              </el-button>
             </div>
           </div>
-          <el-descriptions :column="2" border size="small" class="mt-12">
-            <el-descriptions-item :label="$t('org.cols.code')">{{ selectedNode.code || '-' }}</el-descriptions-item>
-            <el-descriptions-item :label="$t('org.cols.parent')">{{ selectedNode.parentName || $t('org.tree.rootNode') }}</el-descriptions-item>
-            <el-descriptions-item :label="$t('org.cols.description')" :span="2">{{ selectedNode.description || '-' }}</el-descriptions-item>
+          <el-descriptions
+            :column="2"
+            border
+            size="small"
+            class="mt-12"
+          >
+            <el-descriptions-item :label="$t('org.cols.code')">
+              {{ selectedNode.code || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="$t('org.cols.parent')">
+              {{ selectedNode.parentName || $t('org.tree.rootNode') }}
+            </el-descriptions-item>
+            <el-descriptions-item
+              :label="$t('org.cols.description')"
+              :span="2"
+            >
+              {{ selectedNode.description || '-' }}
+            </el-descriptions-item>
           </el-descriptions>
         </div>
 
@@ -85,17 +145,46 @@
         <div class="members-section">
           <div class="section-title">
             <span>{{ $t('org.members.title') }}</span>
-            <el-tag size="small" type="info">{{ members.length }}</el-tag>
+            <el-tag
+              size="small"
+              type="info"
+            >
+              {{ members.length }}
+            </el-tag>
           </div>
 
-          <el-table v-loading="loadingMembers" :data="members" border size="small">
-            <el-table-column :label="$t('org.members.cols.name')" prop="fullName" />
-            <el-table-column :label="$t('org.members.cols.username')" prop="username" />
-            <el-table-column :label="$t('org.members.cols.email')" prop="email" />
-            <el-table-column :label="$t('org.members.cols.title')" prop="title" />
-            <el-table-column :label="$t('org.members.cols.status')" prop="isActive" width="80">
+          <el-table
+            v-loading="loadingMembers"
+            :data="members"
+            border
+            size="small"
+          >
+            <el-table-column
+              :label="$t('org.members.cols.name')"
+              prop="fullName"
+            />
+            <el-table-column
+              :label="$t('org.members.cols.username')"
+              prop="username"
+            />
+            <el-table-column
+              :label="$t('org.members.cols.email')"
+              prop="email"
+            />
+            <el-table-column
+              :label="$t('org.members.cols.title')"
+              prop="title"
+            />
+            <el-table-column
+              :label="$t('org.members.cols.status')"
+              prop="isActive"
+              width="80"
+            >
               <template #default="{ row }">
-                <el-tag :type="row.isActive ? 'success' : 'info'" size="small">
+                <el-tag
+                  :type="row.isActive ? 'success' : 'info'"
+                  size="small"
+                >
                   {{ row.isActive ? $t('common.status.active') : $t('common.status.inactive') }}
                 </el-tag>
               </template>
@@ -112,23 +201,49 @@
       width="460px"
       destroy-on-close
     >
-      <el-form ref="nodeFormRef" :model="nodeForm" :rules="nodeRules" label-width="90px">
-        <el-form-item :label="$t('org.cols.name')" prop="name">
+      <el-form
+        ref="nodeFormRef"
+        :model="nodeForm"
+        :rules="nodeRules"
+        label-width="90px"
+      >
+        <el-form-item
+          :label="$t('org.cols.name')"
+          prop="name"
+        >
           <el-input v-model="nodeForm.name" />
         </el-form-item>
-        <el-form-item :label="$t('org.cols.code')" prop="code">
+        <el-form-item
+          :label="$t('org.cols.code')"
+          prop="code"
+        >
           <el-input v-model="nodeForm.code" />
         </el-form-item>
         <el-form-item :label="$t('org.cols.parent')">
-          <el-input :value="nodeForm.parentName || $t('org.tree.rootNode')" disabled />
+          <el-input
+            :value="nodeForm.parentName || $t('org.tree.rootNode')"
+            disabled
+          />
         </el-form-item>
         <el-form-item :label="$t('org.cols.description')">
-          <el-input v-model="nodeForm.description" type="textarea" :rows="3" />
+          <el-input
+            v-model="nodeForm.description"
+            type="textarea"
+            :rows="3"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="nodeDialog = false">{{ $t('common.actions.cancel') }}</el-button>
-        <el-button type="primary" :loading="savingNode" @click="saveNode">{{ $t('common.actions.save') }}</el-button>
+        <el-button @click="nodeDialog = false">
+          {{ $t('common.actions.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="savingNode"
+          @click="saveNode"
+        >
+          {{ $t('common.actions.save') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>

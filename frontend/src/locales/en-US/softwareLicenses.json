@@ -113,5 +113,27 @@
         "messages": {
             "deallocateConfirm": "Are you sure you want to deallocate {software} from {asset}?"
         }
+    },
+    "allocationDialog": {
+        "title": "Allocate License - {name}",
+        "availableUnits": "Available Units",
+        "asset": "Asset",
+        "allocationKey": "Allocation Key",
+        "notes": "Notes",
+        "placeholders": {
+            "assetSearch": "Search by asset code or name",
+            "allocationKey": "Optional, key specific to this allocation",
+            "notes": "Allocation notes"
+        },
+        "actions": {
+            "allocate": "Allocate"
+        },
+        "messages": {
+            "allocateSuccess": "Allocation successful",
+            "allocateFailed": "Allocation failed"
+        },
+        "validation": {
+            "assetRequired": "Please select asset"
+        }
     }
 }

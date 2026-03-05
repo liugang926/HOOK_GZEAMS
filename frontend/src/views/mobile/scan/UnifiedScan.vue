@@ -1,19 +1,8 @@
-<!--
-  Unified Scan Page (Mobile)
-
-  Unified QR code scanning page for mobile.
-  Features:
-  - Full-screen QR scanner
-  - Recent scan history
-  - Manual input fallback
-  - Asset preview after scan
--->
-
 <template>
   <div class="unified-scan">
     <van-nav-bar
-      title="扫码"
-      left-text="返回"
+      :title="$t('mobile.unifiedScan.title')"
+      :left-text="$t('common.actions.back')"
       left-arrow
       @click-left="goBack"
     >
@@ -26,7 +15,6 @@
       </template>
     </van-nav-bar>
 
-    <!-- Scanner Component -->
     <div class="scanner-wrapper">
       <MobileQRScanner
         ref="scannerRef"
@@ -38,20 +26,19 @@
       />
     </div>
 
-    <!-- Recent Scans -->
     <div
       v-if="recentScans.length > 0"
       class="recent-scans"
     >
       <div class="section-header">
-        <span class="section-title">最近扫描</span>
+        <span class="section-title">{{ $t('mobile.unifiedScan.recentScans') }}</span>
         <van-button
           type="primary"
           size="mini"
           plain
           @click="clearHistory"
         >
-          清空
+          {{ $t('common.actions.clear') }}
         </van-button>
       </div>
       <div class="scan-list">
@@ -74,14 +61,13 @@
               :type="item.result === 'success' ? 'success' : 'danger'"
               size="medium"
             >
-              {{ item.result === 'success' ? '成功' : '异常' }}
+              {{ item.result === 'success' ? $t('mobile.unifiedScan.result.success') : $t('mobile.unifiedScan.result.error') }}
             </van-tag>
           </template>
         </van-cell>
       </div>
     </div>
 
-    <!-- Manual Input -->
     <div class="manual-input-area">
       <van-button
         block
@@ -89,26 +75,26 @@
         icon="aim"
         @click="showManualInput = true"
       >
-        手动输入资产编码
+        {{ $t('mobile.unifiedScan.manualInputButton') }}
       </van-button>
     </div>
 
-    <!-- Manual Input Dialog -->
     <van-dialog
       v-model:show="showManualInput"
-      title="手动输入"
-      show-cancel-button
+      :title="$t('mobile.unifiedScan.manualInputTitle')"
+      :show-cancel-button="true"
+      :confirm-button-text="$t('common.actions.confirm')"
+      :cancel-button-text="$t('common.actions.cancel')"
       @confirm="handleManualSubmit"
     >
       <van-field
         v-model="manualCode"
-        placeholder="请输入资产编码或二维码内容"
+        :placeholder="$t('mobile.unifiedScan.manualInputPlaceholder')"
         clearable
         autofocus
       />
     </van-dialog>
 
-    <!-- More Actions Popup -->
     <van-popup
       v-model:show="showMore"
       position="bottom"
@@ -120,7 +106,6 @@
       />
     </van-popup>
 
-    <!-- Asset Preview Dialog -->
     <van-dialog
       v-model:show="previewVisible"
       :title="previewAsset?.name"
@@ -132,36 +117,36 @@
       >
         <van-cell-group inset>
           <van-cell
-            title="资产编码"
+            :title="$t('mobile.unifiedScan.preview.assetCode')"
             :value="previewAsset.code"
           />
           <van-cell
-            title="资产分类"
+            :title="$t('mobile.unifiedScan.preview.assetCategory')"
             :value="previewAsset.categoryName"
           />
           <van-cell
-            title="资产状态"
+            :title="$t('mobile.unifiedScan.preview.assetStatus')"
             :value="getStatusLabel(previewAsset.status)"
           />
           <van-cell
-            title="存放位置"
+            :title="$t('mobile.unifiedScan.preview.assetLocation')"
             :value="previewAsset.locationName"
           />
           <van-cell
-            title="使用人"
+            :title="$t('mobile.unifiedScan.preview.assetCustodian')"
             :value="previewAsset.custodianName"
           />
         </van-cell-group>
       </div>
       <template #footer>
         <van-button @click="previewVisible = false">
-          关闭
+          {{ $t('common.actions.close') }}
         </van-button>
         <van-button
           type="primary"
           @click="handleConfirmPreview"
         >
-          查看详情
+          {{ $t('common.actions.detail') }}
         </van-button>
       </template>
     </van-dialog>
@@ -169,136 +154,109 @@
 </template>
 
 <script setup lang="ts">
-/**
- * Unified Scan Page (Mobile)
- *
- * Unified QR code scanning page for mobile devices.
- * Supports scanner, manual input, and recent history.
- */
-
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { showToast, showDialog } from 'vant'
+import { useI18n } from 'vue-i18n'
+import { showDialog, showToast } from 'vant'
 import MobileQRScanner from '@/components/mobile/MobileQRScanner.vue'
 import { qrScanApi } from '@/api/inventory'
 import type { AssetStatus } from '@/types/assets'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 
-// ============================================================================
-// State
-// ============================================================================
-
-const taskId = ref(route.query.taskId as string | undefined)
-const recentScans = ref<Array<{
+interface ScanHistoryItem {
   id: number
   assetId: string
   assetName: string
-  scannedAt: Date
+  scannedAt: string
   result: 'success' | 'error'
-}>>([])
+}
 
+const HISTORY_KEY = 'scan_history'
+
+const taskId = ref(route.query.taskId as string | undefined)
+const recentScans = ref<ScanHistoryItem[]>([])
 const showManualInput = ref(false)
 const manualCode = ref('')
 const showMore = ref(false)
 const previewVisible = ref(false)
 const previewAsset = ref<any>(null)
-const scannerRef = ref()
+const scannerRef = ref<any>()
 
-const moreActions = [
-  { text: '查看扫描历史', value: 'history' },
-  { text: '切换摄像头', value: 'camera' },
-  { text: '开灯/关灯', value: 'torch' }
-]
+const moreActions = computed(() => [
+  { text: t('mobile.unifiedScan.moreActions.history'), value: 'history' },
+  { text: t('mobile.unifiedScan.moreActions.camera'), value: 'camera' },
+  { text: t('mobile.unifiedScan.moreActions.torch'), value: 'torch' }
+])
 
-// Load saved scan history from localStorage
 const loadScanHistory = () => {
   try {
-    const saved = localStorage.getItem('scan_history')
+    const saved = localStorage.getItem(HISTORY_KEY)
     if (saved) {
       recentScans.value = JSON.parse(saved)
     }
   } catch (error) {
-    console.error('Failed to load scan history:', error)
+    console.error(error)
   }
 }
 
-// Save scan history to localStorage
 const saveScanHistory = () => {
   try {
-    localStorage.setItem('scan_history', JSON.stringify(recentScans.value.slice(0, 50)))
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(recentScans.value.slice(0, 50)))
   } catch (error) {
-    console.error('Failed to save scan history:', error)
+    console.error(error)
   }
 }
 
-/**
- * Handle scan result
- */
 const handleScan = async (code: string, asset?: any) => {
   if (asset) {
-    // Asset was found and validated by scanner
     addToHistory(code, asset, 'success')
     previewAsset.value = asset
     previewVisible.value = true
-  } else {
-    // Scan found code but no asset data - fetch it
-    try {
-      const result = await qrScanApi.getAssetByQrCode(code)
-      previewAsset.value = result
-      previewVisible.value = true
-      addToHistory(code, result, 'success')
-    } catch (error) {
-      addToHistory(code, null, 'error')
-      showToast('未找到对应资产')
-    }
+    return
+  }
+
+  try {
+    const result = await qrScanApi.getAssetByQrCode(code)
+    previewAsset.value = result
+    previewVisible.value = true
+    addToHistory(code, result, 'success')
+  } catch (error) {
+    addToHistory(code, null, 'error')
+    showToast(t('mobile.messages.assetNotFound'))
   }
 }
 
-/**
- * Handle scan error
- */
 const handleScanError = (error: string) => {
   showToast(error)
 }
 
-/**
- * Add to scan history
- */
 const addToHistory = (code: string, asset: any, result: 'success' | 'error') => {
   recentScans.value.unshift({
     id: Date.now(),
     assetId: asset?.id || code,
     assetName: asset?.name || code,
-    scannedAt: new Date(),
+    scannedAt: new Date().toISOString(),
     result
   })
   saveScanHistory()
 }
 
-/**
- * Handle manual submit
- */
 const handleManualSubmit = () => {
   const code = manualCode.value.trim()
-  if (code) {
-    handleScan(code)
-    manualCode.value = ''
-    showManualInput.value = false
-  }
+  if (!code) return
+
+  handleScan(code)
+  manualCode.value = ''
+  showManualInput.value = false
 }
 
-/**
- * Handle view asset
- */
 const handleViewAsset = (assetId: string) => {
   router.push(`/mobile/assets/${assetId}`)
 }
 
-/**
- * Handle confirm preview - navigate to detail
- */
 const handleConfirmPreview = () => {
   previewVisible.value = false
   if (previewAsset.value) {
@@ -306,33 +264,29 @@ const handleConfirmPreview = () => {
   }
 }
 
-/**
- * Clear history
- */
 const clearHistory = () => {
   showDialog({
-    title: '清空记录',
-    message: '确定要清空扫描历史吗？',
-    showCancelButton: true
-  }).then((action?: string) => {
-    if (action === 'confirm') {
-      recentScans.value = []
-      saveScanHistory()
-      showToast('已清空')
-    }
+    title: t('mobile.unifiedScan.messages.clearHistoryTitle'),
+    message: t('mobile.unifiedScan.messages.clearHistoryConfirm'),
+    showCancelButton: true,
+    confirmButtonText: t('common.actions.confirm'),
+    cancelButtonText: t('common.actions.cancel')
+  }).then(() => {
+    recentScans.value = []
+    saveScanHistory()
+    showToast(t('mobile.unifiedScan.messages.historyCleared'))
+  }).catch(() => {
+    // dialog cancelled
   })
 }
 
-/**
- * Handle more action
- */
-const handleMoreAction = ({ selectedOptions }: any) => {
+const handleMoreAction = (payload: any) => {
   showMore.value = false
-  const value = selectedOptions[0]?.value
+  const value = payload?.selectedOptions?.[0]?.value || payload?.selectedValues?.[0]
 
   switch (value) {
     case 'history':
-      showToast('查看扫描历史')
+      showToast(t('mobile.unifiedScan.messages.historyOpened'))
       break
     case 'camera':
       scannerRef.value?.switchCamera()
@@ -343,46 +297,37 @@ const handleMoreAction = ({ selectedOptions }: any) => {
   }
 }
 
-/**
- * Get status label
- */
 const getStatusLabel = (status: AssetStatus): string => {
-  const labels: Record<AssetStatus, string> = {
-    draft: '草稿',
-    in_use: '使用中',
-    idle: '闲置',
-    maintenance: '维修中',
-    scrapped: '已报废'
+  const keyMap: Record<AssetStatus, string> = {
+    draft: 'assets.status.draft',
+    in_use: 'assets.status.inUse',
+    idle: 'assets.status.idle',
+    maintenance: 'assets.status.maintenance',
+    scrapped: 'assets.status.scrapped'
   }
-  return labels[status] || status
+  const key = keyMap[status]
+  return key ? t(key) : status
 }
 
-/**
- * Format time
- */
-const formatTime = (date: Date): string => {
-  const now = new Date()
-  const diff = now.getTime() - new Date(date).getTime()
+const formatTime = (date: string | Date): string => {
+  const now = Date.now()
+  const target = new Date(date).getTime()
+  const diff = now - target
   const minutes = Math.floor(diff / 60000)
 
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes}分钟前`
+  if (minutes < 1) return t('mobile.unifiedScan.time.justNow')
+  if (minutes < 60) return t('mobile.unifiedScan.time.minutesAgo', { count: minutes })
+
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}小时前`
+  if (hours < 24) return t('mobile.unifiedScan.time.hoursAgo', { count: hours })
+
   const days = Math.floor(hours / 24)
-  return `${days}天前`
+  return t('mobile.unifiedScan.time.daysAgo', { count: days })
 }
 
-/**
- * Go back
- */
 const goBack = () => {
   router.back()
 }
-
-// ============================================================================
-// Lifecycle
-// ============================================================================
 
 onMounted(() => {
   loadScanHistory()

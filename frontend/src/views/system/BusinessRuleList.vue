@@ -313,18 +313,12 @@ const filteredRules = computed(() => {
 })
 
 const emptyDescription = computed(() => {
-  return t('system.businessRule.empty') || '暂无规则'
+  return t('system.businessRule.placeholders.empty')
 })
 
 const getRuleTypeLabel = (type: string) => {
-  const map: Record<string, string> = {
-    validation: 'Validation',
-    visibility: 'Visibility',
-    computed: 'Computed',
-    linkage: 'Linkage',
-    trigger: 'Trigger'
-  }
-  return map[type] || type
+  const key = `system.businessRule.types.${type}`
+  return te(key) ? t(key) : type
 }
 
 const getRuleTypeStyle = (type: string) => {
@@ -357,7 +351,7 @@ const loadRules = async () => {
   try {
     rules.value = await getRulesByObject(objectCode.value)
   } catch (err: any) {
-    if (!err?.isHandled) ElMessage.error(err?.message || 'Failed to load rules')
+    if (!err?.isHandled) ElMessage.error(err?.message || t('common.messages.loadFailed'))
     rules.value = []
   } finally {
     loading.value = false
@@ -382,10 +376,10 @@ const handleRuleSaved = () => {
 const handleDelete = async (row: any) => {
   try {
     await deleteRule(String(row?.id))
-    ElMessage.success('Deleted')
+    ElMessage.success(t('common.messages.deleteSuccess'))
     await loadRules()
   } catch (err: any) {
-    if (!err?.isHandled) ElMessage.error(err?.message || 'Delete failed')
+    if (!err?.isHandled) ElMessage.error(err?.message || t('common.messages.deleteFailed'))
   }
 }
 
@@ -394,7 +388,7 @@ const handleToggleActive = async (row: any, val: any) => {
     await updateRule(String(row?.id), { is_active: !!val })
     row.is_active = !!val
   } catch (err: any) {
-    if (!err?.isHandled) ElMessage.error(err?.message || 'Update failed')
+    if (!err?.isHandled) ElMessage.error(err?.message || t('common.messages.updateFailed'))
   }
 }
 
@@ -412,9 +406,9 @@ const runTest = async () => {
     testResult.value = await evaluateRule(objectCode.value, { record: payload, event: 'update' })
   } catch (err: any) {
     if (err instanceof SyntaxError) {
-      ElMessage.error('Invalid JSON')
+      ElMessage.error(t('system.businessRule.messages.invalidJson'))
     } else if (!err?.isHandled) {
-      ElMessage.error(err?.message || 'Test failed')
+      ElMessage.error(err?.message || t('system.businessRule.messages.testFailed'))
     }
   } finally {
     testing.value = false

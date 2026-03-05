@@ -1,5 +1,6 @@
 <template>
   <el-drawer
+    v-focus-trap.autofocus="modelValue"
     :model-value="modelValue"
     :title="t('integration.logs.drawerTitle')"
     size="800px"

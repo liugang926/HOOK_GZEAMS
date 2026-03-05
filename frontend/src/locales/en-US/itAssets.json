@@ -111,7 +111,18 @@
             },
             "maintenance": {
                 "addTitle": "Add Maintenance Record",
-                "editTitle": "Edit Maintenance Record"
+                "editTitle": "Edit Maintenance Record",
+                "placeholders": {
+                    "title": "Brief title of the maintenance activity",
+                    "description": "Detailed description of work performed",
+                    "vendor": "External vendor (if applicable)",
+                    "notes": "Additional notes"
+                },
+                "validation": {
+                    "selectType": "Please select maintenance type",
+                    "enterTitle": "Please enter title",
+                    "selectDate": "Please select maintenance date"
+                }
             },
             "placeholders": {
                 "selectAsset": "Select asset",
@@ -136,7 +147,14 @@
             },
             "configChange": {
                 "addTitle": "Add Configuration Change",
-                "editTitle": "Edit Configuration Change"
+                "editTitle": "Edit Configuration Change",
+                "placeholders": {
+                    "changeReason": "Explain why this change was made"
+                },
+                "validation": {
+                    "enterFieldName": "Please enter field name",
+                    "selectDate": "Please select change date"
+                }
             }
         },
         "maintenance": {
@@ -156,10 +174,14 @@
         "configChange": {
             "title": "Configuration Changes",
             "field": "Field",
+            "fieldName": "Field Name",
             "allFields": "All Fields",
             "changeDetails": "Change Details",
             "oldValue": "Old Value",
+            "previousValue": "Previous Value",
             "newValue": "New Value",
+            "changeDate": "Change Date",
+            "reason": "Change Reason",
             "empty": "(empty)",
             "fields": {
                 "cpuModel": "CPU Model",

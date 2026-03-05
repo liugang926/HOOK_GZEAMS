@@ -44,10 +44,20 @@ import { isPlainObject, isEmptyValue, resolveFieldValue } from '@/utils/fieldKey
 import RelatedObjectTable from './RelatedObjectTable.vue'
 import FieldDisplay from './FieldDisplay.vue'
 import ObjectAvatar from './ObjectAvatar.vue'
+import ErrorBoundary from './ErrorBoundary.vue'
 import FieldRenderer from '@/components/engine/FieldRenderer.vue'
 import type { FieldDefinition } from '@/types'
 import { normalizeColumnSpan } from '@/platform/layout/semanticGrid'
 import { getCanvasPlacementAttrs, toCanvasGridStyle, type CanvasPlacement } from '@/platform/layout/canvasLayout'
+import { dynamicApi } from '@/api/dynamic'
+import {
+  defaultRelationGroupTitle,
+  groupRelations
+} from '@/platform/reference/relationGrouping'
+import {
+  loadRelationGroupExpandedPreference,
+  saveRelationGroupExpandedPreference
+} from '@/platform/reference/relationGroupCollapsePreference'
 
 // ============================================================================
 // Types
@@ -197,6 +207,13 @@ export interface ReverseRelationField {
   title?: string
   /** Show create button */
   showCreate?: boolean
+  /** Sort order in related section */
+  sortOrder?: number
+  /** Group metadata from relation definition */
+  groupKey?: string
+  groupName?: string
+  groupOrder?: number
+  defaultExpanded?: boolean
 }
 
 interface Props {
@@ -258,8 +275,8 @@ interface Emits {
   (e: 'delete'): void
   (e: 'back'): void
   (e: 'section-click', sectionName: string): void
-  (e: 'related-record-click', relationCode: string, record: any): void
-  (e: 'related-record-edit', relationCode: string, record: any): void
+  (e: 'related-record-click', relationCode: string, record: any, targetObjectCode?: string): void
+  (e: 'related-record-edit', relationCode: string, record: any, targetObjectCode?: string): void
   (e: 'related-refresh', relationCode: string): void
   (e: 'save', data: Record<string, any>): void
   (e: 'cancel'): void
@@ -299,7 +316,12 @@ const formRef = ref<any>(null)
 
 const collapsedSections = ref<Set<string>>(new Set())
 const activeTabs = ref<Record<string, string>>({})
-const { t } = useI18n()
+const runtimeRelations = ref<ReverseRelationField[]>([])
+const activeRelationGroups = ref<string[]>([])
+const relationGroupPreferenceScope = ref('')
+const relationGroupPreferenceHydrated = ref(false)
+const relationGroupPreferenceExists = ref(false)
+const { t, locale } = useI18n()
 
 // ============================================================================
 // Computed
@@ -356,11 +378,191 @@ const availableActions = computed(() => {
 
 /** Visible reverse relations (not hidden) */
 const visibleReverseRelations = computed(() => {
-  if (!props.showRelatedObjects || !props.reverseRelations) {
+  if (!props.showRelatedObjects) {
     return []
   }
-  return props.reverseRelations.filter(rel => rel.displayMode !== 'hidden')
+  const source = runtimeRelations.value.length > 0 ? runtimeRelations.value : (props.reverseRelations || [])
+  return source
+    .filter(rel => rel.displayMode !== 'hidden')
+    .slice()
+    .sort((a, b) => {
+      const aOrder = Number.isFinite(Number(a.sortOrder)) ? Number(a.sortOrder) : 9999
+      const bOrder = Number.isFinite(Number(b.sortOrder)) ? Number(b.sortOrder) : 9999
+      if (aOrder !== bOrder) return aOrder - bOrder
+      return String(a.code || '').localeCompare(String(b.code || ''))
+    })
 })
+
+const mapRuntimeRelation = (raw: Record<string, any>): ReverseRelationField | null => {
+  const code = String(raw.relationCode || raw.relation_code || '').trim()
+  if (!code) return null
+
+  const displayMode = String(raw.displayMode || raw.display_mode || 'inline_readonly') as ReverseRelationField['displayMode']
+  const relatedObjectCode = String(raw.targetObjectCode || raw.target_object_code || '').trim()
+  const label = String(raw.relationName || raw.relation_name || relatedObjectCode || code).trim()
+  const title = label
+  const defaultExpandedRaw = raw.defaultExpanded ?? raw.default_expanded
+
+  return {
+    code,
+    label,
+    displayMode,
+    relatedObjectCode,
+    reverseRelationField: String(raw.targetFkField || raw.target_fk_field || '').trim(),
+    sortOrder: Number(raw.sortOrder || raw.sort_order || 0) || 0,
+    groupKey: String(raw.groupKey || raw.group_key || '').trim(),
+    groupName: String(raw.groupName || raw.group_name || '').trim(),
+    groupOrder: Number(raw.groupOrder || raw.group_order || 0) || undefined,
+    defaultExpanded:
+      defaultExpandedRaw === undefined
+        ? undefined
+        : String(defaultExpandedRaw).toLowerCase() === 'true' || defaultExpandedRaw === true || defaultExpandedRaw === 1,
+    title,
+    showCreate: displayMode === 'inline_editable'
+  }
+}
+
+const resolveRelationGroupTitle = (groupKey: string): string => {
+  return defaultRelationGroupTitle(groupKey, (key, fallback) => {
+    const translated = t(key as any)
+    return translated && translated !== key ? translated : fallback
+  })
+}
+
+const groupedReverseRelationSections = computed(() => {
+  return groupRelations(visibleReverseRelations.value, {
+    getTitle: resolveRelationGroupTitle
+  })
+})
+
+const normalizeRelationGroupNames = (raw: unknown): string[] => {
+  if (Array.isArray(raw)) {
+    return Array.from(new Set(raw.map((item) => String(item || '').trim()).filter(Boolean)))
+  }
+  const single = String(raw || '').trim()
+  return single ? [single] : []
+}
+
+const resolveRelationGroupPreferenceScope = () => {
+  const objectCode = String(props.objectCode || '').trim()
+  if (!objectCode) return null
+  const rawRecordId = (props.data && (props.data.id ?? props.data.code)) || ''
+  const recordId = String(rawRecordId || '').trim() || '_record'
+  return {
+    objectCode,
+    recordId,
+    scope: `${objectCode}:${recordId}`
+  }
+}
+
+const persistRelationGroupPreference = (raw: unknown) => {
+  if (!relationGroupPreferenceHydrated.value) return
+  const scope = resolveRelationGroupPreferenceScope()
+  if (!scope) return
+  const normalized = normalizeRelationGroupNames(raw)
+  relationGroupPreferenceExists.value = true
+  saveRelationGroupExpandedPreference(scope.objectCode, scope.recordId, normalized)
+}
+
+const handleRelationGroupCollapseChange = (names: string[] | string) => {
+  const normalized = normalizeRelationGroupNames(names)
+  if (
+    normalized.length !== activeRelationGroups.value.length
+    || normalized.some((key, index) => key !== activeRelationGroups.value[index])
+  ) {
+    activeRelationGroups.value = normalized
+  }
+  persistRelationGroupPreference(normalized)
+}
+
+watch(
+  groupedReverseRelationSections,
+  (groups) => {
+    const scope = resolveRelationGroupPreferenceScope()
+    const currentScope = scope?.scope || ''
+    if (relationGroupPreferenceScope.value !== currentScope) {
+      relationGroupPreferenceScope.value = currentScope
+      relationGroupPreferenceHydrated.value = false
+      relationGroupPreferenceExists.value = false
+    }
+
+    const validKeys = new Set(groups.map((group) => group.key))
+    const defaultKeys = groups.filter((group) => group.defaultExpanded).map((group) => group.key)
+
+    if (!relationGroupPreferenceHydrated.value) {
+      const restored = scope
+        ? loadRelationGroupExpandedPreference(scope.objectCode, scope.recordId)
+        : null
+      relationGroupPreferenceExists.value = Array.isArray(restored)
+      const next = Array.isArray(restored) ? restored.filter((key) => validKeys.has(key)) : defaultKeys
+      activeRelationGroups.value = next
+      relationGroupPreferenceHydrated.value = true
+      return
+    }
+
+    if (!relationGroupPreferenceExists.value && activeRelationGroups.value.length === 0 && defaultKeys.length > 0) {
+      activeRelationGroups.value = defaultKeys
+      return
+    }
+
+    const next = activeRelationGroups.value.filter((key) => validKeys.has(key))
+    if (
+      next.length !== activeRelationGroups.value.length
+      || next.some((key, index) => key !== activeRelationGroups.value[index])
+    ) {
+      activeRelationGroups.value = next
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  [() => [...activeRelationGroups.value], () => props.objectCode, () => props.data?.id, () => props.data?.code],
+  ([expandedGroups]) => {
+    persistRelationGroupPreference(expandedGroups)
+  }
+)
+
+watch(
+  () => props.objectCode,
+  () => {
+    const scope = resolveRelationGroupPreferenceScope()
+    relationGroupPreferenceScope.value = scope?.scope || ''
+    relationGroupPreferenceHydrated.value = false
+    relationGroupPreferenceExists.value = false
+  }
+)
+
+watch(
+  () => props.data,
+  () => {
+    const scope = resolveRelationGroupPreferenceScope()
+    if ((scope?.scope || '') !== relationGroupPreferenceScope.value) {
+      relationGroupPreferenceScope.value = scope?.scope || ''
+      relationGroupPreferenceHydrated.value = false
+      relationGroupPreferenceExists.value = false
+    }
+  },
+  { deep: false }
+)
+
+const fetchRuntimeRelations = async () => {
+  const objectCode = String(props.objectCode || '').trim()
+  if (!objectCode) {
+    runtimeRelations.value = []
+    return
+  }
+
+  try {
+    const payload = await dynamicApi.getRelations(objectCode)
+    const rows = Array.isArray((payload as any)?.relations) ? (payload as any).relations : []
+    runtimeRelations.value = rows
+      .map((row: Record<string, any>) => mapRuntimeRelation(row))
+      .filter((item: ReverseRelationField | null): item is ReverseRelationField => Boolean(item))
+  } catch {
+    runtimeRelations.value = []
+  }
+}
 
 const getSectionDisplayTitle = (section: DetailSection): string => {
   const baseTitle = section.title || ''
@@ -376,6 +578,12 @@ const getSectionDisplayTitle = (section: DetailSection): string => {
   if (!tabTitle) return baseTitle
   if (baseTitle === tabTitle) return baseTitle
   return `${baseTitle} / ${tabTitle}`
+}
+
+const getSectionErrorTitle = (section: DetailSection): string => {
+  const sectionTitle = getSectionDisplayTitle(section)
+  if (!sectionTitle) return t('common.messages.loadFailed')
+  return `${sectionTitle} - ${t('common.messages.loadFailed')}`
 }
 
 const editDrawerProxyFields = computed<DetailField[]>(() => {
@@ -654,6 +862,21 @@ watch(
   { immediate: true }
 )
 
+watch(
+  () => props.objectCode,
+  () => {
+    fetchRuntimeRelations()
+  },
+  { immediate: true }
+)
+
+watch(
+  () => locale.value,
+  () => {
+    fetchRuntimeRelations()
+  }
+)
+
 defineExpose({
   toggleSection,
   isSectionCollapsed,
@@ -664,15 +887,166 @@ defineExpose({
 <template>
   <div class="base-detail-page">
     <!-- Loading State -->
-    <div
+    <!-- Loading State -->
+    <el-skeleton
       v-if="loading"
-      class="loading-container"
+      animated
+      class="detail-content loading-skeleton"
     >
-      <el-skeleton
-        :rows="10"
-        animated
-      />
-    </div>
+      <template #template>
+        <!-- Skeleton Header -->
+        <div
+          class="page-header record-profile-header"
+          style="border-bottom: 1px solid var(--el-border-color-light); padding-bottom: 16px;"
+        >
+          <div class="header-left">
+            <el-skeleton-item
+              variant="circle"
+              style="width: 48px; height: 48px; margin-right: 16px"
+            />
+            <div
+              class="profile-text"
+              style="display: flex; flex-direction: column; justify-content: center;"
+            >
+              <el-skeleton-item
+                variant="text"
+                style="width: 80px; margin-bottom: 6px"
+              />
+              <el-skeleton-item
+                variant="h1"
+                style="width: 15vw; height: 24px"
+              />
+            </div>
+          </div>
+          <div class="header-right">
+            <el-skeleton-item
+              variant="button"
+              style="width: 80px; margin-right: 12px; height: 32px"
+            />
+            <el-skeleton-item
+              variant="button"
+              style="width: 80px; height: 32px"
+            />
+          </div>
+        </div>
+
+        <div
+          class="detail-layout-container"
+          :class="{ 'has-sidebar': sidebarSections.length > 0 }"
+        >
+          <!-- Schema-driven Main Sections Skeleton -->
+          <div class="main-column detail-sections">
+            <template v-if="mainSections.length > 0">
+              <div
+                v-for="section in mainSections"
+                :key="section.name"
+                class="detail-section"
+              >
+                <div class="section-header">
+                  <el-skeleton-item
+                    variant="h3"
+                    style="width: 120px; height: 20px"
+                  />
+                </div>
+                <div class="section-content">
+                  <div
+                    class="detail-canvas-grid"
+                    :style="getSectionCanvasStyle(section)"
+                  >
+                    <!-- For each field in the schema, render a skeleton block -->
+                    <div
+                      v-for="field in (section.type === 'tab' ? (section.tabs?.[0]?.fields || []) : section.fields)"
+                      :key="field.prop"
+                      class="field-item"
+                      :style="getFieldColStyle(field, section)"
+                    >
+                      <el-skeleton-item
+                        variant="text"
+                        style="width: 30%; margin-bottom: 8px"
+                      />
+                      <el-skeleton-item
+                        variant="rect"
+                        style="width: 80%; height: 20px"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <!-- Fallback Main Column Skeleton if schema not loaded yet -->
+            <template v-else>
+              <div class="detail-section">
+                <div class="section-header">
+                  <el-skeleton-item
+                    variant="h3"
+                    style="width: 120px; height: 20px"
+                  />
+                </div>
+                <div class="section-content">
+                  <div
+                    class="detail-canvas-grid"
+                    style="--detail-section-columns: 2;"
+                  >
+                    <div
+                      v-for="i in 4"
+                      :key="i"
+                      class="field-item"
+                    >
+                      <el-skeleton-item
+                        variant="text"
+                        style="width: 30%; margin-bottom: 8px"
+                      />
+                      <el-skeleton-item
+                        variant="rect"
+                        style="width: 80%; height: 20px"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Schema-driven Sidebar Sections Skeleton -->
+          <div
+            v-if="sidebarSections.length > 0"
+            class="sidebar-column"
+          >
+            <div
+              v-for="section in sidebarSections"
+              :key="section.name"
+              class="detail-section sidebar-section-block"
+            >
+              <div class="section-header">
+                <el-skeleton-item
+                  variant="h3"
+                  style="width: 100px; height: 20px"
+                />
+              </div>
+              <div class="section-content">
+                <div class="detail-canvas-grid sidebar-canvas-grid">
+                  <div
+                    v-for="field in section.fields"
+                    :key="field.prop"
+                    class="field-item"
+                    :style="getFieldColStyle(field, section)"
+                  >
+                    <el-skeleton-item
+                      variant="text"
+                      style="width: 40%; margin-bottom: 8px"
+                    />
+                    <el-skeleton-item
+                      variant="rect"
+                      style="width: 100%; height: 20px"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </el-skeleton>
 
     <!-- Content -->
     <div
@@ -813,149 +1187,175 @@ defineExpose({
                   v-show="!isSectionCollapsed(section)"
                   class="section-content"
                 >
-                  <!-- Custom slot for this section -->
-                  <slot
-                    v-if="$slots[`section-${section.name}`]"
-                    :name="`section-${section.name}`"
-                    :data="data"
-                    :section="section"
-                  />
-                  <!-- Default field rendering -->
-                  <template v-else>
-                    <!-- Render as Tabs if section type is 'tab' -->
-                    <template v-if="section.type === 'tab' && section.tabs && section.tabs.length > 0">
-                      <el-tabs 
-                        v-model="activeTabs[section.name]"
-                        type="card"
-                        class="detail-section-tabs"
+                  <ErrorBoundary>
+                    <template #fallback="{ error, reset }">
+                      <el-alert
+                        :title="getSectionErrorTitle(section)"
+                        type="warning"
+                        show-icon
+                        :closable="false"
                       >
-                        <!-- Initialize activeTabs loosely on mount through a quick hack / v-once evaluated default but Vue handles it gracefully if value is undefined -->
-                        <el-tab-pane
-                          v-for="tab in section.tabs"
-                          :key="tab.id"
-                          :label="tab.title"
-                          :name="tab.id"
+                        <template #default>
+                          <div class="error-description">
+                            {{ error || t('common.messages.operationFailed') }}
+                          </div>
+                          <div class="error-actions">
+                            <el-button
+                              size="small"
+                              type="primary"
+                              plain
+                              @click="reset"
+                            >
+                              {{ t('system.fieldDefinition.actions.retry') }}
+                            </el-button>
+                          </div>
+                        </template>
+                      </el-alert>
+                    </template>
+                    <!-- Custom slot for this section -->
+                    <slot
+                      v-if="$slots[`section-${section.name}`]"
+                      :name="`section-${section.name}`"
+                      :data="data"
+                      :section="section"
+                    />
+                    <!-- Default field rendering -->
+                    <template v-else>
+                      <!-- Render as Tabs if section type is 'tab' -->
+                      <template v-if="section.type === 'tab' && section.tabs && section.tabs.length > 0">
+                        <el-tabs 
+                          v-model="activeTabs[section.name]"
+                          type="card"
+                          class="detail-section-tabs"
                         >
-                          <div
-                            class="detail-canvas-grid"
-                            :style="getSectionCanvasStyle(section)"
+                          <!-- Initialize activeTabs loosely on mount through a quick hack / v-once evaluated default but Vue handles it gracefully if value is undefined -->
+                          <el-tab-pane
+                            v-for="tab in section.tabs"
+                            :key="tab.id"
+                            :label="tab.title"
+                            :name="tab.id"
                           >
                             <div
-                              v-for="field in tab.fields.filter(f => !f.hidden)"
-                              :key="field.prop"
-                              class="field-col"
-                              :style="getFieldColStyle(field, section)"
+                              class="detail-canvas-grid"
+                              :style="getSectionCanvasStyle(section)"
                             >
-                              <!-- Slot field -->
                               <div
-                                v-if="field.type === 'slot'"
-                                class="field-item"
-                                :style="getFieldItemStyle(field)"
-                                v-bind="getFieldPlacementAttrs(field)"
+                                v-for="field in tab.fields.filter(f => !f.hidden)"
+                                :key="field.prop"
+                                class="field-col"
+                                :style="getFieldColStyle(field, section)"
                               >
-                                <slot
-                                  :name="`field-${field.prop}`"
-                                  :field="field"
-                                  :data="data"
-                                  :value="getFieldValue(field)"
-                                />
-                              </div>
+                                <!-- Slot field -->
+                                <div
+                                  v-if="field.type === 'slot'"
+                                  class="field-item"
+                                  :style="getFieldItemStyle(field)"
+                                  v-bind="getFieldPlacementAttrs(field)"
+                                >
+                                  <slot
+                                    :name="`field-${field.prop}`"
+                                    :field="field"
+                                    :data="data"
+                                    :value="getFieldValue(field)"
+                                  />
+                                </div>
 
-                              <div
-                                v-else
-                                :class="['field-item', { 'field-image': field.type === 'image' }]"
-                                :style="getFieldItemStyle(field)"
-                                v-bind="getFieldPlacementAttrs(field)"
-                              >
-                                <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
-                                <div :class="['field-value', field.valueClass]">
-                                  <template v-if="editMode">
-                                    <el-form-item
-                                      :prop="field.prop"
-                                      style="margin-bottom: 0px"
-                                    >
-                                      <FieldRenderer
-                                        :field="toInlineEditRuntimeField(field)"
-                                        :model-value="getEditFieldValue(field)"
-                                        :disabled="field.readonly === true"
-                                        @update:model-value="updateFormData(field.prop, $event)"
+                                <div
+                                  v-else
+                                  :class="['field-item', { 'field-image': field.type === 'image' }]"
+                                  :style="getFieldItemStyle(field)"
+                                  v-bind="getFieldPlacementAttrs(field)"
+                                >
+                                  <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
+                                  <div :class="['field-value', field.valueClass]">
+                                    <template v-if="editMode">
+                                      <el-form-item
+                                        :prop="field.prop"
+                                        style="margin-bottom: 0px"
+                                      >
+                                        <FieldRenderer
+                                          :field="toInlineEditRuntimeField(field)"
+                                          :model-value="getEditFieldValue(field)"
+                                          :disabled="field.readonly === true"
+                                          @update:model-value="updateFormData(field.prop, $event)"
+                                        />
+                                      </el-form-item>
+                                    </template>
+                                    <template v-else>
+                                      <FieldDisplay
+                                        :field="field"
+                                        :value="getFieldValue(field)"
                                       />
-                                    </el-form-item>
-                                  </template>
-                                  <template v-else>
-                                    <FieldDisplay
-                                      :field="field"
-                                      :value="getFieldValue(field)"
-                                    />
-                                  </template>
+                                    </template>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        </el-tab-pane>
-                      </el-tabs>
-                    </template>
+                          </el-tab-pane>
+                        </el-tabs>
+                      </template>
 
-                    <!-- Standard Flow Layout -->
-                    <template v-else>
-                      <div
-                        class="detail-canvas-grid"
-                        :style="getSectionCanvasStyle(section)"
-                      >
+                      <!-- Standard Flow Layout -->
+                      <template v-else>
                         <div
-                          v-for="field in section.fields.filter(f => !f.hidden)"
-                          :key="field.prop"
-                          class="field-col"
-                          :style="getFieldColStyle(field, section)"
+                          class="detail-canvas-grid"
+                          :style="getSectionCanvasStyle(section)"
                         >
-                          <!-- Slot field -->
                           <div
-                            v-if="field.type === 'slot'"
-                            class="field-item"
-                            :style="getFieldItemStyle(field)"
-                            v-bind="getFieldPlacementAttrs(field)"
+                            v-for="field in section.fields.filter(f => !f.hidden)"
+                            :key="field.prop"
+                            class="field-col"
+                            :style="getFieldColStyle(field, section)"
                           >
-                            <slot
-                              :name="`field-${field.prop}`"
-                              :field="field"
-                              :data="data"
-                              :value="getFieldValue(field)"
-                            />
-                          </div>
+                            <!-- Slot field -->
+                            <div
+                              v-if="field.type === 'slot'"
+                              class="field-item"
+                              :style="getFieldItemStyle(field)"
+                              v-bind="getFieldPlacementAttrs(field)"
+                            >
+                              <slot
+                                :name="`field-${field.prop}`"
+                                :field="field"
+                                :data="data"
+                                :value="getFieldValue(field)"
+                              />
+                            </div>
 
-                          <div
-                            v-else
-                            :class="['field-item', { 'field-image': field.type === 'image' }]"
-                            :style="getFieldItemStyle(field)"
-                            v-bind="getFieldPlacementAttrs(field)"
-                          >
-                            <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
-                            <div :class="['field-value', field.valueClass]">
-                              <template v-if="editMode">
-                                <el-form-item
-                                  :prop="field.prop"
-                                  style="margin-bottom: 0px"
-                                >
-                                  <FieldRenderer
-                                    :field="toInlineEditRuntimeField(field)"
-                                    :model-value="getEditFieldValue(field)"
-                                    :disabled="field.readonly === true"
-                                    @update:model-value="updateFormData(field.prop, $event)"
+                            <div
+                              v-else
+                              :class="['field-item', { 'field-image': field.type === 'image' }]"
+                              :style="getFieldItemStyle(field)"
+                              v-bind="getFieldPlacementAttrs(field)"
+                            >
+                              <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
+                              <div :class="['field-value', field.valueClass]">
+                                <template v-if="editMode">
+                                  <el-form-item
+                                    :prop="field.prop"
+                                    style="margin-bottom: 0px"
+                                  >
+                                    <FieldRenderer
+                                      :field="toInlineEditRuntimeField(field)"
+                                      :model-value="getEditFieldValue(field)"
+                                      :disabled="field.readonly === true"
+                                      @update:model-value="updateFormData(field.prop, $event)"
+                                    />
+                                  </el-form-item>
+                                </template>
+                                <template v-else>
+                                  <FieldDisplay
+                                    :field="field"
+                                    :value="getFieldValue(field)"
                                   />
-                                </el-form-item>
-                              </template>
-                              <template v-else>
-                                <FieldDisplay
-                                  :field="field"
-                                  :value="getFieldValue(field)"
-                                />
-                              </template>
+                                </template>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </template>
                     </template>
-                  </template>
+                  </ErrorBoundary>
                 </div>
               </div>
             </template>
@@ -1000,73 +1400,99 @@ defineExpose({
                   v-show="!isSectionCollapsed(section)"
                   class="section-content"
                 >
-                  <!-- Custom slot for this section -->
-                  <slot
-                    v-if="$slots[`section-${section.name}`]"
-                    :name="`section-${section.name}`"
-                    :data="data"
-                    :section="section"
-                  />
-
-                  <template v-else>
-                    <!-- In the sidebar, fields typically stack linearly with full width -->
-                    <div
-                      class="detail-canvas-grid sidebar-canvas-grid"
-                      :style="getSectionCanvasStyle(section)"
-                    >
-                      <div
-                        v-for="field in section.fields.filter(f => !f.hidden)"
-                        :key="field.prop"
-                        class="field-col sidebar-field-col"
-                        :style="getFieldColStyle(field, section)"
+                  <ErrorBoundary>
+                    <template #fallback="{ error, reset }">
+                      <el-alert
+                        :title="getSectionErrorTitle(section)"
+                        type="warning"
+                        show-icon
+                        :closable="false"
                       >
-                        <!-- Slot field -->
-                        <div
-                          v-if="field.type === 'slot'"
-                          class="field-item sidebar-field-item"
-                          :style="getFieldItemStyle(field)"
-                          v-bind="getFieldPlacementAttrs(field)"
-                        >
-                          <slot
-                            :name="`field-${field.prop}`"
-                            :field="field"
-                            :data="data"
-                            :value="getFieldValue(field)"
-                          />
-                        </div>
+                        <template #default>
+                          <div class="error-description">
+                            {{ error || t('common.messages.operationFailed') }}
+                          </div>
+                          <div class="error-actions">
+                            <el-button
+                              size="small"
+                              type="primary"
+                              plain
+                              @click="reset"
+                            >
+                              {{ t('system.fieldDefinition.actions.retry') }}
+                            </el-button>
+                          </div>
+                        </template>
+                      </el-alert>
+                    </template>
+                    <!-- Custom slot for this section -->
+                    <slot
+                      v-if="$slots[`section-${section.name}`]"
+                      :name="`section-${section.name}`"
+                      :data="data"
+                      :section="section"
+                    />
 
+                    <template v-else>
+                      <!-- In the sidebar, fields typically stack linearly with full width -->
+                      <div
+                        class="detail-canvas-grid sidebar-canvas-grid"
+                        :style="getSectionCanvasStyle(section)"
+                      >
                         <div
-                          v-else
-                          :class="['field-item sidebar-field-item', { 'field-image': field.type === 'image' }]"
-                          :style="getFieldItemStyle(field)"
-                          v-bind="getFieldPlacementAttrs(field)"
+                          v-for="field in section.fields.filter(f => !f.hidden)"
+                          :key="field.prop"
+                          class="field-col sidebar-field-col"
+                          :style="getFieldColStyle(field, section)"
                         >
-                          <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
-                          <div :class="['field-value', field.valueClass]">
-                            <template v-if="editMode">
-                              <el-form-item
-                                :prop="field.prop"
-                                style="margin-bottom: 0px"
-                              >
-                                <FieldRenderer
-                                  :field="toInlineEditRuntimeField(field)"
-                                  :model-value="getEditFieldValue(field)"
-                                  :disabled="field.readonly === true"
-                                  @update:model-value="updateFormData(field.prop, $event)"
+                          <!-- Slot field -->
+                          <div
+                            v-if="field.type === 'slot'"
+                            class="field-item sidebar-field-item"
+                            :style="getFieldItemStyle(field)"
+                            v-bind="getFieldPlacementAttrs(field)"
+                          >
+                            <slot
+                              :name="`field-${field.prop}`"
+                              :field="field"
+                              :data="data"
+                              :value="getFieldValue(field)"
+                            />
+                          </div>
+
+                          <div
+                            v-else
+                            :class="['field-item sidebar-field-item', { 'field-image': field.type === 'image' }]"
+                            :style="getFieldItemStyle(field)"
+                            v-bind="getFieldPlacementAttrs(field)"
+                          >
+                            <span :class="['field-label', field.labelClass]">{{ field.label }}</span>
+                            <div :class="['field-value', field.valueClass]">
+                              <template v-if="editMode">
+                                <el-form-item
+                                  :prop="field.prop"
+                                  style="margin-bottom: 0px"
+                                >
+                                  <FieldRenderer
+                                    :field="toInlineEditRuntimeField(field)"
+                                    :model-value="getEditFieldValue(field)"
+                                    :disabled="field.readonly === true"
+                                    @update:model-value="updateFormData(field.prop, $event)"
+                                  />
+                                </el-form-item>
+                              </template>
+                              <template v-else>
+                                <FieldDisplay
+                                  :field="field"
+                                  :value="getFieldValue(field)"
                                 />
-                              </el-form-item>
-                            </template>
-                            <template v-else>
-                              <FieldDisplay
-                                :field="field"
-                                :value="getFieldValue(field)"
-                              />
-                            </template>
+                              </template>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </template>
+                    </template>
+                  </ErrorBoundary>
                 </div>
               </div>
             </template>
@@ -1115,28 +1541,59 @@ defineExpose({
             {{ $t('common.labels.relatedObjects') }}
           </h3>
         </div>
-        <div class="related-objects-list">
-          <RelatedObjectTable
-            v-for="relation in visibleReverseRelations"
-            :key="relation.code"
-            :parent-object-code="objectCode || ''"
-            :parent-id="data.id || data.code"
-            :field="{
-              code: relation.code,
-              label: relation.label,
-              name: relation.label,
-              relationDisplayMode: relation.displayMode,
-              relationDisplayModeDisplay: relation.displayMode,
-              reverseRelationModel: relation.reverseRelationModel,
-              reverseRelationField: relation.reverseRelationField
-            } as FieldDefinition"
-            :mode="relation.displayMode"
-            :title="relation.title"
-            :show-create="relation.showCreate"
-            @record-click="(record) => $emit('related-record-click', relation.code, record)"
-            @record-edit="(record) => $emit('related-record-edit', relation.code, record)"
-            @refresh="$emit('related-refresh', relation.code)"
-          />
+        <div class="related-objects-body">
+          <el-collapse
+            v-model="activeRelationGroups"
+            class="related-groups-collapse"
+            @change="handleRelationGroupCollapseChange"
+          >
+            <el-collapse-item
+              v-for="group in groupedReverseRelationSections"
+              :key="group.key"
+              :name="group.key"
+              class="related-group-item"
+            >
+              <template #title>
+                <div class="related-group-title">
+                  <span class="group-name">{{ group.title }}</span>
+                  <el-tag
+                    size="small"
+                    effect="plain"
+                    type="info"
+                    class="group-count"
+                  >
+                    {{ group.relations.length }}
+                  </el-tag>
+                </div>
+              </template>
+              <div class="related-objects-list">
+                <RelatedObjectTable
+                  v-for="relation in group.relations"
+                  :key="relation.code"
+                  :parent-object-code="objectCode || ''"
+                  :parent-id="data.id || data.code"
+                  :target-object-code="relation.relatedObjectCode || ''"
+                  :field="{
+                    code: relation.code,
+                    label: relation.label,
+                    name: relation.label,
+                    fieldType: 'reference',
+                    relationDisplayMode: relation.displayMode,
+                    relationDisplayModeDisplay: relation.displayMode,
+                    targetObjectCode: relation.relatedObjectCode,
+                    reverseRelationModel: relation.reverseRelationModel,
+                    reverseRelationField: relation.reverseRelationField
+                  } as unknown as FieldDefinition"
+                  :mode="relation.displayMode"
+                  :title="relation.title"
+                  :show-create="relation.showCreate"
+                  @record-click="(record) => $emit('related-record-click', relation.code, record, relation.relatedObjectCode)"
+                  @record-edit="(record) => $emit('related-record-edit', relation.code, record, relation.relatedObjectCode)"
+                  @refresh="$emit('related-refresh', relation.code)"
+                />
+              </div>
+            </el-collapse-item>
+          </el-collapse>
         </div>
       </div>
     </div>
@@ -1162,6 +1619,15 @@ defineExpose({
 }
 
 .detail-content {
+  .error-description {
+    margin-bottom: 8px;
+    word-break: break-word;
+  }
+
+  .error-actions {
+    margin-top: 8px;
+  }
+
   .drawer-compat-proxy {
     position: absolute !important;
     top: 0;
@@ -1500,35 +1966,6 @@ defineExpose({
     }
   }
 
-  .audit-info {
-    margin-top: $spacing-md;
-    padding: $spacing-lg;
-    background-color: $bg-card;
-    border-radius: $radius-large;
-    box-shadow: $shadow-sm;
-    border: 1px solid $border-light;
-
-    .audit-title {
-      margin-bottom: $spacing-md;
-      padding-bottom: $spacing-sm;
-      border-bottom: 1px solid $border-light;
-      border-left: 3px solid #64748b;
-      padding-left: 8px;
-      font-size: 15px;
-      font-weight: 600;
-      color: $text-main;
-    }
-
-    :deep(.el-descriptions) {
-      padding: 0;
-
-      .el-descriptions__label {
-        width: 120px;
-        background-color: #fafafa;
-      }
-    }
-  }
-
   .related-objects-section {
     margin-top: $spacing-md;
     background-color: $bg-card;
@@ -1551,17 +1988,48 @@ defineExpose({
       }
     }
 
-    .related-objects-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0;
+    .related-objects-body {
+      :deep(.related-groups-collapse) {
+        border-top: none;
+        border-bottom: none;
 
-      :deep(.related-object-table) {
-        border-radius: 0;
-        box-shadow: none;
+        .el-collapse-item__header {
+          height: 48px;
+          line-height: 48px;
+          padding: 0 16px;
+          background: #fbfcff;
+          border-bottom: 1px solid #eef2f7;
+        }
 
-        &:not(:last-child) {
-          border-bottom: 1px solid #ebeef5;
+        .el-collapse-item__content {
+          padding-bottom: 0;
+        }
+      }
+
+      .related-group-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+
+        .group-name {
+          font-size: 13px;
+          font-weight: 600;
+          color: $text-main;
+        }
+      }
+
+      .related-objects-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+
+        :deep(.related-object-table) {
+          border-radius: 0;
+          box-shadow: none;
+
+          &:not(:last-child) {
+            border-bottom: 1px solid #ebeef5;
+          }
         }
       }
     }
@@ -1611,7 +2079,7 @@ defineExpose({
         padding: 12px 16px;
       }
 
-      .related-objects-list {
+      .related-objects-body {
         :deep(.related-object-table) {
           .table-header {
             flex-direction: column;
@@ -1642,4 +2110,3 @@ defineExpose({
   }
 }
 </style>
-

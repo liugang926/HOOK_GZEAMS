@@ -78,19 +78,19 @@
           >
             <el-option
               value="businessobject"
-              label="BusinessObject"
+              :label="$t('system.translations.contentTypes.businessObject')"
             />
             <el-option
               value="dictionarytype"
-              label="DictionaryType"
+              :label="$t('system.translations.contentTypes.dictionaryType')"
             />
             <el-option
               value="dictionaryitem"
-              label="DictionaryItem"
+              :label="$t('system.translations.contentTypes.dictionaryItem')"
             />
             <el-option
               value="modelfielddefinition"
-              label="ModelFieldDefinition"
+              :label="$t('system.translations.contentTypes.modelFieldDefinition')"
             />
           </el-select>
         </el-form-item>
@@ -188,6 +188,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { translationApi } from '@/api/translations'
 import type { Translation, Language } from '@/api/translations'
@@ -205,6 +206,7 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+const { t } = useI18n()
 
 const formRef = ref<any>()
 const saving = ref(false)
@@ -236,14 +238,18 @@ const formData = reactive<{
 })
 
 // Validation rules
+const requiredWithField = (fieldKey: string) => {
+  return t('common.validation.requiredWithField', { field: t(fieldKey) })
+}
+
 const rules = {
-  languageCode: [{ required: true, message: 'Language is required', trigger: 'change' }],
-  namespace: [{ required: true, message: 'Namespace is required', trigger: 'blur' }],
-  key: [{ required: true, message: 'Key is required', trigger: 'blur' }],
-  contentTypeModel: [{ required: true, message: 'Content type is required', trigger: 'change' }],
-  objectId: [{ required: true, message: 'Object ID is required', trigger: 'blur' }],
-  fieldName: [{ required: true, message: 'Field name is required', trigger: 'blur' }],
-  text: [{ required: true, message: 'Translation text is required', trigger: 'blur' }]
+  languageCode: [{ required: true, message: requiredWithField('system.translations.language'), trigger: 'change' }],
+  namespace: [{ required: true, message: requiredWithField('system.translations.namespace'), trigger: 'blur' }],
+  key: [{ required: true, message: requiredWithField('system.translations.key'), trigger: 'blur' }],
+  contentTypeModel: [{ required: true, message: requiredWithField('system.translations.contentType'), trigger: 'change' }],
+  objectId: [{ required: true, message: requiredWithField('system.translations.objectId'), trigger: 'blur' }],
+  fieldName: [{ required: true, message: requiredWithField('system.translations.fieldName'), trigger: 'blur' }],
+  text: [{ required: true, message: requiredWithField('system.translations.text'), trigger: 'blur' }]
 }
 
 // Computed
@@ -335,16 +341,16 @@ const handleSave = async () => {
 
     if (isEdit.value && props.translation?.id) {
       await translationApi.update(props.translation.id, payload)
-      ElMessage.success('Translation updated successfully')
+      ElMessage.success(t('system.translations.messages.updateSuccess'))
     } else {
       await translationApi.create(payload)
-      ElMessage.success('Translation created successfully')
+      ElMessage.success(t('system.translations.messages.createSuccess'))
     }
 
     emit('success')
     handleClose()
   } catch (error: any) {
-    ElMessage.error(error.message || 'Failed to save translation')
+    ElMessage.error(error.message || t('system.translations.messages.saveFailed'))
   } finally {
     saving.value = false
   }

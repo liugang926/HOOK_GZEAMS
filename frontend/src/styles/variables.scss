@@ -39,9 +39,18 @@ $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.04); // Ethereal shadow for popovers
 $shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.08); // Deep dropdowns only
 $shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
 
-// Spacing
+// Spacing & Density
 $spacing-xs: 4px;
 $spacing-sm: 8px;
 $spacing-md: 16px;
 $spacing-lg: 24px;
 $spacing-xl: 32px;
+
+// --- Enterprise Density System (Compact vs Comfy) ---
+// These SCSS variables compile to CSS Variables for runtime switching
+// Default is 'Comfy'
+$density-scale: var(--gzeams-density-scale, 1);
+$density-table-row-height: var(--gzeams-density-table-row, 44px);
+$density-input-height: var(--gzeams-density-input, 32px);
+$density-font-size: var(--gzeams-density-font, 13px);
+$density-filter-height: var(--gzeams-density-filter, 32px);

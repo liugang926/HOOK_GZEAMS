@@ -402,9 +402,9 @@ export function useDynamicForm(
     try {
       const result = await formRef.value.validate?.()
       return result === undefined ? true : result
-    } catch (err) {
+    } catch (err: any) {
       console.warn('useDynamicForm: validation failed', err)
-      return false
+      return err || false
     }
   }
 

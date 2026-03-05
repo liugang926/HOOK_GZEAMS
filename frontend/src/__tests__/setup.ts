@@ -4,6 +4,7 @@
  */
 
 import { vi, beforeEach, afterEach } from 'vitest'
+import { config } from '@vue/test-utils'
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -60,6 +61,18 @@ const sessionStorageMock = {
   key: vi.fn(),
 }
 global.sessionStorage = sessionStorageMock as Storage
+
+const noopDirective = {
+  mounted: () => undefined,
+  updated: () => undefined,
+  unmounted: () => undefined
+}
+
+config.global.directives = {
+  ...(config.global.directives || {}),
+  focusTrap: noopDirective,
+  'focus-trap': noopDirective
+}
 
 // Reset mocks before each test
 beforeEach(() => {

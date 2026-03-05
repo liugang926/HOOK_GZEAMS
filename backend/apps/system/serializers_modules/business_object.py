@@ -50,7 +50,11 @@ HARDCODED_OBJECT_NAMES = {
     'Department': ('部门', 'Department'),
     'User': ('用户', 'User'),
     'WorkflowDefinition': ('工作流定义', 'Workflow Definition'),
+    'WorkflowTemplate': ('工作流模板', 'Workflow Template'),
     'WorkflowInstance': ('工作流实例', 'Workflow Instance'),
+    'WorkflowTask': ('工作流任务', 'Workflow Task'),
+    'WorkflowApproval': ('工作流审批记录', 'Workflow Approval'),
+    'WorkflowOperationLog': ('工作流操作日志', 'Workflow Operation Log'),
 }
 
 

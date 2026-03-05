@@ -280,12 +280,15 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Download, Upload, Plus } from '@element-plus/icons-vue'
 import SectionBlock from '@/components/common/SectionBlock.vue'
 import TranslationDialog from '@/components/common/TranslationDialog.vue'
 import { translationApi, languageApi } from '@/api/translations'
 import type { Translation, Language } from '@/api/translations'
+
+const { t } = useI18n()
 
 // State
 const loading = ref(false)
@@ -401,11 +404,11 @@ const handleEdit = (row: Translation) => {
 const handleDelete = async (id: string) => {
   try {
     await translationApi.delete(id)
-    ElMessage.success('Translation deleted successfully')
+    ElMessage.success(t('system.translations.messages.deleteSuccess'))
     loadTranslations()
     loadStats()
   } catch (error) {
-    ElMessage.error('Failed to delete translation')
+    ElMessage.error(t('system.translations.messages.deleteFailed'))
   }
 }
 
@@ -425,9 +428,9 @@ const handleExport = async () => {
     link.click()
     window.URL.revokeObjectURL(url)
 
-    ElMessage.success('Translations exported successfully')
+    ElMessage.success(t('system.translations.messages.exportSuccess'))
   } catch (error) {
-    ElMessage.error('Failed to export translations')
+    ElMessage.error(t('system.translations.messages.exportFailed'))
   }
 }
 
@@ -437,13 +440,17 @@ const handleImport = async (file: File) => {
     const { data } = await translationApi.import(file)
     if (data) {
       ElMessage.success(
-        `Import completed: ${data.summary.created} created, ${data.summary.updated} updated, ${data.summary.failed} failed`
+        t('system.translations.messages.importSummary', {
+          created: data.summary.created,
+          updated: data.summary.updated,
+          failed: data.summary.failed
+        })
       )
       loadTranslations()
       loadStats()
     }
   } catch (error) {
-    ElMessage.error('Failed to import translations')
+    ElMessage.error(t('system.translations.messages.importFailed'))
   }
   return false // Prevent auto upload
 }

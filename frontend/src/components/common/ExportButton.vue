@@ -1,26 +1,15 @@
 <!--
   ExportButton.vue
-  
-  Drop-in export button for any list page. Handles:
-  - Exporting current page data (from prop)
-  - Exporting ALL pages (auto-paginates via fetchAll)
-  - Shows human-readable column labels in the Excel header (NOT raw prop keys)
+
+  Drop-in export button for any list page.
 
   Usage:
     <ExportButton
       :columns="exportColumns"
       :data="tableData"
       :fetch-all="() => myApi(currentFilters)"
-      filename="资产列表"
+      filename="asset-list"
     />
-
-  exportColumns example:
-    [
-      { prop: 'assetNo', label: t('assets.columns.assetNo') },
-      { prop: 'name',    label: t('assets.columns.name') },
-      { prop: 'status',  label: t('assets.columns.status'),
-        format: (val) => t(`assets.status.${val}`) },
-    ]
 -->
 <template>
   <el-dropdown
@@ -28,9 +17,14 @@
     :disabled="exporting"
     @command="handleCommand"
   >
-    <el-button :loading="exporting" :icon="Download">
+    <el-button
+      :loading="exporting"
+      :icon="Download"
+    >
       {{ $t('common.actions.export') }}
-      <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+      <el-icon class="el-icon--right">
+        <ArrowDown />
+      </el-icon>
     </el-button>
     <template #dropdown>
       <el-dropdown-menu>
@@ -74,9 +68,9 @@ import { exportToExcel, exportToCSV, exportAllPages, type ExportColumn } from '@
 
 const { t } = useI18n()
 
-// ─── Props ───────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Props 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 interface Props {
-  /** Column definitions — label is what appears in the Excel header */
+  /** Column definitions 鈥?label is what appears in the Excel header */
   columns: ExportColumn[]
   /** Currently visible page data (used for current-page export) */
   data?: any[]
@@ -98,10 +92,10 @@ const props = withDefaults(defineProps<Props>(), {
   sheetName: 'Sheet1'
 })
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ State 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const exporting = ref(false)
 
-// ─── Handlers ─────────────────────────────────────────────────────────────────
+// 鈹€鈹€鈹€ Handlers 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 const handleCommand = async (command: string) => {
   exporting.value = true
   try {
@@ -158,3 +152,4 @@ const handleCommand = async (command: string) => {
   }
 }
 </script>
+

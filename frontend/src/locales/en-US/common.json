@@ -1,6 +1,10 @@
 {
   "locale": "en-US",
   "TabConfig": "Tab Config",
+  "brand": {
+    "icon": "G",
+    "name": "GZEAMS"
+  },
   "actions": {
     "add": "Add",
     "approve": "Approve",
@@ -26,8 +30,10 @@
     "loadMore": "Load More",
     "save": "Save",
     "search": "Search",
+    "selectAll": "Select all",
     "submit": "Submit",
     "submitApprove": "Submit for Approval",
+    "columns": "Columns",
     "test": "Test",
     "view": "View"
   },
@@ -40,6 +46,7 @@
   "changedBy": "Changed By",
   "columns": {
     "actions": "Actions",
+    "code": "Code",
     "createdAt": "Created At",
     "name": "Name",
     "status": "Status"
@@ -71,21 +78,46 @@
   "item": "Item",
   "json": "JSON",
   "labels": {
+    "advancedLookup": "Advanced Lookup",
     "assetForSearch": "Asset For Search",
     "auditInfo": "Audit Info",
+    "compact": "Compact",
     "contact": "Contact",
     "createdAt": "Created At",
     "createdBy": "Created By",
+    "custom": "Custom",
     "description": "Description",
     "operation": "Operation",
     "record": "Record",
+    "recentRecords": "Recent Records",
     "relatedObjects": "Related Objects",
     "remark": "Remark",
+    "searchResults": "Search Results",
+    "standard": "Standard",
     "status": "Status",
     "system": "System",
     "totalItems": "Total Items",
     "updatedAt": "Updated At",
     "updatedBy": "Updated By"
+  },
+  "hotkeys": {
+    "title": "Keyboard Shortcuts",
+    "subtable": {
+      "toggleHelp": "Toggle shortcut help panel",
+      "togglePin": "Pin/unpin shortcut help panel",
+      "pinned": "Pinned",
+      "nextCell": "Move to next cell",
+      "previousCell": "Move to previous cell",
+      "rowBoundary": "Jump to first/last cell in current row",
+      "verticalMove": "Move up/down in same column",
+      "pageJump": "Jump by one page in same column",
+      "addRowBelow": "Append a new row and focus first column",
+      "insertRowAbove": "Insert a new row above current row",
+      "deleteRow": "Delete current row and keep logical focus",
+      "duplicateBelow": "Duplicate current row below",
+      "duplicateAbove": "Duplicate current row above",
+      "requestSave": "Request parent form save"
+    }
   },
   "locationInfo": "Location Info",
   "localeSwitcher": {
@@ -121,7 +153,16 @@
     "uploadPendingCount": "Upload {count} file(s)",
     "fileValidationFailed": "File validation failed",
     "unknownError": "Unknown error",
+    "badRequest": "Invalid request parameters",
+    "sessionExpired": "Session expired",
+    "reloginPrompt": "Session expired, log in again?",
+    "resourceNotFound": "Requested resource not found",
+    "resourceGone": "Resource has been deleted",
+    "tooManyRequests": "Too many requests, please try again later",
+    "serverError": "Server error, please try again later",
     "noData": "No data",
+    "permissionDenied": "Permission denied",
+    "permissionDeniedHint": "You do not have access to this page.",
     "noSearchResults": "No matching results",
     "operationFailed": "Operation failed",
     "operationSuccess": "Operation succeeded",
@@ -130,8 +171,19 @@
     "saveSuccess": "Saved successfully",
     "selected": "{count} items selected",
     "emptyHint": "No data yet. Try creating a new record.",
+    "requestTimeout": "Request timed out",
     "systemError": "System error",
     "tips": "Tips",
+    "lookupCompactKeysHint": "Used by the lookup compact profile. Locked columns are always kept.",
+    "lookupProfileStandardHint": "Show default columns and widths.",
+    "lookupProfileCompactHint": "Focus on key columns for faster scanning.",
+    "lookupProfileCustomHint": "Uses your manual column visibility, order, and width.",
+    "subtableShortcutHelpHint": "Enable keyboard shortcut help panel in editable subtable.",
+    "subtableShortcutPinnedHint": "When enabled, shortcut help panel opens in pinned mode by default.",
+    "subtableShortcutPinnedRequiresHelpHint": "Enable shortcut help first to use default pinned mode.",
+    "moduleNotEnabledRedirect": "This module backend API is not enabled. Redirected to workbench.",
+    "actionCancelled": "Action cancelled",
+    "unknownActionType": "Unknown action type: {type}",
     "maxFileCountExceeded": "Maximum {count} file(s) allowed.",
     "updateFailed": "Update failed",
     "updateSuccess": "Updated successfully",
@@ -150,6 +202,19 @@
     "startDate": "Start Date"
   },
   "reason": "Reason",
+  "relatedGroup": {
+    "business": "Business",
+    "workflow": "Workflow",
+    "finance": "Finance",
+    "inventory": "Inventory",
+    "consumables": "Consumables",
+    "it_assets": "IT Assets",
+    "insurance": "Insurance",
+    "leasing": "Leasing",
+    "organization": "Organization",
+    "master_data": "Master Data",
+    "other": "Other"
+  },
   "relatedObject": {
     "code": "Code",
     "createdAt": "Created At",
@@ -235,10 +300,77 @@
   "validation": {
     "phone": "Please enter a valid phone number",
     "required": "This field is required",
-    "requiredWithField": "{field} is required"
+    "requiredWithField": "{field} is required",
+    "lowercaseNumberUnderscore": "Only lowercase letters, numbers, and underscores are allowed"
+  },
+  "import": {
+    "invalidSheet": "The file does not contain a valid worksheet",
+    "requiredCell": "\"{label}\" cannot be empty (row {row})",
+    "templateSheetName": "Import Template",
+    "templateSuffix": "Import Template"
+  },
+  "layoutValidation": {
+    "configurationMustBeObject": "Configuration must be a JSON object",
+    "missingOrInvalidArray": "Missing or invalid required field: {field} (must be an array)",
+    "cannotBeEmpty": "{field} cannot be empty",
+    "mustBeArray": "{field} must be an array",
+    "missingRequiredField": "Missing required field: {field}",
+    "invalidType": "Invalid type: {type}. Valid types: {types}",
+    "sectionMustBeObject": "Section must be an object",
+    "tabMustBeObject": "Tab must be an object",
+    "collapseItemMustBeObject": "Collapse item must be an object",
+    "columnItemMustBeObject": "Column item must be an object",
+    "columnMustBeObject": "Column must be an object",
+    "fieldMustBeObject": "Field must be an object",
+    "spanMustBeOneOf": "span must be one of {options}",
+    "spanMustBeIntegerRange": "span must be an integer between 1-24, preferably one of {options}",
+    "widthMustBePositiveInteger": "width must be a positive integer",
+    "minHeightMustBeIntegerRange": "minHeight must be an integer between {min}-{max}",
+    "unknownLayoutTypeFallback": "Unknown layout type: {type}, falling back to form layout"
+  },
+  "layoutSchema": {
+    "sectionIdRequired": "Section id is required",
+    "sectionTitleRequired": "Section title is required",
+    "sectionFieldsArray": "Section fields must be an array",
+    "unknownFieldCode": "Unknown field code: {code}",
+    "sectionColumnsRange": "Section columns must be a number between 1 and 4",
+    "tabIdRequired": "Tab id is required",
+    "tabTitleRequired": "Tab title is required",
+    "tabFieldsArray": "Tab fields must be an array",
+    "tabRelationsArray": "Tab relations must be an array",
+    "fieldOrderArray": "fieldOrder must be an array",
+    "duplicateFieldCode": "Duplicate field code: {code}",
+    "fieldOverridesObject": "fieldOverrides must be an object",
+    "fieldOverrideMustBeObject": "Field override for {code} must be an object",
+    "spanRange": "Span for {code} must be a number between 1 and 24",
+    "sectionsArray": "sections must be an array",
+    "duplicateSectionId": "Duplicate section id: {id}",
+    "tabsArray": "tabs must be an array",
+    "duplicateTabId": "Duplicate tab id: {id}",
+    "containersArray": "containers must be an array",
+    "containerTypeRequired": "Container type is required",
+    "invalidContainerType": "Invalid container type: {type}. Must be one of: {types}",
+    "containerIdRequired": "Container id is required",
+    "duplicateContainerId": "Duplicate container id: {id}",
+    "validationPassed": "Validation passed"
+  },
+  "layoutDefaults": {
+    "formSectionTitle": "Basic Information",
+    "detailSectionTitle": "Detail Information",
+    "submitActionLabel": "Submit",
+    "cancelActionLabel": "Cancel",
+    "createActionLabel": "Create",
+    "deleteActionLabel": "Delete"
   },
   "valueInfo": "Value Info",
   "vendor": "Vendor",
   "warrantyInfo": "Warranty Info",
-  "yes": "Yes"
+  "yes": "Yes",
+  "formula": {
+    "errors": {
+      "emptyExpression": "Expression cannot be empty",
+      "unknownFieldReferences": "Unknown field references: {fields}",
+      "syntax": "Formula syntax error: {detail}"
+    }
+  }
 }

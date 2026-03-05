@@ -38,6 +38,98 @@
       >
         {{ createActionText }}
       </el-button>
+      <el-popover
+        trigger="click"
+        placement="bottom-end"
+        :width="340"
+      >
+        <template #reference>
+          <el-button class="lookup-toolbar__columns-trigger">
+            <el-icon><Setting /></el-icon>
+            <span>{{ columnsActionText }}</span>
+          </el-button>
+        </template>
+        <div class="lookup-column-settings">
+          <div class="lookup-column-settings__header">
+            <div class="lookup-column-settings__title">
+              {{ columnsActionText }}
+            </div>
+            <el-button
+              link
+              type="primary"
+              class="lookup-column-settings__reset lookup-column-settings__reset-columns"
+              @click="resetColumnsPreference"
+            >
+              <el-icon><Refresh /></el-icon>
+              <span>{{ resetActionText }}</span>
+            </el-button>
+          </div>
+          <el-segmented
+            v-model="activeProfile"
+            :options="profileOptions"
+            class="lookup-column-settings__profiles"
+            @change="handleProfileChange"
+          />
+          <div class="lookup-column-settings__profile-hint">
+            {{ profileHintText }}
+          </div>
+          <div
+            v-for="column in orderedAutoFilteredColumns"
+            :key="column.key"
+            class="lookup-column-settings__row"
+            :class="{
+              'is-locked': isColumnLocked(column.key),
+              'is-dragging': draggingColumnKey === column.key,
+              'is-drag-over-top': dragOverColumnKey === column.key && dragOverPosition === 'before' && draggingColumnKey !== column.key,
+              'is-drag-over-bottom': dragOverColumnKey === column.key && dragOverPosition === 'after' && draggingColumnKey !== column.key
+            }"
+            :data-column-key="column.key"
+            :draggable="!isColumnLocked(column.key)"
+            @dragstart="handleColumnDragStart(column.key, $event)"
+            @dragover.prevent="handleColumnDragOver(column.key, $event)"
+            @drop.prevent="handleColumnDrop(column.key, $event)"
+            @dragend="handleColumnDragEnd"
+          >
+            <span class="lookup-column-settings__drag-handle">
+              <el-icon><Rank /></el-icon>
+            </span>
+            <el-checkbox
+              :model-value="isColumnVisible(column.key)"
+              :disabled="isColumnLocked(column.key)"
+              class="lookup-column-settings__item"
+              @change="setColumnVisible(column.key, $event)"
+            >
+              {{ column.label }}
+            </el-checkbox>
+            <el-icon
+              v-if="isColumnLocked(column.key)"
+              class="lookup-column-settings__lock-icon"
+            >
+              <Lock />
+            </el-icon>
+            <div class="lookup-column-settings__order">
+              <el-button
+                text
+                circle
+                class="lookup-column-settings__move-up"
+                :disabled="isMoveDisabled(column.key, -1)"
+                @click="moveColumn(column.key, -1)"
+              >
+                <el-icon><ArrowUp /></el-icon>
+              </el-button>
+              <el-button
+                text
+                circle
+                class="lookup-column-settings__move-down"
+                :disabled="isMoveDisabled(column.key, 1)"
+                @click="moveColumn(column.key, 1)"
+              >
+                <el-icon><ArrowDown /></el-icon>
+              </el-button>
+            </div>
+          </div>
+        </div>
+      </el-popover>
     </div>
 
     <el-table
@@ -51,6 +143,7 @@
       @row-click="handleRowClick"
       @row-dblclick="handleRowDblClick"
       @selection-change="handleSelectionChange"
+      @header-dragend="handleHeaderDragEnd"
     >
       <el-table-column
         v-if="multiple"
@@ -59,43 +152,54 @@
         reserve-selection
       />
       <el-table-column
-        :label="nameLabel"
-        min-width="220"
+        v-for="column in visibleColumns"
+        :key="column.key"
+        :column-key="column.key"
+        :prop="column.key"
+        :label="column.label"
+        :min-width="column.minWidth"
+        :width="column.width"
       >
         <template #default="{ row }">
-          <div class="lookup-cell">
-            <ObjectAvatar
-              :object-code="objectCode || 'Ref'"
-              size="xs"
-            />
-            <div class="lookup-cell__content">
-              <span class="lookup-cell__name">
-                {{ resolveLabel(row) }}
-                <el-tag
-                  v-if="row.__recentPinned"
-                  size="small"
-                  effect="plain"
-                  class="lookup-cell__recent-tag"
-                >
-                  {{ recentTagText }}
-                </el-tag>
-              </span>
-              <span
-                v-if="resolveSecondary(row)"
-                class="lookup-cell__secondary"
-              >
-                {{ resolveSecondary(row) }}
-              </span>
+          <template v-if="isPrimaryColumn(column)">
+            <div
+              v-if="row.__showGroupTitle"
+              class="lookup-cell__group-title"
+            >
+              {{ resolveGroupTitle(row.__group) }}
             </div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column
-        :label="idLabel"
-        min-width="180"
-      >
-        <template #default="{ row }">
-          <span class="lookup-cell__id">{{ row.id }}</span>
+            <div class="lookup-cell">
+              <ObjectAvatar
+                :object-code="objectCode || 'Ref'"
+                size="xs"
+              />
+              <div class="lookup-cell__content">
+                <span class="lookup-cell__name">
+                  {{ resolvePrimaryLabel(row, column.key) }}
+                  <el-tag
+                    v-if="row.__recentPinned"
+                    size="small"
+                    effect="plain"
+                    class="lookup-cell__recent-tag"
+                  >
+                    {{ recentTagText }}
+                  </el-tag>
+                </span>
+                <span
+                  v-if="resolveSecondary(row)"
+                  class="lookup-cell__secondary"
+                >
+                  {{ resolveSecondary(row) }}
+                </span>
+              </div>
+            </div>
+          </template>
+          <template v-else-if="column.key === 'id'">
+            <span class="lookup-cell__id">{{ row.id }}</span>
+          </template>
+          <template v-else>
+            <span class="lookup-cell__text">{{ resolveColumnValue(row, column.key) }}</span>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -133,25 +237,55 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ArrowDown, ArrowUp, Lock, Rank, Refresh, Setting } from '@element-plus/icons-vue'
 import ObjectAvatar from '@/components/common/ObjectAvatar.vue'
 import { searchReferenceData } from '@/api/system'
 import { referenceResolver } from '@/platform/reference/referenceResolver'
 import { resolveReferenceLabel, resolveReferenceSecondaryText } from '@/platform/reference/referenceFieldMeta'
 import { loadRecentReferenceIds } from '@/platform/reference/referenceLookupRecent'
+import {
+  clearLookupColumnsPreference,
+  hasLookupColumnsPreference,
+  loadLastLookupProfile,
+  loadLookupColumnsPreference,
+  type LookupColumnsProfile,
+  saveLastLookupProfile,
+  saveLookupColumnsPreference
+} from '@/platform/reference/referenceLookupColumnsPreference'
 
 type AnyRecord = Record<string, any>
+type LookupColumnConfig = {
+  key: string
+  label?: string
+  minWidth?: number
+  width?: number
+}
+type LookupColumn = {
+  key: string
+  label: string
+  minWidth?: number
+  width?: number
+}
 
 const props = withDefaults(defineProps<{
   modelValue: boolean
   objectCode: string
   displayField: string
   secondaryField: string
+  columns?: LookupColumnConfig[]
+  preferenceKey?: string
+  userScope?: string
+  compactKeys?: string[]
   multiple?: boolean
   selectedIds?: string[]
   allowCreate?: boolean
 }>(), {
+  columns: () => [],
+  preferenceKey: '',
+  userScope: '',
+  compactKeys: () => [],
   multiple: false,
   selectedIds: () => [],
   allowCreate: true
@@ -182,7 +316,7 @@ const tr = (key: string, fallback: string, params?: Record<string, any>) => {
 }
 
 const dialogTitle = computed(() =>
-  `${tr('common.actions.search', 'Advanced Lookup')} - ${props.objectCode || 'Reference'}`
+  `${tr('common.labels.advancedLookup', 'Advanced Lookup')} - ${props.objectCode || 'Reference'}`
 )
 const searchPlaceholder = computed(() =>
   tr('common.placeholders.search', 'Enter keyword')
@@ -195,6 +329,505 @@ const confirmActionText = computed(() => tr('common.actions.confirm', 'Confirm')
 const nameLabel = computed(() => tr('common.columns.name', 'Name'))
 const idLabel = 'ID'
 const recentTagText = computed(() => tr('common.recent', 'Recent'))
+const codeLabel = computed(() => tr('common.columns.code', 'Code'))
+const recentGroupTitleText = computed(() => tr('common.labels.recentRecords', 'Recent Records'))
+const searchGroupTitleText = computed(() => tr('common.labels.searchResults', 'Search Results'))
+const columnsActionText = computed(() => tr('common.actions.columns', 'Columns'))
+const standardProfileText = computed(() => tr('common.labels.standard', 'Standard'))
+const compactProfileText = computed(() => tr('common.labels.compact', 'Compact'))
+const customProfileText = computed(() => tr('common.labels.custom', 'Custom'))
+const standardProfileHintText = computed(() =>
+  tr('common.messages.lookupProfileStandardHint', 'Show default columns and widths.')
+)
+const compactProfileHintText = computed(() =>
+  tr('common.messages.lookupProfileCompactHint', 'Focus on key columns for faster scanning.')
+)
+const customProfileHintText = computed(() =>
+  tr('common.messages.lookupProfileCustomHint', 'Uses your manual column visibility, order, and width.')
+)
+const profileOptions = computed(() => [
+  { label: standardProfileText.value, value: 'standard' },
+  { label: compactProfileText.value, value: 'compact' },
+  { label: customProfileText.value, value: 'custom' }
+])
+const profileHintText = computed(() => {
+  if (activeProfile.value === 'compact') return compactProfileHintText.value
+  if (activeProfile.value === 'custom') return customProfileHintText.value
+  return standardProfileHintText.value
+})
+
+const toColumnLabel = (key: string): string => {
+  if (key === 'id') return idLabel
+  if (key === props.displayField) return nameLabel.value
+  if (key === props.secondaryField) return codeLabel.value
+  return key
+}
+
+const normalizeColumn = (input: LookupColumnConfig): LookupColumn | null => {
+  const key = String(input?.key || '').trim()
+  if (!key) return null
+  const label = String(input?.label || '').trim() || toColumnLabel(key)
+  const minWidth = Number(input?.minWidth)
+  const width = Number(input?.width)
+  return {
+    key,
+    label,
+    minWidth: Number.isFinite(minWidth) && minWidth > 0 ? minWidth : undefined,
+    width: Number.isFinite(width) && width > 0 ? width : undefined
+  }
+}
+
+const defaultColumns = computed<LookupColumn[]>(() => {
+  const base: LookupColumn[] = [
+    {
+      key: String(props.displayField || 'name'),
+      label: nameLabel.value,
+      minWidth: 220
+    }
+  ]
+  const secondaryKey = String(props.secondaryField || '').trim()
+  if (secondaryKey && secondaryKey !== base[0].key) {
+    base.push({
+      key: secondaryKey,
+      label: codeLabel.value,
+      minWidth: 180
+    })
+  }
+  if (!base.some((column) => column.key === 'id')) {
+    base.push({
+      key: 'id',
+      label: idLabel,
+      minWidth: 180
+    })
+  }
+  return base
+})
+
+const hiddenColumnSet = ref<Set<string>>(new Set())
+const columnOrder = ref<string[]>([])
+const columnWidthMap = ref<Record<string, number>>({})
+const activeProfile = ref<LookupColumnsProfile>('standard')
+const applyingProfile = ref(false)
+const draggingColumnKey = ref('')
+const dragOverColumnKey = ref('')
+const dragOverPosition = ref<'before' | 'after' | ''>('')
+
+const baseColumns = computed<LookupColumn[]>(() => {
+  const custom = (props.columns || [])
+    .map((column) => normalizeColumn(column))
+    .filter((column: LookupColumn | null): column is LookupColumn => !!column)
+  if (custom.length === 0) return defaultColumns.value
+  const deduped = new Map<string, LookupColumn>()
+  for (const column of custom) deduped.set(column.key, column)
+  return Array.from(deduped.values())
+})
+
+const nonEmptyRowKeySet = computed<Set<string>>(() => {
+  const out = new Set<string>()
+  for (const row of rows.value) {
+    if (!row || typeof row !== 'object') continue
+    for (const key of Object.keys(row)) {
+      if (key.startsWith('__')) continue
+      const value = row[key]
+      if (value === undefined || value === null || value === '') continue
+      out.add(key)
+    }
+  }
+  return out
+})
+
+const primaryBaseColumnKey = computed(() => {
+  const firstBase = baseColumns.value[0]?.key
+  return firstBase || String(props.displayField || 'name')
+})
+
+const isColumnRequired = (key: string) => {
+  return key === primaryBaseColumnKey.value || key === 'id'
+}
+
+const lockedColumnKeys = computed<string[]>(() => {
+  return baseColumns.value
+    .map((column) => column.key)
+    .filter((key) => isColumnRequired(key))
+})
+
+const isColumnLocked = (key: string): boolean => {
+  return lockedColumnKeys.value.includes(key)
+}
+
+const autoFilteredColumns = computed<LookupColumn[]>(() => {
+  const available = nonEmptyRowKeySet.value
+  return baseColumns.value.filter((column) => {
+    if (isColumnRequired(column.key)) return true
+    return available.has(column.key)
+  })
+})
+
+const isColumnVisible = (key: string): boolean => {
+  if (isColumnRequired(key)) return true
+  return !hiddenColumnSet.value.has(key)
+}
+
+const saveColumnsPreference = (profile?: LookupColumnsProfile) => {
+  const normalizedProfile = profile || activeProfile.value
+  const baseOrder = baseColumns.value.map((column) => column.key)
+  const isDefaultOrder = columnOrder.value.join(',') === baseOrder.join(',')
+  const defaultWidthMap: Record<string, number> = {}
+  for (const column of baseColumns.value) {
+    const width = Number(column.width)
+    if (!Number.isFinite(width) || width <= 0) continue
+    defaultWidthMap[column.key] = Math.round(width)
+  }
+  const normalizedWidths: Record<string, number> = {}
+  for (const [key, width] of Object.entries(columnWidthMap.value)) {
+    const widthNum = Number(width)
+    if (!Number.isFinite(widthNum) || widthNum <= 0) continue
+    const rounded = Math.round(widthNum)
+    if (defaultWidthMap[key] === rounded) continue
+    normalizedWidths[key] = rounded
+  }
+  saveLookupColumnsPreference(
+    props.objectCode,
+    {
+      hidden: Array.from(hiddenColumnSet.value),
+      order: isDefaultOrder ? [] : columnOrder.value,
+      widths: normalizedWidths,
+      profile: normalizedProfile
+    },
+    { preferenceKey: props.preferenceKey, userScope: props.userScope }
+  )
+  saveLastLookupProfile(
+    props.objectCode,
+    normalizedProfile,
+    { userScope: props.userScope }
+  )
+}
+
+const normalizeColumnPreferences = () => {
+  const baseKeys = baseColumns.value.map((column) => column.key)
+  const baseKeySet = new Set(baseKeys)
+
+  const requiredSet = new Set(
+    baseKeys.filter((key) => isColumnRequired(key))
+  )
+
+  const nextHidden = new Set<string>()
+  for (const key of hiddenColumnSet.value) {
+    if (!baseKeySet.has(key)) continue
+    if (requiredSet.has(key)) continue
+    nextHidden.add(key)
+  }
+
+  const seen = new Set<string>()
+  const nextOrder: string[] = []
+  for (const key of columnOrder.value) {
+    if (!baseKeySet.has(key)) continue
+    if (seen.has(key)) continue
+    nextOrder.push(key)
+    seen.add(key)
+  }
+  for (const key of baseKeys) {
+    if (seen.has(key)) continue
+    nextOrder.push(key)
+    seen.add(key)
+  }
+  const lockedSet = new Set(lockedColumnKeys.value)
+  const lockedOrder = lockedColumnKeys.value.filter((key) => baseKeySet.has(key))
+  const unlockedOrder = nextOrder.filter((key) => !lockedSet.has(key))
+  const normalizedOrder = [...lockedOrder, ...unlockedOrder]
+
+  const hiddenChanged = Array.from(nextHidden).sort().join(',') !== Array.from(hiddenColumnSet.value).sort().join(',')
+  const orderChanged = normalizedOrder.join(',') !== columnOrder.value.join(',')
+  const currentWidths = columnWidthMap.value || {}
+  const nextWidths: Record<string, number> = {}
+  for (const key of baseKeys) {
+    const width = Number(currentWidths[key])
+    if (!Number.isFinite(width) || width <= 0) continue
+    nextWidths[key] = Math.round(width)
+  }
+  const widthsChanged = JSON.stringify(nextWidths) !== JSON.stringify(currentWidths)
+
+  hiddenColumnSet.value = nextHidden
+  columnOrder.value = normalizedOrder
+  columnWidthMap.value = nextWidths
+
+  return hiddenChanged || orderChanged || widthsChanged
+}
+
+const sortColumnsByOrder = (columns: LookupColumn[]): LookupColumn[] => {
+  const orderMap = new Map<string, number>()
+  for (let index = 0; index < columnOrder.value.length; index += 1) {
+    orderMap.set(columnOrder.value[index], index)
+  }
+  const baseIndexMap = new Map<string, number>()
+  for (let index = 0; index < baseColumns.value.length; index += 1) {
+    baseIndexMap.set(baseColumns.value[index].key, index)
+  }
+
+  return [...columns].sort((left, right) => {
+    const leftOrder = orderMap.has(left.key)
+      ? Number(orderMap.get(left.key))
+      : 10_000 + Number(baseIndexMap.get(left.key) ?? 0)
+    const rightOrder = orderMap.has(right.key)
+      ? Number(orderMap.get(right.key))
+      : 10_000 + Number(baseIndexMap.get(right.key) ?? 0)
+    return leftOrder - rightOrder
+  })
+}
+
+const markCustomAndSave = () => {
+  if (applyingProfile.value) return
+  if (activeProfile.value !== 'custom') activeProfile.value = 'custom'
+  saveColumnsPreference('custom')
+}
+
+const buildCompactProfileState = (): {
+  hidden: Set<string>
+  order: string[]
+  widths: Record<string, number>
+} => {
+  const baseKeys = baseColumns.value.map((column) => column.key)
+  const lockedSet = new Set(lockedColumnKeys.value)
+  const secondaryKey = String(props.secondaryField || '').trim()
+
+  const visibleSet = new Set<string>([...lockedSet])
+  if (secondaryKey && baseKeys.includes(secondaryKey)) visibleSet.add(secondaryKey)
+  for (const rawKey of props.compactKeys || []) {
+    const key = String(rawKey || '').trim()
+    if (!key) continue
+    if (!baseKeys.includes(key)) continue
+    visibleSet.add(key)
+  }
+
+  const hidden = new Set<string>()
+  for (const key of baseKeys) {
+    if (!visibleSet.has(key)) hidden.add(key)
+  }
+
+  const order = [...baseKeys]
+  const widths: Record<string, number> = {}
+  const primary = primaryBaseColumnKey.value
+  if (primary) widths[primary] = 220
+  if (secondaryKey && visibleSet.has(secondaryKey) && secondaryKey !== primary) widths[secondaryKey] = 160
+  widths.id = 160
+  return { hidden, order, widths }
+}
+
+const applyProfile = (
+  profile: LookupColumnsProfile,
+  options?: { persist?: boolean }
+) => {
+  const persist = options?.persist !== false
+  applyingProfile.value = true
+  if (profile === 'standard') {
+    hiddenColumnSet.value = new Set()
+    columnOrder.value = baseColumns.value.map((column) => column.key)
+    columnWidthMap.value = {}
+  } else if (profile === 'compact') {
+    const compact = buildCompactProfileState()
+    hiddenColumnSet.value = compact.hidden
+    columnOrder.value = compact.order
+    columnWidthMap.value = compact.widths
+  } else {
+    // custom keeps current state; explicit custom selection only updates profile flag
+  }
+  normalizeColumnPreferences()
+  activeProfile.value = profile
+  if (persist) saveColumnsPreference(profile)
+  applyingProfile.value = false
+}
+
+const setColumnVisible = (key: string, value: unknown) => {
+  if (isColumnRequired(key)) return
+  const next = new Set(hiddenColumnSet.value)
+  if (value === false) next.add(key)
+  else next.delete(key)
+  hiddenColumnSet.value = next
+  markCustomAndSave()
+}
+
+const applyReorderedMovableKeys = (movableKeys: string[]) => {
+  const locked = lockedColumnKeys.value
+  columnOrder.value = [...locked, ...movableKeys]
+  markCustomAndSave()
+}
+
+const moveColumn = (key: string, offset: number) => {
+  if (isColumnLocked(key)) return
+  const lockedSet = new Set(lockedColumnKeys.value)
+  const movable = columnOrder.value.filter((item) => !lockedSet.has(item))
+  const currentIndex = movable.indexOf(key)
+  if (currentIndex < 0) return
+  const nextIndex = Math.max(0, Math.min(movable.length - 1, currentIndex + offset))
+  if (nextIndex === currentIndex) return
+  const [item] = movable.splice(currentIndex, 1)
+  movable.splice(nextIndex, 0, item)
+  applyReorderedMovableKeys(movable)
+}
+
+const moveColumnBefore = (sourceKey: string, targetKey: string) => {
+  if (isColumnLocked(sourceKey) || isColumnLocked(targetKey)) return
+  const lockedSet = new Set(lockedColumnKeys.value)
+  const movable = columnOrder.value.filter((item) => !lockedSet.has(item))
+  const fromIndex = movable.indexOf(sourceKey)
+  const targetIndex = movable.indexOf(targetKey)
+  if (fromIndex < 0 || targetIndex < 0 || fromIndex === targetIndex) return
+  const [item] = movable.splice(fromIndex, 1)
+  const normalizedTargetIndex = movable.indexOf(targetKey)
+  movable.splice(Math.max(0, normalizedTargetIndex), 0, item)
+  applyReorderedMovableKeys(movable)
+}
+
+const moveColumnAfter = (sourceKey: string, targetKey: string) => {
+  if (isColumnLocked(sourceKey) || isColumnLocked(targetKey)) return
+  const lockedSet = new Set(lockedColumnKeys.value)
+  const movable = columnOrder.value.filter((item) => !lockedSet.has(item))
+  const fromIndex = movable.indexOf(sourceKey)
+  const targetIndex = movable.indexOf(targetKey)
+  if (fromIndex < 0 || targetIndex < 0 || fromIndex === targetIndex) return
+  const [item] = movable.splice(fromIndex, 1)
+  const normalizedTargetIndex = movable.indexOf(targetKey)
+  movable.splice(Math.min(movable.length, normalizedTargetIndex + 1), 0, item)
+  applyReorderedMovableKeys(movable)
+}
+
+const handleColumnDragStart = (key: string, event: DragEvent) => {
+  if (isColumnLocked(key)) {
+    event.preventDefault()
+    return
+  }
+  draggingColumnKey.value = key
+  dragOverColumnKey.value = ''
+  dragOverPosition.value = ''
+  if (!event.dataTransfer) return
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/plain', key)
+}
+
+const handleColumnDragOver = (key: string, event: DragEvent) => {
+  if (isColumnLocked(key)) return
+  if (!draggingColumnKey.value || draggingColumnKey.value === key) return
+  dragOverColumnKey.value = key
+  const currentTarget = event.currentTarget
+  if (currentTarget instanceof HTMLElement) {
+    const rect = currentTarget.getBoundingClientRect()
+    const middleY = rect.top + rect.height / 2
+    dragOverPosition.value = event.clientY <= middleY ? 'before' : 'after'
+  }
+  if (!event.dataTransfer) return
+  event.dataTransfer.dropEffect = 'move'
+}
+
+const handleColumnDrop = (targetKey: string, _event?: DragEvent) => {
+  const sourceKey = draggingColumnKey.value
+  if (!sourceKey || sourceKey === targetKey || isColumnLocked(sourceKey) || isColumnLocked(targetKey)) {
+    draggingColumnKey.value = ''
+    dragOverColumnKey.value = ''
+    dragOverPosition.value = ''
+    return
+  }
+  if (dragOverPosition.value === 'after') moveColumnAfter(sourceKey, targetKey)
+  else moveColumnBefore(sourceKey, targetKey)
+  draggingColumnKey.value = ''
+  dragOverColumnKey.value = ''
+  dragOverPosition.value = ''
+}
+
+const handleColumnDragEnd = () => {
+  draggingColumnKey.value = ''
+  dragOverColumnKey.value = ''
+  dragOverPosition.value = ''
+}
+
+const isMoveDisabled = (key: string, offset: number): boolean => {
+  if (isColumnLocked(key)) return true
+  const movableKeys = orderedAutoFilteredColumns.value
+    .map((column) => column.key)
+    .filter((columnKey) => !isColumnLocked(columnKey))
+  const index = movableKeys.indexOf(key)
+  if (index < 0) return true
+  if (offset < 0 && index <= 0) return true
+  if (offset > 0 && index >= movableKeys.length - 1) return true
+  return false
+}
+
+const handleProfileChange = (value: string | number | boolean) => {
+  const normalized = String(value || '').trim().toLowerCase()
+  if (normalized !== 'standard' && normalized !== 'compact' && normalized !== 'custom') return
+  if (applyingProfile.value) return
+  applyProfile(normalized as LookupColumnsProfile)
+}
+
+const resolveHeaderColumnKey = (column: AnyRecord): string => {
+  const key = String(
+    column?.columnKey ||
+    column?.property ||
+    column?.rawColumnKey ||
+    ''
+  ).trim()
+  return key
+}
+
+const handleHeaderDragEnd = (newWidth: number, _oldWidth: number, column: AnyRecord) => {
+  const key = resolveHeaderColumnKey(column)
+  if (!key) return
+  if (!baseColumns.value.some((item) => item.key === key)) return
+  const width = Number(newWidth)
+  if (!Number.isFinite(width) || width <= 0) return
+  columnWidthMap.value = {
+    ...columnWidthMap.value,
+    [key]: Math.round(width)
+  }
+  markCustomAndSave()
+}
+
+const resetColumnsPreference = () => {
+  hiddenColumnSet.value = new Set()
+  columnOrder.value = baseColumns.value.map((column) => column.key)
+  columnWidthMap.value = {}
+  activeProfile.value = 'standard'
+  clearLookupColumnsPreference(
+    props.objectCode,
+    { preferenceKey: props.preferenceKey, userScope: props.userScope }
+  )
+  saveLastLookupProfile(
+    props.objectCode,
+    'standard',
+    { userScope: props.userScope }
+  )
+}
+
+const orderedAutoFilteredColumns = computed<LookupColumn[]>(() => {
+  const ordered = sortColumnsByOrder(autoFilteredColumns.value)
+  return ordered.map((column) => {
+    const width = Number(columnWidthMap.value[column.key])
+    if (!Number.isFinite(width) || width <= 0) return column
+    return {
+      ...column,
+      width: Math.round(width)
+    }
+  })
+})
+
+const visibleColumns = computed<LookupColumn[]>(() => {
+  return orderedAutoFilteredColumns.value.filter((column) => isColumnVisible(column.key))
+})
+
+const primaryColumnKey = computed(() => {
+  return primaryBaseColumnKey.value
+})
+
+const groupCountMap = computed<Record<string, number>>(() => {
+  const out: Record<string, number> = {
+    recent: 0,
+    search: 0
+  }
+  for (const row of rows.value) {
+    const group = String(row?.__group || 'search')
+    out[group] = Number(out[group] || 0) + 1
+  }
+  return out
+})
 
 const canConfirm = computed(() => {
   if (props.multiple) return Object.keys(selectedMap.value).length > 0
@@ -230,6 +863,30 @@ const resolveSecondary = (row: AnyRecord) => {
   return resolveReferenceSecondaryText(row, props.secondaryField || 'code', props.displayField || 'name')
 }
 
+const isPrimaryColumn = (column: LookupColumn) => {
+  return column.key === primaryColumnKey.value
+}
+
+const resolveColumnValue = (row: AnyRecord, key: string): string => {
+  if (key === 'id') return String(row?.id || '-')
+  const value = row?.[key]
+  if (value === undefined || value === null || value === '') return '-'
+  return String(value)
+}
+
+const resolvePrimaryLabel = (row: AnyRecord, key: string): string => {
+  const explicit = resolveColumnValue(row, key)
+  if (explicit !== '-') return explicit
+  return resolveLabel(row)
+}
+
+const resolveGroupTitle = (group: unknown): string => {
+  const groupKey = group === 'recent' ? 'recent' : 'search'
+  const title = groupKey === 'recent' ? recentGroupTitleText.value : searchGroupTitleText.value
+  const count = Number(groupCountMap.value[groupKey] || 0)
+  return `${title} (${count})`
+}
+
 const matchesKeyword = (row: AnyRecord, rawKeyword: string): boolean => {
   const keywordText = String(rawKeyword || '').trim().toLowerCase()
   if (!keywordText) return true
@@ -241,6 +898,57 @@ const matchesKeyword = (row: AnyRecord, rawKeyword: string): boolean => {
     .map((item) => String(item || '').toLowerCase())
     .filter(Boolean)
   return candidatePool.some((text) => text.includes(keywordText))
+}
+
+const getNavigableRows = (): AnyRecord[] => {
+  return rows.value.filter((row) => !!row?.id)
+}
+
+const setActiveRowByIndex = (index: number) => {
+  const list = getNavigableRows()
+  if (list.length === 0) return
+  const bounded = Math.max(0, Math.min(index, list.length - 1))
+  const row = list[bounded]
+  activeSingleId.value = row.id
+  activeSingleRow.value = row
+  if (tableRef.value && typeof tableRef.value.setCurrentRow === 'function') {
+    tableRef.value.setCurrentRow(row)
+  }
+}
+
+const isToolbarInputTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof HTMLElement)) return false
+  if (target.closest('.lookup-toolbar__search')) return true
+  return target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
+}
+
+const handleGlobalKeydown = (event: KeyboardEvent) => {
+  if (!props.modelValue) return
+  if (props.multiple) return
+  if (isToolbarInputTarget(event.target)) return
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    const list = getNavigableRows()
+    if (list.length === 0) return
+    const currentIndex = list.findIndex((row) => row.id === activeSingleId.value)
+    setActiveRowByIndex(currentIndex < 0 ? 0 : currentIndex + 1)
+    return
+  }
+
+  if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    const list = getNavigableRows()
+    if (list.length === 0) return
+    const currentIndex = list.findIndex((row) => row.id === activeSingleId.value)
+    setActiveRowByIndex(currentIndex < 0 ? 0 : currentIndex - 1)
+    return
+  }
+
+  if (event.key === 'Enter' && canConfirm.value) {
+    event.preventDefault()
+    handleConfirm()
+  }
 }
 
 const syncTableSelection = async () => {
@@ -269,12 +977,14 @@ const loadRecentRows = async () => {
   }
   const resolved = await referenceResolver.resolveMany(props.objectCode, recentIds)
   const recentRowsMaybe: Array<AnyRecord | null> = recentIds
-    .map((id) => {
+    .map((id, index) => {
       const row = normalizeRow(resolved[id])
       if (!row) return null
       return {
         ...row,
-        __recentPinned: true
+        __recentPinned: true,
+        __group: 'recent',
+        __showGroupTitle: index === 0
       }
     })
   rows.value = recentRowsMaybe.filter((item: AnyRecord | null): item is AnyRecord => !!item)
@@ -312,20 +1022,27 @@ const loadData = async () => {
     const recentIds = loadRecentReferenceIds(props.objectCode, { limit: 8 })
 
     if (recentIds.length === 0) {
-      rows.value = items
+      rows.value = items.map((item: AnyRecord, index: number) => ({
+        ...item,
+        __recentPinned: false,
+        __group: 'search',
+        __showGroupTitle: index === 0
+      }))
       total.value = Number(res?.count || res?.total || items.length)
       return
     }
 
     const recentResolved = await referenceResolver.resolveMany(props.objectCode, recentIds)
     const recentRowsMaybe: Array<AnyRecord | null> = recentIds
-      .map((id) => {
+      .map((id, index) => {
         const fromSearch = items.find((item) => item.id === id)
         const base = fromSearch || normalizeRow(recentResolved[id])
         if (!base) return null
         return {
           ...base,
-          __recentPinned: true
+          __recentPinned: true,
+          __group: 'recent',
+          __showGroupTitle: index === 0
         }
       })
     const recentRows: AnyRecord[] = recentRowsMaybe.filter(
@@ -334,14 +1051,18 @@ const loadData = async () => {
       .filter((item: AnyRecord) => matchesKeyword(item, keyword.value))
 
     const recentIdSet = new Set(recentRows.map((row) => row.id))
+    const searchRows = items
+      .filter((item: AnyRecord) => !recentIdSet.has(item.id))
+      .map((item: AnyRecord, index: number) => ({
+        ...item,
+        __recentPinned: false,
+        __group: 'search',
+        __showGroupTitle: index === 0
+      }))
+
     const mergedRows: AnyRecord[] = [
       ...recentRows,
-      ...items
-        .filter((item: AnyRecord) => !recentIdSet.has(item.id))
-        .map((item: AnyRecord) => ({
-          ...item,
-          __recentPinned: false
-        }))
+      ...searchRows
     ]
     rows.value = mergedRows
     total.value = Number(res?.count || res?.total || items.length)
@@ -467,6 +1188,10 @@ const openCreate = () => {
 watch(
   () => props.modelValue,
   (open) => {
+    if (typeof window !== 'undefined') {
+      if (open) window.addEventListener('keydown', handleGlobalKeydown)
+      else window.removeEventListener('keydown', handleGlobalKeydown)
+    }
     if (!open) return
     // Keep keyword from last search to match common lookup behavior.
     handleOpened()
@@ -480,6 +1205,51 @@ watch(
     await loadData()
   }
 )
+
+watch(
+  () => baseColumns.value.map((column) => column.key).join(','),
+  () => {
+    const changed = normalizeColumnPreferences()
+    if (changed) saveColumnsPreference()
+  }
+)
+
+watch(
+  () => [props.objectCode, props.preferenceKey, props.userScope],
+  () => {
+    const hasStoredPreference = hasLookupColumnsPreference(
+      props.objectCode,
+      { preferenceKey: props.preferenceKey, userScope: props.userScope }
+    )
+    const preference = loadLookupColumnsPreference(
+      props.objectCode,
+      { preferenceKey: props.preferenceKey, userScope: props.userScope }
+    )
+    hiddenColumnSet.value = new Set(preference.hidden)
+    columnOrder.value = [...preference.order]
+    columnWidthMap.value = { ...preference.widths }
+    const fallbackProfile = loadLastLookupProfile(
+      props.objectCode,
+      { userScope: props.userScope }
+    )
+    const initialProfile = hasStoredPreference
+      ? (preference.profile || 'standard')
+      : fallbackProfile
+    activeProfile.value = initialProfile
+    if (!hasStoredPreference && initialProfile !== 'custom') {
+      applyProfile(initialProfile, { persist: false })
+      return
+    }
+    const changed = normalizeColumnPreferences()
+    if (changed) saveColumnsPreference(activeProfile.value)
+  },
+  { immediate: true }
+)
+
+onBeforeUnmount(() => {
+  if (typeof window === 'undefined') return
+  window.removeEventListener('keydown', handleGlobalKeydown)
+})
 </script>
 
 <style scoped lang="scss">
@@ -498,10 +1268,128 @@ watch(
   flex: 1;
 }
 
+.lookup-column-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lookup-column-settings__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lookup-column-settings__title {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.lookup-column-settings__reset {
+  font-size: 12px;
+  padding: 0;
+}
+
+.lookup-column-settings__profiles {
+  width: 100%;
+}
+
+.lookup-column-settings__profile-hint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.35;
+}
+
+.lookup-column-settings__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 4px;
+  border-radius: 6px;
+}
+
+.lookup-column-settings__row.is-locked {
+  background: color-mix(in srgb, var(--el-fill-color-light) 75%, #ffffff);
+}
+
+.lookup-column-settings__row.is-dragging {
+  opacity: 0.65;
+}
+
+.lookup-column-settings__row.is-drag-over-top::before,
+.lookup-column-settings__row.is-drag-over-bottom::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--el-color-primary);
+}
+
+.lookup-column-settings__row.is-drag-over-top::before {
+  top: -1px;
+}
+
+.lookup-column-settings__row.is-drag-over-bottom::after {
+  bottom: -1px;
+}
+
+.lookup-column-settings__drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--el-text-color-secondary);
+  cursor: grab;
+}
+
+.lookup-column-settings__row.is-locked .lookup-column-settings__drag-handle {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.lookup-column-settings__lock-icon {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.lookup-column-settings__order {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.lookup-column-settings__item {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
 .lookup-cell {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.lookup-cell__group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+  margin: 2px 0 6px;
+}
+
+.lookup-cell__group-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--el-border-color-light), transparent);
 }
 
 .lookup-cell__content {
@@ -539,6 +1427,12 @@ watch(
   font-family: 'Consolas', 'Monaco', monospace;
   color: var(--el-text-color-secondary);
   font-size: 12px;
+}
+
+.lookup-cell__text {
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+  word-break: break-word;
 }
 
 .lookup-footer {

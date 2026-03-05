@@ -53,8 +53,12 @@
     "range": "Please enter a value between {min} and {max}"
   },
   "actions": {
+    "addCondition": "Add Condition",
     "addRow": "Add Row",
     "deleteRow": "Delete Row",
+    "logicAnd": "AND",
+    "logicOr": "OR",
+    "removeGroup": "Remove",
     "resetForm": "Reset Form"
   }
 }

@@ -1,6 +1,6 @@
-<template>
+﻿<template>
   <el-dialog
-    title="计提折旧"
+    :title="lt('depreciationDialog.title')"
     :model-value="modelValue"
     width="500px"
     @update:model-value="$emit('update:modelValue', $event)"
@@ -12,24 +12,24 @@
       label-width="100px"
     >
       <el-form-item
-        label="计提期间"
+        :label="lt('depreciationDialog.period')"
         prop="period"
       >
         <el-date-picker
           v-model="form.period"
           type="month"
           value-format="YYYY-MM"
-          placeholder="选择月份"
+          :placeholder="lt('depreciationDialog.periodPlaceholder')"
           style="width: 100%"
         />
       </el-form-item>
-      
+
       <div
         v-if="calculating"
         class="progress-area"
       >
         <div class="mb-2">
-          正在计算中...
+          {{ lt('depreciationDialog.calculating') }}
         </div>
         <el-progress
           :percentage="progress"
@@ -37,17 +37,17 @@
         />
       </div>
     </el-form>
-    
+
     <template #footer>
       <el-button @click="close">
-        取消
+        {{ t('common.actions.cancel') }}
       </el-button>
       <el-button
         type="primary"
         :loading="calculating"
         @click="handleCalculate"
       >
-        开始计算
+        {{ lt('depreciationDialog.start') }}
       </el-button>
     </template>
   </el-dialog>
@@ -55,6 +55,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { depreciationApi } from '@/api/depreciation'
 
@@ -63,19 +64,28 @@ defineProps<{
 }>()
 
 const emit = defineEmits(['update:modelValue', 'success'])
+const { t } = useI18n()
+const lt = (key: string) => {
+  const plainKey = `finance.${key}`
+  const plainText = t(plainKey)
+  if (plainText !== plainKey) return plainText
+  const nestedKey = `finance.finance.${key}`
+  const nestedText = t(nestedKey)
+  return nestedText !== nestedKey ? nestedText : plainText
+}
 
 const formRef = ref()
 const calculating = ref(false)
 const progress = ref(0)
 const progressStatus = ref<'success' | 'exception' | ''>('')
-let pollTimer: any = null
+let pollTimer: ReturnType<typeof setInterval> | null = null
 
 const form = reactive({
-  period: '' // YYYY-MM
+  period: ''
 })
 
 const rules = {
-  period: [{ required: true, message: '请选择期间', trigger: 'change' }]
+  period: [{ required: true, message: lt('depreciationDialog.validation.periodRequired'), trigger: 'change' }]
 }
 
 const close = () => {
@@ -88,16 +98,16 @@ const close = () => {
 const handleCalculate = async () => {
   if (!formRef.value) return
   await formRef.value.validate()
-  
+
   calculating.value = true
   progress.value = 0
   progressStatus.value = ''
-  
+
   try {
     const { taskId } = await depreciationApi.calculate({ period: form.period })
     startPolling(taskId)
   } catch (e: any) {
-    ElMessage.error(e.message || '启动计算失败')
+    ElMessage.error(e.message || lt('depreciationDialog.messages.startFailed'))
     calculating.value = false
   }
 }
@@ -107,20 +117,20 @@ const startPolling = (taskId: string) => {
     try {
       const res = await depreciationApi.getCalculationStatus(taskId)
       progress.value = Math.floor((res.processed / res.total) * 100) || 0
-      
+
       if (res.status === 'completed') {
-        clearInterval(pollTimer)
+        if (pollTimer) clearInterval(pollTimer)
         progress.value = 100
         progressStatus.value = 'success'
-        ElMessage.success('计算完成')
+        ElMessage.success(lt('depreciationDialog.messages.completed'))
         setTimeout(() => {
           emit('success')
           close()
         }, 1000)
       } else if (res.status === 'failed') {
-        clearInterval(pollTimer)
+        if (pollTimer) clearInterval(pollTimer)
         progressStatus.value = 'exception'
-        ElMessage.error(res.error || '计算失败')
+        ElMessage.error(res.error || lt('depreciationDialog.messages.failed'))
         calculating.value = false
       }
     } catch (e) {
