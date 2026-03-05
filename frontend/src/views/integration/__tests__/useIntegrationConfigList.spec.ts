@@ -2,7 +2,7 @@
 import { ElMessage } from 'element-plus'
 import { integrationConfigApi, integrationLogApi } from '@/api/integration'
 import { createDefaultIntegrationFormData } from '@/views/integration/integrationConfig.constants'
-import { useIntegrationConfigList } from '@/views/integration/composables/useIntegrationConfigList'
+import { useIntegrationConfigList } from '@/views/integration/composables'
 import type { IntegrationConfig, IntegrationFormData, IntegrationLog } from '@/types/integration'
 
 vi.mock('vue-i18n', () => ({
@@ -155,6 +155,33 @@ describe('useIntegrationConfigList', () => {
     })
   })
 
+  it('exposes grouped APIs while keeping flat compatibility', () => {
+    const state = useIntegrationConfigList()
+
+    expect(state.query.fetchData).toBe(state.fetchData)
+    expect(state.actions.handleCreate).toBe(state.handleCreate)
+    expect(state.logViewer.handleViewLogs).toBe(state.handleViewLogs)
+  })
+
+  it('prefers stats API values when stats endpoint returns different aggregates', async () => {
+    vi.mocked(integrationConfigApi.stats).mockResolvedValueOnce({
+      total: 99,
+      healthy: 88,
+      degraded: 7,
+      unhealthy: 4
+    })
+    const state = useIntegrationConfigList()
+
+    await state.fetchData()
+
+    expect(state.stats.value).toEqual({
+      total: 99,
+      healthy: 88,
+      degraded: 7,
+      unhealthy: 4
+    })
+  })
+
   it('falls back to page-derived stats when stats API fails', async () => {
     vi.mocked(integrationConfigApi.stats).mockRejectedValueOnce(new Error('stats failed'))
     const state = useIntegrationConfigList()
@@ -190,6 +217,25 @@ describe('useIntegrationConfigList', () => {
     expect(integrationConfigApi.stats).toHaveBeenCalledWith({})
   })
 
+  it('keeps boolean false filter in list and stats params', async () => {
+    const state = useIntegrationConfigList()
+    state.filterForm.isEnabled = false
+    state.filterForm.healthStatus = 'unhealthy'
+
+    await state.fetchData()
+
+    expect(integrationConfigApi.list).toHaveBeenCalledWith({
+      page: 1,
+      page_size: 20,
+      isEnabled: false,
+      healthStatus: 'unhealthy'
+    })
+    expect(integrationConfigApi.stats).toHaveBeenCalledWith({
+      isEnabled: false,
+      healthStatus: 'unhealthy'
+    })
+  })
+
   it('updates list pagination and reloads data', async () => {
     const state = useIntegrationConfigList()
 
@@ -215,12 +261,14 @@ describe('useIntegrationConfigList', () => {
 
   it('opens create dialog with default form data', () => {
     const state = useIntegrationConfigList()
+    state.handleViewLogs(sampleConfig)
     state.formData.value.systemName = 'old'
 
     state.handleCreate()
 
     expect(state.isEdit.value).toBe(false)
-    expect(state.currentConfig.value).toBeNull()
+    expect(state.editingConfig.value).toBeNull()
+    expect(state.currentConfig.value?.id).toBe('cfg-1')
     expect(state.dialogVisible.value).toBe(true)
     expect(state.formData.value).toEqual(createDefaultIntegrationFormData())
   })
@@ -237,7 +285,7 @@ describe('useIntegrationConfigList', () => {
     await state.handleSubmit(payload)
 
     expect(integrationConfigApi.update).toHaveBeenCalledWith('cfg-1', payload)
-    expect(ElMessage.success).toHaveBeenCalledWith('integration.messages.updatedSuccessfully')
+    expect(ElMessage.success).toHaveBeenCalledWith('updated')
     expect(state.dialogVisible.value).toBe(false)
   })
 
@@ -251,7 +299,7 @@ describe('useIntegrationConfigList', () => {
 
     await state.handleSubmit(payload)
     expect(integrationConfigApi.create).toHaveBeenCalledWith(payload)
-    expect(ElMessage.success).toHaveBeenCalledWith('integration.messages.createdSuccessfully')
+    expect(ElMessage.success).toHaveBeenCalledWith('created')
 
     vi.mocked(integrationConfigApi.create).mockRejectedValueOnce(new Error('create failed'))
     await state.handleSubmit(payload)

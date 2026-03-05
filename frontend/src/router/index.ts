@@ -417,6 +417,18 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/system/ModuleWorkbench.vue'),
         meta: { title: 'menu.routes.moduleWorkbench' }
       },
+      {
+        path: 'system/sso',
+        name: 'SSOConfigPage',
+        component: () => import('@/views/system/SSOConfigPage.vue'),
+        meta: { title: 'menu.routes.ssoConfig' }
+      },
+      {
+        path: 'system/organization-tree',
+        name: 'OrganizationTree',
+        component: () => import('@/views/system/OrganizationTree.vue'),
+        meta: { title: 'menu.routes.organizationTree' }
+      },
 
       // Workflow Management
       {

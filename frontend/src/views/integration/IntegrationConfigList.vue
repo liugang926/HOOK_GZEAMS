@@ -4,67 +4,67 @@
       <h3>{{ t('integration.configList.title') }}</h3>
       <el-button
         type="primary"
-        @click="handleCreate"
+        @click="actions.handleCreate"
       >
         {{ t('integration.actions.newIntegration') }}
       </el-button>
     </div>
 
-    <IntegrationStatsCards :stats="stats" />
+    <IntegrationStatsCards :stats="query.stats" />
 
     <IntegrationConfigFilterBar
-      :system-type="filterForm.systemType"
-      :is-enabled="filterForm.isEnabled"
-      :health-status="filterForm.healthStatus"
-      @update:system-type="filterForm.systemType = $event"
-      @update:is-enabled="filterForm.isEnabled = $event"
-      @update:health-status="filterForm.healthStatus = $event"
-      @search="fetchData"
-      @reset="handleFilterReset"
+      :system-type="query.filterForm.systemType"
+      :is-enabled="query.filterForm.isEnabled"
+      :health-status="query.filterForm.healthStatus"
+      @update:system-type="query.filterForm.systemType = $event"
+      @update:is-enabled="query.filterForm.isEnabled = $event"
+      @update:health-status="query.filterForm.healthStatus = $event"
+      @search="query.fetchData"
+      @reset="query.handleFilterReset"
     />
 
     <IntegrationConfigTable
-      :loading="loading"
-      :table-data="tableData"
-      :testing="testing"
-      :syncing="syncing"
-      :current-page="pagination.page"
-      :page-size="pagination.pageSize"
-      :total="pagination.total"
-      @test="handleTest"
-      @sync="handleSync"
-      @logs="handleViewLogs"
-      @edit="handleEdit"
-      @delete="handleDelete"
-      @page-change="handlePageChange"
-      @page-size-change="handlePageSizeChange"
+      :loading="query.loading"
+      :table-data="query.tableData"
+      :testing="actions.testing"
+      :syncing="actions.syncing"
+      :current-page="query.pagination.page"
+      :page-size="query.pagination.pageSize"
+      :total="query.pagination.total"
+      @test="actions.handleTest"
+      @sync="actions.handleSync"
+      @logs="logViewer.handleViewLogs"
+      @edit="actions.handleEdit"
+      @delete="actions.handleDelete"
+      @page-change="query.handlePageChange"
+      @page-size-change="query.handlePageSizeChange"
     />
 
     <IntegrationConfigFormDialog
-      v-model="dialogVisible"
-      :is-edit="isEdit"
-      :submitting="submitting"
-      :form-data="formData"
-      @submit="handleSubmit"
+      v-model="actions.dialogVisible"
+      :is-edit="actions.isEdit"
+      :submitting="actions.submitting"
+      :form-data="actions.formData"
+      @submit="actions.handleSubmit"
     />
 
     <IntegrationLogsDrawer
-      v-model="logsDrawerVisible"
-      :current-config="currentConfig"
-      :logs-loading="logsLoading"
-      :logs="logs"
-      :page="logsPagination.page"
-      :page-size="logsPagination.pageSize"
-      :total="logsPagination.total"
-      @refresh="fetchLogs"
-      @view-detail="handleViewLogDetail"
-      @page-change="handleLogsPageChange"
-      @page-size-change="handleLogsPageSizeChange"
+      v-model="logViewer.logsDrawerVisible"
+      :current-config="logViewer.currentConfig"
+      :logs-loading="logViewer.logsLoading"
+      :logs="logViewer.logs"
+      :page="logViewer.logsPagination.page"
+      :page-size="logViewer.logsPagination.pageSize"
+      :total="logViewer.logsPagination.total"
+      @refresh="logViewer.fetchLogs"
+      @view-detail="logViewer.handleViewLogDetail"
+      @page-change="logViewer.handleLogsPageChange"
+      @page-size-change="logViewer.handleLogsPageSizeChange"
     />
 
     <IntegrationLogDetailDialog
-      v-model="logDetailVisible"
-      :current-log="currentLog"
+      v-model="logViewer.logDetailVisible"
+      :current-log="logViewer.currentLog"
     />
   </div>
 </template>
@@ -78,48 +78,17 @@ import IntegrationLogDetailDialog from './components/IntegrationLogDetailDialog.
 import IntegrationLogsDrawer from './components/IntegrationLogsDrawer.vue'
 import IntegrationStatsCards from './components/IntegrationStatsCards.vue'
 import IntegrationConfigTable from './components/IntegrationConfigTable.vue'
-import { useIntegrationConfigList } from './composables/useIntegrationConfigList'
+import { useIntegrationConfigList } from './composables'
 
 const { t } = useI18n()
 
-const {
-  loading,
-  tableData,
-  dialogVisible,
-  logsDrawerVisible,
-  logDetailVisible,
-  submitting,
-  testing,
-  syncing,
-  logsLoading,
-  currentConfig,
-  currentLog,
-  logs,
-  filterForm,
-  pagination,
-  logsPagination,
-  stats,
-  isEdit,
-  formData,
-  fetchData,
-  handleFilterReset,
-  handlePageChange,
-  handlePageSizeChange,
-  handleCreate,
-  handleEdit,
-  handleSubmit,
-  handleDelete,
-  handleTest,
-  handleSync,
-  handleViewLogs,
-  fetchLogs,
-  handleLogsPageChange,
-  handleLogsPageSizeChange,
-  handleViewLogDetail
-} = useIntegrationConfigList()
+const integration = useIntegrationConfigList()
+const query = integration.query
+const actions = integration.actions
+const logViewer = integration.logViewer
 
 onMounted(() => {
-  void fetchData()
+  void query.fetchData()
 })
 </script>
 

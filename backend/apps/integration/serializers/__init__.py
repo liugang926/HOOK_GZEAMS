@@ -3,6 +3,8 @@ from apps.integration.serializers.config_serializers import (
     IntegrationConfigDetailSerializer,
     IntegrationConfigCreateSerializer,
     IntegrationConfigUpdateSerializer,
+    IntegrationConfigStatsSerializer,
+    IntegrationConfigStatsResponseSerializer,
 )
 from apps.integration.serializers.sync_task_serializers import (
     IntegrationSyncTaskListSerializer,
@@ -24,6 +26,8 @@ __all__ = [
     'IntegrationConfigDetailSerializer',
     'IntegrationConfigCreateSerializer',
     'IntegrationConfigUpdateSerializer',
+    'IntegrationConfigStatsSerializer',
+    'IntegrationConfigStatsResponseSerializer',
     'IntegrationSyncTaskListSerializer',
     'IntegrationSyncTaskDetailSerializer',
     'CreateSyncTaskSerializer',

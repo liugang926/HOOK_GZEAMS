@@ -1,0 +1,30 @@
+{
+    "tree": {
+        "title": "Organization",
+        "addRoot": "Add Root",
+        "addChild": "Add Child",
+        "searchPlaceholder": "Search departments...",
+        "selectPrompt": "Select a department from the left",
+        "rootNode": "Root"
+    },
+    "cols": {
+        "name": "Name",
+        "code": "Code",
+        "parent": "Parent",
+        "description": "Description"
+    },
+    "dialog": {
+        "createTitle": "Add Department",
+        "editTitle": "Edit Department"
+    },
+    "members": {
+        "title": "Members",
+        "cols": {
+            "name": "Name",
+            "username": "Username",
+            "email": "Email",
+            "title": "Title",
+            "status": "Status"
+        }
+    }
+}

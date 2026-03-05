@@ -14,6 +14,8 @@ import mobile from './mobile.json'
 import notifications from './notifications.json'
 import integration from './integration.json'
 import reports from './reports.json'
+import sso from './sso.json'
+import org from './org.json'
 
 export default {
     common,
@@ -31,5 +33,7 @@ export default {
     mobile,
     notifications,
     integration,
-    reports
+    reports,
+    sso,
+    org
 }

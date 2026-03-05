@@ -45,6 +45,101 @@
     <span v-else>{{ displayText }}</span>
   </template>
 
+  <template v-else-if="isReferenceDisplay">
+    <div
+      v-if="referenceEntries.length > 0"
+      class="reference-display"
+    >
+      <el-popover
+        v-for="(entry, index) in referenceEntries"
+        :key="entry.id || `${entry.label}-${index}`"
+        trigger="hover"
+        placement="top-start"
+        :width="300"
+      >
+        <template #reference>
+          <div class="reference-chip">
+            <ObjectAvatar
+              :object-code="referenceObjectCode || 'Ref'"
+              size="xs"
+            />
+            <div class="reference-chip__content">
+              <el-link
+                v-if="entry.href"
+                :href="entry.href"
+                type="primary"
+                class="reference-chip__label"
+              >
+                {{ entry.label }}
+              </el-link>
+              <span
+                v-else
+                class="reference-chip__label"
+              >{{ entry.label }}</span>
+              <span
+                v-if="entry.secondary"
+                class="reference-secondary"
+              >
+                {{ entry.secondary }}
+              </span>
+            </div>
+          </div>
+        </template>
+        <div class="reference-hover-card">
+          <div class="reference-hover-card__header">
+            <ObjectAvatar
+              :object-code="referenceObjectCode || 'Ref'"
+              size="sm"
+            />
+            <div class="reference-hover-card__content">
+              <span class="reference-hover-card__title">{{ entry.label }}</span>
+              <span
+                v-if="entry.secondary"
+                class="reference-hover-card__subtitle"
+              >
+                {{ entry.secondary }}
+              </span>
+            </div>
+            <el-tag
+              v-if="referenceObjectCode"
+              size="small"
+              effect="plain"
+            >
+              {{ referenceObjectCode }}
+            </el-tag>
+          </div>
+          <div
+            v-if="entry.id"
+            class="reference-hover-card__meta"
+          >
+            <span class="reference-hover-card__meta-label">{{ idLabel }}</span>
+            <span class="reference-hover-card__meta-value">{{ entry.id }}</span>
+          </div>
+          <div
+            v-if="entry.href"
+            class="reference-hover-card__actions"
+          >
+            <el-link
+              :href="entry.href"
+              target="_blank"
+              type="primary"
+            >
+              {{ openActionText }}
+            </el-link>
+          </div>
+        </div>
+      </el-popover>
+      <el-tag
+        v-if="referenceObjectCode"
+        size="small"
+        effect="plain"
+      >
+        {{ referenceObjectCode }}
+      </el-tag>
+    </div>
+    <span v-else>-</span>
+  </template>
+
   <template v-else-if="displayType === 'tag'">
     <el-tag :type="tagType">
       {{ displayText }}
@@ -160,16 +255,32 @@ import { formatDate } from '@/utils/dateFormat'
 import { formatMoney } from '@/utils/numberFormat'
 import { normalizeFieldType } from '@/utils/fieldType'
 import { systemFileApi, resolveSystemFileUrl, type SystemFile } from '@/api/systemFile'
+import ObjectAvatar from '@/components/common/ObjectAvatar.vue'
+import { referenceResolver } from '@/platform/reference/referenceResolver'
+import {
+  extractReferenceIds,
+  isReferenceLikeField,
+  isReferenceLikeFieldType,
+  resolveReferenceDisplayField,
+  resolveReferenceLabel,
+  resolveReferenceObjectCode,
+  resolveReferenceSecondaryField,
+  resolveReferenceSecondaryText
+} from '@/platform/reference/referenceFieldMeta'
 
 interface FieldLike {
   type?: string
   fieldType?: string
+  editorType?: string
   dateFormat?: string
   precision?: number
   currency?: string
   size?: number
   width?: number
   height?: number
+  referenceObject?: string
+  referenceDisplayField?: string
+  referenceSecondaryField?: string
   options?: { label: string; value: any; color?: string }[]
   tagType?: Record<string, string> | ((value: any, row?: any) => string)
   defaultTagType?: 'success' | 'warning' | 'danger' | 'info' | 'primary' | string
@@ -192,14 +303,115 @@ const props = defineProps<{
   value: any
 }>()
 const { t } = useI18n()
+const idLabel = computed(() => {
+  const key = 'common.columns.id'
+  const text = t(key)
+  return text === key ? 'ID' : text
+})
+const openActionText = computed(() => {
+  const key = 'common.actions.open'
+  const text = t(key)
+  return text === key ? 'Open' : text
+})
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const fileMetadataMap = ref<Record<string, SystemFile>>({})
 const metadataRequestToken = ref(0)
+const referenceValueMap = ref<Record<string, any>>({})
+const referenceRequestToken = ref(0)
 
-const displayType = computed(() => normalizeFieldType(props.field?.fieldType || props.field?.type || 'text'))
+const displayType = computed(() =>
+  normalizeFieldType(props.field?.editorType || props.field?.fieldType || props.field?.type || 'text')
+)
 
 const hasValue = computed(() => props.value !== undefined && props.value !== null && props.value !== '')
+
+const isReferenceDisplay = computed(() => {
+  if (isReferenceLikeFieldType(displayType.value)) return true
+  return isReferenceLikeField({
+    ...(props.field || {}),
+    fieldType: props.field?.fieldType || props.field?.type || displayType.value,
+    editorType: props.field?.editorType || displayType.value
+  })
+})
+
+const referenceObjectCode = computed(() => {
+  return resolveReferenceObjectCode({
+    ...(props.field || {}),
+    fieldType: displayType.value
+  })
+})
+
+const referenceDisplayField = computed(() => {
+  return resolveReferenceDisplayField(props.field || {}, 'name')
+})
+
+const referenceSecondaryField = computed(() => {
+  return resolveReferenceSecondaryField(props.field || {}, 'code')
+})
+
+const referenceIds = computed(() => {
+  return extractReferenceIds(props.value)
+})
+
+const referenceValueFromInput = computed<Record<string, any>>(() => {
+  const out: Record<string, any> = {}
+  const walk = (value: any) => {
+    if (!value) return
+    if (Array.isArray(value)) {
+      value.forEach((item) => walk(item))
+      return
+    }
+    if (typeof value !== 'object') return
+    const id = String(value.id || value.pk || value.value || '').trim()
+    if (!id) return
+    if (!out[id]) out[id] = value
+  }
+  walk(props.value)
+  return out
+})
+
+interface ReferenceEntry {
+  id: string
+  label: string
+  secondary: string
+  href: string
+}
+
+const toReferenceEntry = (id: string, value: any): ReferenceEntry | null => {
+  const label = resolveReferenceLabel(value, referenceDisplayField.value) || id
+  if (!label) return null
+  const secondary = resolveReferenceSecondaryText(
+    value,
+    referenceSecondaryField.value,
+    referenceDisplayField.value
+  )
+  const href = referenceObjectCode.value && id
+    ? `/objects/${referenceObjectCode.value}/${encodeURIComponent(id)}`
+    : ''
+  return {
+    id,
+    label,
+    secondary,
+    href
+  }
+}
+
+const referenceEntries = computed<ReferenceEntry[]>(() => {
+  const ids = referenceIds.value
+  if (ids.length > 0) {
+    return ids
+      .map((id) => {
+        const candidate = referenceValueFromInput.value[id] || referenceValueMap.value[id] || { id }
+        return toReferenceEntry(id, candidate)
+      })
+      .filter((item): item is ReferenceEntry => !!item)
+  }
+
+  if (!props.value || typeof props.value !== 'object') return []
+  const fallback = toReferenceEntry('', props.value)
+  return fallback ? [fallback] : []
+})
 
 const isUuidLike = (value: unknown): value is string => {
   if (typeof value !== 'string') return false
@@ -503,6 +715,34 @@ const collectFileEntries = (value: any): FileEntry[] => {
 const fileEntries = computed<FileEntry[]>(() => collectFileEntries(props.value))
 
 watch(
+  () => [isReferenceDisplay.value, referenceObjectCode.value, referenceIds.value.slice().sort().join(',')],
+  async () => {
+    if (!isReferenceDisplay.value) return
+    if (!referenceObjectCode.value) return
+    const ids = referenceIds.value
+    if (!ids.length) return
+
+    const missingIds = ids.filter((id) => !referenceValueMap.value[id] && !referenceValueFromInput.value[id])
+    if (!missingIds.length) return
+
+    const token = referenceRequestToken.value + 1
+    referenceRequestToken.value = token
+
+    try {
+      const resolved = await referenceResolver.resolveMany(referenceObjectCode.value, missingIds)
+      if (referenceRequestToken.value !== token) return
+      referenceValueMap.value = {
+        ...referenceValueMap.value,
+        ...resolved
+      }
+    } catch (error) {
+      console.warn('Failed to resolve reference field display values:', error)
+    }
+  },
+  { immediate: true }
+)
+
+watch(
   () => [displayType.value, props.value],
   async () => {
     if (!['file', 'attachment', 'image'].includes(displayType.value)) return
@@ -717,6 +957,118 @@ const codeImageUrl = computed(() => {
 
 .file-item {
   line-height: 1.5;
+}
+
+.reference-display {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.reference-chip {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  gap: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  padding: 4px 8px 4px 6px;
+  background: var(--el-fill-color-blank);
+}
+
+.reference-chip__content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.reference-chip__label {
+  min-width: 0;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.reference-secondary {
+  min-width: 0;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.reference-hover-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reference-hover-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reference-hover-card__content {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reference-hover-card__title {
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reference-hover-card__subtitle {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reference-hover-card__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reference-hover-card__meta-label {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.reference-hover-card__meta-value {
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.reference-hover-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .rich-text-display {

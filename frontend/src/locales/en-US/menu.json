@@ -121,6 +121,9 @@
         "MaintenanceTask": "Maintenance Tasks",
         "DisposalRequest": "Disposal Requests",
         "languages": "Language Management",
-        "translations": "Translation Management"
+        "translations": "Translation Management",
+        "ssoConfig": "SSO Configuration",
+        "organizationTree": "Organization Tree",
+        "reportCenter": "Report Center"
     }
 }

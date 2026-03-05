@@ -76,6 +76,8 @@ export function toRuntimeFieldFromLayout(
     helpText: layoutField?.helpText,
     options: layoutField?.options,
     referenceObject: layoutField?.referenceObject || layoutField?.relatedObject,
+    referenceDisplayField: (layoutField as any)?.referenceDisplayField || (layoutField as any)?.reference_display_field,
+    referenceSecondaryField: (layoutField as any)?.referenceSecondaryField || (layoutField as any)?.reference_secondary_field,
     componentProps: mergedComponentProps,
     component_props: mergedComponentProps
   }
@@ -98,6 +100,8 @@ export function toRuntimeFieldFromLayout(
     helpText: layoutField?.helpText,
     options: layoutField?.options as any,
     referenceObject: layoutField?.referenceObject || layoutField?.relatedObject,
+    referenceDisplayField: (layoutField as any)?.referenceDisplayField || (layoutField as any)?.reference_display_field,
+    referenceSecondaryField: (layoutField as any)?.referenceSecondaryField || (layoutField as any)?.reference_secondary_field,
     componentProps: mergedComponentProps,
     metadata: layoutField as any
   }

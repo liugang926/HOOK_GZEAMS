@@ -17,12 +17,44 @@ from django.db import connections
 from django.db.utils import DatabaseError
 from django.http import HttpResponse
 from django.utils import timezone
-from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
 from apps.common.responses import BaseResponse
+
+try:
+    from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+except ImportError:  # pragma: no cover - optional dependency in local/dev environments
+    CONTENT_TYPE_LATEST = 'text/plain; version=0.0.4; charset=utf-8'
+
+    class _NoopMetric:
+        def labels(self, **_kwargs):
+            return self
+
+        def inc(self):
+            return None
+
+        def observe(self, _value):
+            return None
+
+    def Counter(*_args, **_kwargs):  # noqa: N802 - keep prometheus constructor naming
+        return _NoopMetric()
+
+    def Histogram(*_args, **_kwargs):  # noqa: N802 - keep prometheus constructor naming
+        return _NoopMetric()
+
+    def generate_latest():
+        return (
+            b'# HELP gzeams_health_probe_requests_total Total health probe requests by probe and outcome.\n'
+            b'# TYPE gzeams_health_probe_requests_total counter\n'
+            b'gzeams_health_probe_requests_total{probe="metrics",outcome="degraded"} 0\n'
+            b'# HELP gzeams_health_dependency_check_duration_seconds Dependency check duration for health readiness checks.\n'
+            b'# TYPE gzeams_health_dependency_check_duration_seconds histogram\n'
+            b'gzeams_health_dependency_check_duration_seconds_bucket{dependency="database",le="+Inf"} 0\n'
+            b'gzeams_health_dependency_check_duration_seconds_count{dependency="database"} 0\n'
+            b'gzeams_health_dependency_check_duration_seconds_sum{dependency="database"} 0\n'
+        )
 
 _START_TIME = monotonic()
 HEALTH_PROBE_REQUESTS_TOTAL = Counter(

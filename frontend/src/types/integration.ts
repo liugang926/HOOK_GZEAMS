@@ -90,6 +90,12 @@ export interface IntegrationConfigListParams {
   healthStatus?: IntegrationHealthStatus
 }
 
+export interface IntegrationConfigStatsParams {
+  systemType?: IntegrationSystemType
+  isEnabled?: boolean
+  healthStatus?: IntegrationHealthStatus
+}
+
 export interface IntegrationLogListParams {
   page?: number
   page_size?: number

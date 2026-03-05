@@ -1,5 +1,9 @@
 import { buildRenderSchema } from '@/platform/layout/renderSchema'
-import { projectDetailSectionsFromRenderSchema, type ProjectedDetailSection } from '@/platform/layout/detailSchemaProjector'
+import {
+  projectDetailSectionsFromRenderSchema,
+  type ProjectedDetailField,
+  type ProjectedDetailSection
+} from '@/platform/layout/detailSchemaProjector'
 import { isAuditFieldCode, normalizeDetailSpan, toUnifiedDetailField } from '@/platform/layout/unifiedDetailField'
 import { isSystemField } from '@/utils/transform'
 import type { FieldDefinition } from '@/types'
@@ -87,7 +91,7 @@ export const projectUnifiedDetailSectionsFromLayout = (
       field,
       model.modePolicy.metadataContext || 'form'
     ),
-    fieldToDetailField: (field) => toUnifiedDetailField(field as any),
+    fieldToDetailField: (field) => toUnifiedDetailField(field as any) as unknown as ProjectedDetailField,
     getSectionTitle: input.getSectionTitle,
     getSectionIcon: input.getSectionIcon,
     normalizeSpan: normalizeDetailSpan

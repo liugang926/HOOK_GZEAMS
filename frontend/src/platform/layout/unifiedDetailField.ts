@@ -34,6 +34,12 @@ export type UnifiedDetailField = {
     | 'sub_table'
     | 'json'
     | 'object'
+    | 'reference'
+    | 'user'
+    | 'department'
+    | 'location'
+    | 'organization'
+    | 'asset'
   options?: { label: string; value: any; color?: string }[]
   dateFormat?: string
   precision?: number
@@ -46,6 +52,10 @@ export type UnifiedDetailField = {
   hidden?: boolean
   labelClass?: string
   valueClass?: string
+  referenceObject?: string
+  referenceDisplayField?: string
+  referenceSecondaryField?: string
+  componentProps?: Record<string, any>
 }
 
 const AUDIT_FIELD_CODES = new Set([
@@ -83,6 +93,10 @@ export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailF
   const rawType = field.fieldType || field.field_type || field.type || 'text'
   const normalizedType = normalizeFieldType(rawType)
   const options = field.options || []
+  const componentProps = {
+    ...(field.componentProps || {}),
+    ...(field.component_props || {})
+  }
 
   const detailField: UnifiedDetailField = {
     prop: code,
@@ -90,7 +104,8 @@ export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailF
     editorType: normalizedType,
     span: field.span || 12,
     minHeight: resolveMinHeight(field),
-    options
+    options,
+    componentProps
   }
 
   if (
@@ -146,6 +161,51 @@ export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailF
   } else if (normalizedType === 'file' || normalizedType === 'attachment') {
     detailField.type = normalizedType as UnifiedDetailField['type']
     detailField.span = 24
+  } else if (
+    normalizedType === 'reference' ||
+    normalizedType === 'user' ||
+    normalizedType === 'department' ||
+    normalizedType === 'location' ||
+    normalizedType === 'organization' ||
+    normalizedType === 'asset'
+  ) {
+    detailField.type = normalizedType as UnifiedDetailField['type']
+
+    const typeObjectCodeMap: Record<string, string> = {
+      user: 'User',
+      department: 'Department',
+      location: 'Location',
+      organization: 'Organization',
+      asset: 'Asset'
+    }
+
+    detailField.referenceObject = String(
+      field.referenceObject ||
+      field.reference_object ||
+      field.reference_model_path ||
+      field.referenceModelPath ||
+      field.relatedObject ||
+      componentProps.referenceObject ||
+      typeObjectCodeMap[normalizedType] ||
+      ''
+    ).trim() || undefined
+
+    detailField.referenceDisplayField = String(
+      field.referenceDisplayField ||
+      field.reference_display_field ||
+      field.displayField ||
+      componentProps.referenceDisplayField ||
+      componentProps.displayField ||
+      'name'
+    ).trim()
+
+    detailField.referenceSecondaryField = String(
+      field.referenceSecondaryField ||
+      field.reference_secondary_field ||
+      componentProps.referenceSecondaryField ||
+      componentProps.secondaryField ||
+      'code'
+    ).trim()
   } else {
     detailField.type = 'text'
   }

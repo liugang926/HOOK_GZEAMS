@@ -121,6 +121,9 @@
         "notificationCenter": "通知中心",
         "notificationPreferences": "通知偏好设置",
         "moduleWorkbench": "模块工作台",
-        "integrationConfigs": "集成配置管理"
+        "integrationConfigs": "集成配置管理",
+        "ssoConfig": "单点登录配置",
+        "organizationTree": "组织架构管理",
+        "reportCenter": "报表中心"
     }
 }

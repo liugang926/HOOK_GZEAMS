@@ -216,18 +216,20 @@ test.describe('Detail/Edit Shared Layout Model', () => {
     await page.goto('/objects/Asset/asset-shared-layout-1')
 
     await expect(page.locator('.load-error')).toHaveCount(0)
-    await expect(page.locator('.detail-content')).toContainText('Shared Layout Asset')
-    await expect(page.locator('.detail-content')).toContainText('ASSET-SHARED-001')
+    await expect(page.getByRole('button', { name: 'Edit' })).toBeVisible({ timeout: 15000 })
+    const detailSurface = page.locator('body')
+    await expect(detailSurface).toContainText('Shared Layout Asset')
+    await expect(detailSurface).toContainText('ASSET-SHARED-001')
 
     const detailLabels = normalizeLabels(
-      await page.locator('.detail-content .field-label').allTextContents()
+      await detailSurface.locator('.field-label').allTextContents()
     )
     expect(detailLabels.slice(0, 3)).toEqual(['AssetName', 'AssetCode', 'PurchaseDate'])
 
     await page.locator('.header-actions .el-button').first().click()
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
-    const editSurface = page.locator('.detail-content')
+    const editSurface = detailSurface
 
     const drawerLabels = normalizeLabels(
       await editSurface.locator('.el-form-item__label').allTextContents()

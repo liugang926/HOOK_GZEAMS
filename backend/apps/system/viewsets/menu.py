@@ -344,6 +344,34 @@ class MenuViewSet(viewsets.GenericViewSet):
                 },
             ]
         }
+        # Inject SSO and Org Tree into the system admin group
+        # Find the existing 'system' group and add items to it
+        for group in grouped_list_with_lifecycle:
+            if group.get('code') == 'system':
+                group['items'].append({
+                    'code': 'SSOConfigPage',
+                    'name': '单点登录配置',
+                    'name_en': 'SSO Configuration',
+                    'url': '/system/sso',
+                    'icon': 'Key',
+                    'order': 98,
+                    'group': '系统管理',
+                    'group_code': 'system',
+                    'badge': None,
+                })
+                group['items'].append({
+                    'code': 'OrganizationTree',
+                    'name': '组织架构管理',
+                    'name_en': 'Organization Tree',
+                    'url': '/system/organization-tree',
+                    'icon': 'Share',
+                    'order': 99,
+                    'group': '系统管理',
+                    'group_code': 'system',
+                    'badge': None,
+                })
+                break
+
         grouped_list_with_lifecycle.append(reports_group)
 
         return BaseResponse.success({

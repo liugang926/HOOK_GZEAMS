@@ -3,6 +3,7 @@ import type { PaginatedResponse } from '@/types/api'
 import type {
   IntegrationConfig,
   IntegrationConfigListParams,
+  IntegrationConfigStatsParams,
   IntegrationFormData,
   IntegrationLog,
   IntegrationLogListParams,
@@ -46,7 +47,7 @@ export const integrationConfigApi = {
       })
   },
 
-  stats(params?: Omit<IntegrationConfigListParams, 'page' | 'page_size'>): Promise<IntegrationStats> {
+  stats(params?: IntegrationConfigStatsParams): Promise<IntegrationStats> {
     return request
       .get('/integration/configs/stats/', {
         params: normalizeQueryParams(params),

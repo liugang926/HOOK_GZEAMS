@@ -143,3 +143,11 @@ class IntegrationConfigStatsSerializer(serializers.Serializer):
     healthy = serializers.IntegerField(read_only=True)
     degraded = serializers.IntegerField(read_only=True)
     unhealthy = serializers.IntegerField(read_only=True)
+
+
+class IntegrationConfigStatsResponseSerializer(serializers.Serializer):
+    """Envelope serializer for config stats endpoint."""
+
+    success = serializers.BooleanField(read_only=True)
+    message = serializers.CharField(read_only=True)
+    data = IntegrationConfigStatsSerializer(read_only=True)

@@ -2,6 +2,7 @@
 import type { RuntimeField, RuntimeFieldType } from '@/types/runtime'
 import { snakeToCamel } from '@/utils/case'
 import { normalizeFieldType } from '@/utils/fieldType'
+import { getLocalizedLabel, getLocalizedPlaceholder, getLocalizedHelpText } from '@/utils/getLocalizedLabel'
 
 type AnyField = FieldDefinition & Record<string, any>
 
@@ -10,6 +11,10 @@ const getFieldCode = (field: AnyField): string => {
 }
 
 const getFieldLabel = (field: AnyField): string => {
+  // First try locale-aware multilingual fields (label_zh, label_en etc.)
+  const localized = getLocalizedLabel(field)
+  if (localized) return localized
+  // Fallback chain for legacy fields without multilingual variants
   return field.label || field.name || field.displayName || field.title || getFieldCode(field)
 }
 
@@ -35,11 +40,13 @@ export function adaptFieldDefinition(field: AnyField): RuntimeField {
     visible: field.isVisible ?? (field.visible !== undefined ? field.visible : true),
     span: field.span ?? field.componentProps?.span ?? field.component_props?.span,
     minHeight: field.minHeight ?? field.min_height ?? field.componentProps?.minHeight ?? field.component_props?.min_height,
-    placeholder: field.placeholder,
-    helpText: field.helpText || field.description,
+    placeholder: getLocalizedPlaceholder(field),
+    helpText: getLocalizedHelpText(field),
     defaultValue: field.defaultValue ?? field.default_value,
     options: field.options || field.enum,
     referenceObject: field.referenceObject || field.reference_model_path || field.relatedObject,
+    referenceDisplayField: field.referenceDisplayField || field.reference_display_field || field.displayField || field.display_field,
+    referenceSecondaryField: field.referenceSecondaryField || field.reference_secondary_field,
     componentProps: field.componentProps || field.component_props || {},
     metadata: field
   }
@@ -54,7 +61,7 @@ export function mergeRuntimeField(
   const next: RuntimeField = { ...(baseField as any) }
   for (const [key, value] of Object.entries(override || {})) {
     if (value === undefined) continue
-    ;(next as any)[key] = value
+      ; (next as any)[key] = value
   }
 
   next.componentProps = {

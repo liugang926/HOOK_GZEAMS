@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page, type Route } from '@playwright/test'
+import { expect, test, type Locator, type Page, type Route, type TestInfo } from '@playwright/test'
 import { waitForDesignerReady } from '../helpers/page-ready.helpers'
 
 type AnyRecord = Record<string, unknown>
@@ -528,11 +528,28 @@ const assertMainFieldPair = async (
   await expectRightOfOnSameRow(leftLocator, rightLocator)
 }
 
+const attachLayoutSnapshot = async (
+  page: Page,
+  testInfo: TestInfo,
+  scenarioKind: ScenarioKind,
+  phase: 'designer' | 'detail' | 'edit'
+) => {
+  const target = phase === 'designer'
+    ? page.locator('.canvas-render-shell').first()
+    : page.locator('.detail-layout-container').first()
+  await expect(target).toBeVisible({ timeout: 10000 })
+  const screenshot = await target.screenshot({ animations: 'disabled' })
+  await testInfo.attach(`layout-${scenarioKind}-${phase}`, {
+    body: screenshot,
+    contentType: 'image/png'
+  })
+}
+
 test.describe('Layout Placement Baseline Regression (Designer/Detail/Edit)', () => {
   test.setTimeout(120000)
 
   for (const scenario of scenarios) {
-    test(`${scenario.kind} should keep persisted field placement across designer, detail and edit`, async ({ page }) => {
+    test(`${scenario.kind} should keep persisted field placement across designer, detail and edit`, async ({ page }, testInfo) => {
       await mockApis(page, scenario)
 
       await page.goto(
@@ -555,6 +572,7 @@ test.describe('Layout Placement Baseline Regression (Designer/Detail/Edit)', () 
         await expect(sidebar).toBeVisible()
         await expectRightOf(mainRight, sidebar)
       }
+      await attachLayoutSnapshot(page, testInfo, scenario.kind, 'designer')
 
       await page.goto(`/objects/${OBJECT_CODE}/${scenario.recordId}`, { waitUntil: 'domcontentloaded' })
       await expect(page).toHaveURL(new RegExp(`/objects/${OBJECT_CODE}/${scenario.recordId}`))
@@ -571,6 +589,7 @@ test.describe('Layout Placement Baseline Regression (Designer/Detail/Edit)', () 
         await expect(sidebar).toBeVisible()
         await expectRightOf(mainRight, sidebar)
       }
+      await attachLayoutSnapshot(page, testInfo, scenario.kind, 'detail')
 
       await page.locator('.header-actions .el-button').first().click()
       await expect(page.locator('.drawer-compat-proxy')).toBeVisible({ timeout: 10000 })
@@ -585,6 +604,7 @@ test.describe('Layout Placement Baseline Regression (Designer/Detail/Edit)', () 
       }
 
       await expect(page.locator('.detail-content .field-label', { hasText: RUNTIME_SHADOW_LABEL })).toHaveCount(0)
+      await attachLayoutSnapshot(page, testInfo, scenario.kind, 'edit')
     })
   }
 })

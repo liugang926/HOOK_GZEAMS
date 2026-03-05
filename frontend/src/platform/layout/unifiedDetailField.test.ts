@@ -147,6 +147,25 @@ describe('unifiedDetailField', () => {
       }
     })
     expect((sizedFromComponentProps as any).minHeight).toBe(164)
+
+    const referenceField = toUnifiedDetailField({
+      code: 'owner',
+      label: 'Owner',
+      fieldType: 'reference',
+      reference_model_path: 'apps.accounts.models.User',
+      reference_display_field: 'username'
+    })
+    expect(referenceField.type).toBe('reference')
+    expect(referenceField.referenceObject).toBe('apps.accounts.models.User')
+    expect(referenceField.referenceDisplayField).toBe('username')
+
+    const userField = toUnifiedDetailField({
+      code: 'assignee',
+      label: 'Assignee',
+      fieldType: 'user'
+    })
+    expect(userField.type).toBe('user')
+    expect(userField.referenceObject).toBe('User')
   })
 
   it('builds required form rules from field metadata', () => {

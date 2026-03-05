@@ -61,6 +61,8 @@ export interface RuntimeField {
   defaultValue?: unknown
   options?: RuntimeFieldOption[]
   referenceObject?: string
+  referenceDisplayField?: string
+  referenceSecondaryField?: string
   componentProps?: Record<string, unknown>
   objectCode?: string
   instanceId?: string | null

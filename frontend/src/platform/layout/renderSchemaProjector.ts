@@ -65,6 +65,22 @@ const projectRuntimeField = (field: AnyRecord): RuntimeField => {
     referenceObject: String(
       metadata.referenceObject || metadata.reference_model_path || metadata.relatedObject || ''
     ) || undefined,
+    referenceDisplayField: String(
+      field.referenceDisplayField ||
+      field.reference_display_field ||
+      metadata.referenceDisplayField ||
+      metadata.reference_display_field ||
+      metadata.displayField ||
+      metadata.display_field ||
+      ''
+    ) || undefined,
+    referenceSecondaryField: String(
+      field.referenceSecondaryField ||
+      field.reference_secondary_field ||
+      metadata.referenceSecondaryField ||
+      metadata.reference_secondary_field ||
+      ''
+    ) || undefined,
     objectCode: metadata.objectCode || metadata.object_code,
     instanceId: metadata.instanceId || metadata.instance_id,
     componentProps,

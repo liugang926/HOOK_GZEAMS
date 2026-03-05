@@ -6,6 +6,8 @@ Provides ViewSets for IntegrationConfig model following BaseModelViewSet pattern
 from rest_framework import status
 from rest_framework.decorators import action
 from django.db.models import Count, Q
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 
 from apps.common.viewsets.base import BaseModelViewSetWithBatch
 from apps.common.responses.base import BaseResponse
@@ -15,6 +17,7 @@ from apps.integration.serializers import (
     IntegrationConfigDetailSerializer,
     IntegrationConfigCreateSerializer,
     IntegrationConfigUpdateSerializer,
+    IntegrationConfigStatsResponseSerializer,
     IntegrationSyncTaskDetailSerializer,
 )
 from apps.integration.filters import IntegrationConfigFilter
@@ -214,6 +217,18 @@ class IntegrationConfigViewSet(BaseModelViewSetWithBatch):
             message='Sync task created successfully',
         )
 
+    @extend_schema(
+        summary='Get integration config statistics',
+        description='Return aggregated config counts after applying query filters.',
+        parameters=[
+            OpenApiParameter('system_type', OpenApiTypes.STR, required=False),
+            OpenApiParameter('is_enabled', OpenApiTypes.BOOL, required=False),
+            OpenApiParameter('health_status', OpenApiTypes.STR, required=False),
+            OpenApiParameter('last_sync_status', OpenApiTypes.STR, required=False),
+            OpenApiParameter('system_name', OpenApiTypes.STR, required=False),
+        ],
+        responses={200: IntegrationConfigStatsResponseSerializer},
+    )
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """

@@ -1,0 +1,61 @@
+{
+    "title": "SSO Management",
+    "subtitle": "WeWork · DingTalk · Feishu",
+    "tabs": {
+        "providers": "SSO Providers",
+        "mappings": "User Mappings",
+        "syncLogs": "Sync Logs"
+    },
+    "providers": {
+        "add": "Add Provider",
+        "createTitle": "Add SSO Provider",
+        "editTitle": "Edit SSO Provider",
+        "test": "Test",
+        "testSuccess": "Connection test succeeded",
+        "testFailed": "Connection test failed",
+        "cols": {
+            "platform": "Platform",
+            "name": "Name",
+            "appId": "App ID",
+            "enabled": "Enabled",
+            "actions": "Actions"
+        },
+        "form": {
+            "platform": "Platform",
+            "name": "Config Name",
+            "appId": "App ID / Corp ID",
+            "appSecret": "App Secret",
+            "redirectUri": "Redirect URI",
+            "enabled": "Enabled"
+        }
+    },
+    "mappings": {
+        "searchPlaceholder": "Search users...",
+        "triggerSync": "Trigger Sync",
+        "syncTriggered": "Sync task triggered",
+        "syncFailed": "Failed to trigger sync",
+        "allPlatforms": "All Platforms",
+        "cols": {
+            "localUser": "Local User",
+            "platform": "Platform",
+            "externalId": "External ID",
+            "externalName": "External Name",
+            "syncStatus": "Sync Status",
+            "lastSyncAt": "Last Synced",
+            "actions": "Actions"
+        }
+    },
+    "syncLogs": {
+        "allPlatforms": "All Platforms",
+        "cols": {
+            "platform": "Platform",
+            "syncType": "Sync Type",
+            "status": "Status",
+            "totalCount": "Total",
+            "successCount": "Success",
+            "failedCount": "Failed",
+            "startTime": "Start Time",
+            "errorMsg": "Error"
+        }
+    }
+}
