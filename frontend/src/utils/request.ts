@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Axios Instance with Interceptors
  *
  * Centralized HTTP client with automatic field transformation and error handling.
@@ -14,6 +14,8 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import type { ApiResponse } from '@/types/api'
 import { handleApiError } from '@/utils/errorHandler'
+import { getStoredLocale } from '@/platform/i18n/localePreference'
+import { getStoredAccessToken, getStoredCurrentOrgId } from '@/platform/auth/sessionPreference'
 
 type RequestInstance = AxiosInstance & {
   <T = any>(config: AxiosRequestConfig): Promise<T>
@@ -68,19 +70,19 @@ request.interceptors.request.use(
 
     // Add authorization header
     if (!noAuth) {
-      const token = localStorage.getItem('access_token')
+      const token = getStoredAccessToken()
       if (token) {
         config.headers.Authorization = `Bearer ${token}`
       }
 
       // Add organization header
-      const orgId = localStorage.getItem('current_org_id')
+      const orgId = getStoredCurrentOrgId()
       if (orgId) {
         config.headers['X-Organization-ID'] = orgId
       }
 
       // Add Accept-Language header for i18n
-      const locale = localStorage.getItem('locale') || 'zh-CN'
+      const locale = getStoredLocale()
       config.headers['Accept-Language'] = locale
     }
 
@@ -164,3 +166,4 @@ export default request
  * Export the request type for use in other modules
  */
 export type { AxiosInstance, AxiosRequestConfig, AxiosResponse }
+

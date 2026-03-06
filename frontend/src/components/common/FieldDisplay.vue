@@ -50,88 +50,17 @@
       v-if="referenceEntries.length > 0"
       class="reference-read-view"
     >
-      <el-popover
+      <ReferenceRecordPill
         v-for="(entry, index) in referenceEntries"
         :key="entry.id || `${entry.label}-${index}`"
-        trigger="hover"
-        placement="top-start"
-        :width="300"
-      >
-        <template #reference>
-          <div class="reference-read-item">
-            <el-link
-              v-if="entry.href"
-              :href="entry.href"
-              target="_blank"
-              type="primary"
-              class="reference-link"
-              :underline="false"
-            >
-              {{ entry.label }}
-            </el-link>
-            <span
-              v-else
-              class="reference-link"
-            >
-              {{ entry.label }}
-            </span>
-          </div>
-        </template>
-        <div class="reference-hover-card">
-          <div class="reference-hover-card__header">
-            <ObjectAvatar
-              :object-code="referenceObjectCode || 'Ref'"
-              size="sm"
-            />
-            <div class="reference-hover-card__content">
-              <span class="reference-hover-card__title">{{ entry.label }}</span>
-              <span
-                v-if="entry.secondary"
-                class="reference-hover-card__subtitle"
-              >
-                {{ entry.secondary }}
-              </span>
-            </div>
-            <el-tag
-              v-if="referenceObjectCode"
-              size="small"
-              effect="plain"
-            >
-              {{ referenceObjectCode }}
-            </el-tag>
-          </div>
-          <div
-            v-if="entry.id"
-            class="reference-hover-card__meta"
-          >
-            <span class="reference-hover-card__meta-label">{{ idLabel }}</span>
-            <span class="reference-hover-card__meta-value">{{ entry.id }}</span>
-          </div>
-          <div
-            v-if="entry.href"
-            class="reference-hover-card__actions"
-          >
-            <el-button
-              tag="a"
-              :href="entry.href"
-              target="_blank"
-              type="primary"
-              size="small"
-              plain
-            >
-              {{ openActionText }}
-            </el-button>
-            <el-button
-              v-if="referenceObjectCode === 'User' || referenceObjectCode === 'system_user'"
-              type="success"
-              size="small"
-              plain
-            >
-              Contact
-            </el-button>
-          </div>
-        </div>
-      </el-popover>
+        :label="entry.label"
+        :secondary="entry.secondary"
+        :href="entry.href"
+        :object-code="referenceObjectCode"
+        :record-id="entry.id"
+        :id-label="idLabel"
+        :open-action-text="openActionText"
+      />
     </div>
     <span v-else>-</span>
   </template>
@@ -251,7 +180,7 @@ import { formatDate } from '@/utils/dateFormat'
 import { formatMoney } from '@/utils/numberFormat'
 import { normalizeFieldType } from '@/utils/fieldType'
 import { systemFileApi, resolveSystemFileUrl, type SystemFile } from '@/api/systemFile'
-import ObjectAvatar from '@/components/common/ObjectAvatar.vue'
+import ReferenceRecordPill from '@/components/common/ReferenceRecordPill.vue'
 import { referenceResolver } from '@/platform/reference/referenceResolver'
 import {
   extractReferenceIds,

@@ -41,13 +41,15 @@ import { createModePolicyForContext } from '@/platform/layout/layoutRenderModel'
 import { toUnifiedDetailField, buildRequiredFormRules } from '@/platform/layout/unifiedDetailField'
 import { compileLayoutSchema } from '@/platform/layout/layoutCompiler'
 import { resolveRelationTargetObjectCode } from '@/platform/reference/relationObjectCode'
+import { buildRecordRelationGroupScopeId } from '@/platform/reference/relationGroupScope'
+import { readStorageString } from '@/platform/storage/browserStorage'
 
 const { t } = useI18n()
 const slots = useSlots()
 
 const isDetailDebugEnabled = (() => {
   if (!(import.meta as any).env?.DEV || typeof window === 'undefined') return false
-  return window.localStorage.getItem('detail_debug') === '1'
+  return readStorageString('detail_debug') === '1'
 })()
 
 function debugDetailLog(event: string, payload: Record<string, any>) {
@@ -145,6 +147,10 @@ const baseDetailRef = ref<any>(null)
 
 /** Get record ID from props or route params */
 const recordId = computed(() => props.recordId || route.params.id as string)
+
+const relationGroupScopeId = computed(() => {
+  return buildRecordRelationGroupScopeId(recordId.value, recordData.value?.code)
+})
 
 /** Page title */
 const pageTitle = computed(() => {
@@ -252,10 +258,39 @@ const detailSections = computed<DetailSection[]>(() => {
   return sections
 })
 
+/** Find all related_object codes that are already explicitly placed in the layout canvas */
+const usedRelationCodesInLayout = computed<Set<string>>(() => {
+  const codes = new Set<string>()
+  for (const section of detailSections.value || []) {
+    // Process sidebar fields too, they shouldn't duplicate in Related tab
+    const candidates = [...(section.fields || [])]
+    for (const tab of section.tabs || []) {
+      candidates.push(...(tab.fields || []))
+    }
+    
+    for (const field of candidates) {
+      if (field.type === 'related_object' && field.prop) {
+        // Field prop maps to relation code when projected as a field
+        codes.add(field.prop)
+        
+        // Also add componentProps.relationCode if explicitly overridden
+        if (field.componentProps?.relationCode) {
+          codes.add(field.componentProps.relationCode)
+        }
+      }
+    }
+  }
+  return codes
+})
+
 /** Convert reverse relations to BaseDetailPage format */
 const visibleReverseRelations = computed<ReverseRelationField[]>(() => {
+  const usedCodes = usedRelationCodesInLayout.value
+
   if (runtimeReverseRelationFields.value?.length) {
-    return runtimeReverseRelationFields.value.map((rel: any) => ({
+    return runtimeReverseRelationFields.value
+      .filter((rel: any) => !usedCodes.has(rel.code))
+      .map((rel: any) => ({
       code: rel.code,
       label: rel.label || rel.name,
       displayMode: rel.relationDisplayMode || rel.relation_display_mode || 'inline_readonly',
@@ -277,7 +312,9 @@ const visibleReverseRelations = computed<ReverseRelationField[]>(() => {
   const readonlyRelations = getRelationsByMode('inline_readonly')
   const timelineRelations = getRelationsByMode('timeline')
 
-  return [...inlineRelations, ...readonlyRelations, ...timelineRelations].map(rel => ({
+  return [...inlineRelations, ...readonlyRelations, ...timelineRelations]
+    .filter(rel => !usedCodes.has(rel.code))
+    .map(rel => ({
     code: rel.code,
     label: rel.label || rel.name,
     displayMode: rel.relationDisplayMode || rel.relation_display_mode || 'inline_readonly',
@@ -737,6 +774,7 @@ defineExpose({
       :form-rules="formRules"
       :extra-actions="extraActions"
       :object-code="objectCode"
+      :relation-group-scope-id="relationGroupScopeId"
       :reverse-relations="visibleReverseRelations"
       :show-related-objects="true"
       @edit="handleEdit"

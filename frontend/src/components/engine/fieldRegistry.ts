@@ -53,7 +53,8 @@ export const FIELD_COMPONENT_LOADERS: Record<string, FieldComponentLoader> = {
   color: () => import('./fields/ColorField.vue'),
   rate: () => import('./fields/RateField.vue'),
   slider: () => import('./fields/SliderField.vue'),
-  switch: () => import('./fields/SwitchField.vue')
+  switch: () => import('./fields/SwitchField.vue'),
+  related_object: () => import('@/components/common/RelatedObjectTable.vue')
 }
 
 const FIELD_TYPE_ALIASES: Record<string, string> = {

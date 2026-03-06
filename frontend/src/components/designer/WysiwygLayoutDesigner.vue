@@ -260,6 +260,7 @@
                 :object-code="objectCode"
                 :object-name="previewObjectName"
                 :reverse-relations="previewReverseRelations"
+                :relation-group-scope-id="previewRelationGroupScopeId"
                 @section-click="maybeSelectSection"
               >
                 <template
@@ -681,6 +682,7 @@ import { normalizeGridSpan24 } from '@/platform/layout/semanticGrid'
 import { getCanvasPlacementAttrs, placeCanvasFields, type CanvasPlacement } from '@/platform/layout/canvasLayout'
 import { buildLayoutFieldDropper, compileLayoutSchema } from '@/platform/layout/layoutCompiler'
 import { resolveRelationTargetObjectCode } from '@/platform/reference/relationObjectCode'
+import { buildDesignerRelationGroupScopeId } from '@/platform/reference/relationGroupScope'
 import {
   getDefaultLayoutConfig,
   cloneLayoutConfig,
@@ -691,6 +693,11 @@ import { normalizeLayoutType } from '@/utils/layoutMode'
 import { useHotkey } from '@/composables/useHotkeys'
 import { storage } from '@/utils/storage'
 import { debounce } from 'lodash-es'
+import {
+  DESIGNER_COMPONENT_PROP_KEYS,
+  setDesignerComponentProp,
+  resolveDesignerFieldProps
+} from '@/components/designer/designerComponentProps'
 import type { LayoutFieldConfig } from '@/types/metadata'
 import type { LayoutMode } from '@/types/layout'
 import type { FieldDefinition as RuntimeFieldDefinition } from '@/types'
@@ -1802,6 +1809,13 @@ const previewObjectName = computed(() => {
   return props.objectCode || props.layoutName || 'Record'
 })
 
+const previewRelationGroupScopeId = computed(() => {
+  return buildDesignerRelationGroupScopeId({
+    mode: props.mode,
+    layoutId: props.layoutId
+  })
+})
+
 const previewPageTitle = computed(() => {
   const fields = previewFieldDefinitions.value || []
   const identifier = fields.find((field: any) => field?.isIdentifier || field?.is_identifier || field?.code === 'name')
@@ -2247,42 +2261,6 @@ function handleCollapseDrop(e: DragEvent) {
   addFieldToContainer(field, { kind: 'collapse', sectionId, collapseId })
 }
 
-const DESIGNER_COMPONENT_PROP_KEYS = new Set<string>([
-  'lookupCompactKeys'
-])
-
-const normalizeLookupCompactKeys = (value: unknown): string[] => {
-  if (!Array.isArray(value)) return []
-  return value
-    .map((item) => String(item || '').trim())
-    .filter(Boolean)
-}
-
-const normalizeLookupColumns = (value: unknown): Array<{ key: string; label?: string; minWidth?: number; width?: number }> => {
-  if (!Array.isArray(value)) return []
-  const out: Array<{ key: string; label?: string; minWidth?: number; width?: number }> = []
-  const seen = new Set<string>()
-  for (const item of value) {
-    const key = typeof item === 'string'
-      ? String(item || '').trim()
-      : String((item as Record<string, any>)?.key || '').trim()
-    if (!key || seen.has(key)) continue
-    seen.add(key)
-    const next: { key: string; label?: string; minWidth?: number; width?: number } = { key }
-    if (typeof item === 'object' && item) {
-      const raw = item as Record<string, any>
-      const label = String(raw.label || '').trim()
-      if (label) next.label = label
-      const minWidth = Number(raw.minWidth ?? raw.min_width)
-      const width = Number(raw.width)
-      if (Number.isFinite(minWidth) && minWidth > 0) next.minWidth = minWidth
-      if (Number.isFinite(width) && width > 0) next.width = width
-    }
-    out.push(next)
-  }
-  return out
-}
-
 // Field update
 function updateField(key: string, value: any) {
   if (!selectedId.value || elementType.value !== 'field') return
@@ -2317,19 +2295,7 @@ function updateField(key: string, value: any) {
       setLayoutFieldMinHeight(item as LayoutField, value)
     } else if (DESIGNER_COMPONENT_PROP_KEYS.has(key)) {
       const fieldItem = item as LayoutField
-      const componentProps = {
-        ...((fieldItem.componentProps || {}) as Record<string, any>),
-        ...((fieldItem as any).component_props || {})
-      }
-      if (key === 'lookupCompactKeys') {
-        componentProps.lookupCompactKeys = normalizeLookupCompactKeys(value)
-        componentProps.lookup_compact_keys = [...componentProps.lookupCompactKeys]
-      } else {
-        componentProps[key] = value
-      }
-      fieldItem.componentProps = componentProps
-      ;(fieldItem as any).component_props = componentProps
-      delete (fieldItem as any)[key]
+      setDesignerComponentProp(fieldItem as unknown as Record<string, any>, key, value)
     } else {
       item[key] = value
     }
@@ -3049,7 +3015,22 @@ async function loadAvailableFields() {
     const metadataFields = Array.isArray(metadataPayload?.fields) ? metadataPayload.fields : []
 
     // Runtime fields preserve active layout semantics; metadata fills gaps for full designer palette.
-    const combined = mergeFieldSources(runtimeFields, metadataFields)
+    let combined = mergeFieldSources(runtimeFields, metadataFields)
+
+    if (runtimeReverseRelations && runtimeReverseRelations.length > 0) {
+      const relatedObjectFields = runtimeReverseRelations.map((rel: any) => ({
+        code: rel.code,
+        name: rel.label || rel.name || rel.code,
+        fieldType: 'related_object',
+        componentProps: {
+          relationCode: rel.code,
+          relatedObjectCode: extractRelatedObjectCode(rel),
+          displayMode: rel.relationDisplayMode || rel.relation_display_mode || 'inline_readonly',
+        }
+      }))
+      combined = combined.concat(relatedObjectFields)
+    }
+
     if (combined.length > 0) {
       availableFields.value = normalizeAvailableFields(combined)
       layoutConfig.value = normalizeAndEnsureLayoutConfig(layoutConfig.value)
@@ -3085,26 +3066,12 @@ watch(selectedId, () => {
 
   if (elementType.value === 'field') {
     const field = item as LayoutField
-    const componentProps = {
-      ...((field.componentProps || {}) as Record<string, any>),
-      ...((field as any).component_props || {})
-    }
     const nextFieldProps: Record<string, any> = {
       ...field,
       fieldType: normalizeFieldType((field as any).fieldType || (field as any).field_type || 'text'),
       minHeight: resolveLayoutFieldMinHeight(field)
     }
-    nextFieldProps.lookupCompactKeys = normalizeLookupCompactKeys(
-      (field as any).lookupCompactKeys ??
-      componentProps.lookupCompactKeys ??
-      componentProps.lookup_compact_keys
-    )
-    nextFieldProps.lookupColumns = normalizeLookupColumns(
-      (field as any).lookupColumns ??
-      (field as any).lookup_columns ??
-      componentProps.lookupColumns ??
-      componentProps.lookup_columns
-    )
+    Object.assign(nextFieldProps, resolveDesignerFieldProps(field as unknown as Record<string, any>))
     fieldProps.value = nextFieldProps
   } else if (elementType.value === 'section') {
     sectionProps.value = { ...item }

@@ -4,6 +4,7 @@ import i18n, { normalizeLocale, type LocaleType, SUPPORT_LOCALES } from '@/local
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import en from 'element-plus/dist/locale/en.mjs'
 import { languageApi, type Language } from '@/api/translations'
+import { getStoredLocale, setStoredLocale } from '@/platform/i18n/localePreference'
 
 const ELEMENT_LOCALES: Record<string, typeof zhCn> = {
     'zh-CN': zhCn,
@@ -15,7 +16,7 @@ const ELEMENT_LOCALES: Record<string, typeof zhCn> = {
 }
 
 export const useLocaleStore = defineStore('locale', () => {
-    const currentLocale = ref<LocaleType>(normalizeLocale(localStorage.getItem('locale')))
+    const currentLocale = ref<LocaleType>(normalizeLocale(getStoredLocale()))
     const availableLanguages = ref<Language[]>([])
     const languagesLoaded = ref(false)
 
@@ -59,7 +60,7 @@ export const useLocaleStore = defineStore('locale', () => {
     const setLocale = (locale: LocaleType) => {
         currentLocale.value = locale
         i18n.global.locale.value = locale
-        localStorage.setItem('locale', locale)
+        setStoredLocale(locale)
         document.documentElement.setAttribute('lang', locale.split('-')[0])
     }
 
@@ -104,3 +105,4 @@ export const useLocaleStore = defineStore('locale', () => {
         supportedLocales: SUPPORT_LOCALES
     }
 })
+

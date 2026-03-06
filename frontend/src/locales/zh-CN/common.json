@@ -76,10 +76,13 @@
   "labels": {
     "assetForSearch": "Asset For Search",
     "auditInfo": "系统信息",
+    "basic": "基础",
     "contact": "Contact",
     "createdAt": "创建时间",
     "createdBy": "创建人",
     "description": "Description",
+    "display": "显示",
+    "full": "完整",
     "operation": "Operation",
     "relatedObjects": "相关对象",
     "remark": "Remark",
@@ -93,8 +96,11 @@
     "standard": "标准",
     "compact": "精简",
     "custom": "自定义",
+    "simple": "简洁",
     "recentRecords": "最近记录",
-    "searchResults": "搜索结果"
+    "searchResults": "搜索结果",
+    "validation": "校验",
+    "advanced": "高级"
   },
   "hotkeys": {
     "title": "键盘快捷键",
@@ -170,6 +176,7 @@
     "unknownActionType": "未知动作类型：{type}",
     "updateFailed": "更新失败",
     "updateSuccess": "更新成功",
+    "readonlyByDefaultInDetailMode": "详情模式下默认只读",
     "noSearchResults": "未找到匹配项",
     "records": "条记录",
     "emptyHint": "暂无数据，请尝试创建一条新记录",
@@ -181,9 +188,9 @@
     "lookupProfileStandardHint": "显示默认列与默认宽度。",
     "lookupProfileCompactHint": "聚焦关键列，便于快速浏览。",
     "lookupProfileCustomHint": "使用你手动设置的列显示、顺序和宽度。",
-    "subtableShortcutHelpHint": "用于查找弹窗的精简视图，系统锁定列会始终保留。",
-    "subtableShortcutPinnedHint": "聚焦关键列，便于快速浏览。",
-    "subtableShortcutPinnedRequiresHelpHint": "显示默认列与默认宽度。"
+    "subtableShortcutHelpHint": "在可编辑子表中启用键盘快捷键帮助面板。",
+    "subtableShortcutPinnedHint": "启用后，快捷键帮助面板将默认以固定模式打开。",
+    "subtableShortcutPinnedRequiresHelpHint": "请先启用快捷键帮助，再使用默认固定模式。"
   },
   "no": "否",
   "notes": "Notes",

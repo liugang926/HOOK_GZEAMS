@@ -9,6 +9,7 @@
  */
 
 import request from '@/utils/request'
+import { getStoredLocale, setStoredLocale } from '@/platform/i18n/localePreference'
 
 export interface Language {
   id: string
@@ -283,14 +284,14 @@ export const translationApi = {
  * Get current user's language preference
  */
 export const getCurrentLanguage = (): string => {
-  return localStorage.getItem('locale') || 'zh-CN'
+  return getStoredLocale()
 }
 
 /**
  * Set current language and persist to localStorage
  */
 export const setCurrentLanguage = (langCode: string) => {
-  localStorage.setItem('locale', langCode)
+  setStoredLocale(langCode)
 
   // Update HTML lang attribute
   document.documentElement.lang = langCode.replace('-', '')
@@ -312,3 +313,4 @@ export const localeToLang = (locale: string): string => {
   }
   return locale
 }
+

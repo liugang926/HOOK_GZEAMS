@@ -38,6 +38,7 @@ const CORE_FIELD_TYPES = [
   'barcode',
   'sub_table',
   'formula',
+  'related_object',
 ] as const
 
 const DEFAULT_MODES: Record<FieldRenderMode, boolean> = {
@@ -90,6 +91,7 @@ const MATRIX: Record<string, FieldCapability> = {
   barcode: cap('barcode', 'barcode', { core: true, modes: { search: false } }),
   sub_table: cap('sub_table', 'sub_table', { core: true, modes: { list: false, search: false }, sortable: false }),
   formula: cap('formula', 'formula', { core: true, modes: { search: false } }),
+  related_object: cap('related_object', 'related_object', { core: true, modes: { search: false, list: false }, sortable: false }),
 
   // Non-core but supported by current engine
   switch: cap('switch', 'switch', { modes: { list: false } }),
@@ -128,6 +130,7 @@ const KNOWN_COMPONENT_TYPES = new Set<string>([
   'json',
   'sub_table',
   'formula',
+  'related_object',
   'file',
   'image',
   'attachment',

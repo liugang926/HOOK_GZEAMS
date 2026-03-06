@@ -38,5 +38,21 @@ describe('referenceLookupRecent', () => {
     clearRecentReferenceIds('User', { storage })
     expect(loadRecentReferenceIds('User', { storage })).toEqual([])
   })
-})
 
+  it('isolates recent ids by optional scope', () => {
+    const storage = new MemoryStorage()
+    saveRecentReferenceIds('Asset', ['a-1'], { storage, scope: 'object-detail:Asset' })
+    saveRecentReferenceIds('Asset', ['a-2'], { storage, scope: 'object-edit:Asset' })
+
+    expect(loadRecentReferenceIds('Asset', { storage, scope: 'object-detail:Asset', limit: 10 })).toEqual(['a-1'])
+    expect(loadRecentReferenceIds('Asset', { storage, scope: 'object-edit:Asset', limit: 10 })).toEqual(['a-2'])
+  })
+
+  it('migrates legacy unscoped recent ids to scoped key', () => {
+    const storage = new MemoryStorage()
+    saveRecentReferenceIds('Asset', ['a-1', 'a-2'], { storage })
+
+    expect(loadRecentReferenceIds('Asset', { storage, scope: 'object-detail:Asset', limit: 10 })).toEqual(['a-1', 'a-2'])
+    expect(loadRecentReferenceIds('Asset', { storage, limit: 10 })).toEqual([])
+  })
+})

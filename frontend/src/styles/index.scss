@@ -202,3 +202,88 @@ html.is-compact {
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
 }
+
+/* ====================================================================
+   Table Header Sorting Overrides (Professional Salesforce/SaaS Style)
+   ==================================================================== */
+.el-table {
+
+    /* Hide the default double-triangles for un-sorted columns */
+    .caret-wrapper {
+        display: none;
+    }
+
+    /* When a column is actually sortable, show caret wrapper on hover or active */
+    th.el-table__cell.is-sortable {
+
+        /* Ensure header cell content is flex to align text and icon properly */
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding-right: 24px;
+            /* Make room for the arrow */
+            position: relative;
+        }
+
+        /* Bring back the caret wrapper on hover or if currently sorted */
+        &:hover .caret-wrapper,
+        &.ascending .caret-wrapper,
+        &.descending .caret-wrapper {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            position: absolute;
+            right: 8px;
+            /* Push to the right edge with standard breathing room */
+            height: 14px;
+            width: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Refine the arrows inside the wrapper */
+        .caret-wrapper {
+
+            /* Hide both arrows initially inside the wrapper */
+            .sort-caret {
+                display: none;
+                border-width: 5px;
+                position: absolute;
+            }
+
+            /* 1. Default Hover State (Not Sorted): Show a faint down arrow to hint sortability */
+            &:hover {
+                .sort-caret.bottom {
+                    display: block;
+                    border-top-color: #cbd5e1;
+                    /* Slate-300 faint hint */
+                    top: 4px;
+                }
+            }
+        }
+
+        /* 2. Active Ascending State: Show solid UP arrow in primary color */
+        &.ascending {
+            .caret-wrapper .sort-caret.top {
+                display: block;
+                border-bottom-color: var(--el-color-primary);
+                top: 2px;
+            }
+
+            .caret-wrapper:hover .sort-caret.bottom {
+                display: none;
+                /* Suppress the hover down arrow when ascending */
+            }
+        }
+
+        /* 3. Active Descending State: Show solid DOWN arrow in primary color */
+        &.descending {
+            .caret-wrapper .sort-caret.bottom {
+                display: block;
+                border-top-color: var(--el-color-primary);
+                top: 4px;
+            }
+        }
+    }
+}

@@ -1,28 +1,35 @@
+import {
+  buildStorageKey,
+  normalizeStorageSegment,
+  readWithLegacyMigration,
+  removeLegacyKey,
+  resolveStorage,
+  type StorageLike
+} from '@/platform/reference/scopedStorage'
+
 const RECENT_PREFIX = 'gzeams:lookup:recent:'
 const DEFAULT_LIMIT = 6
 const MAX_LIMIT = 20
 
-type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
-
 const normalizeObjectCode = (raw: unknown): string => {
-  return String(raw || '').trim()
+  return normalizeStorageSegment(raw)
 }
 
 const normalizeId = (raw: unknown): string => {
-  return String(raw || '').trim()
+  return normalizeStorageSegment(raw)
 }
 
-const resolveStorage = (storage?: StorageLike | null): StorageLike | null => {
-  if (storage) return storage
-  if (typeof window === 'undefined') return null
-  try {
-    return window.localStorage
-  } catch {
-    return null
-  }
+const normalizeScope = (raw: unknown): string => {
+  return normalizeStorageSegment(raw)
 }
 
-const makeKey = (objectCode: string): string => `${RECENT_PREFIX}${objectCode}`
+const makeKey = (objectCode: string, scope?: unknown): string => {
+  const normalizedScope = normalizeScope(scope)
+  if (!normalizedScope) return buildStorageKey(RECENT_PREFIX, objectCode)
+  return buildStorageKey(RECENT_PREFIX, objectCode, normalizedScope)
+}
+
+const makeLegacyKey = (objectCode: string): string => buildStorageKey(RECENT_PREFIX, objectCode)
 
 const safeParse = (raw: string | null): string[] => {
   if (!raw) return []
@@ -45,14 +52,18 @@ const clampLimit = (limit: number | undefined): number => {
 
 export const loadRecentReferenceIds = (
   objectCode: unknown,
-  options?: { limit?: number; storage?: StorageLike | null }
+  options?: { limit?: number; scope?: unknown; storage?: StorageLike | null }
 ): string[] => {
   const code = normalizeObjectCode(objectCode)
   if (!code) return []
   const storage = resolveStorage(options?.storage)
   if (!storage) return []
 
-  const ids = safeParse(storage.getItem(makeKey(code)))
+  const scopedKey = makeKey(code, options?.scope)
+  const scoped = normalizeScope(options?.scope)
+  const legacyKey = scoped ? makeLegacyKey(code) : undefined
+  const raw = readWithLegacyMigration(storage, scopedKey, legacyKey)
+  const ids = safeParse(raw)
   const limit = clampLimit(options?.limit)
   return ids.slice(0, limit)
 }
@@ -60,7 +71,7 @@ export const loadRecentReferenceIds = (
 export const saveRecentReferenceIds = (
   objectCode: unknown,
   ids: unknown[],
-  options?: { limit?: number; storage?: StorageLike | null }
+  options?: { limit?: number; scope?: unknown; storage?: StorageLike | null }
 ): void => {
   const code = normalizeObjectCode(objectCode)
   if (!code) return
@@ -72,20 +83,26 @@ export const saveRecentReferenceIds = (
     .filter(Boolean)
   if (incoming.length === 0) return
 
-  const current = safeParse(storage.getItem(makeKey(code)))
+  const scopedKey = makeKey(code, options?.scope)
+  const scoped = normalizeScope(options?.scope)
+  const legacyKey = scoped ? makeLegacyKey(code) : undefined
+  const current = safeParse(readWithLegacyMigration(storage, scopedKey, legacyKey))
   const merged = Array.from(new Set([...incoming, ...current]))
   const limit = clampLimit(options?.limit)
-  storage.setItem(makeKey(code), JSON.stringify(merged.slice(0, limit)))
+  storage.setItem(scopedKey, JSON.stringify(merged.slice(0, limit)))
+  removeLegacyKey(storage, scopedKey, legacyKey)
 }
 
 export const clearRecentReferenceIds = (
   objectCode: unknown,
-  options?: { storage?: StorageLike | null }
+  options?: { scope?: unknown; storage?: StorageLike | null }
 ): void => {
   const code = normalizeObjectCode(objectCode)
   if (!code) return
   const storage = resolveStorage(options?.storage)
   if (!storage) return
-  storage.removeItem(makeKey(code))
+  const scopedKey = makeKey(code, options?.scope)
+  const legacyKey = normalizeScope(options?.scope) ? makeLegacyKey(code) : undefined
+  storage.removeItem(scopedKey)
+  removeLegacyKey(storage, scopedKey, legacyKey)
 }
-

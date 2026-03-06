@@ -1,9 +1,17 @@
-import { defineStore } from 'pinia'
+﻿import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { authApi } from '@/api/auth'
 import { userApi } from '@/api/users'
 import { useLocaleStore } from '@/stores/locale'
 import { normalizeLocale } from '@/locales'
+import { getStoredLocaleSource, setStoredLocaleSource } from '@/platform/i18n/localePreference'
+import {
+    clearStoredAccessToken,
+    clearStoredCurrentOrgId,
+    getStoredAccessToken,
+    setStoredAccessToken,
+    setStoredCurrentOrgId
+} from '@/platform/auth/sessionPreference'
 import type { LoginData } from '@/types/auth'
 import type { User } from '@/types/common'
 
@@ -15,7 +23,7 @@ type CurrentOrganization = {
 }
 
 export const useUserStore = defineStore('user', () => {
-    const token = ref(localStorage.getItem('access_token') || '')
+    const token = ref(getStoredAccessToken())
     const userInfo = ref<User | null>(null)
     const currentOrganization = ref<CurrentOrganization | null>(null)
     const roles = ref<string[]>([])
@@ -25,7 +33,7 @@ export const useUserStore = defineStore('user', () => {
         const preferredLanguage = user?.preferredLanguage
         if (!preferredLanguage) return
 
-        const localeSource = localStorage.getItem('locale_source')
+        const localeSource = getStoredLocaleSource()
         if (localeSource === 'local') return
 
         const localeStore = useLocaleStore()
@@ -34,7 +42,7 @@ export const useUserStore = defineStore('user', () => {
         if (localeStore.currentLocale !== targetLocale) {
             localeStore.setLocale(targetLocale)
         }
-        localStorage.setItem('locale_source', 'profile')
+        setStoredLocaleSource('profile')
     }
 
     const login = async (loginForm: LoginData) => {
@@ -42,12 +50,12 @@ export const useUserStore = defineStore('user', () => {
             const res = await authApi.login(loginForm)
             if (res.token) {
                 token.value = res.token
-                localStorage.setItem('access_token', res.token)
+                setStoredAccessToken(res.token)
 
                 // Save organization ID for subsequent requests
                 if (res.organization) {
                     currentOrganization.value = res.organization
-                    localStorage.setItem('current_org_id', res.organization.id)
+                    setStoredCurrentOrgId(res.organization.id)
                 }
 
                 await getUserInfo()
@@ -68,7 +76,7 @@ export const useUserStore = defineStore('user', () => {
             // Update organization from user info if available
             if (user.primaryOrganization) {
                 currentOrganization.value = user.primaryOrganization
-                localStorage.setItem('current_org_id', user.primaryOrganization.id)
+                setStoredCurrentOrgId(user.primaryOrganization.id)
             }
 
             // Assuming roles/permissions come from user object or separate API
@@ -87,8 +95,8 @@ export const useUserStore = defineStore('user', () => {
         currentOrganization.value = null
         roles.value = []
         permissions.value = []
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('current_org_id')
+        clearStoredAccessToken()
+        clearStoredCurrentOrgId()
     }
 
     return {
@@ -102,3 +110,4 @@ export const useUserStore = defineStore('user', () => {
         logout
     }
 })
+

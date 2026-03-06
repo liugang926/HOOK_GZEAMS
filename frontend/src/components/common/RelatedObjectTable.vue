@@ -18,7 +18,7 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { Plus, Refresh } from '@element-plus/icons-vue'
+import { Plus, Refresh, Link } from '@element-plus/icons-vue'
 import BaseTable from './BaseTable.vue'
 import type { FieldDefinition, TableColumn } from '@/types'
 import request from '@/utils/request'
@@ -74,6 +74,8 @@ const emit = defineEmits<{
   (e: 'refresh'): void
 }>()
 
+
+
 // ============================================================================
 // State
 // ============================================================================
@@ -84,6 +86,7 @@ const records = ref<RelatedRecord[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(props.pageSize)
+const showAll = ref(false)
 const metadataColumns = ref<TableColumn[] | null>(null)
 const relationTargetObjectCode = ref('')
 
@@ -302,7 +305,7 @@ const fetchRecords = async () => {
       relationCode.value,
       {
         page: currentPage.value,
-        page_size: pageSize.value
+        page_size: showAll.value ? pageSize.value : 5
       }
     )
 
@@ -353,6 +356,15 @@ const handleCreate = () => {
       [props.field.reverseRelationField || props.parentObjectCode.toLowerCase()]: props.parentId
     }
   })
+}
+
+/**
+ * Handle view all
+ */
+const handleViewAll = () => {
+  showAll.value = true
+  currentPage.value = 1
+  fetchRecords()
 }
 
 /**
@@ -423,19 +435,23 @@ defineExpose({
 <template>
   <div
     v-if="mode !== 'hidden'"
-    class="related-object-table"
+    class="related-object-card"
   >
-    <!-- Table Header -->
-    <div class="table-header">
+    <!-- Card Header -->
+    <div class="card-header">
       <div class="header-left">
-        <h3 class="table-title">
+        <div class="header-icon-wrapper">
+          <el-icon><Link /></el-icon>
+        </div>
+        <h3 class="card-title">
           {{ title || relatedObjectDisplay }}
         </h3>
-        <el-badge
-          :value="total"
-          :max="9999"
-          class="count-badge"
-        />
+        <span
+          v-if="total > 0"
+          class="card-count"
+        >
+          ({{ total > 5 && !showAll ? '5+' : total }})
+        </span>
       </div>
       <div class="header-actions">
         <el-button
@@ -458,36 +474,52 @@ defineExpose({
     </div>
 
     <!-- Table -->
-    <BaseTable
-      :data="records"
-      :columns="tableColumns"
-      :loading="loading"
-      :show-header="true"
-      :border="true"
-      :stripe="true"
-      row-key="id"
-      @row-click="handleRowClick"
-      @action="(action: string, row: RelatedRecord) => action === 'edit' && handleEdit(row)"
-    >
-      <!-- Custom slot for specific columns can be added here -->
-      <template
-        v-for="column in tableColumns"
-        #[`column-${column.prop}`]="{ row }"
-        :key="column.prop"
+    <div class="card-body">
+      <BaseTable
+        :data="records"
+        :columns="tableColumns"
+        :loading="loading"
+        :show-header="true"
+        :border="false"
+        :stripe="false"
+        row-key="id"
+        class="related-list-table"
+        @row-click="handleRowClick"
+        @action="(action: string, row: RelatedRecord) => action === 'edit' && handleEdit(row)"
       >
-        <slot
-          :name="`cell-${column.prop}`"
-          :row="row"
-          :column="column"
+        <!-- Custom slot for specific columns can be added here -->
+        <template
+          v-for="column in tableColumns"
+          #[`column-${column.prop}`]="{ row }"
+          :key="column.prop"
         >
-          {{ row[column.prop] || '-' }}
-        </slot>
-      </template>
-    </BaseTable>
+          <slot
+            :name="`cell-${column.prop}`"
+            :row="row"
+            :column="column"
+          >
+            {{ row[column.prop] || '-' }}
+          </slot>
+        </template>
+      </BaseTable>
+    </div>
 
-    <!-- Pagination -->
+    <!-- View All Footer -->
     <div
-      v-if="total > pageSize"
+      v-if="total > 5 && !showAll"
+      class="card-footer"
+    >
+      <a
+        class="view-all-link"
+        @click="handleViewAll"
+      >
+        {{ $t('common.actions.viewAll', 'View All') }}
+      </a>
+    </div>
+
+    <!-- Pagination (hidden unless showAll is active) -->
+    <div
+      v-if="showAll && total > pageSize"
       class="table-pagination"
     >
       <el-pagination
@@ -504,36 +536,51 @@ defineExpose({
 </template>
 
 <style scoped lang="scss">
-.related-object-table {
-  background-color: #fff;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+@use '@/styles/variables.scss' as *;
+
+.related-object-card {
+  background-color: var(--el-bg-color-overlay, #ffffff);
+  border-radius: var(--el-border-radius-base, 8px);
+  border: 1px solid var(--el-border-color-lighter, #ebeef5);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  margin-bottom: 16px;
   overflow: hidden;
 
-  .table-header {
+  .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
-    background-color: #f5f7fa;
-    border-bottom: 1px solid #ebeef5;
+    padding: 12px 16px;
+    background-color: var(--el-bg-color-page, #f9fafc);
+    border-bottom: 1px solid var(--el-border-color-lighter, #ebeef5);
 
     .header-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
 
-      .table-title {
-        margin: 0;
+      .header-icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background-color: var(--el-color-primary-light-9, #ecf5ff);
+        color: var(--el-color-primary, #409eff);
+        border-radius: 4px;
         font-size: 16px;
-        font-weight: 500;
-        color: #303133;
       }
 
-      .count-badge {
-        :deep(.el-badge__content) {
-          background-color: #409eff;
-        }
+      .card-title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--el-text-color-primary, #303133);
+      }
+
+      .card-count {
+        font-size: 14px;
+        color: var(--el-text-color-secondary, #909399);
       }
     }
 
@@ -543,19 +590,60 @@ defineExpose({
     }
   }
 
+  .card-body {
+    padding: 0;
+    
+    :deep(.el-table) {
+      border: none;
+      
+      .el-table__inner-wrapper::before {
+        display: none; // remove bottom border from table wrapper
+      }
+      
+      th.el-table__cell {
+        background-color: transparent !important;
+        font-weight: 600;
+        color: var(--el-text-color-regular, #606266);
+      }
+    }
+  }
+
+  .card-footer {
+    border-top: 1px solid var(--el-border-color-lighter, #ebeef5);
+    background-color: var(--el-fill-color-blank, #ffffff);
+    padding: 0;
+    
+    .view-all-link {
+      display: block;
+      width: 100%;
+      padding: 12px 0;
+      text-align: center;
+      color: var(--el-color-primary, #409eff);
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      
+      &:hover {
+        background-color: var(--el-fill-color-light, #f5f7fa);
+      }
+    }
+  }
+
   .table-pagination {
     display: flex;
     justify-content: flex-end;
-    padding: 16px 20px;
-    background-color: #fff;
-    border-top: 1px solid #ebeef5;
+    padding: 12px 16px;
+    background-color: var(--el-fill-color-blank, #ffffff);
+    border-top: 1px solid var(--el-border-color-lighter, #ebeef5);
   }
 }
 
 // Mobile responsive
 @media (max-width: 768px) {
-  .related-object-table {
-    .table-header {
+  .related-object-card {
+    .card-header {
       flex-direction: column;
       gap: 12px;
       align-items: flex-start;

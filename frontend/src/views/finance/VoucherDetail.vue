@@ -6,6 +6,7 @@
       :data="voucherData"
       :loading="loading"
       :audit-info="auditInfo"
+      :relation-group-scope-id="relationGroupScopeId"
       :show-edit="false"
       :show-delete="false"
       :extra-actions="detailActions"
@@ -139,6 +140,7 @@ import { financeApi, integrationApi } from '@/api/finance'
 import { runAction } from '@/composables'
 import { useSyncTaskPolling } from '@/composables/useSyncTaskPolling'
 import { formatMoney } from '@/utils/numberFormat'
+import { buildRecordRelationGroupScopeId } from '@/platform/reference/relationGroupScope'
 
 const route = useRoute()
 const router = useRouter()
@@ -164,6 +166,9 @@ const {
 })
 
 const voucherId = computed(() => String(route.params.id || ''))
+const relationGroupScopeId = computed(() => {
+  return buildRecordRelationGroupScopeId(voucherId.value, voucherData.value?.voucherNo)
+})
 const taskStateKey = computed(() => `voucher:${voucherId.value}`)
 const currentTask = computed(() => (
   getTaskState(taskStateKey.value) || {

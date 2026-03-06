@@ -21,6 +21,15 @@
         :placeholder="searchPlaceholder"
         @keyup.enter="handleSearch"
       />
+      <div class="lookup-toolbar__scope">
+        <span class="lookup-toolbar__scope-label">{{ matchInLabelText }}</span>
+        <el-segmented
+          v-model="searchScope"
+          class="lookup-toolbar__scope-segmented"
+          :options="searchScopeOptions"
+          size="small"
+        />
+      </div>
       <el-button
         type="primary"
         :loading="loading"
@@ -166,6 +175,10 @@
               v-if="row.__showGroupTitle"
               class="lookup-cell__group-title"
             >
+              <span
+                class="lookup-cell__group-dot"
+                :class="row.__group === 'recent' ? 'is-recent' : 'is-search'"
+              />
               {{ resolveGroupTitle(row.__group) }}
             </div>
             <div class="lookup-cell">
@@ -206,7 +219,15 @@
 
     <div class="lookup-footer">
       <div class="lookup-footer__meta">
-        {{ selectionSummary }}
+        <span class="lookup-footer__summary">{{ selectionSummary }}</span>
+        <span
+          v-for="groupItem in footerGroupItems"
+          :key="groupItem.key"
+          class="lookup-footer__group"
+          :class="groupItem.key === 'recent' ? 'is-recent' : 'is-search'"
+        >
+          {{ groupItem.label }} {{ groupItem.count }}
+        </span>
       </div>
       <el-pagination
         v-if="viewMode === 'all'"
@@ -218,11 +239,34 @@
         @current-change="handlePageChange"
       />
     </div>
+    <div
+      v-if="!multiple"
+      class="lookup-hotkeys"
+      role="note"
+      aria-live="polite"
+    >
+      <span class="lookup-hotkeys__title">{{ keyboardTipsTitleText }}</span>
+      <span class="lookup-hotkeys__item">
+        <kbd>↑</kbd><kbd>↓</kbd>
+        {{ keyboardTipNavigateText }}
+      </span>
+      <span class="lookup-hotkeys__item">
+        <kbd>Enter</kbd>
+        {{ keyboardTipConfirmText }}
+      </span>
+    </div>
 
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="$emit('update:modelValue', false)">
           {{ cancelActionText }}
+        </el-button>
+        <el-button
+          v-if="!multiple"
+          :disabled="!activeSingleId"
+          @click="handleOpenSelected"
+        >
+          {{ openActionText }}
         </el-button>
         <el-button
           type="primary"
@@ -268,6 +312,7 @@ type LookupColumn = {
   minWidth?: number
   width?: number
 }
+type LookupSearchScope = 'all' | 'primary' | 'secondary' | 'id'
 
 const props = withDefaults(defineProps<{
   modelValue: boolean
@@ -277,6 +322,7 @@ const props = withDefaults(defineProps<{
   columns?: LookupColumnConfig[]
   preferenceKey?: string
   userScope?: string
+  preferenceScope?: string
   compactKeys?: string[]
   multiple?: boolean
   selectedIds?: string[]
@@ -285,6 +331,7 @@ const props = withDefaults(defineProps<{
   columns: () => [],
   preferenceKey: '',
   userScope: '',
+  preferenceScope: '',
   compactKeys: () => [],
   multiple: false,
   selectedIds: () => [],
@@ -309,6 +356,7 @@ const selectedMap = ref<Record<string, AnyRecord>>({})
 const activeSingleId = ref('')
 const activeSingleRow = ref<AnyRecord | null>(null)
 const viewMode = ref<'all' | 'recent'>('all')
+const searchScope = ref<LookupSearchScope>('all')
 
 const tr = (key: string, fallback: string, params?: Record<string, any>) => {
   const text = t(key, params || {})
@@ -324,6 +372,7 @@ const searchPlaceholder = computed(() =>
 const searchActionText = computed(() => tr('common.actions.search', 'Search'))
 const resetActionText = computed(() => tr('common.actions.reset', 'Reset'))
 const createActionText = computed(() => tr('common.actions.create', 'New'))
+const openActionText = computed(() => tr('common.actions.open', 'Open'))
 const cancelActionText = computed(() => tr('common.actions.cancel', 'Cancel'))
 const confirmActionText = computed(() => tr('common.actions.confirm', 'Confirm'))
 const nameLabel = computed(() => tr('common.columns.name', 'Name'))
@@ -332,7 +381,11 @@ const recentTagText = computed(() => tr('common.recent', 'Recent'))
 const codeLabel = computed(() => tr('common.columns.code', 'Code'))
 const recentGroupTitleText = computed(() => tr('common.labels.recentRecords', 'Recent Records'))
 const searchGroupTitleText = computed(() => tr('common.labels.searchResults', 'Search Results'))
+const matchInLabelText = computed(() => tr('common.labels.lookupMatchIn', 'Match in'))
 const columnsActionText = computed(() => tr('common.actions.columns', 'Columns'))
+const keyboardTipsTitleText = computed(() => tr('common.hotkeys.lookup.title', 'Keyboard'))
+const keyboardTipNavigateText = computed(() => tr('common.hotkeys.lookup.navigateRows', 'Move selection'))
+const keyboardTipConfirmText = computed(() => tr('common.hotkeys.lookup.confirm', 'Confirm selected'))
 const standardProfileText = computed(() => tr('common.labels.standard', 'Standard'))
 const compactProfileText = computed(() => tr('common.labels.compact', 'Compact'))
 const customProfileText = computed(() => tr('common.labels.custom', 'Custom'))
@@ -354,6 +407,22 @@ const profileHintText = computed(() => {
   if (activeProfile.value === 'compact') return compactProfileHintText.value
   if (activeProfile.value === 'custom') return customProfileHintText.value
   return standardProfileHintText.value
+})
+const hasSecondaryField = computed(() => {
+  const secondaryKey = String(props.secondaryField || '').trim()
+  const displayKey = String(props.displayField || '').trim()
+  return !!secondaryKey && secondaryKey !== displayKey
+})
+const searchScopeOptions = computed(() => {
+  const options: Array<{ label: string, value: LookupSearchScope }> = [
+    { label: tr('common.selectors.allFields', 'All Fields'), value: 'all' },
+    { label: nameLabel.value, value: 'primary' }
+  ]
+  if (hasSecondaryField.value) {
+    options.push({ label: codeLabel.value, value: 'secondary' })
+  }
+  options.push({ label: idLabel, value: 'id' })
+  return options
 })
 
 const toColumnLabel = (key: string): string => {
@@ -494,12 +563,12 @@ const saveColumnsPreference = (profile?: LookupColumnsProfile) => {
       widths: normalizedWidths,
       profile: normalizedProfile
     },
-    { preferenceKey: props.preferenceKey, userScope: props.userScope }
+    { preferenceKey: props.preferenceKey, userScope: props.userScope, scope: props.preferenceScope }
   )
   saveLastLookupProfile(
     props.objectCode,
     normalizedProfile,
-    { userScope: props.userScope }
+    { userScope: props.userScope, scope: props.preferenceScope }
   )
 }
 
@@ -788,12 +857,12 @@ const resetColumnsPreference = () => {
   activeProfile.value = 'standard'
   clearLookupColumnsPreference(
     props.objectCode,
-    { preferenceKey: props.preferenceKey, userScope: props.userScope }
+    { preferenceKey: props.preferenceKey, userScope: props.userScope, scope: props.preferenceScope }
   )
   saveLastLookupProfile(
     props.objectCode,
     'standard',
-    { userScope: props.userScope }
+    { userScope: props.userScope, scope: props.preferenceScope }
   )
 }
 
@@ -827,6 +896,26 @@ const groupCountMap = computed<Record<string, number>>(() => {
     out[group] = Number(out[group] || 0) + 1
   }
   return out
+})
+const footerGroupItems = computed<Array<{ key: 'recent' | 'search', label: string, count: number }>>(() => {
+  const recentCount = Number(groupCountMap.value.recent || 0)
+  const searchCount = Number(groupCountMap.value.search || 0)
+  const items: Array<{ key: 'recent' | 'search', label: string, count: number }> = []
+  if (recentCount > 0) {
+    items.push({
+      key: 'recent',
+      label: tr('common.labels.recentRecords', 'Recent'),
+      count: recentCount
+    })
+  }
+  if (searchCount > 0) {
+    items.push({
+      key: 'search',
+      label: tr('common.labels.searchResults', 'Search'),
+      count: searchCount
+    })
+  }
+  return items
 })
 
 const canConfirm = computed(() => {
@@ -887,14 +976,40 @@ const resolveGroupTitle = (group: unknown): string => {
   return `${title} (${count})`
 }
 
+const getScopedSearchCandidatePool = (row: AnyRecord): string[] => {
+  const scope = searchScope.value === 'secondary' && !hasSecondaryField.value
+    ? 'all'
+    : searchScope.value
+
+  if (scope === 'id') {
+    return [String(row?.id || '')]
+  }
+
+  if (scope === 'primary') {
+    return [
+      resolveLabel(row),
+      String(row?.[props.displayField || 'name'] || '')
+    ]
+  }
+
+  if (scope === 'secondary') {
+    return [
+      resolveSecondary(row),
+      String(row?.[props.secondaryField || 'code'] || '')
+    ]
+  }
+
+  return [
+    resolveLabel(row),
+    resolveSecondary(row),
+    String(row?.id || '')
+  ]
+}
+
 const matchesKeyword = (row: AnyRecord, rawKeyword: string): boolean => {
   const keywordText = String(rawKeyword || '').trim().toLowerCase()
   if (!keywordText) return true
-  const candidatePool = [
-    resolveLabel(row),
-    resolveSecondary(row),
-    row?.id
-  ]
+  const candidatePool = getScopedSearchCandidatePool(row)
     .map((item) => String(item || '').toLowerCase())
     .filter(Boolean)
   return candidatePool.some((text) => text.includes(keywordText))
@@ -969,7 +1084,10 @@ const syncTableSelection = async () => {
 }
 
 const loadRecentRows = async () => {
-  const recentIds = loadRecentReferenceIds(props.objectCode, { limit: 30 })
+  const recentIds = loadRecentReferenceIds(props.objectCode, {
+    limit: 30,
+    scope: props.preferenceScope
+  })
   if (recentIds.length === 0) {
     rows.value = []
     total.value = 0
@@ -1019,7 +1137,10 @@ const loadData = async () => {
     const items: AnyRecord[] = rawItems
       .map((item: unknown) => normalizeRow(item))
       .filter((item: AnyRecord | null): item is AnyRecord => !!item)
-    const recentIds = loadRecentReferenceIds(props.objectCode, { limit: 8 })
+    const recentIds = loadRecentReferenceIds(props.objectCode, {
+      limit: 8,
+      scope: props.preferenceScope
+    })
 
     if (recentIds.length === 0) {
       rows.value = items.map((item: AnyRecord, index: number) => ({
@@ -1099,7 +1220,10 @@ const hydrateSelectedRows = async () => {
 }
 
 const handleOpened = async () => {
-  const recentIds = loadRecentReferenceIds(props.objectCode, { limit: 30 })
+  const recentIds = loadRecentReferenceIds(props.objectCode, {
+    limit: 30,
+    scope: props.preferenceScope
+  })
   viewMode.value = recentIds.length > 0 ? 'recent' : 'all'
   page.value = 1
   await hydrateSelectedRows()
@@ -1185,6 +1309,15 @@ const openCreate = () => {
   window.open(targetUrl, '_blank', 'noopener,noreferrer')
 }
 
+const handleOpenSelected = () => {
+  if (!props.objectCode) return
+  const id = String(activeSingleId.value || activeSingleRow.value?.id || '').trim()
+  if (!id) return
+  if (typeof window === 'undefined') return
+  const targetUrl = `/objects/${props.objectCode}/${encodeURIComponent(id)}`
+  window.open(targetUrl, '_blank', 'noopener,noreferrer')
+}
+
 watch(
   () => props.modelValue,
   (open) => {
@@ -1215,22 +1348,22 @@ watch(
 )
 
 watch(
-  () => [props.objectCode, props.preferenceKey, props.userScope],
+  () => [props.objectCode, props.preferenceKey, props.userScope, props.preferenceScope],
   () => {
     const hasStoredPreference = hasLookupColumnsPreference(
       props.objectCode,
-      { preferenceKey: props.preferenceKey, userScope: props.userScope }
+      { preferenceKey: props.preferenceKey, userScope: props.userScope, scope: props.preferenceScope }
     )
     const preference = loadLookupColumnsPreference(
       props.objectCode,
-      { preferenceKey: props.preferenceKey, userScope: props.userScope }
+      { preferenceKey: props.preferenceKey, userScope: props.userScope, scope: props.preferenceScope }
     )
     hiddenColumnSet.value = new Set(preference.hidden)
     columnOrder.value = [...preference.order]
     columnWidthMap.value = { ...preference.widths }
     const fallbackProfile = loadLastLookupProfile(
       props.objectCode,
-      { userScope: props.userScope }
+      { userScope: props.userScope, scope: props.preferenceScope }
     )
     const initialProfile = hasStoredPreference
       ? (preference.profile || 'standard')

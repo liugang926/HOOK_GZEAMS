@@ -1,32 +1,62 @@
+import {
+  buildStorageKey,
+  normalizeStorageSegment,
+  readWithLegacyMigration,
+  removeLegacyKey,
+  resolveStorage,
+  type StorageLike
+} from '@/platform/reference/scopedStorage'
+
 const PREF_PREFIX = 'gzeams:lookup:columns:'
 const LAST_PROFILE_PREFIX = 'gzeams:lookup:last-profile:'
 
-type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
 export type LookupColumnsProfile = 'standard' | 'compact' | 'custom'
-
-const normalize = (value: unknown): string => String(value || '').trim()
-
-const resolveStorage = (storage?: StorageLike | null): StorageLike | null => {
-  if (storage) return storage
-  if (typeof window === 'undefined') return null
-  try {
-    return window.localStorage
-  } catch {
-    return null
-  }
+type LookupPreferenceOptions = {
+  preferenceKey?: unknown
+  userScope?: unknown
+  scope?: unknown
+  storage?: StorageLike | null
 }
 
-const makeKey = (objectCode: unknown, preferenceKey?: unknown, userScope?: unknown): string => {
+const normalize = (value: unknown): string => normalizeStorageSegment(value)
+
+const makeKey = (
+  objectCode: unknown,
+  preferenceKey?: unknown,
+  userScope?: unknown,
+  contextScope?: unknown
+): string => {
   const object = normalize(objectCode)
-  const scope = normalize(preferenceKey) || '_default'
+  const preference = normalize(preferenceKey) || '_default'
   const user = normalize(userScope) || 'anonymous'
-  return `${PREF_PREFIX}${object}:${scope}:${user}`
+  const pageScope = normalize(contextScope)
+  if (!pageScope) return buildStorageKey(PREF_PREFIX, object, preference, user)
+  return buildStorageKey(PREF_PREFIX, object, pageScope, preference, user)
 }
 
-const makeLastProfileKey = (objectCode: unknown, userScope?: unknown): string => {
+const makeLegacyKey = (
+  objectCode: unknown,
+  preferenceKey?: unknown,
+  userScope?: unknown
+): string => {
+  const object = normalize(objectCode)
+  const preference = normalize(preferenceKey) || '_default'
+  const user = normalize(userScope) || 'anonymous'
+  return buildStorageKey(PREF_PREFIX, object, preference, user)
+}
+
+const makeLastProfileKey = (objectCode: unknown, userScope?: unknown, scope?: unknown): string => {
   const object = normalize(objectCode)
   const user = normalize(userScope) || 'anonymous'
-  return `${LAST_PROFILE_PREFIX}${object}:${user}`
+  const pageScope = normalize(scope)
+  if (!pageScope) return buildStorageKey(LAST_PROFILE_PREFIX, object, user)
+  return buildStorageKey(LAST_PROFILE_PREFIX, object, pageScope, user)
+}
+
+const makeLegacyLastProfileKey = (objectCode: unknown, userScope?: unknown): string => {
+  const object = normalize(objectCode)
+  const user = normalize(userScope) || 'anonymous'
+  return buildStorageKey(LAST_PROFILE_PREFIX, object, user)
 }
 
 const safeParseHidden = (raw: string | null): string[] => {
@@ -121,14 +151,16 @@ export type LookupColumnsPreference = {
 
 export const loadLookupColumnsPreference = (
   objectCode: unknown,
-  options?: { preferenceKey?: unknown; userScope?: unknown; storage?: StorageLike | null }
+  options?: LookupPreferenceOptions
 ): LookupColumnsPreference => {
   const object = normalize(objectCode)
   if (!object) return { hidden: new Set<string>(), order: [], widths: {}, profile: 'standard' }
   const storage = resolveStorage(options?.storage)
   if (!storage) return { hidden: new Set<string>(), order: [], widths: {}, profile: 'standard' }
-  const key = makeKey(object, options?.preferenceKey, options?.userScope)
-  const raw = storage.getItem(key)
+  const key = makeKey(object, options?.preferenceKey, options?.userScope, options?.scope)
+  const scoped = normalize(options?.scope)
+  const legacyKey = scoped ? makeLegacyKey(object, options?.preferenceKey, options?.userScope) : undefined
+  const raw = readWithLegacyMigration(storage, key, legacyKey)
   return {
     hidden: new Set(safeParseHidden(raw)),
     order: safeParseOrder(raw),
@@ -139,19 +171,23 @@ export const loadLookupColumnsPreference = (
 
 export const hasLookupColumnsPreference = (
   objectCode: unknown,
-  options?: { preferenceKey?: unknown; userScope?: unknown; storage?: StorageLike | null }
+  options?: LookupPreferenceOptions
 ): boolean => {
   const object = normalize(objectCode)
   if (!object) return false
   const storage = resolveStorage(options?.storage)
   if (!storage) return false
-  return storage.getItem(makeKey(object, options?.preferenceKey, options?.userScope)) !== null
+  const scopedKey = makeKey(object, options?.preferenceKey, options?.userScope, options?.scope)
+  if (storage.getItem(scopedKey) !== null) return true
+  if (!normalize(options?.scope)) return false
+  const legacyKey = makeLegacyKey(object, options?.preferenceKey, options?.userScope)
+  return storage.getItem(legacyKey) !== null
 }
 
 export const saveLookupColumnsPreference = (
   objectCode: unknown,
   preference: { hidden?: unknown[]; order?: unknown[]; widths?: unknown; profile?: unknown },
-  options?: { preferenceKey?: unknown; userScope?: unknown; storage?: StorageLike | null }
+  options?: LookupPreferenceOptions
 ): void => {
   const object = normalize(objectCode)
   if (!object) return
@@ -162,54 +198,67 @@ export const saveLookupColumnsPreference = (
   const order = Array.from(new Set((preference.order || []).map((item) => normalize(item)).filter(Boolean)))
   const widths = normalizeWidths(preference.widths)
   const profile = normalizeProfile(preference.profile)
-  const key = makeKey(object, options?.preferenceKey, options?.userScope)
+  const key = makeKey(object, options?.preferenceKey, options?.userScope, options?.scope)
+  const scoped = normalize(options?.scope)
+  const legacyKey = scoped ? makeLegacyKey(object, options?.preferenceKey, options?.userScope) : undefined
 
   if (hidden.length === 0 && order.length === 0 && Object.keys(widths).length === 0 && profile === 'standard') {
     storage.removeItem(key)
+    removeLegacyKey(storage, key, legacyKey)
     return
   }
   storage.setItem(key, JSON.stringify({ hidden, order, widths, profile }))
+  removeLegacyKey(storage, key, legacyKey)
 }
 
 export const loadLastLookupProfile = (
   objectCode: unknown,
-  options?: { userScope?: unknown; storage?: StorageLike | null }
+  options?: { userScope?: unknown; scope?: unknown; storage?: StorageLike | null }
 ): LookupColumnsProfile => {
   const object = normalize(objectCode)
   if (!object) return 'standard'
   const storage = resolveStorage(options?.storage)
   if (!storage) return 'standard'
-  const raw = storage.getItem(makeLastProfileKey(object, options?.userScope))
+  const key = makeLastProfileKey(object, options?.userScope, options?.scope)
+  const scoped = normalize(options?.scope)
+  const legacyKey = scoped ? makeLegacyLastProfileKey(object, options?.userScope) : undefined
+  const raw = readWithLegacyMigration(storage, key, legacyKey)
   return normalizeProfile(raw)
 }
 
 export const saveLastLookupProfile = (
   objectCode: unknown,
   profile: unknown,
-  options?: { userScope?: unknown; storage?: StorageLike | null }
+  options?: { userScope?: unknown; scope?: unknown; storage?: StorageLike | null }
 ): void => {
   const object = normalize(objectCode)
   if (!object) return
   const storage = resolveStorage(options?.storage)
   if (!storage) return
   const normalizedProfile = normalizeProfile(profile)
-  storage.setItem(makeLastProfileKey(object, options?.userScope), normalizedProfile)
+  const scopedKey = makeLastProfileKey(object, options?.userScope, options?.scope)
+  storage.setItem(scopedKey, normalizedProfile)
+  const legacyKey = normalize(options?.scope) ? makeLegacyLastProfileKey(object, options?.userScope) : undefined
+  removeLegacyKey(storage, scopedKey, legacyKey)
 }
 
 export const clearLookupColumnsPreference = (
   objectCode: unknown,
-  options?: { preferenceKey?: unknown; userScope?: unknown; storage?: StorageLike | null }
+  options?: LookupPreferenceOptions
 ): void => {
   const object = normalize(objectCode)
   if (!object) return
   const storage = resolveStorage(options?.storage)
   if (!storage) return
-  storage.removeItem(makeKey(object, options?.preferenceKey, options?.userScope))
+  const key = makeKey(object, options?.preferenceKey, options?.userScope, options?.scope)
+  const legacyKey = normalize(options?.scope) ? makeLegacyKey(object, options?.preferenceKey, options?.userScope) : undefined
+  storage.removeItem(key)
+  removeLegacyKey(storage, key, legacyKey)
 }
 
 export const loadLookupHiddenColumns = (
   objectCode: unknown,
-  options?: { preferenceKey?: unknown; userScope?: unknown; storage?: StorageLike | null }
+  options?: LookupPreferenceOptions
 ): Set<string> => {
   return loadLookupColumnsPreference(objectCode, options).hidden
 }
@@ -217,7 +266,7 @@ export const loadLookupHiddenColumns = (
 export const saveLookupHiddenColumns = (
   objectCode: unknown,
   hiddenColumns: unknown[],
-  options?: { preferenceKey?: unknown; userScope?: unknown; storage?: StorageLike | null }
+  options?: LookupPreferenceOptions
 ): void => {
   const current = loadLookupColumnsPreference(objectCode, options)
   saveLookupColumnsPreference(

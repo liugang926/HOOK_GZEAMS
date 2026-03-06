@@ -2,6 +2,7 @@ import { expect, test, type Page, type Route } from '@playwright/test'
 
 const OBJECT_CODE = 'Organization'
 const RECORD_ID = 'org-related-1'
+
 function fulfillSuccess(route: Route, data: unknown) {
   return route.fulfill({
     status: 200,
@@ -61,7 +62,6 @@ async function mockApis(page: Page) {
     localStorage.setItem('access_token', 'e2e-related-groups-token')
     localStorage.setItem('current_org_id', 'org-e2e')
     localStorage.setItem('locale', 'en-US')
-    localStorage.removeItem('gzeams:detail:related-groups:Organization:org-related-1')
   })
 
   await page.route('**/*', async (route) => {
@@ -209,12 +209,19 @@ function groupItem(page: Page, title: string) {
   }).first()
 }
 
+async function openRelatedObjectsTab(page: Page) {
+  const relatedTab = page.getByRole('tab', { name: /Related Objects/i }).first()
+  await expect(relatedTab).toBeVisible()
+  await relatedTab.click()
+  await expect(relatedTab).toHaveAttribute('aria-selected', 'true')
+}
+
 async function setGroupExpanded(page: Page, title: string, expanded: boolean) {
   const item = groupItem(page, title)
   await expect(item).toBeVisible()
   const isActive = await item.evaluate((el) => el.classList.contains('is-active'))
   if (isActive !== expanded) {
-    await item.locator('.el-collapse-item__header').first().click()
+    await item.locator('.related-group-header').first().click()
   }
   await expect.poll(async () => {
     return item.evaluate((el) => el.classList.contains('is-active'))
@@ -227,6 +234,7 @@ test.describe('Detail Related Groups Persistence', () => {
 
     await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
     await expect(page.locator('.load-error')).toHaveCount(0)
+    await openRelatedObjectsTab(page)
     await expect(page.locator('.related-groups-collapse')).toBeVisible()
 
     await expect(groupItem(page, 'Workflow')).toHaveClass(/is-active/)
@@ -234,16 +242,31 @@ test.describe('Detail Related Groups Persistence', () => {
 
     await setGroupExpanded(page, 'Workflow', false)
     await setGroupExpanded(page, 'Finance', true)
+    await expect.poll(async () => {
+      return await page.evaluate(() => {
+        return localStorage.getItem('gzeams:detail:related-groups:Organization:org-related-1')
+      })
+    }).toContain('"finance"')
 
     await page.reload()
+    await openRelatedObjectsTab(page)
     await expect(page.locator('.related-groups-collapse')).toBeVisible()
-    await expect(groupItem(page, 'Workflow')).not.toHaveClass(/is-active/)
-    await expect(groupItem(page, 'Finance')).toHaveClass(/is-active/)
+    await expect.poll(async () => {
+      return await groupItem(page, 'Workflow').evaluate((el) => el.classList.contains('is-active'))
+    }).toBe(false)
+    await expect.poll(async () => {
+      return await groupItem(page, 'Finance').evaluate((el) => el.classList.contains('is-active'))
+    }).toBe(true)
 
     await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}/edit`)
     await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
-    await expect(groupItem(page, 'Workflow')).not.toHaveClass(/is-active/)
-    await expect(groupItem(page, 'Finance')).toHaveClass(/is-active/)
+    await openRelatedObjectsTab(page)
+    await expect.poll(async () => {
+      return await groupItem(page, 'Workflow').evaluate((el) => el.classList.contains('is-active'))
+    }).toBe(false)
+    await expect.poll(async () => {
+      return await groupItem(page, 'Finance').evaluate((el) => el.classList.contains('is-active'))
+    }).toBe(true)
   })
 })

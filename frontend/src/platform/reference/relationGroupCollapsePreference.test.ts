@@ -40,5 +40,29 @@ describe('relationGroupCollapsePreference', () => {
     clearRelationGroupExpandedPreference('Asset', 'asset-3', { storage })
     expect(loadRelationGroupExpandedPreference('Asset', 'asset-3', { storage })).toBeNull()
   })
-})
 
+  it('migrates legacy _record key into explicit scoped key', () => {
+    const storage = new MemoryStorage()
+    const legacyKey = 'gzeams:detail:related-groups:Asset:_record'
+    const scopedKey = 'gzeams:detail:related-groups:Asset:designer-preview:edit:draft'
+    storage.setItem(legacyKey, JSON.stringify({ expanded: ['finance'] }))
+
+    expect(loadRelationGroupExpandedPreference('Asset', 'designer-preview:edit:draft', { storage })).toEqual(['finance'])
+    expect(storage.getItem(scopedKey)).toContain('"finance"')
+    expect(storage.getItem(legacyKey)).toBeNull()
+  })
+
+  it('save/clear with explicit scope removes legacy _record key', () => {
+    const storage = new MemoryStorage()
+    const legacyKey = 'gzeams:detail:related-groups:Asset:_record'
+    const scopedKey = 'gzeams:detail:related-groups:Asset:designer-preview:edit:draft'
+    storage.setItem(legacyKey, JSON.stringify({ expanded: ['workflow'] }))
+
+    saveRelationGroupExpandedPreference('Asset', 'designer-preview:edit:draft', ['finance'], { storage })
+    expect(storage.getItem(scopedKey)).toContain('"finance"')
+    expect(storage.getItem(legacyKey)).toBeNull()
+
+    clearRelationGroupExpandedPreference('Asset', 'designer-preview:edit:draft', { storage })
+    expect(storage.getItem(scopedKey)).toBeNull()
+  })
+})

@@ -38,6 +38,37 @@ describe('referenceLookupColumnsPreference', () => {
     expect(Array.from(assignee)).toEqual(['email'])
   })
 
+  it('should isolate preferences by page scope', () => {
+    const storage = createStorage()
+    saveLookupHiddenColumns('User', ['code'], {
+      preferenceKey: 'owner',
+      userScope: 'u1',
+      scope: 'object-detail:Asset',
+      storage
+    })
+    saveLookupHiddenColumns('User', ['email'], {
+      preferenceKey: 'owner',
+      userScope: 'u1',
+      scope: 'object-edit:Asset',
+      storage
+    })
+
+    const detail = loadLookupHiddenColumns('User', {
+      preferenceKey: 'owner',
+      userScope: 'u1',
+      scope: 'object-detail:Asset',
+      storage
+    })
+    const edit = loadLookupHiddenColumns('User', {
+      preferenceKey: 'owner',
+      userScope: 'u1',
+      scope: 'object-edit:Asset',
+      storage
+    })
+    expect(Array.from(detail)).toEqual(['code'])
+    expect(Array.from(edit)).toEqual(['email'])
+  })
+
   it('should persist column order together with hidden columns', () => {
     const storage = createStorage()
     saveLookupColumnsPreference(
@@ -81,6 +112,35 @@ describe('referenceLookupColumnsPreference', () => {
     expect(hasLookupColumnsPreference('User', { preferenceKey: 'owner', userScope: 'u2', storage })).toBe(false)
   })
 
+  it('should migrate legacy unscoped preference to scoped key', () => {
+    const storage = createStorage()
+    saveLookupColumnsPreference(
+      'User',
+      { hidden: ['code'], profile: 'custom' },
+      { preferenceKey: 'owner', userScope: 'u1', storage }
+    )
+
+    const scoped = loadLookupColumnsPreference('User', {
+      preferenceKey: 'owner',
+      userScope: 'u1',
+      scope: 'object-detail:Asset',
+      storage
+    })
+    expect(Array.from(scoped.hidden)).toEqual(['code'])
+    expect(scoped.profile).toBe('custom')
+    expect(hasLookupColumnsPreference('User', {
+      preferenceKey: 'owner',
+      userScope: 'u1',
+      scope: 'object-detail:Asset',
+      storage
+    })).toBe(true)
+    expect(hasLookupColumnsPreference('User', {
+      preferenceKey: 'owner',
+      userScope: 'u1',
+      storage
+    })).toBe(false)
+  })
+
   it('should persist and load last profile per object and user scope', () => {
     const storage = createStorage()
     expect(loadLastLookupProfile('User', { userScope: 'u1', storage })).toBe('standard')
@@ -90,5 +150,22 @@ describe('referenceLookupColumnsPreference', () => {
 
     expect(loadLastLookupProfile('User', { userScope: 'u1', storage })).toBe('compact')
     expect(loadLastLookupProfile('User', { userScope: 'u2', storage })).toBe('custom')
+  })
+
+  it('should persist last profile per page scope', () => {
+    const storage = createStorage()
+    saveLastLookupProfile('User', 'compact', { userScope: 'u1', scope: 'object-detail:Asset', storage })
+    saveLastLookupProfile('User', 'custom', { userScope: 'u1', scope: 'object-edit:Asset', storage })
+
+    expect(loadLastLookupProfile('User', { userScope: 'u1', scope: 'object-detail:Asset', storage })).toBe('compact')
+    expect(loadLastLookupProfile('User', { userScope: 'u1', scope: 'object-edit:Asset', storage })).toBe('custom')
+  })
+
+  it('should migrate legacy last profile to scoped key', () => {
+    const storage = createStorage()
+    saveLastLookupProfile('User', 'compact', { userScope: 'u1', storage })
+
+    expect(loadLastLookupProfile('User', { userScope: 'u1', scope: 'object-detail:Asset', storage })).toBe('compact')
+    expect(loadLastLookupProfile('User', { userScope: 'u1', storage })).toBe('standard')
   })
 })

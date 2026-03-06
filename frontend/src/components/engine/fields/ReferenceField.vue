@@ -106,105 +106,37 @@
       class="reference-read-view"
     >
       <template v-if="isMultiple">
-        <div
+        <ReferenceRecordPill
           v-for="item in currentValueObjects"
           :key="item.id"
-          class="reference-read-item"
-        >
-          <el-link
-            :href="`/objects/${referenceObjectCode}/${encodeURIComponent(item.id)}`"
-            target="_blank"
-            type="primary"
-            class="reference-link"
-            :underline="false"
-          >
-            {{ getItemLabel(item) }}
-          </el-link>
-        </div>
+          :label="getItemLabel(item)"
+          :secondary="getItemSecondary(item)"
+          :href="buildRecordHref(item)"
+          :object-code="referenceObjectCode"
+          :record-id="item.id"
+          :show-popover="false"
+          :id-label="idLabel"
+          :open-action-text="openActionText"
+        />
         <span
           v-if="currentValueObjects.length === 0"
           class="reference-empty-text"
         >-</span>
       </template>
       <template v-else>
-        <el-popover
+        <ReferenceRecordPill
           v-if="selectedSingleOption"
-          trigger="hover"
-          placement="top-start"
-          :width="360"
-          :hide-after="100"
-          popper-class="reference-popover"
-          @show="handleHoverShow(selectedSingleOption)"
-        >
-          <template #reference>
-            <el-link
-              :href="selectedSingleHref"
-              target="_blank"
-              type="primary"
-              class="reference-link"
-              :underline="false"
-            >
-              {{ getItemLabel(selectedSingleOption) }}
-            </el-link>
-          </template>
-          
-          <!-- Hover Card Content -->
-          <div class="reference-hover-card">
-            <!-- Header section -->
-            <div class="reference-hover-card__header">
-              <ObjectAvatar
-                :object-code="referenceObjectCode || 'Ref'"
-                size="md"
-              />
-              <div class="reference-hover-card__content">
-                <span class="reference-hover-card__title">{{ getItemLabel(selectedSingleOption) }}</span>
-                <span class="reference-hover-card__subtitle">
-                  {{ getItemSecondary(selectedSingleOption) || selectedSingleOption.id }}
-                </span>
-              </div>
-            </div>
-            
-            <el-divider class="reference-hover-card__divider" />
-            
-            <!-- Skeleton or Data section -->
-            <div
-              v-if="hoverLoading"
-              class="reference-hover-card__body is-loading"
-            >
-              <el-skeleton
-                animated
-                :rows="3"
-              />
-            </div>
-            <div
-              v-else-if="hoverData"
-              class="reference-hover-card__body"
-            >
-              <div class="reference-meta-grid">
-                <div 
-                  v-for="key in displayCompactKeys" 
-                  :key="key" 
-                  class="reference-meta-item"
-                >
-                  <span class="reference-meta-item__label">{{ getFieldLabel(key) }}</span>
-                  <span class="reference-meta-item__value">{{ getFieldValue(hoverData, key) }}</span>
-                </div>
-              </div>
-            </div>
-            
-            <div class="reference-hover-card__footer">
-              <el-tag
-                v-if="referenceObjectCode"
-                size="small"
-                effect="plain"
-                type="info"
-              >
-                {{ referenceObjectCode }}
-              </el-tag>
-              <span class="reference-hover-card__meta-value">ID: {{ selectedSingleOption.id }}</span>
-            </div>
-          </div>
-        </el-popover>
+          :label="getItemLabel(selectedSingleOption)"
+          :secondary="selectedSingleSecondary"
+          :href="selectedSingleHref"
+          :object-code="referenceObjectCode"
+          :record-id="selectedSingleOption.id"
+          :loading="hoverLoading"
+          :meta-items="hoverMetaItems"
+          :id-label="idLabel"
+          :open-action-text="openActionText"
+          @show="handleSinglePillShow"
+        />
         <span
           v-else
           class="reference-empty-text"
@@ -220,6 +152,7 @@
       :columns="lookupColumns"
       :preference-key="lookupPreferenceKey"
       :user-scope="lookupUserScope"
+      :preference-scope="lookupPreferenceScopeId"
       :compact-keys="lookupCompactKeys"
       :multiple="isMultiple"
       :selected-ids="selectedIdsForDialog"
@@ -231,12 +164,14 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, Plus } from '@element-plus/icons-vue'
 import { searchReferenceData } from '@/api/system'
 import { createObjectClient } from '@/api/dynamic'
 import { debounce } from 'lodash-es'
 import ObjectAvatar from '@/components/common/ObjectAvatar.vue'
+import ReferenceRecordPill from '@/components/common/ReferenceRecordPill.vue'
 import ReferenceLookupDialog from './ReferenceLookupDialog.vue'
 import { useUserStore } from '@/stores/user'
 import { referenceResolver } from '@/platform/reference/referenceResolver'
@@ -253,6 +188,7 @@ import {
   resolveReferenceLookupDefaultColumns,
   type ReferenceLookupColumnConfig
 } from '@/platform/reference/referenceLookupColumnPresets'
+import { buildReferenceLookupScopeId } from '@/platform/reference/referenceLookupScope'
 
 type AnyRecord = Record<string, any>
 type LookupColumnConfig = ReferenceLookupColumnConfig
@@ -268,6 +204,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'change'])
 const { t } = useI18n()
 const userStore = useUserStore()
+const route = useRoute()
 
 const selectRef = ref<any>(null)
 const loadingSearch = ref(false)
@@ -327,6 +264,8 @@ const searchGroupLabel = computed(() => {
 
 const advancedLookupText = computed(() => tr('common.actions.advancedSearch', 'Advanced Search'))
 const createRecordText = computed(() => tr('common.actions.newRecord', 'New Record'))
+const idLabel = computed(() => tr('common.columns.id', 'ID'))
+const openActionText = computed(() => tr('common.actions.open', 'Open'))
 
 const noMatchText = computed(() => {
   if (loading.value) return tr('common.messages.loading', 'Loading...')
@@ -390,6 +329,35 @@ const lookupPreferenceKey = computed(() => {
   ).trim()
 })
 
+const hostObjectCode = computed(() => {
+  const fromParam = route.params.code
+  if (Array.isArray(fromParam)) return String(fromParam[0] || '').trim()
+  if (fromParam) return String(fromParam).trim()
+
+  const fromQuery = route.query.objectCode
+  if (Array.isArray(fromQuery)) return String(fromQuery[0] || '').trim()
+  if (fromQuery) return String(fromQuery).trim()
+  return ''
+})
+
+const hostRecordId = computed(() => {
+  const id = route.params.id
+  if (Array.isArray(id)) return String(id[0] || '').trim()
+  return String(id || '').trim()
+})
+
+const lookupPreferenceScopeId = computed(() => {
+  return buildReferenceLookupScopeId({
+    routeName: route.name,
+    routePath: route.path,
+    hostObjectCode: hostObjectCode.value,
+    hostRecordId: hostRecordId.value,
+    action: route.query.action,
+    layoutId: route.query.layoutId,
+    layoutMode: route.query.layoutType || route.query.mode
+  })
+})
+
 const lookupUserScope = computed(() => {
   return String(userStore.userInfo?.id || 'anonymous').trim() || 'anonymous'
 })
@@ -451,9 +419,19 @@ const selectedSingleOption = computed<AnyRecord | null>(() => {
   return allOptions.value.find((item) => item.id === id) || null
 })
 
+const buildRecordHref = (item: AnyRecord): string => {
+  const id = String(item?.id || '').trim()
+  if (!id || !referenceObjectCode.value) return ''
+  return `/objects/${referenceObjectCode.value}/${encodeURIComponent(id)}`
+}
+
 const selectedSingleHref = computed(() => {
-  if (!selectedSingleOption.value?.id || !referenceObjectCode.value) return ''
-  return `/objects/${referenceObjectCode.value}/${encodeURIComponent(selectedSingleOption.value.id)}`
+  return selectedSingleOption.value ? buildRecordHref(selectedSingleOption.value) : ''
+})
+
+const selectedSingleSecondary = computed(() => {
+  if (!selectedSingleOption.value) return ''
+  return getItemSecondary(selectedSingleOption.value) || selectedSingleOption.value.id
 })
 
 const selectedIdsForDialog = computed(() => {
@@ -476,7 +454,10 @@ const loadRecentReferences = async () => {
     recentOptions.value = []
     return
   }
-  const recentIds = loadRecentReferenceIds(referenceObjectCode.value, { limit: 8 })
+  const recentIds = loadRecentReferenceIds(referenceObjectCode.value, {
+    limit: 8,
+    scope: lookupPreferenceScopeId.value
+  })
   if (!recentIds.length) {
     recentOptions.value = []
     return
@@ -498,7 +479,10 @@ const loadRecentReferences = async () => {
 
 const saveRecentSelection = (ids: string[]) => {
   if (!referenceObjectCode.value || ids.length === 0) return
-  saveRecentReferenceIds(referenceObjectCode.value, ids, { limit: 10 })
+  saveRecentReferenceIds(referenceObjectCode.value, ids, {
+    limit: 10,
+    scope: lookupPreferenceScopeId.value
+  })
 }
 
 const searchReference = async (query = '') => {
@@ -661,6 +645,16 @@ const getFieldValue = (data: AnyRecord, key: string) => {
   return String(val)
 }
 
+const hoverMetaItems = computed(() => {
+  if (!hoverData.value) return []
+  return displayCompactKeys.value
+    .map((key) => ({
+      label: getFieldLabel(key),
+      value: getFieldValue(hoverData.value as AnyRecord, key)
+    }))
+    .filter((item) => item.value !== '-')
+})
+
 const handleHoverShow = async (option: AnyRecord) => {
   if (!referenceObjectCode.value || !option?.id) return
   if (preloadedHoverIds.has(option.id) && hoverData.value?.id === option.id) return
@@ -682,6 +676,11 @@ const handleHoverShow = async (option: AnyRecord) => {
   } finally {
     hoverLoading.value = false
   }
+}
+
+const handleSinglePillShow = () => {
+  if (!selectedSingleOption.value) return
+  handleHoverShow(selectedSingleOption.value)
 }
 </script>
 

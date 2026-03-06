@@ -25,6 +25,25 @@
     "no-console": ["warn", { "allow": ["warn", "error"] }],
     "vue/no-v-html": "off"
   },
+  "overrides": [
+    {
+      "files": ["src/**/*.{ts,tsx,js,jsx,vue}"],
+      "excludedFiles": ["src/**/__tests__/**", "src/**/*.spec.ts", "src/**/*.test.ts"],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "CallExpression[callee.object.name='localStorage'][callee.property.name=/^(getItem|setItem|removeItem)$/][arguments.0.value=/^(access_token|current_org_id|locale|locale_source)$/]",
+            "message": "Do not access core storage keys directly. Use platform preference modules (sessionPreference/localePreference)."
+          },
+          {
+            "selector": "CallExpression[callee.object.object.name='window'][callee.object.property.name='localStorage'][callee.property.name=/^(getItem|setItem|removeItem)$/][arguments.0.value=/^(access_token|current_org_id|locale|locale_source)$/]",
+            "message": "Do not access core storage keys directly. Use platform preference modules (sessionPreference/localePreference)."
+          }
+        ]
+      }
+    }
+  ],
   "globals": {
     "defineProps": "readonly",
     "defineEmits": "readonly",

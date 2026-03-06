@@ -10,6 +10,7 @@
 
 import { ref, computed } from 'vue'
 import { businessObjectApi, type FieldTypeGroup, type FieldTypeOption, type FieldTypeConfig } from '@/api/system'
+import { readStorageString, removeStorageKey, writeStorageJson } from '@/platform/storage/browserStorage'
 
 // Cache configuration
 const CACHE_KEY = 'gzeams_field_types_v1'
@@ -110,7 +111,7 @@ const cache = ref<FieldTypesCache | null>(null)
  */
 function loadFromCache(): FieldTypesCache | null {
   try {
-    const cached = localStorage.getItem(CACHE_KEY)
+    const cached = readStorageString(CACHE_KEY)
     if (!cached) return null
 
     const parsed: FieldTypesCache = JSON.parse(cached)
@@ -122,7 +123,7 @@ function loadFromCache(): FieldTypesCache | null {
     }
 
     // Cache expired, remove it
-    localStorage.removeItem(CACHE_KEY)
+    removeStorageKey(CACHE_KEY)
     return null
   } catch {
     return null
@@ -138,7 +139,7 @@ function saveToCache(data: FieldTypesCache['data']): void {
       data,
       timestamp: Date.now()
     }
-    localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData))
+    writeStorageJson(CACHE_KEY, cacheData)
   } catch (e) {
     // Silent fail - caching is optional
     console.warn('Failed to cache field types:', e)
@@ -290,7 +291,7 @@ export function useFieldTypes() {
    * Clear cached field types (useful for testing or after updates)
    */
   function clearCache(): void {
-    localStorage.removeItem(CACHE_KEY)
+    removeStorageKey(CACHE_KEY)
     cache.value = null
   }
 

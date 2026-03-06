@@ -101,7 +101,7 @@ async function mockApis(page: Page, state: MockState) {
     localStorage.setItem('access_token', 'e2e-reference-lookup-token')
     localStorage.setItem('current_org_id', 'org-reference-lookup')
     localStorage.setItem('locale', 'en-US')
-    localStorage.setItem('gzeams:lookup:recent:User', JSON.stringify(['user-john', 'user-alice']))
+    localStorage.setItem('gzeams:lookup:recent:User:object-detail:Asset', JSON.stringify(['user-john', 'user-alice']))
   })
 
   await page.route('**/*', async (route) => {

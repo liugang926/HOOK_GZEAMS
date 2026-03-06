@@ -1,3 +1,5 @@
+﻿import { getStoredLocale } from '@/platform/i18n/localePreference'
+
 type LocaleType = 'zh-CN' | 'en-US'
 
 const normalizeLocale = (locale?: string | null): LocaleType => {
@@ -67,7 +69,7 @@ const hasOwn = (obj: AnyRecord, key: string): boolean => {
 
 const getCurrentLocale = (): LocaleType => {
   if (typeof window === 'undefined') return 'zh-CN'
-  return normalizeLocale(window.localStorage.getItem('locale'))
+  return normalizeLocale(getStoredLocale())
 }
 
 export const resolveLocalizedValue = (
@@ -137,3 +139,4 @@ export const localizeMultilingualTree = <T>(
 
   return localized as T
 }
+

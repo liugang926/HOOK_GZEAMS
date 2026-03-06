@@ -8,6 +8,7 @@ export interface FieldPropertySchemaItem {
   label: string
   inputType: PropertyInputType
   section: FieldPropertySection
+  options?: Array<{ label: string; value: unknown }>
 }
 
 export type SectionPropertySection = 'basic' | 'display' | 'advanced'
@@ -101,6 +102,22 @@ const FIELD_TYPE_SPECIFIC_SCHEMA: Record<string, FieldPropertySchemaItem[]> = {
     { key: 'accept', label: 'Accept', inputType: 'text', section: 'advanced' },
     { key: 'maxSize', label: 'Max Size', inputType: 'number', section: 'validation' },
     { key: 'maxCount', label: 'Max Count', inputType: 'number', section: 'validation' },
+  ],
+  related_object: [
+    { key: 'relationCode', label: 'Relation Code', inputType: 'text', section: 'advanced' },
+    { key: 'relatedObjectCode', label: 'Target Object', inputType: 'text', section: 'advanced' },
+    { key: 'pageSize', label: 'Max Rows', inputType: 'number', section: 'display' },
+    {
+      key: 'displayMode',
+      label: 'Display Mode',
+      inputType: 'select',
+      section: 'display',
+      options: [
+        { label: 'Inline Editable', value: 'inline_editable' },
+        { label: 'Inline Readonly', value: 'inline_readonly' },
+        { label: 'Hidden', value: 'hidden' }
+      ]
+    }
   ],
 }
 

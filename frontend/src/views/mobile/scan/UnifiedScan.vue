@@ -161,6 +161,7 @@ import { showDialog, showToast } from 'vant'
 import MobileQRScanner from '@/components/mobile/MobileQRScanner.vue'
 import { qrScanApi } from '@/api/inventory'
 import type { AssetStatus } from '@/types/assets'
+import { readStorageJson, writeStorageJson } from '@/platform/storage/browserStorage'
 
 const router = useRouter()
 const route = useRoute()
@@ -193,10 +194,8 @@ const moreActions = computed(() => [
 
 const loadScanHistory = () => {
   try {
-    const saved = localStorage.getItem(HISTORY_KEY)
-    if (saved) {
-      recentScans.value = JSON.parse(saved)
-    }
+    const saved = readStorageJson<ScanHistoryItem[] | unknown>(HISTORY_KEY, [])
+    recentScans.value = Array.isArray(saved) ? (saved as ScanHistoryItem[]) : []
   } catch (error) {
     console.error(error)
   }
@@ -204,7 +203,7 @@ const loadScanHistory = () => {
 
 const saveScanHistory = () => {
   try {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(recentScans.value.slice(0, 50)))
+    writeStorageJson(HISTORY_KEY, recentScans.value.slice(0, 50))
   } catch (error) {
     console.error(error)
   }

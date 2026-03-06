@@ -17,6 +17,7 @@
       :loading="loading"
       :audit-info="auditInfo"
       object-code="Asset"
+      :relation-group-scope-id="relationGroupScopeId"
       :show-related-objects="true"
       @edit="handleEdit"
       @delete="handleDelete"
@@ -90,6 +91,7 @@ import { ElMessage } from 'element-plus'
 import BaseDetailPage from '@/components/common/BaseDetailPage.vue'
 import { assetApi } from '@/api/assets'
 import { deriveObjectCodeFromRelationCode } from '@/platform/reference/relationObjectCode'
+import { buildRecordRelationGroupScopeId } from '@/platform/reference/relationGroupScope'
 
 const route = useRoute()
 const router = useRouter()
@@ -99,6 +101,9 @@ const assetData = ref<any>({})
 const { t } = useI18n()
 
 const assetName = computed(() => assetData.value?.assetName || t('assets.detail.unknownAsset'))
+const relationGroupScopeId = computed(() => {
+  return buildRecordRelationGroupScopeId(getRouteId(), assetData.value?.assetCode)
+})
 
 const auditInfo = computed(() => ({
   createdBy: assetData.value.createdBy?.username || assetData.value.createdBy || 'System',

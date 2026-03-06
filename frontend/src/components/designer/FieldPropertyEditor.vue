@@ -37,7 +37,7 @@
             :data-testid="`field-prop-${item.key}`"
             :model-value="modelValue?.[item.key]"
             :disabled="isSwitchDisabled(item.key)"
-            :active-text="item.key === 'readonly' && mode === 'readonly' ? 'Readonly by default in detail mode' : ''"
+            :active-text="item.key === 'readonly' && mode === 'readonly' ? readonlyDefaultHintText : ''"
             :active-value="item.key === 'visible' ? true : undefined"
             :inactive-value="item.key === 'visible' ? false : undefined"
             @change="handleSwitchChange(item.key, $event)"
@@ -210,12 +210,12 @@ const fieldTypeOptions = computed(() => {
   })
 })
 
-const sectionLabels: Record<string, string> = {
-  basic: 'Basic',
-  display: 'Display',
-  validation: 'Validation',
-  advanced: 'Advanced'
-}
+const sectionLabels = computed<Record<string, string>>(() => ({
+  basic: tr('common.labels.basic', 'Basic'),
+  display: tr('common.labels.display', 'Display'),
+  validation: tr('common.labels.validation', 'Validation'),
+  advanced: tr('common.labels.advanced', 'Advanced')
+}))
 const sections = ['basic', 'display', 'validation', 'advanced'] as const
 
 const groupedSchema = computed(() => {
@@ -235,6 +235,9 @@ const compactKeysSelectAllText = computed(() => tr('common.actions.selectAll', '
 const compactKeysClearText = computed(() => tr('common.actions.clear', 'Clear'))
 const compactKeysHintText = computed(() =>
   tr('common.messages.lookupCompactKeysHint', 'Used by the lookup compact profile. Locked columns are always kept.')
+)
+const readonlyDefaultHintText = computed(() =>
+  tr('common.messages.readonlyByDefaultInDetailMode', 'Readonly by default in detail mode')
 )
 const subtableShortcutHelpHintText = computed(() =>
   tr('common.messages.subtableShortcutHelpHint', 'Enable keyboard shortcut help panel in editable subtable.')
@@ -398,9 +401,9 @@ const getSelectOptions = (key: string): Array<{ label: string; value: string; di
 
   if (key === 'toolbar') {
     return [
-      { label: 'Standard', value: 'standard' },
-      { label: 'Simple', value: 'simple' },
-      { label: 'Full', value: 'full' }
+      { label: tr('common.labels.standard', 'Standard'), value: 'standard' },
+      { label: tr('common.labels.simple', 'Simple'), value: 'simple' },
+      { label: tr('common.labels.full', 'Full'), value: 'full' }
     ]
   }
   return []

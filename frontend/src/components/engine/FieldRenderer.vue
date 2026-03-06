@@ -179,6 +179,20 @@ const fieldProps = computed(() => {
       ...getFileUploadContext(field)
     }
   }
+  
+  if (fieldType === 'related_object') {
+    const componentProps = field.componentProps || field.component_props || {}
+    finalProps = {
+      ...finalProps,
+      parentObjectCode: componentProps.objectCode || field.objectCode,
+      parentId: componentProps.instanceId || field.instanceId || props.formData?.id,
+      mode: componentProps.displayMode || 'inline_readonly',
+      title: field.label || field.name,
+      targetObjectCode: componentProps.relatedObjectCode,
+      pageSize: componentProps.pageSize || 5, // Match default records size design
+      embedded: true
+    }
+  }
 
   return finalProps
 })

@@ -1,33 +1,32 @@
-const PREF_PREFIX = 'gzeams:detail:related-groups:'
+import {
+  buildStorageKey,
+  normalizeStorageSegment,
+  readWithLegacyMigration,
+  removeLegacyKey,
+  resolveStorage,
+  type StorageLike
+} from '@/platform/reference/scopedStorage'
 
-type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
+const PREF_PREFIX = 'gzeams:detail:related-groups:'
 
 type PreferencePayload = {
   expanded: string[]
 }
 
-const normalize = (value: unknown): string => String(value || '').trim()
-
-const resolveStorage = (storage?: StorageLike | null): StorageLike | null => {
-  if (storage) return storage
-  if (typeof window === 'undefined') return null
-  try {
-    return window.localStorage
-  } catch {
-    return null
-  }
-}
+const normalize = (value: unknown): string => normalizeStorageSegment(value)
 
 const normalizeExpandedGroups = (groups: unknown): string[] => {
   if (!Array.isArray(groups)) return []
   return Array.from(new Set(groups.map((group) => normalize(group)).filter(Boolean)))
 }
 
-const makeKey = (objectCode: unknown, recordId: unknown): string => {
+const makeScopedKey = (objectCode: unknown, scopeId: unknown): string => {
   const object = normalize(objectCode)
-  const record = normalize(recordId) || '_record'
-  return `${PREF_PREFIX}${object}:${record}`
+  const scope = normalize(scopeId) || '_record'
+  return buildStorageKey(PREF_PREFIX, object, scope)
 }
+
+const makeLegacyRecordKey = (objectCode: unknown): string => buildStorageKey(PREF_PREFIX, normalize(objectCode), '_record')
 
 const safeParseExpandedGroups = (raw: string | null): string[] => {
   if (!raw) return []
@@ -42,21 +41,24 @@ const safeParseExpandedGroups = (raw: string | null): string[] => {
 
 export const loadRelationGroupExpandedPreference = (
   objectCode: unknown,
-  recordId: unknown,
+  scopeId: unknown,
   options?: { storage?: StorageLike | null }
 ): string[] | null => {
   const object = normalize(objectCode)
   if (!object) return null
   const storage = resolveStorage(options?.storage)
   if (!storage) return null
-  const raw = storage.getItem(makeKey(object, recordId))
+  const scopedKey = makeScopedKey(object, scopeId)
+  const scope = normalize(scopeId)
+  const legacyKey = scope && scope !== '_record' ? makeLegacyRecordKey(object) : undefined
+  const raw = readWithLegacyMigration(storage, scopedKey, legacyKey)
   if (raw === null) return null
   return safeParseExpandedGroups(raw)
 }
 
 export const saveRelationGroupExpandedPreference = (
   objectCode: unknown,
-  recordId: unknown,
+  scopeId: unknown,
   expandedGroups: unknown[],
   options?: { storage?: StorageLike | null }
 ): void => {
@@ -66,18 +68,25 @@ export const saveRelationGroupExpandedPreference = (
   if (!storage) return
 
   const expanded = normalizeExpandedGroups(expandedGroups)
-  storage.setItem(makeKey(object, recordId), JSON.stringify({ expanded }))
+  const scopedKey = makeScopedKey(object, scopeId)
+  const scope = normalize(scopeId)
+  const legacyKey = scope && scope !== '_record' ? makeLegacyRecordKey(object) : undefined
+  storage.setItem(scopedKey, JSON.stringify({ expanded }))
+  removeLegacyKey(storage, scopedKey, legacyKey)
 }
 
 export const clearRelationGroupExpandedPreference = (
   objectCode: unknown,
-  recordId: unknown,
+  scopeId: unknown,
   options?: { storage?: StorageLike | null }
 ): void => {
   const object = normalize(objectCode)
   if (!object) return
   const storage = resolveStorage(options?.storage)
   if (!storage) return
-  storage.removeItem(makeKey(object, recordId))
+  const scopedKey = makeScopedKey(object, scopeId)
+  const scope = normalize(scopeId)
+  const legacyKey = scope && scope !== '_record' ? makeLegacyRecordKey(object) : undefined
+  storage.removeItem(scopedKey)
+  removeLegacyKey(storage, scopedKey, legacyKey)
 }
-

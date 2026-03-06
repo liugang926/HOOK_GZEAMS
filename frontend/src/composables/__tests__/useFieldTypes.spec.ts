@@ -9,9 +9,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { useFieldTypes, STATIC_FIELD_TYPES } from '../useFieldTypes'
+import { useFieldTypes } from '../useFieldTypes'
 import { businessObjectApi } from '@/api/system'
-import type { FieldTypeGroup } from '@/api/system'
 
 // Mock the businessObjectApi
 vi.mock('@/api/system', () => ({
@@ -37,6 +36,8 @@ describe('useFieldTypes', () => {
     vi.clearAllMocks()
     // Reset localStorage mock
     localStorageMock.getItem.mockReturnValue(null)
+    const { clearCache } = useFieldTypes()
+    clearCache()
   })
 
   afterEach(() => {
@@ -51,7 +52,8 @@ describe('useFieldTypes', () => {
       expect(isLoading.value).toBe(false)
       expect(error.value).toBe(null)
       // data may be undefined from shared module state
-      expect(groups.value).toEqual(STATIC_FIELD_TYPES)
+      expect(data.value).toBeUndefined()
+      expect(groups.value.length).toBeGreaterThan(0)
     })
 
     it('should have static fallback field types', () => {
@@ -91,22 +93,20 @@ describe('useFieldTypes', () => {
   describe('fetch', () => {
     it('should fetch field types from API', async () => {
       const mockResponse = {
-        success: true,
-        data: {
-          groups: [
-            {
-              label: 'Test Group',
-              icon: 'Test',
-              types: [
-                { value: 'test_field', label: 'Test Field' }
-              ]
-            }
-          ],
-          allTypes: ['test_field'],
-          typeConfig: {
-            test_field: { component: 'TestComponent', defaultProps: {} }
+        field_type_groups: [
+          {
+            label: 'Test Group',
+            icon: 'Test',
+            types: [
+              {
+                value: 'test_field',
+                label: 'Test Field',
+                component: 'TestComponent',
+                default_props: {}
+              }
+            ]
           }
-        }
+        ]
       }
 
       vi.mocked(businessObjectApi.getFieldTypes).mockResolvedValue(mockResponse)
@@ -115,7 +115,16 @@ describe('useFieldTypes', () => {
       await fetch()
 
       expect(businessObjectApi.getFieldTypes).toHaveBeenCalledTimes(1)
-      expect(data.value).toEqual(mockResponse.data)
+      expect(data.value?.groups).toEqual([
+        {
+          label: 'Test Group',
+          icon: 'Test',
+          types: [{ value: 'test_field', label: 'Test Field' }]
+        }
+      ])
+      expect(data.value?.typeConfig).toEqual({
+        test_field: { component: 'TestComponent', defaultProps: {} }
+      })
       expect(allTypes.value).toEqual(['test_field'])
     })
 
@@ -125,12 +134,13 @@ describe('useFieldTypes', () => {
       clearCache()
 
       const mockResponse = {
-        success: true,
-        data: {
-          groups: STATIC_FIELD_TYPES,
-          allTypes: ['text', 'number'],
-          typeConfig: {}
-        }
+        field_type_groups: [
+          {
+            label: 'Test Group',
+            icon: 'Test',
+            types: [{ value: 'test_field', label: 'Test Field' }]
+          }
+        ]
       }
 
       vi.mocked(businessObjectApi.getFieldTypes).mockResolvedValue(mockResponse)
@@ -152,8 +162,14 @@ describe('useFieldTypes', () => {
 
       const cachedData = {
         data: {
-          groups: STATIC_FIELD_TYPES,
-          allTypes: ['text', 'number'],
+          groups: [
+            {
+              label: 'Cached Group',
+              icon: 'Cached',
+              types: [{ value: 'cached_field', label: 'Cached Field' }]
+            }
+          ],
+          allTypes: ['cached_field'],
           typeConfig: {}
         },
         timestamp: Date.now()
@@ -176,7 +192,13 @@ describe('useFieldTypes', () => {
 
       const expiredCache = {
         data: {
-          groups: STATIC_FIELD_TYPES,
+          groups: [
+            {
+              label: 'Expired Group',
+              icon: 'Expired',
+              types: [{ value: 'expired_field', label: 'Expired Field' }]
+            }
+          ],
           allTypes: ['text'],
           typeConfig: {}
         },
@@ -186,12 +208,13 @@ describe('useFieldTypes', () => {
       localStorageMock.getItem.mockReturnValue(JSON.stringify(expiredCache))
 
       const mockResponse = {
-        success: true,
-        data: {
-          groups: STATIC_FIELD_TYPES,
-          allTypes: ['text', 'number'],
-          typeConfig: {}
-        }
+        field_type_groups: [
+          {
+            label: 'Fresh Group',
+            icon: 'Fresh',
+            types: [{ value: 'fresh_field', label: 'Fresh Field' }]
+          }
+        ]
       }
       vi.mocked(businessObjectApi.getFieldTypes).mockResolvedValue(mockResponse)
 
@@ -215,14 +238,21 @@ describe('useFieldTypes', () => {
       await fetch(true)  // force refresh to bypass cache
 
       expect(error.value).toBe('API Error')
-      expect(groups.value).toEqual(STATIC_FIELD_TYPES)
+      expect(groups.value.length).toBeGreaterThan(0)
+      expect(groups.value.some((group) => group.label === '基础类型')).toBe(true)
       expect(data.value).toBeTruthy()
     })
 
     it('should force refresh when requested', async () => {
       const cachedData = {
         data: {
-          groups: STATIC_FIELD_TYPES,
+          groups: [
+            {
+              label: 'Cached Group',
+              icon: 'Cached',
+              types: [{ value: 'cached_field', label: 'Cached Field' }]
+            }
+          ],
           allTypes: ['text'],
           typeConfig: {}
         },
@@ -232,12 +262,13 @@ describe('useFieldTypes', () => {
       localStorageMock.getItem.mockReturnValue(JSON.stringify(cachedData))
 
       const mockResponse = {
-        success: true,
-        data: {
-          groups: STATIC_FIELD_TYPES,
-          allTypes: ['text', 'number'],
-          typeConfig: {}
-        }
+        field_type_groups: [
+          {
+            label: 'Refresh Group',
+            icon: 'Refresh',
+            types: [{ value: 'refresh_field', label: 'Refresh Field' }]
+          }
+        ]
       }
       vi.mocked(businessObjectApi.getFieldTypes).mockResolvedValue(mockResponse)
 

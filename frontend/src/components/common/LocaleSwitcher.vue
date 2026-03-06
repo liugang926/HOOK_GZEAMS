@@ -34,6 +34,7 @@ import type { LocaleType } from '@/locales'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { userApi } from '@/api/users'
+import { setStoredLocaleSource } from '@/platform/i18n/localePreference'
 
 const localeStore = useLocaleStore()
 const userStore = useUserStore()
@@ -62,19 +63,19 @@ const currentLabel = computed(
 
 const applyLocalLocale = (locale: LocaleType) => {
   localeStore.setLocale(locale)
-  localStorage.setItem('locale_source', 'local')
+  setStoredLocaleSource('local')
 }
 
 const syncProfileLocale = async (locale: LocaleType): Promise<boolean> => {
   try {
     await userApi.updateProfile({ preferredLanguage: locale })
-    localStorage.setItem('locale_source', 'profile')
+    setStoredLocaleSource('profile')
     if (userStore.userInfo) {
       userStore.userInfo.preferredLanguage = locale
     }
     return true
   } catch {
-    localStorage.setItem('locale_source', 'local')
+    setStoredLocaleSource('local')
     ElMessage.error(t('common.localeSwitcher.messages.profileSyncFailed'))
     return false
   }
@@ -145,3 +146,4 @@ onMounted(async () => {
   font-weight: 600;
 }
 </style>
+
