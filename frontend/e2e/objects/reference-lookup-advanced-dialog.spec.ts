@@ -1,23 +1,20 @@
-import { expect, test, type Page, type Route } from '@playwright/test'
-
-function fulfillSuccess(route: Route, data: unknown) {
-  return route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify({ success: true, data })
-  })
-}
+import { expect, test, type Page } from '@playwright/test'
+import {
+  ensureInlineEditMode,
+  getDetailFieldItem,
+  getLookupHeaderCells,
+  openLookupColumnSettings,
+  openReferenceAdvancedLookup,
+  resetLookupColumns,
+  searchLookup,
+  selectLookupProfile
+} from '../helpers/reference-lookup.helpers'
+import { fulfillSuccess, mockReferenceLookupApis } from '../helpers/reference-lookup.api'
 
 type MockState = {
   ownerId: string
-  lastUpdatePayload: Record<string, any> | null
+  lastUpdatePayload: Record<string, unknown> | null
 }
-
-const USER_POOL: Array<Record<string, any>> = [
-  { id: 'user-alice', fullName: 'Alice Stone', username: 'alice', name: 'Alice Stone', code: 'U-ALICE', email: 'alice@example.com', mobile: '13800000001' },
-  { id: 'user-john', fullName: 'John Carter', username: 'john', name: 'John Carter', code: 'U-JOHN', email: 'john@example.com', mobile: '13800000002' },
-  { id: 'user-zoe', fullName: 'Zoe Green', username: 'zoe', name: 'Zoe Green', code: 'U-ZOE', email: 'zoe@example.com', mobile: '13800000003' }
-]
 
 function buildRuntimeLayoutResponse() {
   return {
@@ -84,148 +81,73 @@ function buildRuntimeLayoutResponse() {
   }
 }
 
-function pickUsersBySearch(keyword: string): Array<Record<string, any>> {
-  const q = keyword.trim().toLowerCase()
-  if (!q) return USER_POOL
-  return USER_POOL.filter((user) => {
-    return (
-      String(user.fullName || '').toLowerCase().includes(q) ||
-      String(user.username || '').toLowerCase().includes(q) ||
-      String(user.code || '').toLowerCase().includes(q)
-    )
-  })
-}
-
 async function mockApis(page: Page, state: MockState) {
-  await page.addInitScript(() => {
-    localStorage.setItem('access_token', 'e2e-reference-lookup-token')
-    localStorage.setItem('current_org_id', 'org-reference-lookup')
-    localStorage.setItem('locale', 'en-US')
-    localStorage.setItem('gzeams:lookup:recent:User:object-detail:Asset', JSON.stringify(['user-john', 'user-alice']))
-  })
-
-  await page.route('**/*', async (route) => {
-    const url = new URL(route.request().url())
-    const pathname = url.pathname
-    if (!pathname.startsWith('/api/')) return route.continue()
-
-    if (pathname.endsWith('/api/system/objects/User/me/')) {
-      return fulfillSuccess(route, {
-        id: 'user-reference-lookup',
-        username: 'admin',
-        roles: ['admin'],
-        permissions: ['*'],
-        primaryOrganization: {
-          id: 'org-reference-lookup',
-          name: 'Lookup Org',
-          code: 'LOOK'
-        }
-      })
-    }
-
-    if (pathname.endsWith('/api/system/menu/')) {
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ groups: [], items: [] })
-      })
-    }
-    if (pathname.endsWith('/api/system/menu/flat/')) return fulfillSuccess(route, [])
-    if (pathname.endsWith('/api/system/menu/config/')) {
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ schema: {}, common_groups: [], common_icons: [] })
-      })
-    }
-
-    if (/\/api\/system\/objects\/Asset\/metadata\/?$/.test(pathname)) {
-      return fulfillSuccess(route, {
-        code: 'Asset',
-        name: 'Asset',
-        permissions: { view: true, add: true, change: true, delete: true }
-      })
-    }
-
-    if (/\/api\/system\/objects\/Asset\/runtime\/?$/.test(pathname)) {
-      return fulfillSuccess(route, buildRuntimeLayoutResponse())
-    }
-
-    if (/\/api\/system\/objects\/Asset\/fields\/?$/.test(pathname)) {
-      return fulfillSuccess(route, {
-        editable_fields: [],
-        reverse_relations: [],
-        context: 'form'
-      })
-    }
-
-    if (/\/api\/system\/objects\/Asset\/asset-lookup-1\/?$/.test(pathname) && route.request().method() === 'GET') {
-      return fulfillSuccess(route, {
-        id: 'asset-lookup-1',
-        assetName: 'Lookup Asset',
-        assetCode: 'ASSET-LOOKUP-001',
-        owner: state.ownerId
-      })
-    }
-
-    if (/\/api\/system\/objects\/Asset\/asset-lookup-1\/?$/.test(pathname) && route.request().method() === 'PUT') {
-      const body = route.request().postDataJSON() as Record<string, any>
-      state.lastUpdatePayload = body
-      const owner = String(body?.owner || body?.owner_id || body?.ownerId || '').trim()
-      if (owner) state.ownerId = owner
-      return fulfillSuccess(route, {
-        id: 'asset-lookup-1',
-        ...body
-      })
-    }
-
-    if (pathname.endsWith('/api/system/objects/User/batch-get/')) {
-      const body = route.request().postDataJSON() as { ids?: string[] }
-      const ids = Array.isArray(body?.ids) ? body.ids.map((id) => String(id)) : []
-      const map = new Map(USER_POOL.map((user) => [String(user.id), user]))
-      const results = ids
-        .map((id) => map.get(id))
-        .filter((item): item is Record<string, any> => !!item)
-      const missing_ids = ids.filter((id) => !map.has(id))
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, results, missing_ids })
-      })
-    }
-
-    if (/\/api\/system\/objects\/User\/[^/]+\/$/.test(pathname)) {
-      const id = pathname.split('/').filter(Boolean).pop() || ''
-      const user = USER_POOL.find((item) => item.id === id)
-      if (!user) {
-        return route.fulfill({
-          status: 404,
-          contentType: 'application/json',
-          body: JSON.stringify({ success: false, message: 'not found' })
-        })
+  await mockReferenceLookupApis(page, {
+    accessToken: 'e2e-reference-lookup-token',
+    orgId: 'org-reference-lookup',
+    currentUser: {
+      id: 'user-reference-lookup',
+      username: 'admin',
+      roles: ['admin'],
+      permissions: ['*'],
+      primaryOrganization: {
+        id: 'org-reference-lookup',
+        name: 'Lookup Org',
+        code: 'LOOK'
       }
-      return fulfillSuccess(route, user)
-    }
-
-    if (pathname.endsWith('/api/system/objects/User/')) {
-      const search = url.searchParams.get('search') || ''
-      const pageNo = Number(url.searchParams.get('page') || '1')
-      const pageSize = Number(url.searchParams.get('page_size') || '20')
-      const filtered = pickUsersBySearch(search)
-      const start = Math.max(0, (pageNo - 1) * pageSize)
-      const results = filtered.slice(start, start + pageSize)
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          count: filtered.length,
-          results
+    },
+    localStorageEntries: {
+      'gzeams:lookup:recent:User:object-detail:Asset': JSON.stringify(['user-john', 'user-alice'])
+    },
+    searchKeys: ['fullName', 'username', 'code'],
+    handleApiRoute: async ({ route, pathname }) => {
+      if (/\/api\/system\/objects\/Asset\/metadata\/?$/.test(pathname)) {
+        await fulfillSuccess(route, {
+          code: 'Asset',
+          name: 'Asset',
+          permissions: { view: true, add: true, change: true, delete: true }
         })
-      })
-    }
+        return true
+      }
 
-    return fulfillSuccess(route, {})
+      if (/\/api\/system\/objects\/Asset\/runtime\/?$/.test(pathname)) {
+        await fulfillSuccess(route, buildRuntimeLayoutResponse())
+        return true
+      }
+
+      if (/\/api\/system\/objects\/Asset\/fields\/?$/.test(pathname)) {
+        await fulfillSuccess(route, {
+          editable_fields: [],
+          reverse_relations: [],
+          context: 'form'
+        })
+        return true
+      }
+
+      if (/\/api\/system\/objects\/Asset\/asset-lookup-1\/?$/.test(pathname) && route.request().method() === 'GET') {
+        await fulfillSuccess(route, {
+          id: 'asset-lookup-1',
+          assetName: 'Lookup Asset',
+          assetCode: 'ASSET-LOOKUP-001',
+          owner: state.ownerId
+        })
+        return true
+      }
+
+      if (/\/api\/system\/objects\/Asset\/asset-lookup-1\/?$/.test(pathname) && route.request().method() === 'PUT') {
+        const body = route.request().postDataJSON() as Record<string, unknown>
+        state.lastUpdatePayload = body
+        const owner = String(body?.owner || body?.owner_id || body?.ownerId || '').trim()
+        if (owner) state.ownerId = owner
+        await fulfillSuccess(route, {
+          id: 'asset-lookup-1',
+          ...body
+        })
+        return true
+      }
+
+      return false
+    }
   })
 }
 
@@ -241,103 +163,56 @@ test.describe('Reference Lookup Advanced Dialog', () => {
 
     await page.goto('/objects/Asset/asset-lookup-1')
     await expect(page.locator('.load-error')).toHaveCount(0)
-    const editButton = page.locator('.header-actions .el-button').filter({ hasText: /Edit|编辑/i }).first()
-    await expect(editButton).toBeVisible({ timeout: 20_000 })
-    await editButton.click()
-    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
+    await ensureInlineEditMode(page, { timeout: 20_000 })
 
-    const ownerField = () => page.locator('.field-item').filter({
-      has: page.locator('.field-label', { hasText: 'Owner' })
-    }).first()
-    const openOwnerLookup = async () => {
-      const field = ownerField()
-      await expect(field).toBeVisible()
-      await field.locator('.el-select').first().click()
-    }
-
-    await openOwnerLookup()
-    const dropdownFooter = page.locator('.reference-dropdown-footer').last()
-    await expect(dropdownFooter).toBeVisible()
-    await dropdownFooter.getByRole('button', { name: 'Advanced Search' }).click()
-
-    const dialog = page.locator('.el-dialog').filter({
-      has: page.locator('.lookup-toolbar')
-    }).first()
-    await expect(dialog).toBeVisible()
+    const ownerField = () => getDetailFieldItem(page, 'Owner')
+    const dialog = await openReferenceAdvancedLookup(page, { fieldLabel: 'Owner' })
 
     await dialog.getByRole('button', { name: 'Reset' }).click()
     const groupTitles = dialog.locator('.lookup-cell__group-title')
     await expect(groupTitles).toContainText(['Recent Records (2)', 'Search Results (1)'])
-    await dialog.locator('.lookup-toolbar__columns-trigger').click()
-    const columnSettings = page.locator('.lookup-column-settings:visible').last()
-    await expect(columnSettings).toBeVisible()
+    const columnSettings = await openLookupColumnSettings(page, dialog)
     await columnSettings.locator('.lookup-column-settings__item').filter({ hasText: 'Code' }).first().click()
     await expect(dialog.locator('.el-table__header-wrapper')).not.toContainText('Code')
     const idSettingRow = columnSettings.locator('.lookup-column-settings__row[data-column-key="id"]').first()
     await expect(idSettingRow.locator('.lookup-column-settings__lock-icon')).toBeVisible()
     await expect(idSettingRow.locator('.lookup-column-settings__move-up')).toBeDisabled()
-    const headersAfterMove = dialog.locator('.el-table__header-wrapper thead th .cell')
+    const headersAfterMove = getLookupHeaderCells(dialog)
     await expect(headersAfterMove.first()).toContainText('Name')
     await dialog.getByRole('button', { name: 'Cancel' }).click()
     await expect(dialog).toBeHidden()
 
-    await openOwnerLookup()
-    await page.locator('.reference-dropdown-footer').last().getByRole('button', { name: 'Advanced Search' }).click()
-    const reopenDialog = page.locator('.el-dialog').filter({
-      has: page.locator('.lookup-toolbar')
-    }).first()
-    await expect(reopenDialog).toBeVisible()
+    const reopenDialog = await openReferenceAdvancedLookup(page, { fieldLabel: 'Owner' })
     await expect(reopenDialog.locator('.el-table__header-wrapper')).not.toContainText('Code')
-    const reopenHeaders = reopenDialog.locator('.el-table__header-wrapper thead th .cell')
+    const reopenHeaders = getLookupHeaderCells(reopenDialog)
     await expect(reopenHeaders.first()).toContainText('Name')
-    await reopenDialog.locator('.lookup-toolbar__columns-trigger').click()
-    const reopenedColumnSettings = page.locator('.lookup-column-settings:visible').last()
-    await expect(reopenedColumnSettings).toBeVisible()
-    await reopenedColumnSettings.locator('.lookup-column-settings__profiles').getByText('Compact').click()
-    await expect(reopenedColumnSettings.locator('.lookup-column-settings__profiles .is-selected')).toContainText('Compact')
+    const reopenedColumnSettings = await openLookupColumnSettings(page, reopenDialog)
+    await selectLookupProfile(reopenedColumnSettings, 'Compact')
     await reopenDialog.getByRole('button', { name: 'Cancel' }).click()
     await expect(reopenDialog).toBeHidden()
 
-    await openOwnerLookup()
-    await page.locator('.reference-dropdown-footer').last().getByRole('button', { name: 'Advanced Search' }).click()
-    const compactDialog = page.locator('.el-dialog').filter({
-      has: page.locator('.lookup-toolbar')
-    }).first()
-    await expect(compactDialog).toBeVisible()
-    await compactDialog.locator('.lookup-toolbar__columns-trigger').click()
-    const compactSettings = page.locator('.lookup-column-settings:visible').last()
+    const compactDialog = await openReferenceAdvancedLookup(page, { fieldLabel: 'Owner' })
+    const compactSettings = await openLookupColumnSettings(page, compactDialog)
     await expect(compactSettings.locator('.lookup-column-settings__profiles .is-selected')).toContainText('Compact')
     await expect(compactDialog.locator('.el-table__header-wrapper')).toContainText('email')
     await expect(compactDialog.locator('.el-table__header-wrapper')).not.toContainText('mobile')
-    await compactSettings.locator('.lookup-column-settings__reset-columns').click()
+    await resetLookupColumns(compactSettings)
     await expect(compactSettings.locator('.lookup-column-settings__profiles .is-selected')).toContainText('Standard')
     await compactDialog.getByRole('button', { name: 'Cancel' }).click()
     await expect(compactDialog).toBeHidden()
 
-    await openOwnerLookup()
-    await page.locator('.reference-dropdown-footer').last().getByRole('button', { name: 'Advanced Search' }).click()
-    const resetDialog = page.locator('.el-dialog').filter({
-      has: page.locator('.lookup-toolbar')
-    }).first()
-    await expect(resetDialog).toBeVisible()
-    await resetDialog.locator('.lookup-toolbar__columns-trigger').click()
-    const resetSettings = page.locator('.lookup-column-settings:visible').last()
+    const resetDialog = await openReferenceAdvancedLookup(page, { fieldLabel: 'Owner' })
+    const resetSettings = await openLookupColumnSettings(page, resetDialog)
     await expect(resetSettings.locator('.lookup-column-settings__profiles .is-selected')).toContainText('Standard')
-    await resetSettings.locator('.lookup-column-settings__reset-columns').click()
+    await resetLookupColumns(resetSettings)
     await expect(resetDialog.locator('.el-table__header-wrapper')).toContainText('Code')
-    await expect(resetDialog.locator('.el-table__header-wrapper thead th .cell').first()).toContainText('Name')
+    await expect(getLookupHeaderCells(resetDialog).first()).toContainText('Name')
     await resetDialog.getByRole('button', { name: 'Cancel' }).click()
     await expect(resetDialog).toBeHidden()
 
-    await openOwnerLookup()
-    await page.locator('.reference-dropdown-footer').last().getByRole('button', { name: 'Advanced Search' }).click()
-    const afterResetDialog = page.locator('.el-dialog').filter({
-      has: page.locator('.lookup-toolbar')
-    }).first()
-    await expect(afterResetDialog).toBeVisible()
+    const afterResetDialog = await openReferenceAdvancedLookup(page, { fieldLabel: 'Owner' })
     await expect(afterResetDialog.locator('.el-table__header-wrapper')).toContainText('Code')
-    await expect(afterResetDialog.locator('.el-table__header-wrapper thead th .cell').first()).toContainText('Name')
+    await expect(getLookupHeaderCells(afterResetDialog).first()).toContainText('Name')
 
     const firstRow = afterResetDialog.locator('.el-table__row').first()
     await firstRow.click()
@@ -347,8 +222,7 @@ test.describe('Reference Lookup Advanced Dialog', () => {
     const activeAfter = (await afterResetDialog.locator('.el-table__row.is-active-single-row').first().textContent()) || ''
     expect(activeAfter).not.toBe(activeBefore)
 
-    await afterResetDialog.locator('.lookup-toolbar .el-input__inner').fill('john')
-    await afterResetDialog.locator('.lookup-toolbar .el-input__inner').press('Enter')
+    await searchLookup(afterResetDialog, 'john')
     const johnRow = afterResetDialog.locator('.el-table__row').filter({ hasText: 'John Carter' }).first()
     await expect(johnRow).toBeVisible()
     await expect(afterResetDialog.locator('.lookup-cell__recent-tag')).toContainText('Recent')

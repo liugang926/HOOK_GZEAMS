@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolveRuntimeLayout } from './runtimeLayoutResolver'
 import { dynamicApi } from '@/api/dynamic'
 import { businessObjectApi, pageLayoutApi } from '@/api/system'
@@ -153,5 +153,48 @@ describe('resolveRuntimeLayout', () => {
     expect(businessObjectApi.getFieldsWithContext).toHaveBeenCalledWith('Asset', 'form', { includeRelations: true })
     expect(pageLayoutApi.getDefault).toHaveBeenCalledTimes(1)
     expect(pageLayoutApi.getDefault).toHaveBeenCalledWith('Asset', 'form')
+  })
+
+  it('passes view_mode to runtime API when preferredViewMode is Compact', async () => {
+    vi.mocked(dynamicApi.getRuntime).mockResolvedValue({
+      fields: {
+        editableFields: [
+          { code: 'name', fieldType: 'text', isRequired: true },
+          { code: 'description', fieldType: 'text' }
+        ],
+        reverseRelations: []
+      },
+      permissions: { view: true, add: true, change: true, delete: false },
+      isDefault: false,
+      layout: {
+        status: 'published',
+        version: '1.0.0',
+        layoutConfig: {
+          sections: [
+            {
+              id: 'basic',
+              type: 'section',
+              fields: [
+                { fieldCode: 'name', label: 'Name', span: 12 },
+                { fieldCode: 'description', label: 'Desc', span: 12 }
+              ]
+            }
+          ]
+        }
+      }
+    } as any)
+
+    const result = await resolveRuntimeLayout('Asset', 'edit', {
+      includeRelations: false,
+      preferredViewMode: 'Compact'
+    })
+
+    expect(result.viewMode).toBe('Compact')
+    expect(result.layoutConfig?.layoutType).toBe('Compact')
+    expect(result.layoutConfig?.sections).toHaveLength(1)
+    expect(dynamicApi.getRuntime).toHaveBeenCalledWith(
+      'Asset', 'edit',
+      expect.objectContaining({ view_mode: 'Compact' })
+    )
   })
 })

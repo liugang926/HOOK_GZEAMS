@@ -80,8 +80,9 @@ class AssetViewSet(BaseModelViewSetWithBatch):
     filterset_class = AssetFilter
     service = AssetService()
 
-    # Search fields for search query parameter
-    search_fields = ['asset_code', 'asset_name', 'specification', 'brand', 'model', 'serial_number']
+    # Unified list search is handled by AssetFilter.search so it can cover
+    # numeric and relation-display fields in addition to plain text columns.
+    search_fields = []
 
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""

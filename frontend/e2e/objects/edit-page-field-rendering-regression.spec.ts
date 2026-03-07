@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
+import { getDetailContent, getDetailFieldItem } from '../helpers/detail-page.helpers'
 
 function fulfillSuccess(route: Route, data: unknown) {
   return route.fulfill({
@@ -178,16 +179,10 @@ test.describe('Edit Page Field Rendering Regression', () => {
     await expect.poll(async () => hasInputWithValue(page, 'ASSET-EDIT-001')).toBe(true)
     await expect.poll(async () => hasInputWithValue(page, 'Edit Page Asset')).toBe(true)
 
-    const formRoot = page.locator('.detail-content')
-    const codeField = formRoot.locator('.field-item').filter({
-      has: page.locator('.field-label', { hasText: 'Asset Code' })
-    }).first()
-    const dateField = formRoot.locator('.field-item').filter({
-      has: page.locator('.field-label', { hasText: 'Purchase Date' })
-    }).first()
-    const statusField = formRoot.locator('.field-item').filter({
-      has: page.locator('.field-label', { hasText: 'Status' })
-    }).first()
+    const formRoot = getDetailContent(page)
+    const codeField = getDetailFieldItem(formRoot, 'Asset Code')
+    const dateField = getDetailFieldItem(formRoot, 'Purchase Date')
+    const statusField = getDetailFieldItem(formRoot, 'Status')
 
     await expect(codeField.locator('input')).toHaveValue('ASSET-EDIT-001')
     await expect(codeField.locator('input')).toBeDisabled()

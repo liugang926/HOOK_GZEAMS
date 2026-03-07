@@ -36,6 +36,7 @@ export interface ProjectedDetailField {
     | 'sub_table'
     | 'json'
     | 'object'
+    | 'related_object'
   options?: { label: string; value: any; color?: string }[]
   dateFormat?: string
   precision?: number
@@ -47,6 +48,7 @@ export interface ProjectedDetailField {
   href?: string
   hidden?: boolean
   readonly?: boolean
+  componentProps?: Record<string, any>
   labelClass?: string
   valueClass?: string
   layoutPlacement?: {
@@ -167,6 +169,10 @@ export function projectDetailSectionsFromRenderSchema(
         const detailField = fieldToDetailField(metaField)
         detailField.editorType = detailField.editorType || normalizeFieldType(renderField.fieldType || metaField.fieldType || 'text')
         detailField.label = renderField.label || detailField.label
+        ;(detailField as any).componentProps = {
+          ...((detailField as any).componentProps || {}),
+          ...(((renderField as any).componentProps || (renderField as any).component_props || {}))
+        }
         detailField.hidden = renderField.visible === false
         detailField.readonly = renderField.readonly === true
         detailField.span = normalizeSpan(renderField.span ?? detailField.span ?? 1, section.columns)
@@ -187,6 +193,9 @@ export function projectDetailSectionsFromRenderSchema(
         label: renderField.label || code,
         editorType: normalizeFieldType(renderField.fieldType || 'text'),
         type: normalizeFieldType(renderField.fieldType || 'text') as ProjectedDetailField['type'],
+        componentProps: {
+          ...(((renderField as any).componentProps || (renderField as any).component_props || {}))
+        },
         span: normalizeSpan(renderField.span ?? 1, section.columns),
         minHeight: Number.isFinite(Number(renderField.minHeight)) && Number(renderField.minHeight) > 0
           ? Math.round(Number(renderField.minHeight))

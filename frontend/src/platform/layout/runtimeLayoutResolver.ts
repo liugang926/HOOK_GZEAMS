@@ -2,6 +2,7 @@
 import { businessObjectApi, pageLayoutApi } from '@/api/system'
 import { extractLayoutConfig } from '@/adapters/layoutAdapter'
 import { normalizeLayoutConfig } from '@/adapters/layoutNormalizer'
+import { deriveCompactLayout } from '@/platform/layout/compactLayoutFactory'
 import {
   normalizeLayoutType,
   toMetadataContext,
@@ -10,7 +11,7 @@ import {
   type MetadataContext,
 } from '@/utils/layoutMode'
 import type { RuntimeMode } from '@/contracts/runtimeContract'
-import { localizeMultilingualObject, localizeMultilingualTree } from '@/utils/localeText'
+import { localizeMultilingualObject } from '@/utils/localeText'
 
 type AnyRecord = Record<string, any>
 export type RuntimePermissions = {
@@ -46,6 +47,7 @@ export interface RuntimeLayoutResolution {
   runtimeMode: RuntimeMode
   metadataContext: MetadataContext
   layoutType: LayoutTypeValue
+  viewMode: 'Detail' | 'Compact' | string | null
   layoutConfig: AnyRecord | null
   layoutStatus: string | null
   layoutVersion: string | null
@@ -81,7 +83,7 @@ function normalizeFieldsPayload(payload: any): {
 function normalizeMaybeLayoutConfig(layoutPayload: any): AnyRecord | null {
   const raw = extractLayoutConfig(layoutPayload)
   if (!raw || typeof raw !== 'object') return null
-  return localizeMultilingualTree(normalizeLayoutConfig(raw))
+  return normalizeLayoutConfig(raw)
 }
 
 function cloneConfig<T extends AnyRecord | null>(value: T): T {
@@ -183,7 +185,7 @@ function normalizeRuntimeContext(value: any, fallback: MetadataContext): Metadat
 export async function resolveRuntimeLayout(
   objectCode: string,
   modeInput: string,
-  options: { includeRelations?: boolean } = {}
+  options: { includeRelations?: boolean; preferredViewMode?: 'Detail' | 'Compact' } = {}
 ): Promise<RuntimeLayoutResolution> {
   const runtimeMode = toRuntimeMode(modeInput)
   const inputContext = toMetadataContext(modeInput)
@@ -192,7 +194,8 @@ export async function resolveRuntimeLayout(
 
   try {
     const runtime = await dynamicApi.getRuntime(objectCode, runtimeMode, {
-      include_relations: includeRelations
+      include_relations: includeRelations,
+      ...(options.preferredViewMode ? { view_mode: options.preferredViewMode } : {}),
     })
     const metadataContext = normalizeRuntimeContext(runtime?.context, inputContext)
     const layoutPayload = (runtime?.layout || {}) as AnyRecord
@@ -202,11 +205,17 @@ export async function resolveRuntimeLayout(
       layoutConfig = applyModeOverridesFromLayout(layoutConfig, runtimeMode)
     }
     const permissions = normalizePermissions(runtime?.permissions)
+    // Apply compact derivation if preferred and backend returned a Detail layout
+    const resolvedViewMode = (layoutPayload?.view_mode || layoutPayload?.viewMode || 'Detail') as string
+    if (options.preferredViewMode === 'Compact' && resolvedViewMode !== 'Compact' && layoutConfig) {
+      layoutConfig = deriveCompactLayout(layoutConfig, normalizedFields.editableFields)
+    }
     return {
       source: 'runtime',
       runtimeMode,
       metadataContext,
       layoutType,
+      viewMode: options.preferredViewMode === 'Compact' ? 'Compact' : resolvedViewMode,
       layoutConfig,
       layoutStatus: layoutPayload?.status ?? null,
       layoutVersion: layoutPayload?.version ?? null,
@@ -235,6 +244,7 @@ export async function resolveRuntimeLayout(
       runtimeMode,
       metadataContext: fallbackContext,
       layoutType: fallbackLayoutType,
+      viewMode: (layoutPayload?.view_mode || layoutPayload?.viewMode || 'Detail') as string,
       layoutConfig,
       layoutStatus: (layoutPayload?.status ?? null) as string | null,
       layoutVersion: (layoutPayload?.version ?? null) as string | null,

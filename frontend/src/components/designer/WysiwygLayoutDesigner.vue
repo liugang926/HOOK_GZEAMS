@@ -1,4 +1,4 @@
-﻿<!--
+<!--
   WysiwygLayoutDesigner.vue - WYSIWYG Layout Designer
   What You See Is What You Get layout editor with real-time preview
 
@@ -209,6 +209,20 @@
           </div>
           <div class="canvas-header-right">
             <el-radio-group
+              v-model="layoutMode"
+              size="small"
+              class="layout-mode-toggle"
+              style="margin-right: 16px;"
+            >
+              <el-radio-button label="Detail">
+                {{ t('system.pageLayout.designer.modes.detail', 'Detail View') }}
+              </el-radio-button>
+              <el-radio-button label="Compact">
+                {{ t('system.pageLayout.designer.modes.compact', 'Compact View') }}
+              </el-radio-button>
+            </el-radio-group>
+            
+            <el-radio-group
               :model-value="renderMode"
               size="small"
               @update:model-value="setRenderMode"
@@ -240,6 +254,7 @@
         <div
           ref="canvasContentRef"
           class="canvas-content"
+          :class="{ 'compact-canvas-mode': layoutMode === 'Compact' }"
         >
           <div class="canvas-render-shell">
             <!-- Render the actual form using real components -->
@@ -257,6 +272,8 @@
                 :show-delete="false"
                 section-header-test-id="layout-section-header"
                 :show-related-objects="true"
+                :resolve-runtime-relations="false"
+                :disable-related-object-fetch="true"
                 :object-code="objectCode"
                 :object-name="previewObjectName"
                 :reverse-relations="previewReverseRelations"
@@ -672,7 +689,7 @@ import { dynamicApi } from '@/api/dynamic'
 import { pageLayoutApi } from '@/api/system'
 import { useLayoutHistory } from '@/composables/useLayoutHistory'
 import { normalizeFieldType } from '@/utils/fieldType'
-import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
+import { resolveRuntimeLayout, type RuntimeLayoutResolution } from '@/platform/layout/runtimeLayoutResolver'
 import { toUnifiedDetailField } from '@/platform/layout/unifiedDetailField'
 import { toRuntimeFieldFromLayout } from '@/platform/layout/unifiedRuntimeField'
 import { canAddFieldInDesigner, getFieldDisabledReason } from '@/platform/layout/designerFieldGuard'
@@ -683,6 +700,7 @@ import { getCanvasPlacementAttrs, placeCanvasFields, type CanvasPlacement } from
 import { buildLayoutFieldDropper, compileLayoutSchema } from '@/platform/layout/layoutCompiler'
 import { resolveRelationTargetObjectCode } from '@/platform/reference/relationObjectCode'
 import { buildDesignerRelationGroupScopeId } from '@/platform/reference/relationGroupScope'
+import { resolveTranslatableText } from '@/utils/localeText'
 import {
   getDefaultLayoutConfig,
   cloneLayoutConfig,
@@ -711,6 +729,9 @@ interface FieldDefinition {
   code: string
   name: string
   fieldType: string
+  field_type?: string
+  type?: string
+  displayName?: string
   isRequired?: boolean
   isReadonly?: boolean
   isSystem?: boolean
@@ -719,22 +740,93 @@ interface FieldDefinition {
   showInForm?: boolean
   showInDetail?: boolean
   // Field metadata for proper rendering
-  options?: Array<{ value: any; label: string }>
+  options?: Array<{ value: unknown; label: string }>
   referenceObject?: string
   relatedObject?: string
-  componentProps?: Record<string, any>
+  componentProps?: AnyRecord
+  component_props?: AnyRecord
   dictionaryType?: string
-  defaultValue?: any
+  defaultValue?: unknown
   placeholder?: string
   helpText?: string
+}
+
+type AnyRecord = Record<string, unknown>
+type ApiDataEnvelope<T> = { data?: T }
+type SortableMoveEvent = {
+  from?: Element | null
+  to?: Element | null
+  oldIndex?: number
+  newIndex?: number
+  item?: Element | null
+}
+
+const isRecord = (value: unknown): value is AnyRecord => {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+function unwrapData<T>(raw: T | ApiDataEnvelope<T>): T {
+  if (isRecord(raw) && 'data' in raw) {
+    const value = (raw as ApiDataEnvelope<T>).data
+    return (value ?? raw) as T
+  }
+  return raw
+}
+
+const readErrorMessage = (error: unknown): string | null => {
+  if (!isRecord(error)) return null
+  const response = error.response
+  if (!isRecord(response)) return null
+  const data = response.data
+  if (!isRecord(data)) return null
+  const message = data.message
+  return typeof message === 'string' && message.trim() ? message : null
+}
+
+const readComponentProps = (field: Partial<FieldDefinition & LayoutField> | null | undefined): AnyRecord => {
+  return {
+    ...((isRecord(field?.componentProps) ? field.componentProps : {}) as AnyRecord),
+    ...((isRecord(field?.component_props) ? field.component_props : {}) as AnyRecord)
+  }
+}
+
+const readLayoutPlacement = (
+  field: LayoutField | null | undefined
+): LayoutField['layoutPlacement'] | LayoutField['layout_placement'] | null => {
+  if (!field) return null
+  return field.layoutPlacement || field.layout_placement || null
+}
+
+const writeLegacyLayoutPlacement = (
+  field: LayoutField,
+  placement: LayoutField['layoutPlacement'] | undefined
+): void => {
+  if (!placement) {
+    delete field.layoutPlacement
+    delete field.layout_placement
+    return
+  }
+
+  field.layoutPlacement = placement
+  field.layout_placement = {
+    row: placement.row,
+    col_start: placement.colStart,
+    col_span: placement.colSpan,
+    row_span: placement.rowSpan,
+    columns: placement.columns,
+    total_rows: placement.totalRows,
+    order: placement.order
+  }
 }
 
 // Use LayoutFieldConfig from @/types/metadata for fields with full metadata
 // This local interface is kept for backward compatibility but extends the concept
 interface LayoutField extends Omit<LayoutFieldConfig, 'fieldType'> {
   fieldType?: string // Make fieldType optional for backward compatibility
+  field_type?: string
   minHeight?: number
   min_height?: number
+  component_props?: AnyRecord
   layoutPlacement?: {
     row?: number
     colStart?: number
@@ -795,11 +887,14 @@ interface LayoutCollapseItem {
 
 interface LayoutConfig {
   sections?: LayoutSection[]
-  columns?: any[]
-  actions?: any[]
-  modeOverrides?: Record<string, any>
-  layoutOverrides?: Record<string, any>
+  columns?: unknown[]
+  actions?: unknown[]
+  modeOverrides?: AnyRecord
+  layoutOverrides?: AnyRecord
+  layoutType?: 'Detail' | 'Compact'
 }
+
+type DesignerConfigNode = LayoutSection | LayoutTab | LayoutCollapseItem | LayoutField
 
 interface FieldGroup {
   type: string
@@ -821,8 +916,6 @@ interface Props {
   businessObjectId?: string
   initialPreviewMode?: 'current' | 'active'
   layoutConfig?: LayoutConfig
-  translationMode?: boolean
-  isDefault?: boolean
 }
 
 const translationMode = ref(false)
@@ -857,6 +950,7 @@ const layoutConfig = ref<LayoutConfig>(
 )
 const selectedId = ref<string>('')
 const renderMode = ref<'design' | 'preview'>('design')
+const layoutMode = ref<'Detail' | 'Compact'>('Detail')
 const isDesignMode = computed(() => renderMode.value === 'design')
 const previewMode = ref<'current' | 'active'>('current')
 const currentLayoutSnapshot = ref<LayoutConfig | null>(null)
@@ -864,7 +958,7 @@ const previewLoading = ref(false)
 const selectedSection = ref<LayoutSection | null>(null)
 const saving = ref(false)
 const publishing = ref(false)
-const searchInputRef = ref()
+const searchInputRef = ref<{ focus: () => void } | null>(null)
 const searchQuery = ref('')
 const expandedGroups = ref<Set<string>>(new Set())
 
@@ -892,7 +986,7 @@ const isDragOverCanvas = ref(false)
 const dragOverSection = ref<string | null>(null)
 
 // Sample data for preview
-const sampleData = ref<Record<string, any>>({})
+const sampleData = ref<AnyRecord>({})
 const canvasAreaRef = ref<HTMLElement | null>(null)
 const canvasContentRef = ref<HTMLElement | null>(null)
 
@@ -1064,21 +1158,19 @@ const clampFieldMinHeight = (value: number): number => {
 
 const resolveLayoutFieldMinHeight = (field: LayoutField | null | undefined): number | undefined => {
   if (!field) return undefined
-  const componentMinHeight = (field.componentProps as any)?.minHeight
-  const legacyComponentMinHeight = (field as any)?.component_props?.minHeight ?? (field as any)?.component_props?.min_height
+  const componentProps = readComponentProps(field)
+  const componentMinHeight = componentProps.minHeight
+  const legacyComponentMinHeight = componentProps.min_height
   const raw = componentMinHeight ?? legacyComponentMinHeight ?? field.minHeight ?? field.min_height
   const normalized = normalizeFieldMinHeight(raw)
   return normalized ? clampFieldMinHeight(normalized) : undefined
 }
 
-const setLayoutFieldMinHeight = (field: LayoutField, value: number | undefined) => {
+const setLayoutFieldMinHeight = (field: LayoutField, value: unknown) => {
   const normalized = normalizeFieldMinHeight(value)
   const next = normalized ? clampFieldMinHeight(normalized) : undefined
 
-  const componentProps = {
-    ...((field.componentProps || {}) as Record<string, any>),
-    ...((field as any).component_props || {})
-  }
+  const componentProps = readComponentProps(field)
 
   if (next === undefined) {
     delete componentProps.minHeight
@@ -1089,14 +1181,14 @@ const setLayoutFieldMinHeight = (field: LayoutField, value: number | undefined) 
   }
 
   field.componentProps = componentProps
-  ;(field as any).component_props = componentProps
+  field.component_props = componentProps
   // Keep legacy direct keys in sync for backend compatibility.
   if (next === undefined) {
-    delete (field as any).minHeight
-    delete (field as any).min_height
+    delete field.minHeight
+    delete field.min_height
   } else {
-    (field as any).minHeight = next
-    ;(field as any).min_height = next
+    field.minHeight = next
+    field.min_height = next
   }
 }
 
@@ -1190,7 +1282,7 @@ async function showPropertySizeFeedback(fieldId: string) {
   }, 1100)
 }
 
-const applySortableMove = (evt: any) => {
+const applySortableMove = (evt: SortableMoveEvent) => {
   const fromMeta = parseContainerMeta(evt?.from as HTMLElement)
   const toMeta = parseContainerMeta(evt?.to as HTMLElement)
   const oldIndex = typeof evt?.oldIndex === 'number' ? evt.oldIndex : null
@@ -1248,11 +1340,11 @@ const initSortables = async () => {
   }
 }
 
-function getColumns(section: any): number {
+function getColumns(section: Partial<LayoutSection> | null | undefined): number {
   return Number(section?.columns || section?.columnCount || section?.column || 2) || 2
 }
 
-function getRenderColumns(section: any): number {
+function getRenderColumns(section: Partial<LayoutSection> | null | undefined): number {
   if (section?.position === 'sidebar') return 1
   return getColumns(section)
 }
@@ -1265,7 +1357,7 @@ function buildDesignerRenderFields(fields: LayoutField[], columns: number): Desi
   const placementSeed = (fields || []).map((field) => ({
     span: field?.span ?? 1,
     minHeight: resolveLayoutFieldMinHeight(field),
-    layoutPlacement: (field as any)?.layoutPlacement || (field as any)?.layout_placement || null
+    layoutPlacement: readLayoutPlacement(field)
   }))
   const placed = placeCanvasFields(placementSeed, columns, {
     preferSavedPlacement: true
@@ -1322,19 +1414,9 @@ const applyPlacementSnapshotToFieldList = (
     const placement = (placed[index]?.placement || null) as CanvasPlacement | null
     const persisted = toPersistedLayoutPlacement(placement)
     if (persisted) {
-      next.layoutPlacement = persisted
-      ;(next as any).layout_placement = {
-        row: persisted.row,
-        col_start: persisted.colStart,
-        col_span: persisted.colSpan,
-        row_span: persisted.rowSpan,
-        columns: persisted.columns,
-        total_rows: persisted.totalRows,
-        order: persisted.order
-      }
+      writeLegacyLayoutPlacement(next, persisted)
     } else {
-      delete (next as any).layoutPlacement
-      delete (next as any).layout_placement
+      writeLegacyLayoutPlacement(next, undefined)
     }
     return next
   })
@@ -1375,11 +1457,11 @@ const activeCollapses = ref<Record<string, string[]>>({})
 const history = useLayoutHistory(layoutConfig, { maxHistory: 50 })
 const { canUndo, canRedo, undo, redo, historyLength } = history
 
-const debouncedSaveLayoutState = debounce(async (key: string, config: any) => {
+const debouncedSaveLayoutState = debounce(async (key: string, config: LayoutConfig) => {
   try {
     await storage.set(key, config)
-  } catch (e) {
-    console.error('Failed to auto-save layout state:', e)
+  } catch {
+    // Ignore background autosave failure; explicit save/publish remains available.
   }
 }, 800)
 
@@ -1475,7 +1557,7 @@ const addedFieldCodes = computed(() => {
 })
 
 // Group metadata for field types
-const groupMetadata: Record<string, { label: string; icon: any; color: string }> = {
+const groupMetadata: Record<string, { label: string; icon: unknown; color: string }> = {
   text: { label: 'Text', icon: Edit, color: '#409eff' },
   textarea: { label: 'Textarea', icon: Document, color: '#409eff' },
   rich_text: { label: 'Rich Text', icon: Document, color: '#409eff' },
@@ -1551,7 +1633,7 @@ const filteredFieldGroups = computed(() => {
 // Methods
 // ============================================================================
 
-function findItemById(config: LayoutConfig, id: string): any {
+function findItemById(config: LayoutConfig, id: string): DesignerConfigNode | null {
   for (const section of config.sections || []) {
     if (section.id === id) return section
     if (section.type === 'tab') {
@@ -1578,8 +1660,11 @@ function findItemById(config: LayoutConfig, id: string): any {
 }
 
 function fieldToDesignDisplayField(field: LayoutField): DetailField {
-  const runtimeField = toRuntimeFieldFromLayout(field as any, availableFields.value as any[])
-  const detailField = toUnifiedDetailField(runtimeField as any) as DetailField
+  const runtimeField = toRuntimeFieldFromLayout(
+    field as unknown as Record<string, unknown>,
+    availableFields.value as Array<Record<string, unknown>>
+  )
+  const detailField = toUnifiedDetailField(runtimeField as unknown as Record<string, unknown>) as DetailField
   detailField.prop = field.fieldCode
   detailField.label = field.label || detailField.label || field.fieldCode
   return detailField
@@ -1588,7 +1673,7 @@ function fieldToDesignDisplayField(field: LayoutField): DetailField {
 /**
  * Generate a sample value by canonical field type.
  */
-function getSampleValue(field: LayoutField): any {
+function getSampleValue(field: LayoutField): unknown {
   const type = normalizeFieldType(field.fieldType || 'text')
   const label = field.label || ''
   const code = field.fieldCode || ''
@@ -1605,7 +1690,7 @@ function getSampleValue(field: LayoutField): any {
     return 'CODE001'
   }
 
-  const sampleValues: Record<string, any> = {
+  const sampleValues: Record<string, unknown> = {
     text: label || 'Sample Text',
     textarea: `${label || 'Sample'} details`,
     rich_text: `<p>${label || 'Sample rich text'}</p>`,
@@ -1691,7 +1776,7 @@ const previewFieldDefinitions = computed<RuntimeFieldDefinition[]>(() => {
       isReadonly: field.isReadonly,
       showInForm: field.showInForm ?? true,
       showInDetail: field.showInDetail ?? true,
-      options: field.options as any,
+      options: field.options as RuntimeFieldDefinition['options'],
       defaultValue: field.defaultValue,
       placeholder: field.placeholder,
       helpText: field.helpText,
@@ -1710,16 +1795,13 @@ const previewFieldDefinitions = computed<RuntimeFieldDefinition[]>(() => {
       isHidden: field.visible === false,
       showInForm: field.visible !== false,
       showInDetail: field.visible !== false,
-      options: (field.options || []) as any,
+      options: (field.options || []) as RuntimeFieldDefinition['options'],
       span: field.span,
       defaultValue: field.defaultValue,
       placeholder: field.placeholder,
       helpText: field.helpText,
       referenceObject: field.referenceObject || field.relatedObject,
-      componentProps: {
-        ...(field.componentProps || {}),
-        ...(field as any).component_props || {}
-      }
+      componentProps: readComponentProps(field)
     })
   }
 
@@ -1730,16 +1812,17 @@ const designerRenderSections = computed<DesignerRenderSection[]>(() => {
   return (layoutConfig.value.sections || []).map((section: LayoutSection) => {
     const type = section.type || 'section'
     const renderColumns = getRenderColumns(section)
+    const sectionTitle = resolveTranslatableText(section.title) || t('system.pageLayout.designer.defaults.untitledSection')
 
     if (type === 'tab') {
       const tabs = (section.tabs || []).map((tab) => ({
         id: tab.id,
-        title: tab.title,
+        title: resolveTranslatableText(tab.title) || String(tab.name || tab.id || ''),
         fields: buildDesignerRenderFields((tab.fields || []) as LayoutField[], renderColumns)
       }))
       return {
         id: section.id,
-        title: section.title || 'Untitled Section',
+        title: sectionTitle,
         type,
         position: section.position,
         collapsible: section.collapsible === true,
@@ -1754,12 +1837,12 @@ const designerRenderSections = computed<DesignerRenderSection[]>(() => {
     if (type === 'collapse') {
       const items = (section.items || []).map((item) => ({
         id: item.id,
-        title: item.title,
+        title: resolveTranslatableText(item.title) || String(item.name || item.id || ''),
         fields: buildDesignerRenderFields((item.fields || []) as LayoutField[], renderColumns)
       }))
       return {
         id: section.id,
-        title: section.title || 'Untitled Section',
+        title: sectionTitle,
         type,
         position: section.position,
         collapsible: section.collapsible === true,
@@ -1773,7 +1856,7 @@ const designerRenderSections = computed<DesignerRenderSection[]>(() => {
 
     return {
       id: section.id,
-      title: section.title || 'Untitled Section',
+      title: sectionTitle,
       type,
       position: section.position,
       collapsible: section.collapsible === true,
@@ -1818,7 +1901,10 @@ const previewRelationGroupScopeId = computed(() => {
 
 const previewPageTitle = computed(() => {
   const fields = previewFieldDefinitions.value || []
-  const identifier = fields.find((field: any) => field?.isIdentifier || field?.is_identifier || field?.code === 'name')
+  const identifier = fields.find((field) => {
+    const candidate = field as Record<string, unknown>
+    return candidate?.isIdentifier || candidate?.is_identifier || candidate?.code === 'name'
+  })
   const candidateKeys = [
     identifier?.code,
     'name',
@@ -1873,22 +1959,34 @@ function notifyUnsupportedField(field: FieldDefinition): void {
   ElMessage.warning(t('system.pageLayout.designer.messages.cannotAddField', { name: field.name, reason }))
 }
 
-function extractRelatedObjectCode(field: Record<string, any>): string {
+function extractRelatedObjectCode(field: AnyRecord): string {
   return resolveRelationTargetObjectCode({
     explicitTarget: field.relatedObjectCode || field.related_object_code || field.referenceObject,
     reverseRelationModel: field.reverseRelationModel || field.reverse_relation_model,
-    relationCode: field.code
+    relationCode: String(field.code || field.fieldCode || field.field_code || '').trim()
   })
 }
 
-function mapPreviewReverseRelations(fields: any[]): ReverseRelationField[] {
-  return (fields || []).map((rel: any) => ({
+function getDesignerFieldCode(field: AnyRecord): string {
+  return String(field.code || field.fieldCode || field.field_code || field.fieldName || '').trim()
+}
+
+function mapPreviewReverseRelations(fields: AnyRecord[]): ReverseRelationField[] {
+  return (fields || []).map((rel) => ({
     code: rel.code,
     label: rel.label || rel.name || rel.code,
     displayMode: rel.relationDisplayMode || rel.relation_display_mode || 'inline_readonly',
     relatedObjectCode: extractRelatedObjectCode(rel),
     reverseRelationField: rel.reverseRelationField || rel.reverse_relation_field,
     reverseRelationModel: rel.reverseRelationModel || rel.reverse_relation_model,
+    sortOrder: Number(rel.sortOrder || rel.sort_order || 0) || 0,
+    groupKey: rel.groupKey || rel.group_key || '',
+    groupName: rel.groupName || rel.group_name || '',
+    groupOrder: Number(rel.groupOrder || rel.group_order || 0) || undefined,
+    defaultExpanded:
+      rel.defaultExpanded === undefined && rel.default_expanded === undefined
+        ? undefined
+        : Boolean(rel.defaultExpanded ?? rel.default_expanded),
     title: rel.label || rel.name || rel.code,
     showCreate: (rel.relationDisplayMode || rel.relation_display_mode) === 'inline_editable',
     position: rel.position
@@ -1897,10 +1995,7 @@ function mapPreviewReverseRelations(fields: any[]): ReverseRelationField[] {
 
 function buildLayoutField(field: FieldDefinition): LayoutField {
   const fieldType = normalizeFieldType(field.fieldType || 'text')
-  const componentProps = {
-    ...(field.componentProps || {}),
-    ...(field as any).component_props || {}
-  }
+  const componentProps = readComponentProps(field)
 
   return {
     id: generateId('field'),
@@ -2262,7 +2357,7 @@ function handleCollapseDrop(e: DragEvent) {
 }
 
 // Field update
-function updateField(key: string, value: any) {
+function updateField(key: string, value: unknown) {
   if (!selectedId.value || elementType.value !== 'field') return
 
   if (key === 'fieldType') {
@@ -2285,19 +2380,20 @@ function updateField(key: string, value: any) {
   const newConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
   const item = findItemById(newConfig, selectedId.value)
   if (item) {
+    const itemRecord = item as Record<string, unknown>
     if (key === 'fieldType') {
-      item[key] = normalizeFieldType(value || 'text')
+      itemRecord[key] = normalizeFieldType(String(value || 'text'))
     } else if (key === 'span') {
       const columns = selectedSection.value ? getColumns(selectedSection.value) : 2
       const nextSpan = Math.max(1, Math.min(columns, Number(value || 1)))
-      item[key] = nextSpan
+      itemRecord[key] = nextSpan
     } else if (key === 'minHeight') {
       setLayoutFieldMinHeight(item as LayoutField, value)
     } else if (DESIGNER_COMPONENT_PROP_KEYS.has(key)) {
       const fieldItem = item as LayoutField
-      setDesignerComponentProp(fieldItem as unknown as Record<string, any>, key, value)
+      setDesignerComponentProp(fieldItem as unknown as Record<string, unknown>, key, value)
     } else {
-      item[key] = value
+      itemRecord[key] = value
     }
     commitLayoutChange(newConfig, `Update field ${key}`, previousConfig)
     if (key === 'span' || key === 'minHeight') {
@@ -2306,7 +2402,7 @@ function updateField(key: string, value: any) {
   }
 }
 
-function handleFieldPropertyUpdate(payload: { key: string; value: any }) {
+function handleFieldPropertyUpdate(payload: { key: string; value: unknown }) {
   updateField(payload.key, payload.value)
 }
 
@@ -2332,27 +2428,29 @@ function handleFieldSizeReset(fieldId: string) {
   void showPropertySizeFeedback(fieldId)
 }
 
-function updateSection(key: string, value: any) {
+function updateSection(key: string, value: unknown) {
   if (!selectedId.value || elementType.value !== 'section') return
 
   const previousConfig = cloneLayoutConfig(layoutConfig.value)
   const newConfig = cloneLayoutConfig(layoutConfig.value) as LayoutConfig
   const item = findItemById(newConfig, selectedId.value)
   if (item) {
-    item[key] = value
+    const section = item as LayoutSection & { name?: string }
+    const sectionRecord = section as Record<string, unknown>
+    sectionRecord[key] = value
 
     // Auto-bootstrap tabs array if switching to tab mode and empty
     if (key === 'type' && value === 'tab') {
-      if (!Array.isArray(item.tabs) || item.tabs.length === 0) {
+      if (!Array.isArray(section.tabs) || section.tabs.length === 0) {
         const tabId = `tab_${Date.now()}`
-        item.tabs = [{
+        section.tabs = [{
           id: tabId,
           title: t('system.pageLayout.designer.defaults.tabTitle', { index: 1 }),
           name: tabId,
           fields: []
         }]
         // Initialize the v-model as well
-        activeTabs.value[item.id] = tabId
+        activeTabs.value[section.id] = tabId
       }
     }
 
@@ -2360,7 +2458,7 @@ function updateSection(key: string, value: any) {
   }
 }
 
-function handleSectionPropertyUpdate(payload: { key: string; value: any }) {
+function handleSectionPropertyUpdate(payload: { key: string; value: unknown }) {
   updateSection(payload.key, payload.value)
 }
 
@@ -2449,22 +2547,24 @@ const isReadonlyMode = computed(() => props.mode === 'readonly')
 function normalizeAndEnsureLayoutConfig(rawConfig: LayoutConfig): LayoutConfig {
   return compileLayoutSchema({
     mode: resolveDesignerRuntimeMode(),
-    fields: availableFields.value as unknown as Record<string, any>[],
+    fields: availableFields.value as Array<Record<string, unknown>>,
     layoutConfig: rawConfig || { sections: [] },
     ensureIds: true
   }).layoutConfig as LayoutConfig
 }
 
-function extractConfigPayload(raw: any): LayoutConfig {
-  const payload = (raw?.data ?? raw) as any
+function extractConfigPayload(raw: unknown): LayoutConfig {
+  const payload = unwrapData(raw as ApiDataEnvelope<AnyRecord> | AnyRecord)
   const config = payload?.layoutConfig || payload?.layout_config || payload?.layout || { sections: [] }
   return normalizeAndEnsureLayoutConfig(config as LayoutConfig)
 }
 
 function buildReadonlyModeOverride(sharedBase: LayoutConfig, readonlyConfig: LayoutConfig): LayoutConfig {
-  const next = cloneLayoutConfig(normalizeAndEnsureLayoutConfig(sharedBase || { sections: [] })) as any
+  const next = cloneLayoutConfig(normalizeAndEnsureLayoutConfig(sharedBase || { sections: [] })) as LayoutConfig & {
+    mode_overrides?: AnyRecord
+  }
   const normalizedReadonly = normalizeAndEnsureLayoutConfig(readonlyConfig || { sections: [] })
-  const existingOverrides = (next.modeOverrides || next.mode_overrides || {}) as Record<string, any>
+  const existingOverrides = (next.modeOverrides || next.mode_overrides || {}) as AnyRecord
 
   next.modeOverrides = {
     ...existingOverrides,
@@ -2477,7 +2577,7 @@ function buildReadonlyModeOverride(sharedBase: LayoutConfig, readonlyConfig: Lay
   return next as LayoutConfig
 }
 
-async function resolveSharedEditLayout(readonlySeed?: LayoutConfig): Promise<any> {
+async function resolveSharedEditLayout(readonlySeed?: LayoutConfig): Promise<AnyRecord> {
   if (!props.objectCode) {
     throw new Error('Missing objectCode')
   }
@@ -2485,17 +2585,17 @@ async function resolveSharedEditLayout(readonlySeed?: LayoutConfig): Promise<any
   // Reuse resolved target when possible to avoid redundant queries.
   if (sharedEditLayoutId.value) {
     const existing = await pageLayoutApi.detail(sharedEditLayoutId.value)
-    if ((existing as any)?.id) return existing
+    if (isRecord(existing) && existing.id) return existing
   }
 
-  let activeEdit: any = null
+  let activeEdit: unknown = null
   try {
     activeEdit = await pageLayoutApi.byObjectAndMode(props.objectCode, 'edit')
   } catch {
     activeEdit = null
   }
 
-  const normalizedEdit = ((activeEdit as any)?.data ?? activeEdit) as any
+  const normalizedEdit = unwrapData(activeEdit as ApiDataEnvelope<AnyRecord> | AnyRecord | null)
   if (normalizedEdit?.id && !normalizedEdit?.isDefault) {
     sharedEditLayoutId.value = String(normalizedEdit.id)
     return normalizedEdit
@@ -2531,12 +2631,12 @@ async function resolveSharedEditLayout(readonlySeed?: LayoutConfig): Promise<any
     layoutConfig: baseLayoutConfig || fallbackSeed
   }
 
-  const created = await pageLayoutApi.create(createPayload as any)
-  const normalizedCreated = ((created as any)?.data ?? created) as any
+  const created = await pageLayoutApi.create(createPayload as Record<string, unknown>)
+  const normalizedCreated = unwrapData(created as ApiDataEnvelope<AnyRecord> | AnyRecord)
   if (!normalizedCreated?.id) {
     if (props.layoutId) {
       const legacy = await pageLayoutApi.detail(props.layoutId)
-      const normalizedLegacy = ((legacy as any)?.data ?? legacy) as any
+      const normalizedLegacy = unwrapData(legacy as ApiDataEnvelope<AnyRecord> | AnyRecord)
       if (normalizedLegacy?.id) {
         sharedEditLayoutId.value = String(normalizedLegacy.id)
         return normalizedLegacy
@@ -2588,10 +2688,11 @@ const prepareLayoutConfig = (): LayoutConfig | null => {
       availableFieldCodes,
       dropFieldCode
     }) as LayoutConfig
+    prepared.layoutType = layoutMode.value // Save custom compact/detail layout mode in config
     layoutConfig.value = prepared
     return prepared
-  } catch (error: any) {
-    ElMessage.error(error?.message || t('system.pageLayout.designer.messages.invalidLayoutConfig'))
+  } catch (error: unknown) {
+    ElMessage.error(error instanceof Error ? error.message : t('system.pageLayout.designer.messages.invalidLayoutConfig'))
     return null
   }
 }
@@ -2602,9 +2703,10 @@ async function handleSave() {
   try {
     const sanitizedConfig = prepareLayoutConfig()
     if (!sanitizedConfig) return
-    const data: Record<string, any> = {
+    const data: AnyRecord = {
       layoutConfig: sanitizedConfig,
-      status: 'draft'
+      status: 'draft',
+      view_mode: layoutMode.value,
     }
 
     if (isReadonlyMode.value && props.objectCode) {
@@ -2616,13 +2718,13 @@ async function handleSave() {
           await pageLayoutApi.partialUpdate(props.layoutId, {
             layoutConfig: sanitizedConfig,
             status: 'draft'
-          } as any)
+          } as Record<string, unknown>)
         } catch {
           // ignore legacy sync failure; shared edit layout is source of truth.
         }
       }
     } else if (props.layoutId) {
-      await pageLayoutApi.partialUpdate(props.layoutId, data as any)
+      await pageLayoutApi.partialUpdate(props.layoutId, data as Record<string, unknown>)
     } else {
       await pageLayoutApi.create({
         ...data,
@@ -2630,7 +2732,7 @@ async function handleSave() {
         layoutName: props.layoutName,
         mode: props.mode,
         business_object: props.businessObjectId
-      } as any)
+      } as Record<string, unknown>)
     }
 
     if (props.objectCode && props.mode) {
@@ -2638,9 +2740,8 @@ async function handleSave() {
     }
     ElMessage.success(t('system.pageLayout.designer.messages.layoutSaved'))
     emit('save', data)
-  } catch (error: any) {
-    console.error('Save failed:', error)
-    ElMessage.error(error.response?.data?.message || t('system.pageLayout.designer.messages.saveFailed'))
+  } catch (error: unknown) {
+    ElMessage.error(readErrorMessage(error) || t('system.pageLayout.designer.messages.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -2660,7 +2761,7 @@ async function handlePublish() {
           await pageLayoutApi.partialUpdate(props.layoutId, {
             layoutConfig: sanitizedConfig,
             status: 'draft'
-          } as any)
+          } as Record<string, unknown>)
           await pageLayoutApi.publish(props.layoutId, {
             change_summary: 'Sync readonly snapshot from shared edit layout'
           })
@@ -2672,7 +2773,8 @@ async function handlePublish() {
       // Persist latest draft before publish to avoid publishing stale server-side config.
       await pageLayoutApi.partialUpdate(props.layoutId, {
         layoutConfig: sanitizedConfig,
-        status: 'draft'
+        status: 'draft',
+        view_mode: layoutMode.value,
       })
       await pageLayoutApi.publish(props.layoutId, {
         change_summary: 'Publish layout'
@@ -2686,8 +2788,8 @@ async function handlePublish() {
         mode: props.mode,
         business_object: props.businessObjectId,
         status: 'draft'
-      } as any)
-      const createdPayload = ((createResult as any)?.data ?? createResult) as { id: string }
+      } as Record<string, unknown>)
+      const createdPayload = unwrapData(createResult as ApiDataEnvelope<{ id: string }> | { id: string })
       await pageLayoutApi.publish(createdPayload.id, {
         change_summary: 'Publish layout',
         set_as_default: true
@@ -2700,9 +2802,8 @@ async function handlePublish() {
     }
     ElMessage.success(t('system.pageLayout.designer.messages.layoutPublished'))
     emit('published', layoutConfig.value)
-  } catch (error: any) {
-    console.error('Publish failed:', error)
-    ElMessage.error(error.response?.data?.message || t('system.pageLayout.designer.messages.publishFailed'))
+  } catch (error: unknown) {
+    ElMessage.error(readErrorMessage(error) || t('system.pageLayout.designer.messages.publishFailed'))
   } finally {
     publishing.value = false
   }
@@ -2729,7 +2830,7 @@ async function handleReset() {
     // Single source of truth: default layout endpoint (supports mode/type normalization).
     const layoutType = normalizeLayoutType(props.mode)
     const result = await pageLayoutApi.getDefault(props.objectCode, layoutType)
-    const payload = ((result as any)?.data ?? result) as any
+    const payload = unwrapData(result as ApiDataEnvelope<AnyRecord> | AnyRecord)
     const backendConfig =
       payload?.layoutConfig ||
       payload?.layout_config ||
@@ -2748,10 +2849,8 @@ async function handleReset() {
       layoutConfig.value = normalizeAndEnsureLayoutConfig(backendConfig as LayoutConfig)
       await loadAvailableFields()
       populateSampleData()
-      console.log('[LayoutDesigner Reset] Applied normalized layout:', layoutConfig.value)
     } else {
       // Fallback: generate a layout with all available fields
-      console.warn('[LayoutDesigner Reset] No default layout from backend, generating from available fields')
       await loadAvailableFields()
       
       const defaultSection = {
@@ -2765,8 +2864,8 @@ async function handleReset() {
         fields: availableFields.value.map((field, index) => ({
           id: `field-${Date.now()}-${index}`,
           fieldCode: field.code,
-          label: field.name || (field as any).displayName || field.code,
-          fieldType: normalizeFieldType((field as any).fieldType || (field as any).field_type || (field as any).type || 'text'),
+          label: field.name || field.displayName || field.code,
+          fieldType: normalizeFieldType(field.fieldType || field.field_type || field.type || 'text'),
           span: 12,
           required: field.isRequired || false,
           options: field.options,
@@ -2789,8 +2888,7 @@ async function handleReset() {
     selectedId.value = ''
     history.clear()
     ElMessage.success(t('system.pageLayout.designer.messages.resetToDefaultSuccess'))
-  } catch (error) {
-    console.error('[LayoutDesigner Reset] Failed:', error)
+  } catch {
     ElMessage.error(t('system.pageLayout.designer.messages.resetFailedRefresh'))
   }
 }
@@ -2804,7 +2902,7 @@ function handleCancel() {
  * This ensures the canvas preview displays sample text instead of empty fields
  */
 function populateSampleData() {
-  const data: Record<string, any> = {}
+  const data: AnyRecord = {}
 
   // Iterate through all sections and fields to collect field codes
   for (const section of layoutConfig.value.sections || []) {
@@ -2830,22 +2928,90 @@ function populateSampleData() {
     }
   }
 
+  // Keep a minimal preview-record baseline so BaseDetailPage renders tabs/sections
+  // even when the current layout contains zero visible fields.
+  if (!String(data.id || '').trim()) {
+    data.id = 'preview-record'
+  }
+  if (!String(data.code || '').trim()) {
+    data.code = 'PREVIEW-001'
+  }
+  if (!String(data.name || '').trim()) {
+    data.name = props.layoutName || previewObjectName.value || 'Preview Record'
+  }
+
   sampleData.value = data
 }
 
-function normalizeAvailableFields(fields: any[]): FieldDefinition[] {
-  return (fields || []).map((field: any) => ({
+function normalizeAvailableFields(fields: AnyRecord[]): FieldDefinition[] {
+  return filterDesignerPaletteFields(fields).map((field) => ({
     ...field,
-    code: String(field.code || field.fieldCode || field.field_code || field.fieldName || '').trim(),
+    code: getDesignerFieldCode(field),
     name: String(field.name || field.label || field.displayName || field.display_name || field.code || field.fieldName || '').trim(),
     fieldType: normalizeFieldType(field.fieldType || field.field_type || field.type || 'text')
   }))
 }
 
-function applyResolvedLayoutToDesigner(resolved: any): boolean {
-  const combinedFields = Array.isArray(resolved?.fields) ? resolved.fields : []
-  if (combinedFields.length > 0 && availableFields.value.length === 0) {
-    availableFields.value = normalizeAvailableFields(combinedFields)
+function readDesignerBooleanFlag(field: AnyRecord, ...keys: string[]): boolean | undefined {
+  for (const key of keys) {
+    if (field?.[key] === undefined || field?.[key] === null) continue
+    return Boolean(field[key])
+  }
+  return undefined
+}
+
+function resolveDesignerFieldContext(): 'form' | 'detail' | 'list' | 'search' {
+  const rawMode = String(props.mode || '').toLowerCase()
+  if (rawMode === 'readonly' || rawMode === 'detail') return 'detail'
+  if (rawMode === 'list') return 'list'
+  if (rawMode === 'search') return 'search'
+  return 'form'
+}
+
+function isReverseRelationPaletteField(field: AnyRecord): boolean {
+  return Boolean(
+    field?.isReverseRelation ||
+    field?.is_reverse_relation ||
+    field?.reverseRelationField ||
+    field?.reverse_relation_field ||
+    normalizeFieldType(field?.fieldType || field?.field_type || field?.type || 'text') === 'related_object'
+  )
+}
+
+function isDesignerVisibleField(field: AnyRecord): boolean {
+  if (!field || typeof field !== 'object') return false
+  if (!getDesignerFieldCode(field)) return false
+  if (isReverseRelationPaletteField(field)) return false
+  if (readDesignerBooleanFlag(field, 'isHidden', 'is_hidden') === true) return false
+
+  const context = resolveDesignerFieldContext()
+  if (context === 'detail') {
+    return readDesignerBooleanFlag(field, 'showInDetail', 'show_in_detail') !== false
+  }
+  if (context === 'list') {
+    return readDesignerBooleanFlag(field, 'showInList', 'show_in_list') !== false
+  }
+  if (context === 'search') {
+    const showInFilter = readDesignerBooleanFlag(field, 'showInFilter', 'show_in_filter')
+    if (showInFilter !== undefined) return showInFilter
+    const searchable = readDesignerBooleanFlag(field, 'isSearchable', 'is_searchable')
+    if (searchable !== undefined) return searchable
+    return true
+  }
+  return readDesignerBooleanFlag(field, 'showInForm', 'show_in_form') !== false
+}
+
+function filterDesignerPaletteFields(fields: AnyRecord[]): AnyRecord[] {
+  return (fields || []).filter((field) => isDesignerVisibleField(field))
+}
+
+function applyResolvedLayoutToDesigner(resolved: Partial<RuntimeLayoutResolution>): boolean {
+  const editableFields = Array.isArray(resolved?.editableFields) ? resolved.editableFields : []
+  if (editableFields.length > 0 && availableFields.value.length === 0) {
+    const normalizedEditableFields = normalizeAvailableFields(editableFields as AnyRecord[])
+    if (normalizedEditableFields.length > 0) {
+      availableFields.value = normalizedEditableFields
+    }
   }
 
   const activeConfig = resolved?.layoutConfig || null
@@ -2918,10 +3084,11 @@ async function loadLayout() {
   if (props.layoutId && !isReadonlyMode.value) {
     try {
       const layoutRaw = await pageLayoutApi.detail(props.layoutId)
-      const layout = ((layoutRaw as any)?.data ?? layoutRaw) as any
-      const rawConfig = layout.layoutConfig || layout.layout_config || getDefaultLayoutConfig(props.mode)
+      const layout = unwrapData(layoutRaw as ApiDataEnvelope<AnyRecord> | AnyRecord)
+      const rawConfig = (layout.layoutConfig || layout.layout_config || getDefaultLayoutConfig(props.mode)) as LayoutConfig
       // Normalize the layout config to handle backend API format (field -> fieldCode)
       layoutConfig.value = normalizeAndEnsureLayoutConfig(rawConfig as LayoutConfig)
+      layoutMode.value = layoutConfig.value.layoutType === 'Compact' ? 'Compact' : 'Detail'
       isDefault.value = Boolean(layout.isDefault ?? layout.is_default)
       isPublished.value = String(layout.status || '') === 'published'
       layoutVersion.value = String(layout.version || layoutVersion.value)
@@ -2929,8 +3096,8 @@ async function loadLayout() {
       await loadAvailableFields()
       populateSampleData()
       return
-    } catch (error) {
-      console.error('Failed to load layout:', error)
+    } catch {
+      // Fall through to runtime/default layout resolution below.
     }
   }
 
@@ -2941,6 +3108,7 @@ async function loadLayout() {
         includeRelations: true
       })
       applyResolvedLayoutToDesigner(resolved)
+      layoutMode.value = layoutConfig.value.layoutType === 'Compact' ? 'Compact' : 'Detail'
       await loadAvailableFields()
       isDefault.value = !!resolved?.isDefault
       isPublished.value = resolved?.layoutStatus === 'published'
@@ -2956,6 +3124,7 @@ async function loadLayout() {
   // Fall back to layoutConfig prop if provided
   if (props.layoutConfig && (props.layoutConfig.sections?.length || props.layoutConfig.columns?.length)) {
     layoutConfig.value = normalizeAndEnsureLayoutConfig({ ...props.layoutConfig } as LayoutConfig)
+    layoutMode.value = layoutConfig.value.layoutType === 'Compact' ? 'Compact' : 'Detail'
     populateSampleData()
     return
   }
@@ -2964,10 +3133,11 @@ async function loadLayout() {
   if (props.objectCode) {
     try {
       const defaultLayout = await pageLayoutApi.getDefault(props.objectCode, normalizeLayoutType(props.mode))
-      const defaultData: any = (defaultLayout as any)?.data ?? defaultLayout
+      const defaultData = unwrapData(defaultLayout as ApiDataEnvelope<AnyRecord> | AnyRecord)
       const backendConfig = defaultData?.layoutConfig || defaultData?.layout_config
       if (backendConfig && (backendConfig.sections?.length || backendConfig.columns?.length)) {
         layoutConfig.value = normalizeAndEnsureLayoutConfig({ ...backendConfig } as LayoutConfig)
+        layoutMode.value = layoutConfig.value.layoutType === 'Compact' ? 'Compact' : 'Detail'
         populateSampleData()
         return
       }
@@ -2985,7 +3155,6 @@ async function loadLayout() {
  */
 async function loadAvailableFields() {
   if (!props.objectCode) {
-    console.warn('[LayoutDesigner] No objectCode provided, cannot load fields')
     previewReverseRelations.value = []
     return
   }
@@ -2999,51 +3168,37 @@ async function loadAvailableFields() {
     ])
 
     const runtimeFields =
-      runtimeResult.status === 'fulfilled' && Array.isArray(runtimeResult.value?.fields)
-        ? runtimeResult.value.fields
+      runtimeResult.status === 'fulfilled' && Array.isArray(runtimeResult.value?.editableFields)
+        ? runtimeResult.value.editableFields
         : []
     const runtimeReverseRelations =
-      runtimeResult.status === 'fulfilled' && Array.isArray((runtimeResult.value as any)?.reverseRelations)
-        ? (runtimeResult.value as any).reverseRelations
+      runtimeResult.status === 'fulfilled' && Array.isArray((runtimeResult.value as RuntimeLayoutResolution)?.reverseRelations)
+        ? (runtimeResult.value as RuntimeLayoutResolution).reverseRelations
         : []
     previewReverseRelations.value = mapPreviewReverseRelations(runtimeReverseRelations)
 
     const metadataPayload =
       metadataResult.status === 'fulfilled'
-        ? ((metadataResult.value as any)?.data ?? metadataResult.value)
+        ? unwrapData(metadataResult.value as ApiDataEnvelope<AnyRecord> | AnyRecord)
         : null
     const metadataFields = Array.isArray(metadataPayload?.fields) ? metadataPayload.fields : []
 
-    // Runtime fields preserve active layout semantics; metadata fills gaps for full designer palette.
-    let combined = mergeFieldSources(runtimeFields, metadataFields)
-
-    if (runtimeReverseRelations && runtimeReverseRelations.length > 0) {
-      const relatedObjectFields = runtimeReverseRelations.map((rel: any) => ({
-        code: rel.code,
-        name: rel.label || rel.name || rel.code,
-        fieldType: 'related_object',
-        componentProps: {
-          relationCode: rel.code,
-          relatedObjectCode: extractRelatedObjectCode(rel),
-          displayMode: rel.relationDisplayMode || rel.relation_display_mode || 'inline_readonly',
-        }
-      }))
-      combined = combined.concat(relatedObjectFields)
-    }
+    // Runtime fields preserve the active page semantics; metadata only fills gaps.
+    // Reverse relations stay in previewReverseRelations and should not pollute the palette.
+    const combined = mergeFieldSources(runtimeFields, metadataFields)
 
     if (combined.length > 0) {
-      availableFields.value = normalizeAvailableFields(combined)
-      layoutConfig.value = normalizeAndEnsureLayoutConfig(layoutConfig.value)
-      return
+      const normalizedFields = normalizeAvailableFields(combined)
+      if (normalizedFields.length > 0) {
+        availableFields.value = normalizedFields
+        layoutConfig.value = normalizeAndEnsureLayoutConfig(layoutConfig.value)
+        return
+      }
     }
-
-    console.warn('[LayoutDesigner] No fields returned from runtime/metadata endpoints, keeping current fields')
   } catch (error) {
-    console.error('Failed to load fields:', error)
     previewReverseRelations.value = []
     // Only set fallback mock data if availableFields is empty
     if (availableFields.value.length === 0) {
-      console.log('[LayoutDesigner] Using fallback mock data')
       availableFields.value = [
         { code: 'name', name: 'Name', fieldType: 'text', isRequired: true },
         { code: 'code', name: 'Code', fieldType: 'text', isRequired: true },
@@ -3066,12 +3221,12 @@ watch(selectedId, () => {
 
   if (elementType.value === 'field') {
     const field = item as LayoutField
-    const nextFieldProps: Record<string, any> = {
+    const nextFieldProps: AnyRecord = {
       ...field,
-      fieldType: normalizeFieldType((field as any).fieldType || (field as any).field_type || 'text'),
+      fieldType: normalizeFieldType(field.fieldType || field.field_type || 'text'),
       minHeight: resolveLayoutFieldMinHeight(field)
     }
-    Object.assign(nextFieldProps, resolveDesignerFieldProps(field as unknown as Record<string, any>))
+    Object.assign(nextFieldProps, resolveDesignerFieldProps(field as unknown as Record<string, unknown>))
     fieldProps.value = nextFieldProps
   } else if (elementType.value === 'section') {
     sectionProps.value = { ...item }
@@ -3184,7 +3339,7 @@ onMounted(() => {
   const autoSaveKey = props.objectCode && props.mode ? `layout_autosave_${props.objectCode}_${props.mode}` : null
   
   if (autoSaveKey) {
-    storage.get<any>(autoSaveKey).then((savedState) => {
+    storage.get<LayoutConfig>(autoSaveKey).then((savedState) => {
       if (savedState) {
         ElMessageBox.confirm(
           t('system.pageLayout.designer.messages.recoverDirtySchema', 'An unsaved layout state was found. Do you want to recover it?'),
@@ -3195,8 +3350,7 @@ onMounted(() => {
             layoutConfig.value = normalizeAndEnsureLayoutConfig(savedState)
             populateSampleData()
             history.push(layoutConfig.value as unknown as Record<string, unknown>, 'Recovered state')
-          } catch (e) {
-            console.error('Failed to parse auto-saved layout', e)
+          } catch {
             storage.remove(autoSaveKey)
             proceedWithNormalLoad()
           }
@@ -3207,8 +3361,7 @@ onMounted(() => {
       } else {
         proceedWithNormalLoad()
       }
-    }).catch((e) => {
-      console.error('Failed to read from local storage:', e)
+    }).catch(() => {
       proceedWithNormalLoad()
     })
   } else {
@@ -3232,6 +3385,7 @@ watch(() => props.mode, (newType) => {
 </script>
 
 <style scoped lang="scss">
+@use "../common/detail/BaseDetailPage.scss";
 .wysiwyg-layout-designer {
   display: flex;
   flex-direction: column;
@@ -3271,6 +3425,9 @@ watch(() => props.mode, (newType) => {
 
   .toolbar-center {
     flex: 0 0 auto;
+    display: flex; /* Added to center segmented control */
+    align-items: center;
+    gap: 12px;
   }
 
   .toolbar-right {
@@ -3427,6 +3584,16 @@ watch(() => props.mode, (newType) => {
     flex: 1;
     overflow-y: auto;
     padding: 20px;
+
+    &.compact-canvas-mode {
+      max-width: 640px;
+      margin: 24px auto;
+      border: 1px solid var(--el-border-color);
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      background: var(--el-bg-color);
+      padding: 24px;
+    }
   }
 
   &.drag-over {
@@ -3566,4 +3733,5 @@ watch(() => props.mode, (newType) => {
     background: transparent;
   }
 }
+
 </style>

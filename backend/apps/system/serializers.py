@@ -55,6 +55,8 @@ class BusinessObjectSerializer(BaseModelSerializer):
             'table_name',
             'field_count',
             'layout_count',
+            'menu_category',
+            'is_menu_hidden',
         ]
 
 
@@ -87,6 +89,8 @@ class BusinessObjectDetailSerializer(BaseModelWithAuditSerializer):
             'layout_count',
             'field_definitions',
             'page_layouts',
+            'menu_category',
+            'is_menu_hidden',
         ]
 
     def get_field_definitions(self, obj):
@@ -295,6 +299,10 @@ class PageLayoutSerializer(BaseModelSerializer):
         read_only=True
     )
     # New mode field for unified layout system
+    view_mode_display = serializers.CharField(
+        source='get_view_mode_display',
+        read_only=True
+    )
     mode_display = serializers.CharField(
         source='get_mode_display',
         read_only=True
@@ -327,6 +335,8 @@ class PageLayoutSerializer(BaseModelSerializer):
             'layout_name',
             'layout_type',
             'layout_type_display',
+            'view_mode',
+            'view_mode_display',
             'mode',  # New unified mode field
             'mode_display',  # Display value for mode
             'description',
@@ -500,6 +510,10 @@ class PageLayoutDetailSerializer(BaseModelWithAuditSerializer):
         read_only=True
     )
     # New mode field for unified layout system
+    view_mode_display = serializers.CharField(
+        source='get_view_mode_display',
+        read_only=True
+    )
     mode_display = serializers.CharField(
         source='get_mode_display',
         read_only=True
@@ -529,6 +543,8 @@ class PageLayoutDetailSerializer(BaseModelWithAuditSerializer):
             'layout_name',
             'layout_type',
             'layout_type_display',
+            'view_mode',
+            'view_mode_display',
             'mode',  # New unified mode field
             'mode_display',  # Display value for mode
             'description',

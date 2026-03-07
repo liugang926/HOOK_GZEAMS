@@ -257,6 +257,10 @@ interface Props {
   reverseRelations?: ReverseRelationField[]
   /** Whether to show related objects inline */
   showRelatedObjects?: boolean
+  /** Whether to resolve relation definitions from runtime metadata */
+  resolveRuntimeRelations?: boolean
+  /** Whether related tables should skip real data fetching */
+  disableRelatedObjectFetch?: boolean
   /** Optional scope id used for relation-group expansion preference persistence */
   relationGroupScopeId?: string
   /** Whether the page is in edit mode */
@@ -299,6 +303,8 @@ const props = withDefaults(defineProps<Props>(), {
   extraActions: () => [],
   reverseRelations: () => [],
   showRelatedObjects: true,
+  resolveRuntimeRelations: true,
+  disableRelatedObjectFetch: false,
   editMode: false,
   formData: () => ({}),
   formRules: () => ({}),
@@ -448,6 +454,11 @@ const isRelationGroupExpanded = relationGroupExpansion.isExpanded
 const toggleRelationGroup = relationGroupExpansion.toggle
 
 const fetchRuntimeRelations = async () => {
+  if (!props.showRelatedObjects || !props.resolveRuntimeRelations) {
+    runtimeRelations.value = []
+    return
+  }
+
   const objectCode = String(props.objectCode || '').trim()
   if (!objectCode) {
     runtimeRelations.value = []
@@ -764,7 +775,7 @@ watch(
 )
 
 watch(
-  () => props.objectCode,
+  () => [props.objectCode, props.showRelatedObjects, props.resolveRuntimeRelations],
   () => {
     fetchRuntimeRelations()
   },
@@ -774,6 +785,7 @@ watch(
 watch(
   () => locale.value,
   () => {
+    if (!props.showRelatedObjects || !props.resolveRuntimeRelations) return
     fetchRuntimeRelations()
   }
 )
@@ -1006,15 +1018,17 @@ defineExpose({
           </div>
 
           <div class="header-actions">
-            <el-button
-              v-for="action in availableActions"
-              :key="action.label"
-              :type="action.type as any"
-              :icon="action.icon"
-              @click="action.action"
-            >
-              {{ action.label }}
-            </el-button>
+            <slot name="action-bar" :data="data" :actions="availableActions">
+              <el-button
+                v-for="action in availableActions"
+                :key="action.label"
+                :type="action.type as any"
+                :icon="action.icon"
+                @click="action.action"
+              >
+                {{ action.label }}
+              </el-button>
+            </slot>
           </div>
         </div>
       </div>
@@ -1034,6 +1048,9 @@ defineExpose({
           </span>
         </div>
       </div>
+
+      <!-- Extension Slot: header-extra (workflow steps, status bars etc.) -->
+      <slot name="header-extra" :data="data" />
 
       <!-- Layout Container for Two Columns -->
       <el-form
@@ -1288,6 +1305,9 @@ defineExpose({
                     </div>
                   </template>
 
+                  <!-- Extension Slot: after-sections (sub-tables, cost breakdown etc.) -->
+                  <slot name="after-sections" :data="data" />
+
                   <!-- Audit Info (System Information) -->
                   <div
                     v-if="hasAuditInfo"
@@ -1382,6 +1402,7 @@ defineExpose({
                               :mode="relation.displayMode"
                               :title="relation.title"
                               :show-create="relation.showCreate"
+                              :disable-data-fetch="disableRelatedObjectFetch"
                               @record-click="(record) => $emit('related-record-click', relation.code, record, relation.relatedObjectCode)"
                               @record-edit="(record) => $emit('related-record-edit', relation.code, record, relation.relatedObjectCode)"
                               @refresh="$emit('related-refresh', relation.code)"

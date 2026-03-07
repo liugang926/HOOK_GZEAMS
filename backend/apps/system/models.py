@@ -116,6 +116,15 @@ class BusinessObject(BaseModel):
     )
 
     # === Menu Configuration ===
+    menu_category = models.CharField(
+        max_length=50,
+        blank=True,
+        db_comment='Menu category for automated routing'
+    )
+    is_menu_hidden = models.BooleanField(
+        default=False,
+        db_comment='Hide from automated sidebar menu'
+    )
     menu_config = models.JSONField(
         default=dict,
         blank=True,
@@ -903,6 +912,12 @@ class PageLayout(BaseModel):
         default='form',
         db_comment='Layout type (deprecated: use mode instead)'
     )
+    # New view mode choices (Dual Mode Layout)
+    VIEW_MODE_CHOICES = [
+        ('Detail', 'Detail View'),
+        ('Compact', 'Compact View'),
+    ]
+    
     # New mode field - use this instead of layout_type
     mode = models.CharField(
         max_length=20,
@@ -910,6 +925,12 @@ class PageLayout(BaseModel):
         default='edit',
         blank=True,
         db_comment='Layout display mode (edit/readonly/search)'
+    )
+    view_mode = models.CharField(
+        max_length=20,
+        choices=VIEW_MODE_CHOICES,
+        default='Detail',
+        db_comment='View mode (Detail or Compact)'
     )
     description = models.TextField(
         blank=True,

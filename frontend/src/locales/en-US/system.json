@@ -410,6 +410,7 @@
                 "editSection": "Edit Section",
                 "deleteSection": "Delete Section",
                 "removeField": "Remove Field",
+                "translationMode": "Translation Mode",
                 "resetSize": "Reset Size"
             },
             "status": {

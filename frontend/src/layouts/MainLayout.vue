@@ -22,6 +22,16 @@
           </h1>
         </div>
 
+        <div v-if="!isCollapsed" class="sidebar-search">
+          <el-input
+            v-model="menuSearchQuery"
+            :placeholder="$t('common.actions.search')"
+            prefix-icon="Search"
+            clearable
+            size="small"
+          />
+        </div>
+
         <el-scrollbar class="sidebar-menu-scroll">
           <el-menu
             :default-active="activeMenu"
@@ -44,7 +54,7 @@
             </el-menu-item>
 
             <template
-              v-for="(group, groupIdx) in menuGroups"
+              v-for="(group, groupIdx) in filteredMenuGroups"
               :key="getMenuGroupIdentity(group, groupIdx)"
             >
               <!-- Multi-item group to sub-menu -->
@@ -133,7 +143,7 @@
               <span>{{ $t('menu.menu.dashboard') }}</span>
             </el-menu-item>
             <template
-              v-for="(group, groupIdx) in menuGroups"
+              v-for="(group, groupIdx) in filteredMenuGroups"
               :key="getMenuGroupIdentity(group, groupIdx)"
             >
               <el-sub-menu
@@ -223,23 +233,13 @@ import NotificationBell from '@/components/layout/NotificationBell.vue'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import { businessObjectApi, menuApi, type BusinessObject, type MenuGroup, type MenuItem } from '@/api/system'
 import { translateObjectCodeLabel, resolveObjectDisplayName } from '@/utils/objectDisplay'
+import { MenuRegistryManager, type RegistryMenuCategory, type RegistryMenuItem } from '@/router/menuRegistry'
 import * as ElementPlusIcons from '@element-plus/icons-vue'
 
-interface LocalMenuItem extends MenuItem {
-  code: string
-  name: string
-  url: string
-}
-
-interface LocalMenuGroup extends MenuGroup {
-  code?: string
-  items: LocalMenuItem[]
-}
+type LocalMenuItem = RegistryMenuItem & Partial<MenuItem>
+type LocalMenuGroup = RegistryMenuCategory & Partial<MenuGroup>
 
 type AnyRecord = Record<string, unknown>
-const AUTO_DYNAMIC_ENTRY_EXCLUDE_CODES = new Set<string>([
-  'Role'
-])
 
 const route = useRoute()
 const { t, te } = useI18n()
@@ -251,6 +251,23 @@ const isCollapsed = ref(false)
 // Dynamic menu state
 const menuGroups = shallowRef<LocalMenuGroup[]>([])
 const isLoading = ref(false)
+
+const menuSearchQuery = ref('')
+const filteredMenuGroups = computed(() => {
+  if (!menuSearchQuery.value) return menuGroups.value
+  
+  const query = menuSearchQuery.value.toLowerCase()
+  return menuGroups.value.map(group => {
+    const groupMatches = getGroupLabel(group).toLowerCase().includes(query)
+    const filteredItems = group.items.filter(item => 
+      groupMatches ||
+      getItemLabel(item).toLowerCase().includes(query) ||
+      String(item.name || '').toLowerCase().includes(query) || 
+      String(item.code || '').toLowerCase().includes(query)
+    )
+    return { ...group, items: filteredItems }
+  }).filter(group => group.items.length > 0)
+})
 
 // ============================================================================
 // Auto-collapse sidebar on designer routes
@@ -335,33 +352,21 @@ const resolveIcon = (iconName: string) => {
 // Menu label translation (reused from previous implementation)
 // ============================================================================
 const getGroupLabel = (group: LocalMenuGroup) => {
-  const groupCode = String(group.code || '').trim()
   const groupName = String(group.name || '').trim()
+  const explicitTranslationKey = String((group as MenuGroup).translationKey || '').trim()
 
-  if (groupCode) {
-    const normalizedCode = groupCode.toLowerCase()
-    const groupCodeToKeyMap: Record<string, string> = {
-      dashboard: 'dashboard',
-      asset: 'assets',
-      asset_operation: 'assetOperations',
-      lifecycle: 'lifecycle',
-      insurance: 'insurance',
-      leasing: 'leasing',
-      consumable: 'consumables',
-      purchase: 'procurement',
-      maintenance: 'maintenance',
-      inventory: 'inventory',
-      organization: 'organization',
-      finance: 'finance',
-      workflow: 'workflowManagement',
-      system: 'system',
-      dynamicobjects: 'dynamicObjects'
-    }
+  if (explicitTranslationKey && te(explicitTranslationKey)) {
+    return t(explicitTranslationKey)
+  }
 
-    const mappedByCode = groupCodeToKeyMap[normalizedCode] || groupCode
-    const translationKey = `menu.menu.${mappedByCode}`
+  if (group.code) {
+    const translationKey = `menu.categories.${group.code}`
     if (te(translationKey)) {
       return t(translationKey)
+    }
+    // Fallback if the registry emits the translation key directly
+    if (groupName.startsWith('menu.categories.') && te(groupName)) {
+      return t(groupName)
     }
   }
 
@@ -371,6 +376,11 @@ const getGroupLabel = (group: LocalMenuGroup) => {
 const getItemLabel = (item: LocalMenuItem) => {
   const itemCode = String(item.code || '').trim()
   const itemName = String(item.name || '').trim()
+  const explicitTranslationKey = String((item as MenuItem).translationKey || '').trim()
+
+  if (explicitTranslationKey && te(explicitTranslationKey)) {
+    return t(explicitTranslationKey)
+  }
 
   if (itemCode) {
     const objectCodeLabel = translateObjectCodeLabel(itemCode, t as (key: string) => string, te)
@@ -429,78 +439,53 @@ const normalizeBusinessObjects = (payload: AnyRecord): BusinessObject[] => {
       id: String(item?.id || code),
       code,
       name: String(item?.name || code),
-      nameEn: String(item?.nameEn || ''),
+      nameEn: String(item?.nameEn || item?.name_en || ''),
       description: String(item?.description || ''),
       enableWorkflow: item?.enableWorkflow === true,
       enableVersion: item?.enableVersion === true,
       enableSoftDelete: item?.enableSoftDelete !== false,
-      isHardcoded: item?.isHardcoded === true || item?.type === 'hardcoded',
-      djangoModelPath: String(item?.djangoModelPath || item?.modelPath || ''),
-      tableName: String(item?.tableName || ''),
-      fieldCount: Number(item?.fieldCount || 0),
-      layoutCount: Number(item?.layoutCount || 0)
+      isHardcoded: item?.isHardcoded === true || item?.is_hardcoded === true || item?.type === 'hardcoded',
+      djangoModelPath: String(item?.djangoModelPath || item?.django_model_path || item?.modelPath || ''),
+      tableName: String(item?.tableName || item?.table_name || ''),
+      fieldCount: Number(item?.fieldCount || item?.field_count || 0),
+      layoutCount: Number(item?.layoutCount || item?.layout_count || 0),
+      menuCategory: String(item?.menuCategory || item?.menu_category || ''),
+      isMenuHidden: item?.isMenuHidden === true || item?.is_menu_hidden === true,
     })
   }
   return normalized
 }
 
-const normalizeMenuGroups = (payload: unknown): LocalMenuGroup[] => {
-  if (Array.isArray(payload)) {
-    return payload as LocalMenuGroup[]
-  }
-  if (payload && typeof payload === 'object') {
-    const data = payload as AnyRecord
-    if (Array.isArray(data.groups)) {
-      return data.groups as LocalMenuGroup[]
-    }
-  }
-  return []
-}
+const normalizeMenuGroups = (payload: AnyRecord): LocalMenuGroup[] => {
+  const source = Array.isArray(payload?.groups) ? (payload.groups as AnyRecord[]) : []
 
-const extractObjectCodeFromUrl = (url: string): string => {
-  const value = String(url || '').trim()
-  const match = value.match(/^\/objects\/([^/?#]+)/)
-  return match ? decodeURIComponent(match[1]) : ''
-}
+  return source
+    .map((group, groupIndex) => {
+      const itemsSource = Array.isArray(group?.items) ? (group.items as AnyRecord[]) : []
+      const items: LocalMenuItem[] = itemsSource.map((item, itemIndex) => ({
+        code: String(item?.code || `item-${groupIndex}-${itemIndex}`),
+        name: String(item?.name || item?.translationKey || item?.code || ''),
+        url: String(item?.url || ''),
+        icon: String(item?.icon || ''),
+        order: Number(item?.order || itemIndex + 1),
+        group: String(item?.group || item?.groupCode || group?.code || ''),
+        groupCode: String(item?.groupCode || group?.code || ''),
+        groupTranslationKey: String(item?.groupTranslationKey || group?.translationKey || ''),
+        translationKey: String(item?.translationKey || ''),
+        badge: item?.badge,
+      }))
 
-const collectMenuObjectCodes = (groups: LocalMenuGroup[]): Set<string> => {
-  const codes = new Set<string>()
-  groups.forEach((group) => {
-    group.items.forEach((item) => {
-      const code = String(item?.code || '').trim()
-      if (code) codes.add(code)
-      const urlCode = extractObjectCodeFromUrl(String(item?.url || ''))
-      if (urlCode) codes.add(urlCode)
+      return {
+        id: String(group?.code || group?.name || `group-${groupIndex}`),
+        code: String(group?.code || ''),
+        name: String(group?.name || group?.translationKey || ''),
+        translationKey: String(group?.translationKey || ''),
+        icon: String(group?.icon || 'Menu'),
+        order: Number(group?.order || groupIndex + 1),
+        items,
+      }
     })
-  })
-  return codes
-}
-
-const buildMissingObjectGroup = (objects: BusinessObject[], menuGroupsData: LocalMenuGroup[]): LocalMenuGroup | null => {
-  const existingCodes = collectMenuObjectCodes(menuGroupsData)
-  const missingObjects = objects
-    .filter((obj) => !existingCodes.has(obj.code))
-    .filter((obj) => !AUTO_DYNAMIC_ENTRY_EXCLUDE_CODES.has(obj.code))
-    .sort((a, b) => a.code.localeCompare(b.code))
-
-  if (!missingObjects.length) return null
-
-  return {
-    name: '',
-    code: 'dynamicObjects',
-    icon: 'Grid',
-    order: 999,
-    items: missingObjects.map((obj, index) => ({
-      code: obj.code,
-      name: obj.nameEn || obj.name || obj.code,
-      nameEn: obj.nameEn || '',
-      url: `/objects/${obj.code}`,
-      icon: 'Document',
-      order: index + 1,
-      group: '',
-      badge: null
-    }))
-  }
+    .filter((group) => group.items.length > 0)
 }
 
 const fetchMenu = async () => {
@@ -508,18 +493,30 @@ const fetchMenu = async () => {
   isLoading.value = true
 
   try {
-    const [menuResponse, objectsResponse] = await Promise.all([
-      menuApi.get(),
-      businessObjectApi.list({ pageSize: 500 })
-    ])
+    const menuResponse = await menuApi.get()
+    const normalizedGroups = normalizeMenuGroups((menuResponse || {}) as unknown as AnyRecord)
 
-    const baseGroups = normalizeMenuGroups(menuResponse)
+    if (normalizedGroups.length > 0) {
+      menuGroups.value = normalizedGroups
+      return
+    }
+
+    const objectsResponse = await businessObjectApi.list({ pageSize: 500 })
     const objects = normalizeBusinessObjects((objectsResponse || {}) as unknown as AnyRecord)
-    const missingGroup = buildMissingObjectGroup(objects, baseGroups)
-    menuGroups.value = missingGroup ? [...baseGroups, missingGroup] : baseGroups
+    const registry = new MenuRegistryManager()
+    menuGroups.value = registry.generateMenuTree(objects)
   } catch (error) {
     console.error(error)
-    menuGroups.value = []
+
+    try {
+      const objectsResponse = await businessObjectApi.list({ pageSize: 500 })
+      const objects = normalizeBusinessObjects((objectsResponse || {}) as unknown as AnyRecord)
+      const registry = new MenuRegistryManager()
+      menuGroups.value = registry.generateMenuTree(objects)
+    } catch (fallbackError) {
+      console.error(fallbackError)
+      menuGroups.value = []
+    }
   } finally {
     isLoading.value = false
   }
@@ -594,6 +591,22 @@ onUnmounted(() => {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   letter-spacing: 1px;
+}
+
+.sidebar-search {
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sidebar-search :deep(.el-input__wrapper) {
+  background-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  border-radius: 6px;
+}
+.sidebar-search :deep(.el-input__inner) {
+  color: rgba(255, 255, 255, 0.9);
+}
+.sidebar-search :deep(.el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .sidebar-menu-scroll {
@@ -771,4 +784,3 @@ onUnmounted(() => {
   }
 }
 </style>
-

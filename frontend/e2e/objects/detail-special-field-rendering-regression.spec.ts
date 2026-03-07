@@ -1,4 +1,5 @@
 import { test, expect, type Route } from '@playwright/test'
+import { waitForDetailPageReady } from '../helpers/detail-page.helpers'
 
 interface FieldStub {
   code: string
@@ -165,7 +166,7 @@ test.describe('Detail Special Field Rendering Regression', () => {
     })
 
     await page.goto('/objects/Asset/asset-special-regression-1')
-    await expect(page.locator('.load-error')).toHaveCount(0)
+    await waitForDetailPageReady(page)
 
     await expect(page.locator('.qr-code-image')).toHaveCount(1)
     await expect(page.locator('a[href="https://example.com/assets/1"]')).toHaveCount(1)

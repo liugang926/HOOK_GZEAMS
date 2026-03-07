@@ -1,4 +1,8 @@
 import { test, expect, type Route } from '@playwright/test'
+import {
+  getDetailContent,
+  waitForDetailPageReady
+} from '../helpers/detail-page.helpers'
 
 interface FieldStub {
   code: string
@@ -202,12 +206,10 @@ test.describe('Detail Rendering Regression', () => {
 
       await page.goto(`/objects/${scenario.objectCode}/${scenario.id}`, { waitUntil: 'domcontentloaded' })
       await expect(page).toHaveURL(new RegExp(`/objects/${scenario.objectCode}/${scenario.id}`))
-      const detailRoot = page.locator('.dynamic-detail-page, .base-detail-page, .object-detail-page').first()
-      await expect(detailRoot).toBeVisible({ timeout: 15000 })
-      await expect(page.locator('.load-error')).toHaveCount(0)
+      await waitForDetailPageReady(page)
       await expect(page.locator('.field-item')).toHaveCount(scenario.businessFields.length, { timeout: 15000 })
       for (const text of scenario.expectedTexts) {
-        await expect(page.locator('.detail-content')).toContainText(text)
+        await expect(getDetailContent(page)).toContainText(text)
       }
     })
   }

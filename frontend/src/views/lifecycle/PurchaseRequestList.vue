@@ -49,6 +49,13 @@
         </el-button>
       </template>
     </BaseListPage>
+
+    <ContextDrawer
+      v-model="drawerVisible"
+      object-code="PurchaseRequest"
+      size="800px"
+      @success="handleDrawerSuccess"
+    />
   </div>
 </template>
 
@@ -60,6 +67,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { purchaseRequestApi } from '@/api/lifecycle'
 import BaseListPage from '@/components/common/BaseListPage.vue'
+import ContextDrawer from '@/components/common/ContextDrawer.vue'
 import type { TableColumn, SearchField } from '@/types/common'
 
 const router = useRouter()
@@ -124,7 +132,9 @@ const columns: TableColumn[] = [
   { prop: 'createdAt', label: t('assets.lifecycle.purchaseRequest.columns.createdAt'), width: 160 }
 ]
 
-const handleCreate = () => router.push('/assets/lifecycle/purchase-requests/create')
+const drawerVisible = ref(false)
+const handleCreate = () => { drawerVisible.value = true }
+const handleDrawerSuccess = () => { listRef.value?.refresh() }
 const handleView = (row: any) => router.push(`/assets/lifecycle/purchase-requests/${row.id}`)
 
 const handleSubmit = async (row: any) => {

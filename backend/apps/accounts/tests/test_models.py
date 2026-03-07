@@ -113,6 +113,48 @@ class TestUser:
         primary = user.get_primary_organization()
         assert primary == organization
 
+    def test_get_primary_organization_promotes_current_membership(self, db, organization):
+        """Current organization membership should become the default when primary is missing."""
+        user = User.objects.create_user(
+            username='currentonly',
+            email='currentonly@example.com',
+            password='testpass123'
+        )
+        UserOrganization.objects.create(
+            user=user,
+            organization=organization,
+            role='member',
+            is_primary=False
+        )
+        user.current_organization = organization
+        user.save(update_fields=['current_organization'])
+
+        primary = user.get_primary_organization()
+
+        user.refresh_from_db()
+        membership = UserOrganization.objects.get(user=user, organization=organization)
+        assert primary == organization
+        assert membership.is_primary is True
+        assert user.current_organization == organization
+
+    def test_get_primary_organization_auto_assigns_superuser(self, db, organization):
+        """Superusers without memberships should be auto-bound to the first active organization."""
+        user = User.objects.create_superuser(
+            username='orglessadmin',
+            email='orglessadmin@example.com',
+            password='adminpass123'
+        )
+
+        primary = user.get_primary_organization()
+
+        user.refresh_from_db()
+        membership = UserOrganization.objects.get(user=user, organization=organization)
+        assert primary == organization
+        assert membership.role == 'admin'
+        assert membership.is_active is True
+        assert membership.is_primary is True
+        assert user.current_organization == organization
+
     def test_switch_organization(self, user, organization, second_organization):
         """Test switching user's current organization."""
         # Add to second org

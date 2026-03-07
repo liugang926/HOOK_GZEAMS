@@ -447,7 +447,13 @@
                 "faultDescription": "Fault Description",
                 "faultDescriptionPlaceholder": "Describe the fault",
                 "priority": "Priority",
-                "remark": "Remark"
+                "remark": "Remark",
+                "completionDate": "Completion Date",
+                "costBreakdown": "Cost Breakdown",
+                "laborCost": "Labor Cost",
+                "materialCost": "Material Cost",
+                "otherCost": "Other Cost",
+                "totalCost": "Total Cost"
             },
             "priority": {
                 "low": "Low",
@@ -510,7 +516,11 @@
                 "itemsTitle": "Assets to Dispose",
                 "addItem": "Add Asset",
                 "assetLabel": "Asset",
-                "assetPlaceholder": "Select asset"
+                "assetPlaceholder": "Select asset",
+                "disposalMethod": "Disposal Method",
+                "appraisalValue": "Appraisal Value",
+                "disposalValue": "Disposal Value",
+                "assetCode": "Asset Code"
             },
             "status": {
                 "draft": "Draft",

@@ -8,7 +8,10 @@ Provides:
 - AssetStatusLogFilter: Filter for status log list
 """
 import django_filters
+import uuid
 from django.db.models import Q
+from django.db.models import CharField
+from django.db.models.functions import Cast
 from apps.common.filters.base import BaseModelFilter
 from apps.assets.models import Asset, Supplier, Location, AssetStatusLog
 
@@ -42,14 +45,15 @@ class AssetFilter(BaseModelFilter):
     serial_number = django_filters.CharFilter(lookup_expr='icontains')
 
     # Related object filters
-    asset_category = django_filters.UUIDFilter(field_name='asset_category_id')
-    department = django_filters.UUIDFilter(field_name='department_id')
-    location = django_filters.UUIDFilter(field_name='location_id')
-    custodian = django_filters.UUIDFilter(field_name='custodian_id')
-    user = django_filters.UUIDFilter(field_name='user_id')
-    supplier = django_filters.UUIDFilter(field_name='supplier_id')
+    asset_category = django_filters.CharFilter(method='filter_asset_category')
+    department = django_filters.CharFilter(method='filter_department')
+    location = django_filters.CharFilter(method='filter_location')
+    custodian = django_filters.CharFilter(method='filter_custodian')
+    user = django_filters.CharFilter(method='filter_user')
+    supplier = django_filters.CharFilter(method='filter_supplier')
 
-    # Status filter - use CharFilter since status values are from Dictionary (ASSET_STATUS)\n    asset_status = django_filters.CharFilter(lookup_expr='exact')
+    # Status filter - supports exact code match and fuzzy text search.
+    asset_status = django_filters.CharFilter(method='filter_asset_status')
 
     # Date range filters for purchase_date
     purchase_date_from = django_filters.DateFilter(
@@ -66,28 +70,128 @@ class AssetFilter(BaseModelFilter):
         field_name='purchase_price',
         lookup_expr='gte'
     )
+    purchase_price = django_filters.CharFilter(method='filter_purchase_price')
     purchase_price_to = django_filters.NumberFilter(
         field_name='purchase_price',
         lookup_expr='lte'
     )
+    current_value = django_filters.CharFilter(method='filter_current_value')
 
     # Combined search filter
     search = django_filters.CharFilter(method='filter_search')
+
+    @staticmethod
+    def _is_uuid(value):
+        try:
+            uuid.UUID(str(value))
+            return True
+        except (TypeError, ValueError, AttributeError):
+            return False
+
+    @staticmethod
+    def _text_cast_filter(queryset, field_name, value):
+        alias = f'{field_name.replace("__", "_")}_text'
+        return queryset.annotate(
+            **{alias: Cast(field_name, output_field=CharField())}
+        ).filter(**{f'{alias}__icontains': value})
+
+    def _filter_relation_or_uuid(self, queryset, value, *, id_field, text_fields):
+        if self._is_uuid(value):
+            return queryset.filter(**{id_field: value})
+
+        query = Q()
+        for field_name in text_fields:
+            query |= Q(**{f'{field_name}__icontains': value})
+        return queryset.filter(query)
 
     def filter_search(self, queryset, name, value):
         """
         Search across multiple text fields.
 
-        Searches: asset_code, asset_name, specification, brand, model, serial_number
+        Searches visible list fields including numbers and relation names.
         """
-        return queryset.filter(
+        annotated = queryset.annotate(
+            purchase_price_text=Cast('purchase_price', output_field=CharField()),
+            current_value_text=Cast('current_value', output_field=CharField()),
+            purchase_date_text=Cast('purchase_date', output_field=CharField()),
+        )
+        return annotated.filter(
             Q(asset_code__icontains=value) |
             Q(asset_name__icontains=value) |
             Q(specification__icontains=value) |
             Q(brand__icontains=value) |
             Q(model__icontains=value) |
-            Q(serial_number__icontains=value)
+            Q(serial_number__icontains=value) |
+            Q(asset_category__name__icontains=value) |
+            Q(department__name__icontains=value) |
+            Q(location__name__icontains=value) |
+            Q(location__path__icontains=value) |
+            Q(custodian__username__icontains=value) |
+            Q(custodian__first_name__icontains=value) |
+            Q(custodian__last_name__icontains=value) |
+            Q(supplier__name__icontains=value) |
+            Q(asset_status__icontains=value) |
+            Q(purchase_price_text__icontains=value) |
+            Q(current_value_text__icontains=value) |
+            Q(purchase_date_text__icontains=value)
         )
+
+    def filter_asset_category(self, queryset, name, value):
+        return self._filter_relation_or_uuid(
+            queryset,
+            value,
+            id_field='asset_category_id',
+            text_fields=['asset_category__name', 'asset_category__code']
+        )
+
+    def filter_department(self, queryset, name, value):
+        return self._filter_relation_or_uuid(
+            queryset,
+            value,
+            id_field='department_id',
+            text_fields=['department__name', 'department__code', 'department__full_path_name']
+        )
+
+    def filter_location(self, queryset, name, value):
+        return self._filter_relation_or_uuid(
+            queryset,
+            value,
+            id_field='location_id',
+            text_fields=['location__name', 'location__path']
+        )
+
+    def filter_custodian(self, queryset, name, value):
+        return self._filter_relation_or_uuid(
+            queryset,
+            value,
+            id_field='custodian_id',
+            text_fields=['custodian__username', 'custodian__first_name', 'custodian__last_name']
+        )
+
+    def filter_user(self, queryset, name, value):
+        return self._filter_relation_or_uuid(
+            queryset,
+            value,
+            id_field='user_id',
+            text_fields=['user__username', 'user__first_name', 'user__last_name']
+        )
+
+    def filter_supplier(self, queryset, name, value):
+        return self._filter_relation_or_uuid(
+            queryset,
+            value,
+            id_field='supplier_id',
+            text_fields=['supplier__name', 'supplier__code']
+        )
+
+    def filter_asset_status(self, queryset, name, value):
+        return queryset.filter(asset_status__icontains=value)
+
+    def filter_purchase_price(self, queryset, name, value):
+        return self._text_cast_filter(queryset, 'purchase_price', value)
+
+    def filter_current_value(self, queryset, name, value):
+        return self._text_cast_filter(queryset, 'current_value', value)
 
 
 class SupplierFilter(BaseModelFilter):

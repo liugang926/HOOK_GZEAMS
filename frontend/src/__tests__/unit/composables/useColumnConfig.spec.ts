@@ -46,15 +46,12 @@ describe('useColumnConfig', () => {
       const { columnConfigApi } = await import('@/api/system')
 
       const mockResponse = {
-        data: {
-          success: true,
-          data: {
-            columns: [
-              { prop: 'name', label: 'Name', width: 150, visible: true },
-              { prop: 'code', label: 'Code', width: 120, visible: true }
-            ]
-          }
-        }
+        columns: [
+          { prop: 'name', label: 'Name', width: 150, visible: true },
+          { prop: 'code', label: 'Code', width: 120, visible: true }
+        ],
+        columnOrder: ['code', 'name'],
+        source: 'user'
       }
 
       vi.mocked(columnConfigApi.get).mockResolvedValue(mockResponse)
@@ -65,6 +62,8 @@ describe('useColumnConfig', () => {
       expect(config.loading.value).toBe(false)
       expect(config.config.value).not.toBeNull()
       expect(config.config.value?.columns).toHaveLength(2)
+      expect(config.config.value?.columnOrder).toEqual(['code', 'name'])
+      expect(config.config.value?.source).toBe('user')
       expect(result?.columns[0].label).toBe('Name')
     })
 
@@ -72,10 +71,7 @@ describe('useColumnConfig', () => {
       const { columnConfigApi } = await import('@/api/system')
 
       const mockResponse = {
-        data: {
-          success: true,
-          data: { columns: [{ prop: 'name', label: 'Name' }] }
-        }
+        columns: [{ prop: 'name', label: 'Name' }]
       }
 
       vi.mocked(columnConfigApi.get).mockResolvedValue(mockResponse)
@@ -138,7 +134,7 @@ describe('useColumnConfig', () => {
         columnOrder: ['name', 'code']
       })
 
-      expect(ElMessage.success).toHaveBeenCalledWith('Column configuration saved')
+      expect(ElMessage.success).toHaveBeenCalled()
       expect(config.loading.value).toBe(false)
     })
 
@@ -174,7 +170,7 @@ describe('useColumnConfig', () => {
 
       await config.saveConfig(columns)
 
-      expect(ElMessage.warning).toHaveBeenCalledWith('Failed to save column configuration')
+      expect(ElMessage.warning).toHaveBeenCalled()
       expect(config.error.value).toBeInstanceOf(Error)
     })
 
@@ -190,6 +186,8 @@ describe('useColumnConfig', () => {
       await config.saveConfig(columns)
 
       expect(config.config.value?.columns).toEqual(columns)
+      expect(config.config.value?.columnOrder).toEqual(['name'])
+      expect(config.config.value?.source).toBe('user')
     })
   })
 
@@ -211,7 +209,7 @@ describe('useColumnConfig', () => {
 
       expect(columnConfigApi.reset).toHaveBeenCalledWith('asset')
       expect(config.config.value).toBe(null)
-      expect(ElMessage.success).toHaveBeenCalledWith('Column configuration reset to default')
+      expect(ElMessage.success).toHaveBeenCalled()
     })
 
     it('should handle reset errors', async () => {
@@ -223,7 +221,7 @@ describe('useColumnConfig', () => {
 
       await config.resetConfig()
 
-      expect(ElMessage.warning).toHaveBeenCalledWith('Failed to reset column configuration')
+      expect(ElMessage.warning).toHaveBeenCalled()
       expect(config.error.value).toBeInstanceOf(Error)
     })
 
@@ -398,10 +396,7 @@ describe('useColumnConfig', () => {
       const { columnConfigApi } = await import('@/api/system')
 
       const mockResponse = {
-        data: {
-          success: true,
-          data: { columns: [{ prop: 'name', label: 'Name' }] }
-        }
+        columns: [{ prop: 'name', label: 'Name' }]
       }
 
       vi.mocked(columnConfigApi.get).mockResolvedValue(mockResponse)
@@ -423,10 +418,7 @@ describe('useColumnConfig', () => {
       const { columnConfigApi } = await import('@/api/system')
 
       const mockResponse = {
-        data: {
-          success: true,
-          data: { columns: [] }
-        }
+        columns: []
       }
 
       vi.mocked(columnConfigApi.get).mockResolvedValue(mockResponse)

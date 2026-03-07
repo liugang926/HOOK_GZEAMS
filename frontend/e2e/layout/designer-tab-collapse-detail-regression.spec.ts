@@ -4,6 +4,10 @@ import {
   clickDesignerSectionHeader,
   waitForDesignerReady
 } from '../helpers/page-ready.helpers'
+import {
+  getDetailContent,
+  waitForDetailPageReady
+} from '../helpers/detail-page.helpers'
 type AnyRecord = Record<string, any>
 type ScenarioType = 'tab' | 'collapse'
 
@@ -283,14 +287,12 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
 
       await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`, { waitUntil: 'domcontentloaded' })
       await expect(page).toHaveURL(new RegExp(`/objects/${OBJECT_CODE}/${RECORD_ID}`))
-      const detailRoot = page.locator('.dynamic-detail-page, .base-detail-page, .object-detail-page').first()
-      await expect(detailRoot).toBeVisible({ timeout: 15000 })
+      await waitForDetailPageReady(page)
       await expect(page.locator('.detail-content').first()).toBeVisible({ timeout: 15000 })
-      await expect(page.locator('.load-error')).toHaveCount(0)
 
       const expectedTitle = `${scenario.updatedTitle} / ${scenario.nestedTitle}`
       await expect(page.locator('.detail-sections .section-title', { hasText: expectedTitle }).first()).toBeVisible()
-      await expect(page.locator('.detail-content')).toContainText(recordPayload.assetName)
+      await expect(getDetailContent(page)).toContainText(recordPayload.assetName)
     })
 
     test(`${scenario.type} field props save must reflect on readonly detail`, async ({ page }) => {
@@ -444,7 +446,7 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
       await fieldCard.click({ position: { x: 4, y: 4 }, force: true })
 
       const fieldPropertyEditor = page.getByTestId('layout-field-property-editor')
-      if (!(await fieldPropertyEditor.count())) {
+      if (!(await fieldPropertyEditor.isVisible().catch(() => false))) {
         await page.locator('.canvas-content .el-form-item__label').first().click({ force: true })
       }
       await expect(fieldPropertyEditor).toBeVisible()
@@ -456,8 +458,7 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
 
       const spanSelect = page.getByTestId('field-prop-span').first()
       await expect(spanSelect).toBeVisible()
-      await spanSelect.click({ force: true })
-      await page.locator('.el-select-dropdown__item').filter({ hasText: /^2\s*\/\s*2$/ }).first().click()
+      await spanSelect.getByRole('button', { name: 'increase number' }).click()
 
       const readonlySwitch = page.getByTestId('field-prop-readonly').locator('.el-switch').first()
       await expect(readonlySwitch).toBeVisible()
@@ -474,17 +475,15 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
 
       await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`, { waitUntil: 'domcontentloaded' })
       await expect(page).toHaveURL(new RegExp(`/objects/${OBJECT_CODE}/${RECORD_ID}`))
-      const detailRoot = page.locator('.dynamic-detail-page, .base-detail-page, .object-detail-page').first()
-      await expect(detailRoot).toBeVisible({ timeout: 15000 })
+      await waitForDetailPageReady(page)
       await expect(page.locator('.detail-content').first()).toBeVisible({ timeout: 15000 })
-      await expect(page.locator('.load-error')).toHaveCount(0)
 
-      await expect(page.locator('.detail-content')).toContainText(recordPayload.assetName)
+      await expect(getDetailContent(page)).toContainText(recordPayload.assetName)
       const fieldLabel = page.locator('.detail-sections .field-label', { hasText: scenario.updatedFieldLabel }).first()
       await expect(fieldLabel).toBeVisible()
 
-      const fieldCol = fieldLabel.locator('xpath=ancestor::div[contains(@class,"field-col")]').first()
-      await expect(fieldCol).toHaveClass(/el-col-24/)
+      const fieldItem = fieldLabel.locator('xpath=ancestor::div[contains(@class,"field-item")]').first()
+      await expect(fieldItem).toHaveAttribute('data-grid-col-span', '2')
     })
 
     test(`${scenario.type} field visible=false must hide on readonly detail`, async ({ page }) => {
@@ -638,7 +637,7 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
       await fieldCard.click({ position: { x: 4, y: 4 }, force: true })
 
       const fieldPropertyEditor = page.getByTestId('layout-field-property-editor')
-      if (!(await fieldPropertyEditor.count())) {
+      if (!(await fieldPropertyEditor.isVisible().catch(() => false))) {
         await page.locator('.canvas-content .el-form-item__label').first().click({ force: true })
       }
       await expect(fieldPropertyEditor).toBeVisible()
@@ -656,10 +655,8 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
 
       await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`, { waitUntil: 'domcontentloaded' })
       await expect(page).toHaveURL(new RegExp(`/objects/${OBJECT_CODE}/${RECORD_ID}`))
-      const detailRoot = page.locator('.dynamic-detail-page, .base-detail-page, .object-detail-page').first()
-      await expect(detailRoot).toBeVisible({ timeout: 15000 })
+      await waitForDetailPageReady(page)
       await expect(page.locator('.detail-content').first()).toBeVisible({ timeout: 15000 })
-      await expect(page.locator('.load-error')).toHaveCount(0)
 
       await expect(page.locator('.detail-sections .field-col')).toHaveCount(0)
       await expect(page.locator('.detail-sections .field-label', { hasText: 'Asset Name' })).toHaveCount(0)

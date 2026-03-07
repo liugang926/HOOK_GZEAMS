@@ -53,6 +53,15 @@ export interface FieldMetadata {
   /** Section this field belongs to */
   sectionName?: string
 
+  /** Section title payload localized by frontend localeText */
+  sectionTitle?: string | Record<string, any>
+
+  /** Stable i18n key for section title */
+  sectionTranslationKey?: string
+
+  /** Optional section icon from backend metadata */
+  sectionIcon?: string
+
   /** Whether this is a reverse relation field */
   isReverseRelation?: boolean
 

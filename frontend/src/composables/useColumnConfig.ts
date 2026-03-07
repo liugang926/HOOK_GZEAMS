@@ -13,6 +13,8 @@ export type { ColumnItem } from '@/types/common'
 export interface ColumnConfig {
   object_code: string
   columns: ColumnItem[]
+  columnOrder?: string[]
+  source?: 'user' | 'default'
 }
 
 /**
@@ -75,7 +77,9 @@ export function useColumnConfig(objectCode: string) {
       if (result) {
         config.value = {
           object_code: objectCode,
-          columns: result.columns || []
+          columns: result.columns || [],
+          columnOrder: Array.isArray(result.columnOrder) ? result.columnOrder : [],
+          source: result.source
         }
 
         // Update in-memory cache
@@ -122,7 +126,9 @@ export function useColumnConfig(objectCode: string) {
 
       const newConfig: ColumnConfig = {
         object_code: objectCode,
-        columns
+        columns,
+        columnOrder: columnConfig.columnOrder,
+        source: 'user'
       }
       config.value = newConfig
       columnConfigCache.set(cacheKey, newConfig)

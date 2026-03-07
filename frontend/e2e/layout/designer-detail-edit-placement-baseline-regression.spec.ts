@@ -1,4 +1,9 @@
 import { expect, test, type Locator, type Page, type Route, type TestInfo } from '@playwright/test'
+import {
+  getDetailFieldItem,
+  getHeaderActionButton,
+  waitForDetailPageReady
+} from '../helpers/detail-page.helpers'
 import { waitForDesignerReady } from '../helpers/page-ready.helpers'
 
 type AnyRecord = Record<string, unknown>
@@ -465,11 +470,7 @@ const designerFieldByCode = (page: Page, code: string) => {
   return page.locator(`.field-renderer[data-field-code="${code}"]`).first()
 }
 
-const detailFieldByLabel = (page: Page, label: string) => {
-  return page.locator('.detail-content .field-item').filter({
-    has: page.locator('.field-label', { hasText: label })
-  }).first()
-}
+const detailFieldByLabel = (page: Page, label: string) => getDetailFieldItem(page, label)
 
 const expectRightOfOnSameRow = async (left: Locator, right: Locator) => {
   const [leftBox, rightBox] = await Promise.all([left.boundingBox(), right.boundingBox()])
@@ -576,9 +577,8 @@ test.describe('Layout Placement Baseline Regression (Designer/Detail/Edit)', () 
 
       await page.goto(`/objects/${OBJECT_CODE}/${scenario.recordId}`, { waitUntil: 'domcontentloaded' })
       await expect(page).toHaveURL(new RegExp(`/objects/${OBJECT_CODE}/${scenario.recordId}`))
-      await expect(page.locator('.dynamic-detail-page, .base-detail-page, .object-detail-page').first()).toBeVisible({ timeout: 15000 })
+      await waitForDetailPageReady(page)
       await expect(page.locator('.detail-content').first()).toBeVisible({ timeout: 15000 })
-      await expect(page.locator('.load-error')).toHaveCount(0)
 
       await assertMainFieldPair(page, scenario.mainFields, 'detail')
       await expect(page.locator('.detail-content .field-label', { hasText: RUNTIME_SHADOW_LABEL })).toHaveCount(0)
@@ -591,7 +591,7 @@ test.describe('Layout Placement Baseline Regression (Designer/Detail/Edit)', () 
       }
       await attachLayoutSnapshot(page, testInfo, scenario.kind, 'detail')
 
-      await page.locator('.header-actions .el-button').first().click()
+      await getHeaderActionButton(page, /Edit/i).click()
       await expect(page.locator('.drawer-compat-proxy')).toBeVisible({ timeout: 10000 })
 
       await assertMainFieldPair(page, scenario.mainFields, 'detail')

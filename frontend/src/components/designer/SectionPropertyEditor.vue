@@ -84,28 +84,23 @@
       </el-form-item>
     </template>
   </el-form>
-</template>
 
-<script setup lang="ts">
-import { computed } from 'vue'
-import { getSectionPropertySchema } from '@/composables/useSectionPropertySchema'
-
-interface Props {
-  modelValue?: Record<string, any>
-  sectionType?: string
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  modelValue: () => ({}),
-  sectionType: 'section'
+const schema = computed(() => {
+  const base = getSectionPropertySchema(props.sectionType || 'section')
+  if (!props.isCompactMode) return base
+  // In Compact mode: filter out tab/collapse from type options, keep only 'section'
+  return base.map(item => {
+    if (item.key === 'type' && item.options) {
+      return {
+        ...item,
+        options: item.options.filter((opt: { value: unknown }) => opt.value === 'section')
+      }
+    }
+    // Hide tab management in compact mode
+    if (item.key === 'tabs') return null
+    return item
+  }).filter(Boolean) as typeof base
 })
-
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: Record<string, any>): void
-  (e: 'update-property', payload: { key: string; value: any }): void
-}>()
-
-const schema = computed(() => getSectionPropertySchema(props.sectionType || 'section'))
 
 const sectionLabels: Record<string, string> = {
   basic: 'Basic',

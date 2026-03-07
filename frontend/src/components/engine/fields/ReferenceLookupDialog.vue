@@ -247,7 +247,7 @@
     >
       <span class="lookup-hotkeys__title">{{ keyboardTipsTitleText }}</span>
       <span class="lookup-hotkeys__item">
-        <kbd>↑</kbd><kbd>↓</kbd>
+        <kbd>Up</kbd><kbd>Down</kbd>
         {{ keyboardTipNavigateText }}
       </span>
       <span class="lookup-hotkeys__item">
@@ -376,7 +376,7 @@ const openActionText = computed(() => tr('common.actions.open', 'Open'))
 const cancelActionText = computed(() => tr('common.actions.cancel', 'Cancel'))
 const confirmActionText = computed(() => tr('common.actions.confirm', 'Confirm'))
 const nameLabel = computed(() => tr('common.columns.name', 'Name'))
-const idLabel = 'ID'
+const idLabel = computed(() => tr('common.relatedObject.id', 'ID'))
 const recentTagText = computed(() => tr('common.recent', 'Recent'))
 const codeLabel = computed(() => tr('common.columns.code', 'Code'))
 const recentGroupTitleText = computed(() => tr('common.labels.recentRecords', 'Recent Records'))
@@ -421,12 +421,12 @@ const searchScopeOptions = computed(() => {
   if (hasSecondaryField.value) {
     options.push({ label: codeLabel.value, value: 'secondary' })
   }
-  options.push({ label: idLabel, value: 'id' })
+  options.push({ label: idLabel.value, value: 'id' })
   return options
 })
 
 const toColumnLabel = (key: string): string => {
-  if (key === 'id') return idLabel
+  if (key === 'id') return idLabel.value
   if (key === props.displayField) return nameLabel.value
   if (key === props.secondaryField) return codeLabel.value
   return key
@@ -465,7 +465,7 @@ const defaultColumns = computed<LookupColumn[]>(() => {
   if (!base.some((column) => column.key === 'id')) {
     base.push({
       key: 'id',
-      label: idLabel,
+      label: idLabel.value,
       minWidth: 180
     })
   }
@@ -477,6 +477,7 @@ const columnOrder = ref<string[]>([])
 const columnWidthMap = ref<Record<string, number>>({})
 const activeProfile = ref<LookupColumnsProfile>('standard')
 const applyingProfile = ref(false)
+const suspendColumnPreferenceAutoSave = ref(true)
 const draggingColumnKey = ref('')
 const dragOverColumnKey = ref('')
 const dragOverPosition = ref<'before' | 'after' | ''>('')
@@ -758,6 +759,33 @@ const moveColumnAfter = (sourceKey: string, targetKey: string) => {
   const normalizedTargetIndex = movable.indexOf(targetKey)
   movable.splice(Math.min(movable.length, normalizedTargetIndex + 1), 0, item)
   applyReorderedMovableKeys(movable)
+}
+
+const hydrateColumnPreferences = () => {
+  const hasStoredPreference = hasLookupColumnsPreference(
+    props.objectCode,
+    { preferenceKey: props.preferenceKey, userScope: props.userScope, scope: props.preferenceScope }
+  )
+  const preference = loadLookupColumnsPreference(
+    props.objectCode,
+    { preferenceKey: props.preferenceKey, userScope: props.userScope, scope: props.preferenceScope }
+  )
+  hiddenColumnSet.value = new Set(preference.hidden)
+  columnOrder.value = [...preference.order]
+  columnWidthMap.value = { ...preference.widths }
+  const fallbackProfile = loadLastLookupProfile(
+    props.objectCode,
+    { userScope: props.userScope, scope: props.preferenceScope }
+  )
+  const initialProfile = hasStoredPreference
+    ? (preference.profile || 'standard')
+    : fallbackProfile
+  activeProfile.value = initialProfile
+  if (!hasStoredPreference && initialProfile !== 'custom') {
+    applyProfile(initialProfile, { persist: false })
+    return
+  }
+  normalizeColumnPreferences()
 }
 
 const handleColumnDragStart = (key: string, event: DragEvent) => {
@@ -1069,9 +1097,24 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
 const syncTableSelection = async () => {
   await nextTick()
 
-  if (!props.multiple && activeSingleId.value) {
-    const selected = rows.value.find((row) => row.id === activeSingleId.value) || null
-    if (selected) activeSingleRow.value = selected
+  if (!props.multiple) {
+    if (!activeSingleId.value) {
+      activeSingleRow.value = null
+      if (tableRef.value && typeof tableRef.value.setCurrentRow === 'function') {
+        tableRef.value.setCurrentRow(null)
+      }
+    } else {
+      const selected = rows.value.find((row) => row.id === activeSingleId.value) || null
+      if (selected) {
+        activeSingleRow.value = selected
+      } else {
+        activeSingleId.value = ''
+        activeSingleRow.value = null
+        if (tableRef.value && typeof tableRef.value.setCurrentRow === 'function') {
+          tableRef.value.setCurrentRow(null)
+        }
+      }
+    }
   }
 
   if (!props.multiple || !tableRef.value) return
@@ -1127,7 +1170,10 @@ const loadData = async () => {
       reference_object: props.objectCode,
       search: keyword.value.trim(),
       page: page.value,
-      page_size: pageSize
+      page_size: pageSize,
+      lookup_search_scope: searchScope.value,
+      lookup_display_field: props.displayField || 'name',
+      lookup_secondary_field: props.secondaryField || 'code'
     })
     const rawItems: unknown[] = Array.isArray(res?.results)
       ? res.results
@@ -1239,6 +1285,7 @@ const handleSearch = async () => {
 const handleReset = async () => {
   viewMode.value = 'all'
   keyword.value = ''
+  searchScope.value = 'all'
   page.value = 1
   await loadData()
 }
@@ -1340,41 +1387,46 @@ watch(
 )
 
 watch(
-  () => baseColumns.value.map((column) => column.key).join(','),
-  () => {
-    const changed = normalizeColumnPreferences()
-    if (changed) saveColumnsPreference()
+  () => searchScope.value,
+  async () => {
+    if (!props.modelValue) return
+    page.value = 1
+    await loadData()
   }
 )
 
 watch(
-  () => [props.objectCode, props.preferenceKey, props.userScope, props.preferenceScope],
+  () => baseColumns.value.map((column) => column.key).join(','),
   () => {
-    const hasStoredPreference = hasLookupColumnsPreference(
-      props.objectCode,
-      { preferenceKey: props.preferenceKey, userScope: props.userScope, scope: props.preferenceScope }
-    )
-    const preference = loadLookupColumnsPreference(
-      props.objectCode,
-      { preferenceKey: props.preferenceKey, userScope: props.userScope, scope: props.preferenceScope }
-    )
-    hiddenColumnSet.value = new Set(preference.hidden)
-    columnOrder.value = [...preference.order]
-    columnWidthMap.value = { ...preference.widths }
-    const fallbackProfile = loadLastLookupProfile(
-      props.objectCode,
-      { userScope: props.userScope, scope: props.preferenceScope }
-    )
-    const initialProfile = hasStoredPreference
-      ? (preference.profile || 'standard')
-      : fallbackProfile
-    activeProfile.value = initialProfile
-    if (!hasStoredPreference && initialProfile !== 'custom') {
-      applyProfile(initialProfile, { persist: false })
-      return
+    if (suspendColumnPreferenceAutoSave.value) return
+    normalizeColumnPreferences()
+  }
+)
+
+watch(
+  () => [props.displayField, props.secondaryField],
+  () => {
+    if (searchScope.value === 'secondary' && !hasSecondaryField.value) {
+      searchScope.value = 'all'
     }
-    const changed = normalizeColumnPreferences()
-    if (changed) saveColumnsPreference(activeProfile.value)
+  }
+)
+
+watch(
+  () => [
+    props.objectCode,
+    props.preferenceKey,
+    props.userScope,
+    props.preferenceScope,
+    props.displayField,
+    props.secondaryField,
+    baseColumns.value.map((column) => column.key).join(',')
+  ],
+  async () => {
+    suspendColumnPreferenceAutoSave.value = true
+    hydrateColumnPreferences()
+    await nextTick()
+    suspendColumnPreferenceAutoSave.value = false
   },
   { immediate: true }
 )
@@ -1389,6 +1441,7 @@ onBeforeUnmount(() => {
 .lookup-toolbar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -1399,6 +1452,24 @@ onBeforeUnmount(() => {
 
 .lookup-toolbar__search {
   flex: 1;
+  min-width: 220px;
+}
+
+.lookup-toolbar__scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.lookup-toolbar__scope-label {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.lookup-toolbar__scope-segmented {
+  min-width: 220px;
 }
 
 .lookup-column-settings {
@@ -1518,6 +1589,21 @@ onBeforeUnmount(() => {
   margin: 2px 0 6px;
 }
 
+.lookup-cell__group-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.lookup-cell__group-dot.is-recent {
+  background: color-mix(in srgb, var(--el-color-warning) 88%, #ffffff);
+}
+
+.lookup-cell__group-dot.is-search {
+  background: color-mix(in srgb, var(--el-color-primary) 88%, #ffffff);
+}
+
 .lookup-cell__group-title::after {
   content: '';
   flex: 1;
@@ -1577,14 +1663,91 @@ onBeforeUnmount(() => {
 }
 
 .lookup-footer__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--el-text-color-secondary);
   font-size: 12px;
+}
+
+.lookup-footer__summary {
+  white-space: nowrap;
+}
+
+.lookup-footer__group {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 10px;
+  white-space: nowrap;
+}
+
+.lookup-footer__group::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.lookup-footer__group.is-recent::before {
+  background: color-mix(in srgb, var(--el-color-warning) 88%, #ffffff);
+}
+
+.lookup-footer__group.is-search::before {
+  background: color-mix(in srgb, var(--el-color-primary) 88%, #ffffff);
+}
+
+.lookup-hotkeys {
+  margin-top: 8px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.lookup-hotkeys__title {
+  font-weight: 600;
+}
+
+.lookup-hotkeys__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lookup-hotkeys kbd {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  line-height: 1;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+  padding: 3px 5px;
+  color: var(--el-text-color-regular);
+  background: color-mix(in srgb, var(--el-fill-color-light) 70%, #ffffff);
 }
 
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+@media (max-width: 980px) {
+  .lookup-toolbar__scope {
+    width: 100%;
+  }
+
+  .lookup-toolbar__scope-segmented {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 :deep(.el-table .is-active-single-row > td) {

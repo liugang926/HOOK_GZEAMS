@@ -9,8 +9,10 @@ This ensures all business objects have usable layouts immediately without
 requiring manual layout configuration.
 """
 
+from collections import OrderedDict
 from typing import Dict, List, Any, Optional
 from apps.system.models import BusinessObject, ModelFieldDefinition, FieldDefinition, PageLayout
+from apps.system.layout_sections import get_object_section_definitions, resolve_section_definition
 
 
 class LayoutGenerator:
@@ -42,6 +44,64 @@ class LayoutGenerator:
 
     # Fields to exclude from auto-generated layouts
     EXCLUDED_FIELDS = ['id', 'organization', 'is_deleted', 'deleted_at', 'deleted_by']
+    ACTION_LABEL = {
+        'zh': '操作',
+        'en': 'Actions',
+    }
+
+    @classmethod
+    def _is_model_field_candidate(cls, field_def: ModelFieldDefinition) -> bool:
+        return (
+            field_def.field_name not in cls.EXCLUDED_FIELDS
+            and getattr(field_def, 'field_type', '') != 'sub_table'
+        )
+
+    @classmethod
+    def _is_dynamic_field_candidate(cls, field_def: FieldDefinition) -> bool:
+        return (
+            field_def.code not in cls.EXCLUDED_FIELDS
+            and not getattr(field_def, 'is_reverse_relation', False)
+            and getattr(field_def, 'field_type', '') != 'sub_table'
+        )
+
+    @classmethod
+    def _select_model_fields_for_layout(
+        cls,
+        business_object: BusinessObject,
+        visibility_attr: str,
+    ) -> List[ModelFieldDefinition]:
+        all_fields = [
+            field_def
+            for field_def in ModelFieldDefinition.objects.filter(
+                business_object=business_object
+            ).order_by('sort_order')
+            if cls._is_model_field_candidate(field_def)
+        ]
+        visible_fields = [
+            field_def for field_def in all_fields
+            if getattr(field_def, visibility_attr, True)
+        ]
+        return visible_fields or all_fields
+
+    @classmethod
+    def _select_dynamic_fields_for_layout(
+        cls,
+        business_object: BusinessObject,
+        visibility_attr: str,
+    ) -> List[FieldDefinition]:
+        all_fields = [
+            field_def
+            for field_def in FieldDefinition.objects.filter(
+                business_object=business_object,
+                is_deleted=False
+            ).order_by('sort_order')
+            if cls._is_dynamic_field_candidate(field_def)
+        ]
+        visible_fields = [
+            field_def for field_def in all_fields
+            if getattr(field_def, visibility_attr, True)
+        ]
+        return visible_fields or all_fields
 
     @classmethod
     def generate_list_layout(cls, business_object: BusinessObject) -> Dict[str, Any]:
@@ -74,9 +134,7 @@ class LayoutGenerator:
     @classmethod
     def _generate_list_columns_from_model_fields(cls, business_object: BusinessObject) -> List[Dict[str, Any]]:
         """Generate list columns from ModelFieldDefinition records."""
-        model_fields = ModelFieldDefinition.objects.filter(
-            business_object=business_object
-        ).order_by('sort_order')
+        model_fields = cls._select_model_fields_for_layout(business_object, 'show_in_list')
 
         columns = []
         added_fields = set()
@@ -84,15 +142,13 @@ class LayoutGenerator:
         # Add default fields first
         for field_name in cls.DEFAULT_LIST_FIELDS:
             field_def = next((f for f in model_fields if f.field_name == field_name), None)
-            if field_def and field_def.show_in_list:
+            if field_def:
                 columns.append(cls._model_field_to_column(field_def))
                 added_fields.add(field_name)
 
-        # Add other fields marked for list display
+        # Add the remaining fields so the generated system layout covers the full schema.
         for field_def in model_fields:
-            if (field_def.field_name not in added_fields and
-                field_def.show_in_list and
-                field_def.field_name not in cls.EXCLUDED_FIELDS):
+            if field_def.field_name not in added_fields:
                 columns.append(cls._model_field_to_column(field_def))
                 added_fields.add(field_def.field_name)
 
@@ -100,7 +156,7 @@ class LayoutGenerator:
         columns.append({
             'fieldCode': 'actions',
             'prop': 'actions',
-            'label': '操作',
+            'label': cls.ACTION_LABEL,
             'width': 180,
             'fixed': 'right',
             'type': 'actions',
@@ -112,10 +168,7 @@ class LayoutGenerator:
     @classmethod
     def _generate_list_columns_from_field_definitions(cls, business_object: BusinessObject) -> List[Dict[str, Any]]:
         """Generate list columns from FieldDefinition records."""
-        field_definitions = FieldDefinition.objects.filter(
-            business_object=business_object,
-            is_deleted=False
-        ).order_by('sort_order')
+        field_definitions = cls._select_dynamic_fields_for_layout(business_object, 'show_in_list')
 
         columns = []
         added_fields = set()
@@ -123,15 +176,13 @@ class LayoutGenerator:
         # Add default fields first
         for field_name in cls.DEFAULT_LIST_FIELDS:
             field_def = next((f for f in field_definitions if f.code == field_name), None)
-            if field_def and field_def.show_in_list:
+            if field_def:
                 columns.append(cls._field_definition_to_column(field_def))
                 added_fields.add(field_name)
 
-        # Add other fields marked for list display
+        # Add the remaining fields so the generated system layout covers the full schema.
         for field_def in field_definitions:
-            if (field_def.code not in added_fields and
-                field_def.show_in_list and
-                field_def.code not in cls.EXCLUDED_FIELDS):
+            if field_def.code not in added_fields:
                 columns.append(cls._field_definition_to_column(field_def))
                 added_fields.add(field_def.code)
 
@@ -139,7 +190,7 @@ class LayoutGenerator:
         columns.append({
             'fieldCode': 'actions',
             'prop': 'actions',
-            'label': '操作',
+            'label': cls.ACTION_LABEL,
             'width': 180,
             'fixed': 'right',
             'type': 'actions',
@@ -249,133 +300,106 @@ class LayoutGenerator:
             Dictionary with form layout configuration
         """
         if business_object.is_hardcoded:
-            return cls._generate_form_from_model_fields(business_object)
+            return cls._generate_form_from_model_fields(business_object, 'show_in_form')
         else:
-            return cls._generate_form_from_field_definitions(business_object)
+            return cls._generate_form_from_field_definitions(business_object, 'show_in_form')
 
     @classmethod
-    def _generate_form_from_model_fields(cls, business_object: BusinessObject) -> Dict[str, Any]:
+    def _generate_form_from_model_fields(
+        cls,
+        business_object: BusinessObject,
+        visibility_attr: str,
+    ) -> Dict[str, Any]:
         """Generate form layout from ModelFieldDefinition records."""
-        model_fields = ModelFieldDefinition.objects.filter(
-            business_object=business_object,
-            show_in_form=True
-        ).order_by('sort_order')
-
-        # Group fields by logical sections
-        basic_fields = []
-        detail_fields = []
-        system_fields = []
-
-        for field_def in model_fields:
-            if field_def.field_name in cls.EXCLUDED_FIELDS:
-                continue
-
-            field_config = cls._model_field_to_form_field(field_def)
-
-            # Categorize field
-            if field_def.field_name in ['code', 'name', 'status']:
-                basic_fields.append(field_config)
-            elif field_def.field_name.startswith('created_') or field_def.field_name.startswith('updated_'):
-                system_fields.append(field_config)
-            else:
-                detail_fields.append(field_config)
-
-        sections = []
-
-        # Basic Info section
-        if basic_fields:
-            sections.append({
-                'name': 'basic',
-                'title': '基本信息',
-                'fields': basic_fields,
-                'column': 2  # 2 columns per row
-            })
-
-        # Details section
-        if detail_fields:
-            sections.append({
-                'name': 'details',
-                'title': '详细信息',
-                'fields': detail_fields,
-                'column': 2
-            })
-
-        # System Info section (readonly)
-        if system_fields:
-            for field in system_fields:
-                field['readonly'] = True
-            sections.append({
-                'name': 'system',
-                'title': '系统信息',
-                'fields': system_fields,
-                'column': 2,
-                'collapsible': True,
-                'collapsed': True
-            })
-
-        return {'sections': sections}
+        model_fields = cls._select_model_fields_for_layout(business_object, visibility_attr)
+        return {
+            'sections': cls._build_form_sections(
+                business_object.code,
+                model_fields,
+                lambda field_def: cls._model_field_to_form_field(field_def),
+                readonly=False,
+            )
+        }
 
     @classmethod
-    def _generate_form_from_field_definitions(cls, business_object: BusinessObject) -> Dict[str, Any]:
+    def _generate_form_from_field_definitions(
+        cls,
+        business_object: BusinessObject,
+        visibility_attr: str,
+    ) -> Dict[str, Any]:
         """Generate form layout from FieldDefinition records."""
-        field_definitions = FieldDefinition.objects.filter(
-            business_object=business_object,
-            is_deleted=False
-        ).order_by('sort_order')
+        field_definitions = cls._select_dynamic_fields_for_layout(business_object, visibility_attr)
+        return {
+            'sections': cls._build_form_sections(
+                business_object.code,
+                field_definitions,
+                lambda field_def: cls._field_definition_to_form_field(field_def),
+                readonly=False,
+            )
+        }
 
-        # Group fields by logical sections
-        basic_fields = []
-        detail_fields = []
-        system_fields = []
+    @classmethod
+    def _build_form_sections(
+        cls,
+        object_code: str,
+        fields: List[Any],
+        field_builder,
+        *,
+        readonly: bool,
+    ) -> List[Dict[str, Any]]:
+        sections = OrderedDict()
+        for section in get_object_section_definitions(object_code):
+            sections[section['id']] = {
+                'id': section['id'],
+                'name': section['id'],
+                'type': 'section',
+                'title': section['title'],
+                'icon': section.get('icon'),
+                'columns': section.get('columns', 2),
+                'column': section.get('columns', 2),
+                'collapsible': section.get('collapsible', False),
+                'collapsed': section.get('collapsed', False),
+                'order': section.get('order', 0),
+                'fields': [],
+            }
 
-        for field_def in field_definitions:
-            if field_def.code in cls.EXCLUDED_FIELDS:
+        for field_def in fields:
+            field_code = getattr(field_def, 'field_name', None) or getattr(field_def, 'code', None)
+            if not field_code:
                 continue
 
-            field_config = cls._field_definition_to_form_field(field_def)
+            section_definition = resolve_section_definition(object_code, str(field_code))
+            section = sections.setdefault(
+                section_definition['id'],
+                {
+                    'id': section_definition['id'],
+                    'name': section_definition['id'],
+                    'type': 'section',
+                    'title': section_definition['title'],
+                    'icon': section_definition.get('icon'),
+                    'columns': section_definition.get('columns', 2),
+                    'column': section_definition.get('columns', 2),
+                    'collapsible': section_definition.get('collapsible', False),
+                    'collapsed': section_definition.get('collapsed', False),
+                    'order': section_definition.get('order', 999),
+                    'fields': [],
+                },
+            )
+            field_config = field_builder(field_def)
+            field_config['sectionName'] = section_definition['id']
+            field_config['sectionTitle'] = section_definition['title']
+            if readonly or section_definition.get('readonly'):
+                field_config['readonly'] = True
+            section['fields'].append(field_config)
 
-            # Categorize field
-            if field_def.code in ['code', 'name', 'status']:
-                basic_fields.append(field_config)
-            elif field_def.code.startswith('created_') or field_def.code.startswith('updated_'):
-                system_fields.append(field_config)
-            else:
-                detail_fields.append(field_config)
-
-        sections = []
-
-        # Basic Info section
-        if basic_fields:
-            sections.append({
-                'name': 'basic',
-                'title': '基本信息',
-                'fields': basic_fields,
-                'column': 2
-            })
-
-        # Details section
-        if detail_fields:
-            sections.append({
-                'name': 'details',
-                'title': '详细信息',
-                'fields': detail_fields,
-                'column': 2
-            })
-
-        # System Info section (readonly)
-        if system_fields:
-            for field in system_fields:
-                field['readonly'] = True
-            sections.append({
-                'name': 'system',
-                'title': '系统信息',
-                'fields': system_fields,
-                'column': 2,
-                'collapsible': True,
-                'collapsed': True
-            })
-
-        return {'sections': sections}
+        ordered = [
+            section
+            for section in sorted(sections.values(), key=lambda item: (item.get('order', 0), item.get('id', '')))
+            if section.get('fields')
+        ]
+        for section in ordered:
+            section.pop('order', None)
+        return ordered
 
     @classmethod
     def _model_field_to_form_field(cls, field_def: ModelFieldDefinition) -> Dict[str, Any]:
@@ -519,15 +543,37 @@ class LayoutGenerator:
         Returns:
             Dictionary with detail layout configuration
         """
-        # Reuse form layout structure
-        form_layout = cls.generate_form_layout(business_object)
+        if business_object.is_hardcoded:
+            model_fields = cls._select_model_fields_for_layout(business_object, 'show_in_detail')
+            sections = cls._build_form_sections(
+                business_object.code,
+                model_fields,
+                lambda field_def: cls._model_field_to_form_field(field_def),
+                readonly=True,
+            )
+        else:
+            field_definitions = cls._select_dynamic_fields_for_layout(business_object, 'show_in_detail')
+            sections = cls._build_form_sections(
+                business_object.code,
+                field_definitions,
+                lambda field_def: cls._field_definition_to_form_field(field_def),
+                readonly=True,
+            )
 
-        # Mark all fields as readonly for detail view
-        for section in form_layout.get('sections', []):
-            for field in section.get('fields', []):
-                field['readonly'] = True
+        return {'sections': sections}
 
-        return form_layout
+    @classmethod
+    def generate_all_layouts(cls, business_object: BusinessObject) -> Dict[str, Dict[str, Any]]:
+        """
+        Generate all default layouts for a business object.
+
+        Args:
+            business_object: BusinessObject instance
+
+        Returns:
+            Dictionary with all layout types
+        """
+        return {
 
     @classmethod
     def generate_all_layouts(cls, business_object: BusinessObject) -> Dict[str, Dict[str, Any]]:
@@ -547,7 +593,7 @@ class LayoutGenerator:
         }
 
     @classmethod
-    def get_or_generate_layout(cls, business_object: BusinessObject, layout_type: str) -> Dict[str, Any]:
+    def get_or_generate_layout(cls, business_object: BusinessObject, layout_type: str, view_mode: str = '') -> Dict[str, Any]:
         """
         Get existing layout or generate default one.
 
@@ -557,17 +603,25 @@ class LayoutGenerator:
         Args:
             business_object: BusinessObject instance
             layout_type: Type of layout ('list', 'form', 'detail')
+            view_mode: Optional view mode filter ('Detail', 'Compact').
+                       When specified, only layouts matching this view_mode are returned.
 
         Returns:
             Layout configuration dictionary
         """
         # Try to get existing layout from database
         try:
+            filters = {
+                'business_object': business_object,
+                'layout_type': layout_type,
+                'is_active': True,
+            }
+            if view_mode:
+                filters['view_mode'] = view_mode
+
             existing_layout = PageLayout.objects.filter(
-                business_object=business_object,
-                layout_type=layout_type,
-                is_active=True
-            ).order_by('-is_default', '-created_at').first()
+                **filters
+            ).order_by('-is_default', '-updated_at', '-created_at').first()
 
             if existing_layout and existing_layout.layout_config:
                 return existing_layout.layout_config

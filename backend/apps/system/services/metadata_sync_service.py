@@ -20,6 +20,7 @@ from apps.system.models import (
     FieldDefinition,
     PageLayout,
 )
+from apps.system.menu_config import sync_business_object_menu_configs
 from apps.system.services.business_object_service import (
     CORE_HARDcoded_MODELS,
     HARDCODED_OBJECT_NAMES,
@@ -135,12 +136,21 @@ class MetadataSyncService:
             )
         }
 
-        # Process each model field
+        canonical_fields = []
         for field in model_class._meta.get_fields():
-            # Skip auto-generated relations and many-to-many fields
-            if field.auto_created or field.many_to_many:
-                if not field.concrete:
-                    continue
+            is_reverse_relation = bool(field.auto_created and getattr(field, 'one_to_many', False))
+            if is_reverse_relation:
+                continue
+            if field.auto_created and not getattr(field, 'concrete', False):
+                continue
+            if getattr(field, 'many_to_many', False):
+                continue
+            if field.is_relation and not getattr(field, 'many_to_one', False) and not getattr(field, 'one_to_one', False):
+                continue
+            canonical_fields.append(field)
+
+        # Process each model field
+        for index, field in enumerate(canonical_fields, start=1):
 
             field_name = field.name
             field_type = self._get_field_type(field)
@@ -173,6 +183,8 @@ class MetadataSyncService:
                 fd.decimal_places = decimal_places or fd.decimal_places
                 fd.display_name = verbose_name or fd.display_name
                 fd.reference_model_path = ref_model_path or fd.reference_model_path
+                fd.sort_order = index
+                fd.is_deleted = False
                 fd.save()
                 synced_count += 1
             else:
@@ -187,7 +199,7 @@ class MetadataSyncService:
                     'show_in_list': self._should_show_in_list(field_name),
                     'show_in_detail': True,
                     'show_in_form': True,
-                    'sort_order': synced_count + 1,
+                    'sort_order': index,
                     'reference_model_path': ref_model_path or '',
                     'reference_display_field': 'name' if ref_model_path else '',
                 }
@@ -200,6 +212,12 @@ class MetadataSyncService:
 
                 ModelFieldDefinition.objects.create(**create_kwargs)
                 synced_count += 1
+
+        canonical_field_names = {field.name for field in canonical_fields}
+        ModelFieldDefinition.objects.filter(
+            business_object=business_obj,
+            is_deleted=False,
+        ).exclude(field_name__in=canonical_field_names).update(is_deleted=True)
 
         return synced_count
 
@@ -293,61 +311,14 @@ class MetadataSyncService:
         business_obj.save()
 
     def _update_form_layout(self, layout: PageLayout, object_code: str):
-        """Update existing form layout with synced fields (append missing only)."""
+        """Regenerate the default form layout from the current field metadata."""
         try:
-            fields = ModelFieldDefinition.objects.filter(
-                business_object=layout.business_object,
-                is_deleted=False,
-                show_in_form=True
-            ).order_by('sort_order')
-
-            if not fields.exists():
-                return
-
-            layout_config = layout.layout_config or {}
-            sections = layout_config.get('sections') or []
-
-            # Normalize existing sections and collect existing field codes
-            existing_field_codes = set()
-            for section in sections:
-                section.setdefault('id', f"section-{uuid4().hex}")
-                section.setdefault('type', 'section')
-                for field in section.get('fields', []) or []:
-                    field_code = field.get('fieldCode') or field.get('field') or field.get('field_code') or field.get('code')
-                    if field_code:
-                        existing_field_codes.add(field_code)
-                    field.setdefault('id', f"field-{uuid4().hex}")
-
-            missing_fields = []
-            for field_def in fields:
-                if field_def.field_name in existing_field_codes:
-                    continue
-                missing_fields.append({
-                    'id': f"field-{uuid4().hex}",
-                    'fieldCode': field_def.field_name,
-                    'label': field_def.display_name or field_def.field_name,
-                    'span': self._get_field_span(field_def.field_name),
-                    'required': field_def.is_required,
-                    'readonly': field_def.is_readonly,
-                    'visible': True
-                })
-
-            if missing_fields:
-                sections.append({
-                    'id': f"section-{uuid4().hex}",
-                    'type': 'section',
-                    'title': 'Auto Added',
-                    'collapsed': True,
-                    'fields': missing_fields
-                })
-
-            layout.layout_config = {
-                **layout_config,
-                'sections': sections,
-                'columns': layout_config.get('columns', 2)
-            }
+            layout.layout_config = self._merge_generated_form_layout_config(
+                layout.layout_config or {},
+                LayoutGenerator.generate_form_layout(layout.business_object)
+            )
             layout.save(update_fields=['layout_config'])
-            logger.info(f"Updated form layout for {object_code} (missing fields appended)")
+            logger.info(f"Regenerated form layout for {object_code}")
 
         except Exception as e:
             logger.error(f"Failed to update form layout for {object_code}: {e}")
@@ -420,59 +391,31 @@ class MetadataSyncService:
         return config
 
     def _update_form_layout_dynamic(self, layout: PageLayout, object_code: str):
-        """Update existing form layout for dynamic objects (append missing only)."""
+        """Regenerate the default form layout for dynamic objects."""
         try:
-            fields = FieldDefinition.objects.filter(
-                business_object=layout.business_object,
-                is_deleted=False,
-                show_in_form=True
-            ).order_by('sort_order')
-
-            if not fields.exists():
-                return
-
-            layout_config = self._normalize_form_layout_config(layout.layout_config or {})
-            sections = layout_config.get('sections') or []
-
-            existing_field_codes = set()
-            for section in sections:
-                for field in section.get('fields', []) or []:
-                    field_code = field.get('fieldCode') or field.get('field') or field.get('field_code') or field.get('code')
-                    if field_code:
-                        existing_field_codes.add(field_code)
-
-            missing_fields = []
-            for field_def in fields:
-                if field_def.code in existing_field_codes:
-                    continue
-                missing_fields.append({
-                    'id': f"field-{uuid4().hex}",
-                    'fieldCode': field_def.code,
-                    'label': field_def.name,
-                    'span': field_def.span if hasattr(field_def, 'span') else 12,
-                    'required': field_def.is_required,
-                    'readonly': field_def.is_readonly,
-                    'visible': True
-                })
-
-            if missing_fields:
-                sections.append({
-                    'id': f"section-{uuid4().hex}",
-                    'type': 'section',
-                    'title': 'Auto Added',
-                    'collapsed': True,
-                    'fields': missing_fields
-                })
-
-            layout.layout_config = {
-                **layout_config,
-                'sections': sections
-            }
+            layout.layout_config = self._merge_generated_form_layout_config(
+                layout.layout_config or {},
+                LayoutGenerator.generate_form_layout(layout.business_object)
+            )
             layout.save(update_fields=['layout_config'])
-            logger.info(f"Updated dynamic form layout for {object_code} (missing fields appended)")
+            logger.info(f"Regenerated dynamic form layout for {object_code}")
 
         except Exception as e:
             logger.error(f"Failed to update dynamic form layout for {object_code}: {e}")
+
+    def _merge_generated_form_layout_config(
+        self,
+        current_layout_config: Dict[str, Any],
+        generated_layout_config: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        merged = self._normalize_form_layout_config(generated_layout_config or {})
+        current = current_layout_config or {}
+
+        for key in ('layoutType', 'layout_type', 'modeOverrides', 'mode_overrides', 'actions'):
+            if key in current:
+                merged[key] = current[key]
+
+        return merged
 
     def _update_list_layout_dynamic(self, layout: PageLayout, object_code: str):
         """Update existing list layout for dynamic objects (append missing only)."""
@@ -530,7 +473,7 @@ class MetadataSyncService:
             layout = PageLayout.objects.create(
                 business_object=business_obj,
                 layout_code=f'{object_code.lower()}_default_form',
-                layout_name=f'{business_obj.name} Default Form',
+                layout_name=f'{business_obj.name} [form]',
                 layout_type='form',
                 layout_config=layout_config,
                 is_default=True,
@@ -553,7 +496,7 @@ class MetadataSyncService:
             layout = PageLayout.objects.create(
                 business_object=business_obj,
                 layout_code=f'{object_code.lower()}_default_list',
-                layout_name=f'{business_obj.name} Default List',
+                layout_name=f'{business_obj.name} [list]',
                 layout_type='list',
                 layout_config=layout_config,
                 is_default=True,
@@ -572,24 +515,12 @@ class MetadataSyncService:
     def _create_default_form_layout(self, business_obj: BusinessObject, object_code: str) -> Optional[PageLayout]:
         """Create default form layout for an object."""
         try:
-            # Get all field definitions
-            fields = ModelFieldDefinition.objects.filter(
-                business_object=business_obj,
-                is_deleted=False
-            ).order_by('sort_order')
-
-            # Build layout config with sections
-            sections = self._build_form_sections(object_code, fields)
-
-            layout_config = {
-                'sections': sections,
-                'columns': 2
-            }
+            layout_config = LayoutGenerator.generate_form_layout(business_obj)
 
             layout = PageLayout.objects.create(
                 business_object=business_obj,
                 layout_code=f'{object_code.lower()}_default_form',
-                layout_name=f'{business_obj.name} Default Form',
+                layout_name=f'{business_obj.name} [form]',
                 layout_type='form',
                 layout_config=layout_config,
                 is_default=True,
@@ -638,7 +569,7 @@ class MetadataSyncService:
             layout = PageLayout.objects.create(
                 business_object=business_obj,
                 layout_code=f'{object_code.lower()}_default_list',
-                layout_name=f'{business_obj.name} Default List',
+                layout_name=f'{business_obj.name} [list]',
                 layout_type='list',
                 layout_config=layout_config,
                 is_default=True,
@@ -653,103 +584,6 @@ class MetadataSyncService:
         except Exception as e:
             logger.error(f"Failed to create list layout for {object_code}: {e}")
             return None
-
-    def _build_form_sections(self, object_code: str, fields) -> List[Dict]:
-        """Build form sections based on object type and field names."""
-        # Group fields by section
-        sections_map = self._get_section_mapping(object_code)
-
-        sections = []
-        for section_title, field_patterns in sections_map:
-            section_fields = []
-            for field in fields:
-                if any(fp in field.field_name for fp in field_patterns):
-                    section_fields.append({
-                        'id': f"field-{uuid4().hex}",
-                        'fieldCode': field.field_name,
-                        'label': field.display_name or field.field_name,
-                        'span': self._get_field_span(field.field_name),
-                        'required': field.is_required,
-                        'readonly': field.is_readonly,
-                        'visible': True
-                    })
-
-            if section_fields:
-                sections.append({
-                    'id': f"section-{uuid4().hex}",
-                    'type': 'section',
-                    'title': section_title,
-                    'collapsed': False,
-                    'fields': section_fields
-                })
-
-        # Add any remaining fields to "Other" section
-        assigned_fields = set()
-        for section in sections:
-            for f in section['fields']:
-                field_code = f.get('fieldCode') or f.get('field')
-                if field_code:
-                    assigned_fields.add(field_code)
-
-        other_fields = []
-        for field in fields:
-            if field.field_name not in assigned_fields and field.field_name not in ['id', 'created_at', 'updated_at', 'created_by', 'organization']:
-                other_fields.append({
-                    'id': f"field-{uuid4().hex}",
-                    'fieldCode': field.field_name,
-                    'label': field.display_name or field.field_name,
-                    'span': 1,
-                    'required': field.is_required,
-                    'readonly': field.is_readonly,
-                    'visible': True
-                })
-
-        if other_fields:
-            sections.append({
-                'id': f"section-{uuid4().hex}",
-                'type': 'section',
-                'title': 'Other',
-                'collapsed': True,
-                'fields': other_fields
-            })
-
-        return sections or [{
-            'id': f"section-{uuid4().hex}",
-            'type': 'section',
-            'title': 'Basic',
-            'collapsed': False,
-            'fields': []
-        }]
-
-    def _get_section_mapping(self, object_code: str) -> List[tuple]:
-        """Get section mapping for specific object types."""
-        if object_code == 'Asset':
-            return [
-                ('Basic Information', ['asset_code', 'asset_name', 'specification', 'brand', 'model', 'serial_number']),
-                ('Category', ['asset_category', 'unit']),
-                ('Financial', ['purchase_price', 'current_value', 'accumulated_depreciation', 'purchase_date', 'depreciation_start_date', 'useful_life', 'residual_rate']),
-                ('Supplier', ['supplier', 'supplier_order_no', 'invoice_no']),
-                ('Usage', ['department', 'location', 'custodian', 'user']),
-                ('Status', ['asset_status', 'qr_code', 'rfid_code']),
-            ]
-        elif object_code == 'AssetCategory':
-            return [
-                ('Basic', ['code', 'name', 'parent']),
-                ('Depreciation', ['depreciation_method', 'default_useful_life', 'residual_rate']),
-            ]
-        else:
-            # Generic mapping
-            return [
-                ('Basic', ['code', 'name', 'description']),
-                ('Details', []),
-            ]
-
-    def _get_field_span(self, field_name: str) -> int:
-        """Determine field span (1 or 2 columns)."""
-        # Fields that take full width
-        full_width_fields = ['remarks', 'description', 'attachments']
-        return 2 if field_name in full_width_fields else 1
-
 
 # Singleton instance
 _metadata_sync_service = None
@@ -786,5 +620,15 @@ def sync_metadata_on_startup(force: bool = False) -> Dict[str, Any]:
         logger.info(f"Ensured default layouts for {dynamic_objects.count()} dynamic objects")
     except Exception as e:
         logger.warning(f"Failed to ensure default layouts for dynamic objects: {e}")
+
+    try:
+        menu_results = sync_business_object_menu_configs()
+        results["menu_config"] = menu_results
+        logger.info(
+            "Synchronized menu config during metadata startup sync: "
+            f"updated={len(menu_results['updated'])}, unchanged={len(menu_results['unchanged'])}"
+        )
+    except Exception as e:
+        logger.warning(f"Failed to sync menu config on startup: {e}")
 
     return results

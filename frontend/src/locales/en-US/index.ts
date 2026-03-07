@@ -18,14 +18,54 @@ import sso from './sso.json'
 import org from './org.json'
 import consumables from './consumables.json'
 
+const menuCategories = {
+    asset_master: 'Asset Master',
+    asset_operation: 'Asset Operations',
+    lifecycle: 'Lifecycle',
+    consumable: 'Consumables',
+    inventory: 'Inventory',
+    finance: 'Finance',
+    organization: 'Organization',
+    workflow: 'Workflow',
+    system: 'System',
+    reports: 'Reports',
+    other: 'Other'
+}
+
+const pageLayoutSections = {
+    basic: 'Basic Information',
+    financial: 'Financial Information',
+    depreciation: 'Depreciation Information',
+    supplier: 'Supplier Information',
+    usage: 'Usage Information',
+    status: 'Status Information',
+    details: 'Detailed Information',
+    system: 'System Information'
+}
+
 export default {
     common,
     login,
     dashboard,
     assets,
     workflow,
-    system,
-    menu,
+    system: {
+        ...system,
+        pageLayout: {
+            ...(system.pageLayout || {}),
+            sections: {
+                ...((system.pageLayout || {}).sections || {}),
+                ...pageLayoutSections
+            }
+        }
+    },
+    menu: {
+        ...menu,
+        categories: {
+            ...(menu.categories || {}),
+            ...menuCategories
+        }
+    },
     inventory,
     finance,
     itAssets,

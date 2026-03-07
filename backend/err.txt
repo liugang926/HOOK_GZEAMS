@@ -1,0 +1,388 @@
+﻿venv\Scripts\python : I
+NFO 2026-03-07 08:55:43
+,675 apps 49112 32384 S
+kipping metadata sync o
+n management command st
+artup: migrate
+所在位置 行:1 字符: 1
++ venv\Scripts\python m
+anage.py migrate system
+ > migration_error.log 
+2> ...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (INFO 2026-03-   
+ 07...tartup: migra    
+te:String) [], Rem    o
+teException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+System check identified
+ some issues:
+
+WARNINGS:
+system.Comment.attachme
+nts: (fields.W346) db_c
+omment has no effect on
+ ManyToManyField.
+system.Comment.mentione
+d_users: (fields.W346) 
+db_comment has no effec
+t on ManyToManyField.
+Traceback (most recent 
+call last):
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\backends\base\base.py
+", line 279, in ensure_
+connection
+    self.connect()
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\u
+tils\asyncio.py", line 
+26, in inner
+    return func(*args, 
+**kwargs)
+           ^^^^^^^^^^^^
+^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\backends\base\base.py
+", line 256, in connect
+    self.connection = s
+elf.get_new_connection(
+conn_params)
+                      ^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\u
+tils\asyncio.py", line 
+26, in inner
+    return func(*args, 
+**kwargs)
+           ^^^^^^^^^^^^
+^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\backends\postgresql\b
+ase.py", line 332, in g
+et_new_connection
+    connection = self.D
+atabase.connect(**conn_
+params)
+                 ^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\psycopg2
+\__init__.py", line 135
+, in connect
+    conn = _connect(dsn
+, connection_factory=co
+nnection_factory, **kwa
+sync)
+           ^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^
+psycopg2.OperationalErr
+or: connection to serve
+r at "localhost" (::1),
+ port 5432 failed: serv
+er closed the connectio
+n unexpectedly
+	This probably means th
+e server terminated abn
+ormally
+	before or while proces
+sing the request.
+
+
+The above exception was
+ the direct cause of th
+e following exception:
+
+Traceback (most recent 
+call last):
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\manage.p
+y", line 20, in <module
+>
+    main()
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\manage.p
+y", line 16, in main
+    execute_from_comman
+d_line(sys.argv)
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\c
+ore\management\__init__
+.py", line 442, in exec
+ute_from_command_line
+    utility.execute()
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\c
+ore\management\__init__
+.py", line 436, in exec
+ute
+    self.fetch_command(
+subcommand).run_from_ar
+gv(self.argv)
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\c
+ore\management\base.py"
+, line 420, in run_from
+_argv
+    self.execute(*args,
+ **cmd_options)
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\c
+ore\management\base.py"
+, line 464, in execute
+    output = self.handl
+e(*args, **options)
+             ^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\c
+ore\management\base.py"
+, line 111, in wrapper
+    res = handle_func(*
+args, **kwargs)
+          ^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\c
+ore\management\commands
+\migrate.py", line 114,
+ in handle
+    executor = Migratio
+nExecutor(connection, s
+elf.migration_progress_
+callback)
+               ^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\migrations\executor.p
+y", line 18, in __init_
+_
+    self.loader = Migra
+tionLoader(self.connect
+ion)
+                  ^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\migrations\loader.py"
+, line 58, in __init__
+    self.build_graph()
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\migrations\loader.py"
+, line 235, in build_gr
+aph
+    self.applied_migrat
+ions = recorder.applied
+_migrations()
+                       
+       ^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\migrations\recorder.p
+y", line 89, in applied
+_migrations
+    if self.has_table()
+:
+       ^^^^^^^^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\migrations\recorder.p
+y", line 63, in has_tab
+le
+    with self.connectio
+n.cursor() as cursor:
+         ^^^^^^^^^^^^^^
+^^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\u
+tils\asyncio.py", line 
+26, in inner
+    return func(*args, 
+**kwargs)
+           ^^^^^^^^^^^^
+^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\backends\base\base.py
+", line 320, in cursor
+    return self._cursor
+()
+           ^^^^^^^^^^^^
+^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\backends\base\base.py
+", line 296, in _cursor
+    self.ensure_connect
+ion()
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\u
+tils\asyncio.py", line 
+26, in inner
+    return func(*args, 
+**kwargs)
+           ^^^^^^^^^^^^
+^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\backends\base\base.py
+", line 278, in ensure_
+connection
+    with self.wrap_data
+base_errors:
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\utils.py", line 91, i
+n __exit__
+    raise dj_exc_value.
+with_traceback(tracebac
+k) from exc_value
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\backends\base\base.py
+", line 279, in ensure_
+connection
+    self.connect()
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\u
+tils\asyncio.py", line 
+26, in inner
+    return func(*args, 
+**kwargs)
+           ^^^^^^^^^^^^
+^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\backends\base\base.py
+", line 256, in connect
+    self.connection = s
+elf.get_new_connection(
+conn_params)
+                      ^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\u
+tils\asyncio.py", line 
+26, in inner
+    return func(*args, 
+**kwargs)
+           ^^^^^^^^^^^^
+^^^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\django\d
+b\backends\postgresql\b
+ase.py", line 332, in g
+et_new_connection
+    connection = self.D
+atabase.connect(**conn_
+params)
+                 ^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^
+  File "C:\Users\ND\Des
+ktop\Notting_Project\NE
+WSEAMS\backend\venv\Lib
+\site-packages\psycopg2
+\__init__.py", line 135
+, in connect
+    conn = _connect(dsn
+, connection_factory=co
+nnection_factory, **kwa
+sync)
+           ^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^
+django.db.utils.Operati
+onalError: connection t
+o server at "localhost"
+ (::1), port 5432 faile
+d: server closed the co
+nnection unexpectedly
+	This probably means th
+e server terminated abn
+ormally
+	before or while proces
+sing the request.
+

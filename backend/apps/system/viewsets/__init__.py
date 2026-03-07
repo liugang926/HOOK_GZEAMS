@@ -267,10 +267,16 @@ class BusinessObjectViewSet(BaseModelViewSetWithBatch):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         service = BusinessObjectService()
+        request_locale = (
+            getattr(request, 'LANGUAGE_CODE', None)
+            or request.headers.get('Accept-Language')
+            or 'zh-CN'
+        )
         data = service.get_object_fields(
             object_code,
             context=context,
             include_relations=include_relations,
+            locale=request_locale,
         )
 
         if 'error' in data:

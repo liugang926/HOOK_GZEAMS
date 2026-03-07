@@ -9,13 +9,17 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 import inspect
 import re
 import logging
-from django.db.models import Q
+from types import SimpleNamespace
+from django.db.models import Q, CharField
+from django.db.models.functions import Cast
 from django.core.exceptions import ValidationError as DjangoValidationError
 
+from apps.system.models import BusinessObject
+from apps.system.layout_sections import get_field_section_metadata
 from apps.system.services.object_registry import ObjectRegistry
 from apps.system.services.layout_runtime_normalizer import normalize_layout_config_for_runtime
 from apps.system.services.relation_query_service import RelationQueryService
@@ -228,13 +232,132 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
     # Delegate all standard CRUD methods to the delegate ViewSet
 
+    def _get_lookup_search_params(self, request) -> Optional[dict]:
+        """
+        Parse lookup-scoped search parameters from query string.
+
+        Query params:
+        - search: keyword
+        - lookup_search_scope: all|primary|secondary|id
+        - lookup_display_field: field code for primary label
+        - lookup_secondary_field: field code for secondary label
+        """
+        search = str(request.query_params.get('search') or '').strip()
+        scope = str(request.query_params.get('lookup_search_scope') or '').strip().lower()
+        if not search or scope not in {'all', 'primary', 'secondary', 'id'}:
+            return None
+
+        return {
+            'search': search,
+            'scope': scope,
+            'display_field': str(request.query_params.get('lookup_display_field') or '').strip(),
+            'secondary_field': str(request.query_params.get('lookup_secondary_field') or '').strip(),
+        }
+
+    def _filter_queryset_without_search_param(self, request, filter_callable, queryset):
+        """
+        Execute delegated filter_queryset with `search` removed from query params.
+
+        This keeps normal filter/order/pagination behavior while preventing global
+        SearchFilter from overriding lookup-scoped semantics.
+        """
+        raw_request = getattr(request, '_request', None)
+        original_get = getattr(raw_request, 'GET', None)
+        if raw_request is None or original_get is None:
+            return filter_callable(queryset)
+
+        stripped = original_get.copy()
+        stripped.pop('search', None)
+        raw_request.GET = stripped
+        try:
+            return filter_callable(queryset)
+        finally:
+            raw_request.GET = original_get
+
+    def _apply_lookup_scoped_search(self, queryset, params: dict):
+        """
+        Apply lookup-scoped search across model fields and/or dynamic JSON fields.
+        """
+        search = str(params.get('search') or '').strip()
+        if not search:
+            return queryset
+
+        scope = str(params.get('scope') or '').strip().lower()
+        display_field = str(params.get('display_field') or '').strip()
+        secondary_field = str(params.get('secondary_field') or '').strip()
+
+        target_fields: List[str] = []
+        if scope in {'all', 'primary'} and display_field:
+            target_fields.append(display_field)
+        if scope in {'all', 'secondary'} and secondary_field and secondary_field != display_field:
+            target_fields.append(secondary_field)
+        if scope in {'all', 'id'}:
+            target_fields.append('id')
+
+        if not target_fields:
+            return queryset
+
+        model_field_map = {field.name: field for field in queryset.model._meta.fields}
+        has_dynamic_fields = 'dynamic_fields' in model_field_map
+        has_custom_fields = 'custom_fields' in model_field_map
+        text_like_field_types = {'CharField', 'TextField', 'EmailField', 'URLField', 'SlugField'}
+
+        annotations: Dict[str, Any] = {}
+        search_q = Q()
+
+        for field_name in target_fields:
+            model_field = model_field_map.get(field_name)
+            if model_field is not None:
+                field_type = model_field.get_internal_type()
+                if field_type in text_like_field_types:
+                    search_q |= Q(**{f'{field_name}__icontains': search})
+                    continue
+                if field_type == 'UUIDField':
+                    cast_alias = f'__lookup_{field_name}_text'
+                    annotations[cast_alias] = Cast(field_name, output_field=CharField())
+                    search_q |= Q(**{f'{cast_alias}__icontains': search})
+                    continue
+                # Unsupported non-text field type for lookup scoped search.
+                continue
+
+            if has_dynamic_fields:
+                search_q |= Q(**{f'dynamic_fields__{field_name}__icontains': search})
+            if has_custom_fields:
+                search_q |= Q(**{f'custom_fields__{field_name}__icontains': search})
+
+        if not search_q.children:
+            return queryset.none()
+
+        if annotations:
+            queryset = queryset.annotate(**annotations)
+        return queryset.filter(search_q)
+
     def list(self, request, *args, **kwargs):
         """
         List objects with pagination, filtering, and search.
 
         GET /api/objects/{code}/
         """
-        resp = self._delegate_viewset.list(request, *args, **kwargs)
+        lookup_search_params = self._get_lookup_search_params(request)
+        original_filter_queryset = None
+        if lookup_search_params and hasattr(self._delegate_viewset, 'filter_queryset'):
+            original_filter_queryset = self._delegate_viewset.filter_queryset
+
+            def _lookup_filter_wrapper(queryset):
+                filtered = self._filter_queryset_without_search_param(
+                    request=request,
+                    filter_callable=original_filter_queryset,
+                    queryset=queryset
+                )
+                return self._apply_lookup_scoped_search(filtered, lookup_search_params)
+
+            self._delegate_viewset.filter_queryset = _lookup_filter_wrapper
+
+        try:
+            resp = self._delegate_viewset.list(request, *args, **kwargs)
+        finally:
+            if original_filter_queryset is not None:
+                self._delegate_viewset.filter_queryset = original_filter_queryset
 
         # Normalize list response shapes:
         # - The low-code frontend expects the standard paginated DTO (wrapped by BaseResponse):
@@ -646,7 +769,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             if not self._object_meta:
                 return BaseResponse.not_found(f"Business object '{object_code}' not found")
 
-        from apps.system.models import FieldDefinition, ModelFieldDefinition, PageLayout
+        from apps.system.models import FieldDefinition, PageLayout
 
         # Get field definitions from both sources:
         # 1. FieldDefinition for low-code custom fields
@@ -661,9 +784,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         # For hardcoded objects, get fields from ModelFieldDefinition
         if self._object_meta.is_hardcoded:
-            model_fields = ModelFieldDefinition.objects.filter(
-                business_object__code=self._object_meta.code
-            ).order_by('sort_order')
+            model_fields = self._get_hardcoded_model_fields()
 
             for fd in model_fields:
                 fields.append(
@@ -700,13 +821,18 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         # Get BusinessObject for layout generation
         bo = BusinessObject.objects.filter(code=self._object_meta.code).first()
 
+        # Parse optional view_mode query parameter ('Detail' or 'Compact')
+        requested_view_mode = (request.query_params.get('view_mode') or '').strip()
+
         if bo:
             # Auto-generate layouts using LayoutGenerator
             # This will return existing PageLayout configs or generate defaults
             layout_types = ['list', 'form', 'detail']
             for layout_type in layout_types:
                 try:
-                    layouts[layout_type] = LayoutGenerator.get_or_generate_layout(bo, layout_type)
+                    layouts[layout_type] = LayoutGenerator.get_or_generate_layout(
+                        bo, layout_type, view_mode=requested_view_mode
+                    )
                 except Exception as layout_err:
                     logger.warning(
                         "metadata layout generation failed. code=%s layout_type=%s error=%s",
@@ -715,6 +841,17 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                         layout_err,
                     )
                     layouts[layout_type] = get_default_layout_config(layout_type)
+
+            # When Compact is specifically requested, also try to fetch a dedicated Compact layout
+            if requested_view_mode.lower() == 'compact':
+                try:
+                    compact_layout = LayoutGenerator.get_or_generate_layout(
+                        bo, 'form', view_mode='Compact'
+                    )
+                    if compact_layout:
+                        layouts['compact'] = compact_layout
+                except Exception:
+                    pass
         else:
             # Fallback to PageLayout query for backward compatibility
             try:
@@ -1118,16 +1255,22 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 http_status=status.HTTP_400_BAD_REQUEST
             )
 
-        from apps.system.models import FieldDefinition, ModelFieldDefinition
+        from apps.system.models import FieldDefinition
 
         editable_fields = []
         reverse_relations = []
+        runtime_relations = (
+            self._build_relation_runtime_fields(
+                locale=request_locale,
+                strict_identifier=False,
+            )
+            if self._object_meta.is_hardcoded and include_relations
+            else []
+        )
 
         if self._object_meta.is_hardcoded:
             # For hardcoded objects, get fields from ModelFieldDefinition
-            model_fields = ModelFieldDefinition.objects.filter(
-                business_object__code=self._object_meta.code
-            ).order_by('sort_order')
+            model_fields = self._get_hardcoded_model_fields()
 
             for fd in model_fields:
                 field_data = self._format_model_field(
@@ -1138,7 +1281,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 )
                 # Check if this is a reverse relation (sub_table type)
                 if fd.field_type == 'sub_table':
-                    if include_relations:
+                    if include_relations and not runtime_relations:
                         reverse_relations.append(field_data)
                 else:
                     # Apply context filtering
@@ -1194,6 +1337,9 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                             localize=runtime_i18n_enabled,
                         )
                     )
+
+        if runtime_relations:
+            reverse_relations = runtime_relations
 
         return BaseResponse.success({
             'editable_fields': editable_fields,
@@ -1401,16 +1547,22 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         # Build fields payload (same logic as `fields()`).
         # Duplicated here to keep `runtime` independent from action dispatch plumbing.
-        from apps.system.models import FieldDefinition, ModelFieldDefinition, BusinessObject, PageLayout
+        from apps.system.models import FieldDefinition, BusinessObject, PageLayout
         from apps.system.serializers import PageLayoutSerializer
 
         editable_fields = []
         reverse_relations = []
+        runtime_relations = (
+            self._build_relation_runtime_fields(
+                locale=request_locale,
+                strict_identifier=True,
+            )
+            if self._object_meta.is_hardcoded and include_relations
+            else []
+        )
 
         if self._object_meta.is_hardcoded:
-            model_fields = ModelFieldDefinition.objects.filter(
-                business_object__code=self._object_meta.code
-            ).order_by('sort_order')
+            model_fields = self._get_hardcoded_model_fields()
 
             for fd in model_fields:
                 field_data = self._format_model_field(
@@ -1421,7 +1573,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                     strict_identifier=True,
                 )
                 if fd.field_type == 'sub_table':
-                    if include_relations:
+                    if include_relations and not runtime_relations:
                         reverse_relations.append(field_data)
                 else:
                     if self._should_show_field(fd, context, is_model_field=True):
@@ -1475,6 +1627,9 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                             strict_identifier=True,
                         )
                     )
+
+        if runtime_relations:
+            reverse_relations = runtime_relations
 
         # Resolve active layout (custom > default > generated config).
         # Single-layout model: readonly/detail/search reuses shared form layout.
@@ -1757,6 +1912,289 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         return True
 
+    def _get_hardcoded_model_fields(self) -> List[Any]:
+        """
+        Resolve hardcoded object fields by merging live Django model fields with
+        stored ModelFieldDefinition rows.
+
+        Stored metadata remains the source of truth for display flags/order when
+        present, while live model inspection guarantees missing/stale fields do
+        not disappear from runtime pages.
+        """
+        if not self._object_meta or not self._object_meta.is_hardcoded:
+            return []
+
+        from apps.system.models import BusinessObject, ModelFieldDefinition
+
+        business_object = BusinessObject.objects.filter(
+            code=self._object_meta.code,
+            is_deleted=False,
+        ).first()
+        if not business_object:
+            return []
+
+        stored_fields = list(
+            ModelFieldDefinition.objects.filter(
+                business_object=business_object,
+                is_deleted=False,
+            ).order_by('sort_order', 'field_name')
+        )
+        stored_by_name = {
+            str(field.field_name or '').strip(): field
+            for field in stored_fields
+            if getattr(field, 'field_name', None)
+        }
+
+        model_class = (
+            business_object.get_django_model()
+            or (self._object_meta.get_django_model() if hasattr(self._object_meta, 'get_django_model') else None)
+        )
+        if not model_class:
+            return stored_fields
+
+        merged_fields: List[Any] = []
+        seen_field_names = set()
+        next_index = 0
+
+        for field in model_class._meta.get_fields():
+            field_name = str(getattr(field, 'name', '') or '').strip()
+            if not field_name or field_name.startswith('_'):
+                continue
+
+            is_reverse_relation = bool(field.auto_created and getattr(field, 'one_to_many', False))
+            if field.auto_created and not is_reverse_relation:
+                continue
+
+            if is_reverse_relation:
+                relation_name = (
+                    str(getattr(field, 'get_accessor_name', lambda: field_name)() or '').strip()
+                    or field_name
+                )
+                existing = stored_by_name.get(relation_name)
+                merged_fields.append(
+                    self._build_runtime_reverse_relation_field(
+                        business_object,
+                        field,
+                        relation_name,
+                        existing,
+                        next_index,
+                    )
+                )
+                seen_field_names.add(relation_name)
+                next_index += 1
+                continue
+
+            if field.is_relation and not field.many_to_one and not field.one_to_one:
+                continue
+
+            generated = ModelFieldDefinition.from_django_field(business_object, field)
+            existing = stored_by_name.get(field_name)
+            merged_fields.append(
+                self._merge_runtime_model_field(generated, existing, next_index)
+            )
+            seen_field_names.add(field_name)
+            next_index += 1
+
+        for existing in stored_fields:
+            field_name = str(getattr(existing, 'field_name', '') or '').strip()
+            if not field_name or field_name in seen_field_names:
+                continue
+            setattr(existing, '__runtime_sort_index', next_index)
+            merged_fields.append(existing)
+            next_index += 1
+
+        return sorted(
+            merged_fields,
+            key=lambda field: (
+                getattr(field, 'sort_order', 0) if getattr(field, 'sort_order', None) is not None else 0,
+                getattr(field, '__runtime_sort_index', 0),
+                str(getattr(field, 'field_name', '') or ''),
+            )
+        )
+
+    def _merge_runtime_model_field(self, generated, existing=None, runtime_index: int = 0):
+        """
+        Overlay persisted display configuration onto a live-generated field.
+
+        Live generation fixes missing fields and stale type mappings such as
+        JSON-backed `images`/`attachments`, while stored rows preserve user
+        configuration like sort order and visibility toggles.
+        """
+        generated.show_in_list = getattr(existing, 'show_in_list', getattr(generated, 'show_in_list', True))
+        generated.show_in_detail = getattr(existing, 'show_in_detail', getattr(generated, 'show_in_detail', True))
+        generated.show_in_form = getattr(existing, 'show_in_form', getattr(generated, 'show_in_form', True))
+        generated.sort_order = getattr(existing, 'sort_order', None)
+        if generated.sort_order is None:
+            generated.sort_order = runtime_index
+
+        generated.display_name = (
+            getattr(existing, 'display_name', None)
+            or getattr(generated, 'display_name', None)
+            or getattr(generated, 'field_name', '')
+        )
+        generated.display_name_en = (
+            getattr(existing, 'display_name_en', None)
+            or getattr(generated, 'display_name_en', '')
+            or ''
+        )
+        setattr(generated, '__runtime_sort_index', runtime_index)
+        return generated
+
+    def _build_runtime_reverse_relation_field(
+        self,
+        business_object,
+        field,
+        relation_name: str,
+        existing=None,
+        runtime_index: int = 0,
+    ):
+        """Build a synthetic sub-table field for one-to-many reverse relations."""
+        related_model = getattr(field, 'related_model', None)
+        related_model_path = self._get_model_path(related_model)
+        reverse_relation_field = str(getattr(getattr(field, 'field', None), 'name', '') or '')
+        runtime_field = SimpleNamespace(
+            business_object=business_object,
+            field_name=relation_name,
+            display_name=getattr(existing, 'display_name', None) or relation_name,
+            display_name_en=getattr(existing, 'display_name_en', None) or '',
+            field_type='sub_table',
+            django_field_type=field.__class__.__name__,
+            is_required=False,
+            is_readonly=True,
+            is_editable=False,
+            is_unique=False,
+            show_in_list=getattr(existing, 'show_in_list', False),
+            show_in_detail=getattr(existing, 'show_in_detail', True),
+            show_in_form=getattr(existing, 'show_in_form', False),
+            sort_order=getattr(existing, 'sort_order', runtime_index),
+            reference_model_path=related_model_path,
+            reference_display_field='',
+            decimal_places=None,
+            max_digits=None,
+            max_length=None,
+            is_reverse_relation=True,
+            reverse_relation_model=related_model_path,
+            reverse_relation_field=reverse_relation_field,
+            relation_display_mode='tab_readonly',
+            target_object_code=self._resolve_target_object_code(
+                explicit_code='',
+                model_path=related_model_path,
+                model_class=related_model,
+            ),
+            target_fk_field=reverse_relation_field,
+        )
+        setattr(runtime_field, '__runtime_sort_index', runtime_index)
+        return runtime_field
+
+    def _build_relation_runtime_fields(
+        self,
+        *,
+        locale: Optional[str],
+        strict_identifier: bool,
+    ) -> List[dict]:
+        if not self._object_meta:
+            return []
+
+        request_locale = locale or TranslationService.DEFAULT_LANGUAGE
+        service = RelationQueryService()
+        relations = service.list_relations(self._object_meta.code, locale=request_locale)
+        if not relations:
+            return []
+
+        target_codes = {
+            str(item.get('target_object_code') or '').strip()
+            for item in relations
+            if str(item.get('target_object_code') or '').strip()
+        }
+        target_path_map = {
+            bo.code: str(bo.django_model_path or '').strip()
+            for bo in BusinessObject.objects.filter(code__in=target_codes)
+        }
+
+        payload = []
+        for item in relations:
+            relation_code = str(item.get('relation_code') or '').strip()
+            if not relation_code:
+                continue
+
+            target_object_code = str(item.get('target_object_code') or '').strip()
+            target_meta = ObjectRegistry.get_or_create_from_db(target_object_code) if target_object_code else None
+            reverse_relation_model = (
+                str(getattr(target_meta, 'django_model_path', '') or '').strip()
+                or target_path_map.get(target_object_code, '')
+            )
+            relation_name = str(item.get('relation_name') or target_object_code or relation_code).strip()
+
+            payload.append({
+                **self._build_field_identifier_payload(relation_code, force_strict=strict_identifier),
+                'name': relation_name,
+                'label': relation_name,
+                'field_type': 'sub_table',
+                'is_required': False,
+                'is_readonly': True,
+                'is_system': True,
+                'is_searchable': False,
+                'sortable': False,
+                'show_in_filter': False,
+                'show_in_list': False,
+                'show_in_detail': True,
+                'show_in_form': False,
+                'sort_order': int(item.get('sort_order') or 0),
+                'column_width': None,
+                'min_column_width': None,
+                'fixed': False,
+                'options': None,
+                'placeholder': None,
+                'default_value': None,
+                'reference_object': target_object_code,
+                'is_reverse_relation': True,
+                'reverse_relation_model': reverse_relation_model,
+                'reverse_relation_field': str(item.get('target_fk_field') or '').strip(),
+                'relation_display_mode': str(item.get('display_mode') or 'tab_readonly'),
+                'locale': request_locale,
+                'target_object_code': target_object_code,
+                'target_fk_field': str(item.get('target_fk_field') or '').strip(),
+                'relation_kind': str(item.get('relation_kind') or '').strip(),
+                'relation_name': relation_name,
+                'relation_code': relation_code,
+                'group_key': str(item.get('group_key') or '').strip(),
+                'group_name': str(item.get('group_name') or '').strip(),
+                'group_order': int(item.get('group_order') or 0),
+                'default_expanded': bool(item.get('default_expanded')),
+            })
+
+        return payload
+
+    def _get_model_path(self, model_class) -> str:
+        if not model_class:
+            return ''
+        module_name = str(getattr(model_class, '__module__', '') or '').strip()
+        class_name = str(getattr(model_class, '__name__', '') or '').strip()
+        if not module_name or not class_name:
+            return ''
+        return f'{module_name}.{class_name}'
+
+    def _resolve_target_object_code(
+        self,
+        *,
+        explicit_code: str = '',
+        model_path: str = '',
+        model_class=None,
+    ) -> str:
+        normalized_code = str(explicit_code or '').strip()
+        if normalized_code:
+            return normalized_code
+
+        normalized_path = str(model_path or '').strip() or self._get_model_path(model_class)
+        if not normalized_path:
+            return ''
+
+        business_object = BusinessObject.objects.filter(django_model_path=normalized_path).first()
+        if business_object:
+            return str(business_object.code or '').strip()
+
+        return normalized_path.rsplit('.', 1)[-1]
+
     @classmethod
     def _is_builtin_system_field_code(cls, code: str) -> bool:
         normalized = str(code or '').strip().lower()
@@ -1788,6 +2226,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             localized_name = fd.name
             localized_placeholder = fd.placeholder
             localized_options = fd.options
+        section_meta = get_field_section_metadata(self._object_meta.code, fd.code, locale=resolved_locale)
 
         return {
             **self._build_field_identifier_payload(fd.code, force_strict=strict_identifier),
@@ -1816,6 +2255,15 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             'reverse_relation_model': getattr(fd, 'reverse_relation_model', ''),
             'reverse_relation_field': getattr(fd, 'reverse_relation_field', ''),
             'relation_display_mode': getattr(fd, 'relation_display_mode', 'tab_readonly'),
+            'target_object_code': self._resolve_target_object_code(
+                explicit_code=str(getattr(fd, 'reference_object', '') or ''),
+                model_path=str(getattr(fd, 'reverse_relation_model', '') or ''),
+            ),
+            'section_name': section_meta['section_name'],
+            'section_title': section_meta['section_title'],
+            'section_title_i18n': section_meta['section_title_i18n'],
+            'section_translation_key': section_meta['section_translation_key'],
+            'section_icon': section_meta['section_icon'],
             'locale': resolved_locale,
         }
 
@@ -1855,6 +2303,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             not getattr(fd, 'is_editable', True)
             or self._is_builtin_system_field_code(getattr(fd, 'field_name', ''))
         )
+        section_meta = get_field_section_metadata(self._object_meta.code, fd.field_name, locale=resolved_locale)
 
         return {
             **self._build_field_identifier_payload(fd.field_name, force_strict=strict_identifier),
@@ -1877,12 +2326,21 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             'options': options,  # Now includes choices from Django model
             'placeholder': None,
             'default_value': None,
-            'reference_object': fd.reference_model_path if fd.field_type == 'reference' else None,
+            'reference_object': fd.reference_model_path if fd.field_type == 'reference' else getattr(fd, 'target_object_code', None),
+            'section_name': section_meta['section_name'],
+            'section_title': section_meta['section_title'],
+            'section_title_i18n': section_meta['section_title_i18n'],
+            'section_translation_key': section_meta['section_translation_key'],
+            'section_icon': section_meta['section_icon'],
             # Reverse relation fields
             'is_reverse_relation': fd.field_type == 'sub_table',
-            'reverse_relation_model': '',
-            'reverse_relation_field': '',
-            'relation_display_mode': 'tab_readonly',
+            'reverse_relation_model': getattr(fd, 'reverse_relation_model', ''),
+            'reverse_relation_field': getattr(fd, 'reverse_relation_field', ''),
+            'relation_display_mode': getattr(fd, 'relation_display_mode', 'tab_readonly'),
+            'target_object_code': self._resolve_target_object_code(
+                explicit_code=str(getattr(fd, 'target_object_code', '') or ''),
+                model_path=str(getattr(fd, 'reverse_relation_model', '') or getattr(fd, 'reference_model_path', '') or ''),
+            ),
             'locale': resolved_locale,
         }
 

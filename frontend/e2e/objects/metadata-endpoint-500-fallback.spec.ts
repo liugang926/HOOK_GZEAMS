@@ -1,4 +1,9 @@
 import { test, expect, type Route } from '@playwright/test'
+import {
+  expectNoLoadError,
+  getDetailContent,
+  waitForLoadingMaskToClear
+} from '../helpers/detail-page.helpers'
 
 const assetId = 'asset-500-1'
 const assetRecord = {
@@ -175,21 +180,21 @@ test.describe('Metadata 500 Fallback Regression', () => {
     })
 
     await page.goto('/objects/Asset')
-    await page.locator('.el-loading-mask').first().waitFor({ state: 'detached' }).catch(() => {})
-    await expect(page.locator('.load-error')).toHaveCount(0)
+    await waitForLoadingMaskToClear(page)
+    await expectNoLoadError(page)
     await expect(page.locator('.dynamic-list-page .el-table')).toBeVisible()
     await expect(page.locator('.dynamic-list-page')).toContainText('ASSET-500-001')
 
     await page.goto(`/objects/Asset/${assetId}`)
-    await page.locator('.el-loading-mask').first().waitFor({ state: 'detached' }).catch(() => {})
-    await expect(page.locator('.load-error')).toHaveCount(0)
+    await waitForLoadingMaskToClear(page)
+    await expectNoLoadError(page)
     await expect(page.locator('.dynamic-detail-page .field-item')).toHaveCount(2)
-    await expect(page.locator('.detail-content').first()).toContainText('ASSET-500-001')
-    await expect(page.locator('.detail-content').first()).toContainText('Metadata Failure Regression Asset')
+    await expect(getDetailContent(page)).toContainText('ASSET-500-001')
+    await expect(getDetailContent(page)).toContainText('Metadata Failure Regression Asset')
 
     await page.goto(`/objects/Asset/${assetId}/edit`)
-    await page.locator('.el-loading-mask').first().waitFor({ state: 'detached' }).catch(() => {})
-    await expect(page.locator('.load-error')).toHaveCount(0)
+    await waitForLoadingMaskToClear(page)
+    await expectNoLoadError(page)
     await expect(page.locator('.dynamic-form .el-form-item')).toHaveCount(2)
     await expect(page.locator('.dynamic-form')).toContainText('Asset Code')
     await expect(page.locator('.dynamic-form')).toContainText('Asset Name')

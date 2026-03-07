@@ -23,7 +23,7 @@
             {{ $t('common.actions.back') }}
           </el-button>
           <h2 class="page-title">
-            {{ $t('assets.lifecycle.purchaseRequest.detailTitle') }}
+            {{ detail.requestNo || $t('assets.lifecycle.purchaseRequest.detailTitle') }}
           </h2>
           <el-tag
             :type="getStatusType(detail.status)"
@@ -32,36 +32,14 @@
             {{ getStatusLabel(detail.status) }}
           </el-tag>
         </div>
-        <div class="header-actions">
-          <el-button
-            v-if="detail.status === 'draft'"
-            type="primary"
-            @click="handleSubmit"
-          >
-            {{ $t('assets.lifecycle.purchaseRequest.actions.submit') }}
-          </el-button>
-          <el-button
-            v-if="detail.status === 'submitted'"
-            type="success"
-            @click="handleApprove"
-          >
-            {{ $t('assets.lifecycle.purchaseRequest.actions.approve') }}
-          </el-button>
-          <el-button
-            v-if="detail.status === 'submitted'"
-            type="danger"
-            @click="handleReject"
-          >
-            {{ $t('assets.lifecycle.purchaseRequest.actions.reject') }}
-          </el-button>
-          <el-button
-            v-if="['draft', 'submitted'].includes(detail.status)"
-            @click="handleCancel"
-          >
-            {{ $t('assets.lifecycle.purchaseRequest.actions.cancel') }}
-          </el-button>
-        </div>
       </div>
+
+      <!-- Workflow Actions -->
+      <StatusActionBar
+        :status="detail.status"
+        :actions="workflowActions"
+        @action-success="handleRefresh"
+      />
 
       <!-- Basic Info -->
       <el-card class="info-card">
@@ -73,7 +51,7 @@
             {{ detail.requestNo }}
           </el-descriptions-item>
           <el-descriptions-item :label="$t('assets.lifecycle.purchaseRequest.columns.requester')">
-            {{ detail.requesterDisplay || '—' }}
+            {{ detail.requesterDisplay || detail.applicantDisplay || '—' }}
           </el-descriptions-item>
           <el-descriptions-item :label="$t('assets.lifecycle.purchaseRequest.columns.department')">
             {{ detail.departmentDisplay || '—' }}
@@ -94,85 +72,107 @@
       </el-card>
 
       <!-- Items Sub-table -->
-      <el-card class="items-card mt-4">
-        <template #header>
-          <span>{{ $t('assets.lifecycle.purchaseRequest.form.itemsTitle') }}</span>
-        </template>
-        <el-table
-          :data="items"
-          border
-          stripe
-        >
-          <el-table-column
-            type="index"
-            width="50"
-          />
-          <el-table-column
-            :label="$t('assets.lifecycle.purchaseRequest.form.assetName')"
-            prop="assetName"
-          />
-          <el-table-column
-            :label="$t('assets.lifecycle.purchaseRequest.form.specification')"
-            prop="specification"
-            width="160"
-          />
-          <el-table-column
-            :label="$t('assets.lifecycle.purchaseRequest.form.quantity')"
-            prop="quantity"
-            width="100"
-            align="right"
-          />
-          <el-table-column
-            :label="$t('assets.lifecycle.purchaseRequest.form.estimatedUnitPrice')"
-            prop="estimatedUnitPrice"
-            width="130"
-            align="right"
-          />
-          <el-table-column
-            :label="$t('assets.lifecycle.purchaseRequest.form.supplier')"
-            prop="supplierDisplay"
-            width="140"
-          />
-          <el-table-column
-            :label="$t('assets.lifecycle.purchaseRequest.form.remark')"
-            prop="remark"
-          />
-        </el-table>
-      </el-card>
+      <SubTablePanel
+        :title="$t('assets.lifecycle.purchaseRequest.form.itemsTitle')"
+        :columns="itemColumns"
+        :data="items"
+        :loading="itemsLoading"
+        :show-summary="true"
+        :summary-method="summaryMethod"
+        :empty-text="$t('common.messages.noData')"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { purchaseRequestApi } from '@/api/lifecycle'
+import StatusActionBar, { type StatusAction } from '@/components/common/StatusActionBar.vue'
+import SubTablePanel, { type SubTableColumn } from '@/components/common/SubTablePanel.vue'
 
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
 const loading = ref(true)
+const itemsLoading = ref(false)
 const detail = ref<any>(null)
 const items = ref<any[]>([])
 
 const id = route.params.id as string
 
-onMounted(async () => {
-  try {
-    detail.value = await purchaseRequestApi.detail(id)
-    try {
-      const res = await purchaseRequestApi.items(id) as any
-      items.value = Array.isArray(res) ? res : (res.data || [])
-    } catch { /* items endpoint may not exist */ }
-  } catch {
-    ElMessage.error(t('assets.lifecycle.purchaseRequest.messages.loadFailed'))
-  } finally {
-    loading.value = false
-  }
-})
+const workflowActions = computed<StatusAction[]>(() => [
+  {
+    key: 'submit',
+    label: t('assets.lifecycle.purchaseRequest.actions.submit'),
+    type: 'primary',
+    confirmMessage: t('assets.lifecycle.purchaseRequest.actions.submit') + '?',
+    apiCall: () => purchaseRequestApi.submit(id),
+    visibleWhen: (s: string) => s === 'draft',
+  },
+  {
+    key: 'approve',
+    label: t('assets.lifecycle.purchaseRequest.actions.approve'),
+    type: 'success',
+    confirmMessage: t('assets.lifecycle.purchaseRequest.actions.approve') + '?',
+    apiCall: () => purchaseRequestApi.approve(id, 'approved'),
+    visibleWhen: (s: string) => s === 'submitted',
+  },
+  {
+    key: 'reject',
+    label: t('assets.lifecycle.purchaseRequest.actions.reject'),
+    type: 'danger',
+    confirmMessage: t('assets.lifecycle.purchaseRequest.actions.reject') + '?',
+    confirmType: 'warning',
+    apiCall: () => purchaseRequestApi.approve(id, 'rejected'),
+    visibleWhen: (s: string) => s === 'submitted',
+  },
+  {
+    key: 'complete',
+    label: t('assets.lifecycle.purchaseRequest.actions.complete'),
+    type: 'success',
+    confirmMessage: t('common.actions.complete') + '?',
+    apiCall: () => purchaseRequestApi.complete(id),
+    visibleWhen: (s: string) => s === 'processing',
+  },
+  {
+    key: 'cancel',
+    label: t('assets.lifecycle.purchaseRequest.actions.cancel'),
+    type: 'default',
+    confirmMessage: t('assets.lifecycle.purchaseRequest.messages.cancelConfirm'),
+    confirmType: 'warning',
+    apiCall: () => purchaseRequestApi.cancel(id),
+    visibleWhen: (s: string) => ['draft', 'submitted'].includes(s),
+  },
+])
+
+const itemColumns = computed<SubTableColumn[]>(() => [
+  { prop: 'itemName', label: t('assets.lifecycle.purchaseRequest.form.assetName') },
+  { prop: 'specification', label: t('assets.lifecycle.purchaseRequest.form.specification'), width: 160 },
+  { prop: 'quantity', label: t('assets.lifecycle.purchaseRequest.form.quantity'), width: 100, align: 'right' },
+  { prop: 'unitPrice', label: t('assets.lifecycle.purchaseRequest.form.estimatedUnitPrice'), width: 130, align: 'right' },
+  { prop: 'totalAmount', label: t('assets.lifecycle.purchaseRequest.columns.totalAmount'), width: 130, align: 'right' },
+  { prop: 'suggestedSupplier', label: t('assets.lifecycle.purchaseRequest.form.supplier'), width: 140 },
+  { prop: 'remark', label: t('assets.lifecycle.purchaseRequest.form.remark') },
+])
+
+const summaryMethod = ({ columns, data }: { columns: any[]; data: any[] }) => {
+  return columns.map((col: any, index: number) => {
+    if (index === 0) return t('common.labels.total')
+    if (col.property === 'totalAmount') {
+      const sum = data.reduce((acc, row) => acc + (Number(row.totalAmount) || 0), 0)
+      return `¥ ${sum.toFixed(2)}`
+    }
+    if (col.property === 'quantity') {
+      return data.reduce((acc, row) => acc + (Number(row.quantity) || 0), 0)
+    }
+    return ''
+  })
+}
 
 const getStatusType = (status: string) => {
   const map: Record<string, string> = {
@@ -184,45 +184,29 @@ const getStatusType = (status: string) => {
 const getStatusLabel = (status: string) =>
   t(`assets.lifecycle.purchaseRequest.status.${status}`) || status
 
-const handleSubmit = async () => {
+const handleRefresh = async () => {
   try {
-    await ElMessageBox.confirm(t('assets.lifecycle.purchaseRequest.actions.submit'), t('common.messages.confirmTitle'), { type: 'info' })
-    await purchaseRequestApi.submit(id)
-    ElMessage.success(t('assets.lifecycle.purchaseRequest.messages.submitSuccess'))
     detail.value = await purchaseRequestApi.detail(id)
-  } catch { /* cancelled */ }
+    const res = await purchaseRequestApi.items(id) as any
+    items.value = Array.isArray(res) ? res : (res.data || [])
+  } catch { /* ignore */ }
 }
 
-const handleApprove = async () => {
+onMounted(async () => {
   try {
-    await ElMessageBox.confirm(t('assets.lifecycle.purchaseRequest.actions.approve'), t('common.messages.confirmTitle'), { type: 'success' })
-    await purchaseRequestApi.approve(id, 'approved')
-    ElMessage.success(t('assets.lifecycle.purchaseRequest.messages.approveSuccess'))
     detail.value = await purchaseRequestApi.detail(id)
-  } catch { /* cancelled */ }
-}
-
-const handleReject = async () => {
-  try {
-    const { value: comment } = await ElMessageBox.prompt(
-      t('assets.lifecycle.purchaseRequest.dialog.rejectCommentPlaceholder'),
-      t('assets.lifecycle.purchaseRequest.dialog.rejectTitle'),
-      { inputType: 'textarea', confirmButtonText: t('common.actions.confirm'), cancelButtonText: t('common.actions.cancel') }
-    )
-    await purchaseRequestApi.approve(id, 'rejected', comment)
-    ElMessage.success(t('assets.lifecycle.purchaseRequest.messages.rejectSuccess'))
-    detail.value = await purchaseRequestApi.detail(id)
-  } catch { /* cancelled */ }
-}
-
-const handleCancel = async () => {
-  try {
-    await ElMessageBox.confirm(t('assets.lifecycle.purchaseRequest.messages.cancelConfirm'), t('common.messages.confirmTitle'), { type: 'warning' })
-    await purchaseRequestApi.cancel(id)
-    ElMessage.success(t('assets.lifecycle.purchaseRequest.messages.cancelSuccess'))
-    detail.value = await purchaseRequestApi.detail(id)
-  } catch { /* cancelled */ }
-}
+    itemsLoading.value = true
+    try {
+      const res = await purchaseRequestApi.items(id) as any
+      items.value = Array.isArray(res) ? res : (res.data || [])
+    } catch { /* items endpoint may not exist */ }
+    itemsLoading.value = false
+  } catch {
+    ElMessage.error(t('assets.lifecycle.purchaseRequest.messages.loadFailed'))
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped lang="scss">
@@ -231,14 +215,13 @@ const handleCancel = async () => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
     .header-left {
       display: flex;
       align-items: center;
       gap: 12px;
       .page-title { margin: 0; font-size: 18px; }
     }
-    .header-actions { display: flex; gap: 8px; }
   }
   .mt-4 { margin-top: 16px; }
   .ml-2 { margin-left: 8px; }

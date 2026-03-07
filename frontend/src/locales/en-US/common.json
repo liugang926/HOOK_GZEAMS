@@ -88,10 +88,12 @@
     "createdBy": "Created By",
     "custom": "Custom",
     "description": "Description",
+    "details": "Details",
     "display": "Display",
     "full": "Full",
     "operation": "Operation",
     "record": "Record",
+    "lookupMatchIn": "Match In",
     "recentRecords": "Recent Records",
     "relatedObjects": "Related Objects",
     "remark": "Remark",
@@ -108,6 +110,11 @@
   },
   "hotkeys": {
     "title": "Keyboard Shortcuts",
+    "lookup": {
+      "title": "Keyboard",
+      "navigateRows": "Move selection",
+      "confirm": "Confirm selected"
+    },
     "subtable": {
       "toggleHelp": "Toggle shortcut help panel",
       "togglePin": "Pin/unpin shortcut help panel",

@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
+import { getDetailFieldItem } from '../helpers/detail-page.helpers'
 import { setDesignerRenderMode, waitForDesignerReady } from '../helpers/page-ready.helpers'
 
 const OBJECT_CODE = 'Asset'
@@ -185,9 +186,7 @@ async function collectCanvasPreviewLeftsByLabels(page: Page, labels: string[]): 
   const previewRoot = page.locator('.runtime-preview-card').first()
 
   for (const label of labels) {
-    const fieldItem = previewRoot.locator('.field-item').filter({
-      has: page.locator('.field-label', { hasText: label })
-    }).first()
+    const fieldItem = getDetailFieldItem(previewRoot, label)
     await expect(fieldItem).toBeVisible()
 
     const box = await fieldItem.locator('.field-value').first().boundingBox()

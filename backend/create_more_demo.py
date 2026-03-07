@@ -1,0 +1,325 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Create more demo data for GZEAMS.
+Run with: docker-compose exec backend python manage.py shell < create_more_demo.py
+"""
+import django
+django.setup()
+
+from django.contrib.auth import get_user_model
+from apps.assets.models import (
+    Asset, AssetPickup, AssetTransfer, PickupItem, TransferItem,
+    AssetReturn, ReturnItem, AssetLoan, LoanItem, Supplier
+)
+from apps.consumables.models import Consumable, ConsumableCategory, ConsumableStock
+from apps.lifecycle.models import (
+    Maintenance, MaintenancePlan, MaintenanceTask,
+    PurchaseRequest, AssetReceipt
+)
+from apps.inventory.models import InventoryTask
+from apps.organizations.models import Organization, Department
+from datetime import date, timedelta
+from decimal import Decimal
+import random
+
+User = get_user_model()
+
+org = Organization.objects.get(code='DEMO')
+admin_user = User.objects.filter(username='admin').first()
+demo_users = list(User.objects.filter(username__in=['zhang_san', 'li_si', 'wang_wu', 'zhao_liu', 'chen_qi']))
+departments = list(Department.objects.filter(organization=org))
+assets = list(Asset.objects.filter(organization=org))
+
+print("\n=== ASSET PICKUPS (15) ===")
+pickup_statuses = ['pending', 'approved', 'completed']
+for i in range(1, 16):
+    pickup_no = f'LY202501{i:04d}'
+    pickup_date = date(2025, 1, i % 28 + 1)
+    status = random.choice(pickup_statuses)
+
+    pickup, created = AssetPickup.objects.get_or_create(
+        organization=org, pickup_no=pickup_no,
+        defaults={
+            'applicant': random.choice(demo_users),
+            'department': random.choice(departments),
+            'pickup_date': pickup_date,
+            'pickup_reason': f'部门办公需要领用设备 #{i}',
+            'status': status,
+            'approved_by': admin_user if status == 'completed' else None,
+            'approved_at': pickup_date if status == 'completed' else None,
+            'completed_at': pickup_date + timedelta(days=1) if status == 'completed' else None,
+            'created_by': admin_user,
+        }
+    )
+    if created:
+        for asset in assets[:random.randint(1, 3)]:
+            PickupItem.objects.get_or_create(
+                pickup=pickup, asset=asset,
+                defaults={'organization': org, 'quantity': 1, 'created_by': admin_user}
+            )
+        print(f"Pickup: {pickup.pickup_no} - {pickup.applicant.username}")
+
+print("\n=== ASSET TRANSFERS (12) ===")
+transfer_statuses = ['pending', 'approved', 'completed']
+for i in range(1, 13):
+    transfer_no = f'TF202501{i:04d}'
+    transfer_date = date(2025, 1, i % 28 + 1)
+    status = random.choice(transfer_statuses)
+    from_dept = departments[i % len(departments)]
+    to_dept = departments[(i + 1) % len(departments)]
+
+    transfer, created = AssetTransfer.objects.get_or_create(
+        organization=org, transfer_no=transfer_no,
+        defaults={
+            'from_department': from_dept,
+            'to_department': to_dept,
+            'transfer_date': transfer_date,
+            'transfer_reason': f'部门间资产调拨 #{i}',
+            'status': status,
+            'from_approved_by': admin_user if status == 'completed' else None,
+            'from_approved_at': transfer_date if status == 'completed' else None,
+            'to_approved_by': admin_user if status == 'completed' else None,
+            'to_approved_at': transfer_date if status == 'completed' else None,
+            'completed_at': transfer_date + timedelta(days=1) if status == 'completed' else None,
+            'created_by': admin_user,
+        }
+    )
+    if created:
+        for asset in assets[:random.randint(1, 2)]:
+            TransferItem.objects.get_or_create(
+                transfer=transfer, asset=asset,
+                defaults={'organization': org, 'created_by': admin_user}
+            )
+        print(f"Transfer: {transfer.transfer_no} - {from_dept.name} -> {to_dept.name}")
+
+print("\n=== ASSET RETURNS (10) ===")
+return_statuses = ['pending', 'confirmed', 'completed']
+for i in range(1, 11):
+    return_no = f'RT202501{i:04d}'
+    return_date = date(2025, 1, i % 28 + 1)
+    status = random.choice(return_statuses)
+
+    asset_return, created = AssetReturn.objects.get_or_create(
+        organization=org, return_no=return_no,
+        defaults={
+            'returner': random.choice(demo_users),
+            'return_date': return_date,
+            'return_reason': f'归还闲置设备 #{i}',
+            'status': status,
+            'confirmed_by': admin_user if status == 'completed' else None,
+            'confirmed_at': return_date if status == 'completed' else None,
+            'completed_at': return_date + timedelta(days=1) if status == 'completed' else None,
+            'created_by': admin_user,
+        }
+    )
+    if created:
+        for asset in assets[:random.randint(1, 2)]:
+            ReturnItem.objects.get_or_create(
+                asset_return=asset_return, asset=asset,
+                defaults={'organization': org, 'created_by': admin_user}
+            )
+        print(f"Return: {asset_return.return_no} - {asset_return.returner.username}")
+
+print("\n=== ASSET LOANS (12) ===")
+loan_statuses = ['approved', 'borrowed', 'returned', 'overdue']
+for i in range(1, 13):
+    loan_no = f'JY202501{i:04d}'
+    borrow_date = date(2025, 1, i % 28 + 1)
+    expected_return = borrow_date + timedelta(days=30)
+    status = random.choice(loan_statuses)
+    actual_return = borrow_date + timedelta(days=random.randint(1, 25)) if status == 'returned' else None
+
+    asset_loan, created = AssetLoan.objects.get_or_create(
+        organization=org, loan_no=loan_no,
+        defaults={
+            'borrower': random.choice(demo_users),
+            'borrow_date': borrow_date,
+            'expected_return_date': expected_return,
+            'actual_return_date': actual_return,
+            'loan_reason': f'临时借用设备 #{i}',
+            'status': status,
+            'approved_by': admin_user,
+            'approved_at': borrow_date,
+            'lent_by': admin_user if status in ['borrowed', 'returned', 'overdue'] else None,
+            'lent_at': borrow_date + timedelta(hours=1) if status in ['borrowed', 'returned', 'overdue'] else None,
+            'returned_at': actual_return,
+            'return_confirmed_by': admin_user if status == 'returned' else None,
+            'asset_condition': 'good' if status == 'returned' else '',
+            'created_by': admin_user,
+        }
+    )
+    if created:
+        for asset in assets[:random.randint(1, 2)]:
+            LoanItem.objects.get_or_create(
+                loan=asset_loan, asset=asset,
+                defaults={'organization': org, 'created_by': admin_user}
+            )
+        print(f"Loan: {asset_loan.loan_no} - {asset_loan.borrower.username} ({status})")
+
+print("\n=== CONSUMABLES (10) ===")
+cons_category, _ = ConsumableCategory.objects.get_or_create(
+    organization=org, code='C01',
+    defaults={'name': '办公耗材', 'created_by': admin_user}
+)
+
+consumable_names = ['打印纸', '签字笔', '文件夹', '订书机', '计算器', '鼠标', '键盘', 'U盘', '硬盘', '电池']
+for i, name in enumerate(consumable_names, 1):
+    consumable, created = Consumable.objects.get_or_create(
+        organization=org, code=f'CON{i:04d}',
+        defaults={
+            'name': name,
+            'category': cons_category,
+            'unit': random.choice(['个', '包', '盒', '只', '条']),
+            'specification': f'规格-{random.randint(1, 5)}',
+            'safe_stock': random.randint(10, 50),
+            'created_by': admin_user,
+        }
+    )
+    ConsumableStock.objects.get_or_create(
+        organization=org, consumable=consumable,
+        defaults={'quantity': random.randint(50, 500), 'unit_price': Decimal(random.randint(1, 100)), 'created_by': admin_user}
+    )
+    if created:
+        print(f"Consumable: {consumable.code} - {consumable.name}")
+
+print("\n=== MAINTENANCE (10) ===")
+maintenance_types = ['routine', 'corrective', 'preventive']
+for i in range(1, 11):
+    maintenance_date = date(2024, random.randint(1, 12), random.randint(1, 28))
+
+    maintenance, created = Maintenance.objects.get_or_create(
+        organization=org, maintenance_no=f'MNT{i:04d}',
+        defaults={
+            'asset_code': f'ZC{random.randint(202401, 202412)}{random.randint(1, 99):03d}',
+            'maintenance_type': random.choice(maintenance_types),
+            'maintenance_date': maintenance_date,
+            'technician': random.choice(demo_users).get_full_name(),
+            'cost': Decimal(random.randint(100, 5000)),
+            'description': f'定期维护保养 #{i}',
+            'status': random.choice(['pending', 'in_progress', 'completed']),
+            'created_by': admin_user,
+        }
+    )
+    if created:
+        print(f"Maintenance: {maintenance.maintenance_no} - {maintenance.maintenance_type}")
+
+print("\n=== MAINTENANCE PLANS (3) ===")
+for i in range(1, 4):
+    plan, created = MaintenancePlan.objects.get_or_create(
+        organization=org, plan_no=f'PLAN{i:03d}',
+        defaults={
+            'name': f'季度维护计划-{i}',
+            'plan_type': 'quarterly',
+            'start_date': date(2025, 1, 1),
+            'end_date': date(2025, 12, 31),
+            'description': f'按季度进行设备维护检查',
+            'status': 'active',
+            'created_by': admin_user,
+        }
+    )
+    if created:
+        print(f"Plan: {plan.plan_no} - {plan.name}")
+
+print("\n=== MAINTENANCE TASKS (6) ===")
+for i in range(1, 7):
+    task_date = date(2025, random.randint(1, 6), random.randint(1, 28))
+
+    task, created = MaintenanceTask.objects.get_or_create(
+        organization=org, task_no=f'TASK{i:04d}',
+        defaults={
+            'title': f'设备检查任务-{i}',
+            'description': f'对指定设备进行全面检查',
+            'scheduled_date': task_date,
+            'assigned_to': random.choice(demo_users),
+            'priority': random.choice(['low', 'medium', 'high']),
+            'status': random.choice(['pending', 'in_progress', 'completed']),
+            'completed_at': task_date + timedelta(hours=random.randint(1, 8)) if random.random() > 0.5 else None,
+            'created_by': admin_user,
+        }
+    )
+    if created:
+        print(f"Task: {task.task_no} - {task.title}")
+
+print("\n=== INVENTORY TASKS (6) ===")
+for i in range(1, 7):
+    task_date = date(2025, random.randint(1, 12), random.randint(1, 28))
+
+    task, created = InventoryTask.objects.get_or_create(
+        organization=org, task_code=f'PD2025{i:03d}',
+        defaults={
+            'task_name': f'季度资产盘点-{i}期',
+            'description': f'季度盘点任务',
+            'inventory_type': random.choice(['full', 'partial', 'spot']),
+            'department': random.choice(departments),
+            'planned_date': task_date,
+            'status': random.choice(['draft', 'pending', 'in_progress', 'completed']),
+            'total_count': random.randint(50, 200),
+            'scanned_count': random.randint(0, 200),
+            'created_by': admin_user,
+        }
+    )
+    if created:
+        print(f"Inventory: {task.task_code} - {task.task_name}")
+
+print("\n=== PURCHASE REQUESTS (8) ===")
+request_statuses = ['draft', 'submitted', 'approved', 'processing', 'completed']
+for i in range(1, 9):
+    request_date = date(2025, random.randint(1, 6), random.randint(1, 28))
+
+    request, created = PurchaseRequest.objects.get_or_create(
+        organization=org, request_no=f'CG2025{i:04d}',
+        defaults={
+            'title': f'采购申请-{random.choice(["电脑", "办公椅", "打印机"])}',
+            'applicant': random.choice(demo_users),
+            'department': random.choice(departments),
+            'request_date': request_date,
+            'expected_date': request_date + timedelta(days=30),
+            'total_amount': Decimal(random.randint(10000, 100000)),
+            'status': random.choice(request_statuses),
+            'approved_by': admin_user if random.random() > 0.3 else None,
+            'approved_at': request_date + timedelta(days=random.randint(1, 5)) if random.random() > 0.3 else None,
+            'reason': f'部门业务需要采购相关设备',
+            'created_by': admin_user,
+        }
+    )
+    if created:
+        print(f"Request: {request.request_no} - {request.title}")
+
+print("\n=== ASSET RECEIPTS (6) ===")
+from apps.assets.models import Supplier
+suppliers = list(Supplier.objects.filter(organization=org))
+receipt_statuses = ['pending', 'partial', 'completed']
+for i in range(1, 7):
+    receipt_date = date(2025, random.randint(1, 6), random.randint(1, 28))
+
+    receipt, created = AssetReceipt.objects.get_or_create(
+        organization=org, receipt_no=f'RK2025{i:04d}',
+        defaults={
+            'supplier': random.choice(suppliers) if suppliers else None,
+            'receipt_date': receipt_date,
+            'total_amount': Decimal(random.randint(20000, 100000)),
+            'quantity': random.randint(5, 20),
+            'status': random.choice(receipt_statuses),
+            'received_by': random.choice(demo_users),
+            'inspected_by': admin_user if random.random() > 0.3 else None,
+            'warehouse_location': '仓库',
+            'remarks': f'货物验收合格，入库',
+            'created_by': admin_user,
+        }
+    )
+    if created and receipt.supplier:
+        print(f"Receipt: {receipt.receipt_no} - {receipt.supplier.name}")
+
+print("\n=== SUMMARY ===")
+print(f"Pickups: {AssetPickup.objects.filter(organization=org).count()}")
+print(f"Transfers: {AssetTransfer.objects.filter(organization=org).count()}")
+print(f"Returns: {AssetReturn.objects.filter(organization=org).count()}")
+print(f"Loans: {AssetLoan.objects.filter(organization=org).count()}")
+print(f"Consumables: {Consumable.objects.filter(organization=org).count()}")
+print(f"Maintenances: {Maintenance.objects.filter(organization=org).count()}")
+print(f"Maintenance Plans: {MaintenancePlan.objects.filter(organization=org).count()}")
+print(f"Maintenance Tasks: {MaintenanceTask.objects.filter(organization=org).count()}")
+print(f"Inventory Tasks: {InventoryTask.objects.filter(organization=org).count()}")
+print(f"Purchase Requests: {PurchaseRequest.objects.filter(organization=org).count()}")
+print(f"Asset Receipts: {AssetReceipt.objects.filter(organization=org).count()}")

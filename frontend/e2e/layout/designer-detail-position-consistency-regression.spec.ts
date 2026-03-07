@@ -1,4 +1,8 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
+import {
+  getDetailFieldItem,
+  waitForDetailPageReady
+} from '../helpers/detail-page.helpers'
 import { waitForDesignerReady } from '../helpers/page-ready.helpers'
 
 const OBJECT_CODE = 'Asset'
@@ -219,16 +223,10 @@ test.describe('Designer/Detail Position Consistency Regression', () => {
 
     await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`, { waitUntil: 'domcontentloaded' })
     await expect(page).toHaveURL(new RegExp(`/objects/${OBJECT_CODE}/${RECORD_ID}`))
-    const detailRoot = page.locator('.dynamic-detail-page, .base-detail-page, .object-detail-page').first()
-    await expect(detailRoot).toBeVisible({ timeout: 15000 })
-    await expect(page.locator('.load-error')).toHaveCount(0)
+    await waitForDetailPageReady(page)
 
-    const leftItem = page.locator('.field-item').filter({
-      has: page.locator('.field-label', { hasText: 'Left Field' })
-    }).first()
-    const rightItem = page.locator('.field-item').filter({
-      has: page.locator('.field-label', { hasText: 'Right Field' })
-    }).first()
+    const leftItem = getDetailFieldItem(page, 'Left Field')
+    const rightItem = getDetailFieldItem(page, 'Right Field')
 
     await expect(leftItem).toBeVisible()
     await expect(rightItem).toBeVisible()

@@ -455,14 +455,51 @@ class ObjectRegistry:
                 continue
 
             try:
-                # Create or update field definition
-                ModelFieldDefinition.objects.get_or_create(
+                field_defaults = cls._model_field_to_dict(business_object, field)
+                existing = ModelFieldDefinition.objects.filter(
                     business_object=business_object,
                     field_name=field.name,
-                    defaults={
-                        **cls._model_field_to_dict(business_object, field)
-                    }
-                )
+                ).first()
+
+                if existing:
+                    existing.field_type = field_defaults['field_type']
+                    existing.django_field_type = field_defaults['django_field_type']
+                    existing.is_required = field_defaults['is_required']
+                    existing.is_readonly = field_defaults['is_readonly']
+                    existing.is_editable = field_defaults['is_editable']
+                    existing.is_unique = field_defaults['is_unique']
+                    existing.reference_model_path = field_defaults.get('reference_model_path', '')
+                    existing.max_length = field_defaults.get('max_length')
+                    existing.decimal_places = field_defaults.get('decimal_places')
+                    existing.max_digits = field_defaults.get('max_digits')
+                    if not existing.display_name:
+                        existing.display_name = field_defaults['display_name']
+                    if not existing.display_name_en:
+                        existing.display_name_en = field_defaults.get('display_name_en', '')
+                    existing.save(update_fields=[
+                        'field_type',
+                        'django_field_type',
+                        'is_required',
+                        'is_readonly',
+                        'is_editable',
+                        'is_unique',
+                        'reference_model_path',
+                        'max_length',
+                        'decimal_places',
+                        'max_digits',
+                        'display_name',
+                        'display_name_en',
+                        'updated_at',
+                    ])
+                else:
+                    # Create field definition when metadata row is missing.
+                    ModelFieldDefinition.objects.create(
+                        business_object=business_object,
+                        field_name=field.name,
+                        **field_defaults,
+                    )
+
+                # Create or update field definition
                 count += 1
             except Exception:
                 continue
@@ -496,10 +533,7 @@ class ObjectRegistry:
         display_name = getattr(field, 'verbose_name', field.name) or field.name
 
         # Map Django field type to metadata field type
-        field_type = ModelFieldDefinition.DJANGO_FIELD_TYPE_MAP.get(
-            field.__class__.__name__,
-            'text'
-        )
+        field_type = ModelFieldDefinition.get_metadata_field_type(field)
 
         # Check if required
         is_required = not field.null and not field.blank

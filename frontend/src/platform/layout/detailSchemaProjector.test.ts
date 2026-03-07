@@ -133,4 +133,58 @@ describe('detailSchemaProjector', () => {
     expect(sections).toHaveLength(1)
     expect(sections[0].fields.map((field) => field.prop)).toEqual(['assetName'])
   })
+
+  it('keeps layout-only related_object fields with component props intact', () => {
+    const schema: RenderSchema = {
+      mode: 'readonly',
+      fieldOrder: ['maintenance_records'],
+      sections: [
+        {
+          id: 'related',
+          title: 'Related',
+          kind: 'section',
+          columns: 1,
+          collapsible: false,
+          collapsed: false,
+          fields: [
+            {
+              code: 'maintenance_records',
+              label: 'Maintenance Records',
+              fieldType: 'related_object',
+              span: 1,
+              required: false,
+              readonly: true,
+              visible: true,
+              componentProps: {
+                relationCode: 'maintenance_records',
+                relatedObjectCode: 'Maintenance'
+              }
+            }
+          ]
+        }
+      ]
+    }
+
+    const sections = projectDetailSectionsFromRenderSchema(
+      schema,
+      [],
+      {
+        fieldToDetailField: (field: any) => ({
+          prop: field.code,
+          label: field.name,
+          type: 'text'
+        }),
+        shouldSkipField: () => false
+      }
+    )
+
+    expect(sections).toHaveLength(1)
+    expect(sections[0].fields).toHaveLength(1)
+    expect(sections[0].fields[0].prop).toBe('maintenance_records')
+    expect(sections[0].fields[0].type).toBe('related_object')
+    expect((sections[0].fields[0] as any).componentProps).toMatchObject({
+      relationCode: 'maintenance_records',
+      relatedObjectCode: 'Maintenance'
+    })
+  })
 })

@@ -410,6 +410,7 @@
                 "editSection": "编辑分组",
                 "deleteSection": "删除分组",
                 "removeField": "移除字段",
+                "translationMode": "翻译模式",
                 "resetSize": "重置尺寸"
             },
             "status": {

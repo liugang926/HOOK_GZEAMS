@@ -250,7 +250,7 @@ import { assetApi } from '@/api/assets'
 import { purchaseRequestApi, maintenanceApi, disposalRequestApi } from '@/api/lifecycle'
 import { insurancePolicyApi, claimRecordApi } from '@/api/insurance'
 import { leaseContractApi, rentPaymentApi } from '@/api/leasing'
-import { exportAllPages, type ExportColumn } from '@/utils/exportService'
+import { exportAllPages, exportToCSV, type ExportColumn } from '@/utils/exportService'
 
 const { t } = useI18n()
 const activeTab = ref('assets')
@@ -433,7 +433,6 @@ const runReport = async (report: ReportDef, format: 'xlsx' | 'csv' = 'xlsx') => 
       // CSV: fetch first 2000 rows
       const res = await report.api({ page: 1, page_size: 2000 }) as any
       const data = res?.results ?? (Array.isArray(res) ? res : [])
-      const { exportToCSV } = await import('@/utils/exportService')
       exportToCSV(report.name, report.columns, data)
     }
     ElMessage.success(t('reports.export.successMessage'))

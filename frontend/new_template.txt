@@ -1,0 +1,197 @@
+<template>
+  <div class="base-detail-page">
+    <DetailHeader
+      :title="title"
+      :subtitle="subtitle"
+      :object-code="objectCode"
+      :object-icon="objectIcon"
+      :edit-mode="editMode"
+      :show-back="showBack"
+      :show-edit="showEdit"
+      :show-delete="showDelete"
+      :edit-text="editText"
+      :delete-text="deleteText"
+      :delete-confirm-message="deleteConfirmMessage"
+      :available-actions="availableActions"
+      :audit-info="auditInfo"
+      @back="$emit('back')"
+      @edit="$emit('edit')"
+      @delete="$emit('delete')"
+      @save="$emit('save', formData)"
+      @cancel="$emit('cancel')"
+    >
+      <template #toolbar>
+        <slot name="toolbar" />
+      </template>
+    </DetailHeader>
+
+    <div
+      v-loading="loading"
+      class="page-content detail-content"
+    >
+      <!-- Error State -->
+      <div
+        v-if="error"
+        class="state-container"
+      >
+        <el-empty :description="error">
+          <el-button
+            v-if="showBack"
+            @click="$emit('back')"
+          >
+            {{ $t('common.actions.back') }}
+          </el-button>
+        </el-empty>
+      </div>
+
+      <!-- Empty State -->
+      <div
+        v-else-if="!loading && !data && isEmpty"
+        class="state-container"
+      >
+        <el-empty :description="$t('common.messages.noData')" />
+      </div>
+
+      <!-- Content State -->
+      <div
+        v-else-if="data"
+        class="content-layout"
+      >
+        <!-- Two-Column Layout Container -->
+        <div :class="['detail-layout-container', { 'has-sidebar': sidebarSections.length > 0 }]">
+          <!-- Main Column -->
+          <div class="main-column">
+            <el-tabs
+              v-model="activeMainTab"
+              class="top-level-tabs"
+            >
+              <el-tab-pane
+                :label="mainTabLabel || $t('common.labels.details', '详情')"
+                name="details"
+              >
+                <div class="detail-sections">
+                  <!-- Render Main Sections via extracted Component -->
+                  <DetailSectionRenderer
+                    v-for="section in mainSections"
+                    :key="section.name"
+                    v-show="!editMode || hasVisibleFields(section)"
+                    :section="section"
+                    :data="editMode ? formData : data"
+                    :field-span="fieldSpan"
+                    :section-header-test-id="sectionHeaderTestId"
+                    @collapse-change="(isCollapsed) => setSectionCollapsed(section.name, isCollapsed)"
+                    @tab-change="(tabId) => activeTabs[section.name] = tabId"
+                  >
+                    <!-- Pass down custom section slots dynamically -->
+                    <template v-if="$slots[`section-${section.name}`]" #[`section-${section.name}`]="slotProps">
+                      <slot :name="`section-${section.name}`" v-bind="slotProps" />
+                    </template>
+
+                    <!-- Pass down specific field rendering logic -->
+                    <template #field-renderer="{ field, tab }">
+                      <template v-if="editMode">
+                        <el-form-item
+                          :prop="field.prop"
+                          style="margin-bottom: 0px"
+                        >
+                          <FieldRenderer
+                            :field="toInlineEditRuntimeField(field)"
+                            :model-value="getEditFieldValue(field)"
+                            :disabled="field.readonly === true"
+                            @update:model-value="(val) => $emit('update:formData', { ...formData, [field.prop]: val })"
+                          />
+                        </el-form-item>
+                      </template>
+                      <template v-else>
+                        <template v-if="field.type === 'related_object'">
+                          <FieldRenderer
+                            :field="toInlineEditRuntimeField(field)"
+                            :model-value="getEditFieldValue(field)"
+                            :disabled="true"
+                          />
+                        </template>
+                        <template v-else>
+                          <FieldDisplay
+                            :field="field"
+                            :value="getFieldValue(field)"
+                          />
+                        </template>
+                      </template>
+                    </template>
+                    <!-- Pass down slot field -->
+                    <template v-for="slotName in Object.keys($slots).filter(s => s.startsWith('field-'))" :key="slotName" #[slotName]="slotProps">
+                      <slot :name="slotName" v-bind="slotProps" />
+                    </template>
+                  </DetailSectionRenderer>
+                </div>
+              </el-tab-pane>
+
+              <el-tab-pane
+                :label="$t('common.labels.relatedObjects', '相关 (Related)')"
+                name="related"
+              >
+                <!-- Render Relational Manager Extracted Component -->
+                <DetailRelatedManager
+                  :grouped-relations="groupedReverseRelationSections"
+                  :parent-object-code="objectCode"
+                  :parent-id="data.id || data.code"
+                  :relation-group-scope-id="relationGroupScopeId"
+                  @related-record-click="(code, record, tgt) => $emit('related-record-click', code, record, tgt)"
+                  @related-record-edit="(code, record, tgt) => $emit('related-record-edit', code, record, tgt)"
+                  @related-refresh="(code) => $emit('related-refresh', code)"
+                />
+              </el-tab-pane>
+            </el-tabs>
+          </div> <!-- End Main Column -->
+
+          <!-- Sidebar Column (Remains similar architecture but uses Renderer) -->
+          <div
+            v-if="sidebarSections.length > 0"
+            class="sidebar-column"
+          >
+            <DetailSectionRenderer
+              v-for="section in sidebarSections"
+              :key="section.name"
+              v-show="!editMode || hasVisibleFields(section)"
+              :section="section"
+              :data="editMode ? formData : data"
+              :field-span="fieldSpan"
+              @collapse-change="(isCollapsed) => setSectionCollapsed(section.name, isCollapsed)"
+              @tab-change="(tabId) => activeTabs[section.name] = tabId"
+            >
+              <!-- Pass down custom section slots dynamically -->
+              <template v-if="$slots[`section-${section.name}`]" #[`section-${section.name}`]="slotProps">
+                <slot :name="`section-${section.name}`" v-bind="slotProps" />
+              </template>
+              
+              <!-- Pass down custom field rendering specific to sidebar -->
+              <template #field-renderer="{ field }">
+                <!-- Sidebar fields usually rely purely on slots (like timeline) -->
+                <slot :name="`field-${field.prop}`" :field="field" :data="data" :value="getFieldValue(field)" />
+              </template>
+            </DetailSectionRenderer>
+          </div> <!-- End Sidebar Column -->
+        </div> <!-- End Layout Wrapper -->
+
+        <slot name="footer" />
+      </div>
+    </div>
+
+    <!-- Hidden form for drawer edit mapping if necessary -->
+    <el-form
+      v-if="editMode && editDrawerProxyFields.length > 0"
+      ref="formRef"
+      :model="formData"
+      :rules="formRules"
+      style="display: none;"
+    >
+      <el-form-item
+        v-for="field in editDrawerProxyFields"
+        :key="field.prop"
+        :prop="field.prop"
+      >
+        <span />
+      </el-form-item>
+    </el-form>
+  </div>
+</template>

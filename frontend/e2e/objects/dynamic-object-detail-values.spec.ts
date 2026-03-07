@@ -1,5 +1,31 @@
 ﻿import { apiRequest, getTestUserToken } from '../helpers/api.helpers'
+import {
+  expectNoLoadError,
+  getHeaderActionButton,
+  waitForDetailPageReady,
+  waitForLoadingMaskToClear
+} from '../helpers/detail-page.helpers'
 import { test, expect } from '../fixtures/auth.fixture'
+
+interface AssetListItem {
+  id: string
+}
+
+interface AssetListResponse {
+  results?: AssetListItem[]
+}
+
+interface ReferenceValue {
+  id?: string
+  name?: string
+}
+
+interface AssetRecordResponse {
+  id: string
+  assetCode?: string
+  assetCategory?: ReferenceValue | null
+  organization?: ReferenceValue | null
+}
 
 test.describe('Dynamic Object Detail', () => {
   test('should render detail values and submit reference as id', async ({ authenticatedPage: page }) => {
@@ -38,11 +64,11 @@ test.describe('Dynamic Object Detail', () => {
     const token = await getTestUserToken()
     if (!token) test.skip(true, 'Missing E2E auth token')
 
-    const listRes = await apiRequest<any>('/system/objects/Asset/?page=1&page_size=1', token)
+    const listRes = await apiRequest<AssetListResponse>('/system/objects/Asset/?page=1&page_size=1', token)
     const first = listRes.data?.results?.[0]
     if (!listRes.success || !first?.id) test.skip(true, 'No Asset records available')
 
-    const recordRes = await apiRequest<any>(`/system/objects/Asset/${first.id}/`, token)
+    const recordRes = await apiRequest<AssetRecordResponse>(`/system/objects/Asset/${first.id}/`, token)
     if (!recordRes.success || !recordRes.data) test.skip(true, 'Failed to load Asset record')
 
     const assetId = recordRes.data.id as string
@@ -54,16 +80,16 @@ test.describe('Dynamic Object Detail', () => {
     await page.goto(`/objects/Asset/${assetId}`)
     await page.waitForLoadState('domcontentloaded')
 
-    await expect(page.locator('.dynamic-detail-page')).toBeVisible()
+    await waitForDetailPageReady(page)
 
     // Wait for loading mask to disappear (if any)
-    await page.locator('.el-loading-mask').first().waitFor({ state: 'detached' }).catch(() => {})
+    await waitForLoadingMaskToClear(page)
     // Give async option loaders (reference fields, etc.) a moment to settle.
     await page.waitForTimeout(800)
     expect(notFound, `Unexpected 404 API calls: ${JSON.stringify(notFound, null, 2)}`).toEqual([])
     expect(legacyCalls, `Unexpected legacy API calls: ${JSON.stringify(legacyCalls, null, 2)}`).toEqual([])
 
-    await expect(page.locator('.load-error')).toHaveCount(0)
+    await expectNoLoadError(page)
 
     const hasInputWithValue = async (value: string) => {
       return page.evaluate((v) => {
@@ -93,7 +119,7 @@ test.describe('Dynamic Object Detail', () => {
       await expect(page.locator('.dynamic-detail-page').locator(`text=${category.name}`)).toBeVisible()
     }
 
-    const editButton = page.locator('.base-detail-page .header-actions button').first()
+    const editButton = getHeaderActionButton(page, /Edit/i)
     if (!(await editButton.isVisible({ timeout: 3000 }).catch(() => false))) {
       test.skip(true, 'Edit button not available')
     }
@@ -108,7 +134,7 @@ test.describe('Dynamic Object Detail', () => {
       await expect(page.locator('.el-drawer:visible')).toHaveCount(1)
     }
 
-    await page.locator('.el-loading-mask').first().waitFor({ state: 'detached' }).catch(() => {})
+    await waitForLoadingMaskToClear(page)
     await page.waitForTimeout(500)
     expect(legacyCalls, `Unexpected legacy API calls (edit): ${JSON.stringify(legacyCalls, null, 2)}`).toEqual([])
 
@@ -133,7 +159,7 @@ test.describe('Dynamic Object Detail', () => {
       await remarksControl.fill(`e2e-${Date.now()}`)
     }
 
-    let capturedPayload: any = null
+    let capturedPayload: Record<string, unknown> | null = null
     await page.route(new RegExp(`/api/system/objects/Asset/${assetId}/$`), async (route) => {
       const req = route.request()
       if (req.method() !== 'PUT') return route.continue()

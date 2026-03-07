@@ -19,6 +19,19 @@
         "dynamicObjects": "Dynamic Objects",
         "other": "Other"
     },
+    "categories": {
+        "asset_master": "Asset Master",
+        "asset_operation": "Asset Operations",
+        "lifecycle": "Lifecycle",
+        "consumable": "Consumables",
+        "inventory": "Inventory",
+        "finance": "Finance",
+        "organization": "Organization",
+        "workflow": "Workflow",
+        "system": "System",
+        "reports": "Reports",
+        "other": "Other"
+    },
     "routes": {
         "objectList": "Object List",
         "objectCreate": "Create Object",

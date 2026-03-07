@@ -1,4 +1,5 @@
-﻿import { getStoredLocale } from '@/platform/i18n/localePreference'
+import { getStoredLocale } from '@/platform/i18n/localePreference'
+import i18n from '@/locales'
 
 type LocaleType = 'zh-CN' | 'en-US'
 
@@ -16,6 +17,7 @@ const DEFAULT_TEXT_KEYS = [
   'label',
   'name',
   'title',
+  'sectionTitle',
   'placeholder',
   'description',
   'helpText',
@@ -72,6 +74,24 @@ const getCurrentLocale = (): LocaleType => {
   return normalizeLocale(getStoredLocale())
 }
 
+const resolveTranslationKeyValue = (value: AnyRecord): string | undefined => {
+  const translationKey = typeof value.translationKey === 'string' ? value.translationKey.trim() : ''
+  if (!translationKey) return undefined
+
+  try {
+    if (typeof i18n?.global?.te === 'function' && i18n.global.te(translationKey)) {
+      const translated = i18n.global.t(translationKey)
+      if (typeof translated === 'string' && translated.trim()) {
+        return translated
+      }
+    }
+  } catch {
+    // Ignore i18n resolution errors and use the key as fallback.
+  }
+
+  return translationKey
+}
+
 export const resolveLocalizedValue = (
   source: AnyRecord,
   baseKey: string,
@@ -80,6 +100,10 @@ export const resolveLocalizedValue = (
   const value = source[baseKey]
   if (value && typeof value === 'object') {
     const localeMap = toRecord(value)
+    const translatedByKey = resolveTranslationKeyValue(localeMap)
+    if (translatedByKey !== undefined) {
+      return translatedByKey
+    }
     const aliases = localeAliases(locale)
     for (const alias of aliases) {
       if (typeof localeMap[alias] === 'string' && localeMap[alias].trim()) {
@@ -96,6 +120,34 @@ export const resolveLocalizedValue = (
 
   if (typeof value === 'string' && value.trim()) return value
   return undefined
+}
+
+export const resolveTranslatableText = (
+  value: any,
+  locale: LocaleType = getCurrentLocale()
+): string => {
+  if (typeof value === 'string') return value
+  if (!value || typeof value !== 'object') return ''
+
+  const record = toRecord(value)
+  const translatedByKey = resolveTranslationKeyValue(record)
+  if (translatedByKey !== undefined) {
+    return translatedByKey
+  }
+
+  const aliases = localeAliases(locale)
+  for (const alias of aliases) {
+    if (typeof record[alias] === 'string' && record[alias].trim()) {
+      return record[alias]
+    }
+  }
+
+  if (typeof record.zh === 'string' && record.zh.trim()) return record.zh
+  if (typeof record.en === 'string' && record.en.trim()) return record.en
+  if (typeof record.label === 'string' && record.label.trim()) return record.label
+  if (typeof record.title === 'string' && record.title.trim()) return record.title
+
+  return ''
 }
 
 export const localizeMultilingualObject = <T extends AnyRecord>(
@@ -139,4 +191,3 @@ export const localizeMultilingualTree = <T>(
 
   return localized as T
 }
-

@@ -90,6 +90,29 @@ class TestOrganizationMiddleware:
         org_id = middleware._extract_organization_id(request)
         assert org_id == str(organization.id)
 
+    def test_extract_from_superuser_default_organization(self, db, organization, superuser):
+        """Superusers without memberships should fall back to the first active organization."""
+        from apps.common.middleware import OrganizationMiddleware
+        from apps.accounts.models import UserOrganization
+
+        middleware = OrganizationMiddleware(get_response=lambda r: r)
+
+        request = Mock()
+        request.META = {}
+        request.user = superuser
+        request.session = {}
+        request.GET = {}
+        request.auth = None
+
+        org_id = middleware._extract_organization_id(request)
+
+        superuser.refresh_from_db()
+        membership = UserOrganization.objects.get(user=superuser, organization=organization)
+        assert org_id == str(organization.id)
+        assert membership.is_primary is True
+        assert membership.role == 'admin'
+        assert superuser.current_organization == organization
+
     def test_process_response_clears_context(self):
         """Test that process_response clears organization context."""
         from apps.common.middleware import (

@@ -234,7 +234,8 @@ class TestMenuAPICrossOrganization:
         bo = BusinessObject.objects.get(code='TEST_METADATA')
         bo.menu_config = {
             'show_in_menu': True,
-            'group': 'Test Group',
+            'group_code': 'other',
+            'group_translation_key': 'menu.categories.other',
             'item_order': 1
         }
         bo.save()
@@ -246,8 +247,13 @@ class TestMenuAPICrossOrganization:
             assert response.status_code == 200
 
             # Should find the test object in menu
-            codes = [item['code'] for item in response.data]
+            items = response.data['data']['items']
+            codes = [item['code'] for item in items]
             assert 'TEST_METADATA' in codes
+            test_item = next(item for item in items if item['code'] == 'TEST_METADATA')
+            assert test_item['group_code'] == 'other'
+            assert test_item['group_translation_key'] == 'menu.categories.other'
+            assert test_item['translation_key'] == 'menu.routes.TEST_METADATA'
         finally:
             clear_current_organization()
 
@@ -260,7 +266,8 @@ class TestMenuAPICrossOrganization:
         bo = BusinessObject.objects.get(code='TEST_METADATA')
         bo.menu_config = {
             'show_in_menu': True,
-            'group': 'Test Group',
+            'group_code': 'other',
+            'group_translation_key': 'menu.categories.other',
             'item_order': 1
         }
         bo.save()
@@ -272,7 +279,8 @@ class TestMenuAPICrossOrganization:
             assert response.status_code == 200
 
             # Should STILL find the test object in menu
-            codes = [item['code'] for item in response.data]
+            items = response.data['data']['items']
+            codes = [item['code'] for item in items]
             assert 'TEST_METADATA' in codes
         finally:
             clear_current_organization()

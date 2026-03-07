@@ -83,17 +83,14 @@ class LoginView(APIView):
         token_serializer.is_valid(raise_exception=True)
         tokens = token_serializer.validated_data
 
-        # Get user's primary organization
-        primary_org = user.user_orgs.filter(is_primary=True, is_active=True).first()
-        if not primary_org:
-            primary_org = user.user_orgs.filter(is_active=True).first()
+        primary_org = user.ensure_default_organization()
 
         org_data = None
         if primary_org:
             org_data = {
-                'id': str(primary_org.organization.id),
-                'name': primary_org.organization.name,
-                'role': primary_org.role
+                'id': str(primary_org.id),
+                'name': primary_org.name,
+                'role': user.get_org_role(primary_org.id) or 'admin'
             }
 
         serializer = UserDetailSerializer(user)

@@ -98,6 +98,7 @@ class BusinessObjectSerializer(BaseModelSerializer):
             'default_form_layout_name', 'default_list_layout_name',
             'table_name',
             'field_count', 'layout_count',
+            'menu_category', 'is_menu_hidden',
             'menu_config',
         ]
 
@@ -137,6 +138,7 @@ class BusinessObjectListSerializer(BaseListSerializer):
             'code', 'name', 'name_en',
             'is_hardcoded', 'table_name',
             'field_count', 'enable_workflow', 'object_type',
+            'menu_category', 'is_menu_hidden',
             'menu_config',
         ]
 
@@ -171,6 +173,7 @@ class BusinessObjectDetailSerializer(BaseModelWithAuditSerializer):
             'default_form_layout', 'default_list_layout',
             'table_name',
             'field_definitions', 'page_layouts',
+            'menu_category', 'is_menu_hidden',
             'menu_config',
         ]
 
@@ -334,7 +337,7 @@ class PageLayoutSerializer(BaseModelSerializer):
         fields = BaseModelSerializer.Meta.fields + [
             'business_object', 'business_object_code', 'business_object_name',
             'layout_code', 'layout_name', 'layout_type', 'layout_type_display',
-            'layout_config',
+            'view_mode', 'layout_config',
             'is_default', 'is_active',
         ]
 
@@ -370,6 +373,6 @@ class PageLayoutListSerializer(BaseListSerializer):
         fields = BaseListSerializer.Meta.fields + [
             'business_object_code',
             'layout_code', 'layout_name',
-            'layout_type', 'layout_type_display',
+            'layout_type', 'layout_type_display', 'view_mode',
             'is_default', 'is_active',
         ]

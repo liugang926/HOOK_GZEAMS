@@ -258,6 +258,83 @@ class User(AbstractUser, BaseModel):
 
         return True
 
+    def ensure_default_organization(self):
+        """
+        Ensure the user has a valid default organization.
+
+        Rules:
+        - Reuse the active primary organization if present.
+        - Otherwise promote the current organization membership when valid.
+        - Otherwise promote the first active organization membership.
+        - For superusers without any memberships, auto-bind the first active
+          organization as the default admin organization.
+        """
+        if not self.pk:
+            return None
+
+        selected_user_org = self.user_orgs.filter(
+            is_primary=True,
+            is_active=True
+        ).select_related('organization').first()
+
+        if not selected_user_org and self.current_organization_id:
+            selected_user_org = self.user_orgs.filter(
+                organization_id=self.current_organization_id,
+                is_active=True
+            ).select_related('organization').first()
+
+        if not selected_user_org:
+            selected_user_org = self.user_orgs.filter(
+                is_active=True
+            ).select_related('organization').first()
+
+        if not selected_user_org and self.is_superuser:
+            from apps.organizations.models import Organization
+
+            fallback_org = Organization.objects.filter(
+                is_deleted=False,
+                is_active=True
+            ).order_by('created_at', 'id').first()
+
+            if fallback_org:
+                selected_user_org, _ = UserOrganization.objects.get_or_create(
+                    user=self,
+                    organization=fallback_org,
+                    defaults={
+                        'role': 'admin',
+                        'is_active': True,
+                        'is_primary': True,
+                    }
+                )
+
+                updates = []
+                if not selected_user_org.is_active:
+                    selected_user_org.is_active = True
+                    updates.append('is_active')
+                if selected_user_org.role != 'admin':
+                    selected_user_org.role = 'admin'
+                    updates.append('role')
+                if not selected_user_org.is_primary:
+                    selected_user_org.is_primary = True
+                    updates.append('is_primary')
+
+                if updates:
+                    selected_user_org.save(update_fields=updates)
+
+        if not selected_user_org:
+            return None
+
+        if not selected_user_org.is_primary:
+            selected_user_org.is_primary = True
+            selected_user_org.save(update_fields=['is_primary'])
+
+        selected_org = selected_user_org.organization
+        if self.current_organization_id != selected_org.id:
+            self.current_organization = selected_org
+            self.save(update_fields=['current_organization'])
+
+        return selected_org
+
     def get_primary_organization(self):
         """
         Get the user's primary (default) organization.
@@ -265,17 +342,4 @@ class User(AbstractUser, BaseModel):
         Returns:
             Organization: The primary organization or None
         """
-        if not self.pk:
-            return None
-
-        primary_user_org = self.user_orgs.filter(
-            is_primary=True,
-            is_active=True
-        ).select_related('organization').first()
-
-        if primary_user_org:
-            return primary_user_org.organization
-
-        # Fallback to first accessible organization
-        first_org = self.get_accessible_organizations().first()
-        return first_org
+        return self.ensure_default_organization()

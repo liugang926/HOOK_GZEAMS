@@ -189,24 +189,38 @@ import {
   type ReferenceLookupColumnConfig
 } from '@/platform/reference/referenceLookupColumnPresets'
 import { buildReferenceLookupScopeId } from '@/platform/reference/referenceLookupScope'
+import type { FieldDefinition } from '@/types'
 
-type AnyRecord = Record<string, any>
+type AnyRecord = Record<string, unknown>
 type LookupColumnConfig = ReferenceLookupColumnConfig
+type ReferenceFieldValue = string | number | AnyRecord | Array<string | number | AnyRecord> | null | undefined
+type SelectRefLike = {
+  blur?: () => void
+}
 
-const props = defineProps({
-  field: Object,
-  // Detail endpoints may return expanded objects; edit submits IDs.
-  modelValue: [String, Number, Object, Array],
-  disabled: Boolean,
-  placeholder: String
+interface Props {
+  field?: FieldDefinition | AnyRecord | null
+  modelValue?: ReferenceFieldValue
+  disabled?: boolean
+  placeholder?: string
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  field: null,
+  modelValue: undefined,
+  disabled: false,
+  placeholder: ''
 })
 
-const emit = defineEmits(['update:modelValue', 'change'])
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: ReferenceFieldValue): void
+  (e: 'change', value: AnyRecord | AnyRecord[] | null): void
+}>()
 const { t } = useI18n()
 const userStore = useUserStore()
 const route = useRoute()
 
-const selectRef = ref<any>(null)
+const selectRef = ref<SelectRefLike | null>(null)
 const loadingSearch = ref(false)
 const loadingRecent = ref(false)
 const searchOptions = ref<AnyRecord[]>([])
@@ -220,7 +234,7 @@ const hoverLoading = ref(false)
 const hoverData = ref<AnyRecord | null>(null)
 const preloadedHoverIds = new Set<string>()
 
-const tr = (key: string, fallback: string, params?: Record<string, any>) => {
+const tr = (key: string, fallback: string, params?: Record<string, unknown>) => {
   const text = t(key, params || {})
   return text === key ? fallback : text
 }
@@ -500,7 +514,10 @@ const searchReference = async (query = '') => {
     const res = await searchReferenceData({
       reference_object: referenceObjectCode.value,
       search: searchKeyword.value,
-      page_size: 50
+      page_size: 50,
+      lookup_search_scope: 'all',
+      lookup_display_field: displayField.value || 'name',
+      lookup_secondary_field: secondaryField.value || 'code'
     })
     searchOptions.value = (res.results || res.items || [])
       .map((item: unknown) => normalizeOption(item))

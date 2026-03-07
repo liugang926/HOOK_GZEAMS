@@ -48,6 +48,10 @@ export interface RelatedObjectTableProps {
   pageSize?: number
   /** Explicit target object code (recommended for stable routing) */
   targetObjectCode?: string
+  /** The position of the component in the layout */
+  position?: 'main' | 'sidebar'
+  /** Disable record fetching and keep the table in metadata-only preview mode */
+  disableDataFetch?: boolean
 }
 
 interface RelatedRecord {
@@ -65,7 +69,9 @@ const props = withDefaults(defineProps<RelatedObjectTableProps>(), {
   mode: 'inline_readonly',
   title: '',
   showCreate: true,
-  pageSize: 10
+  targetObjectCode: '',
+  position: 'main',
+  disableDataFetch: false
 })
 
 const emit = defineEmits<{
@@ -84,11 +90,17 @@ const router = useRouter()
 const loading = ref(false)
 const records = ref<RelatedRecord[]>([])
 const total = ref(0)
+const defaultPageSize = computed(() => {
+  return props.position === 'sidebar' ? 3 : (props.pageSize || 10)
+})
+
 const currentPage = ref(1)
-const pageSize = ref(props.pageSize)
+const pageSize = ref(defaultPageSize.value)
 const showAll = ref(false)
 const metadataColumns = ref<TableColumn[] | null>(null)
 const relationTargetObjectCode = ref('')
+
+const isSidebarMode = computed(() => props.position === 'sidebar')
 
 const relationCode = computed(() => {
   return String(props.field.code || '').trim()
@@ -182,7 +194,9 @@ function buildColumnsFromMetadata(fields: AnyRecord[]): TableColumn[] {
     return a.code.localeCompare(b.code)
   })
 
-  return candidates.slice(0, 8).map((item) => item.column)
+  // Limit columns to 2 if in sidebar mode (plus the ID column built separately)
+  const maxColumns = props.position === 'sidebar' ? 2 : 8
+  return candidates.slice(0, maxColumns).map((item) => item.column)
 }
 
 function buildFallbackColumnsFromRecords(dataRows: RelatedRecord[]): TableColumn[] {
@@ -192,11 +206,10 @@ function buildFallbackColumnsFromRecords(dataRows: RelatedRecord[]): TableColumn
     : []
   const preferredKeys = ['code', 'name', 'status', 'createdAt']
   const selectedKeys = [
-    ...preferredKeys.filter((key) => allKeys.includes(key)),
     ...allKeys.filter((key) => !preferredKeys.includes(key))
-  ].slice(0, 3)
+  ].slice(0, props.position === 'sidebar' ? 2 : 3)
 
-  const fallbackKeys = selectedKeys.length > 0 ? selectedKeys : ['code', 'name', 'createdAt']
+  const fallbackKeys = selectedKeys.length > 0 ? selectedKeys : ['code', 'name', 'createdAt'].slice(0, props.position === 'sidebar' ? 2 : 3)
 
   return fallbackKeys.map((key) => {
     const labelByKey: Record<string, string> = {
@@ -291,6 +304,12 @@ const fetchRelatedColumns = async () => {
  */
 const fetchRecords = async () => {
   if (props.mode === 'hidden') return
+  if (props.disableDataFetch) {
+    records.value = []
+    total.value = 0
+    loading.value = false
+    return
+  }
   if (!props.parentObjectCode || !props.parentId || !relationCode.value) {
     records.value = []
     total.value = 0
@@ -305,7 +324,7 @@ const fetchRecords = async () => {
       relationCode.value,
       {
         page: currentPage.value,
-        page_size: showAll.value ? pageSize.value : 5
+        page_size: showAll.value ? pageSize.value : defaultPageSize.value
       }
     )
 
@@ -436,6 +455,7 @@ defineExpose({
   <div
     v-if="mode !== 'hidden'"
     class="related-object-card"
+    :class="{ 'related-object-card--sidebar': isSidebarMode }"
   >
     <!-- Card Header -->
     <div class="card-header">
@@ -450,7 +470,7 @@ defineExpose({
           v-if="total > 0"
           class="card-count"
         >
-          ({{ total > 5 && !showAll ? '5+' : total }})
+          ({{ total > defaultPageSize && !showAll ? `${defaultPageSize}+` : total }})
         </span>
       </div>
       <div class="header-actions">
@@ -506,7 +526,7 @@ defineExpose({
 
     <!-- View All Footer -->
     <div
-      v-if="total > 5 && !showAll"
+      v-if="total > defaultPageSize && !showAll"
       class="card-footer"
     >
       <a
@@ -545,6 +565,32 @@ defineExpose({
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   margin-bottom: 16px;
   overflow: hidden;
+
+  &.related-object-card--sidebar {
+    box-shadow: none;
+    border: none;
+    background-color: transparent;
+    border-bottom: 1px solid var(--el-border-color-lighter, #ebeef5);
+    border-radius: 0;
+    margin-bottom: 0;
+    
+    .card-header {
+      background-color: transparent;
+      padding: 12px 0;
+      border-bottom: none;
+      
+      .header-icon-wrapper {
+        width: 24px;
+        height: 24px;
+        font-size: 14px;
+        border-radius: 4px;
+      }
+      
+      .card-title {
+        font-size: 14px;
+      }
+    }
+  }
 
   .card-header {
     display: flex;

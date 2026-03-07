@@ -274,10 +274,13 @@
           min-width="200"
         />
         <el-table-column
-          prop="name"
           :label="t('system.moduleWorkbench.columns.menuName')"
           min-width="240"
-        />
+        >
+          <template #default="{ row }">
+            {{ getMenuDisplayName(row) }}
+          </template>
+        </el-table-column>
         <el-table-column
           prop="url"
           :label="t('system.moduleWorkbench.columns.url')"
@@ -314,10 +317,13 @@
         stripe
       >
         <el-table-column
-          prop="name"
           :label="t('system.moduleWorkbench.columns.menuName')"
           min-width="240"
-        />
+        >
+          <template #default="{ row }">
+            {{ getMenuDisplayName(row) }}
+          </template>
+        </el-table-column>
         <el-table-column
           prop="code"
           :label="t('system.moduleWorkbench.columns.code')"
@@ -346,6 +352,7 @@ import { filterSystemFields } from '@/utils/transform'
 
 interface MenuCoverageItem extends MenuItem {
   code: string
+  translationKey?: string
 }
 
 type ReadinessState = 'ready' | 'empty_fields' | 'unavailable' | 'checking'
@@ -432,6 +439,9 @@ const normalizeMenuItems = (payload: AnyRecord): MenuCoverageItem[] => {
       icon: String(item?.icon || ''),
       order: Number(item?.order || 0),
       group: String(item?.group || ''),
+      groupCode: String(item?.groupCode || ''),
+      groupTranslationKey: String(item?.groupTranslationKey || ''),
+      translationKey: String(item?.translationKey || ''),
       badge: item?.badge
     })
   }
@@ -519,6 +529,16 @@ const getObjectDisplayName = (code: string, fallbackName: string): string => {
     t as (key: string) => string,
     te
   )
+}
+
+const getMenuDisplayName = (item: MenuCoverageItem): string => {
+  const translationKey = String(item.translationKey || '').trim()
+  if (translationKey && te(translationKey)) {
+    return t(translationKey)
+  }
+
+  const objectCode = extractObjectCodeFromUrl(item.url) || item.code
+  return getObjectDisplayName(objectCode, item.name)
 }
 
 const isCovered = (code: string): boolean => {

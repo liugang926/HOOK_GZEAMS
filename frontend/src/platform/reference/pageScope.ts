@@ -70,9 +70,9 @@ export const buildObjectPageScopeId = (
   }
 
   if (objectCode) {
-    if (action === 'edit') return `object-edit:${objectCode}`
     if (routePath.endsWith('/create')) return `object-create:${objectCode}`
     if (routePath.endsWith('/edit') || (!!recordId && routePath.includes('/edit'))) return `object-edit:${objectCode}`
+    if (action === 'edit') return `object-edit:${objectCode}`
     if (recordId) return `object-detail:${objectCode}`
     return `object:${objectCode}`
   }
@@ -81,4 +81,3 @@ export const buildObjectPageScopeId = (
   if (routePath) return `path:${routePath}`
   return 'global'
 }
-

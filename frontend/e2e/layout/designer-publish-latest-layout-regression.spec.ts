@@ -1,5 +1,9 @@
 import { test, expect, type Route } from '@playwright/test'
 import { clickDesignerPublish, waitForDesignerReady } from '../helpers/page-ready.helpers'
+import {
+  getDetailContent,
+  waitForDetailPageReady
+} from '../helpers/detail-page.helpers'
 type AnyRecord = Record<string, any>
 
 const OBJECT_CODE = 'Asset'
@@ -237,10 +241,9 @@ test.describe('Layout Designer Publish Latest Regression', () => {
     await expect.poll(() => findFieldLabel(publishedLayoutConfig, 'assetName')).toBe(UPDATED_LABEL)
 
     await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
-    await expect(page.locator('.dynamic-detail-page').first()).toBeVisible()
-    await expect(page.locator('.load-error')).toHaveCount(0)
+    await waitForDetailPageReady(page)
     await expect(page.locator('.detail-sections .field-label', { hasText: UPDATED_LABEL }).first()).toBeVisible()
-    await expect(page.locator('.detail-content')).toContainText(recordPayload.assetName)
+    await expect(getDetailContent(page)).toContainText(recordPayload.assetName)
   })
 })
 

@@ -15,6 +15,7 @@ from apps.system.models import (
     ModelFieldDefinition,
     FieldDefinition,
 )
+from apps.system.layout_sections import get_field_section_metadata
 
 
 # Core hardcoded model display names (for display name mapping)
@@ -177,6 +178,20 @@ class BusinessObjectService:
     providing a unified interface for the metadata engine.
     """
 
+    @staticmethod
+    def _iter_supported_model_fields(model_class):
+        for field in model_class._meta.get_fields():
+            is_reverse_relation = bool(field.auto_created and getattr(field, 'one_to_many', False))
+            if is_reverse_relation:
+                continue
+            if field.auto_created and not getattr(field, 'concrete', False):
+                continue
+            if getattr(field, 'many_to_many', False):
+                continue
+            if field.is_relation and not getattr(field, 'many_to_one', False) and not getattr(field, 'one_to_one', False):
+                continue
+            yield field
+
     def get_all_objects(
         self,
         organization_id: Optional[str] = None,
@@ -267,6 +282,7 @@ class BusinessObjectService:
         *,
         context: str = 'form',
         include_relations: bool = False,
+        locale: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Get field definitions for a specific business object.
@@ -284,6 +300,7 @@ class BusinessObjectService:
                 object_code,
                 context=context,
                 include_relations=include_relations,
+                locale=locale,
             )
 
         # Otherwise, it's a custom low-code object
@@ -293,6 +310,7 @@ class BusinessObjectService:
                 obj,
                 context=context,
                 include_relations=include_relations,
+                locale=locale,
             )
         except BusinessObject.DoesNotExist:
             return {
@@ -419,18 +437,14 @@ class BusinessObjectService:
             raise ValueError(f'Business object not registered: {object_code}')
 
         # Get fields from the model
-        fields = []
-        for field in model_class._meta.get_fields():
-            # Skip reverse relations and auto-generated fields
-            if field.auto_created or field.is_relation:
-                if not field.one_to_many and not field.many_to_one:
-                    continue
-            fields.append(field)
+        fields = list(self._iter_supported_model_fields(model_class))
+        canonical_field_names = {field.name for field in fields}
 
         # Sync each field
         count = 0
-        for field in fields:
+        for index, field in enumerate(fields, start=1):
             field_def = ModelFieldDefinition.from_django_field(obj, field)
+            field_def.sort_order = index
 
             # Special handling for JSONField-based file/image fields
             # Fields named 'images' or containing 'image' should use 'image' type
@@ -442,7 +456,7 @@ class BusinessObjectService:
                 field_def.field_type = 'file'
 
             # Get or update
-            existing = ModelFieldDefinition.objects.filter(
+            existing = ModelFieldDefinition.all_objects.filter(
                 business_object=obj,
                 field_name=field.name
             ).first()
@@ -453,6 +467,7 @@ class BusinessObjectService:
                 existing.display_name_en = field_def.display_name_en
                 existing.field_type = field_def.field_type
                 existing.sort_order = field_def.sort_order
+                existing.is_deleted = False
                 existing.save()
             else:
                 # Set organization if provided
@@ -461,6 +476,11 @@ class BusinessObjectService:
                 field_def.save()
 
             count += 1
+
+        ModelFieldDefinition.objects.filter(
+            business_object=obj,
+            is_deleted=False,
+        ).exclude(field_name__in=canonical_field_names).update(is_deleted=True)
 
         return count
 
@@ -527,6 +547,7 @@ class BusinessObjectService:
         *,
         context: str = 'form',
         include_relations: bool = False,
+        locale: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Get fields for a hardcoded object."""
         # Get BusinessObject metadata
@@ -587,6 +608,7 @@ class BusinessObjectService:
 
             # Use ModelFieldDefinition.from_django_field to get correct field type
             field_def = ModelFieldDefinition.from_django_field(obj, field)
+            section_meta = get_field_section_metadata(object_code, field_def.field_name, locale=locale)
 
             if not self._should_show_model_field_in_context(field_def, normalized_context):
                 continue
@@ -609,6 +631,11 @@ class BusinessObjectService:
                 'maxLength': field_def.max_length,
                 'decimalPlaces': field_def.decimal_places,
                 'isReverseRelation': False,
+                'sectionName': section_meta['section_name'],
+                'sectionTitle': section_meta['section_title'],
+                'sectionTitleI18n': section_meta['section_title_i18n'],
+                'sectionTranslationKey': section_meta['section_translation_key'],
+                'sectionIcon': section_meta['section_icon'],
             })
 
         return {
@@ -626,6 +653,7 @@ class BusinessObjectService:
         *,
         context: str = 'form',
         include_relations: bool = False,
+        locale: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Get fields for a custom low-code object."""
         normalized_context = context if context in {'form', 'detail', 'list'} else 'form'
@@ -636,6 +664,7 @@ class BusinessObjectService:
                 continue
             if not self._should_show_custom_field_in_context(f, normalized_context):
                 continue
+            section_meta = get_field_section_metadata(obj.code, f.code, locale=locale)
             rows.append(
                 {
                     'field_name': f.code,
@@ -655,6 +684,11 @@ class BusinessObjectService:
                     'reverse_relation_model': getattr(f, 'reverse_relation_model', ''),
                     'reverse_relation_field': getattr(f, 'reverse_relation_field', ''),
                     'relation_display_mode': getattr(f, 'relation_display_mode', 'tab_readonly'),
+                    'section_name': section_meta['section_name'],
+                    'section_title': section_meta['section_title'],
+                    'section_title_i18n': section_meta['section_title_i18n'],
+                    'section_translation_key': section_meta['section_translation_key'],
+                    'section_icon': section_meta['section_icon'],
                 }
             )
 

@@ -17,12 +17,15 @@ export interface MenuItem {
     order: number
     group: string
     groupCode?: string
+    groupTranslationKey?: string
+    translationKey?: string
     badge?: any
 }
 
 export interface MenuGroup {
     code?: string
     name: string
+    translationKey?: string
     order: number
     icon: string
     items: MenuItem[]

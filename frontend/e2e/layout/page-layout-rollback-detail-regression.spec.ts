@@ -1,5 +1,9 @@
 import { test, expect, type Route } from '@playwright/test'
 import { confirmDialogPrimary } from '../helpers/page-ready.helpers'
+import {
+  getDetailContent,
+  waitForDetailPageReady
+} from '../helpers/detail-page.helpers'
 
 type AnyRecord = Record<string, any>
 
@@ -223,10 +227,9 @@ test.describe('Page Layout Rollback -> Detail Regression', () => {
     await expect(page.locator('.version-badge').first()).toContainText('1')
 
     await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
-    await expect(page.locator('.dynamic-detail-page').first()).toBeVisible()
-    await expect(page.locator('.load-error')).toHaveCount(0)
+    await waitForDetailPageReady(page)
     await expect(page.locator('.detail-sections .field-label', { hasText: LABEL_V1 }).first()).toBeVisible()
     await expect(page.locator('.detail-sections .field-label', { hasText: LABEL_V2 })).toHaveCount(0)
-    await expect(page.locator('.detail-content')).toContainText(recordPayload.assetName)
+    await expect(getDetailContent(page)).toContainText(recordPayload.assetName)
   })
 })

@@ -14,11 +14,17 @@ import {
   type ModePolicy,
   type RenderMetadataContext
 } from '@/platform/layout/layoutRenderModel'
+import { normalizeFieldType } from '@/utils/fieldType'
 
 export type DetailMetadataContext = RenderMetadataContext
 
 const isHiddenField = (field: FieldDefinition | FieldViewModel): boolean => {
   return ((field as any).isHidden ?? (field as any).is_hidden) === true
+}
+
+const isLayoutInjectedRelatedObjectField = (field: FieldDefinition | FieldViewModel): boolean => {
+  const rawType = String((field as any)?.fieldType || (field as any)?.field_type || (field as any)?.type || '').trim()
+  return normalizeFieldType(rawType) === 'related_object'
 }
 
 /**
@@ -44,6 +50,7 @@ export const shouldSkipUnifiedDetailField = (
 export interface UnifiedDetailSectionsInput {
   layoutSections: Record<string, any>[]
   fields: FieldDefinition[]
+  reverseRelations?: Record<string, any>[]
   modePolicy?: ModePolicy
   metadataContext?: DetailMetadataContext
   strictVisibility?: boolean
@@ -68,7 +75,8 @@ export const projectUnifiedDetailSectionsFromLayout = (
     // Single layout model: detail rendering follows edit layout structure.
     mode: 'edit',
     fields: model.fields as any[],
-    layoutConfig: { sections: model.sections || [] }
+    layoutConfig: { sections: model.sections || [] },
+    reverseRelations: input.reverseRelations || []
   })
   const knownFieldCodes = new Set(
     (model.fields || [])
@@ -80,6 +88,7 @@ export const projectUnifiedDetailSectionsFromLayout = (
     strictVisibility: model.modePolicy.strictVisibility === true,
     isAuditFieldCode,
     mustSkipField: (field) => {
+      if (isLayoutInjectedRelatedObjectField(field)) return false
       // Runtime metadata field map is the source of truth.
       // Layout-only injected fields (often system/legacy artifacts) should not
       // occupy grid slots in detail rendering.

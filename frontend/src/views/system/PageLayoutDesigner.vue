@@ -70,11 +70,20 @@ const router = useRouter()
 const layoutId = computed(() => (route.query.layoutId as string) || '')
 const objectCode = computed(() => (route.query.objectCode as string) || '')
 const layoutName = computed(() => (route.query.layoutName as string) || '')
+const layoutType = computed(() => String(route.query.layoutType || '').toLowerCase())
 const initialPreviewMode = computed<'current' | 'active'>(() => {
   return (route.query.previewMode as string) === 'active' ? 'active' : 'current'
 })
 
-const mode = computed<LayoutMode>(() => 'edit')
+const mode = computed<LayoutMode>(() => {
+  if (layoutType.value === 'readonly' || layoutType.value === 'detail') {
+    return 'readonly'
+  }
+  if (layoutType.value === 'search') {
+    return 'search'
+  }
+  return 'edit'
+})
 const objectName = computed(() => (route.query.objectName as string) || '')
 const objectDisplayName = computed(() => {
   return resolveObjectDisplayName(
@@ -85,6 +94,12 @@ const objectDisplayName = computed(() => {
   )
 })
 const layoutTypeLabel = computed(() => {
+  if (layoutType.value === 'readonly' || layoutType.value === 'detail') {
+    return t('system.pageLayout.types.readonly')
+  }
+  if (layoutType.value === 'search') {
+    return t('system.pageLayout.types.search')
+  }
   return t('system.pageLayout.types.edit')
 })
 const businessObjectId = computed(() => (route.query.businessObjectId as string) || '')

@@ -309,3 +309,53 @@ def test_object_router_runtime_list_uses_field_driven_columns_not_legacy_list_la
     assert 'name' in field_codes
     assert 'hidden_note' not in field_codes
     assert 'legacy_only' not in field_codes
+
+
+@pytest.mark.django_db
+def test_object_router_runtime_relations_use_relation_definitions_for_hardcoded_objects():
+    org = Organization.objects.create(name='Runtime Relation Org', code='runtime-relation-org')
+    user = User.objects.create(username='runtime_relation_user', organization=org)
+
+    BusinessObject.objects.update_or_create(
+        code='Asset',
+        defaults={
+            'name': 'Asset',
+            'name_en': 'Asset',
+            'is_hardcoded': True,
+            'django_model_path': 'apps.assets.models.Asset',
+        },
+    )
+    BusinessObject.objects.update_or_create(
+        code='AssetTransfer',
+        defaults={
+            'name': 'Asset Transfer',
+            'name_en': 'Asset Transfer',
+            'is_hardcoded': True,
+            'django_model_path': 'apps.assets.models.AssetTransfer',
+        },
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id), HTTP_ACCEPT_LANGUAGE='en-US,en;q=0.9')
+
+    resp = client.get('/api/system/objects/Asset/runtime/?mode=readonly&include_relations=true')
+    assert resp.status_code == 200
+
+    payload = resp.json()
+    assert payload['success'] is True
+    fields = payload['data']['fields']
+    reverse_relations = fields.get('reverseRelations')
+    if reverse_relations is None:
+        reverse_relations = fields.get('reverse_relations')
+    reverse_relations = reverse_relations or []
+
+    transfer_relation = next(
+        (
+            item for item in reverse_relations
+            if (item.get('fieldCode') or item.get('field_code') or item.get('code')) == 'transfer_orders'
+        ),
+        None,
+    )
+    assert transfer_relation is not None
+    assert (transfer_relation.get('targetObjectCode') or transfer_relation.get('target_object_code')) == 'AssetTransfer'

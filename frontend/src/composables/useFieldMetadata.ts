@@ -207,11 +207,13 @@ export function useFieldMetadata(
 
       const reverseRelationsConverted: FieldDefinition[] = rawReverseRelations.map((f) => {
         const localized = localizeMultilingualObject(f)
+        const code = String(f.code || f.fieldCode || f.field_code || '').trim()
         return {
           ...localized,
-        id: f.id || f.code,
-        label: localized.label || localized.name || f.label || f.name,
-        span: f.span || 12
+          code,
+          id: f.id || code,
+          label: localized.label || localized.name || f.label || f.name || code,
+          span: f.span || 12
         }
       })
 

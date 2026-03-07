@@ -42,6 +42,12 @@ export interface BusinessObject {
   /** Whether this is a hardcoded model (vs custom object) */
   isHardcoded?: boolean
 
+  /** Menu category for automated routing */
+  menuCategory?: string
+
+  /** Whether the object should be hidden from the sidebar menu */
+  isMenuHidden?: boolean
+
   /** Django model path for hardcoded models */
   djangoModelPath?: string
 
@@ -117,6 +123,12 @@ export interface ObjectMetadata {
 
   /** English name */
   nameEn?: string
+
+  /** Menu category */
+  menuCategory?: string
+
+  /** Whether the object is hidden from menus */
+  isMenuHidden?: boolean
 
   /** Whether this is a hardcoded model */
   isHardcoded: boolean
@@ -211,6 +223,12 @@ export interface BusinessObjectListItem {
 
   /** Module */
   module?: string
+
+  /** Menu category */
+  menuCategory?: string
+
+  /** Whether hidden from menu */
+  isMenuHidden?: boolean
 
   /** Whether active */
   isActive?: boolean

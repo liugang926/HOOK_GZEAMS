@@ -406,3 +406,7 @@ function handleResizePointerDown(axis: ResizeAxis, event: PointerEvent) {
   pointer-events: none;
 }
 </style>
+
+<style lang="scss">
+@use '@/components/common/detail/BaseDetailPage.scss';
+</style>

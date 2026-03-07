@@ -447,7 +447,13 @@
                 "faultDescription": "故障描述",
                 "faultDescriptionPlaceholder": "请描述故障现象",
                 "priority": "优先级",
-                "remark": "备注"
+                "remark": "备注",
+                "completionDate": "完成日期",
+                "costBreakdown": "费用明细",
+                "laborCost": "人工费用",
+                "materialCost": "材料费用",
+                "otherCost": "其他费用",
+                "totalCost": "费用合计"
             },
             "priority": {
                 "low": "低",
@@ -510,7 +516,11 @@
                 "itemsTitle": "报废资产明细",
                 "addItem": "添加资产",
                 "assetLabel": "资产",
-                "assetPlaceholder": "请选择资产"
+                "assetPlaceholder": "请选择资产",
+                "disposalMethod": "处置方式",
+                "appraisalValue": "评估价值",
+                "disposalValue": "处置价值",
+                "assetCode": "资产编码"
             },
             "status": {
                 "draft": "草稿",

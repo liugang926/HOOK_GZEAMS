@@ -151,35 +151,32 @@ function generateDefaultSections(fields: FieldMetadata[]): SectionConfig[] {
   }
 
   // Group by sectionName if available, otherwise use defaults
-  const groupedFields = new Map<string, string[]>()
+  const groupedFields = new Map<string, { fields: string[]; title?: string }>()
 
   editableFields.forEach(field => {
     const sectionName = field.sectionName || 'basic'
     if (!groupedFields.has(sectionName)) {
-      groupedFields.set(sectionName, [])
+      groupedFields.set(sectionName, {
+        fields: [],
+        title: field.sectionTitle
+      })
     }
-    groupedFields.get(sectionName)!.push(field.code)
+    const section = groupedFields.get(sectionName)!
+    section.fields.push(field.code)
+    if (!section.title && field.sectionTitle) {
+      section.title = field.sectionTitle
+    }
   })
 
   // Convert to section configs
   const sections: SectionConfig[] = []
-  const sectionTitles: Record<string, string> = {
-    basic: 'Basic Information',
-    detail: 'Details',
-    value: 'Value Information',
-    usage: 'Usage Information',
-    images: 'Images',
-    attachments: 'Attachments',
-    status: 'Status',
-    location: 'Location'
-  }
 
   let isFirst = true
-  for (const [sectionId, fieldCodes] of groupedFields.entries()) {
+  for (const [sectionId, sectionData] of groupedFields.entries()) {
     sections.push({
       id: sectionId,
-      title: sectionTitles[sectionId] || toTitleCase(sectionId),
-      fields: fieldCodes,
+      title: sectionData.title || sectionId,
+      fields: sectionData.fields,
       collapsed: !isFirst // First section is expanded by default
     })
     isFirst = false

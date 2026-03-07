@@ -1,4 +1,9 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
+import {
+  ensureInlineEditMode,
+  getDetailFieldItem,
+  getHeaderActionButton
+} from '../helpers/detail-page.helpers'
 
 function fulfillSuccess(route: Route, data: unknown) {
   return route.fulfill({
@@ -226,9 +231,8 @@ test.describe('Detail/Edit Shared Layout Model', () => {
     )
     expect(detailLabels.slice(0, 3)).toEqual(['AssetName', 'AssetCode', 'PurchaseDate'])
 
-    await page.locator('.header-actions .el-button').first().click()
-    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
+    await getHeaderActionButton(page, /Edit/i).click()
+    await ensureInlineEditMode(page)
     const editSurface = detailSurface
 
     const drawerLabels = normalizeLabels(
@@ -237,15 +241,9 @@ test.describe('Detail/Edit Shared Layout Model', () => {
     expect(drawerLabels.slice(0, 3)).toEqual(['AssetName', 'AssetCode', 'PurchaseDate'])
     await expect.poll(async () => hasInputWithValue(page, 'ASSET-SHARED-001')).toBe(true)
     await expect.poll(async () => hasInputWithValue(page, 'Shared Layout Asset')).toBe(true)
-    const purchaseDateField = editSurface.locator('.field-item').filter({
-      has: page.locator('.field-label', { hasText: 'Purchase Date' })
-    }).first()
-    const assetCodeField = editSurface.locator('.field-item').filter({
-      has: page.locator('.field-label', { hasText: 'Asset Code' })
-    }).first()
-    const statusField = editSurface.locator('.field-item').filter({
-      has: page.locator('.field-label', { hasText: 'Status' })
-    }).first()
+    const purchaseDateField = getDetailFieldItem(editSurface, 'Purchase Date')
+    const assetCodeField = getDetailFieldItem(editSurface, 'Asset Code')
+    const statusField = getDetailFieldItem(editSurface, 'Status')
     await expect(assetCodeField.locator('input')).toHaveValue('ASSET-SHARED-001')
     await expect(assetCodeField.locator('input')).toBeDisabled()
     await expect(purchaseDateField.locator('.el-date-editor')).toHaveCount(1)

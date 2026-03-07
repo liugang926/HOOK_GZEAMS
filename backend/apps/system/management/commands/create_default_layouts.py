@@ -18,6 +18,13 @@ from apps.system.services.business_object_service import (
     HARDCODED_OBJECT_NAMES,
 )
 from apps.system.models import BusinessObject, PageLayout
+from apps.system.services.layout_generator import LayoutGenerator
+
+
+SEARCH_SECTION_TITLE = {
+    'zh': '搜索条件',
+    'en': 'Search Filters',
+}
 
 
 # Default layout configurations for each object type
@@ -283,7 +290,7 @@ def generate_search_layout_config(object_code: str, field_names: list) -> dict:
         'sections': [{
             'id': 'search_section',
             'type': 'section',
-            'title': '搜索条件',
+            'title': SEARCH_SECTION_TITLE,
             'collapsible': False,
             'border': True,
             'columns': 3,
@@ -311,6 +318,47 @@ def _get_search_component(field_name: str) -> str:
     return component_map.get(field_name, 'input')
 
 
+def get_available_field_names(business_object: BusinessObject, *, for_search: bool = False) -> list[str]:
+    """Return field codes available for default layout generation."""
+    if business_object.is_hardcoded:
+        rows = business_object.model_fields.filter(
+            is_deleted=False,
+        ).order_by('sort_order', 'field_name')
+        visible_rows = [
+            row for row in rows
+            if str(row.field_name or '').strip() and getattr(row, 'field_type', '') != 'sub_table'
+        ]
+        if for_search:
+            search_rows = [row for row in visible_rows if getattr(row, 'show_in_list', False)]
+            visible_rows = search_rows or visible_rows
+        return [
+            str(row.field_name or '').strip()
+            for row in visible_rows
+        ]
+
+    rows = business_object.field_definitions.filter(
+        is_deleted=False,
+    ).order_by('sort_order', 'code')
+    visible_rows = [
+        row for row in rows
+        if (
+            str(row.code or '').strip()
+            and not getattr(row, 'is_reverse_relation', False)
+            and getattr(row, 'field_type', '') != 'sub_table'
+        )
+    ]
+    if for_search:
+        search_rows = [
+            row for row in visible_rows
+            if getattr(row, 'show_in_filter', False) or getattr(row, 'is_searchable', False)
+        ]
+        visible_rows = search_rows or visible_rows
+    return [
+        str(row.code or '').strip()
+        for row in visible_rows
+    ]
+
+
 class Command(BaseCommand):
     help = 'Create default layouts for business objects'
 
@@ -335,14 +383,18 @@ class Command(BaseCommand):
 
         # Determine which objects to process
         if specific_code:
-            if specific_code not in CORE_HARDcoded_MODELS:
+            if specific_code in CORE_HARDcoded_MODELS or BusinessObject.objects.filter(code=specific_code).exists():
+                object_codes = [specific_code]
+            else:
                 self.stderr.write(
-                    self.style.ERROR(f'Unknown hardcoded model: {specific_code}')
+                    self.style.ERROR(f'Unknown business object: {specific_code}')
                 )
                 return
-            object_codes = [specific_code]
         else:
-            object_codes = list(CORE_HARDcoded_MODELS.keys())
+            object_codes = sorted({
+                *CORE_HARDcoded_MODELS.keys(),
+                *BusinessObject.objects.filter(is_deleted=False).values_list('code', flat=True),
+            })
 
         # Statistics
         created_count = 0
@@ -351,10 +403,10 @@ class Command(BaseCommand):
 
         # Layout types to create
         layout_types = [
-            ('form', '表单', generate_form_layout_config),
-            ('list', '列表', generate_list_layout_config),
-            ('detail', '详情', generate_detail_layout_config),
-            ('search', '搜索', generate_search_layout_config),
+            ('form', 'form', generate_form_layout_config),
+            ('list', 'list', generate_list_layout_config),
+            ('detail', 'detail', generate_detail_layout_config),
+            ('search', 'search', generate_search_layout_config),
         ]
 
         with transaction.atomic():
@@ -364,21 +416,26 @@ class Command(BaseCommand):
                     obj = BusinessObject.objects.filter(code=code).first()
 
                     if not obj:
-                        names = HARDCODED_OBJECT_NAMES.get(code, (code, code))
-                        obj = service.register_hardcoded_object(code, names[0], names[1])
-                        self.stdout.write(f'  {self.style.SUCCESS("REGISTERED")}: {code}')
+                        if code in CORE_HARDcoded_MODELS:
+                            names = HARDCODED_OBJECT_NAMES.get(code, (code, code))
+                            obj = service.register_hardcoded_object(code, names[0], names[1])
+                            self.stdout.write(f'  {self.style.SUCCESS("REGISTERED")}: {code}')
+                        else:
+                            self.stdout.write(f'  {self.style.WARNING("SKIP")}: {code} not registered')
+                            skipped_count += 1
+                            continue
 
                     # Sync fields first
-                    try:
-                        service.sync_model_fields(code)
-                        self.stdout.write(f'    {self.style.SUCCESS("SYNCED")}: Fields synced')
-                    except Exception as e:
-                        self.stdout.write(f'    {self.style.WARNING("WARNING")}: Could not sync fields - {e}')
+                    if obj.is_hardcoded and code in CORE_HARDcoded_MODELS:
+                        try:
+                            service.sync_model_fields(code)
+                            self.stdout.write(f'    {self.style.SUCCESS("SYNCED")}: Fields synced')
+                        except Exception as e:
+                            self.stdout.write(f'    {self.style.WARNING("WARNING")}: Could not sync fields - {e}')
 
                     # Get available field names
-                    field_names = list(obj.model_fields.filter(
-                        show_in_form=True
-                    ).values_list('field_name', flat=True))
+                    field_names = get_available_field_names(obj)
+                    search_field_names = get_available_field_names(obj, for_search=True)
 
                     if not field_names:
                         self.stdout.write(f'    {self.style.WARNING("SKIP")}: No fields available')
@@ -393,16 +450,26 @@ class Command(BaseCommand):
                             layout_code=layout_code
                         ).first()
 
-                        if existing_layout and not force:
+                        should_update = force or existing_layout is None or bool(existing_layout.is_default)
+
+                        if existing_layout and not should_update:
                             self.stdout.write(f'    {self.style.SUCCESS("EXISTS")}: {layout_name_suffix} layout')
                         else:
-                            layout_config = config_generator(code, field_names)
+                            if layout_type == 'form':
+                                layout_config = LayoutGenerator.generate_form_layout(obj)
+                            elif layout_type == 'list':
+                                layout_config = LayoutGenerator.generate_list_layout(obj)
+                            elif layout_type == 'detail':
+                                layout_config = LayoutGenerator.generate_detail_layout(obj)
+                            else:
+                                layout_config = config_generator(code, search_field_names)
+
                             if layout_config:
                                 PageLayout.objects.update_or_create(
                                     business_object=obj,
                                     layout_code=layout_code,
                                     defaults={
-                                        'layout_name': f'{obj.name}{layout_name_suffix}',
+                                        'layout_name': f'{obj.name} [{layout_name_suffix}]',
                                         'layout_type': layout_type,
                                         'layout_config': layout_config,
                                         'is_default': True,

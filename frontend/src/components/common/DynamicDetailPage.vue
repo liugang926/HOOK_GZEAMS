@@ -43,6 +43,7 @@ import { compileLayoutSchema } from '@/platform/layout/layoutCompiler'
 import { resolveRelationTargetObjectCode } from '@/platform/reference/relationObjectCode'
 import { buildRecordRelationGroupScopeId } from '@/platform/reference/relationGroupScope'
 import { readStorageString } from '@/platform/storage/browserStorage'
+import ContextDrawer from '@/components/common/ContextDrawer.vue'
 
 const { t } = useI18n()
 const slots = useSlots()
@@ -140,6 +141,8 @@ const formData = ref<Record<string, any>>({})
 const formRules = ref<Record<string, any>>({})
 const submitting = ref(false)
 const baseDetailRef = ref<any>(null)
+const isCompactMode = ref(false)
+const compactEditDrawerVisible = ref(false)
 
 // ============================================================================
 // Computed
@@ -208,6 +211,31 @@ const effectiveAuditInfo = computed<AuditInfo | null>(() => {
   return auditInfo.value
 })
 
+function isMediaDetailField(field: DetailField): boolean {
+  const type = String(field.type || field.editorType || '').trim()
+  const prop = String(field.prop || '').trim()
+  return (
+    type === 'image' ||
+    type === 'file' ||
+    type === 'attachment' ||
+    prop === 'images' ||
+    prop === 'attachments'
+  )
+}
+
+function shouldForceSectionExpanded(section: DetailSection): boolean {
+  const directFields = Array.isArray(section.fields) ? section.fields : []
+  const tabFields = (section.tabs || []).flatMap((tab) => tab.fields || [])
+  return [...directFields, ...tabFields].some((field) => isMediaDetailField(field))
+}
+
+function normalizeDetailSectionsForDisplay(sections: DetailSection[]): DetailSection[] {
+  return (sections || []).map((section) => ({
+    ...section,
+    collapsed: shouldForceSectionExpanded(section) ? false : section.collapsed
+  }))
+}
+
 function normalizeRecordPayload(payload: any): Record<string, any> {
   if (!payload || typeof payload !== 'object') return {}
   if (
@@ -236,7 +264,7 @@ const detailSections = computed<DetailSection[]>(() => {
     )
     // Respect runtime layout as single source of truth even when
     // visibility policy projects to zero visible fields.
-    return runtimeSections
+    return normalizeDetailSectionsForDisplay(runtimeSections)
   }
 
   const sections: DetailSection[] = []
@@ -244,18 +272,19 @@ const detailSections = computed<DetailSection[]>(() => {
 
   for (const [sectionName, fields] of Object.entries(fieldGroups)) {
     if (fields.length === 0) continue
+    const sectionMeta = fields[0] as FieldDefinition & { sectionTitle?: string; sectionIcon?: string }
 
     sections.push({
       name: sectionName,
-      title: getSectionTitle(sectionName),
-      icon: getSectionIcon(sectionName),
+      title: sectionMeta.sectionTitle || getSectionTitle(sectionName),
+      icon: sectionMeta.sectionIcon || getSectionIcon(sectionName),
       collapsible: sectionName !== 'basic',
-      collapsed: sectionName === 'images' || sectionName === 'attachments',
+      collapsed: false,
       fields: fields.map(f => fieldToDetailField(f))
     })
   }
 
-  return sections
+  return normalizeDetailSectionsForDisplay(sections)
 })
 
 /** Find all related_object codes that are already explicitly placed in the layout canvas */
@@ -269,14 +298,15 @@ const usedRelationCodesInLayout = computed<Set<string>>(() => {
     }
     
     for (const field of candidates) {
-      if (field.type === 'related_object' && field.prop) {
-        // Field prop maps to relation code when projected as a field
-        codes.add(field.prop)
-        
-        // Also add componentProps.relationCode if explicitly overridden
-        if (field.componentProps?.relationCode) {
-          codes.add(field.componentProps.relationCode)
-        }
+      const relationCode = String(field.componentProps?.relationCode || field.prop || '').trim()
+      const isRelatedObject = field.type === 'related_object' || field.editorType === 'related_object'
+      if (!isRelatedObject || !relationCode) continue
+
+      // Field prop maps to relation code when projected as a field.
+      codes.add(relationCode)
+
+      if (field.componentProps?.relationCode) {
+        codes.add(field.componentProps.relationCode)
       }
     }
   }
@@ -289,10 +319,10 @@ const visibleReverseRelations = computed<ReverseRelationField[]>(() => {
 
   if (runtimeReverseRelationFields.value?.length) {
     return runtimeReverseRelationFields.value
-      .filter((rel: any) => !usedCodes.has(rel.code))
+      .filter((rel: any) => !usedCodes.has(getRuntimeFieldCode(rel)))
       .map((rel: any) => ({
-      code: rel.code,
-      label: rel.label || rel.name,
+      code: getRuntimeFieldCode(rel),
+      label: rel.label || rel.name || getRuntimeFieldCode(rel),
       displayMode: rel.relationDisplayMode || rel.relation_display_mode || 'inline_readonly',
       relatedObjectCode: extractObjectCode(rel),
       reverseRelationField: rel.reverseRelationField || rel.reverse_relation_field,
@@ -302,7 +332,7 @@ const visibleReverseRelations = computed<ReverseRelationField[]>(() => {
       groupName: rel.groupName || rel.group_name || '',
       groupOrder: Number(rel.groupOrder || rel.group_order || 0) || undefined,
       defaultExpanded: rel.defaultExpanded ?? rel.default_expanded,
-      title: rel.label || rel.name,
+      title: rel.label || rel.name || getRuntimeFieldCode(rel),
       showCreate: (rel.relationDisplayMode || rel.relation_display_mode) === 'inline_editable',
       position: rel.position
     }))
@@ -411,6 +441,7 @@ async function loadRuntimeLayout(): Promise<void> {
     const runtime = await resolveRuntimeLayout(props.objectCode, 'edit', { includeRelations: true })
     metadataSourceContext.value = 'form'
     const layoutConfig = runtime.layoutConfig || null
+    isCompactMode.value = runtime.viewMode === 'Compact'
     const editable = (runtime.editableFields || []) as any[]
     if (editable.length > 0) {
       const normalizedEditable = editable.map((field: any) => ({
@@ -452,7 +483,12 @@ async function loadRuntimeLayout(): Promise<void> {
     }
     const reverse = (runtime.reverseRelations || []) as any[]
     if (reverse.length > 0) {
-      runtimeReverseRelationFields.value = reverse as FieldDefinition[]
+      runtimeReverseRelationFields.value = reverse.map((field: any) => ({
+        ...field,
+        code: getRuntimeFieldCode(field),
+        name: field.name || field.label || getRuntimeFieldCode(field),
+        label: field.label || field.name || getRuntimeFieldCode(field)
+      })) as FieldDefinition[]
     }
   } catch (error: any) {
     debugDetailLog('runtime-layout-load-failed', {
@@ -468,6 +504,7 @@ async function loadRuntimeLayout(): Promise<void> {
 function getSectionTitle(sectionName: string): string {
   const titles: Record<string, string> = {
     basic: t('common.basicInfo'),
+    financial: t('common.valueInfo'),
     value: t('common.valueInfo'),
     usage: t('common.usageInfo'),
     images: t('common.detailPage.images'),
@@ -487,6 +524,7 @@ function getSectionTitle(sectionName: string): string {
 function getSectionIcon(sectionName: string): string {
   const icons: Record<string, string> = {
     basic: 'InfoFilled',
+    financial: 'Money',
     value: 'Money',
     usage: 'UserFilled',
     images: 'Picture',
@@ -505,6 +543,10 @@ function getSectionIcon(sectionName: string): string {
  */
 function fieldToDetailField(field: FieldDefinition): DetailField {
   return toUnifiedDetailField(field as any) as DetailField
+}
+
+function getRuntimeFieldCode(field: Record<string, any>): string {
+  return String(field.code || field.fieldCode || field.field_code || '').trim()
 }
 
 function collectEditableFieldProps(sections: DetailSection[]): string[] {
@@ -613,6 +655,11 @@ function handleEdit() {
     return
   }
 
+  if (isCompactMode.value) {
+    compactEditDrawerVisible.value = true
+    return
+  }
+
   // Inline editing mode
   formData.value = buildInlineEditFormSeed(recordData.value, detailSections.value)
   isEditing.value = true
@@ -642,6 +689,11 @@ async function handleSave(updatedFormData: Record<string, any>) {
   } finally {
     submitting.value = false
   }
+}
+
+async function handleDrawerSuccess() {
+  compactEditDrawerVisible.value = false
+  await fetchRecordDetail()
 }
 
 /**
@@ -812,7 +864,33 @@ defineExpose({
           :section="section"
         />
       </template>
+      <template #related-tab-actions="{ relation, records }">
+        <slot
+          name="related-tab-actions"
+          :relation="relation"
+          :records="records"
+        />
+      </template>
+
+      <!-- Extension slot pass-throughs for lifecycle/workflow injection -->
+      <template #action-bar="actionBarScope">
+        <slot name="action-bar" v-bind="actionBarScope" />
+      </template>
+      <template #header-extra="headerExtraScope">
+        <slot name="header-extra" v-bind="headerExtraScope" />
+      </template>
+      <template #after-sections="afterSectionsScope">
+        <slot name="after-sections" v-bind="afterSectionsScope" />
+      </template>
     </BaseDetailPage>
+
+    <!-- Context Drawer for Compact Edit mode -->
+    <ContextDrawer
+      v-model="compactEditDrawerVisible"
+      :object-code="objectCode"
+      :record-id="recordId"
+      @success="handleDrawerSuccess"
+    />
   </div>
 </template>
 

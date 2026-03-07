@@ -64,7 +64,15 @@ export function updateDynamicData(objectCode: string, id: string, data: any) {
 }
 
 // 获取关联引用数据
-export function searchReferenceData(params: { reference_object: string; search?: string; page?: number; page_size?: number }) {
+export function searchReferenceData(params: {
+    reference_object: string
+    search?: string
+    page?: number
+    page_size?: number
+    lookup_search_scope?: 'all' | 'primary' | 'secondary' | 'id'
+    lookup_display_field?: string
+    lookup_secondary_field?: string
+}) {
     // Backend does not expose a generic /system/references/search/ endpoint.
     // Resolve reference_object to an object code and query the unified dynamic object route.
     const ref = (params.reference_object || '').trim()
@@ -81,6 +89,9 @@ export function searchReferenceData(params: { reference_object: string; search?:
                 search: params.search || '',
                 page: params.page,
                 page_size: params.page_size || 50,
+                lookup_search_scope: params.lookup_search_scope,
+                lookup_display_field: params.lookup_display_field,
+                lookup_secondary_field: params.lookup_secondary_field,
             }
         })
 

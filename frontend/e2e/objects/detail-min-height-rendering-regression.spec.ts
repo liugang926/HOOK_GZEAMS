@@ -1,4 +1,12 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
+import {
+  ensureInlineEditMode,
+  getDetailContent,
+  getDetailFieldItem,
+  getHeaderActionButton,
+  waitForDetailPageReady,
+  waitForLoadingMaskToClear
+} from '../helpers/detail-page.helpers'
 
 function fulfillSuccess(route: Route, data: unknown) {
   return route.fulfill({
@@ -143,28 +151,22 @@ async function mockApis(page: Page) {
   })
 }
 
-function fieldItemByLabel(page: Page, label: string) {
-  return page.locator('.detail-content .field-item').filter({
-    has: page.locator('.field-label', { hasText: label })
-  }).first()
-}
-
 test.describe('Detail MinHeight Rendering Regression', () => {
   test('detail and inline edit should both respect layout minHeight', async ({ page }) => {
     await mockApis(page)
     await page.goto('/objects/Asset/asset-min-height-1')
 
-    await expect(page.locator('.load-error')).toHaveCount(0)
-    await expect(page.locator('.detail-content')).toContainText('Min Height Asset')
+    await waitForDetailPageReady(page)
+    await waitForLoadingMaskToClear(page)
+    await expect(getDetailContent(page)).toContainText('Min Height Asset')
 
-    const detailFieldItem = fieldItemByLabel(page, 'Asset Name')
+    const detailFieldItem = getDetailFieldItem(page, 'Asset Name')
     await expect(detailFieldItem).toHaveCSS('min-height', '168px')
 
-    await page.locator('.header-actions .el-button').first().click()
-    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
+    await getHeaderActionButton(page, /Edit/i).click()
+    await ensureInlineEditMode(page)
 
-    const editFieldItem = fieldItemByLabel(page, 'Asset Name')
+    const editFieldItem = getDetailFieldItem(page, 'Asset Name')
     await expect(editFieldItem).toHaveCSS('min-height', '168px')
   })
 })
-

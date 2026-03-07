@@ -60,6 +60,13 @@
         </el-button>
       </template>
     </BaseListPage>
+
+    <ContextDrawer
+      v-model="drawerVisible"
+      object-code="MaintenancePlan"
+      size="800px"
+      @success="handleDrawerSuccess"
+    />
   </div>
 </template>
 
@@ -71,6 +78,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { maintenancePlanApi } from '@/api/lifecycle'
 import BaseListPage from '@/components/common/BaseListPage.vue'
+import ContextDrawer from '@/components/common/ContextDrawer.vue'
 import type { TableColumn, SearchField } from '@/types/common'
 
 const router = useRouter()
@@ -118,7 +126,9 @@ const columns: TableColumn[] = [
   { prop: 'status', label: t('assets.lifecycle.maintenancePlan.columns.status'), width: 100, slot: 'status' }
 ]
 
-const handleCreate = () => router.push('/assets/lifecycle/maintenance-plans/create')
+const drawerVisible = ref(false)
+const handleCreate = () => { drawerVisible.value = true }
+const handleDrawerSuccess = () => { listRef.value?.refresh() }
 const handleView = (row: any) => router.push(`/assets/lifecycle/maintenance-plans/${row.id}`)
 
 const handleActivate = async (row: any) => {

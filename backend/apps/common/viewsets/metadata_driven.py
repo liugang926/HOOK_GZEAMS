@@ -7,7 +7,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from typing import Optional, Type
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from django.core.exceptions import ObjectDoesNotExist
 
 from apps.common.serializers.metadata_driven import MetadataDrivenSerializer, DynamicDataSerializer
@@ -28,7 +28,7 @@ class MetadataDrivenViewSet(BatchOperationMixin, viewsets.ModelViewSet):
     Usage:
         # In urls.py
         router.register(
-            r'dynamic/(?P<object_code>\w+)',
+            r'dynamic/(?P<object_code>\\w+)',
             MetadataDrivenViewSet,
             basename='dynamic'
         )
@@ -67,11 +67,16 @@ class MetadataDrivenViewSet(BatchOperationMixin, viewsets.ModelViewSet):
             ).order_by('sort_order')
 
             # Configure search fields
-            self.search_fields = [
-                f'custom_fields__{fd.code}'
-                for fd in self._field_definitions
-                if fd.is_searchable
-            ]
+            self.search_fields = []
+            for fd in self._field_definitions:
+                if not fd.is_searchable:
+                    continue
+                # Support both the current JSON storage (`dynamic_fields`) and
+                # older payloads still persisted in BaseModel.custom_fields.
+                self.search_fields.extend([
+                    f'dynamic_fields__{fd.code}',
+                    f'custom_fields__{fd.code}',
+                ])
 
             # Configure ordering fields
             self.ordering_fields = [
@@ -104,6 +109,85 @@ class MetadataDrivenViewSet(BatchOperationMixin, viewsets.ModelViewSet):
         org_id = getattr(self.request, 'organization_id', None)
         if org_id:
             queryset = queryset.filter(organization_id=org_id)
+
+        return queryset
+
+    def filter_queryset(self, queryset: QuerySet) -> QuerySet:
+        """Apply DRF backends first, then dynamic field filters from query params."""
+        queryset = super().filter_queryset(queryset)
+        return self._apply_dynamic_field_filters(queryset)
+
+    def _build_json_field_q(self, field_code: str, lookup: str = '', value=None) -> Q:
+        lookup_suffix = f'__{lookup}' if lookup else ''
+        return (
+            Q(**{f'dynamic_fields__{field_code}{lookup_suffix}': value}) |
+            Q(**{f'custom_fields__{field_code}{lookup_suffix}': value})
+        )
+
+    def _coerce_filter_value(self, field_type: str, value):
+        if value in (None, ''):
+            return value
+        try:
+            if field_type == 'integer':
+                return int(value)
+            if field_type in {'number', 'float'}:
+                return float(value)
+        except (TypeError, ValueError):
+            return value
+        return value
+
+    def _apply_dynamic_field_filters(self, queryset: QuerySet) -> QuerySet:
+        """Support per-field list filters such as `?name=abc` from the unified search UI."""
+        if not self._field_definitions:
+            return queryset
+
+        params = self.request.query_params
+        for field_def in self._field_definitions:
+            field_code = field_def.code
+            field_type = field_def.field_type
+            raw_value = params.get(field_code)
+
+            if field_type in {'text', 'textarea', 'email', 'url'}:
+                if raw_value not in (None, ''):
+                    queryset = queryset.filter(self._build_json_field_q(field_code, 'icontains', raw_value))
+                continue
+
+            if field_type in {'number', 'integer', 'float'}:
+                value_from = self._coerce_filter_value(field_type, params.get(f'{field_code}_from') or params.get(f'{field_code}_min'))
+                value_to = self._coerce_filter_value(field_type, params.get(f'{field_code}_to') or params.get(f'{field_code}_max'))
+                exact_value = self._coerce_filter_value(field_type, raw_value)
+                if value_from not in (None, ''):
+                    queryset = queryset.filter(self._build_json_field_q(field_code, 'gte', value_from))
+                if value_to not in (None, ''):
+                    queryset = queryset.filter(self._build_json_field_q(field_code, 'lte', value_to))
+                if exact_value not in (None, '') and value_from in (None, '') and value_to in (None, ''):
+                    queryset = queryset.filter(self._build_json_field_q(field_code, '', exact_value))
+                continue
+
+            if field_type in {'date', 'datetime', 'time', 'month', 'year'}:
+                value_from = params.get(f'{field_code}_from')
+                value_to = params.get(f'{field_code}_to')
+                if value_from not in (None, ''):
+                    queryset = queryset.filter(self._build_json_field_q(field_code, 'gte', value_from))
+                if value_to not in (None, ''):
+                    queryset = queryset.filter(self._build_json_field_q(field_code, 'lte', value_to))
+                if raw_value not in (None, '') and value_from in (None, '') and value_to in (None, ''):
+                    queryset = queryset.filter(self._build_json_field_q(field_code, '', raw_value))
+                continue
+
+            if field_type == 'multi_choice':
+                if raw_value not in (None, ''):
+                    queryset = queryset.filter(self._build_json_field_q(field_code, 'contains', raw_value))
+                continue
+
+            if field_type == 'boolean':
+                if raw_value not in (None, ''):
+                    bool_value = str(raw_value).strip().lower() in {'true', '1', 'yes', 'on'}
+                    queryset = queryset.filter(self._build_json_field_q(field_code, '', bool_value))
+                continue
+
+            if raw_value not in (None, ''):
+                queryset = queryset.filter(self._build_json_field_q(field_code, '', raw_value))
 
         return queryset
 

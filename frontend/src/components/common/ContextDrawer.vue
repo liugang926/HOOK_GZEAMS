@@ -4,18 +4,20 @@
     A global slide-out drawer used to display dynamic forms (create/edit) or details
     without losing the user's current context (e.g. List Page or Parent Detail Page).
   -->
-  <el-drawer
+  <component
+    v-if="visible"
+    :is="displayMode === 'Compact' ? 'el-dialog' : 'el-drawer'"
     v-model="visible"
     v-focus-trap.autofocus="visible"
     :title="title"
-    :size="size"
+    v-bind="displayMode === 'Compact' ? { width: size } : { size: size }"
     :destroy-on-close="true"
     :before-close="handleBeforeClose"
-    class="context-drawer"
+    :class="['context-container', displayMode === 'Compact' ? 'context-dialog' : 'context-drawer']"
   >
     <div
       v-loading="loading"
-      class="context-drawer__content"
+      class="context-container__content"
     >
       <el-result
         v-if="loadError"
@@ -47,7 +49,7 @@
     </div>
 
     <template #footer>
-      <div class="context-drawer__footer">
+      <div class="context-container__footer">
         <div class="footer-left">
           <transition name="el-fade-in">
             <div
@@ -79,7 +81,7 @@
         </div>
       </div>
     </template>
-  </el-drawer>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -119,6 +121,7 @@ const isDirty = ref(false)
 const metadataPermissions = ref<ObjectMetadata['permissions'] | null>(null)
 const runtimePermissions = ref<RuntimePermissions | null>(null)
 const objectMetadata = ref<ObjectMetadata | null>(null)
+const displayMode = ref<'Detail' | 'Compact'>('Detail')
 
 const isEdit = computed(() => !!props.recordId)
 const apiClient = computed(() => createObjectClient(props.objectCode))
@@ -246,13 +249,22 @@ const loadData = async () => {
 
   try {
     const [runtimeResult, metadataResult] = await Promise.allSettled([
-      resolveRuntimeLayout(props.objectCode, 'edit', { includeRelations: false }),
+      resolveRuntimeLayout(props.objectCode, 'edit', {
+        includeRelations: false,
+        preferredViewMode: isEdit.value ? undefined : 'Compact',
+      }),
       apiClient.value.getMetadata()
     ])
 
     runtimePermissions.value = runtimeResult.status === 'fulfilled'
       ? (runtimeResult.value.permissions || null)
       : null
+      
+    if (runtimeResult.status === 'fulfilled') {
+      displayMode.value = (runtimeResult.value.viewMode === 'Compact') ? 'Compact' : 'Detail'
+    } else {
+      displayMode.value = 'Detail'
+    }
 
     if (metadataResult.status === 'fulfilled') {
       objectMetadata.value = metadataResult.value as ObjectMetadata
@@ -307,7 +319,7 @@ watch(visible, (val) => {
 </script>
 
 <style scoped lang="scss">
-.context-drawer {
+.context-container {
   &__content {
     height: 100%;
     padding: 0;
@@ -338,6 +350,22 @@ watch(visible, (val) => {
   .footer-right {
     display: flex;
     gap: 12px;
+  }
+}
+
+:deep(.context-dialog) {
+  margin-top: 5vh;
+  margin-bottom: 5vh;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  
+  .el-dialog__body {
+    flex: 1;
+    overflow: hidden;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
   }
 }
 </style>

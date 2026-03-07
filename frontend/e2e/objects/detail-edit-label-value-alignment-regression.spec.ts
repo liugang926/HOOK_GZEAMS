@@ -1,4 +1,11 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
+import {
+  ensureInlineEditMode,
+  getDetailContent,
+  getHeaderActionButton,
+  waitForDetailPageReady,
+  waitForLoadingMaskToClear
+} from '../helpers/detail-page.helpers'
 
 const OBJECT_CODE = 'Asset'
 const RECORD_ID = 'asset-alignment-regression-1'
@@ -148,7 +155,7 @@ async function mockApis(page: Page) {
 
 async function collectValueLefts(page: Page, expectedCount: number): Promise<number[]> {
   const lefts: number[] = []
-  const detailRoot = page.locator('.detail-content')
+  const detailRoot = getDetailContent(page)
   const items = detailRoot.locator('.field-item')
   await expect(items).toHaveCount(expectedCount)
 
@@ -175,15 +182,15 @@ test.describe('Detail/Edit Label-Value Alignment Regression', () => {
     await mockApis(page)
     await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
 
-    await expect(page.locator('.load-error')).toHaveCount(0)
+    await waitForDetailPageReady(page)
+    await waitForLoadingMaskToClear(page)
     await expect(page.locator('.detail-content .field-item')).toHaveCount(fieldDefs.length)
 
     const detailLefts = await collectValueLefts(page, fieldDefs.length)
     assertXAligned(detailLefts)
 
-    await page.locator('.header-actions .el-button').first().click()
-    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
+    await getHeaderActionButton(page, /Edit/i).click()
+    await ensureInlineEditMode(page)
 
     const editLefts = await collectValueLefts(page, fieldDefs.length)
     assertXAligned(editLefts)

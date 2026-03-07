@@ -34,6 +34,7 @@ export type UnifiedDetailField = {
     | 'sub_table'
     | 'json'
     | 'object'
+    | 'related_object'
     | 'reference'
     | 'user'
     | 'department'
@@ -160,6 +161,9 @@ export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailF
     detailField.type = normalizedType as UnifiedDetailField['type']
   } else if (normalizedType === 'file' || normalizedType === 'attachment') {
     detailField.type = normalizedType as UnifiedDetailField['type']
+    detailField.span = 24
+  } else if (normalizedType === 'related_object') {
+    detailField.type = 'related_object'
     detailField.span = 24
   } else if (
     normalizedType === 'reference' ||

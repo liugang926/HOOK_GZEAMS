@@ -56,6 +56,16 @@ class Command(BaseCommand):
                 self.style.SUCCESS(f"Created default layouts: {', '.join(results['created_layouts'])}")
             )
 
+        menu_results = results.get('menu_config') or {}
+        if menu_results:
+            updated = len(menu_results.get('updated', []))
+            unchanged = len(menu_results.get('unchanged', []))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Menu config sync: updated={updated}, unchanged={unchanged}"
+                )
+            )
+
         if results['errors']:
             self.stdout.write(
                 self.style.ERROR(f"\nErrors encountered: {len(results['errors'])}")

@@ -1,4 +1,9 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
+import {
+  ensureInlineEditMode,
+  waitForDetailPageReady,
+  waitForLoadingMaskToClear
+} from '../helpers/detail-page.helpers'
 
 const OBJECT_CODE = 'Organization'
 const RECORD_ID = 'org-related-1'
@@ -233,7 +238,8 @@ test.describe('Detail Related Groups Persistence', () => {
     await mockApis(page)
 
     await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
-    await expect(page.locator('.load-error')).toHaveCount(0)
+    await waitForDetailPageReady(page)
+    await waitForLoadingMaskToClear(page)
     await openRelatedObjectsTab(page)
     await expect(page.locator('.related-groups-collapse')).toBeVisible()
 
@@ -249,6 +255,8 @@ test.describe('Detail Related Groups Persistence', () => {
     }).toContain('"finance"')
 
     await page.reload()
+    await waitForDetailPageReady(page)
+    await waitForLoadingMaskToClear(page)
     await openRelatedObjectsTab(page)
     await expect(page.locator('.related-groups-collapse')).toBeVisible()
     await expect.poll(async () => {
@@ -259,8 +267,9 @@ test.describe('Detail Related Groups Persistence', () => {
     }).toBe(true)
 
     await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}/edit`)
-    await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
+    await waitForDetailPageReady(page)
+    await waitForLoadingMaskToClear(page)
+    await ensureInlineEditMode(page)
     await openRelatedObjectsTab(page)
     await expect.poll(async () => {
       return await groupItem(page, 'Workflow').evaluate((el) => el.classList.contains('is-active'))

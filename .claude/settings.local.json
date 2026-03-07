@@ -21,7 +21,18 @@
       "Bash(npm run i18n:parity:all:strict:*)",
       "Bash(npm run i18n:defects:p1:strict:*)",
       "Bash(npm run related:metadata:audit:all:strict:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(set:*)",
+      "Bash(set HTTPS_PROXY=http://127.0.0.1:33210:*)",
+      "Bash(curl:*)",
+      "Bash(timeout 30 docker images:*)",
+      "Bash(timeout 30 docker ps:*)",
+      "Bash(dir:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcyNzkyNzk2LCJpYXQiOjE3NzI3ODU1OTYsImp0aSI6ImYxYzhiMzZhNmRiMjQ3ZDhiMjA4NTU2ZDdkZmY0MzUwIiwidXNlcl9pZCI6IjcyNTU2ODliLTM4NmUtNGYwOC04NDU1LWQ4NTc3ODRmZGE5NCJ9.8UQLZbayuvkAs9mdt6lscmaYG8d10-vFn04j-aQk8mw\")",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzcyNzkyNzk2LCJpYXQiOjE3NzI3ODU1OTYsImp0aSI6ImYxYzhiMzZhNmRiMjQ3ZDhiMjA4NTU2ZDdkZmY0MzUwIiwidXNlcl9pZCI6IjcyNTU2ODliLTM4NmUtNGYwOC04NDU1LWQ4NTc3ODRmZGE5NCJ9.8UQLZbayuvkAs9mdt6lscmaYG8d10-vFn04j-aQk8mw\" curl:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

@@ -177,7 +177,7 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'assets/lifecycle/purchase-requests/:id',
         name: 'PurchaseRequestDetail',
-        component: () => import('@/views/lifecycle/PurchaseRequestDetail.vue'),
+        redirect: (to) => toObjectDetailPath('PurchaseRequest', String(to.params.id)),
         meta: { title: 'assets.lifecycle.purchaseRequest.detailTitle' }
       },
       {
@@ -195,7 +195,7 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'assets/lifecycle/maintenance/:id',
         name: 'MaintenanceDetail',
-        component: () => import('@/views/lifecycle/MaintenanceDetail.vue'),
+        redirect: (to) => toObjectDetailPath('Maintenance', String(to.params.id)),
         meta: { title: 'assets.lifecycle.maintenance.detailTitle' }
       },
       {
@@ -213,7 +213,7 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'assets/lifecycle/disposal-requests/:id',
         name: 'DisposalRequestDetail',
-        component: () => import('@/views/lifecycle/DisposalRequestDetail.vue'),
+        redirect: (to) => toObjectDetailPath('DisposalRequest', String(to.params.id)),
         meta: { title: 'assets.lifecycle.disposalRequest.detailTitle' }
       },
 
@@ -233,7 +233,7 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'assets/lifecycle/asset-receipts/:id',
         name: 'AssetReceiptDetail',
-        component: () => import('@/views/lifecycle/AssetReceiptDetail.vue'),
+        redirect: (to) => toObjectDetailPath('AssetReceipt', String(to.params.id)),
         meta: { title: 'assets.lifecycle.assetReceipt.detailTitle' }
       },
       {
@@ -251,7 +251,7 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'assets/lifecycle/maintenance-plans/:id',
         name: 'MaintenancePlanDetail',
-        component: () => import('@/views/lifecycle/MaintenancePlanDetail.vue'),
+        redirect: (to) => toObjectDetailPath('MaintenancePlan', String(to.params.id)),
         meta: { title: 'assets.lifecycle.maintenancePlan.detailTitle' }
       },
       {
@@ -269,7 +269,7 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'assets/lifecycle/maintenance-tasks/:id',
         name: 'MaintenanceTaskDetail',
-        component: () => import('@/views/lifecycle/MaintenanceTaskDetail.vue'),
+        redirect: (to) => toObjectDetailPath('MaintenanceTask', String(to.params.id)),
         meta: { title: 'assets.lifecycle.maintenanceTask.detailTitle' }
       },
 

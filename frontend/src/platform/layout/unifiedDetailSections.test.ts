@@ -80,4 +80,40 @@ describe('unifiedDetailSections', () => {
     expect(sections).toHaveLength(1)
     expect(sections[0].fields.map((field) => field.prop)).toEqual(['left_field', 'right_field'])
   })
+
+  it('preserves layout-injected related_object fields so placed relations can render in detail', () => {
+    const sections = projectUnifiedDetailSectionsFromLayout({
+      layoutSections: [
+        {
+          id: 'related',
+          type: 'section',
+          title: 'Related',
+          columns: 1,
+          fields: [
+            {
+              fieldCode: 'maintenance_records',
+              label: 'Maintenance Records',
+              fieldType: 'related_object',
+              span: 1,
+              componentProps: {
+                relationCode: 'maintenance_records',
+                relatedObjectCode: 'Maintenance'
+              }
+            }
+          ]
+        }
+      ],
+      fields: [
+        { code: 'asset_name', name: 'Asset Name', fieldType: 'text', showInForm: true } as any
+      ],
+      metadataContext: 'form',
+      strictVisibility: false
+    })
+
+    expect(sections).toHaveLength(1)
+    expect(sections[0].fields).toHaveLength(1)
+    expect(sections[0].fields[0].prop).toBe('maintenance_records')
+    expect(sections[0].fields[0].type).toBe('related_object')
+    expect((sections[0].fields[0] as any).componentProps?.relationCode).toBe('maintenance_records')
+  })
 })

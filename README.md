@@ -45,23 +45,42 @@ git clone https://github.com/liugang926/HOOK_GZEAMS.git
 cd HOOK_GZEAMS
 
 # Start all services
-docker-compose up -d
-
-# Run database migrations
-docker-compose exec backend python manage.py migrate
-
-# Sync low-code metadata schemas
-docker-compose exec backend python manage.py sync_schemas
+docker compose up -d
 
 # Create superuser
-docker-compose exec backend python manage.py createsuperuser
+docker compose exec backend python manage.py createsuperuser
+```
+
+The `backend` container now runs the runtime-safe bootstrap chain automatically on startup:
+
+- `python manage.py migrate --noinput`
+- `python manage.py bootstrap_defaults`
+- `python manage.py collectstatic --noinput`
+
+`bootstrap_defaults` is designed for Docker startup and will:
+
+- register missing hardcoded business objects
+- sync metadata fields
+- create missing default layouts without forcing overwrites
+- normalize standard menu classification for default objects
+
+If you need to re-run it manually inside Docker:
+
+```bash
+docker compose exec backend python manage.py bootstrap_defaults
+```
+
+If you need to disable automatic bootstrap for a specific backend container start, set:
+
+```bash
+BOOTSTRAP_DEFAULTS_ON_STARTUP=0
 ```
 
 ### Development
 
 ```bash
 # Backend development (view logs)
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # Frontend development (hot-reload)
 cd frontend

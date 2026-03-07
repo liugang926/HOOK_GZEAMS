@@ -13,6 +13,7 @@ export interface RenderField {
   span: number
   minHeight?: number
   layoutPlacement?: Partial<CanvasPlacement>
+  componentProps?: AnyRecord
   required: boolean
   readonly: boolean
   visible: boolean
@@ -146,6 +147,7 @@ const buildRenderField = (
     span,
     minHeight,
     layoutPlacement: layoutPlacement || undefined,
+    componentProps: Object.keys(mergedComponentProps).length > 0 ? mergedComponentProps : undefined,
     required: Boolean(layoutField?.required ?? meta?.required ?? meta?.isRequired ?? meta?.is_required ?? false),
     readonly: normalizeReadonly(layoutField, meta, mode),
     visible: layoutField?.visible !== false && meta?.isHidden !== true && meta?.is_hidden !== true,
@@ -231,18 +233,129 @@ export function buildRenderSchema(input: {
   layoutConfig: AnyRecord | null | undefined
   fields: AnyRecord[]
   mode: RuntimeMode
+  reverseRelations?: AnyRecord[]
 }): RenderSchema {
-  const { layoutConfig, fields, mode } = input
+  const { layoutConfig, fields, mode, reverseRelations } = input
   const fieldMap = buildFieldMap(fields)
   const sections: RenderSection[] = []
   const rawSections = Array.isArray(layoutConfig?.sections) ? layoutConfig.sections : []
 
   if (rawSections.length === 0) {
-    const fallback = buildFallbackSections(fields, fieldMap, mode)
+    // Phase 3: Detailed Fallback Architecture
+    const fallbackSections: RenderSection[] = []
+
+    // 1. Sort standard fields
+    const fallbackFields = sortFieldsByRuntimeOrder(fields).map((field) => ({
+      fieldCode: toFieldCode(field),
+      label: field?.label || field?.name
+    }))
+
+    // 2. Separate Reverse Relations
+    const standardRelations: AnyRecord[] = []
+    const sidebarRelations: AnyRecord[] = []
+
+    if (Array.isArray(reverseRelations)) {
+      for (const rel of reverseRelations) {
+        if (rel.position === 'sidebar') sidebarRelations.push(rel)
+        else standardRelations.push(rel)
+      }
+    }
+
+    if (standardRelations.length === 0 && sidebarRelations.length === 0) {
+      // Degrade to old behavior if no relations are present at all
+      const fallback = buildFallbackSections(fields, fieldMap, mode)
+      return {
+        mode,
+        sections: fallback,
+        fieldOrder: flattenFieldOrder(fallback)
+      }
+    }
+
+    // 3. Build Main Tabs (Details & Related)
+    const containerId = 'default_fallback_container'
+    const detailTabFields = fallbackFields
+
+    const relatedTabFields = standardRelations.map((rel) => ({
+      fieldCode: rel.code || rel.relationCode || rel.relation_code,
+      label: rel.label || rel.name,
+      fieldType: 'related_object',
+      span: 2,
+      componentProps: {
+        relationCode: rel.code || rel.relationCode || rel.relation_code,
+        relatedObjectCode: rel.targetObjectCode || rel.target_object_code || rel.relatedObjectCode,
+        displayMode: rel.relationDisplayMode || rel.relation_display_mode || rel.displayMode || 'inline_readonly'
+      }
+    }))
+
+    const detailSection = buildSectionFromFields(
+      `${containerId}::tab::details`,
+      'Details',
+      'tab',
+      2,
+      detailTabFields,
+      fieldMap,
+      mode,
+      {
+        containerId,
+        containerTitle: 'Record Details',
+        itemId: 'details',
+        itemTitle: 'Details'
+      }
+    )
+    if (detailSection) fallbackSections.push(detailSection)
+
+    if (relatedTabFields.length > 0) {
+      const relatedSection = buildSectionFromFields(
+        `${containerId}::tab::related`,
+        'Related',
+        'tab',
+        1, // Single column for tables is better
+        relatedTabFields as AnyRecord[],
+        fieldMap,
+        mode,
+        {
+          containerId,
+          containerTitle: 'Record Details',
+          itemId: 'related',
+          itemTitle: 'Related'
+        }
+      )
+      if (relatedSection) fallbackSections.push(relatedSection)
+    }
+
+    // 4. Build Sidebar Sections
+    for (const rel of sidebarRelations) {
+      const sidebarField = {
+        fieldCode: rel.code || rel.relationCode || rel.relation_code,
+        label: rel.label || rel.name,
+        fieldType: 'related_object',
+        span: 1,
+        componentProps: {
+          relationCode: rel.code || rel.relationCode || rel.relation_code,
+          relatedObjectCode: rel.targetObjectCode || rel.target_object_code || rel.relatedObjectCode,
+          displayMode: rel.relationDisplayMode || rel.relation_display_mode || rel.displayMode || 'inline_readonly'
+        }
+      }
+
+      const relSection = buildSectionFromFields(
+        `${containerId}::sidebar::${String(sidebarField.fieldCode || 'related').trim() || 'related'}`,
+        sidebarField.label,
+        'section',
+        1,
+        [sidebarField] as AnyRecord[],
+        fieldMap,
+        mode,
+        {
+          position: 'sidebar'
+        }
+      )
+      if (relSection) fallbackSections.push(relSection)
+    }
+
     return {
       mode,
-      sections: fallback,
-      fieldOrder: flattenFieldOrder(fallback)
+      sections: fallbackSections,
+      fieldOrder: flattenFieldOrder(fallbackSections)
     }
   }
 

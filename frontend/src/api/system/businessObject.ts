@@ -1,4 +1,4 @@
-﻿import request from '@/utils/request'
+import request from '@/utils/request'
 
 // =============================================================================
 // Business Object API
@@ -22,6 +22,8 @@ export interface BusinessObject {
     tableName?: string
     fieldCount?: number
     layoutCount?: number
+    menuCategory?: string
+    isMenuHidden?: boolean
 }
 
 export const businessObjectApi = {

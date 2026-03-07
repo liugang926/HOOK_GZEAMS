@@ -23,7 +23,7 @@
             {{ $t('common.actions.back') }}
           </el-button>
           <h2 class="page-title">
-            {{ $t('assets.lifecycle.maintenance.detailTitle') }}
+            {{ detail.maintenanceNo || $t('assets.lifecycle.maintenance.detailTitle') }}
           </h2>
           <el-tag
             :type="getStatusType(detail.status)"
@@ -39,43 +39,14 @@
             {{ getPriorityLabel(detail.priority) }}
           </el-tag>
         </div>
-        <div class="header-actions">
-          <el-button
-            v-if="detail.status === 'pending'"
-            type="primary"
-            @click="dialogType = 'assign'; dialogVisible = true"
-          >
-            {{ $t('assets.lifecycle.maintenance.actions.assign') }}
-          </el-button>
-          <el-button
-            v-if="detail.status === 'assigned'"
-            type="primary"
-            @click="handleStartWork"
-          >
-            {{ $t('assets.lifecycle.maintenance.actions.startWork') }}
-          </el-button>
-          <el-button
-            v-if="detail.status === 'in_progress'"
-            type="success"
-            @click="dialogType = 'complete'; dialogVisible = true"
-          >
-            {{ $t('assets.lifecycle.maintenance.actions.completeWork') }}
-          </el-button>
-          <el-button
-            v-if="detail.status === 'completed'"
-            type="success"
-            @click="dialogType = 'verify'; dialogVisible = true"
-          >
-            {{ $t('assets.lifecycle.maintenance.actions.verify') }}
-          </el-button>
-          <el-button
-            v-if="['pending', 'assigned', 'in_progress'].includes(detail.status)"
-            @click="handleCancel"
-          >
-            {{ $t('assets.lifecycle.maintenance.actions.cancel') }}
-          </el-button>
-        </div>
       </div>
+
+      <!-- Workflow Actions -->
+      <StatusActionBar
+        :status="detail.status"
+        :actions="workflowActions"
+        @action-success="handleRefresh"
+      />
 
       <!-- Status Steps -->
       <el-card class="steps-card mb-4">
@@ -123,9 +94,33 @@
           </el-descriptions-item>
           <el-descriptions-item
             v-if="detail.completionDate"
-            label="completionDate"
+            :label="$t('assets.lifecycle.maintenance.form.completionDate')"
           >
             {{ detail.completionDate }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </el-card>
+
+      <!-- Cost Breakdown (visible after completion) -->
+      <el-card
+        v-if="detail.laborCost || detail.materialCost || detail.otherCost || detail.totalCost"
+        class="info-card mt-4"
+      >
+        <template #header>
+          <span>{{ $t('assets.lifecycle.maintenance.form.costBreakdown') }}</span>
+        </template>
+        <el-descriptions :column="4" border>
+          <el-descriptions-item :label="$t('assets.lifecycle.maintenance.form.laborCost')">
+            ¥ {{ detail.laborCost || 0 }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('assets.lifecycle.maintenance.form.materialCost')">
+            ¥ {{ detail.materialCost || 0 }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('assets.lifecycle.maintenance.form.otherCost')">
+            ¥ {{ detail.otherCost || 0 }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('assets.lifecycle.maintenance.form.totalCost')">
+            <span class="cost-total">¥ {{ detail.totalCost || 0 }}</span>
           </el-descriptions-item>
         </el-descriptions>
       </el-card>
@@ -201,9 +196,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { maintenanceApi } from '@/api/lifecycle'
+import StatusActionBar, { type StatusAction } from '@/components/common/StatusActionBar.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -225,6 +221,47 @@ const dialogTitle = computed(() => {
   return map[dialogType.value]
 })
 
+const workflowActions = computed<StatusAction[]>(() => [
+  {
+    key: 'assign',
+    label: t('assets.lifecycle.maintenance.actions.assign'),
+    type: 'primary',
+    apiCall: async () => { dialogType.value = 'assign'; dialogVisible.value = true },
+    visibleWhen: (s: string) => s === 'pending' || s === 'reported',
+  },
+  {
+    key: 'startWork',
+    label: t('assets.lifecycle.maintenance.actions.startWork'),
+    type: 'primary',
+    confirmMessage: t('assets.lifecycle.maintenance.actions.startWork') + '?',
+    apiCall: () => maintenanceApi.startWork(id),
+    visibleWhen: (s: string) => s === 'assigned',
+  },
+  {
+    key: 'complete',
+    label: t('assets.lifecycle.maintenance.actions.completeWork'),
+    type: 'success',
+    apiCall: async () => { dialogType.value = 'complete'; dialogVisible.value = true },
+    visibleWhen: (s: string) => s === 'in_progress' || s === 'processing',
+  },
+  {
+    key: 'verify',
+    label: t('assets.lifecycle.maintenance.actions.verify'),
+    type: 'success',
+    apiCall: async () => { dialogType.value = 'verify'; dialogVisible.value = true },
+    visibleWhen: (s: string) => s === 'completed',
+  },
+  {
+    key: 'cancel',
+    label: t('assets.lifecycle.maintenance.actions.cancel'),
+    type: 'default',
+    confirmMessage: t('assets.lifecycle.maintenance.messages.cancelConfirm'),
+    confirmType: 'warning',
+    apiCall: () => maintenanceApi.cancel(id),
+    visibleWhen: (s: string) => ['pending', 'reported', 'assigned', 'in_progress', 'processing'].includes(s),
+  },
+])
+
 onMounted(async () => {
   try {
     detail.value = await maintenanceApi.detail(id)
@@ -236,12 +273,15 @@ onMounted(async () => {
 })
 
 const statusSteps = ['pending', 'assigned', 'in_progress', 'completed', 'verified']
-const getStepIndex = (status: string) => Math.max(0, statusSteps.indexOf(status))
+const getStepIndex = (status: string) => {
+  const idx = statusSteps.indexOf(status)
+  return idx >= 0 ? idx : (status === 'reported' ? 0 : (status === 'processing' ? 2 : 0))
+}
 
 const getStatusType = (s: string) => {
   const map: Record<string, string> = {
-    pending: 'info', assigned: 'warning', in_progress: 'primary',
-    completed: 'warning', verified: 'success', cancelled: 'info'
+    pending: 'info', reported: 'info', assigned: 'warning', in_progress: 'primary',
+    processing: 'primary', completed: 'warning', verified: 'success', cancelled: 'info'
   }
   return map[s] || 'info'
 }
@@ -253,14 +293,8 @@ const getPriorityType = (p: string) => {
 }
 const getPriorityLabel = (p: string) => t(`assets.lifecycle.maintenance.priority.${p}`) || p
 
-const handleStartWork = async () => {
-  try {
-    await maintenanceApi.startWork(id)
-    ElMessage.success(t('assets.lifecycle.maintenance.messages.startWorkSuccess'))
-    detail.value = await maintenanceApi.detail(id)
-  } catch (e: any) {
-    ElMessage.error(e?.message || t('common.messages.operationFailed'))
-  }
+const handleRefresh = async () => {
+  try { detail.value = await maintenanceApi.detail(id) } catch { /* ignore */ }
 }
 
 const handleDialogConfirm = async () => {
@@ -282,26 +316,18 @@ const handleDialogConfirm = async () => {
     ElMessage.error(e?.message || t('common.messages.operationFailed'))
   }
 }
-
-const handleCancel = async () => {
-  try {
-    await ElMessageBox.confirm(t('assets.lifecycle.maintenance.messages.cancelConfirm'), t('common.messages.confirmTitle'), { type: 'warning' })
-    await maintenanceApi.cancel(id)
-    ElMessage.success(t('assets.lifecycle.maintenance.messages.cancelSuccess'))
-    detail.value = await maintenanceApi.detail(id)
-  } catch { /* cancelled */ }
-}
 </script>
 
 <style scoped lang="scss">
 .detail-wrapper {
   .page-header {
-    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
     .header-left { display: flex; align-items: center; gap: 12px; .page-title { margin: 0; font-size: 18px; } }
-    .header-actions { display: flex; gap: 8px; }
   }
   .mb-4 { margin-bottom: 16px; }
+  .mt-4 { margin-top: 16px; }
   .ml-2 { margin-left: 8px; }
   .ml-1 { margin-left: 4px; }
+  .cost-total { font-weight: 700; color: var(--el-color-danger); font-size: 15px; }
 }
 </style>
