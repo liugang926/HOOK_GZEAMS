@@ -288,7 +288,15 @@ const loadData = async () => {
 
     if (isEdit.value) {
       const recordResponse = await apiClient.value.get<Record<string, unknown>>(props.recordId)
-      formData.value = recordResponse.data || {}
+      const resolvedRecord =
+        recordResponse &&
+        typeof recordResponse === 'object' &&
+        'data' in recordResponse &&
+        recordResponse.data &&
+        typeof recordResponse.data === 'object'
+          ? recordResponse.data as Record<string, unknown>
+          : (recordResponse as Record<string, unknown>)
+      formData.value = resolvedRecord || {}
     }
 
     await nextTick()

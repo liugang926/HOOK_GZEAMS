@@ -70,6 +70,22 @@ If you need to re-run it manually inside Docker:
 docker compose exec backend python manage.py bootstrap_defaults
 ```
 
+If you need to re-standardize an existing development environment and overwrite system default layouts:
+
+```bash
+docker compose exec -T backend python manage.py bootstrap_defaults --force-layouts
+docker compose exec -T backend python manage.py verify_runtime_defaults
+```
+
+To verify that a new environment actually has the standardized defaults, run:
+
+```bash
+docker compose exec -T backend python manage.py verify_runtime_defaults
+```
+
+This command fails if default `form/list/detail/search` layouts are missing or if section titles are not stored as i18n payloads.
+This command fails if published default `form/detail/search` layouts are missing, if the runtime-generated `list` layout cannot be produced, or if `form/detail` section titles are not stored as i18n payloads.
+
 If you need to disable automatic bootstrap for a specific backend container start, set:
 
 ```bash
@@ -99,6 +115,7 @@ See [docs/](./docs) for detailed documentation, including:
 - Development Guidelines
 - Deployment Guide
 - Health and observability runbook: [docs/operations/health-observability.md](./docs/operations/health-observability.md)
+- Runtime default bootstrap: [docs/operations/runtime-default-bootstrap.md](./docs/operations/runtime-default-bootstrap.md)
 
 ## Contributing
 

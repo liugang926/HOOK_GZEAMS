@@ -362,10 +362,15 @@ const fetchData = async () => {
   loading.value = true
   tableData.value = [] // Clear data to show skeleton
   try {
+    const visibleFieldCodes = visibleTableColumns.value
+      .map((column) => String(column.fieldCode || column.prop || '').trim())
+      .filter(Boolean)
+
     // Build request params
     const params: Record<string, any> = {
       page: currentPage.value,
-      pageSize: pageSize.value
+      pageSize: pageSize.value,
+      __visibleFieldCodes: visibleFieldCodes
     }
 
     // Add search filters
@@ -412,6 +417,16 @@ const fetchData = async () => {
 const handleSearch = () => {
   currentPage.value = 1
   fetchData()
+}
+
+const getSearchFieldValue = (key: string) => {
+  if (!key) return undefined
+  return searchForm.value[key]
+}
+
+const setSearchFieldValue = (key: string, value: any) => {
+  if (!key) return
+  searchForm.value[key] = value
 }
 
 /**
@@ -1003,6 +1018,10 @@ defineExpose({
                   :name="`search-${field.prop}`"
                   :field="field"
                   :form="searchForm"
+                  :get-value="getSearchFieldValue"
+                  :set-value="setSearchFieldValue"
+                  :search="handleSearch"
+                  :reset="handleReset"
                 />
               </el-form-item>
             </template>

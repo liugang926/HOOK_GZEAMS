@@ -17,6 +17,46 @@ export interface ColumnConfig {
   source?: 'user' | 'default'
 }
 
+const resolveColumnKey = (column: Record<string, any> | null | undefined): string => {
+  if (!column) return ''
+  return String(column.fieldCode || column.field_code || column.prop || '').trim()
+}
+
+const normalizeColumnConfig = (objectCode: string, raw: Record<string, any> | null | undefined): ColumnConfig | null => {
+  if (!raw || typeof raw !== 'object') return null
+
+  const columns = Array.isArray(raw.columns)
+    ? raw.columns
+        .filter((column) => column && typeof column === 'object')
+        .map((column) => {
+          const key = resolveColumnKey(column as Record<string, any>)
+          return key
+            ? {
+                ...(column as Record<string, any>),
+                fieldCode: key,
+                field_code: key,
+                prop: (column as Record<string, any>).prop || key
+              }
+            : null
+        })
+        .filter(Boolean) as ColumnItem[]
+    : []
+
+  const rawOrder = Array.isArray(raw.columnOrder)
+    ? raw.columnOrder
+    : (Array.isArray((raw as any).column_order) ? (raw as any).column_order : [])
+  const columnOrder = rawOrder
+    .map((item: any) => String(item || '').trim())
+    .filter(Boolean)
+
+  return {
+    object_code: objectCode,
+    columns,
+    columnOrder: columnOrder.length > 0 ? columnOrder : columns.map((column) => resolveColumnKey(column as any)).filter(Boolean),
+    source: raw.source
+  }
+}
+
 /**
  * Column configuration cache for performance
  */
@@ -75,15 +115,12 @@ export function useColumnConfig(objectCode: string) {
         : (response?.columns ? response : null)
 
       if (result) {
-        config.value = {
-          object_code: objectCode,
-          columns: result.columns || [],
-          columnOrder: Array.isArray(result.columnOrder) ? result.columnOrder : [],
-          source: result.source
-        }
+        config.value = normalizeColumnConfig(objectCode, result)
 
         // Update in-memory cache
-        columnConfigCache.set(cacheKey, config.value)
+        if (config.value) {
+          columnConfigCache.set(cacheKey, config.value)
+        }
       }
     } catch (err) {
       console.warn('Failed to fetch column config', err)
@@ -124,11 +161,13 @@ export function useColumnConfig(objectCode: string) {
       // so a successful save means we get here without throwing.
       await columnConfigApi.save(objectCode, columnConfig)
 
-      const newConfig: ColumnConfig = {
-        object_code: objectCode,
+      const newConfig = normalizeColumnConfig(objectCode, {
         columns,
         columnOrder: columnConfig.columnOrder,
         source: 'user'
+      })
+      if (!newConfig) {
+        throw new Error('Failed to normalize column config')
       }
       config.value = newConfig
       columnConfigCache.set(cacheKey, newConfig)
@@ -185,13 +224,13 @@ export function useColumnConfig(objectCode: string) {
     // Create a map of saved columns for quick lookup
     const savedMap = new Map<string, ColumnItem>()
     savedColumns.forEach(col => {
-      const key = (col as any).field_code || (col as any).fieldCode || col.prop
+      const key = resolveColumnKey(col as any)
       savedMap.set(key, col)
     })
 
     // Apply saved configuration to default columns
     defaultColumns.forEach((defaultCol) => {
-      const key = (defaultCol as any).field_code || (defaultCol as any).fieldCode || defaultCol.prop
+      const key = resolveColumnKey(defaultCol as any)
       const saved = savedMap.get(key)
 
       if (saved) {
@@ -208,11 +247,11 @@ export function useColumnConfig(objectCode: string) {
     })
 
     // Sort by saved order (if columnOrder exists)
-    if (config.value && (config.value as any).columnOrder) {
+    if (config.value && Array.isArray((config.value as any).columnOrder)) {
       const order = (config.value as any).columnOrder
       result.sort((a, b) => {
-        const aKey = (a as any).field_code || (a as any).fieldCode || a.prop
-        const bKey = (b as any).field_code || (b as any).fieldCode || b.prop
+        const aKey = resolveColumnKey(a as any)
+        const bKey = resolveColumnKey(b as any)
         const aIndex = order.indexOf(aKey)
         const bIndex = order.indexOf(bKey)
 

@@ -272,6 +272,24 @@ export const routes: RouteRecordRaw[] = [
         redirect: (to) => toObjectDetailPath('MaintenanceTask', String(to.params.id)),
         meta: { title: 'assets.lifecycle.maintenanceTask.detailTitle' }
       },
+      {
+        path: 'assets/lifecycle/asset-warranties',
+        name: 'AssetWarrantyList',
+        component: () => import('@/views/lifecycle/AssetWarrantyList.vue'),
+        meta: { title: 'assets.lifecycle.assetWarranty.title' }
+      },
+      {
+        path: 'assets/lifecycle/asset-warranties/create',
+        name: 'AssetWarrantyCreate',
+        component: () => import('@/views/lifecycle/AssetWarrantyDetail.vue'),
+        meta: { title: 'assets.lifecycle.assetWarranty.createTitle' }
+      },
+      {
+        path: 'assets/lifecycle/asset-warranties/:id',
+        name: 'AssetWarrantyDetail',
+        component: () => import('@/views/lifecycle/AssetWarrantyDetail.vue'),
+        meta: { title: 'assets.lifecycle.assetWarranty.detailTitle' }
+      },
 
       // Inventory Routes
       {

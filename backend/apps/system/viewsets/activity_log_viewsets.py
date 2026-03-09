@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
-from apps.system.models import ActivityLog
+from apps.system.activity_log import ActivityLog
 from apps.system.activity_log_serializers import ActivityLogSerializer
 from apps.common.permissions.base import IsOrganizationMember
 

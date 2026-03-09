@@ -10,10 +10,12 @@ hardcoded models and the low-code metadata system.
 import logging
 from uuid import uuid4
 from typing import Dict, List, Optional, Any
-from django.db import transaction
 from django.utils.module_loading import import_string
-from django.core.exceptions import ValidationError
 
+from apps.system.object_catalog import (
+    get_object_code_by_model_path,
+    iter_hardcoded_object_definitions,
+)
 from apps.system.models import (
     BusinessObject,
     ModelFieldDefinition,
@@ -21,10 +23,7 @@ from apps.system.models import (
     PageLayout,
 )
 from apps.system.menu_config import sync_business_object_menu_configs
-from apps.system.services.business_object_service import (
-    CORE_HARDcoded_MODELS,
-    HARDCODED_OBJECT_NAMES,
-)
+from apps.system.services.hardcoded_object_sync_service import HardcodedObjectSyncService
 from apps.system.services.layout_generator import LayoutGenerator
 
 logger = logging.getLogger(__name__)
@@ -41,6 +40,7 @@ class MetadataSyncService:
     """
 
     def __init__(self):
+        self.hardcoded_object_sync_service = HardcodedObjectSyncService()
         self.sync_results = {
             'created_objects': [],
             'updated_objects': [],
@@ -67,13 +67,13 @@ class MetadataSyncService:
             'errors': []
         }
 
-        for object_code, model_path in CORE_HARDcoded_MODELS.items():
+        for definition in iter_hardcoded_object_definitions():
             try:
-                self._sync_single_model(object_code, model_path, force)
+                self._sync_single_model(definition.code, definition.django_model_path, force)
             except Exception as e:
-                logger.error(f"Failed to sync {object_code}: {e}")
+                logger.error(f"Failed to sync {definition.code}: {e}")
                 self.sync_results['errors'].append({
-                    'object_code': object_code,
+                    'object_code': definition.code,
                     'error': str(e)
                 })
 
@@ -82,6 +82,11 @@ class MetadataSyncService:
 
     def _sync_single_model(self, object_code: str, model_path: str, force: bool = False):
         """Sync a single hardcoded model to metadata."""
+        definition = self.hardcoded_object_sync_service.get_definition(object_code)
+        if not definition:
+            logger.warning(f"Could not locate catalog definition for {object_code}")
+            return
+
         # Import the model class
         try:
             model_class = import_string(model_path)
@@ -89,25 +94,20 @@ class MetadataSyncService:
             logger.warning(f"Could not import {model_path}: {e}")
             return
 
-        # Get or create BusinessObject
-        obj, created = BusinessObject.objects.get_or_create(
-            code=object_code,
-            defaults={
-                'name': HARDCODED_OBJECT_NAMES.get(object_code, (object_code, object_code))[0],
-                'name_en': HARDCODED_OBJECT_NAMES.get(object_code, (object_code, object_code))[1],
-                'is_hardcoded': True,
-                'django_model_path': model_path,
-                'description': f'Hardcoded model: {model_path}',
-                'enable_workflow': False,
-                'enable_version': True,
-                'enable_soft_delete': True,
-            }
+        sync_result = self.hardcoded_object_sync_service.ensure_business_object(
+            definition,
+            overwrite_existing=True,
         )
+        obj = sync_result.business_object
 
-        if created:
+        if not obj.description:
+            obj.description = f'Hardcoded model: {model_path}'
+            obj.save(update_fields=['description', 'updated_at'])
+
+        if sync_result.created:
             self.sync_results['created_objects'].append(object_code)
             logger.info(f"Created BusinessObject for {object_code}")
-        elif force:
+        elif sync_result.updated or force:
             self.sync_results['updated_objects'].append(object_code)
             logger.info(f"Updated BusinessObject for {object_code}")
 
@@ -245,10 +245,7 @@ class MetadataSyncService:
     def _get_object_code_for_model(self, model_class) -> Optional[str]:
         """Get object code for a related model class."""
         model_path = f"{model_class.__module__}.{model_class.__name__}"
-        for code, path in CORE_HARDcoded_MODELS.items():
-            if path == model_path:
-                return code
-        return None
+        return get_object_code_by_model_path(model_path)
 
     def _ensure_default_layouts(self, business_obj: BusinessObject, object_code: str):
         """

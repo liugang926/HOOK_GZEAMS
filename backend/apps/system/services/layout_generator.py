@@ -574,19 +574,6 @@ class LayoutGenerator:
             Dictionary with all layout types
         """
         return {
-
-    @classmethod
-    def generate_all_layouts(cls, business_object: BusinessObject) -> Dict[str, Dict[str, Any]]:
-        """
-        Generate all default layouts for a business object.
-
-        Args:
-            business_object: BusinessObject instance
-
-        Returns:
-            Dictionary with all layout types
-        """
-        return {
             'list': cls.generate_list_layout(business_object),
             'form': cls.generate_form_layout(business_object),
             'detail': cls.generate_detail_layout(business_object),

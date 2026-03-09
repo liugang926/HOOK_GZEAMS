@@ -82,6 +82,22 @@ describe('DetailSectionRenderer contract', () => {
     expect(header.text()).toContain('Basic')
   })
 
+  it('resolves multilingual section titles from translation payload objects', async () => {
+    const wrapper = await mountRenderer({
+      section: {
+        name: 'basic',
+        title: { translationKey: 'system.pageLayout.sections.basic' },
+        fields: [{ prop: 'name', label: 'Name' }]
+      },
+      data: { name: 'Org One' }
+    }, {
+      'field-content': ({ field }: any) => h('span', field.label)
+    })
+
+    expect(wrapper.text()).not.toContain('[object Object]')
+    expect(wrapper.text()).toContain('基本信息')
+  })
+
   it('passes resolved value into field slots', async () => {
     const wrapper = await mountRenderer({
       section: {

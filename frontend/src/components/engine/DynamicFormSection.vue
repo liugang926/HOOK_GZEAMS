@@ -9,7 +9,7 @@
           v-for="tab in section.tabs || []"
           :key="tab.id || tab.name"
           :name="tab.id || tab.name"
-          :label="tab.title || tab.name"
+          :label="getDisplayText(tab.title) || tab.name"
         >
           <div
             class="dynamic-form-section__fields"
@@ -61,7 +61,7 @@
           v-for="item in section.items || []"
           :key="item.id || item.name"
           :name="item.id || item.name"
-          :title="item.title || item.name"
+          :title="getDisplayText(item.title) || item.name"
         >
           <div
             class="dynamic-form-section__fields"
@@ -154,11 +154,13 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import RuntimeFieldControl from '@/components/engine/RuntimeFieldControl.vue'
 import type { RuntimeField, RuntimeSection } from '@/types/runtime'
 import { getFieldValue, setFieldValue } from '@/components/engine/valueAccessor'
 import { normalizeSpan } from '@/adapters/layoutNormalizer'
 import { placeCanvasFields, toCanvasGridStyle, type CanvasPlacement } from '@/platform/layout/canvasLayout'
+import { resolveTranslatableText } from '@/utils/localeText'
 
 interface Props {
   section: RuntimeSection
@@ -179,6 +181,12 @@ const props = withDefaults(defineProps<Props>(), {
   labelWidth: '120px',
   labelPosition: 'right'
 })
+
+const { locale } = useI18n()
+
+const getDisplayText = (value: any): string => {
+  return resolveTranslatableText(value, locale.value as 'zh-CN' | 'en-US')
+}
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: Record<string, any>): void

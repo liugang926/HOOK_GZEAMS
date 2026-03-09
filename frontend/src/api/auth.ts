@@ -10,20 +10,20 @@ export const authApi = {
      * Login
      */
     login(data: LoginData): Promise<LoginResponse> {
-        return request.post('/auth/login/', data)
+        return request.post('/auth/login/', data, { noAuth: true } as any)
     },
 
     /**
      * Logout
      */
     logout(): Promise<void> {
-        return request.post('/auth/logout/')
+        return request.post('/auth/logout/', undefined, { noAuth: true } as any)
     },
 
     /**
      * Refresh Token
      */
     refreshToken(token: string): Promise<{ token: string }> {
-        return request.post('/auth/refresh/', { token })
+        return request.post('/auth/refresh/', { token }, { noAuth: true } as any)
     }
 }

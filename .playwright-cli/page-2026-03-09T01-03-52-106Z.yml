@@ -1,0 +1,879 @@
+- generic [ref=e5]:
+  - complementary [ref=e6]:
+    - heading "G GZEAMS" [level=1] [ref=e8]:
+      - generic [ref=e9]: G
+      - generic [ref=e10]: GZEAMS
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic:
+          - search
+      - textbox "搜索" [ref=e15]
+    - menubar [ref=e19]:
+      - menuitem "工作台" [ref=e20] [cursor=pointer]:
+        - img [ref=e22]
+        - text: 工作台
+      - menuitem "资产主数据" [expanded] [ref=e26]:
+        - generic [ref=e27] [cursor=pointer]:
+          - img [ref=e29]
+          - generic [ref=e31]: 资产主数据
+          - img [ref=e33]
+        - menu [ref=e373]:
+          - menuitem "资产卡片" [ref=e35] [cursor=pointer]:
+            - img [ref=e37]
+            - text: 资产卡片
+          - menuitem "资产分类" [ref=e39] [cursor=pointer]:
+            - img [ref=e41]
+            - text: 资产分类
+          - menuitem "存放地点" [ref=e43] [cursor=pointer]:
+            - img [ref=e45]
+            - text: 存放地点
+          - menuitem "供应商" [ref=e48] [cursor=pointer]:
+            - img [ref=e50]
+            - text: 供应商
+          - menuitem "IT资产" [ref=e54] [cursor=pointer]:
+            - img [ref=e56]
+            - text: IT资产
+      - menuitem "资产业务" [ref=e58]:
+        - generic [ref=e59] [cursor=pointer]:
+          - img [ref=e61]
+          - generic [ref=e63]: 资产业务
+          - img [ref=e65]
+      - menuitem "资产生命周期" [ref=e67]:
+        - generic [ref=e68] [cursor=pointer]:
+          - img [ref=e70]
+          - generic [ref=e72]: 资产生命周期
+          - img [ref=e74]
+      - menuitem "耗材管理" [ref=e76]:
+        - generic [ref=e77] [cursor=pointer]:
+          - img [ref=e79]
+          - generic [ref=e83]: 耗材管理
+          - img [ref=e85]
+      - menuitem "盘点任务" [ref=e87] [cursor=pointer]: 盘点任务
+      - menuitem "财务管理" [expanded] [ref=e89]:
+        - generic [ref=e90] [cursor=pointer]:
+          - img [ref=e92]
+          - generic [ref=e96]: 财务管理
+          - img [ref=e98]
+        - menu:
+          - menuitem "财务凭证" [ref=e374] [cursor=pointer]:
+            - img [ref=e376]
+            - text: 财务凭证
+          - menuitem "折旧管理" [ref=e378] [cursor=pointer]:
+            - img [ref=e380]
+            - text: 折旧管理
+          - menuitem "保险概览" [ref=e382] [cursor=pointer]:
+            - img [ref=e384]
+            - text: 保险概览
+          - menuitem "理赔管理" [ref=e386] [cursor=pointer]:
+            - img [ref=e388]
+            - text: 理赔管理
+          - menuitem "租赁概览" [ref=e390] [cursor=pointer]:
+            - img [ref=e392]
+            - text: 租赁概览
+          - menuitem "租金管理" [ref=e394] [cursor=pointer]:
+            - img [ref=e396]
+            - text: 租金管理
+          - menuitem "保险保单" [ref=e400] [cursor=pointer]: 保险保单
+          - menuitem "理赔记录" [ref=e402] [cursor=pointer]:
+            - img [ref=e404]
+            - text: 理赔记录
+          - menuitem "租赁合同" [ref=e406] [cursor=pointer]:
+            - img [ref=e408]
+            - text: 租赁合同
+          - menuitem "软件许可" [ref=e410] [cursor=pointer]:
+            - img [ref=e412]
+            - text: 软件许可
+          - menuitem "IT软件目录" [ref=e414] [cursor=pointer]:
+            - img [ref=e416]
+            - text: IT软件目录
+      - menuitem "部门" [ref=e100] [cursor=pointer]:
+        - img [ref=e102]
+        - text: 部门
+      - menuitem "工作流" [ref=e105]:
+        - generic [ref=e106] [cursor=pointer]:
+          - img [ref=e108]
+          - generic [ref=e111]: 工作流
+          - img [ref=e113]
+      - menuitem "系统管理" [ref=e115]:
+        - generic [ref=e116] [cursor=pointer]:
+          - img [ref=e118]
+          - generic [ref=e120]: 系统管理
+          - img [ref=e122]
+      - menuitem "报表中心" [ref=e124] [cursor=pointer]:
+        - img [ref=e126]
+        - text: 报表中心
+    - generic [ref=e128] [cursor=pointer]:
+      - img [ref=e130]
+      - generic [ref=e132]: 收起
+  - generic [ref=e133]:
+    - generic [ref=e134]:
+      - navigation "面包屑" [ref=e136]:
+        - generic [ref=e137]:
+          - link "工作台" [ref=e138]
+          - text: /
+        - link "资产卡片" [ref=e140]
+      - generic [ref=e141]:
+        - button "🌐 简体中文" [ref=e143] [cursor=pointer]:
+          - generic [ref=e144]: 🌐
+          - generic [ref=e145]: 简体中文
+          - img [ref=e147]
+        - button "通知" [ref=e151] [cursor=pointer]:
+          - img [ref=e153]
+    - main [ref=e157]:
+      - generic [ref=e160]:
+        - generic [ref=e161]:
+          - generic [ref=e162]:
+            - generic [ref=e164]: AS
+            - heading "资产卡片" [level=2] [ref=e165]
+            - generic [ref=e166]: 20 条记录
+          - generic [ref=e167]:
+            - button "新建" [ref=e168] [cursor=pointer]:
+              - generic [ref=e169]: 新建
+            - button "布局管理" [ref=e170] [cursor=pointer]:
+              - generic [ref=e171]: 布局管理
+            - button [ref=e173] [cursor=pointer]:
+              - img [ref=e175]
+        - generic [ref=e178]:
+          - group "搜索" [ref=e180]:
+            - generic [ref=e182]: 搜索
+            - generic [ref=e184]:
+              - generic [ref=e186] [cursor=pointer]:
+                - generic:
+                  - combobox [ref=e188]
+                  - generic [ref=e189]: 全部字段
+                - img [ref=e192]
+              - textbox "Search Keyword" [ref=e196]
+          - generic [ref=e197]:
+            - button "搜索" [ref=e198] [cursor=pointer]:
+              - generic [ref=e199]: 搜索
+            - button "重置" [ref=e200] [cursor=pointer]:
+              - generic [ref=e201]: 重置
+        - generic [ref=e204]:
+          - table [ref=e206]:
+            - rowgroup [ref=e239]:
+              - row "选择所有行 序号 asset code 按 asset code 排序 purchase price 按 purchase price 排序 asset name 按 asset name 排序 asset category 按 asset category 排序 current value 按 current value 排序 department 按 department 排序 location 按 location 排序 custodian 按 custodian 排序 asset status 按 asset status 排序 操作" [ref=e418]:
+                - columnheader "选择所有行" [ref=e241]:
+                  - generic "选择所有行" [ref=e243] [cursor=pointer]:
+                    - generic [ref=e244]:
+                      - checkbox "选择所有行"
+                - columnheader "序号" [ref=e246]:
+                  - generic [ref=e247]: 序号
+                - columnheader "asset code 按 asset code 排序" [ref=e248] [cursor=pointer]:
+                  - generic [ref=e249]:
+                    - text: asset code
+                    - button "按 asset code 排序" [ref=e250]
+                - columnheader "purchase price 按 purchase price 排序" [ref=e251] [cursor=pointer]:
+                  - generic [ref=e252]:
+                    - text: purchase price
+                    - button "按 purchase price 排序" [ref=e419]
+                - columnheader "asset name 按 asset name 排序" [ref=e253] [cursor=pointer]:
+                  - generic [ref=e254]:
+                    - text: asset name
+                    - button "按 asset name 排序" [ref=e255]
+                - columnheader "asset category 按 asset category 排序" [ref=e256] [cursor=pointer]:
+                  - generic [ref=e257]:
+                    - text: asset category
+                    - button "按 asset category 排序" [ref=e420]
+                - columnheader "current value 按 current value 排序" [ref=e258] [cursor=pointer]:
+                  - generic [ref=e259]:
+                    - text: current value
+                    - button "按 current value 排序" [ref=e421]
+                - columnheader "department 按 department 排序" [ref=e260] [cursor=pointer]:
+                  - generic [ref=e261]:
+                    - text: department
+                    - button "按 department 排序" [ref=e422]
+                - columnheader "location 按 location 排序" [ref=e262] [cursor=pointer]:
+                  - generic [ref=e263]:
+                    - text: location
+                    - button "按 location 排序" [ref=e423]
+                - columnheader "custodian 按 custodian 排序" [ref=e264] [cursor=pointer]:
+                  - generic [ref=e265]:
+                    - text: custodian
+                    - button "按 custodian 排序" [ref=e424]
+                - columnheader "asset status 按 asset status 排序" [ref=e266] [cursor=pointer]:
+                  - generic [ref=e267]:
+                    - text: asset status
+                    - button "按 asset status 排序" [ref=e268]
+                - columnheader "操作" [ref=e314]:
+                  - generic [ref=e315]: 操作
+          - table [ref=e425]:
+            - rowgroup [ref=e439]:
+              - row "选择当前行 1 ZC2024040020 ¥15,315.00 惠普 MateBook - ¥4,606.00 - - - maintenance 查看 编辑 删除" [ref=e440]:
+                - cell "选择当前行" [ref=e441]:
+                  - generic "选择当前行" [ref=e443] [cursor=pointer]:
+                    - generic [ref=e444]:
+                      - checkbox "选择当前行"
+                - cell "1" [ref=e446]:
+                  - generic [ref=e448]: "1"
+                - cell "ZC2024040020" [ref=e449]:
+                  - generic [ref=e451]: ZC2024040020
+                - cell "¥15,315.00" [ref=e452]:
+                  - generic [ref=e454]: ¥15,315.00
+                - cell "惠普 MateBook" [ref=e455]:
+                  - generic [ref=e457]: 惠普 MateBook
+                - cell "-" [ref=e458]:
+                  - generic [ref=e460]: "-"
+                - cell "¥4,606.00" [ref=e461]:
+                  - generic [ref=e463]: ¥4,606.00
+                - cell "-" [ref=e464]:
+                  - generic [ref=e468]: "-"
+                - cell "-" [ref=e469]:
+                  - generic [ref=e471]: "-"
+                - cell "-" [ref=e472]:
+                  - generic [ref=e476]: "-"
+                - cell "maintenance" [ref=e477]:
+                  - generic [ref=e479]: maintenance
+                - cell "查看 编辑 删除" [ref=e480]:
+                  - generic [ref=e481]:
+                    - button "查看" [ref=e482] [cursor=pointer]:
+                      - generic [ref=e483]: 查看
+                    - button "编辑" [ref=e484] [cursor=pointer]:
+                      - generic [ref=e485]: 编辑
+                    - button "删除" [ref=e486] [cursor=pointer]:
+                      - generic [ref=e487]: 删除
+              - row "选择当前行 2 ZC2024090019 ¥12,762.00 苹果 MacBook - ¥11,434.00 - - - idle 查看 编辑 删除" [ref=e488]:
+                - cell "选择当前行" [ref=e489]:
+                  - generic "选择当前行" [ref=e491] [cursor=pointer]:
+                    - generic [ref=e492]:
+                      - checkbox "选择当前行"
+                - cell "2" [ref=e494]:
+                  - generic [ref=e496]: "2"
+                - cell "ZC2024090019" [ref=e497]:
+                  - generic [ref=e499]: ZC2024090019
+                - cell "¥12,762.00" [ref=e500]:
+                  - generic [ref=e502]: ¥12,762.00
+                - cell "苹果 MacBook" [ref=e503]:
+                  - generic [ref=e505]: 苹果 MacBook
+                - cell "-" [ref=e506]:
+                  - generic [ref=e508]: "-"
+                - cell "¥11,434.00" [ref=e509]:
+                  - generic [ref=e511]: ¥11,434.00
+                - cell "-" [ref=e512]:
+                  - generic [ref=e516]: "-"
+                - cell "-" [ref=e517]:
+                  - generic [ref=e519]: "-"
+                - cell "-" [ref=e520]:
+                  - generic [ref=e524]: "-"
+                - cell "idle" [ref=e525]:
+                  - generic [ref=e527]: idle
+                - cell "查看 编辑 删除" [ref=e528]:
+                  - generic [ref=e529]:
+                    - button "查看" [ref=e530] [cursor=pointer]:
+                      - generic [ref=e531]: 查看
+                    - button "编辑" [ref=e532] [cursor=pointer]:
+                      - generic [ref=e533]: 编辑
+                    - button "删除" [ref=e534] [cursor=pointer]:
+                      - generic [ref=e535]: 删除
+              - row "选择当前行 3 ZC2024010018 ¥17,690.00 联想 MateBook - ¥13,858.00 - - - in_use 查看 编辑 删除" [ref=e536]:
+                - cell "选择当前行" [ref=e537]:
+                  - generic "选择当前行" [ref=e539] [cursor=pointer]:
+                    - generic [ref=e540]:
+                      - checkbox "选择当前行"
+                - cell "3" [ref=e542]:
+                  - generic [ref=e544]: "3"
+                - cell "ZC2024010018" [ref=e545]:
+                  - generic [ref=e547]: ZC2024010018
+                - cell "¥17,690.00" [ref=e548]:
+                  - generic [ref=e550]: ¥17,690.00
+                - cell "联想 MateBook" [ref=e551]:
+                  - generic [ref=e553]: 联想 MateBook
+                - cell "-" [ref=e554]:
+                  - generic [ref=e556]: "-"
+                - cell "¥13,858.00" [ref=e557]:
+                  - generic [ref=e559]: ¥13,858.00
+                - cell "-" [ref=e560]:
+                  - generic [ref=e564]: "-"
+                - cell "-" [ref=e565]:
+                  - generic [ref=e567]: "-"
+                - cell "-" [ref=e568]:
+                  - generic [ref=e572]: "-"
+                - cell "in_use" [ref=e573]:
+                  - generic [ref=e575]: in_use
+                - cell "查看 编辑 删除" [ref=e576]:
+                  - generic [ref=e577]:
+                    - button "查看" [ref=e578] [cursor=pointer]:
+                      - generic [ref=e579]: 查看
+                    - button "编辑" [ref=e580] [cursor=pointer]:
+                      - generic [ref=e581]: 编辑
+                    - button "删除" [ref=e582] [cursor=pointer]:
+                      - generic [ref=e583]: 删除
+              - row "选择当前行 4 ZC2024010017 ¥15,723.00 惠普 MateBook - ¥13,031.00 - - - maintenance 查看 编辑 删除" [ref=e584]:
+                - cell "选择当前行" [ref=e585]:
+                  - generic "选择当前行" [ref=e587] [cursor=pointer]:
+                    - generic [ref=e588]:
+                      - checkbox "选择当前行"
+                - cell "4" [ref=e590]:
+                  - generic [ref=e592]: "4"
+                - cell "ZC2024010017" [ref=e593]:
+                  - generic [ref=e595]: ZC2024010017
+                - cell "¥15,723.00" [ref=e596]:
+                  - generic [ref=e598]: ¥15,723.00
+                - cell "惠普 MateBook" [ref=e599]:
+                  - generic [ref=e601]: 惠普 MateBook
+                - cell "-" [ref=e602]:
+                  - generic [ref=e604]: "-"
+                - cell "¥13,031.00" [ref=e605]:
+                  - generic [ref=e607]: ¥13,031.00
+                - cell "-" [ref=e608]:
+                  - generic [ref=e612]: "-"
+                - cell "-" [ref=e613]:
+                  - generic [ref=e615]: "-"
+                - cell "-" [ref=e616]:
+                  - generic [ref=e620]: "-"
+                - cell "maintenance" [ref=e621]:
+                  - generic [ref=e623]: maintenance
+                - cell "查看 编辑 删除" [ref=e624]:
+                  - generic [ref=e625]:
+                    - button "查看" [ref=e626] [cursor=pointer]:
+                      - generic [ref=e627]: 查看
+                    - button "编辑" [ref=e628] [cursor=pointer]:
+                      - generic [ref=e629]: 编辑
+                    - button "删除" [ref=e630] [cursor=pointer]:
+                      - generic [ref=e631]: 删除
+              - row "选择当前行 5 ZC2024020016 ¥18,268.00 联想 ProBook - ¥7,752.00 - - - idle 查看 编辑 删除" [ref=e632]:
+                - cell "选择当前行" [ref=e633]:
+                  - generic "选择当前行" [ref=e635] [cursor=pointer]:
+                    - generic [ref=e636]:
+                      - checkbox "选择当前行"
+                - cell "5" [ref=e638]:
+                  - generic [ref=e640]: "5"
+                - cell "ZC2024020016" [ref=e641]:
+                  - generic [ref=e643]: ZC2024020016
+                - cell "¥18,268.00" [ref=e644]:
+                  - generic [ref=e646]: ¥18,268.00
+                - cell "联想 ProBook" [ref=e647]:
+                  - generic [ref=e649]: 联想 ProBook
+                - cell "-" [ref=e650]:
+                  - generic [ref=e652]: "-"
+                - cell "¥7,752.00" [ref=e653]:
+                  - generic [ref=e655]: ¥7,752.00
+                - cell "-" [ref=e656]:
+                  - generic [ref=e660]: "-"
+                - cell "-" [ref=e661]:
+                  - generic [ref=e663]: "-"
+                - cell "-" [ref=e664]:
+                  - generic [ref=e668]: "-"
+                - cell "idle" [ref=e669]:
+                  - generic [ref=e671]: idle
+                - cell "查看 编辑 删除" [ref=e672]:
+                  - generic [ref=e673]:
+                    - button "查看" [ref=e674] [cursor=pointer]:
+                      - generic [ref=e675]: 查看
+                    - button "编辑" [ref=e676] [cursor=pointer]:
+                      - generic [ref=e677]: 编辑
+                    - button "删除" [ref=e678] [cursor=pointer]:
+                      - generic [ref=e679]: 删除
+              - row "选择当前行 6 ZC2024050015 ¥10,660.00 惠普 MateBook - ¥10,112.00 - - - in_use 查看 编辑 删除" [ref=e680]:
+                - cell "选择当前行" [ref=e681]:
+                  - generic "选择当前行" [ref=e683] [cursor=pointer]:
+                    - generic [ref=e684]:
+                      - checkbox "选择当前行"
+                - cell "6" [ref=e686]:
+                  - generic [ref=e688]: "6"
+                - cell "ZC2024050015" [ref=e689]:
+                  - generic [ref=e691]: ZC2024050015
+                - cell "¥10,660.00" [ref=e692]:
+                  - generic [ref=e694]: ¥10,660.00
+                - cell "惠普 MateBook" [ref=e695]:
+                  - generic [ref=e697]: 惠普 MateBook
+                - cell "-" [ref=e698]:
+                  - generic [ref=e700]: "-"
+                - cell "¥10,112.00" [ref=e701]:
+                  - generic [ref=e703]: ¥10,112.00
+                - cell "-" [ref=e704]:
+                  - generic [ref=e708]: "-"
+                - cell "-" [ref=e709]:
+                  - generic [ref=e711]: "-"
+                - cell "-" [ref=e712]:
+                  - generic [ref=e716]: "-"
+                - cell "in_use" [ref=e717]:
+                  - generic [ref=e719]: in_use
+                - cell "查看 编辑 删除" [ref=e720]:
+                  - generic [ref=e721]:
+                    - button "查看" [ref=e722] [cursor=pointer]:
+                      - generic [ref=e723]: 查看
+                    - button "编辑" [ref=e724] [cursor=pointer]:
+                      - generic [ref=e725]: 编辑
+                    - button "删除" [ref=e726] [cursor=pointer]:
+                      - generic [ref=e727]: 删除
+              - row "选择当前行 7 ZC2024030014 ¥18,537.00 华为 OptiPlex - ¥8,990.00 - - - maintenance 查看 编辑 删除" [ref=e728]:
+                - cell "选择当前行" [ref=e729]:
+                  - generic "选择当前行" [ref=e731] [cursor=pointer]:
+                    - generic [ref=e732]:
+                      - checkbox "选择当前行"
+                - cell "7" [ref=e734]:
+                  - generic [ref=e736]: "7"
+                - cell "ZC2024030014" [ref=e737]:
+                  - generic [ref=e739]: ZC2024030014
+                - cell "¥18,537.00" [ref=e740]:
+                  - generic [ref=e742]: ¥18,537.00
+                - cell "华为 OptiPlex" [ref=e743]:
+                  - generic [ref=e745]: 华为 OptiPlex
+                - cell "-" [ref=e746]:
+                  - generic [ref=e748]: "-"
+                - cell "¥8,990.00" [ref=e749]:
+                  - generic [ref=e751]: ¥8,990.00
+                - cell "-" [ref=e752]:
+                  - generic [ref=e756]: "-"
+                - cell "-" [ref=e757]:
+                  - generic [ref=e759]: "-"
+                - cell "-" [ref=e760]:
+                  - generic [ref=e764]: "-"
+                - cell "maintenance" [ref=e765]:
+                  - generic [ref=e767]: maintenance
+                - cell "查看 编辑 删除" [ref=e768]:
+                  - generic [ref=e769]:
+                    - button "查看" [ref=e770] [cursor=pointer]:
+                      - generic [ref=e771]: 查看
+                    - button "编辑" [ref=e772] [cursor=pointer]:
+                      - generic [ref=e773]: 编辑
+                    - button "删除" [ref=e774] [cursor=pointer]:
+                      - generic [ref=e775]: 删除
+              - row "选择当前行 8 ZC2024090013 ¥10,004.00 华为 MateBook - ¥6,376.00 - - - maintenance 查看 编辑 删除" [ref=e776]:
+                - cell "选择当前行" [ref=e777]:
+                  - generic "选择当前行" [ref=e779] [cursor=pointer]:
+                    - generic [ref=e780]:
+                      - checkbox "选择当前行"
+                - cell "8" [ref=e782]:
+                  - generic [ref=e784]: "8"
+                - cell "ZC2024090013" [ref=e785]:
+                  - generic [ref=e787]: ZC2024090013
+                - cell "¥10,004.00" [ref=e788]:
+                  - generic [ref=e790]: ¥10,004.00
+                - cell "华为 MateBook" [ref=e791]:
+                  - generic [ref=e793]: 华为 MateBook
+                - cell "-" [ref=e794]:
+                  - generic [ref=e796]: "-"
+                - cell "¥6,376.00" [ref=e797]:
+                  - generic [ref=e799]: ¥6,376.00
+                - cell "-" [ref=e800]:
+                  - generic [ref=e804]: "-"
+                - cell "-" [ref=e805]:
+                  - generic [ref=e807]: "-"
+                - cell "-" [ref=e808]:
+                  - generic [ref=e812]: "-"
+                - cell "maintenance" [ref=e813]:
+                  - generic [ref=e815]: maintenance
+                - cell "查看 编辑 删除" [ref=e816]:
+                  - generic [ref=e817]:
+                    - button "查看" [ref=e818] [cursor=pointer]:
+                      - generic [ref=e819]: 查看
+                    - button "编辑" [ref=e820] [cursor=pointer]:
+                      - generic [ref=e821]: 编辑
+                    - button "删除" [ref=e822] [cursor=pointer]:
+                      - generic [ref=e823]: 删除
+              - row "选择当前行 9 ZC2024030012 ¥14,086.00 华为 MateBook - ¥13,979.00 - - - maintenance 查看 编辑 删除" [ref=e824]:
+                - cell "选择当前行" [ref=e825]:
+                  - generic "选择当前行" [ref=e827] [cursor=pointer]:
+                    - generic [ref=e828]:
+                      - checkbox "选择当前行"
+                - cell "9" [ref=e830]:
+                  - generic [ref=e832]: "9"
+                - cell "ZC2024030012" [ref=e833]:
+                  - generic [ref=e835]: ZC2024030012
+                - cell "¥14,086.00" [ref=e836]:
+                  - generic [ref=e838]: ¥14,086.00
+                - cell "华为 MateBook" [ref=e839]:
+                  - generic [ref=e841]: 华为 MateBook
+                - cell "-" [ref=e842]:
+                  - generic [ref=e844]: "-"
+                - cell "¥13,979.00" [ref=e845]:
+                  - generic [ref=e847]: ¥13,979.00
+                - cell "-" [ref=e848]:
+                  - generic [ref=e852]: "-"
+                - cell "-" [ref=e853]:
+                  - generic [ref=e855]: "-"
+                - cell "-" [ref=e856]:
+                  - generic [ref=e860]: "-"
+                - cell "maintenance" [ref=e861]:
+                  - generic [ref=e863]: maintenance
+                - cell "查看 编辑 删除" [ref=e864]:
+                  - generic [ref=e865]:
+                    - button "查看" [ref=e866] [cursor=pointer]:
+                      - generic [ref=e867]: 查看
+                    - button "编辑" [ref=e868] [cursor=pointer]:
+                      - generic [ref=e869]: 编辑
+                    - button "删除" [ref=e870] [cursor=pointer]:
+                      - generic [ref=e871]: 删除
+              - row "选择当前行 10 ZC2024040011 ¥11,642.00 联想 MacBook - ¥13,172.00 - - - maintenance 查看 编辑 删除" [ref=e872]:
+                - cell "选择当前行" [ref=e873]:
+                  - generic "选择当前行" [ref=e875] [cursor=pointer]:
+                    - generic [ref=e876]:
+                      - checkbox "选择当前行"
+                - cell "10" [ref=e878]:
+                  - generic [ref=e880]: "10"
+                - cell "ZC2024040011" [ref=e881]:
+                  - generic [ref=e883]: ZC2024040011
+                - cell "¥11,642.00" [ref=e884]:
+                  - generic [ref=e886]: ¥11,642.00
+                - cell "联想 MacBook" [ref=e887]:
+                  - generic [ref=e889]: 联想 MacBook
+                - cell "-" [ref=e890]:
+                  - generic [ref=e892]: "-"
+                - cell "¥13,172.00" [ref=e893]:
+                  - generic [ref=e895]: ¥13,172.00
+                - cell "-" [ref=e896]:
+                  - generic [ref=e900]: "-"
+                - cell "-" [ref=e901]:
+                  - generic [ref=e903]: "-"
+                - cell "-" [ref=e904]:
+                  - generic [ref=e908]: "-"
+                - cell "maintenance" [ref=e909]:
+                  - generic [ref=e911]: maintenance
+                - cell "查看 编辑 删除" [ref=e912]:
+                  - generic [ref=e913]:
+                    - button "查看" [ref=e914] [cursor=pointer]:
+                      - generic [ref=e915]: 查看
+                    - button "编辑" [ref=e916] [cursor=pointer]:
+                      - generic [ref=e917]: 编辑
+                    - button "删除" [ref=e918] [cursor=pointer]:
+                      - generic [ref=e919]: 删除
+              - row "选择当前行 11 ZC2024040010 ¥10,607.00 联想 MacBook - ¥6,603.00 - - - in_use 查看 编辑 删除" [ref=e920]:
+                - cell "选择当前行" [ref=e921]:
+                  - generic "选择当前行" [ref=e923] [cursor=pointer]:
+                    - generic [ref=e924]:
+                      - checkbox "选择当前行"
+                - cell "11" [ref=e926]:
+                  - generic [ref=e928]: "11"
+                - cell "ZC2024040010" [ref=e929]:
+                  - generic [ref=e931]: ZC2024040010
+                - cell "¥10,607.00" [ref=e932]:
+                  - generic [ref=e934]: ¥10,607.00
+                - cell "联想 MacBook" [ref=e935]:
+                  - generic [ref=e937]: 联想 MacBook
+                - cell "-" [ref=e938]:
+                  - generic [ref=e940]: "-"
+                - cell "¥6,603.00" [ref=e941]:
+                  - generic [ref=e943]: ¥6,603.00
+                - cell "-" [ref=e944]:
+                  - generic [ref=e948]: "-"
+                - cell "-" [ref=e949]:
+                  - generic [ref=e951]: "-"
+                - cell "-" [ref=e952]:
+                  - generic [ref=e956]: "-"
+                - cell "in_use" [ref=e957]:
+                  - generic [ref=e959]: in_use
+                - cell "查看 编辑 删除" [ref=e960]:
+                  - generic [ref=e961]:
+                    - button "查看" [ref=e962] [cursor=pointer]:
+                      - generic [ref=e963]: 查看
+                    - button "编辑" [ref=e964] [cursor=pointer]:
+                      - generic [ref=e965]: 编辑
+                    - button "删除" [ref=e966] [cursor=pointer]:
+                      - generic [ref=e967]: 删除
+              - row "选择当前行 12 ZC2024050009 ¥7,147.00 惠普 MateBook - ¥12,851.00 - - - idle 查看 编辑 删除" [ref=e968]:
+                - cell "选择当前行" [ref=e969]:
+                  - generic "选择当前行" [ref=e971] [cursor=pointer]:
+                    - generic [ref=e972]:
+                      - checkbox "选择当前行"
+                - cell "12" [ref=e974]:
+                  - generic [ref=e976]: "12"
+                - cell "ZC2024050009" [ref=e977]:
+                  - generic [ref=e979]: ZC2024050009
+                - cell "¥7,147.00" [ref=e980]:
+                  - generic [ref=e982]: ¥7,147.00
+                - cell "惠普 MateBook" [ref=e983]:
+                  - generic [ref=e985]: 惠普 MateBook
+                - cell "-" [ref=e986]:
+                  - generic [ref=e988]: "-"
+                - cell "¥12,851.00" [ref=e989]:
+                  - generic [ref=e991]: ¥12,851.00
+                - cell "-" [ref=e992]:
+                  - generic [ref=e996]: "-"
+                - cell "-" [ref=e997]:
+                  - generic [ref=e999]: "-"
+                - cell "-" [ref=e1000]:
+                  - generic [ref=e1004]: "-"
+                - cell "idle" [ref=e1005]:
+                  - generic [ref=e1007]: idle
+                - cell "查看 编辑 删除" [ref=e1008]:
+                  - generic [ref=e1009]:
+                    - button "查看" [ref=e1010] [cursor=pointer]:
+                      - generic [ref=e1011]: 查看
+                    - button "编辑" [ref=e1012] [cursor=pointer]:
+                      - generic [ref=e1013]: 编辑
+                    - button "删除" [ref=e1014] [cursor=pointer]:
+                      - generic [ref=e1015]: 删除
+              - row "选择当前行 13 ZC2024120008 ¥17,207.00 联想 OptiPlex - ¥10,709.00 - - - maintenance 查看 编辑 删除" [ref=e1016]:
+                - cell "选择当前行" [ref=e1017]:
+                  - generic "选择当前行" [ref=e1019] [cursor=pointer]:
+                    - generic [ref=e1020]:
+                      - checkbox "选择当前行"
+                - cell "13" [ref=e1022]:
+                  - generic [ref=e1024]: "13"
+                - cell "ZC2024120008" [ref=e1025]:
+                  - generic [ref=e1027]: ZC2024120008
+                - cell "¥17,207.00" [ref=e1028]:
+                  - generic [ref=e1030]: ¥17,207.00
+                - cell "联想 OptiPlex" [ref=e1031]:
+                  - generic [ref=e1033]: 联想 OptiPlex
+                - cell "-" [ref=e1034]:
+                  - generic [ref=e1036]: "-"
+                - cell "¥10,709.00" [ref=e1037]:
+                  - generic [ref=e1039]: ¥10,709.00
+                - cell "-" [ref=e1040]:
+                  - generic [ref=e1044]: "-"
+                - cell "-" [ref=e1045]:
+                  - generic [ref=e1047]: "-"
+                - cell "-" [ref=e1048]:
+                  - generic [ref=e1052]: "-"
+                - cell "maintenance" [ref=e1053]:
+                  - generic [ref=e1055]: maintenance
+                - cell "查看 编辑 删除" [ref=e1056]:
+                  - generic [ref=e1057]:
+                    - button "查看" [ref=e1058] [cursor=pointer]:
+                      - generic [ref=e1059]: 查看
+                    - button "编辑" [ref=e1060] [cursor=pointer]:
+                      - generic [ref=e1061]: 编辑
+                    - button "删除" [ref=e1062] [cursor=pointer]:
+                      - generic [ref=e1063]: 删除
+              - row "选择当前行 14 ZC2024080007 ¥16,593.00 华为 MateBook - ¥10,514.00 - - - maintenance 查看 编辑 删除" [ref=e1064]:
+                - cell "选择当前行" [ref=e1065]:
+                  - generic "选择当前行" [ref=e1067] [cursor=pointer]:
+                    - generic [ref=e1068]:
+                      - checkbox "选择当前行"
+                - cell "14" [ref=e1070]:
+                  - generic [ref=e1072]: "14"
+                - cell "ZC2024080007" [ref=e1073]:
+                  - generic [ref=e1075]: ZC2024080007
+                - cell "¥16,593.00" [ref=e1076]:
+                  - generic [ref=e1078]: ¥16,593.00
+                - cell "华为 MateBook" [ref=e1079]:
+                  - generic [ref=e1081]: 华为 MateBook
+                - cell "-" [ref=e1082]:
+                  - generic [ref=e1084]: "-"
+                - cell "¥10,514.00" [ref=e1085]:
+                  - generic [ref=e1087]: ¥10,514.00
+                - cell "-" [ref=e1088]:
+                  - generic [ref=e1092]: "-"
+                - cell "-" [ref=e1093]:
+                  - generic [ref=e1095]: "-"
+                - cell "-" [ref=e1096]:
+                  - generic [ref=e1100]: "-"
+                - cell "maintenance" [ref=e1101]:
+                  - generic [ref=e1103]: maintenance
+                - cell "查看 编辑 删除" [ref=e1104]:
+                  - generic [ref=e1105]:
+                    - button "查看" [ref=e1106] [cursor=pointer]:
+                      - generic [ref=e1107]: 查看
+                    - button "编辑" [ref=e1108] [cursor=pointer]:
+                      - generic [ref=e1109]: 编辑
+                    - button "删除" [ref=e1110] [cursor=pointer]:
+                      - generic [ref=e1111]: 删除
+              - row "选择当前行 15 ZC2024020006 ¥5,504.00 惠普 MacBook - ¥12,556.00 - - - in_use 查看 编辑 删除" [ref=e1112]:
+                - cell "选择当前行" [ref=e1113]:
+                  - generic "选择当前行" [ref=e1115] [cursor=pointer]:
+                    - generic [ref=e1116]:
+                      - checkbox "选择当前行"
+                - cell "15" [ref=e1118]:
+                  - generic [ref=e1120]: "15"
+                - cell "ZC2024020006" [ref=e1121]:
+                  - generic [ref=e1123]: ZC2024020006
+                - cell "¥5,504.00" [ref=e1124]:
+                  - generic [ref=e1126]: ¥5,504.00
+                - cell "惠普 MacBook" [ref=e1127]:
+                  - generic [ref=e1129]: 惠普 MacBook
+                - cell "-" [ref=e1130]:
+                  - generic [ref=e1132]: "-"
+                - cell "¥12,556.00" [ref=e1133]:
+                  - generic [ref=e1135]: ¥12,556.00
+                - cell "-" [ref=e1136]:
+                  - generic [ref=e1140]: "-"
+                - cell "-" [ref=e1141]:
+                  - generic [ref=e1143]: "-"
+                - cell "-" [ref=e1144]:
+                  - generic [ref=e1148]: "-"
+                - cell "in_use" [ref=e1149]:
+                  - generic [ref=e1151]: in_use
+                - cell "查看 编辑 删除" [ref=e1152]:
+                  - generic [ref=e1153]:
+                    - button "查看" [ref=e1154] [cursor=pointer]:
+                      - generic [ref=e1155]: 查看
+                    - button "编辑" [ref=e1156] [cursor=pointer]:
+                      - generic [ref=e1157]: 编辑
+                    - button "删除" [ref=e1158] [cursor=pointer]:
+                      - generic [ref=e1159]: 删除
+              - row "选择当前行 16 ZC2024040005 ¥11,929.00 戴尔 MacBook - ¥9,076.00 - - - idle 查看 编辑 删除" [ref=e1160]:
+                - cell "选择当前行" [ref=e1161]:
+                  - generic "选择当前行" [ref=e1163] [cursor=pointer]:
+                    - generic [ref=e1164]:
+                      - checkbox "选择当前行"
+                - cell "16" [ref=e1166]:
+                  - generic [ref=e1168]: "16"
+                - cell "ZC2024040005" [ref=e1169]:
+                  - generic [ref=e1171]: ZC2024040005
+                - cell "¥11,929.00" [ref=e1172]:
+                  - generic [ref=e1174]: ¥11,929.00
+                - cell "戴尔 MacBook" [ref=e1175]:
+                  - generic [ref=e1177]: 戴尔 MacBook
+                - cell "-" [ref=e1178]:
+                  - generic [ref=e1180]: "-"
+                - cell "¥9,076.00" [ref=e1181]:
+                  - generic [ref=e1183]: ¥9,076.00
+                - cell "-" [ref=e1184]:
+                  - generic [ref=e1188]: "-"
+                - cell "-" [ref=e1189]:
+                  - generic [ref=e1191]: "-"
+                - cell "-" [ref=e1192]:
+                  - generic [ref=e1196]: "-"
+                - cell "idle" [ref=e1197]:
+                  - generic [ref=e1199]: idle
+                - cell "查看 编辑 删除" [ref=e1200]:
+                  - generic [ref=e1201]:
+                    - button "查看" [ref=e1202] [cursor=pointer]:
+                      - generic [ref=e1203]: 查看
+                    - button "编辑" [ref=e1204] [cursor=pointer]:
+                      - generic [ref=e1205]: 编辑
+                    - button "删除" [ref=e1206] [cursor=pointer]:
+                      - generic [ref=e1207]: 删除
+              - row "选择当前行 17 ZC2024050004 ¥6,299.00 联想 ProBook - ¥13,915.00 - - - idle 查看 编辑 删除" [ref=e1208]:
+                - cell "选择当前行" [ref=e1209]:
+                  - generic "选择当前行" [ref=e1211] [cursor=pointer]:
+                    - generic [ref=e1212]:
+                      - checkbox "选择当前行"
+                - cell "17" [ref=e1214]:
+                  - generic [ref=e1216]: "17"
+                - cell "ZC2024050004" [ref=e1217]:
+                  - generic [ref=e1219]: ZC2024050004
+                - cell "¥6,299.00" [ref=e1220]:
+                  - generic [ref=e1222]: ¥6,299.00
+                - cell "联想 ProBook" [ref=e1223]:
+                  - generic [ref=e1225]: 联想 ProBook
+                - cell "-" [ref=e1226]:
+                  - generic [ref=e1228]: "-"
+                - cell "¥13,915.00" [ref=e1229]:
+                  - generic [ref=e1231]: ¥13,915.00
+                - cell "-" [ref=e1232]:
+                  - generic [ref=e1236]: "-"
+                - cell "-" [ref=e1237]:
+                  - generic [ref=e1239]: "-"
+                - cell "-" [ref=e1240]:
+                  - generic [ref=e1244]: "-"
+                - cell "idle" [ref=e1245]:
+                  - generic [ref=e1247]: idle
+                - cell "查看 编辑 删除" [ref=e1248]:
+                  - generic [ref=e1249]:
+                    - button "查看" [ref=e1250] [cursor=pointer]:
+                      - generic [ref=e1251]: 查看
+                    - button "编辑" [ref=e1252] [cursor=pointer]:
+                      - generic [ref=e1253]: 编辑
+                    - button "删除" [ref=e1254] [cursor=pointer]:
+                      - generic [ref=e1255]: 删除
+              - row "选择当前行 18 ZC2024080003 ¥19,101.00 惠普 ThinkPad - ¥4,365.00 - - - in_use 查看 编辑 删除" [ref=e1256]:
+                - cell "选择当前行" [ref=e1257]:
+                  - generic "选择当前行" [ref=e1259] [cursor=pointer]:
+                    - generic [ref=e1260]:
+                      - checkbox "选择当前行"
+                - cell "18" [ref=e1262]:
+                  - generic [ref=e1264]: "18"
+                - cell "ZC2024080003" [ref=e1265]:
+                  - generic [ref=e1267]: ZC2024080003
+                - cell "¥19,101.00" [ref=e1268]:
+                  - generic [ref=e1270]: ¥19,101.00
+                - cell "惠普 ThinkPad" [ref=e1271]:
+                  - generic [ref=e1273]: 惠普 ThinkPad
+                - cell "-" [ref=e1274]:
+                  - generic [ref=e1276]: "-"
+                - cell "¥4,365.00" [ref=e1277]:
+                  - generic [ref=e1279]: ¥4,365.00
+                - cell "-" [ref=e1280]:
+                  - generic [ref=e1284]: "-"
+                - cell "-" [ref=e1285]:
+                  - generic [ref=e1287]: "-"
+                - cell "-" [ref=e1288]:
+                  - generic [ref=e1292]: "-"
+                - cell "in_use" [ref=e1293]:
+                  - generic [ref=e1295]: in_use
+                - cell "查看 编辑 删除" [ref=e1296]:
+                  - generic [ref=e1297]:
+                    - button "查看" [ref=e1298] [cursor=pointer]:
+                      - generic [ref=e1299]: 查看
+                    - button "编辑" [ref=e1300] [cursor=pointer]:
+                      - generic [ref=e1301]: 编辑
+                    - button "删除" [ref=e1302] [cursor=pointer]:
+                      - generic [ref=e1303]: 删除
+              - row "选择当前行 19 ZC2024110002 ¥18,597.00 戴尔 ThinkPad - ¥9,862.00 - - - idle 查看 编辑 删除" [ref=e1304]:
+                - cell "选择当前行" [ref=e1305]:
+                  - generic "选择当前行" [ref=e1307] [cursor=pointer]:
+                    - generic [ref=e1308]:
+                      - checkbox "选择当前行"
+                - cell "19" [ref=e1310]:
+                  - generic [ref=e1312]: "19"
+                - cell "ZC2024110002" [ref=e1313]:
+                  - generic [ref=e1315]: ZC2024110002
+                - cell "¥18,597.00" [ref=e1316]:
+                  - generic [ref=e1318]: ¥18,597.00
+                - cell "戴尔 ThinkPad" [ref=e1319]:
+                  - generic [ref=e1321]: 戴尔 ThinkPad
+                - cell "-" [ref=e1322]:
+                  - generic [ref=e1324]: "-"
+                - cell "¥9,862.00" [ref=e1325]:
+                  - generic [ref=e1327]: ¥9,862.00
+                - cell "-" [ref=e1328]:
+                  - generic [ref=e1332]: "-"
+                - cell "-" [ref=e1333]:
+                  - generic [ref=e1335]: "-"
+                - cell "-" [ref=e1336]:
+                  - generic [ref=e1340]: "-"
+                - cell "idle" [ref=e1341]:
+                  - generic [ref=e1343]: idle
+                - cell "查看 编辑 删除" [ref=e1344]:
+                  - generic [ref=e1345]:
+                    - button "查看" [ref=e1346] [cursor=pointer]:
+                      - generic [ref=e1347]: 查看
+                    - button "编辑" [ref=e1348] [cursor=pointer]:
+                      - generic [ref=e1349]: 编辑
+                    - button "删除" [ref=e1350] [cursor=pointer]:
+                      - generic [ref=e1351]: 删除
+              - row "选择当前行 20 ZC2024060001 ¥16,541.00 惠普 MateBook - ¥7,184.00 - - - idle 查看 编辑 删除" [ref=e1352]:
+                - cell "选择当前行" [ref=e1353]:
+                  - generic "选择当前行" [ref=e1355] [cursor=pointer]:
+                    - generic [ref=e1356]:
+                      - checkbox "选择当前行"
+                - cell "20" [ref=e1358]:
+                  - generic [ref=e1360]: "20"
+                - cell "ZC2024060001" [ref=e1361]:
+                  - generic [ref=e1363]: ZC2024060001
+                - cell "¥16,541.00" [ref=e1364]:
+                  - generic [ref=e1366]: ¥16,541.00
+                - cell "惠普 MateBook" [ref=e1367]:
+                  - generic [ref=e1369]: 惠普 MateBook
+                - cell "-" [ref=e1370]:
+                  - generic [ref=e1372]: "-"
+                - cell "¥7,184.00" [ref=e1373]:
+                  - generic [ref=e1375]: ¥7,184.00
+                - cell "-" [ref=e1376]:
+                  - generic [ref=e1380]: "-"
+                - cell "-" [ref=e1381]:
+                  - generic [ref=e1383]: "-"
+                - cell "-" [ref=e1384]:
+                  - generic [ref=e1388]: "-"
+                - cell "idle" [ref=e1389]:
+                  - generic [ref=e1391]: idle
+                - cell "查看 编辑 删除" [ref=e1392]:
+                  - generic [ref=e1393]:
+                    - button "查看" [ref=e1394] [cursor=pointer]:
+                      - generic [ref=e1395]: 查看
+                    - button "编辑" [ref=e1396] [cursor=pointer]:
+                      - generic [ref=e1397]: 编辑
+                    - button "删除" [ref=e1398] [cursor=pointer]:
+                      - generic [ref=e1399]: 删除
+        - generic [ref=e347]:
+          - generic [ref=e348]: 共 20 条
+          - generic [ref=e351] [cursor=pointer]:
+            - generic:
+              - combobox [ref=e353]
+              - generic [ref=e354]: 20条/页
+            - img [ref=e357]
+          - button "上一页" [disabled] [ref=e359]:
+            - generic:
+              - img
+          - list [ref=e360]:
+            - listitem "第 1 页" [ref=e361]: "1"
+          - button "下一页" [disabled] [ref=e362]:
+            - generic:
+              - img
+          - generic [ref=e363]:
+            - generic [ref=e364]: 前往
+            - spinbutton "页" [ref=e367]: "1"
+            - generic [ref=e368]: 页

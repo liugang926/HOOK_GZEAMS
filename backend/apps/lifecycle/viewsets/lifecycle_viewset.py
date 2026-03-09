@@ -24,6 +24,8 @@ from apps.lifecycle.models import (
     DisposalRequest,
     DisposalItem,
     DisposalRequestStatus,
+    AssetWarranty,
+    AssetWarrantyStatus,
 )
 from apps.lifecycle.serializers import (
     # Purchase request serializers
@@ -57,6 +59,11 @@ from apps.lifecycle.serializers import (
     DisposalRequestCreateSerializer,
     DisposalRequestUpdateSerializer,
     DisposalItemSerializer,
+    # Asset warranty serializers
+    AssetWarrantyListSerializer,
+    AssetWarrantyDetailSerializer,
+    AssetWarrantyCreateSerializer,
+    AssetWarrantyUpdateSerializer,
 )
 from apps.lifecycle.filters import (
     PurchaseRequestFilter,
@@ -65,6 +72,7 @@ from apps.lifecycle.filters import (
     MaintenancePlanFilter,
     MaintenanceTaskFilter,
     DisposalRequestFilter,
+    AssetWarrantyFilter,
 )
 from apps.lifecycle.services import (
     PurchaseRequestService,
@@ -933,3 +941,170 @@ class DisposalRequestViewSet(BaseModelViewSetWithBatch):
             msg += '. All items executed, request can be completed.'
 
         return BaseResponse.success(message=msg)
+
+
+# ========== Asset Warranty ViewSet ==========
+
+class AssetWarrantyViewSet(BaseModelViewSetWithBatch):
+    """
+    ViewSet for Asset Warranty operations.
+
+    Provides:
+    - Standard CRUD operations
+    - Warranty lifecycle actions (activate, expire, renew, cancel)
+    - Expiring soon listing
+    - Batch operations
+    """
+    queryset = AssetWarranty.objects.all()
+    filterset_class = AssetWarrantyFilter
+    search_fields = ['warranty_no', 'warranty_provider', 'contract_no']
+
+    def get_serializer_class(self):
+        """Return appropriate serializer based on action"""
+        if self.action == 'list':
+            return AssetWarrantyListSerializer
+        elif self.action == 'create':
+            return AssetWarrantyCreateSerializer
+        elif self.action in ['update', 'partial_update']:
+            return AssetWarrantyUpdateSerializer
+        return AssetWarrantyDetailSerializer
+
+    @action(detail=True, methods=['post'])
+    def activate(self, request, pk=None):
+        """
+        Activate warranty.
+
+        POST /api/lifecycle/asset-warranties/{id}/activate/
+        """
+        instance = self.get_object()
+        if instance.status not in [AssetWarrantyStatus.DRAFT]:
+            return BaseResponse.error(message='Only draft warranties can be activated')
+
+        from django.utils import timezone
+        instance.status = AssetWarrantyStatus.ACTIVE
+        instance.activated_at = timezone.now()
+        instance.save()
+
+        serializer = AssetWarrantyDetailSerializer(instance)
+        return BaseResponse.success(data=serializer.data, message='Warranty activated')
+
+    @action(detail=True, methods=['post'])
+    def expire(self, request, pk=None):
+        """
+        Mark warranty as expired.
+
+        POST /api/lifecycle/asset-warranties/{id}/expire/
+        """
+        instance = self.get_object()
+        if instance.status not in [AssetWarrantyStatus.ACTIVE, AssetWarrantyStatus.EXPIRING]:
+            return BaseResponse.error(message='Only active/expiring warranties can be expired')
+
+        from django.utils import timezone
+        instance.status = AssetWarrantyStatus.EXPIRED
+        instance.expired_at = timezone.now()
+        instance.save()
+
+        serializer = AssetWarrantyDetailSerializer(instance)
+        return BaseResponse.success(data=serializer.data, message='Warranty expired')
+
+    @action(detail=True, methods=['post'])
+    def renew(self, request, pk=None):
+        """
+        Renew warranty with new end date.
+
+        POST /api/lifecycle/asset-warranties/{id}/renew/
+        Body: { end_date: '2027-01-01', warranty_cost: 5000 }
+        """
+        instance = self.get_object()
+        if instance.status not in [
+            AssetWarrantyStatus.ACTIVE,
+            AssetWarrantyStatus.EXPIRING,
+            AssetWarrantyStatus.EXPIRED
+        ]:
+            return BaseResponse.error(message='Cannot renew warranty in current status')
+
+        new_end_date = request.data.get('end_date')
+        if not new_end_date:
+            return BaseResponse.error(message='end_date is required')
+
+        instance.end_date = new_end_date
+        instance.status = AssetWarrantyStatus.ACTIVE
+        if request.data.get('warranty_cost'):
+            instance.warranty_cost = request.data['warranty_cost']
+        instance.save()
+
+        serializer = AssetWarrantyDetailSerializer(instance)
+        return BaseResponse.success(data=serializer.data, message='Warranty renewed')
+
+    @action(detail=True, methods=['post'])
+    def record_claim(self, request, pk=None):
+        """
+        Record a warranty claim.
+
+        POST /api/lifecycle/asset-warranties/{id}/record_claim/
+        """
+        instance = self.get_object()
+        if instance.status not in [AssetWarrantyStatus.ACTIVE, AssetWarrantyStatus.EXPIRING]:
+            return BaseResponse.error(message='Can only claim on active warranties')
+
+        from django.utils import timezone
+        instance.claim_count += 1
+        instance.last_claim_date = timezone.now().date()
+        instance.status = AssetWarrantyStatus.CLAIMED
+        instance.save()
+
+        serializer = AssetWarrantyDetailSerializer(instance)
+        return BaseResponse.success(data=serializer.data, message='Claim recorded')
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """
+        Cancel warranty.
+
+        POST /api/lifecycle/asset-warranties/{id}/cancel/
+        """
+        instance = self.get_object()
+        instance.status = AssetWarrantyStatus.CANCELLED
+        instance.save()
+
+        serializer = AssetWarrantyDetailSerializer(instance)
+        return BaseResponse.success(data=serializer.data, message='Warranty cancelled')
+
+    @action(detail=False, methods=['get'])
+    def expiring_soon(self, request):
+        """
+        Get warranties expiring within 30 days.
+
+        GET /api/lifecycle/asset-warranties/expiring_soon/
+        """
+        from django.utils import timezone
+        from datetime import timedelta
+
+        today = timezone.now().date()
+        queryset = self.get_queryset().filter(
+            status=AssetWarrantyStatus.ACTIVE,
+            end_date__lte=today + timedelta(days=30),
+            end_date__gte=today
+        )
+        serializer = AssetWarrantyListSerializer(queryset, many=True)
+        return BaseResponse.success(data=serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def statistics(self, request):
+        """
+        Get warranty statistics summary.
+
+        GET /api/lifecycle/asset-warranties/statistics/
+        """
+        from django.db.models import Count, Sum
+
+        qs = self.get_queryset()
+        stats = {
+            'total': qs.count(),
+            'active': qs.filter(status=AssetWarrantyStatus.ACTIVE).count(),
+            'expiring': qs.filter(status=AssetWarrantyStatus.EXPIRING).count(),
+            'expired': qs.filter(status=AssetWarrantyStatus.EXPIRED).count(),
+            'total_cost': qs.aggregate(total=Sum('warranty_cost'))['total'] or 0,
+            'total_claims': qs.aggregate(total=Sum('claim_count'))['total'] or 0,
+        }
+        return BaseResponse.success(data=stats)

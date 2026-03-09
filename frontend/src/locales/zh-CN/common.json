@@ -80,6 +80,7 @@
     "contact": "Contact",
     "createdAt": "\u521b\u5efa\u65f6\u95f4",
     "createdBy": "\u521b\u5efa\u4eba",
+    "changeHistory": "\u53d8\u66f4\u8bb0\u5f55",
     "description": "Description",
     "details": "\u8be6\u60c5",
     "display": "\u663e\u793a",
@@ -124,6 +125,31 @@
       "requestSave": "\u89e6\u53d1\u8868\u5355\u4fdd\u5b58\u8bf7\u6c42"
     }
   },
+  "history": {
+    "title": "变更历史",
+    "description": "参考 Salesforce 的字段级变更记录方式，展示字段、原值、新值、操作人和时间。",
+    "labels": {
+      "recordLevel": "记录级"
+    },
+    "actions": {
+      "create": "创建",
+      "update": "更新",
+      "delete": "删除",
+      "status_change": "状态变更",
+      "assign": "分配",
+      "unassign": "取消分配",
+      "custom": "自定义操作"
+    },
+    "columns": {
+      "changedAt": "变更时间",
+      "changedBy": "变更人",
+      "action": "动作",
+      "field": "字段",
+      "oldValue": "原值",
+      "newValue": "新值",
+      "description": "说明"
+    }
+  },
   "locationInfo": "Location Info",
   "localeSwitcher": {
     "title": "\u8bed\u8a00\u504f\u597d",
@@ -151,6 +177,7 @@
     "deleteSuccess": "\u5220\u9664\u6210\u529f",
     "functionUnderDevelopment": "\u529f\u80fd\u5f00\u53d1\u4e2d",
     "loadFailed": "\u52a0\u8f7d\u5931\u8d25",
+    "noTimelineData": "\u6682\u65e0\u53d8\u66f4\u8bb0\u5f55",
     "dragFileHere": "\u5c06\u6587\u4ef6\u62d6\u62fd\u5230\u6b64\u5904\u6216",
     "clickToUpload": "\u70b9\u51fb\u4e0a\u4f20",
     "uploading": "\u4e0a\u4f20\u4e2d...",
@@ -183,6 +210,7 @@
     "noSearchResults": "\u672a\u627e\u5230\u5339\u914d\u9879",
     "records": "\u6761\u8bb0\u5f55",
     "emptyHint": "\u6682\u65e0\u6570\u636e\uff0c\u8bf7\u5c1d\u8bd5\u521b\u5efa\u4e00\u6761\u65b0\u8bb0\u5f55",
+    "timelineHint": "\u5f53\u8be5\u8bb0\u5f55\u53d1\u751f\u521b\u5efa\u3001\u66f4\u65b0\u6216\u72b6\u6001\u53d8\u5316\u65f6\uff0c\u53d8\u66f4\u8bb0\u5f55\u4f1a\u663e\u793a\u5728\u8fd9\u91cc\u3002",
     "requestTimeout": "\u8bf7\u6c42\u8d85\u65f6",
     "systemError": "\u7cfb\u7edf\u51fa\u9519",
     "formValidationFailed": "\u8868\u5355\u6821\u9a8c\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u8f93\u5165\u5185\u5bb9",
@@ -249,6 +277,33 @@
     },
     "status": "Status",
     "type": "Type"
+  },
+  "referenceCard": {
+    "fields": {
+      "status": "状态",
+      "category": "分类",
+      "type": "类型",
+      "department": "部门",
+      "location": "位置",
+      "parent": "上级",
+      "owner": "负责人",
+      "user": "用户",
+      "custodian": "保管人",
+      "manager": "管理员",
+      "brand": "品牌",
+      "model": "型号",
+      "specification": "规格",
+      "serialNumber": "序列号",
+      "phone": "电话",
+      "mobile": "手机",
+      "email": "邮箱",
+      "depreciationMethod": "折旧方法",
+      "defaultUsefulLife": "默认使用年限",
+      "residualRate": "残值率",
+      "isActive": "启用状态",
+      "updatedAt": "更新时间",
+      "createdAt": "创建时间"
+    }
   },
   "rules": {
     "required": "Required"

@@ -1176,3 +1176,184 @@ class DisposalItem(BaseModel):
 
     def __str__(self):
         return f"{self.disposal_request.request_no} - {self.asset.asset_name}"
+
+
+# ========== Asset Warranty Models ==========
+
+class AssetWarrantyStatus(models.TextChoices):
+    """Asset warranty status choices"""
+    DRAFT = 'draft', 'Draft'
+    ACTIVE = 'active', 'Active'
+    EXPIRING = 'expiring', 'Expiring Soon'
+    EXPIRED = 'expired', 'Expired'
+    CLAIMED = 'claimed', 'Claimed'
+    CANCELLED = 'cancelled', 'Cancelled'
+
+
+class AssetWarrantyType(models.TextChoices):
+    """Warranty type choices"""
+    MANUFACTURER = 'manufacturer', 'Manufacturer Warranty'
+    EXTENDED = 'extended', 'Extended Warranty'
+    THIRD_PARTY = 'third_party', 'Third-Party Warranty'
+    SERVICE_CONTRACT = 'service_contract', 'Service Contract'
+
+
+class AssetWarranty(BaseModel):
+    """
+    Asset Warranty Model
+
+    Tracks warranty information for assets including coverage period,
+    warranty provider, and claim history.
+    Inherits from BaseModel for organization isolation and soft delete.
+    """
+    class Meta:
+        db_table = 'lifecycle_asset_warranty'
+        verbose_name = 'Asset Warranty'
+        verbose_name_plural = 'Asset Warranties'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['organization', 'warranty_no']),
+            models.Index(fields=['organization', 'status']),
+            models.Index(fields=['organization', 'asset']),
+            models.Index(fields=['organization', 'end_date']),
+        ]
+
+    # Basic Information
+    warranty_no = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        help_text='Warranty number (auto-generated: WR+YYYYMM+NNNN)'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=AssetWarrantyStatus.choices,
+        default=AssetWarrantyStatus.DRAFT,
+        db_index=True,
+        help_text='Warranty status'
+    )
+    warranty_type = models.CharField(
+        max_length=30,
+        choices=AssetWarrantyType.choices,
+        default=AssetWarrantyType.MANUFACTURER,
+        help_text='Warranty type'
+    )
+
+    # Asset Information
+    asset = models.ForeignKey(
+        'assets.Asset',
+        on_delete=models.PROTECT,
+        related_name='warranties',
+        help_text='Warranted asset'
+    )
+
+    # Warranty Coverage
+    start_date = models.DateField(help_text='Warranty start date')
+    end_date = models.DateField(help_text='Warranty end date')
+    coverage_description = models.TextField(
+        blank=True,
+        help_text='Warranty coverage description'
+    )
+
+    # Warranty Provider
+    warranty_provider = models.CharField(
+        max_length=200,
+        help_text='Warranty provider name'
+    )
+    provider_contact = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text='Provider contact person'
+    )
+    provider_phone = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='Provider phone number'
+    )
+    provider_email = models.EmailField(
+        blank=True,
+        help_text='Provider email'
+    )
+
+    # Financial Information
+    warranty_cost = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Warranty cost'
+    )
+    purchase_request = models.ForeignKey(
+        'lifecycle.PurchaseRequest',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='warranties',
+        help_text='Associated purchase request'
+    )
+
+    # Document Reference
+    contract_no = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text='Warranty contract number'
+    )
+    document_urls = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='Warranty document URLs'
+    )
+
+    # Claim Information
+    claim_count = models.PositiveIntegerField(
+        default=0,
+        help_text='Number of claims made'
+    )
+    last_claim_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Date of last claim'
+    )
+
+    # Additional Information
+    remark = models.TextField(
+        blank=True,
+        help_text='Additional remarks'
+    )
+    activated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Activation time'
+    )
+    expired_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Expiration time'
+    )
+
+    def __str__(self):
+        return f"{self.warranty_no} - {self.asset}"
+
+    def save(self, *args, **kwargs):
+        """Generate warranty number if not set"""
+        if not self.warranty_no:
+            self.warranty_no = self._generate_warranty_no()
+        super().save(*args, **kwargs)
+
+    def _generate_warranty_no(self):
+        """Generate warranty number: WR+YYYYMM+NNNN"""
+        now = timezone.now()
+        prefix = f"WR{now.strftime('%Y%m')}"
+        last = AssetWarranty.objects.filter(
+            warranty_no__startswith=prefix
+        ).order_by('-warranty_no').first()
+        if last:
+            seq = int(last.warranty_no[-4:]) + 1
+        else:
+            seq = 1
+        return f"{prefix}{seq:04d}"
+
+    def clean(self):
+        """Validate warranty dates"""
+        if self.start_date and self.end_date and self.start_date > self.end_date:
+            raise ValidationError('Start date cannot be after end date')

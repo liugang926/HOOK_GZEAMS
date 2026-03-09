@@ -86,6 +86,7 @@
     "contact": "Contact",
     "createdAt": "Created At",
     "createdBy": "Created By",
+    "changeHistory": "Change History",
     "custom": "Custom",
     "description": "Description",
     "details": "Details",
@@ -132,6 +133,31 @@
       "requestSave": "Request parent form save"
     }
   },
+  "history": {
+    "title": "Change History",
+    "description": "A Salesforce-style field history view showing field, previous value, new value, actor, and change time.",
+    "labels": {
+      "recordLevel": "Record"
+    },
+    "actions": {
+      "create": "Created",
+      "update": "Updated",
+      "delete": "Deleted",
+      "status_change": "Status Changed",
+      "assign": "Assigned",
+      "unassign": "Unassigned",
+      "custom": "Custom Action"
+    },
+    "columns": {
+      "changedAt": "Changed At",
+      "changedBy": "Changed By",
+      "action": "Action",
+      "field": "Field",
+      "oldValue": "Previous Value",
+      "newValue": "New Value",
+      "description": "Description"
+    }
+  },
   "locationInfo": "Location Info",
   "localeSwitcher": {
     "title": "Language Preference",
@@ -159,6 +185,7 @@
     "deleteSuccess": "Deleted successfully",
     "functionUnderDevelopment": "Feature under development",
     "loadFailed": "Load failed",
+    "noTimelineData": "No change history yet",
     "dragFileHere": "Drag file here or",
     "clickToUpload": "click to upload",
     "uploading": "Uploading...",
@@ -184,6 +211,7 @@
     "saveSuccess": "Saved successfully",
     "selected": "{count} items selected",
     "emptyHint": "No data yet. Try creating a new record.",
+    "timelineHint": "Changes will appear here once this record is created, updated, or changes status.",
     "requestTimeout": "Request timed out",
     "systemError": "System error",
     "tips": "Tips",
@@ -257,6 +285,33 @@
     },
     "status": "Status",
     "type": "Type"
+  },
+  "referenceCard": {
+    "fields": {
+      "status": "Status",
+      "category": "Category",
+      "type": "Type",
+      "department": "Department",
+      "location": "Location",
+      "parent": "Parent",
+      "owner": "Owner",
+      "user": "User",
+      "custodian": "Custodian",
+      "manager": "Manager",
+      "brand": "Brand",
+      "model": "Model",
+      "specification": "Specification",
+      "serialNumber": "Serial Number",
+      "phone": "Phone",
+      "mobile": "Mobile",
+      "email": "Email",
+      "depreciationMethod": "Depreciation Method",
+      "defaultUsefulLife": "Default Useful Life",
+      "residualRate": "Residual Rate",
+      "isActive": "Active",
+      "updatedAt": "Updated At",
+      "createdAt": "Created At"
+    }
   },
   "rules": {
     "required": "Required"

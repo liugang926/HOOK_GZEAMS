@@ -2645,3 +2645,8 @@ class Translation(BaseModel):
         elif self.content_object:
             return f"{self.content_type}:{self.object_id}.{self.field_name}[{self.language_code}]"
         return f"Translation[{self.language_code}]"
+
+
+# Register split models that live outside models.py so Django app loading,
+# ContentType creation, and apps.get_model('system', ...) remain consistent.
+from .activity_log import ActivityLog  # noqa: E402,F401

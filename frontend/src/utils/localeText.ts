@@ -127,6 +127,13 @@ export const resolveTranslatableText = (
   locale: LocaleType = getCurrentLocale()
 ): string => {
   if (typeof value === 'string') return value
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const resolved = resolveTranslatableText(item, locale)
+      if (resolved) return resolved
+    }
+    return ''
+  }
   if (!value || typeof value !== 'object') return ''
 
   const record = toRecord(value)

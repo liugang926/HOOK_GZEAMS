@@ -85,13 +85,13 @@ export interface ProjectedDetailField {
 
 export interface ProjectedDetailTab {
   id: string
-  title: string
+  title: any
   fields: ProjectedDetailField[]
 }
 
 export interface ProjectedDetailSection {
   name: string
-  title: string
+  title: any
   type?: string
   position?: 'main' | 'sidebar'
   fields: ProjectedDetailField[]

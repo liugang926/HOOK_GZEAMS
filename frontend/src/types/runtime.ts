@@ -104,14 +104,14 @@ export type RuntimeSectionType = 'section' | 'card' | 'tab' | 'collapse'
 export interface RuntimeTab {
   id: string
   name?: string
-  title?: string
+  title?: any
   fields: RuntimeField[]
 }
 
 export interface RuntimeCollapseItem {
   id: string
   name?: string
-  title?: string
+  title?: any
   collapsed?: boolean
   fields: RuntimeField[]
 }
@@ -119,7 +119,7 @@ export interface RuntimeCollapseItem {
 export interface RuntimeSection {
   id: string
   name?: string
-  title?: string
+  title?: any
   type?: RuntimeSectionType
   position?: 'main' | 'sidebar'
   columns?: number

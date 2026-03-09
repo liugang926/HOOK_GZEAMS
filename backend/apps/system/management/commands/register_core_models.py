@@ -12,11 +12,8 @@ Usage:
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.system.services.business_object_service import (
-    BusinessObjectService,
-    CORE_HARDcoded_MODELS,
-    HARDCODED_OBJECT_NAMES,
-)
+from apps.system.services.business_object_service import BusinessObjectService
+from apps.system.services.hardcoded_object_sync_service import HardcodedObjectSyncService
 
 
 class Command(BaseCommand):
@@ -46,18 +43,20 @@ class Command(BaseCommand):
         specific_code = options.get('code')
         force = options.get('force', False)
 
-        service = BusinessObjectService()
+        business_object_service = BusinessObjectService()
+        sync_service = HardcodedObjectSyncService()
 
         # Filter models to register
         if specific_code:
-            if specific_code not in CORE_HARDcoded_MODELS:
+            definition = sync_service.get_definition(specific_code)
+            if not definition:
                 self.stderr.write(
                     self.style.ERROR(f'Unknown hardcoded model: {specific_code}')
                 )
                 return
-            models_to_register = {specific_code: CORE_HARDcoded_MODELS[specific_code]}
+            definitions = [definition]
         else:
-            models_to_register = CORE_HARDcoded_MODELS
+            definitions = list(sync_service.iter_definitions())
 
         # Register each model
         registered_count = 0
@@ -65,44 +64,33 @@ class Command(BaseCommand):
         synced_count = 0
 
         with transaction.atomic():
-            for code, model_path in sorted(models_to_register.items()):
-                names = HARDCODED_OBJECT_NAMES.get(code, (code, code))
-                name = names[0]
-                name_en = names[1]
+            for definition in sorted(definitions, key=lambda item: item.code):
+                result = sync_service.ensure_business_object(
+                    definition,
+                    overwrite_existing=force,
+                )
+                code = definition.code
+                name = definition.name
 
-                # Check if already exists
-                from apps.system.models import BusinessObject
-                existing = BusinessObject.objects.filter(code=code).first()
-
-                if existing:
-                    if force:
-                        # Update existing
-                        existing.name = name
-                        existing.name_en = name_en
-                        existing.is_hardcoded = True
-                        existing.django_model_path = model_path
-                        existing.save()
-                        updated_count += 1
-                        self.stdout.write(
-                            f'  {self.style.WARNING("UPDATED")}: {code} - {name}'
-                        )
-                    else:
-                        self.stdout.write(
-                            f'  {self.style.SUCCESS("SKIP")}: {code} - {name} (already exists)'
-                        )
-                        registered_count += 1
-                else:
-                    # Create new
-                    obj = service.register_hardcoded_object(code, name, name_en)
+                if result.created:
                     registered_count += 1
                     self.stdout.write(
                         f'  {self.style.SUCCESS("CREATED")}: {code} - {name}'
+                    )
+                elif result.updated:
+                    updated_count += 1
+                    self.stdout.write(
+                        f'  {self.style.WARNING("UPDATED")}: {code} - {name}'
+                    )
+                else:
+                    self.stdout.write(
+                        f'  {self.style.SUCCESS("SKIP")}: {code} - {name} (already exists)'
                     )
 
                 # Sync fields if requested
                 if sync_fields:
                     try:
-                        field_count = service.sync_model_fields(code)
+                        field_count = business_object_service.sync_model_fields(code)
                         synced_count += field_count
                         self.stdout.write(
                             f'    {self.style.SUCCESS("SYNCED")}: {field_count} fields'
@@ -115,7 +103,7 @@ class Command(BaseCommand):
         # Summary
         self.stdout.write('\n' + '=' * 60)
         self.stdout.write('Registration Summary:')
-        self.stdout.write(f'  Total processed: {len(models_to_register)}')
+        self.stdout.write(f'  Total processed: {len(definitions)}')
         self.stdout.write(f'  Registered: {registered_count}')
         self.stdout.write(f'  Updated: {updated_count}')
         if sync_fields:

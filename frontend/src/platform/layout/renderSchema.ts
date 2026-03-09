@@ -22,14 +22,14 @@ export interface RenderField {
 
 export interface RenderSection {
   id: string
-  title: string
+  title: any
   columns: number
   position?: 'main' | 'sidebar'
   kind: 'section' | 'tab' | 'collapse'
   containerId?: string
-  containerTitle?: string
+  containerTitle?: any
   itemId?: string
-  itemTitle?: string
+  itemTitle?: any
   collapsible: boolean
   collapsed: boolean
   fields: RenderField[]
@@ -58,6 +58,15 @@ const buildFieldMap = (fields: AnyRecord[]): Map<string, AnyRecord> => {
 
 const resolveColumns = (section: AnyRecord): number => {
   return Number(section?.columns || section?.columnCount || section?.column || 2) || 2
+}
+
+const preserveTitlePayload = (value: unknown, fallback = ''): any => {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) return value
+  if (value && typeof value === 'object') return value
+  if (value === undefined || value === null) return fallback
+  const normalized = String(value).trim()
+  return normalized || fallback
 }
 
 const coerceBoolean = (value: unknown): boolean | undefined => {
@@ -157,7 +166,7 @@ const buildRenderField = (
 
 const buildSectionFromFields = (
   id: string,
-  title: string,
+  title: any,
   kind: 'section' | 'tab' | 'collapse',
   columns: number,
   fields: AnyRecord[],
@@ -168,9 +177,9 @@ const buildSectionFromFields = (
     collapsible?: boolean
     collapsed?: boolean
     containerId?: string
-    containerTitle?: string
+    containerTitle?: any
     itemId?: string
-    itemTitle?: string
+    itemTitle?: any
   } = {}
 ): RenderSection | null => {
   const renderFields = (fields || [])
@@ -361,7 +370,7 @@ export function buildRenderSchema(input: {
 
   for (const rawSection of rawSections) {
     const sectionId = String(rawSection?.id || rawSection?.name || `section_${sections.length + 1}`)
-    const sectionTitle = String(rawSection?.title || '')
+    const sectionTitle = preserveTitlePayload(rawSection?.title, '')
     const columns = resolveColumns(rawSection)
     const sectionType = String(rawSection?.type || 'section')
 
@@ -369,10 +378,10 @@ export function buildRenderSchema(input: {
       const tabs = Array.isArray(rawSection?.tabs) ? rawSection.tabs : []
       for (const tab of tabs) {
         const tabId = String(tab?.id || tab?.name || `tab_${sections.length + 1}`)
-        const tabTitle = String(tab?.title || tab?.name || 'Tab')
+        const tabTitle = preserveTitlePayload(tab?.title ?? tab?.name, 'Tab')
         const section = buildSectionFromFields(
           `${sectionId}::tab::${tabId}`,
-          sectionTitle ? `${sectionTitle} / ${tabTitle}` : tabTitle,
+          tabTitle,
           'tab',
           columns,
           Array.isArray(tab?.fields) ? tab.fields : [],
@@ -397,10 +406,10 @@ export function buildRenderSchema(input: {
       const items = Array.isArray(rawSection?.items) ? rawSection.items : []
       for (const item of items) {
         const itemId = String(item?.id || item?.name || `item_${sections.length + 1}`)
-        const itemTitle = String(item?.title || item?.name || 'Group')
+        const itemTitle = preserveTitlePayload(item?.title ?? item?.name, 'Group')
         const section = buildSectionFromFields(
           `${sectionId}::collapse::${itemId}`,
-          sectionTitle ? `${sectionTitle} / ${itemTitle}` : itemTitle,
+          itemTitle,
           'collapse',
           columns,
           Array.isArray(item?.fields) ? item.fields : [],

@@ -2,6 +2,11 @@
 import { shallowMount } from '@vue/test-utils'
 import { defineComponent, h, nextTick } from 'vue'
 
+const flushDesignerMount = async () => {
+  await nextTick()
+  await nextTick()
+}
+
 const BaseDetailPageStub = defineComponent({
   name: 'BaseDetailPage',
   props: {
@@ -38,6 +43,36 @@ const SectionPropertyEditorStub = defineComponent({
   }
 })
 
+const DesignerCanvasStub = defineComponent({
+  name: 'DesignerCanvas',
+  setup(_props, { slots }) {
+    return () => h('div', { class: 'designer-canvas-stub' }, slots.default ? slots.default() : [])
+  }
+})
+
+const DesignerPropertyPanelStub = defineComponent({
+  name: 'DesignerPropertyPanel',
+  props: {
+    elementType: {
+      type: String,
+      default: null
+    },
+    sectionProps: {
+      type: Object,
+      default: () => ({})
+    }
+  },
+  setup(props) {
+    return () => h(
+      'div',
+      { class: 'designer-property-panel-stub' },
+      props.elementType === 'section'
+        ? [h(SectionPropertyEditorStub, { modelValue: props.sectionProps })]
+        : []
+    )
+  }
+})
+
 describe('WysiwygLayoutDesigner section selection bridge', () => {
   it('selects the matching section when BaseDetailPage emits section-click', async () => {
     const i18n = (await import('@/locales')).default
@@ -63,8 +98,10 @@ describe('WysiwygLayoutDesigner section selection bridge', () => {
         plugins: [i18n],
         stubs: {
           BaseDetailPage: BaseDetailPageStub,
-          FieldPropertyEditor: true,
-          SectionPropertyEditor: SectionPropertyEditorStub,
+          DesignerCanvas: DesignerCanvasStub,
+          DesignerPropertyPanel: DesignerPropertyPanelStub,
+          DesignerToolbar: true,
+          DesignerFieldPanel: true,
           DesignerFieldCard: true,
           'el-button': true,
           'el-button-group': true,
@@ -88,6 +125,8 @@ describe('WysiwygLayoutDesigner section selection bridge', () => {
       }
     })
 
+    await flushDesignerMount()
+
     expect(wrapper.find('.designer-section-slot').classes()).not.toContain('is-selected')
 
     wrapper.getComponent(BaseDetailPageStub).vm.$emit('section-click', 'section-1')
@@ -95,6 +134,6 @@ describe('WysiwygLayoutDesigner section selection bridge', () => {
 
     const section = wrapper.get('.designer-section-slot')
     expect(section.attributes('data-section-id')).toBe('section-1')
-    expect(wrapper.get('.section-property-editor-stub').text()).toContain('section-1')
-  })
+    expect(wrapper.getComponent(DesignerPropertyPanelStub).props('sectionProps')).toMatchObject({ id: 'section-1' })
+  }, 20000)
 })

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.system.models import ActivityLog
+from apps.system.activity_log import ActivityLog
 from apps.accounts.serializers import UserBasicSerializer
 
 class ActivityLogSerializer(serializers.ModelSerializer):
@@ -26,4 +26,4 @@ class ActivityLogSerializer(serializers.ModelSerializer):
     def get_userName(self, obj):
         if obj.actor:
             return obj.actor.get_full_name() or obj.actor.username
-        return 'System'
+        return None

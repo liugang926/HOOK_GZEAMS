@@ -19,44 +19,6 @@ from apps.system.models import (
 )
 
 
-# Core hardcoded model names (for display name mapping)
-HARDCODED_OBJECT_NAMES = {
-    'Asset': ('资产', 'Asset'),
-    'AssetCategory': ('资产分类', 'Asset Category'),
-    'Supplier': ('供应商', 'Supplier'),
-    'Location': ('位置', 'Location'),
-    'AssetStatusLog': ('资产状态日志', 'Asset Status Log'),
-    'AssetPickup': ('资产领用', 'Asset Pickup'),
-    'PickupItem': ('领用明细', 'Pickup Item'),
-    'AssetTransfer': ('资产调拨', 'Asset Transfer'),
-    'TransferItem': ('调拨明细', 'Transfer Item'),
-    'AssetReturn': ('资产归还', 'Asset Return'),
-    'ReturnItem': ('归还明细', 'Return Item'),
-    'AssetLoan': ('资产借用', 'Asset Loan'),
-    'LoanItem': ('借用明细', 'Loan Item'),
-    'Consumable': ('耗材', 'Consumable'),
-    'ConsumableCategory': ('耗材分类', 'Consumable Category'),
-    'ConsumableStock': ('耗材库存', 'Consumable Stock'),
-    'ConsumablePurchase': ('耗材采购', 'Consumable Purchase'),
-    'ConsumableIssue': ('耗材领用', 'Consumable Issue'),
-    'PurchaseRequest': ('采购申请', 'Purchase Request'),
-    'AssetReceipt': ('资产入库', 'Asset Receipt'),
-    'Maintenance': ('维修记录', 'Maintenance'),
-    'MaintenancePlan': ('维修计划', 'Maintenance Plan'),
-    'DisposalRequest': ('报废申请', 'Disposal Request'),
-    'InventoryTask': ('盘点任务', 'Inventory Task'),
-    'InventorySnapshot': ('资产快照', 'Inventory Snapshot'),
-    'Organization': ('组织', 'Organization'),
-    'Department': ('部门', 'Department'),
-    'User': ('用户', 'User'),
-    'WorkflowDefinition': ('工作流定义', 'Workflow Definition'),
-    'WorkflowTemplate': ('工作流模板', 'Workflow Template'),
-    'WorkflowInstance': ('工作流实例', 'Workflow Instance'),
-    'WorkflowTask': ('工作流任务', 'Workflow Task'),
-    'WorkflowApproval': ('工作流审批记录', 'Workflow Approval'),
-    'WorkflowOperationLog': ('工作流操作日志', 'Workflow Operation Log'),
-}
-
 
 class BusinessObjectSerializer(BaseModelSerializer):
     """

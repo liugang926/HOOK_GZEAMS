@@ -67,6 +67,26 @@ describe('useColumnConfig', () => {
       expect(result?.columns[0].label).toBe('Name')
     })
 
+    it('should normalize legacy snake_case order from backend', async () => {
+      const { columnConfigApi } = await import('@/api/system')
+
+      vi.mocked(columnConfigApi.get).mockResolvedValue({
+        columns: [
+          { field_code: 'name', label: 'Name', width: 150, visible: true },
+          { fieldCode: 'code', label: 'Code', width: 120, visible: true }
+        ],
+        column_order: ['name', 'code'],
+        source: 'user'
+      } as any)
+
+      const config = useColumnConfig('asset')
+      const result = await config.fetchConfig()
+
+      expect(result?.columnOrder).toEqual(['name', 'code'])
+      expect(result?.columns[0]).toMatchObject({ fieldCode: 'name', field_code: 'name' })
+      expect(result?.columns[1]).toMatchObject({ fieldCode: 'code', field_code: 'code' })
+    })
+
     it('should cache configuration', async () => {
       const { columnConfigApi } = await import('@/api/system')
 
@@ -185,7 +205,9 @@ describe('useColumnConfig', () => {
 
       await config.saveConfig(columns)
 
-      expect(config.config.value?.columns).toEqual(columns)
+      expect(config.config.value?.columns).toEqual([
+        expect.objectContaining({ prop: 'name', label: 'Name', fieldCode: 'name', field_code: 'name' })
+      ])
       expect(config.config.value?.columnOrder).toEqual(['name'])
       expect(config.config.value?.source).toBe('user')
     })
@@ -343,6 +365,29 @@ describe('useColumnConfig', () => {
 
       expect(result[0].prop).toBe('code')
       expect(result[1].prop).toBe('name')
+    })
+
+    it('should sort columns by normalized legacy field keys', () => {
+      const config = useColumnConfig('asset')
+
+      config.config.value = {
+        object_code: 'asset',
+        columns: [
+          { field_code: 'name', width: 150 } as any,
+          { fieldCode: 'code', width: 120 } as any
+        ],
+        columnOrder: ['name', 'code']
+      }
+
+      const defaultColumns = [
+        { prop: 'code', label: 'Code', defaultWidth: 120 },
+        { prop: 'name', label: 'Name', defaultWidth: 150 }
+      ] as any
+
+      const result = config.applyConfig(defaultColumns)
+
+      expect(result[0].prop).toBe('name')
+      expect(result[1].prop).toBe('code')
     })
   })
 

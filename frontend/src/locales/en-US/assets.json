@@ -407,7 +407,8 @@
                 "approve": "Approve",
                 "reject": "Reject",
                 "cancel": "Cancel",
-                "complete": "Mark Complete"
+                "complete": "Mark Complete",
+                "createReceipt": "Create Receipt"
             },
             "dialog": {
                 "approveTitle": "Confirm Approval",
@@ -703,6 +704,73 @@
                 "verifySuccess": "Verified successfully",
                 "skipSuccess": "Task skipped",
                 "loadFailed": "Failed to load maintenance tasks"
+            }
+        },
+        "assetWarranty": {
+            "title": "Warranty Management",
+            "createButton": "New Warranty",
+            "createTitle": "New Warranty Record",
+            "editTitle": "Edit Warranty Record",
+            "detailTitle": "Warranty Detail",
+            "columns": {
+                "warrantyNo": "Warranty No",
+                "assetName": "Asset Name",
+                "warrantyType": "Warranty Type",
+                "warrantyProvider": "Warranty Provider",
+                "startDate": "Start Date",
+                "endDate": "End Date",
+                "warrantyCost": "Warranty Cost",
+                "status": "Status",
+                "claimCount": "Claims"
+            },
+            "form": {
+                "providerContact": "Contact Person",
+                "providerPhone": "Phone",
+                "providerEmail": "Email",
+                "contractNo": "Contract No",
+                "coverageDescription": "Coverage Description",
+                "lastClaimDate": "Last Claim Date",
+                "newEndDate": "New End Date",
+                "remark": "Remark"
+            },
+            "warrantyType": {
+                "manufacturer": "Manufacturer Warranty",
+                "extended": "Extended Warranty",
+                "third_party": "Third-Party Warranty",
+                "service_contract": "Service Contract"
+            },
+            "status": {
+                "draft": "Draft",
+                "active": "Active",
+                "expiring": "Expiring Soon",
+                "expired": "Expired",
+                "claimed": "Claimed",
+                "cancelled": "Cancelled"
+            },
+            "actions": {
+                "activate": "Activate",
+                "expire": "Mark Expired",
+                "renew": "Renew",
+                "recordClaim": "Record Claim",
+                "cancel": "Cancel"
+            },
+            "sections": {
+                "providerInfo": "Provider Information",
+                "coverageInfo": "Coverage & Financials"
+            },
+            "dialog": {
+                "renewTitle": "Renew Warranty"
+            },
+            "messages": {
+                "activateConfirm": "Are you sure you want to activate this warranty?",
+                "activateSuccess": "Warranty activated",
+                "renewSuccess": "Warranty renewed successfully",
+                "claimConfirm": "Are you sure you want to record a claim?",
+                "claimSuccess": "Claim recorded",
+                "cancelConfirm": "Are you sure you want to cancel this warranty?",
+                "cancelSuccess": "Warranty cancelled",
+                "endDateRequired": "Please select a new end date",
+                "loadFailed": "Failed to load warranty record"
             }
         },
         "insurance": {

@@ -10,6 +10,14 @@ const REFERENCE_TYPE_OBJECT_CODE_MAP: Record<string, string> = {
   asset: 'Asset'
 }
 
+const CANONICAL_REFERENCE_OBJECT_CODE_MAP: Record<string, string> = {
+  user: 'User',
+  department: 'Department',
+  location: 'Location',
+  organization: 'Organization',
+  asset: 'Asset'
+}
+
 const LABEL_FALLBACK_FIELDS = [
   'name',
   'label',
@@ -30,7 +38,9 @@ export const normalizeReferenceObjectCode = (raw: unknown): string => {
   if (!noQuery) return ''
   const lastDot = noQuery.split('.').pop() || noQuery
   const lastPath = lastDot.split('/').filter(Boolean).pop() || lastDot
-  return String(lastPath || '').trim()
+  const normalized = String(lastPath || '').trim()
+  if (!normalized) return ''
+  return CANONICAL_REFERENCE_OBJECT_CODE_MAP[normalized.toLowerCase()] || normalized
 }
 
 export const resolveReferenceObjectCode = (field: AnyRecord | null | undefined): string => {

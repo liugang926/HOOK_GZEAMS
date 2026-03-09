@@ -123,7 +123,7 @@ const projectRuntimeSection = (section: RenderSection): RuntimeSection => ({
 const projectTabSection = (group: RenderSection[]): RuntimeSection => {
   const seed = group[0]
   const sectionId = String(seed.containerId || seed.id || 'tab_section')
-  const sectionTitle = String(seed.containerTitle || seed.title || '')
+  const sectionTitle = seed.containerTitle ?? seed.title ?? ''
 
   return {
     id: sectionId,
@@ -141,7 +141,7 @@ const projectTabSection = (group: RenderSection[]): RuntimeSection => {
       return {
         id: tabId,
         name: tabId,
-        title: String(item.itemTitle || item.title || tabId),
+        title: item.itemTitle ?? item.title ?? tabId,
         fields: projectRuntimeFieldsWithCanvas(item.fields, Number(seed.columns || 2) || 2)
       }
     })
@@ -151,7 +151,7 @@ const projectTabSection = (group: RenderSection[]): RuntimeSection => {
 const projectCollapseSection = (group: RenderSection[]): RuntimeSection => {
   const seed = group[0]
   const sectionId = String(seed.containerId || seed.id || 'collapse_section')
-  const sectionTitle = String(seed.containerTitle || seed.title || '')
+  const sectionTitle = seed.containerTitle ?? seed.title ?? ''
 
   return {
     id: sectionId,
@@ -169,7 +169,7 @@ const projectCollapseSection = (group: RenderSection[]): RuntimeSection => {
       return {
         id: itemId,
         name: itemId,
-        title: String(item.itemTitle || item.title || itemId),
+        title: item.itemTitle ?? item.title ?? itemId,
         collapsed: item.collapsed === true,
         fields: projectRuntimeFieldsWithCanvas(item.fields, Number(seed.columns || 2) || 2)
       }

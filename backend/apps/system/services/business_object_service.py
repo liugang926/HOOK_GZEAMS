@@ -8,166 +8,23 @@ from typing import Dict, List, Optional, Any
 from django.db.models import QuerySet
 from django.utils.module_loading import import_string
 
-from apps.common.models import BaseModel
-from apps.common.services.base_crud import BaseCRUDService
+from apps.system.object_catalog import (
+    get_hardcoded_model_map,
+    get_hardcoded_object_definition,
+    get_hardcoded_object_names,
+    iter_hardcoded_object_definitions,
+)
 from apps.system.models import (
     BusinessObject,
     ModelFieldDefinition,
     FieldDefinition,
 )
 from apps.system.layout_sections import get_field_section_metadata
+from apps.system.services.hardcoded_object_sync_service import HardcodedObjectSyncService
 
 
-# Core hardcoded model display names (for display name mapping)
-HARDCODED_OBJECT_NAMES = {
-    'Asset': ('资产', 'Asset'),
-    'AssetCategory': ('资产分类', 'Asset Category'),
-    'Supplier': ('供应商', 'Supplier'),
-    'Location': ('位置', 'Location'),
-    'AssetStatusLog': ('资产状态日志', 'Asset Status Log'),
-    'AssetPickup': ('资产领用', 'Asset Pickup'),
-    'PickupItem': ('领用明细', 'Pickup Item'),
-    'AssetTransfer': ('资产调拨', 'Asset Transfer'),
-    'TransferItem': ('调拨明细', 'Transfer Item'),
-    'AssetReturn': ('资产归还', 'Asset Return'),
-    'ReturnItem': ('归还明细', 'Return Item'),
-    'AssetLoan': ('资产借用', 'Asset Loan'),
-    'LoanItem': ('借用明细', 'Loan Item'),
-    'Consumable': ('耗材', 'Consumable'),
-    'ConsumableCategory': ('耗材分类', 'Consumable Category'),
-    'ConsumableStock': ('耗材库存', 'Consumable Stock'),
-    'ConsumablePurchase': ('耗材采购', 'Consumable Purchase'),
-    'ConsumableIssue': ('耗材领用', 'Consumable Issue'),
-    'PurchaseRequest': ('采购申请', 'Purchase Request'),
-    'AssetReceipt': ('资产入库', 'Asset Receipt'),
-    'Maintenance': ('维修记录', 'Maintenance'),
-    'MaintenanceTask': ('维修任务', 'Maintenance Task'),
-    'MaintenancePlan': ('维修计划', 'Maintenance Plan'),
-    'DisposalRequest': ('报废申请', 'Disposal Request'),
-    'InventoryTask': ('盘点任务', 'Inventory Task'),
-    'InventorySnapshot': ('资产快照', 'Inventory Snapshot'),
-    'InventoryItem': ('盘点明细', 'Inventory Item'),
-    'Organization': ('组织', 'Organization'),
-    'Department': ('部门', 'Department'),
-    'User': ('用户', 'User'),
-    'WorkflowDefinition': ('工作流定义', 'Workflow Definition'),
-    'WorkflowTemplate': ('工作流模板', 'Workflow Template'),
-    'WorkflowInstance': ('工作流实例', 'Workflow Instance'),
-    'WorkflowTask': ('工作流任务', 'Workflow Task'),
-    'WorkflowApproval': ('工作流审批记录', 'Workflow Approval'),
-    'WorkflowOperationLog': ('工作流操作日志', 'Workflow Operation Log'),
-    'FinanceVoucher': ('财务凭证', 'Finance Voucher'),
-    'VoucherTemplate': ('凭证模板', 'Voucher Template'),
-    'DepreciationConfig': ('折旧配置', 'Depreciation Config'),
-    'DepreciationRecord': ('折旧记录', 'Depreciation Record'),
-    'DepreciationRun': ('折旧运行', 'Depreciation Run'),
-    'ITAsset': ('IT资产', 'IT Asset'),
-    'ITMaintenanceRecord': ('IT维护记录', 'IT Maintenance Record'),
-    'ConfigurationChange': ('配置变更', 'Configuration Change'),
-    'ITSoftware': ('IT软件目录', 'IT Software Catalog'),
-    'ITSoftwareLicense': ('IT软件许可', 'IT Software License'),
-    'ITLicenseAllocation': ('IT许可证分配', 'IT License Allocation'),
-    'Software': ('软件目录', 'Software Catalog'),
-    'SoftwareLicense': ('软件许可', 'Software License'),
-    'LicenseAllocation': ('许可证分配', 'License Allocation'),
-    'LeasingContract': ('Lease Contract', 'Lease Contract'),
-    'LeaseItem': ('Lease Item', 'Lease Item'),
-    'RentPayment': ('Rent Payment', 'Rent Payment'),
-    'LeaseReturn': ('Lease Return', 'Lease Return'),
-    'LeaseExtension': ('Lease Extension', 'Lease Extension'),
-    'InsuranceCompany': ('Insurance Company', 'Insurance Company'),
-    'InsurancePolicy': ('Insurance Policy', 'Insurance Policy'),
-    'InsuredAsset': ('Insured Asset', 'Insured Asset'),
-    'PremiumPayment': ('Premium Payment', 'Premium Payment'),
-    'ClaimRecord': ('Claim Record', 'Claim Record'),
-    'PolicyRenewal': ('Policy Renewal', 'Policy Renewal'),
-}
-
-
-# Core hardcoded model registry
-# Maps object codes to their Django model paths
-CORE_HARDcoded_MODELS = {
-    # Assets Module
-    'Asset': 'apps.assets.models.Asset',
-    'AssetCategory': 'apps.assets.models.AssetCategory',
-    'Supplier': 'apps.assets.models.Supplier',
-    'Location': 'apps.assets.models.Location',
-    'AssetStatusLog': 'apps.assets.models.AssetStatusLog',
-    'AssetPickup': 'apps.assets.models.AssetPickup',
-    'AssetTransfer': 'apps.assets.models.AssetTransfer',
-    'AssetReturn': 'apps.assets.models.AssetReturn',
-    'AssetLoan': 'apps.assets.models.AssetLoan',
-
-    # Consumables Module
-    'Consumable': 'apps.consumables.models.Consumable',
-    'ConsumableCategory': 'apps.consumables.models.ConsumableCategory',
-    'ConsumableStock': 'apps.consumables.models.ConsumableStock',
-    'ConsumablePurchase': 'apps.consumables.models.ConsumablePurchase',
-    'ConsumableIssue': 'apps.consumables.models.ConsumableIssue',
-
-    # Lifecycle Module
-    'PurchaseRequest': 'apps.lifecycle.models.PurchaseRequest',
-    'AssetReceipt': 'apps.lifecycle.models.AssetReceipt',
-    'Maintenance': 'apps.lifecycle.models.Maintenance',
-    'MaintenanceTask': 'apps.lifecycle.models.MaintenanceTask',
-    'MaintenancePlan': 'apps.lifecycle.models.MaintenancePlan',
-    'DisposalRequest': 'apps.lifecycle.models.DisposalRequest',
-
-    # Inventory Module
-    'InventoryTask': 'apps.inventory.models.InventoryTask',
-    'InventorySnapshot': 'apps.inventory.models.InventorySnapshot',
-    'InventoryItem': 'apps.inventory.models.InventoryDifference',
-
-    # Organizations Module
-    'Organization': 'apps.organizations.models.Organization',
-    'Department': 'apps.organizations.models.Department',
-
-    # Accounts Module
-    'User': 'apps.accounts.models.User',
-
-    # Workflows Module
-    'WorkflowDefinition': 'apps.workflows.models.WorkflowDefinition',
-    'WorkflowTemplate': 'apps.workflows.models.WorkflowTemplate',
-    'WorkflowInstance': 'apps.workflows.models.WorkflowInstance',
-    'WorkflowTask': 'apps.workflows.models.WorkflowTask',
-    'WorkflowApproval': 'apps.workflows.models.WorkflowApproval',
-    'WorkflowOperationLog': 'apps.workflows.models.WorkflowOperationLog',
-
-    # Finance / Depreciation Module
-    'FinanceVoucher': 'apps.finance.models.FinanceVoucher',
-    'VoucherTemplate': 'apps.finance.models.VoucherTemplate',
-    'DepreciationConfig': 'apps.depreciation.models.DepreciationConfig',
-    'DepreciationRecord': 'apps.depreciation.models.DepreciationRecord',
-    'DepreciationRun': 'apps.depreciation.models.DepreciationRun',
-
-    # IT Assets Module
-    'ITAsset': 'apps.it_assets.models.ITAssetInfo',
-    'ITMaintenanceRecord': 'apps.it_assets.models.ITMaintenanceRecord',
-    'ConfigurationChange': 'apps.it_assets.models.ConfigurationChange',
-    'ITSoftware': 'apps.it_assets.models.Software',
-    'ITSoftwareLicense': 'apps.it_assets.models.SoftwareLicense',
-    'ITLicenseAllocation': 'apps.it_assets.models.LicenseAllocation',
-
-    # Software Licenses Module
-    'Software': 'apps.software_licenses.models.Software',
-    'SoftwareLicense': 'apps.software_licenses.models.SoftwareLicense',
-    'LicenseAllocation': 'apps.software_licenses.models.LicenseAllocation',
-
-    # Leasing Module
-    'LeasingContract': 'apps.leasing.models.LeaseContract',
-    'LeaseItem': 'apps.leasing.models.LeaseItem',
-    'RentPayment': 'apps.leasing.models.RentPayment',
-    'LeaseReturn': 'apps.leasing.models.LeaseReturn',
-    'LeaseExtension': 'apps.leasing.models.LeaseExtension',
-
-    # Insurance Module
-    'InsuranceCompany': 'apps.insurance.models.InsuranceCompany',
-    'InsurancePolicy': 'apps.insurance.models.InsurancePolicy',
-    'InsuredAsset': 'apps.insurance.models.InsuredAsset',
-    'PremiumPayment': 'apps.insurance.models.PremiumPayment',
-    'ClaimRecord': 'apps.insurance.models.ClaimRecord',
-    'PolicyRenewal': 'apps.insurance.models.PolicyRenewal',
-}
+HARDCODED_OBJECT_NAMES = get_hardcoded_object_names()
+CORE_HARDcoded_MODELS = get_hardcoded_model_map()
 
 
 class BusinessObjectService:
@@ -191,6 +48,9 @@ class BusinessObjectService:
             if field.is_relation and not getattr(field, 'many_to_one', False) and not getattr(field, 'one_to_one', False):
                 continue
             yield field
+
+    def __init__(self):
+        self.hardcoded_object_sync_service = HardcodedObjectSyncService()
 
     def get_all_objects(
         self,
@@ -226,6 +86,15 @@ class BusinessObjectService:
             )
 
         return result
+
+    def get_model_class(self, object_code: str):
+        """
+        Backward-compatible alias used by older callers.
+
+        The service's canonical method is `get_django_model`, but several
+        runtime call sites still reference `get_model_class`.
+        """
+        return self.get_django_model(object_code)
 
     def get_reference_options(
         self,
@@ -295,7 +164,7 @@ class BusinessObjectService:
             Dict with object info and fields list
         """
         # Check if it's a hardcoded model
-        if object_code in CORE_HARDcoded_MODELS:
+        if self.is_hardcoded_model(object_code):
             return self._get_hardcoded_object_fields(
                 object_code,
                 context=context,
@@ -340,9 +209,25 @@ class BusinessObjectService:
         except BusinessObject.DoesNotExist:
             return None
 
+    def _get_hardcoded_definition(self, object_code: str):
+        return get_hardcoded_object_definition(object_code)
+
+    def _get_hardcoded_model_path(self, object_code: str) -> Optional[str]:
+        obj = self.get_object_by_code(object_code)
+        if obj and obj.is_hardcoded and obj.django_model_path:
+            return obj.django_model_path
+
+        definition = self._get_hardcoded_definition(object_code)
+        if definition:
+            return definition.django_model_path
+        return None
+
     def is_hardcoded_model(self, object_code: str) -> bool:
         """Check if an object code refers to a hardcoded model."""
-        return object_code in CORE_HARDcoded_MODELS
+        obj = self.get_object_by_code(object_code)
+        if obj and obj.is_hardcoded:
+            return True
+        return self._get_hardcoded_definition(object_code) is not None
 
     def get_django_model(self, object_code: str):
         """
@@ -357,7 +242,7 @@ class BusinessObjectService:
         if not self.is_hardcoded_model(object_code):
             return None
 
-        model_path = CORE_HARDcoded_MODELS.get(object_code)
+        model_path = self._get_hardcoded_model_path(object_code)
         if not model_path:
             return None
 
@@ -385,27 +270,27 @@ class BusinessObjectService:
         Returns:
             Created or updated BusinessObject
         """
-        if code not in CORE_HARDcoded_MODELS:
+        definition = self._get_hardcoded_definition(code)
+        if not definition:
             raise ValueError(f'Unknown hardcoded model: {code}')
-
-        obj, created = BusinessObject.objects.get_or_create(
-            code=code,
-            defaults={
-                'name': name,
-                'name_en': name_en,
-                'is_hardcoded': True,
-                'django_model_path': CORE_HARDcoded_MODELS[code],
-                'organization_id': organization_id,
-            }
+        sync_result = self.hardcoded_object_sync_service.ensure_business_object(
+            definition,
+            overwrite_existing=True,
         )
+        obj = sync_result.business_object
 
-        if not created:
-            # Update existing
-            obj.name = name
-            obj.name_en = name_en
-            obj.is_hardcoded = True
-            obj.django_model_path = CORE_HARDcoded_MODELS[code]
-            obj.save()
+        updated_fields = []
+        if obj.name != (name or definition.name):
+            obj.name = name or definition.name
+            updated_fields.append('name')
+        if obj.name_en != (name_en or definition.name_en):
+            obj.name_en = name_en or definition.name_en
+            updated_fields.append('name_en')
+        if organization_id and obj.organization_id != organization_id:
+            obj.organization_id = organization_id
+            updated_fields.append('organization')
+        if updated_fields:
+            obj.save(update_fields=updated_fields + ['updated_at'])
 
         return obj
 
@@ -487,11 +372,12 @@ class BusinessObjectService:
     def _get_hardcoded_objects(self) -> List[Dict[str, Any]]:
         """Get list of hardcoded objects from registry."""
         result = []
-        for code, model_path in CORE_HARDcoded_MODELS.items():
+        for definition in iter_hardcoded_object_definitions():
             # Try to get name from BusinessObject if registered
-            name = code  # Default
-            name_en = ''
-            app_label = model_path.split('.')[2] if len(model_path.split('.')) > 2 else ''
+            code = definition.code
+            name = definition.name
+            name_en = definition.name_en
+            model_path = definition.django_model_path
 
             try:
                 obj = BusinessObject.objects.get(code=code)
@@ -504,7 +390,7 @@ class BusinessObjectService:
                 'code': code,
                 'name': name,
                 'name_en': name_en,
-                'app_label': app_label,
+                'app_label': definition.app_label,
                 'model_path': model_path,
                 'type': 'hardcoded'
             })
@@ -554,9 +440,18 @@ class BusinessObjectService:
         try:
             obj = BusinessObject.objects.get(code=object_code)
         except BusinessObject.DoesNotExist:
-            return {
-                'error': f'Business object "{object_code}" not registered'
-            }
+            definition = self._get_hardcoded_definition(object_code)
+            if not definition:
+                return {
+                    'error': f'Business object "{object_code}" not registered'
+                }
+            obj = BusinessObject(
+                code=definition.code,
+                name=definition.name,
+                name_en=definition.name_en,
+                is_hardcoded=True,
+                django_model_path=definition.django_model_path,
+            )
 
         # Get the Django model class
         model_class = self.get_django_model(object_code)
@@ -703,22 +598,8 @@ class BusinessObjectService:
 
     def _get_object_icon(self, code: str) -> str:
         """Get icon name for an object code."""
-        icon_map = {
-            'Asset': 'box',
-            'AssetCategory': 'folder',
-            'Supplier': 'office-building',
-            'Location': 'location',
-            'AssetPickup': 'hand',
-            'AssetTransfer': 'switch',
-            'AssetReturn': 'back',
-            'Consumable': 'files',
-            'ConsumableCategory': 'folder',
-            'PurchaseRequest': 'document',
-            'Maintenance': 'tools',
-            'InventoryTask': 'clipboard',
-            'Organization': 'office-building',
-            'Department': 'office-building',
-            'User': 'user',
-        }
-        return icon_map.get(code, 'document')
+        definition = self._get_hardcoded_definition(code)
+        if definition:
+            return definition.icon
+        return 'document'
 

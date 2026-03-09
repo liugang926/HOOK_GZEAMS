@@ -284,3 +284,63 @@ export const updateDisposalRequest = (id: string, d: any) => disposalRequestApi.
 export const submitDisposalRequest = (id: string) => disposalRequestApi.submit(id)
 export const approveDisposalRequest = (id: string, d: any) => disposalRequestApi.approve(id, d.decision, d.comment)
 export const confirmDisposal = (id: string, d: any) => disposalRequestApi.approve(id, 'approved', d.comment)
+
+// ─── Asset Warranties ─────────────────────────────────────────────────────────
+
+export const assetWarrantyApi = {
+  async list(params?: any): Promise<PaginatedResponse<any>> {
+    const res = await request.get('/lifecycle/asset-warranties/', { params }) as any
+    return {
+      results: res?.data?.results ?? res?.results ?? [],
+      count: res?.data?.count ?? res?.count ?? 0,
+      next: null,
+      previous: null
+    }
+  },
+  async detail(id: string): Promise<any> {
+    const res = await request.get(`/lifecycle/asset-warranties/${id}/`) as any
+    return res?.data ?? res
+  },
+  create(data: any): Promise<any> {
+    return request.post('/lifecycle/asset-warranties/', data)
+  },
+  update(id: string, data: any): Promise<any> {
+    return request.put(`/lifecycle/asset-warranties/${id}/`, data)
+  },
+  /** Activate warranty */
+  activate(id: string): Promise<any> {
+    return request.post(`/lifecycle/asset-warranties/${id}/activate/`)
+  },
+  /** Mark as expired */
+  expire(id: string): Promise<any> {
+    return request.post(`/lifecycle/asset-warranties/${id}/expire/`)
+  },
+  /** Renew warranty */
+  renew(id: string, data: { end_date: string; warranty_cost?: number }): Promise<any> {
+    return request.post(`/lifecycle/asset-warranties/${id}/renew/`, data)
+  },
+  /** Record a claim */
+  recordClaim(id: string): Promise<any> {
+    return request.post(`/lifecycle/asset-warranties/${id}/record_claim/`)
+  },
+  /** Cancel warranty */
+  cancel(id: string): Promise<any> {
+    return request.post(`/lifecycle/asset-warranties/${id}/cancel/`)
+  },
+  /** Get expiring soon */
+  expiringSoon(): Promise<any[]> {
+    return request.get('/lifecycle/asset-warranties/expiring_soon/')
+  },
+  /** Get statistics */
+  statistics(): Promise<any> {
+    return request.get('/lifecycle/asset-warranties/statistics/')
+  }
+}
+
+// ─── Legacy function exports (asset warranty) ──────────────────────────────────
+
+export const getAssetWarrantyList = (p?: any) => assetWarrantyApi.list(p)
+export const getAssetWarrantyDetail = (id: string) => assetWarrantyApi.detail(id)
+export const createAssetWarranty = (d: any) => assetWarrantyApi.create(d)
+export const updateAssetWarranty = (id: string, d: any) => assetWarrantyApi.update(id, d)
+export const activateAssetWarranty = (id: string) => assetWarrantyApi.activate(id)

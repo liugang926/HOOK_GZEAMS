@@ -407,7 +407,8 @@
                 "approve": "批准",
                 "reject": "拒绝",
                 "cancel": "取消申请",
-                "complete": "标记完成"
+                "complete": "标记完成",
+                "createReceipt": "创建到货验收"
             },
             "dialog": {
                 "approveTitle": "审批确认",
@@ -703,6 +704,73 @@
                 "verifySuccess": "验收完成",
                 "skipSuccess": "任务已跳过",
                 "loadFailed": "加载维保任务失败"
+            }
+        },
+        "assetWarranty": {
+            "title": "保修管理",
+            "createButton": "新建保修",
+            "createTitle": "新建保修记录",
+            "editTitle": "编辑保修记录",
+            "detailTitle": "保修详情",
+            "columns": {
+                "warrantyNo": "保修编号",
+                "assetName": "资产名称",
+                "warrantyType": "保修类型",
+                "warrantyProvider": "保修提供商",
+                "startDate": "开始日期",
+                "endDate": "结束日期",
+                "warrantyCost": "保修费用",
+                "status": "状态",
+                "claimCount": "索赔次数"
+            },
+            "form": {
+                "providerContact": "联系人",
+                "providerPhone": "联系电话",
+                "providerEmail": "联系邮箱",
+                "contractNo": "合同编号",
+                "coverageDescription": "保修覆盖范围",
+                "lastClaimDate": "最近索赔日期",
+                "newEndDate": "新到期日期",
+                "remark": "备注"
+            },
+            "warrantyType": {
+                "manufacturer": "制造商保修",
+                "extended": "延保",
+                "third_party": "第三方保修",
+                "service_contract": "服务合同"
+            },
+            "status": {
+                "draft": "草稿",
+                "active": "生效中",
+                "expiring": "即将到期",
+                "expired": "已过期",
+                "claimed": "已索赔",
+                "cancelled": "已取消"
+            },
+            "actions": {
+                "activate": "激活",
+                "expire": "标记过期",
+                "renew": "续保",
+                "recordClaim": "记录索赔",
+                "cancel": "取消"
+            },
+            "sections": {
+                "providerInfo": "供应商信息",
+                "coverageInfo": "保修覆盖与财务"
+            },
+            "dialog": {
+                "renewTitle": "续保"
+            },
+            "messages": {
+                "activateConfirm": "确定要激活此保修吗？",
+                "activateSuccess": "保修已激活",
+                "renewSuccess": "续保成功",
+                "claimConfirm": "确定要记录一次索赔吗？",
+                "claimSuccess": "索赔已记录",
+                "cancelConfirm": "确定要取消此保修吗？",
+                "cancelSuccess": "保修已取消",
+                "endDateRequired": "请选择新的到期日期",
+                "loadFailed": "加载保修记录失败"
             }
         },
         "insurance": {

@@ -1,0 +1,266 @@
+- generic [ref=e5]:
+  - complementary [ref=e6]:
+    - heading "G GZEAMS" [level=1] [ref=e8]:
+      - generic [ref=e9]: G
+      - generic [ref=e10]: GZEAMS
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic:
+          - search
+      - textbox "搜索" [ref=e15]
+    - menubar [ref=e19]:
+      - menuitem "工作台" [ref=e20] [cursor=pointer]:
+        - img [ref=e22]
+        - text: 工作台
+      - menuitem "资产主数据" [expanded] [ref=e26]:
+        - generic [ref=e27] [cursor=pointer]:
+          - img [ref=e29]
+          - generic [ref=e31]: 资产主数据
+          - img [ref=e33]
+        - menu:
+          - menuitem "资产卡片" [ref=e35] [cursor=pointer]:
+            - img [ref=e37]
+            - text: 资产卡片
+          - menuitem "资产分类" [ref=e39] [cursor=pointer]:
+            - img [ref=e41]
+            - text: 资产分类
+          - menuitem "存放地点" [ref=e43] [cursor=pointer]:
+            - img [ref=e45]
+            - text: 存放地点
+          - menuitem "供应商" [ref=e48] [cursor=pointer]:
+            - img [ref=e50]
+            - text: 供应商
+          - menuitem "IT资产" [ref=e54] [cursor=pointer]:
+            - img [ref=e56]
+            - text: IT资产
+      - menuitem "资产业务" [ref=e58]:
+        - generic [ref=e59] [cursor=pointer]:
+          - img [ref=e61]
+          - generic [ref=e63]: 资产业务
+          - img [ref=e65]
+      - menuitem "资产生命周期" [ref=e67]:
+        - generic [ref=e68] [cursor=pointer]:
+          - img [ref=e70]
+          - generic [ref=e72]: 资产生命周期
+          - img [ref=e74]
+      - menuitem "耗材管理" [ref=e76]:
+        - generic [ref=e77] [cursor=pointer]:
+          - img [ref=e79]
+          - generic [ref=e83]: 耗材管理
+          - img [ref=e85]
+      - menuitem "盘点任务" [ref=e87] [cursor=pointer]: 盘点任务
+      - menuitem "财务管理" [ref=e89]:
+        - generic [ref=e90] [cursor=pointer]:
+          - img [ref=e92]
+          - generic [ref=e96]: 财务管理
+          - img [ref=e98]
+      - menuitem "部门" [ref=e100] [cursor=pointer]:
+        - img [ref=e102]
+        - text: 部门
+      - menuitem "工作流" [ref=e105]:
+        - generic [ref=e106] [cursor=pointer]:
+          - img [ref=e108]
+          - generic [ref=e111]: 工作流
+          - img [ref=e113]
+      - menuitem "系统管理" [ref=e115]:
+        - generic [ref=e116] [cursor=pointer]:
+          - img [ref=e118]
+          - generic [ref=e120]: 系统管理
+          - img [ref=e122]
+      - menuitem "报表中心" [ref=e124] [cursor=pointer]:
+        - img [ref=e126]
+        - text: 报表中心
+    - generic [ref=e128] [cursor=pointer]:
+      - img [ref=e130]
+      - generic [ref=e132]: 收起
+  - generic [ref=e133]:
+    - generic [ref=e134]:
+      - navigation "面包屑" [ref=e136]:
+        - generic [ref=e137]:
+          - link "工作台" [ref=e138]
+          - text: /
+        - link "资产卡片" [ref=e140]
+      - generic [ref=e141]:
+        - button "🌐 简体中文" [ref=e143] [cursor=pointer]:
+          - generic [ref=e144]: 🌐
+          - generic [ref=e145]: 简体中文
+          - img [ref=e147]
+        - button "通知" [ref=e151] [cursor=pointer]:
+          - img [ref=e153]
+    - main [ref=e157]:
+      - generic [ref=e158]:
+        - generic [ref=e160]:
+          - generic [ref=e161]:
+            - generic [ref=e162]:
+              - generic [ref=e164]: AS
+              - heading "资产卡片" [level=2] [ref=e165]
+              - generic [ref=e166]: 20 条记录
+            - generic [ref=e167]:
+              - button "新建" [ref=e168] [cursor=pointer]:
+                - generic [ref=e169]: 新建
+              - button "布局管理" [ref=e170] [cursor=pointer]:
+                - generic [ref=e171]: 布局管理
+              - button [ref=e173] [cursor=pointer]:
+                - img [ref=e175]
+          - generic [ref=e178]:
+            - group "搜索" [ref=e180]:
+              - generic [ref=e182]: 搜索
+              - generic [ref=e184]:
+                - generic [ref=e186] [cursor=pointer]:
+                  - generic:
+                    - combobox [ref=e188]
+                    - generic [ref=e189]: 全部字段
+                  - img [ref=e192]
+                - textbox "Search Keyword" [ref=e196]
+            - generic [ref=e197]:
+              - button "搜索" [ref=e198] [cursor=pointer]:
+                - generic [ref=e199]: 搜索
+              - button "重置" [ref=e200] [cursor=pointer]:
+                - generic [ref=e201]: 重置
+          - generic [ref=e204]:
+            - table [ref=e206]:
+              - rowgroup [ref=e239]:
+                - row "选择所有行 序号 asset code 按 asset code 排序 purchase price 按 purchase price 排序 asset name 按 asset name 排序 asset category 按 asset category 排序 current value 按 current value 排序 department 按 department 排序 location 按 location 排序 custodian 按 custodian 排序 asset status 按 asset status 排序 specification 按 specification 排序 brand 按 brand 排序 model 按 model 排序 unit 按 unit 排序 serial number 按 serial number 排序 accumulated depreciation 按 accumulated depreciation 排序 purchase date 按 purchase date 排序 depreciation start date 按 depreciation start date 排序 useful life 按 useful life 排序 residual rate 按 residual rate 排序 supplier 按 supplier 排序 supplier order no 按 supplier order no 排序 invoice no 按 invoice no 排序 user 按 user 排序 qr code 按 qr code 排序 rfid code 按 rfid code 排序 images 按 images 排序 attachments 按 attachments 排序 remarks 按 remarks 排序 操作" [ref=e240]:
+                  - columnheader "选择所有行" [ref=e241]:
+                    - generic "选择所有行" [ref=e243]:
+                      - generic [ref=e244] [cursor=pointer]:
+                        - checkbox "选择所有行" [disabled]
+                  - columnheader "序号" [ref=e246]:
+                    - generic [ref=e247]: 序号
+                  - columnheader "asset code 按 asset code 排序" [ref=e248] [cursor=pointer]:
+                    - generic [ref=e249]:
+                      - text: asset code
+                      - button "按 asset code 排序" [ref=e250]
+                  - columnheader "purchase price 按 purchase price 排序" [ref=e251] [cursor=pointer]:
+                    - generic [ref=e252]:
+                      - text: purchase price
+                      - button "按 purchase price 排序"
+                  - columnheader "asset name 按 asset name 排序" [ref=e253] [cursor=pointer]:
+                    - generic [ref=e254]:
+                      - text: asset name
+                      - button "按 asset name 排序" [ref=e255]
+                  - columnheader "asset category 按 asset category 排序" [ref=e256] [cursor=pointer]:
+                    - generic [ref=e257]:
+                      - text: asset category
+                      - button "按 asset category 排序"
+                  - columnheader "current value 按 current value 排序" [ref=e258] [cursor=pointer]:
+                    - generic [ref=e259]:
+                      - text: current value
+                      - button "按 current value 排序"
+                  - columnheader "department 按 department 排序" [ref=e260] [cursor=pointer]:
+                    - generic [ref=e261]:
+                      - text: department
+                      - button "按 department 排序"
+                  - columnheader "location 按 location 排序" [ref=e262] [cursor=pointer]:
+                    - generic [ref=e263]:
+                      - text: location
+                      - button "按 location 排序"
+                  - columnheader "custodian 按 custodian 排序" [ref=e264] [cursor=pointer]:
+                    - generic [ref=e265]:
+                      - text: custodian
+                      - button "按 custodian 排序"
+                  - columnheader "asset status 按 asset status 排序" [ref=e266] [cursor=pointer]:
+                    - generic [ref=e267]:
+                      - text: asset status
+                      - button "按 asset status 排序" [ref=e268]
+                  - columnheader "specification 按 specification 排序" [ref=e269] [cursor=pointer]:
+                    - generic [ref=e270]:
+                      - text: specification
+                      - button "按 specification 排序"
+                  - columnheader "brand 按 brand 排序" [ref=e271] [cursor=pointer]:
+                    - generic [ref=e272]:
+                      - text: brand
+                      - button "按 brand 排序" [ref=e273]
+                  - columnheader "model 按 model 排序" [ref=e274] [cursor=pointer]:
+                    - generic [ref=e275]:
+                      - text: model
+                      - button "按 model 排序" [ref=e276]
+                  - columnheader "unit 按 unit 排序" [ref=e277] [cursor=pointer]:
+                    - generic [ref=e278]:
+                      - text: unit
+                      - button "按 unit 排序" [ref=e279]
+                  - columnheader "serial number 按 serial number 排序" [ref=e280] [cursor=pointer]:
+                    - generic [ref=e281]:
+                      - text: serial number
+                      - button "按 serial number 排序"
+                  - columnheader "accumulated depreciation 按 accumulated depreciation 排序" [ref=e282] [cursor=pointer]:
+                    - generic [ref=e283]:
+                      - text: accumulated depreciation
+                      - button "按 accumulated depreciation 排序"
+                  - columnheader "purchase date 按 purchase date 排序" [ref=e284] [cursor=pointer]:
+                    - generic [ref=e285]:
+                      - text: purchase date
+                      - button "按 purchase date 排序"
+                  - columnheader "depreciation start date 按 depreciation start date 排序" [ref=e286] [cursor=pointer]:
+                    - generic [ref=e287]:
+                      - text: depreciation start date
+                      - button "按 depreciation start date 排序"
+                  - columnheader "useful life 按 useful life 排序" [ref=e288] [cursor=pointer]:
+                    - generic [ref=e289]:
+                      - text: useful life
+                      - button "按 useful life 排序" [ref=e290]
+                  - columnheader "residual rate 按 residual rate 排序" [ref=e291] [cursor=pointer]:
+                    - generic [ref=e292]:
+                      - text: residual rate
+                      - button "按 residual rate 排序"
+                  - columnheader "supplier 按 supplier 排序" [ref=e293] [cursor=pointer]:
+                    - generic [ref=e294]:
+                      - text: supplier
+                      - button "按 supplier 排序"
+                  - columnheader "supplier order no 按 supplier order no 排序" [ref=e295] [cursor=pointer]:
+                    - generic [ref=e296]:
+                      - text: supplier order no
+                      - button "按 supplier order no 排序"
+                  - columnheader "invoice no 按 invoice no 排序" [ref=e297] [cursor=pointer]:
+                    - generic [ref=e298]:
+                      - text: invoice no
+                      - button "按 invoice no 排序"
+                  - columnheader "user 按 user 排序" [ref=e299] [cursor=pointer]:
+                    - generic [ref=e300]:
+                      - text: user
+                      - button "按 user 排序" [ref=e301]
+                  - columnheader "qr code 按 qr code 排序" [ref=e302] [cursor=pointer]:
+                    - generic [ref=e303]:
+                      - text: qr code
+                      - button "按 qr code 排序" [ref=e304]
+                  - columnheader "rfid code 按 rfid code 排序" [ref=e305] [cursor=pointer]:
+                    - generic [ref=e306]:
+                      - text: rfid code
+                      - button "按 rfid code 排序" [ref=e307]
+                  - columnheader "images 按 images 排序" [ref=e308] [cursor=pointer]:
+                    - generic [ref=e309]:
+                      - text: images
+                      - button "按 images 排序"
+                  - columnheader "attachments 按 attachments 排序" [ref=e310] [cursor=pointer]:
+                    - generic [ref=e311]:
+                      - text: attachments
+                      - button "按 attachments 排序"
+                  - columnheader "remarks 按 remarks 排序" [ref=e312] [cursor=pointer]:
+                    - generic [ref=e313]:
+                      - text: remarks
+                      - button "按 remarks 排序"
+                  - columnheader "操作" [ref=e314]:
+                    - generic [ref=e315]: 操作
+            - generic [ref=e319]:
+              - table:
+                - rowgroup
+          - generic [ref=e347]:
+            - generic [ref=e348]: 共 20 条
+            - generic [ref=e351] [cursor=pointer]:
+              - generic:
+                - combobox [ref=e353]
+                - generic [ref=e354]: 20条/页
+              - img [ref=e357]
+            - button "上一页" [disabled] [ref=e359]:
+              - generic:
+                - img
+            - list [ref=e360]:
+              - listitem "第 1 页" [ref=e361]: "1"
+            - button "下一页" [disabled] [ref=e362]:
+              - generic:
+                - img
+            - generic [ref=e363]:
+              - generic [ref=e364]: 前往
+              - spinbutton "页" [ref=e367]: "1"
+              - generic [ref=e368]: 页
+        - img [ref=e371]

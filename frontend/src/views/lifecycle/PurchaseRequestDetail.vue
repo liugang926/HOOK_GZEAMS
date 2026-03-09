@@ -32,6 +32,15 @@
             {{ getStatusLabel(detail.status) }}
           </el-tag>
         </div>
+        <div class="header-right">
+          <el-button
+            v-if="['approved', 'processing'].includes(detail.status)"
+            type="success"
+            @click="handleCreateReceipt"
+          >
+            {{ $t('assets.lifecycle.purchaseRequest.actions.createReceipt') }}
+          </el-button>
+        </div>
       </div>
 
       <!-- Workflow Actions -->
@@ -190,6 +199,13 @@ const handleRefresh = async () => {
     const res = await purchaseRequestApi.items(id) as any
     items.value = Array.isArray(res) ? res : (res.data || [])
   } catch { /* ignore */ }
+}
+
+const handleCreateReceipt = () => {
+  router.push({
+    path: '/assets/lifecycle/asset-receipts/create',
+    query: { purchaseRequestId: id, purchaseRequestNo: detail.value?.requestNo || '' }
+  })
 }
 
 onMounted(async () => {

@@ -25,6 +25,9 @@ from apps.lifecycle.models import (
     DisposalItem,
     DisposalRequestStatus,
     DisposalType,
+    AssetWarranty,
+    AssetWarrantyStatus,
+    AssetWarrantyType,
 )
 
 
@@ -358,3 +361,52 @@ class DisposalItemFilter(BaseModelFilter):
             'disposal_request_id', 'asset_id', 'asset_code', 'asset_name',
             'appraised_by_id',
         ]
+
+
+# ========== Asset Warranty Filter ==========
+
+class AssetWarrantyFilter(BaseModelFilter):
+    """Filter for AssetWarranty queries"""
+
+    warranty_no = filters.CharFilter(field_name='warranty_no', lookup_expr='icontains')
+    status = filters.ChoiceFilter(field_name='status', choices=AssetWarrantyStatus.choices)
+    warranty_type = filters.ChoiceFilter(field_name='warranty_type', choices=AssetWarrantyType.choices)
+    asset_id = filters.UUIDFilter(field_name='asset__id')
+    asset_code = filters.CharFilter(field_name='asset__asset_code', lookup_expr='icontains')
+    asset_name = filters.CharFilter(field_name='asset__asset_name', lookup_expr='icontains')
+    warranty_provider = filters.CharFilter(field_name='warranty_provider', lookup_expr='icontains')
+    contract_no = filters.CharFilter(field_name='contract_no', lookup_expr='icontains')
+
+    # Date range filters
+    start_date_from = filters.DateFilter(field_name='start_date', lookup_expr='gte')
+    start_date_to = filters.DateFilter(field_name='start_date', lookup_expr='lte')
+    end_date_from = filters.DateFilter(field_name='end_date', lookup_expr='gte')
+    end_date_to = filters.DateFilter(field_name='end_date', lookup_expr='lte')
+
+    # Cost range filters
+    warranty_cost_min = filters.NumberFilter(field_name='warranty_cost', lookup_expr='gte')
+    warranty_cost_max = filters.NumberFilter(field_name='warranty_cost', lookup_expr='lte')
+
+    # Expiry filter
+    is_expiring = filters.BooleanFilter(method='filter_is_expiring')
+
+    class Meta:
+        model = AssetWarranty
+        fields = [
+            'warranty_no', 'status', 'warranty_type', 'asset_id',
+            'asset_code', 'asset_name', 'warranty_provider', 'contract_no',
+        ]
+
+    def filter_is_expiring(self, queryset, name, value):
+        """Filter warranties expiring within 30 days"""
+        from django.utils import timezone
+        from datetime import timedelta
+
+        if value is True:
+            today = timezone.now().date()
+            return queryset.filter(
+                status='active',
+                end_date__lte=today + timedelta(days=30),
+                end_date__gte=today
+            )
+        return queryset

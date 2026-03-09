@@ -70,7 +70,7 @@
               <el-tab-pane
                 v-for="tab in section.tabs"
                 :key="tab.id"
-                :label="tab.title"
+                :label="getDisplayText(tab.title)"
                 :name="tab.id"
               >
                 <div
@@ -172,10 +172,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ArrowDown } from '@element-plus/icons-vue'
 import ErrorBoundary from '../ErrorBoundary.vue'
 import type { DetailField, DetailSection } from '../BaseDetailPage.vue'
 import { useDetailGridPlacement } from '@/composables/useDetailGridPlacement'
+import { resolveTranslatableText } from '@/utils/localeText'
 
 type AnyRecord = Record<string, unknown>
 
@@ -208,6 +210,8 @@ const emit = defineEmits<{
   (e: 'tab-change', tabId: string, sectionName: string): void
 }>()
 
+const { locale } = useI18n()
+
 const { getSectionCanvasStyle, getFieldColStyle, getFieldItemStyle, getFieldPlacementAttrs } = useDetailGridPlacement({
   fieldSpan: computed(() => props.fieldSpan)
 })
@@ -220,7 +224,12 @@ const rootClasses = computed(() => [
   }
 ])
 
-const displayTitle = computed(() => props.displayTitle || props.section.title || '')
+const getDisplayText = (value: any): string => {
+  if (typeof value === 'string') return value
+  return resolveTranslatableText(value, locale.value as 'zh-CN' | 'en-US')
+}
+
+const displayTitle = computed(() => props.displayTitle || getDisplayText(props.section.title) || '')
 const errorTitle = computed(() => props.errorTitle || displayTitle.value)
 
 const activeTabModel = computed({

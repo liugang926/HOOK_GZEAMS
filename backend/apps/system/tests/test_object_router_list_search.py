@@ -1,9 +1,11 @@
 import pytest
 from rest_framework.test import APIClient
 
+from apps.assets.models import Asset, AssetCategory
 from apps.accounts.models import User
 from apps.organizations.models import Organization
 from apps.system.models import BusinessObject, DynamicData, FieldDefinition
+from apps.system.services.object_registry import ObjectRegistry
 
 
 def _build_authed_client(org, user):
@@ -98,3 +100,65 @@ def test_object_router_list_selected_field_filter_supports_text_contains_search(
     results = response.json()['data']['results']
     assert [item['id'] for item in results] == [str(matched.id)]
 
+
+@pytest.mark.django_db
+def test_object_router_list_search_fields_constrain_hardcoded_asset_search_scope():
+    org = Organization.objects.create(name='Asset Search Scope Org', code='asset-search-scope-org')
+    user = User.objects.create_user(username='asset-search-scope-user', password='pass123456', organization=org)
+
+    BusinessObject.objects.update_or_create(
+        code='Asset',
+        defaults={
+            'name': 'Asset',
+            'name_en': 'Asset',
+            'is_hardcoded': True,
+            'django_model_path': 'apps.assets.models.Asset',
+        },
+    )
+    ObjectRegistry.invalidate_cache('Asset')
+
+    category = AssetCategory.objects.create(
+        organization=org,
+        created_by=user,
+        code='2001',
+        name='Laptop',
+    )
+
+    hidden_brand_match = Asset.objects.create(
+        organization=org,
+        created_by=user,
+        asset_code='ASSET0001',
+        asset_name='苹果 MacBook',
+        asset_category=category,
+        brand='戴尔',
+        purchase_price=12000,
+        current_value=10000,
+        purchase_date='2026-01-01',
+    )
+    visible_name_match = Asset.objects.create(
+        organization=org,
+        created_by=user,
+        asset_code='ASSET0002',
+        asset_name='戴尔 ThinkPad',
+        asset_category=category,
+        brand='联想',
+        purchase_price=15000,
+        current_value=12000,
+        purchase_date='2026-01-02',
+    )
+
+    client = _build_authed_client(org, user)
+
+    broad_response = client.get('/api/system/objects/Asset/', {'search': '戴尔'})
+    assert broad_response.status_code == 200
+    broad_results = broad_response.json()['data']['results']
+    assert {item['id'] for item in broad_results} == {str(hidden_brand_match.id), str(visible_name_match.id)}
+
+    constrained_response = client.get(
+        '/api/system/objects/Asset/',
+        {'search': '戴尔', 'searchFields': 'asset_name'},
+    )
+    assert constrained_response.status_code == 200
+
+    constrained_results = constrained_response.json()['data']['results']
+    assert [item['id'] for item in constrained_results] == [str(visible_name_match.id)]

@@ -58,6 +58,11 @@ const mountPage = async (
           name: 'RelatedObjectTable',
           template: '<div class="related-table-stub"></div>'
         }),
+        ActivityTimeline: defineComponent({
+          name: 'ActivityTimeline',
+          props: ['objectCode', 'recordId'],
+          template: '<div class="activity-timeline-stub">{{ objectCode }}::{{ recordId }}</div>'
+        }),
         FieldDisplay: defineComponent({
           name: 'FieldDisplay',
           props: { value: { type: null, default: null } },
@@ -118,7 +123,8 @@ const mountPage = async (
         }),
         'el-tab-pane': defineComponent({
           name: 'ElTabPane',
-          template: '<div class="el-tab-pane-stub"><slot /></div>'
+          props: ['label'],
+          template: '<div class="el-tab-pane-stub"><span class="tab-label-stub">{{ label }}</span><slot /></div>'
         }),
         'el-skeleton': defineComponent({
           name: 'ElSkeleton',
@@ -151,7 +157,7 @@ describe('BaseDetailPage contract', () => {
         updatedAt: '2026-03-07T10:00:00Z'
       }
     }, {
-      toolbar: () => h('div', { class: 'toolbar-slot-stub' }, 'toolbar')
+      'action-bar': () => h('div', { class: 'toolbar-slot-stub' }, 'toolbar')
     })
 
     expect(wrapper.find('.record-profile-header').exists()).toBe(true)
@@ -159,7 +165,6 @@ describe('BaseDetailPage contract', () => {
     expect(wrapper.find('.profile-identity').exists()).toBe(true)
     expect(wrapper.find('.header-right').exists()).toBe(true)
     expect(wrapper.find('.header-audit-info').text()).toContain('alice')
-    expect(wrapper.find('.header-actions').text()).toContain('Archive')
     expect(wrapper.find('.toolbar-slot-stub').exists()).toBe(true)
   })
 
@@ -189,5 +194,12 @@ describe('BaseDetailPage contract', () => {
     })
 
     expect(wrapper.find('.field-slot-value').text()).toBe('Org One')
+  })
+
+  it('renders the change history tab when object code and record id are available', async () => {
+    const wrapper = await mountPage()
+
+    expect(wrapper.text()).toContain('变更记录')
+    expect(wrapper.text()).toContain('Organization::org-1')
   })
 })

@@ -23,6 +23,7 @@ from apps.system.layout_sections import get_field_section_metadata
 from apps.system.services.object_registry import ObjectRegistry
 from apps.system.services.layout_runtime_normalizer import normalize_layout_config_for_runtime
 from apps.system.services.relation_query_service import RelationQueryService
+from apps.system.services.activity_log_service import ActivityLogService
 from apps.common.viewsets.metadata_driven import MetadataDrivenViewSet
 from apps.common.responses.base import BaseResponse
 from apps.common.services.i18n_service import TranslationService, get_current_language
@@ -254,12 +255,49 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             'secondary_field': str(request.query_params.get('lookup_secondary_field') or '').strip(),
         }
 
-    def _filter_queryset_without_search_param(self, request, filter_callable, queryset):
+    def _parse_explicit_search_fields(self, request) -> List[str]:
+        raw_value = (
+            request.query_params.get('search_fields')
+            or request.query_params.get('searchFields')
+            or ''
+        )
+        if not raw_value:
+            return []
+
+        fields = []
+        seen = set()
+        for item in re.split(r'[\s,]+', str(raw_value).strip()):
+            field_name = str(item or '').strip()
+            if not field_name or field_name in seen:
+                continue
+            seen.add(field_name)
+            fields.append(field_name)
+        return fields
+
+    def _get_constrained_search_params(self, request) -> Optional[dict]:
         """
-        Execute delegated filter_queryset with `search` removed from query params.
+        Parse unified list search parameters constrained to explicit field codes.
+
+        Query params:
+        - search: keyword
+        - search_fields/searchFields: comma-separated field codes
+        """
+        search = str(request.query_params.get('search') or '').strip()
+        fields = self._parse_explicit_search_fields(request)
+        if not search or not fields:
+            return None
+
+        return {
+            'search': search,
+            'fields': fields,
+        }
+
+    def _filter_queryset_without_query_params(self, request, filter_callable, queryset, keys_to_strip: List[str]):
+        """
+        Execute delegated filter_queryset with selected query params removed.
 
         This keeps normal filter/order/pagination behavior while preventing global
-        SearchFilter from overriding lookup-scoped semantics.
+        SearchFilter/filterset side effects from overriding custom semantics.
         """
         raw_request = getattr(request, '_request', None)
         original_get = getattr(raw_request, 'GET', None)
@@ -267,7 +305,8 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             return filter_callable(queryset)
 
         stripped = original_get.copy()
-        stripped.pop('search', None)
+        for key in keys_to_strip:
+            stripped.pop(key, None)
         raw_request.GET = stripped
         try:
             return filter_callable(queryset)
@@ -332,6 +371,77 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             queryset = queryset.annotate(**annotations)
         return queryset.filter(search_q)
 
+    def _resolve_delegate_filterset_class(self):
+        filterset_class = getattr(self._delegate_viewset, 'filterset_class', None)
+        if filterset_class:
+            return filterset_class
+
+        getter = getattr(self._delegate_viewset, 'get_filterset_class', None)
+        if callable(getter):
+            try:
+                return getter()
+            except Exception:
+                return None
+        return None
+
+    def _apply_constrained_search(self, request, queryset, params: dict):
+        """
+        Apply unified keyword search constrained to explicit field codes.
+
+        For hardcoded objects, prefer filterset field semantics so relation/text casts
+        behave exactly like field-specific filters. For dynamic objects, fall back to
+        direct field lookup across model and JSON payload fields.
+        """
+        search = str(params.get('search') or '').strip()
+        fields = [
+            str(field_name or '').strip()
+            for field_name in (params.get('fields') or [])
+            if str(field_name or '').strip()
+        ]
+        if not search or not fields:
+            return queryset
+
+        filterset_class = self._resolve_delegate_filterset_class()
+        match_q = Q()
+        matched_any = False
+
+        for field_name in fields:
+            field_queryset = None
+
+            if filterset_class is not None:
+                try:
+                    probe_filterset = filterset_class(
+                        data={field_name: search},
+                        queryset=queryset,
+                        request=request,
+                    )
+                    if field_name in getattr(probe_filterset, 'filters', {}):
+                        field_queryset = probe_filterset.qs
+                except Exception:
+                    field_queryset = None
+
+            if field_queryset is None:
+                field_queryset = self._apply_lookup_scoped_search(
+                    queryset,
+                    {
+                        'search': search,
+                        'scope': 'primary',
+                        'display_field': field_name,
+                        'secondary_field': '',
+                    }
+                )
+
+            if field_queryset is None:
+                continue
+
+            match_q |= Q(pk__in=field_queryset.values('pk'))
+            matched_any = True
+
+        if not matched_any or not match_q.children:
+            return queryset.none()
+
+        return queryset.filter(match_q).distinct()
+
     def list(self, request, *args, **kwargs):
         """
         List objects with pagination, filtering, and search.
@@ -339,19 +449,34 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         GET /api/objects/{code}/
         """
         lookup_search_params = self._get_lookup_search_params(request)
+        constrained_search_params = self._get_constrained_search_params(request)
         original_filter_queryset = None
         if lookup_search_params and hasattr(self._delegate_viewset, 'filter_queryset'):
             original_filter_queryset = self._delegate_viewset.filter_queryset
 
             def _lookup_filter_wrapper(queryset):
-                filtered = self._filter_queryset_without_search_param(
+                filtered = self._filter_queryset_without_query_params(
                     request=request,
                     filter_callable=original_filter_queryset,
-                    queryset=queryset
+                    queryset=queryset,
+                    keys_to_strip=['search'],
                 )
                 return self._apply_lookup_scoped_search(filtered, lookup_search_params)
 
             self._delegate_viewset.filter_queryset = _lookup_filter_wrapper
+        elif constrained_search_params and hasattr(self._delegate_viewset, 'filter_queryset'):
+            original_filter_queryset = self._delegate_viewset.filter_queryset
+
+            def _constrained_search_filter_wrapper(queryset):
+                filtered = self._filter_queryset_without_query_params(
+                    request=request,
+                    filter_callable=original_filter_queryset,
+                    queryset=queryset,
+                    keys_to_strip=['search', 'search_fields', 'searchFields'],
+                )
+                return self._apply_constrained_search(request, filtered, constrained_search_params)
+
+            self._delegate_viewset.filter_queryset = _constrained_search_filter_wrapper
 
         try:
             resp = self._delegate_viewset.list(request, *args, **kwargs)
@@ -431,7 +556,13 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         POST /api/objects/{code}/
         """
-        return self._delegate_viewset.create(request, *args, **kwargs)
+        response = self._delegate_viewset.create(request, *args, **kwargs)
+        if self._response_is_success(response):
+            record_id = self._extract_response_record_id(response)
+            if record_id:
+                instance = self._load_delegate_instance(record_id)
+                self._safe_log_create(request, instance)
+        return response
 
     def update(self, request, *args, **kwargs):
         """
@@ -445,7 +576,20 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 **self._delegate_viewset.kwargs,
                 'pk': kwargs['id']
             }
-        return self._delegate_viewset.update(request, *args, **kwargs)
+        instance = self._load_delegate_instance(kwargs.get('id'))
+        before_snapshot = ActivityLogService.snapshot_instance(
+            instance,
+            fields=self._extract_changed_fields(request),
+        )
+        response = self._delegate_viewset.update(request, *args, **kwargs)
+        if self._response_is_success(response):
+            updated_instance = self._load_delegate_instance(kwargs.get('id'))
+            self._safe_log_update(
+                request,
+                before_snapshot=before_snapshot,
+                instance=updated_instance,
+            )
+        return response
 
     def partial_update(self, request, *args, **kwargs):
         """
@@ -459,7 +603,20 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 **self._delegate_viewset.kwargs,
                 'pk': kwargs['id']
             }
-        return self._delegate_viewset.partial_update(request, *args, **kwargs)
+        instance = self._load_delegate_instance(kwargs.get('id'))
+        before_snapshot = ActivityLogService.snapshot_instance(
+            instance,
+            fields=self._extract_changed_fields(request),
+        )
+        response = self._delegate_viewset.partial_update(request, *args, **kwargs)
+        if self._response_is_success(response):
+            updated_instance = self._load_delegate_instance(kwargs.get('id'))
+            self._safe_log_update(
+                request,
+                before_snapshot=before_snapshot,
+                instance=updated_instance,
+            )
+        return response
 
     def destroy(self, request, *args, **kwargs):
         """
@@ -473,7 +630,91 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 **self._delegate_viewset.kwargs,
                 'pk': kwargs['id']
             }
-        return self._delegate_viewset.destroy(request, *args, **kwargs)
+        instance = self._load_delegate_instance(kwargs.get('id'))
+        response = self._delegate_viewset.destroy(request, *args, **kwargs)
+        if self._response_is_success(response):
+            self._safe_log_delete(request, instance)
+        return response
+
+    def _extract_changed_fields(self, request) -> List[str]:
+        data = getattr(request, 'data', None)
+        if hasattr(data, 'keys'):
+            return [str(key).strip() for key in data.keys() if str(key).strip()]
+        if isinstance(data, dict):
+            return [str(key).strip() for key in data.keys() if str(key).strip()]
+        return []
+
+    def _response_is_success(self, response) -> bool:
+        status_code = getattr(response, 'status_code', None)
+        return isinstance(status_code, int) and 200 <= status_code < 300
+
+    def _extract_response_record_id(self, response) -> str:
+        payload = getattr(response, 'data', None)
+        if not isinstance(payload, dict):
+            return ''
+
+        record = payload.get('data', payload)
+        if not isinstance(record, dict):
+            return ''
+
+        candidate = record.get('id') or record.get('pk')
+        if candidate in (None, ''):
+            return ''
+        return str(candidate)
+
+    def _load_delegate_instance(self, object_id):
+        if not object_id or not self._delegate_viewset or not hasattr(self._delegate_viewset, 'get_object'):
+            return None
+
+        original_kwargs = dict(getattr(self._delegate_viewset, 'kwargs', {}) or {})
+        self._delegate_viewset.kwargs = {
+            **original_kwargs,
+            'pk': object_id,
+        }
+        try:
+            return self._delegate_viewset.get_object()
+        except Exception:
+            return None
+        finally:
+            self._delegate_viewset.kwargs = original_kwargs
+
+    def _safe_log_create(self, request, instance):
+        if instance is None:
+            return
+        try:
+            ActivityLogService.log_create(
+                actor=getattr(request, 'user', None),
+                instance=instance,
+                organization=getattr(instance, 'organization', None) or getattr(request.user, 'organization', None),
+            )
+        except Exception as exc:
+            logger.warning("Activity log create failed. code=%s id=%s error=%s", getattr(self._object_meta, 'code', None), getattr(instance, 'pk', None), exc)
+
+    def _safe_log_update(self, request, *, before_snapshot: Dict[str, Any], instance):
+        if instance is None:
+            return
+        try:
+            ActivityLogService.log_update(
+                actor=getattr(request, 'user', None),
+                before_snapshot=before_snapshot,
+                instance=instance,
+                changed_fields=self._extract_changed_fields(request),
+                organization=getattr(instance, 'organization', None) or getattr(request.user, 'organization', None),
+            )
+        except Exception as exc:
+            logger.warning("Activity log update failed. code=%s id=%s error=%s", getattr(self._object_meta, 'code', None), getattr(instance, 'pk', None), exc)
+
+    def _safe_log_delete(self, request, instance):
+        if instance is None:
+            return
+        try:
+            ActivityLogService.log_delete(
+                actor=getattr(request, 'user', None),
+                instance=instance,
+                organization=getattr(instance, 'organization', None) or getattr(request.user, 'organization', None),
+            )
+        except Exception as exc:
+            logger.warning("Activity log delete failed. code=%s id=%s error=%s", getattr(self._object_meta, 'code', None), getattr(instance, 'pk', None), exc)
 
     def _resolve_custom_action(self, action_path: str, request_method: str, detail: bool):
         """

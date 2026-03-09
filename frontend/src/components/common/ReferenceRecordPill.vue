@@ -5,7 +5,7 @@
     placement="top-start"
     :width="popoverWidth"
     popper-class="reference-record-pill-popover"
-    @show="$emit('show')"
+    @show="handleShow"
   >
     <template #reference>
       <component
@@ -49,14 +49,14 @@
           effect="plain"
           type="info"
         >
-          {{ objectCode }}
+          {{ objectTagLabel }}
         </el-tag>
       </div>
 
       <el-divider class="reference-record-pill__divider" />
 
       <div
-        v-if="loading"
+        v-if="resolvedLoading"
         class="reference-record-pill__body is-loading"
       >
         <el-skeleton
@@ -65,12 +65,12 @@
         />
       </div>
       <div
-        v-else-if="metaItems.length > 0"
+        v-else-if="resolvedMetaItems.length > 0"
         class="reference-record-pill__body"
       >
         <div class="reference-record-pill__meta-grid">
           <div
-            v-for="item in metaItems"
+            v-for="item in resolvedMetaItems"
             :key="`${item.label}-${item.value}`"
             class="reference-record-pill__meta-item"
           >
@@ -82,7 +82,7 @@
 
       <div class="reference-record-pill__footer">
         <span
-          v-if="recordId"
+          v-if="showRecordId && recordId"
           class="reference-record-pill__id"
         >
           {{ idLabel }}: {{ recordId }}
@@ -122,14 +122,19 @@
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import ObjectAvatar from '@/components/common/ObjectAvatar.vue'
+import { createObjectClient } from '@/api/dynamic'
+import { resolveObjectDisplayName } from '@/utils/objectDisplay'
+import {
+  buildReferenceCardMetaItems,
+  type ReferenceCardMetaItem
+} from '@/platform/reference/referenceCard'
 
-export interface ReferenceRecordMetaItem {
-  label: string
-  value: string
-}
+type AnyRecord = Record<string, any>
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   label: string
   secondary?: string
   href?: string
@@ -138,10 +143,14 @@ withDefaults(defineProps<{
   showPopover?: boolean
   showObjectTag?: boolean
   loading?: boolean
-  metaItems?: ReferenceRecordMetaItem[]
+  metaItems?: ReferenceCardMetaItem[]
   popoverWidth?: number
   idLabel?: string
   openActionText?: string
+  sourceData?: AnyRecord | null
+  summaryFieldKeys?: string[]
+  maxMetaItems?: number
+  showRecordId?: boolean
 }>(), {
   secondary: '',
   href: '',
@@ -153,12 +162,78 @@ withDefaults(defineProps<{
   metaItems: () => [],
   popoverWidth: 360,
   idLabel: 'ID',
-  openActionText: 'Open'
+  openActionText: 'Open',
+  sourceData: null,
+  summaryFieldKeys: () => [],
+  maxMetaItems: 4,
+  showRecordId: false
 })
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'show'): void
 }>()
+
+const { t, te } = useI18n()
+
+const internalLoading = ref(false)
+const internalRecord = ref<AnyRecord | null>(null)
+const hasLoadedRecord = ref(false)
+
+const objectTagLabel = computed(() => {
+  if (!props.objectCode) return ''
+  return resolveObjectDisplayName(props.objectCode, props.objectCode, t, te)
+})
+
+const effectiveSourceData = computed<AnyRecord | null>(() => {
+  if (props.sourceData && typeof props.sourceData === 'object') return props.sourceData
+  if (internalRecord.value && typeof internalRecord.value === 'object') return internalRecord.value
+  return null
+})
+
+const derivedMetaItems = computed<ReferenceCardMetaItem[]>(() => {
+  return buildReferenceCardMetaItems(effectiveSourceData.value, {
+    label: props.label,
+    secondary: props.secondary,
+    fieldKeys: props.summaryFieldKeys,
+    maxItems: props.maxMetaItems,
+    t,
+    te
+  })
+})
+
+const resolvedMetaItems = computed<ReferenceCardMetaItem[]>(() => {
+  return props.metaItems.length > 0 ? props.metaItems : derivedMetaItems.value
+})
+
+const resolvedLoading = computed(() => {
+  return props.loading || internalLoading.value
+})
+
+const loadRecordDetails = async () => {
+  if (props.metaItems.length > 0) return
+  if (derivedMetaItems.value.length > 0) return
+  if (!props.objectCode || !props.recordId || hasLoadedRecord.value) return
+
+  hasLoadedRecord.value = true
+  internalLoading.value = true
+
+  try {
+    const client = createObjectClient(props.objectCode)
+    const data = await client.get(props.recordId)
+    if (data && typeof data === 'object') {
+      internalRecord.value = data as AnyRecord
+    }
+  } catch (error) {
+    console.warn('Failed to load reference card details:', error)
+  } finally {
+    internalLoading.value = false
+  }
+}
+
+const handleShow = async () => {
+  emit('show')
+  await loadRecordDetails()
+}
 </script>
 
 <style scoped lang="scss">
@@ -263,11 +338,12 @@ defineEmits<{
 .reference-record-pill__footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 8px;
 }
 
 .reference-record-pill__id {
+  margin-right: auto;
   color: var(--el-text-color-secondary);
   font-size: 11px;
   font-family: 'Consolas', 'Monaco', monospace;

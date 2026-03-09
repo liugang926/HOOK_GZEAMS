@@ -1,0 +1,76 @@
+- generic [ref=e5]:
+  - complementary [ref=e6]:
+    - heading "G GZEAMS" [level=1] [ref=e8]:
+      - generic [ref=e9]: G
+      - generic [ref=e10]: GZEAMS
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic:
+          - search
+      - textbox "搜索" [ref=e15]
+    - menubar [ref=e19]:
+      - menuitem "工作台" [ref=e20] [cursor=pointer]:
+        - img [ref=e22]
+        - text: 工作台
+    - generic [ref=e26] [cursor=pointer]:
+      - img [ref=e28]
+      - generic [ref=e30]: 收起
+  - generic [ref=e31]:
+    - generic [ref=e32]:
+      - navigation "面包屑" [ref=e34]:
+        - generic [ref=e35]:
+          - link "工作台" [ref=e36]
+          - text: /
+        - link "资产卡片" [ref=e38]
+      - generic [ref=e39]:
+        - button "🌐 zh-CN" [ref=e41] [cursor=pointer]:
+          - generic [ref=e42]: 🌐
+          - generic [ref=e43]: zh-CN
+          - img [ref=e45]
+        - button "通知" [ref=e49] [cursor=pointer]:
+          - img [ref=e51]
+    - main [ref=e55]:
+      - generic [ref=e56]:
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - generic [ref=e60]:
+              - generic [ref=e62]: AS
+              - heading "资产卡片" [level=2] [ref=e63]
+            - generic [ref=e64]:
+              - button "新建" [ref=e65] [cursor=pointer]:
+                - generic [ref=e66]: 新建
+              - button "布局管理" [ref=e67] [cursor=pointer]:
+                - generic [ref=e68]: 布局管理
+              - button [ref=e70] [cursor=pointer]:
+                - img [ref=e72]
+          - generic [ref=e75]:
+            - group "搜索" [ref=e77]:
+              - generic [ref=e79]: 搜索
+              - generic [ref=e81]:
+                - generic [ref=e83] [cursor=pointer]:
+                  - generic:
+                    - combobox [ref=e85]
+                    - generic [ref=e86]: 全部字段
+                  - img [ref=e89]
+                - textbox "Search Keyword" [ref=e93]
+            - generic [ref=e94]:
+              - button "搜索" [ref=e95] [cursor=pointer]:
+                - generic [ref=e96]: 搜索
+              - button "重置" [ref=e97] [cursor=pointer]:
+                - generic [ref=e98]: 重置
+          - generic [ref=e101]:
+            - table [ref=e103]:
+              - rowgroup [ref=e108]:
+                - row "选择所有行 序号 操作" [ref=e109]:
+                  - columnheader "选择所有行" [ref=e110]:
+                    - generic "选择所有行" [ref=e112]:
+                      - generic [ref=e113] [cursor=pointer]:
+                        - checkbox "选择所有行" [disabled]
+                  - columnheader "序号" [ref=e115]:
+                    - generic [ref=e116]: 序号
+                  - columnheader "操作" [ref=e117]:
+                    - generic [ref=e118]: 操作
+            - generic [ref=e122]:
+              - table:
+                - rowgroup
+        - img [ref=e151]

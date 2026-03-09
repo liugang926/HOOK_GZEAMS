@@ -10,7 +10,9 @@ This service provides:
 from typing import Dict, Optional, Type, List
 from django.core.cache import cache
 from django.utils.module_loading import import_string
+from apps.system.object_catalog import get_hardcoded_viewset_map
 from apps.system.models import BusinessObject, FieldDefinition, ModelFieldDefinition
+from apps.system.services.hardcoded_object_sync_service import HardcodedObjectSyncService
 
 
 class ObjectMeta:
@@ -65,78 +67,7 @@ class ObjectRegistry:
     _registry: Dict[str, ObjectMeta] = {}
 
     # ViewSet class path mapping for hardcoded objects
-    _viewset_map: Dict[str, str] = {
-        # Asset module
-        'Asset': 'apps.assets.viewsets.AssetViewSet',
-        'AssetCategory': 'apps.assets.viewsets.AssetCategoryViewSet',
-        'AssetPickup': 'apps.assets.viewsets.AssetPickupViewSet',
-        'AssetTransfer': 'apps.assets.viewsets.AssetTransferViewSet',
-        'AssetReturn': 'apps.assets.viewsets.AssetReturnViewSet',
-        'AssetLoan': 'apps.assets.viewsets.AssetLoanViewSet',
-        'Supplier': 'apps.assets.viewsets.SupplierViewSet',
-        'Location': 'apps.assets.viewsets.LocationViewSet',
-        'AssetStatusLog': 'apps.assets.viewsets.AssetStatusLogViewSet',
-        # Consumables module
-        'Consumable': 'apps.consumables.viewsets.ConsumableViewSet',
-        'ConsumableCategory': 'apps.consumables.viewsets.ConsumableCategoryViewSet',
-        'ConsumableStock': 'apps.consumables.viewsets.ConsumableStockViewSet',
-        'ConsumablePurchase': 'apps.consumables.viewsets.ConsumablePurchaseViewSet',
-        'ConsumableIssue': 'apps.consumables.viewsets.ConsumableIssueViewSet',
-        # Lifecycle module
-        'PurchaseRequest': 'apps.lifecycle.viewsets.PurchaseRequestViewSet',
-        'AssetReceipt': 'apps.lifecycle.viewsets.AssetReceiptViewSet',
-        'Maintenance': 'apps.lifecycle.viewsets.MaintenanceViewSet',
-        'MaintenancePlan': 'apps.lifecycle.viewsets.MaintenancePlanViewSet',
-        'MaintenanceTask': 'apps.lifecycle.viewsets.MaintenanceTaskViewSet',
-        'DisposalRequest': 'apps.lifecycle.viewsets.DisposalRequestViewSet',
-        # Inventory module
-        'InventoryTask': 'apps.inventory.viewsets.InventoryTaskViewSet',
-        'InventorySnapshot': 'apps.inventory.viewsets.InventorySnapshotViewSet',
-        'InventoryItem': 'apps.inventory.viewsets.InventoryDifferenceViewSet',
-        # IT Assets
-        'ITAsset': 'apps.it_assets.viewsets.ITAssetInfoViewSet',
-        'ITSoftware': 'apps.it_assets.viewsets.SoftwareViewSet',
-        'ITSoftwareLicense': 'apps.it_assets.viewsets.SoftwareLicenseViewSet',
-        'ITLicenseAllocation': 'apps.it_assets.viewsets.LicenseAllocationViewSet',
-        'ITMaintenanceRecord': 'apps.it_assets.viewsets.ITMaintenanceRecordViewSet',
-        'ConfigurationChange': 'apps.it_assets.viewsets.ConfigurationChangeViewSet',
-        # Software Licenses
-        'Software': 'apps.software_licenses.viewsets.SoftwareViewSet',
-        'SoftwareLicense': 'apps.software_licenses.viewsets.SoftwareLicenseViewSet',
-        'LicenseAllocation': 'apps.software_licenses.viewsets.LicenseAllocationViewSet',
-        # Leasing
-        'LeasingContract': 'apps.leasing.viewsets.LeaseContractViewSet',
-        'LeaseItem': 'apps.leasing.viewsets.LeaseItemViewSet',
-        'RentPayment': 'apps.leasing.viewsets.RentPaymentViewSet',
-        'LeaseReturn': 'apps.leasing.viewsets.LeaseReturnViewSet',
-        'LeaseExtension': 'apps.leasing.viewsets.LeaseExtensionViewSet',
-        # Insurance
-        'InsuranceCompany': 'apps.insurance.viewsets.InsuranceCompanyViewSet',
-        'InsurancePolicy': 'apps.insurance.viewsets.InsurancePolicyViewSet',
-        'InsuredAsset': 'apps.insurance.viewsets.InsuredAssetViewSet',
-        'PremiumPayment': 'apps.insurance.viewsets.PremiumPaymentViewSet',
-        'ClaimRecord': 'apps.insurance.viewsets.ClaimRecordViewSet',
-        'PolicyRenewal': 'apps.insurance.viewsets.PolicyRenewalViewSet',
-        # Finance
-        'DepreciationConfig': 'apps.depreciation.viewsets.DepreciationConfigViewSet',
-        'DepreciationRecord': 'apps.depreciation.viewsets.DepreciationRecordViewSet',
-        'DepreciationRun': 'apps.depreciation.viewsets.DepreciationRunViewSet',
-        'FinanceVoucher': 'apps.finance.viewsets.FinanceVoucherViewSet',
-        'VoucherTemplate': 'apps.finance.viewsets.VoucherTemplateViewSet',
-        # Workflows
-        'WorkflowDefinition': 'apps.workflows.viewsets.WorkflowDefinitionViewSet',
-        'WorkflowTemplate': 'apps.workflows.viewsets.WorkflowTemplateViewSet',
-        'WorkflowInstance': 'apps.workflows.viewsets.WorkflowInstanceViewSet',
-        'WorkflowTask': 'apps.workflows.viewsets.WorkflowTaskViewSet',
-        'WorkflowApproval': 'apps.workflows.viewsets.WorkflowApprovalViewSet',
-        'WorkflowOperationLog': 'apps.workflows.viewsets.WorkflowOperationLogViewSet',
-        # Organizations
-        'Department': 'apps.organizations.viewsets.DepartmentViewSet',
-        'Organization': 'apps.organizations.viewsets.OrganizationViewSet',
-
-        # Accounts (needed for reference resolution in low-code runtime)
-        'User': 'apps.accounts.viewsets.UserViewSet',
-    }
+    _viewset_map: Dict[str, str] = get_hardcoded_viewset_map()
 
     @classmethod
     def register(cls, code: str, **metadata) -> ObjectMeta:
@@ -286,135 +217,22 @@ class ObjectRegistry:
         Returns:
             Number of objects registered/updated
         """
-        standard_objects = [
-            # Asset module
-            {'code': 'Asset', 'name': '资产卡片', 'model': 'apps.assets.models.Asset'},
-            {'code': 'AssetCategory', 'name': '资产分类', 'model': 'apps.assets.models.AssetCategory'},
-            {'code': 'AssetPickup', 'name': '资产领用单', 'model': 'apps.assets.models.AssetPickup'},
-            {'code': 'AssetTransfer', 'name': '资产调拨单', 'model': 'apps.assets.models.AssetTransfer'},
-            {'code': 'AssetReturn', 'name': '资产归还单', 'model': 'apps.assets.models.AssetReturn'},
-            {'code': 'AssetLoan', 'name': '资产借用单', 'model': 'apps.assets.models.AssetLoan'},
-            {'code': 'Supplier', 'name': '供应商', 'model': 'apps.assets.models.Supplier'},
-            {'code': 'Location', 'name': '存放地点', 'model': 'apps.assets.models.Location'},
-            {'code': 'AssetStatusLog', 'name': '资产状态日志', 'model': 'apps.assets.models.AssetStatusLog'},
-            # Consumables module
-            {'code': 'Consumable', 'name': '低值易耗品', 'model': 'apps.consumables.models.Consumable'},
-            {'code': 'ConsumableCategory', 'name': '易耗品分类', 'model': 'apps.consumables.models.ConsumableCategory'},
-            {'code': 'ConsumableStock', 'name': '易耗品库存', 'model': 'apps.consumables.models.ConsumableStock'},
-            {'code': 'ConsumablePurchase', 'name': '易耗品采购', 'model': 'apps.consumables.models.ConsumablePurchase'},
-            {'code': 'ConsumableIssue', 'name': '易耗品领用', 'model': 'apps.consumables.models.ConsumableIssue'},
-            # Lifecycle module
-            {'code': 'PurchaseRequest', 'name': '采购申请', 'model': 'apps.lifecycle.models.PurchaseRequest'},
-            {'code': 'AssetReceipt', 'name': '资产入库单', 'model': 'apps.lifecycle.models.AssetReceipt'},
-            {'code': 'Maintenance', 'name': '维修记录', 'model': 'apps.lifecycle.models.Maintenance'},
-            {'code': 'MaintenancePlan', 'name': '维修计划', 'model': 'apps.lifecycle.models.MaintenancePlan'},
-            {'code': 'MaintenanceTask', 'name': '维修任务', 'model': 'apps.lifecycle.models.MaintenanceTask'},
-            {'code': 'DisposalRequest', 'name': '处置申请', 'model': 'apps.lifecycle.models.DisposalRequest'},
-            # Inventory module
-            {'code': 'InventoryTask', 'name': '盘点任务', 'model': 'apps.inventory.models.InventoryTask'},
-            {'code': 'InventorySnapshot', 'name': '盘点快照', 'model': 'apps.inventory.models.InventorySnapshot'},
-            {'code': 'InventoryItem', 'name': '盘点明细', 'model': 'apps.inventory.models.InventoryDifference'},
-            # IT Assets
-            {'code': 'ITAsset', 'name': 'IT设备', 'model': 'apps.it_assets.models.ITAssetInfo'},
-            {'code': 'ITSoftware', 'name': 'IT软件目录', 'model': 'apps.it_assets.models.Software'},
-            {'code': 'ITSoftwareLicense', 'name': 'IT软件许可', 'model': 'apps.it_assets.models.SoftwareLicense'},
-            {'code': 'ITLicenseAllocation', 'name': 'IT许可证分配', 'model': 'apps.it_assets.models.LicenseAllocation'},
-            {'code': 'ITMaintenanceRecord', 'name': 'IT维护记录', 'model': 'apps.it_assets.models.ITMaintenanceRecord'},
-            {'code': 'ConfigurationChange', 'name': '配置变更', 'model': 'apps.it_assets.models.ConfigurationChange'},
-            # Software Licenses
-            {'code': 'Software', 'name': '软件目录', 'model': 'apps.software_licenses.models.Software'},
-            {'code': 'SoftwareLicense', 'name': '软件许可', 'model': 'apps.software_licenses.models.SoftwareLicense'},
-            {'code': 'LicenseAllocation', 'name': '许可证分配', 'model': 'apps.software_licenses.models.LicenseAllocation'},
-            # Leasing
-            {'code': 'LeasingContract', 'name': '租赁合同', 'model': 'apps.leasing.models.LeaseContract'},
-            {'code': 'LeaseItem', 'name': '租赁明细', 'model': 'apps.leasing.models.LeaseItem'},
-            {'code': 'RentPayment', 'name': '租金支付', 'model': 'apps.leasing.models.RentPayment'},
-            {'code': 'LeaseReturn', 'name': '租赁归还', 'model': 'apps.leasing.models.LeaseReturn'},
-            {'code': 'LeaseExtension', 'name': '租赁续租', 'model': 'apps.leasing.models.LeaseExtension'},
-            # Insurance
-            {'code': 'InsurancePolicy', 'name': '保险单', 'model': 'apps.insurance.models.InsurancePolicy'},
-            {'code': 'InsuranceCompany', 'name': '保险公司', 'model': 'apps.insurance.models.InsuranceCompany'},
-            {'code': 'InsuredAsset', 'name': '投保资产', 'model': 'apps.insurance.models.InsuredAsset'},
-            {'code': 'PremiumPayment', 'name': '保费支付', 'model': 'apps.insurance.models.PremiumPayment'},
-            {'code': 'ClaimRecord', 'name': '理赔记录', 'model': 'apps.insurance.models.ClaimRecord'},
-            {'code': 'PolicyRenewal', 'name': '保单续保', 'model': 'apps.insurance.models.PolicyRenewal'},
-            # Finance
-            {'code': 'DepreciationConfig', 'name': '折旧配置', 'model': 'apps.depreciation.models.DepreciationConfig'},
-            {'code': 'DepreciationRecord', 'name': '折旧记录', 'model': 'apps.depreciation.models.DepreciationRecord'},
-            {'code': 'DepreciationRun', 'name': '折旧运行', 'model': 'apps.depreciation.models.DepreciationRun'},
-            {'code': 'FinanceVoucher', 'name': '财务凭证', 'model': 'apps.finance.models.FinanceVoucher'},
-            {'code': 'VoucherTemplate', 'name': '凭证模板', 'model': 'apps.finance.models.VoucherTemplate'},
-            # Workflows
-            {'code': 'WorkflowDefinition', 'name': '工作流定义', 'model': 'apps.workflows.models.WorkflowDefinition'},
-            {'code': 'WorkflowTemplate', 'name': '工作流模板', 'model': 'apps.workflows.models.WorkflowTemplate'},
-            {'code': 'WorkflowInstance', 'name': '工作流实例', 'model': 'apps.workflows.models.WorkflowInstance'},
-            {'code': 'WorkflowTask', 'name': '工作流任务', 'model': 'apps.workflows.models.WorkflowTask'},
-            {'code': 'WorkflowApproval', 'name': '工作流审批记录', 'model': 'apps.workflows.models.WorkflowApproval'},
-            {'code': 'WorkflowOperationLog', 'name': '工作流操作日志', 'model': 'apps.workflows.models.WorkflowOperationLog'},
-            # Organizations
-            {'code': 'Department', 'name': '部门', 'model': 'apps.organizations.models.Department'},
-            {'code': 'Organization', 'name': '组织', 'model': 'apps.organizations.models.Organization'},
-            # Accounts (needed for reference resolution via unified object router)
-            {'code': 'User', 'name': '用户', 'model': 'apps.accounts.models.User'},
-        ]
-
         count = 0
-        for obj_def in standard_objects:
-            if cls._ensure_business_object_exists(obj_def):
-                count += 1
+        sync_service = HardcodedObjectSyncService()
+        for result in sync_service.sync_catalog(overwrite_existing=True):
+            business_object = result.business_object
 
-        return count
+            if business_object.is_hardcoded:
+                cls._sync_model_fields(business_object)
 
-    @classmethod
-    def _ensure_business_object_exists(cls, obj_def: dict) -> bool:
-        """
-        Ensure BusinessObject record exists for a standard object.
-
-        Creates the BusinessObject if it doesn't exist,
-        and syncs field definitions for hardcoded models.
-
-        Args:
-            obj_def: Dictionary with 'code', 'name', 'model' keys
-
-        Returns:
-            True if object was created or updated, False on error
-        """
-        try:
-            bo, created = BusinessObject.objects.get_or_create(
-                code=obj_def['code'],
-                defaults={
-                    'name': obj_def['name'],
-                    'is_hardcoded': True,
-                    'django_model_path': obj_def['model'],
-                    'enable_workflow': True,
-                    'enable_version': True,
-                    'enable_soft_delete': True,
-                }
-            )
-
-            # Update if exists but was modified
-            if not created:
-                bo.name = obj_def['name']
-                bo.is_hardcoded = True
-                bo.django_model_path = obj_def['model']
-                bo.save()
-
-            # Sync field definitions for hardcoded models
-            if bo.is_hardcoded:
-                cls._sync_model_fields(bo)
-
-            # Also register in memory
             cls.register(
-                bo.code,
-                name=bo.name,
-                is_hardcoded=bo.is_hardcoded,
-                django_model_path=bo.django_model_path,
+                business_object.code,
+                name=business_object.name,
+                is_hardcoded=business_object.is_hardcoded,
+                django_model_path=business_object.django_model_path,
             )
-
-            return True
-
-        except Exception:
-            return False
+            count += 1
+        return count
 
     @classmethod
     def _sync_model_fields(cls, business_object: BusinessObject) -> int:

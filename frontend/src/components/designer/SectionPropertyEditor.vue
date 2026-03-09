@@ -84,6 +84,28 @@
       </el-form-item>
     </template>
   </el-form>
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import { getSectionPropertySchema } from '@/composables/useSectionPropertySchema'
+
+interface Props {
+  modelValue?: Record<string, any>
+  sectionType?: string
+  isCompactMode?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: () => ({}),
+  sectionType: 'section',
+  isCompactMode: false
+})
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: Record<string, any>): void
+  (e: 'update-property', payload: { key: string; value: any }): void
+}>()
 
 const schema = computed(() => {
   const base = getSectionPropertySchema(props.sectionType || 'section')

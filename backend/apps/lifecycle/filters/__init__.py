@@ -19,6 +19,7 @@ from apps.lifecycle.filters.lifecycle_filter import (
     MaintenanceTaskFilter,
     DisposalRequestFilter,
     DisposalItemFilter,
+    AssetWarrantyFilter,
 )
 
 __all__ = [
@@ -31,4 +32,5 @@ __all__ = [
     'MaintenanceTaskFilter',
     'DisposalRequestFilter',
     'DisposalItemFilter',
+    'AssetWarrantyFilter',
 ]

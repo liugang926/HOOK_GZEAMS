@@ -26,7 +26,7 @@
               v-if="showSectionTitle(section)"
               #header
             >
-              <span>{{ section.title }}</span>
+              <span>{{ getSectionTitle(section) }}</span>
             </template>
             <div class="dynamic-form-renderer__section-body">
               <DynamicFormSection
@@ -53,7 +53,7 @@
               v-if="showSectionTitle(section)"
               class="dynamic-form-renderer__section-title"
             >
-              {{ section.title }}
+              {{ getSectionTitle(section) }}
             </div>
             <DynamicFormSection
               :section="section"
@@ -89,7 +89,7 @@
               v-if="showSectionTitle(section)"
               #header
             >
-              <span>{{ section.title }}</span>
+              <span>{{ getSectionTitle(section) }}</span>
             </template>
             <div class="dynamic-form-renderer__section-body">
               <DynamicFormSection
@@ -116,7 +116,7 @@
               v-if="showSectionTitle(section)"
               class="dynamic-form-renderer__section-title"
             >
-              {{ section.title }}
+              {{ getSectionTitle(section) }}
             </div>
             <DynamicFormSection
               :section="section"
@@ -140,10 +140,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DynamicFormSection from '@/components/engine/DynamicFormSection.vue'
 import type { RuntimeLayoutConfig, RuntimeSection } from '@/types/runtime'
 import type { RenderSchema } from '@/platform/layout/renderSchema'
 import { projectRuntimeLayoutFromRenderSchema } from '@/platform/layout/renderSchemaProjector'
+import { resolveTranslatableText } from '@/utils/localeText'
 
 interface Props {
   layout?: RuntimeLayoutConfig
@@ -174,6 +176,8 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: Record<string, any>): void
   (e: 'request-save'): void
 }>()
+
+const { locale } = useI18n()
 
 const effectiveLayout = computed<RuntimeLayoutConfig>(() => {
   if (props.schema) {
@@ -209,8 +213,12 @@ const hasRenderableFields = computed(() => {
 
 const sectionKey = (section: RuntimeSection) => section.id || section.name || ''
 
+const getSectionTitle = (section: RuntimeSection): string => {
+  return resolveTranslatableText((section as any).title, locale.value as 'zh-CN' | 'en-US')
+}
+
 const showSectionTitle = (section: RuntimeSection) => {
-  return section.showTitle !== false && !!section.title
+  return section.showTitle !== false && !!getSectionTitle(section)
 }
 
 const shouldRenderSectionCard = (section: RuntimeSection) => {

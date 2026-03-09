@@ -11,6 +11,7 @@ from apps.lifecycle.viewsets import (
     MaintenancePlanViewSet,
     MaintenanceTaskViewSet,
     DisposalRequestViewSet,
+    AssetWarrantyViewSet,
 )
 
 app_router = routers.DefaultRouter()
@@ -32,5 +33,8 @@ app_router.register(r'maintenance-tasks', MaintenanceTaskViewSet, basename='main
 
 # Disposal request endpoints
 app_router.register(r'disposal-requests', DisposalRequestViewSet, basename='disposal-request')
+
+# Asset warranty endpoints
+app_router.register(r'asset-warranties', AssetWarrantyViewSet, basename='asset-warranty')
 
 urlpatterns = app_router.urls

@@ -115,8 +115,8 @@
           :object-code="referenceObjectCode"
           :record-id="item.id"
           :show-popover="false"
-          :id-label="idLabel"
-          :open-action-text="openActionText"
+          :source-data="item"
+          :summary-field-keys="displayCompactKeys"
         />
         <span
           v-if="currentValueObjects.length === 0"
@@ -131,11 +131,8 @@
           :href="selectedSingleHref"
           :object-code="referenceObjectCode"
           :record-id="selectedSingleOption.id"
-          :loading="hoverLoading"
-          :meta-items="hoverMetaItems"
-          :id-label="idLabel"
-          :open-action-text="openActionText"
-          @show="handleSinglePillShow"
+          :source-data="selectedSingleOption"
+          :summary-field-keys="displayCompactKeys"
         />
         <span
           v-else
@@ -168,7 +165,6 @@ import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Search, Plus } from '@element-plus/icons-vue'
 import { searchReferenceData } from '@/api/system'
-import { createObjectClient } from '@/api/dynamic'
 import { debounce } from 'lodash-es'
 import ObjectAvatar from '@/components/common/ObjectAvatar.vue'
 import ReferenceRecordPill from '@/components/common/ReferenceRecordPill.vue'
@@ -183,6 +179,11 @@ import {
   resolveReferenceLabel,
   resolveReferenceSecondaryText
 } from '@/platform/reference/referenceFieldMeta'
+import {
+  extractEmbeddedReferenceOptions,
+  mergeReferenceOptionsByIds,
+  normalizeReferenceOption as normalizeOption
+} from '@/platform/reference/referenceValueAdapter'
 import { loadRecentReferenceIds, saveRecentReferenceIds } from '@/platform/reference/referenceLookupRecent'
 import {
   resolveReferenceLookupDefaultColumns,
@@ -229,11 +230,6 @@ const currentValueObjects = ref<AnyRecord[]>([])
 const searchKeyword = ref('')
 const lookupDialogVisible = ref(false)
 
-// Hover card state
-const hoverLoading = ref(false)
-const hoverData = ref<AnyRecord | null>(null)
-const preloadedHoverIds = new Set<string>()
-
 const tr = (key: string, fallback: string, params?: Record<string, unknown>) => {
   const text = t(key, params || {})
   return text === key ? fallback : text
@@ -278,8 +274,6 @@ const searchGroupLabel = computed(() => {
 
 const advancedLookupText = computed(() => tr('common.actions.advancedSearch', 'Advanced Search'))
 const createRecordText = computed(() => tr('common.actions.newRecord', 'New Record'))
-const idLabel = computed(() => tr('common.columns.id', 'ID'))
-const openActionText = computed(() => tr('common.actions.open', 'Open'))
 
 const noMatchText = computed(() => {
   if (loading.value) return tr('common.messages.loading', 'Loading...')
@@ -391,17 +385,6 @@ const normalizedValue = computed(() => {
   return ids[0] || ''
 })
 
-const normalizeOption = (input: unknown): AnyRecord | null => {
-  if (!input || typeof input !== 'object') return null
-  const raw = input as AnyRecord
-  const id = String(raw.id || raw.pk || raw.value || '').trim()
-  if (!id) return null
-  return {
-    ...raw,
-    id
-  }
-}
-
 const allOptions = computed(() => {
   const merged = [...recentOptions.value, ...searchOptions.value, ...currentValueObjects.value]
   const map = new Map<string, AnyRecord>()
@@ -445,7 +428,7 @@ const selectedSingleHref = computed(() => {
 
 const selectedSingleSecondary = computed(() => {
   if (!selectedSingleOption.value) return ''
-  return getItemSecondary(selectedSingleOption.value) || selectedSingleOption.value.id
+  return getItemSecondary(selectedSingleOption.value)
 })
 
 const selectedIdsForDialog = computed(() => {
@@ -607,18 +590,31 @@ const handleLookupConfirm = (rows: AnyRecord[]) => {
 
 const fetchCurrentValue = async () => {
   const ids = extractReferenceIds(props.modelValue)
-  if (!ids.length || !referenceObjectCode.value) {
-    currentValueObjects.value = []
+  const embeddedOptions = extractEmbeddedReferenceOptions(props.modelValue)
+
+  if (!ids.length) {
+    currentValueObjects.value = embeddedOptions
+    return
+  }
+
+  if (embeddedOptions.length > 0) {
+    currentValueObjects.value = embeddedOptions
+  }
+
+  if (!referenceObjectCode.value) {
     return
   }
 
   try {
     const resolved = await referenceResolver.resolveMany(referenceObjectCode.value, ids)
-    currentValueObjects.value = ids
-      .map((id) => normalizeOption(resolved[id]))
-      .filter((item: AnyRecord | null): item is AnyRecord => !!item)
+    currentValueObjects.value = mergeReferenceOptionsByIds(
+      ids,
+      Object.fromEntries(embeddedOptions.map((item) => [item.id, item])),
+      resolved
+    )
   } catch (error) {
     console.warn('Failed to fetch current value for reference field:', error)
+    currentValueObjects.value = embeddedOptions
   }
 }
 
@@ -637,68 +633,13 @@ watch(
     searchOptions.value = []
     recentOptions.value = []
     searchKeyword.value = ''
-    preloadedHoverIds.clear()
   }
 )
 
-// -- Hover Card Logic --
 const displayCompactKeys = computed(() => {
   if (lookupCompactKeys.value.length > 0) return lookupCompactKeys.value
-  // Fallback generic keys if none specified in compact keys
-  return ['status', 'created_at', 'department_id', 'user_id']
+  return ['status', 'department', 'location', 'user', 'custodian', 'brand', 'model']
 })
-
-const getFieldLabel = (key: string) => {
-  // Ideally resolved from metadata, for now use generic formatting
-  return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-}
-
-const getFieldValue = (data: AnyRecord, key: string) => {
-  const val = data[key]
-  if (val === null || val === undefined) return '-'
-  if (typeof val === 'object') {
-    return val.name || val.label || val.id || JSON.stringify(val)
-  }
-  return String(val)
-}
-
-const hoverMetaItems = computed(() => {
-  if (!hoverData.value) return []
-  return displayCompactKeys.value
-    .map((key) => ({
-      label: getFieldLabel(key),
-      value: getFieldValue(hoverData.value as AnyRecord, key)
-    }))
-    .filter((item) => item.value !== '-')
-})
-
-const handleHoverShow = async (option: AnyRecord) => {
-  if (!referenceObjectCode.value || !option?.id) return
-  if (preloadedHoverIds.has(option.id) && hoverData.value?.id === option.id) return
-
-  hoverLoading.value = true
-  hoverData.value = null
-  
-  try {
-    const client = createObjectClient(referenceObjectCode.value)
-    const data = await client.get(option.id)
-    if (data) {
-      hoverData.value = data
-      preloadedHoverIds.add(option.id)
-    }
-  } catch (err) {
-    console.warn('Failed to load deep reference data for hover card', err)
-    // Fallback to basic shallow data
-    hoverData.value = { ...option }
-  } finally {
-    hoverLoading.value = false
-  }
-}
-
-const handleSinglePillShow = () => {
-  if (!selectedSingleOption.value) return
-  handleHoverShow(selectedSingleOption.value)
-}
 </script>
 
 <style scoped lang="scss">

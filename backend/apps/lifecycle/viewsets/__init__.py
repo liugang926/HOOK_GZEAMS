@@ -16,6 +16,7 @@ from apps.lifecycle.viewsets.lifecycle_viewset import (
     MaintenancePlanViewSet,
     MaintenanceTaskViewSet,
     DisposalRequestViewSet,
+    AssetWarrantyViewSet,
 )
 
 __all__ = [
@@ -25,4 +26,5 @@ __all__ = [
     'MaintenancePlanViewSet',
     'MaintenanceTaskViewSet',
     'DisposalRequestViewSet',
+    'AssetWarrantyViewSet',
 ]

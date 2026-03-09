@@ -50,13 +50,14 @@
         </el-button>
       </template>
 
-      <template #search-__unifiedKeyword="{ form }">
+      <template #search-__unifiedKeyword="{ getValue, setValue, search }">
         <div class="unified-search">
           <el-select
-            v-model="form.__unifiedField"
+            :model-value="getValue('__unifiedField') ?? '__all'"
             class="unified-search-field"
             clearable
             :placeholder="t('common.select')"
+            @update:model-value="setValue('__unifiedField', $event || '__all')"
           >
             <el-option
               :label="unifiedAllFieldsLabel"
@@ -70,10 +71,12 @@
             />
           </el-select>
           <el-input
-            v-model="form.__unifiedKeyword"
+            :model-value="getValue('__unifiedKeyword') || ''"
             class="unified-search-keyword"
             clearable
             :placeholder="searchKeywordPlaceholder"
+            @update:model-value="setValue('__unifiedKeyword', $event || '')"
+            @keyup.enter="search()"
           />
         </div>
       </template>
@@ -505,22 +508,35 @@ const unifiedSearchFieldCandidates = computed(() => {
   return options
 })
 
+const visibleUnifiedSearchFieldCandidates = computed(() => {
+  const visibleCodes = new Set(
+    (tableColumns.value || [])
+      .filter((column) => column?.visible !== false)
+      .map((column) => String(column?.fieldCode || column?.prop || '').trim())
+      .filter(Boolean)
+  )
+
+  if (!visibleCodes.size) return unifiedSearchFieldCandidates.value
+
+  return unifiedSearchFieldCandidates.value.filter((item) => visibleCodes.has(item.value))
+})
+
 const unifiedSearchFieldOptions = computed(() => {
-  // Prefer searchable configuration, but always keep full-field fallback
-  if (!rawSearchFields.value.length) return unifiedSearchFieldCandidates.value
+  const candidateOptions = visibleUnifiedSearchFieldCandidates.value.length
+    ? visibleUnifiedSearchFieldCandidates.value
+    : unifiedSearchFieldCandidates.value
+  const candidateCodeSet = new Set(candidateOptions.map((item) => item.value))
+
+  if (!rawSearchFields.value.length) return candidateOptions
 
   const bySearchable = rawSearchFields.value
     .map((field) => ({
       label: String(field?.label || field?.prop || field?.field || ''),
       value: String(field?.prop || field?.field || '').trim()
     }))
-    .filter((item) => item.value)
+    .filter((item) => item.value && candidateCodeSet.has(item.value))
 
-  const missing = unifiedSearchFieldCandidates.value.filter(
-    (item) => !bySearchable.some((entry) => entry.value === item.value)
-  )
-
-  return [...bySearchable, ...missing]
+  return bySearchable.length ? bySearchable : candidateOptions
 })
 
 const unifiedSearchFields = computed<SearchField[]>(() => {
@@ -594,13 +610,27 @@ const fetchData = async (params: any) => {
   const nextParams = { ...(params || {}) }
   const keyword = String(nextParams.__unifiedKeyword || '').trim()
   const selectedField = String(nextParams.__unifiedField || '__all').trim()
+  const visibleFieldCodeSet = new Set(
+    (Array.isArray(nextParams.__visibleFieldCodes) ? nextParams.__visibleFieldCodes : [])
+      .map((item: any) => String(item || '').trim())
+      .filter(Boolean)
+  )
+  const constrainedFieldCodes = unifiedSearchFieldOptions.value
+    .map((item) => String(item?.value || '').trim())
+    .filter((value) => !visibleFieldCodeSet.size || visibleFieldCodeSet.has(value))
   delete nextParams.__unifiedKeyword
   delete nextParams.__unifiedField
   delete nextParams.__unifiedSearch
+  delete nextParams.__visibleFieldCodes
+  delete nextParams.searchFields
+  delete nextParams.search_fields
 
   if (keyword) {
     if (selectedField && selectedField !== '__all') {
       nextParams[selectedField] = keyword
+    } else if (constrainedFieldCodes.length) {
+      nextParams.search = keyword
+      nextParams.searchFields = constrainedFieldCodes.join(',')
     } else {
       nextParams.search = keyword
     }
@@ -637,8 +667,13 @@ const handleLayoutSettings = () => {
 }
 
 const handleEdit = (row: any) => {
-  activeRecordId.value = row.id || row._id
-  drawerVisible.value = true
+  const recordId = row?.id || row?._id
+  if (!recordId) {
+    ElMessage.error(t('common.messages.operationFailed'))
+    return
+  }
+
+  router.push(`/objects/${encodeURIComponent(objectCode.value)}/${encodeURIComponent(String(recordId))}/edit`)
 }
 
 const handleDelete = async (row: any) => {

@@ -58,8 +58,7 @@
         :href="entry.href"
         :object-code="referenceObjectCode"
         :record-id="entry.id"
-        :id-label="idLabel"
-        :open-action-text="openActionText"
+        :source-data="referenceValueFromInput[entry.id] || referenceValueMap[entry.id] || null"
       />
     </div>
     <span v-else>-</span>
@@ -192,6 +191,9 @@ import {
   resolveReferenceSecondaryField,
   resolveReferenceSecondaryText
 } from '@/platform/reference/referenceFieldMeta'
+import {
+  buildReferenceValueMap
+} from '@/platform/reference/referenceValueAdapter'
 
 interface FieldLike {
   type?: string
@@ -228,16 +230,6 @@ const props = defineProps<{
   value: any
 }>()
 const { t } = useI18n()
-const idLabel = computed(() => {
-  const key = 'common.columns.id'
-  const text = t(key)
-  return text === key ? 'ID' : text
-})
-const openActionText = computed(() => {
-  const key = 'common.actions.open'
-  const text = t(key)
-  return text === key ? 'Open' : text
-})
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const fileMetadataMap = ref<Record<string, SystemFile>>({})
@@ -279,22 +271,7 @@ const referenceIds = computed(() => {
   return extractReferenceIds(props.value)
 })
 
-const referenceValueFromInput = computed<Record<string, any>>(() => {
-  const out: Record<string, any> = {}
-  const walk = (value: any) => {
-    if (!value) return
-    if (Array.isArray(value)) {
-      value.forEach((item) => walk(item))
-      return
-    }
-    if (typeof value !== 'object') return
-    const id = String(value.id || value.pk || value.value || '').trim()
-    if (!id) return
-    if (!out[id]) out[id] = value
-  }
-  walk(props.value)
-  return out
-})
+const referenceValueFromInput = computed<Record<string, any>>(() => buildReferenceValueMap(props.value))
 
 interface ReferenceEntry {
   id: string

@@ -17,6 +17,7 @@ from apps.system.viewsets import (
 )
 from apps.system.viewsets.system_file import SystemFileViewSet
 from apps.system.viewsets.menu import MenuViewSet  # Dynamic menu system
+from apps.system.viewsets.activity_log_viewsets import ActivityLogViewSet
 
 # Conditionally import business rule viewsets (may not be available)
 try:
@@ -52,6 +53,7 @@ router.register(r'column-preferences', UserColumnPreferenceViewSet, basename='co
 router.register(r'tab-configs', TabConfigViewSet, basename='tabconfig')
 router.register(r'system-files', SystemFileViewSet, basename='system-file')  # File upload/management
 router.register(r'menu', MenuViewSet, basename='menu')  # Dynamic menu
+router.register(r'activity-logs', ActivityLogViewSet, basename='activity-log')
 # i18n routes
 router.register(r'languages', LanguageViewSet, basename='language')
 router.register(r'translations', TranslationViewSet, basename='translation')
