@@ -3,9 +3,7 @@
     class="field-renderer"
     :class="[`mode-${mode}`, `type-${fieldType}`]"
   >
-    <!-- WRITE MODE -->
     <template v-if="mode === 'write'">
-      <!-- Input -->
       <el-input
         v-if="['text', 'string', 'email', 'phone'].includes(fieldType)"
         :model-value="modelValue"
@@ -15,7 +13,6 @@
         @update:model-value="handleChange"
       />
 
-      <!-- Textarea -->
       <el-input
         v-else-if="fieldType === 'textarea'"
         :model-value="modelValue"
@@ -26,7 +23,6 @@
         @update:model-value="handleChange"
       />
 
-      <!-- Number -->
       <el-input-number
         v-else-if="['number', 'integer', 'float'].includes(fieldType)"
         :model-value="modelValue"
@@ -36,7 +32,6 @@
         @update:model-value="handleChange"
       />
 
-      <!-- Select / Enum -->
       <el-select
         v-else-if="['select', 'enum', 'status'].includes(fieldType)"
         :model-value="modelValue"
@@ -54,7 +49,6 @@
         />
       </el-select>
 
-      <!-- Date -->
       <el-date-picker
         v-else-if="['date', 'datetime'].includes(fieldType)"
         :model-value="modelValue"
@@ -66,7 +60,6 @@
         @update:model-value="handleChange"
       />
 
-      <!-- Progress -->
       <el-input-number
         v-else-if="fieldType === 'progress'"
         :model-value="modelValue"
@@ -77,7 +70,6 @@
         @update:model-value="handleChange"
       />
 
-      <!-- Reference -->
       <el-input
         v-else-if="fieldType === 'reference'"
         :model-value="modelValue?.name || modelValue"
@@ -90,7 +82,6 @@
         </template>
       </el-input>
 
-      <!-- Formula (Readonly) -->
       <el-input
         v-else-if="fieldType === 'formula'"
         :model-value="modelValue"
@@ -98,7 +89,6 @@
         disabled
       />
 
-      <!-- File (Simple URL input for now) -->
       <el-input
         v-else-if="fieldType === 'file'"
         :model-value="modelValue"
@@ -107,16 +97,13 @@
         @update:model-value="handleChange"
       />
 
-      <!-- Fallback -->
       <span
         v-else
         class="text-gray-400"
       >{{ $t('common.messages.operationFailed') }}: {{ fieldType }}</span>
     </template>
 
-    <!-- READ / TABLE MODE -->
     <template v-else>
-      <!-- Status / Enum / Select (Tag) -->
       <template v-if="['status', 'enum', 'select'].includes(fieldType)">
         <el-tag
           :type="getStatusType(modelValue)"
@@ -127,32 +114,16 @@
         </el-tag>
       </template>
 
-      <!-- Date -->
       <template v-else-if="['date', 'datetime'].includes(fieldType)">
         <span class="text-sm font-mono text-gray-600">
           {{ formatDateDisplay(modelValue) }}
         </span>
       </template>
 
-      <!-- User -->
-      <template v-else-if="fieldType === 'user'">
-        <div class="flex items-center gap-2">
-          <el-avatar
-            :size="24"
-            :src="getUserAvatar(modelValue)"
-          >
-            {{ getUserInitials(modelValue) }}
-          </el-avatar>
-          <span class="text-sm">{{ getUserName(modelValue) }}</span>
-        </div>
-      </template>
-
-      <!-- Currency -->
       <template v-else-if="fieldType === 'currency'">
         <span class="font-mono">{{ formatCurrency(modelValue) }}</span>
       </template>
 
-      <!-- Boolean -->
       <template v-else-if="fieldType === 'boolean'">
         <el-icon
           v-if="modelValue"
@@ -168,14 +139,12 @@
         </el-icon>
       </template>
 
-      <!-- Progress -->
       <el-progress
         v-else-if="fieldType === 'progress'"
         :percentage="Number(modelValue || 0)"
         :status="Number(modelValue) === 100 ? 'success' : ''"
       />
 
-      <!-- File -->
       <template v-else-if="fieldType === 'file'">
         <a
           v-if="modelValue"
@@ -189,19 +158,13 @@
         <span v-else>-</span>
       </template>
 
-      <!-- Reference / Department / Location / Asset -->
-      <template v-else-if="['reference', 'department', 'location', 'asset'].includes(fieldType)">
-        <router-link 
-          v-if="modelValue && field.referenceRoute" 
-          :to="{ name: field.referenceRoute, params: { id: modelValue.id || modelValue } }"
-          class="text-blue-500 hover:underline"
-        >
-          {{ formatDefaultValue(modelValue) }}
-        </router-link>
-        <span v-else>{{ formatDefaultValue(modelValue) }}</span>
+      <template v-else-if="['reference', 'user', 'department', 'location', 'organization', 'asset'].includes(fieldType)">
+        <FieldDisplay
+          :field="field"
+          :value="modelValue"
+        />
       </template>
 
-      <!-- Formula -->
       <span
         v-else-if="fieldType === 'formula'"
         class="font-mono text-gray-600 bg-gray-50 px-1 rounded"
@@ -209,7 +172,6 @@
         {{ modelValue || '-' }}
       </span>
 
-      <!-- Default Text -->
       <span
         v-else
         class="text-sm truncate block"
@@ -225,13 +187,14 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { resolveFieldType } from '@/utils/fieldType'
+import FieldDisplay from '@/components/common/FieldDisplay.vue'
 import { Check, Close, Document, Search } from '@element-plus/icons-vue'
 import dayjs from 'dayjs'
 
 interface FieldConfig {
   prop: string
   label: string
-  type: string // text, number, date, status, user, etc.
+  type: string
   options?: { label: string; value: any; color?: string }[]
   [key: string]: any
 }
@@ -253,7 +216,6 @@ const emit = defineEmits(['update:modelValue', 'change'])
 
 const fieldType = computed(() => resolveFieldType(props.field))
 const placeholder = computed(() => t('form.placeholders.input', { field: props.field.label || '' }))
-
 const options = computed(() => props.field.options || [])
 
 const handleChange = (val: any) => {
@@ -261,28 +223,40 @@ const handleChange = (val: any) => {
   emit('change', val)
 }
 
-// --- Helpers ---
-
 const formatDefaultValue = (val: any): string => {
   if (val === null || val === undefined || val === '') return '-'
   if (Array.isArray(val)) return val.map(formatDefaultValue).join(', ')
   if (typeof val === 'object') {
-    return val.name || val.label || val.title || val.code || val.id || '-'
+    return (
+      val.name ||
+      val.label ||
+      val.title ||
+      val.displayName ||
+      val.display_name ||
+      val.fullName ||
+      val.full_name ||
+      val.username ||
+      val.path ||
+      val.fullPath ||
+      val.full_path ||
+      val.code ||
+      val.id ||
+      '-'
+    )
   }
   return String(val)
 }
 
 const getStatusLabel = (val: any): string => {
   if (Array.isArray(val)) return val.map(getStatusLabel).join(', ')
-  const opt = options.value.find(o => o.value === val)
+  const opt = options.value.find((option) => option.value === val)
   return opt ? opt.label : formatDefaultValue(val)
 }
 
 const getStatusType = (val: any) => {
-  // Simple mapping or use config
-  const opt = options.value.find(o => o.value === val)
-  if (opt?.color) return opt.color // If specialized
-  
+  const opt = options.value.find((option) => option.value === val)
+  if (opt?.color) return opt.color
+
   const map: Record<string, string> = {
     active: 'success',
     enabled: 'success',
@@ -303,20 +277,13 @@ const formatCurrency = (val: any) => {
   if (val === null || val === undefined) return '-'
   return `¥${Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2 })}`
 }
-
-// Mock User helpers - in real app, fetch from store or input object
-const getUserName = (val: any) => typeof val === 'object' ? (val.name || val.username) : val
-const getUserAvatar = (val: any) => typeof val === 'object' ? val.avatar : ''
-const getUserInitials = (val: any) => {
-  const name = getUserName(val)
-  return name ? String(name).substring(0, 1).toUpperCase() : 'U'
-}
 </script>
 
 <style scoped>
 .field-renderer {
   @apply w-full;
 }
+
 .full-width {
   @apply w-full;
 }

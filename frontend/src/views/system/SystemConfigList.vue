@@ -2,12 +2,17 @@
   <div class="system-config-list">
     <div class="page-header">
       <h3>{{ $t('system.config.title') }}</h3>
-      <el-button
-        type="primary"
-        @click="handleCreate"
-      >
-        {{ $t('system.config.addConfig') }}
-      </el-button>
+      <div class="header-actions">
+        <el-button @click="router.push('/system/branding')">
+          {{ $t('system.branding.entry') }}
+        </el-button>
+        <el-button
+          type="primary"
+          @click="handleCreate"
+        >
+          {{ $t('system.config.addConfig') }}
+        </el-button>
+      </div>
     </div>
 
     <!-- Category Tabs -->
@@ -253,6 +258,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { SystemConfig } from '@/api/system'
@@ -288,6 +294,7 @@ const dialogVisible = ref(false)
 const activeCategory = ref('')
 const currentRow = ref<SystemConfigRow | null>(null)
 const { t } = useI18n()
+const router = useRouter()
 
 const filterForm = reactive({
   search: '',
@@ -456,6 +463,11 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
 }
 
 .page-header h3 {

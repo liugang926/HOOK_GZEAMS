@@ -1,5 +1,8 @@
 <template>
-  <div v-if="extension" class="lifecycle-detail-renderer">
+  <div
+    v-if="extension"
+    class="lifecycle-detail-renderer"
+  >
     <!-- Slot: action-bar — StatusActionBar replaces default edit/delete buttons -->
     <template v-if="$slots['action-bar']">
       <!-- Parent provides the slot, we just render inside it -->
@@ -24,7 +27,10 @@
     </el-card>
 
     <!-- Slot: after-sections — SubTablePanel + Cost Breakdown -->
-    <div v-if="extension.subTable" class="lifecycle-sub-table mt-4">
+    <div
+      v-if="extension.subTable"
+      class="lifecycle-sub-table mt-4"
+    >
       <SubTablePanel
         :title="t('common.labels.items')"
         :columns="subTableColumns"
@@ -45,7 +51,10 @@
       <template #header>
         <span>{{ t('assets.lifecycle.maintenance.form.costBreakdown') }}</span>
       </template>
-      <el-descriptions :column="4" border>
+      <el-descriptions
+        :column="4"
+        border
+      >
         <el-descriptions-item :label="t('assets.lifecycle.maintenance.form.laborCost')">
           ¥ {{ recordData.laborCost || recordData.labor_cost || 0 }}
         </el-descriptions-item>

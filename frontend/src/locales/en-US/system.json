@@ -254,6 +254,42 @@
             }
         }
     },
+    "branding": {
+        "title": "Branding Settings",
+        "subtitle": "Manage the system theme, application identity, logo assets, and login experience from one place.",
+        "entry": "Branding",
+        "sections": {
+            "identity": "Identity",
+            "theme": "Theme Tokens",
+            "login": "Login Experience",
+            "loginI18n": "Login Copy by Locale",
+            "assets": "Logo & Icon Assets",
+            "preview": "Live Preview"
+        },
+        "fields": {
+            "appName": "Application Name",
+            "appShortName": "Short Name",
+            "appTagline": "Tagline",
+            "appIconText": "Fallback Mark",
+            "primaryColor": "Primary Color",
+            "accentColor": "Accent Color",
+            "sidebarGradientStart": "Sidebar Gradient Start",
+            "sidebarGradientEnd": "Sidebar Gradient End",
+            "borderRadius": "Border Radius",
+            "darkMode": "Dark Mode",
+            "loginTitle": "Login Title",
+            "loginSubtitle": "Login Subtitle",
+            "copyright": "Footer Copyright"
+        },
+        "actions": {
+            "upload": "Upload",
+            "remove": "Remove"
+        },
+        "preview": {
+            "primaryAction": "Primary Action",
+            "radius": "Component Radius"
+        }
+    },
     "businessObject": {
         "title": "Business Objects",
         "create": "Create Business Object",

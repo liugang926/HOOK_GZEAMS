@@ -109,7 +109,10 @@
         <template #header>
           <span>{{ $t('assets.lifecycle.maintenance.form.costBreakdown') }}</span>
         </template>
-        <el-descriptions :column="4" border>
+        <el-descriptions
+          :column="4"
+          border
+        >
           <el-descriptions-item :label="$t('assets.lifecycle.maintenance.form.laborCost')">
             ¥ {{ detail.laborCost || 0 }}
           </el-descriptions-item>

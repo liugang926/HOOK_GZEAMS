@@ -172,6 +172,9 @@ class AssetListSerializer(BaseListSerializer):
     asset_code = serializers.CharField(read_only=True)
     asset_name = serializers.CharField(read_only=True)
     asset_category_name = serializers.CharField(source='asset_category.name', read_only=True)
+    department_name = serializers.CharField(source='department.name', read_only=True, allow_null=True)
+    location_path = serializers.CharField(source='location.path', read_only=True, allow_null=True)
+    custodian_username = serializers.CharField(source='custodian.username', read_only=True, allow_null=True)
     asset_status = serializers.CharField(read_only=True)
     asset_status_display = serializers.SerializerMethodField()
     purchase_price = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
@@ -181,6 +184,8 @@ class AssetListSerializer(BaseListSerializer):
         model = Asset
         fields = BaseListSerializer.Meta.fields + [
             'asset_code', 'asset_name', 'asset_category_name',
+            'department', 'location', 'custodian',
+            'department_name', 'location_path', 'custodian_username',
             'specification', 'brand', 'model',
             'purchase_price', 'current_value',
             'asset_status', 'asset_status_display',

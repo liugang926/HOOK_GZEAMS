@@ -15,6 +15,7 @@ from apps.system.viewsets import (
     LanguageViewSet,  # i18n
     TranslationViewSet,  # i18n
 )
+from apps.system.viewsets.branding import BrandingSettingsAPIView
 from apps.system.viewsets.system_file import SystemFileViewSet
 from apps.system.viewsets.menu import MenuViewSet  # Dynamic menu system
 from apps.system.viewsets.activity_log_viewsets import ActivityLogViewSet
@@ -75,6 +76,7 @@ app_name = 'system'
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('branding/', BrandingSettingsAPIView.as_view(), name='branding-settings'),
     # Custom dynamic object routing patterns with {code} parameter
     # These must come after the router to avoid conflicts
     path('objects/<str:code>/', ObjectRouterViewSet.as_view({'get': 'list', 'post': 'create'}), name='object-router-list'),

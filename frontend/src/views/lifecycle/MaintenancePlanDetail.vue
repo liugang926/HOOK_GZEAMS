@@ -1,41 +1,96 @@
 <template>
   <div class="page-container">
-    <div v-if="loading"><el-skeleton :rows="8" animated /></div>
-    <div v-else-if="detail" class="detail-wrapper">
+    <div v-if="loading">
+      <el-skeleton
+        :rows="8"
+        animated
+      />
+    </div>
+    <div
+      v-else-if="detail"
+      class="detail-wrapper"
+    >
       <!-- Header -->
       <div class="page-header">
         <div class="header-left">
-          <el-button :icon="ArrowLeft" @click="router.back()">{{ $t('common.actions.back') }}</el-button>
-          <h2 class="page-title">{{ detail.planName || $t('assets.lifecycle.maintenancePlan.detailTitle') }}</h2>
-          <el-tag :type="getStatusType(detail.status)" class="ml-2">{{ getStatusLabel(detail.status) }}</el-tag>
+          <el-button
+            :icon="ArrowLeft"
+            @click="router.back()"
+          >
+            {{ $t('common.actions.back') }}
+          </el-button>
+          <h2 class="page-title">
+            {{ detail.planName || $t('assets.lifecycle.maintenancePlan.detailTitle') }}
+          </h2>
+          <el-tag
+            :type="getStatusType(detail.status)"
+            class="ml-2"
+          >
+            {{ getStatusLabel(detail.status) }}
+          </el-tag>
         </div>
       </div>
 
       <!-- Workflow Actions -->
-      <StatusActionBar :status="detail.status" :actions="workflowActions" @action-success="handleRefresh" />
+      <StatusActionBar
+        :status="detail.status"
+        :actions="workflowActions"
+        @action-success="handleRefresh"
+      />
 
       <!-- Basic Info -->
       <el-card class="info-card">
-        <el-descriptions :column="3" border>
-          <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.columns.planCode')">{{ detail.planCode }}</el-descriptions-item>
-          <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.columns.planName')">{{ detail.planName }}</el-descriptions-item>
+        <el-descriptions
+          :column="3"
+          border
+        >
+          <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.columns.planCode')">
+            {{ detail.planCode }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.columns.planName')">
+            {{ detail.planName }}
+          </el-descriptions-item>
           <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.columns.cycleType')">
             {{ t(`assets.lifecycle.maintenancePlan.cycle.${detail.cycleType}`) || detail.cycleType }}
-            <template v-if="detail.cycleValue > 1">&nbsp;&times;&nbsp;{{ detail.cycleValue }}</template>
+            <template v-if="detail.cycleValue > 1">
+              &nbsp;&times;&nbsp;{{ detail.cycleValue }}
+            </template>
           </el-descriptions-item>
-          <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.columns.startDate')">{{ detail.startDate }}</el-descriptions-item>
-          <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.form.endDate')">{{ detail.endDate || '—' }}</el-descriptions-item>
-          <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.columns.estimatedHours')">{{ detail.estimatedHours }} h</el-descriptions-item>
+          <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.columns.startDate')">
+            {{ detail.startDate }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.form.endDate')">
+            {{ detail.endDate || '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.columns.estimatedHours')">
+            {{ detail.estimatedHours }} h
+          </el-descriptions-item>
           <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.form.remindDaysBefore')">
             {{ t('assets.lifecycle.maintenancePlan.form.daysBefore', { days: detail.remindDaysBefore }) }}
           </el-descriptions-item>
-          <el-descriptions-item :label="$t('assets.lifecycle.maintenancePlan.form.maintenanceContent')" :span="3">{{ detail.maintenanceContent }}</el-descriptions-item>
-          <el-descriptions-item v-if="detail.remark" :label="$t('assets.lifecycle.maintenancePlan.form.remark')" :span="3">{{ detail.remark }}</el-descriptions-item>
+          <el-descriptions-item
+            :label="$t('assets.lifecycle.maintenancePlan.form.maintenanceContent')"
+            :span="3"
+          >
+            {{ detail.maintenanceContent }}
+          </el-descriptions-item>
+          <el-descriptions-item
+            v-if="detail.remark"
+            :label="$t('assets.lifecycle.maintenancePlan.form.remark')"
+            :span="3"
+          >
+            {{ detail.remark }}
+          </el-descriptions-item>
         </el-descriptions>
       </el-card>
 
       <!-- Last Generate Result -->
-      <el-alert v-if="lastGenerateCount !== null" type="success" class="mt-4" :closable="true">
+      <el-alert
+        v-if="lastGenerateCount !== null"
+        type="success"
+        class="mt-4"
+        :closable="true"
+      >
         {{ $t('assets.lifecycle.maintenancePlan.messages.generateTasksSuccess', { count: lastGenerateCount }) }}
       </el-alert>
     </div>

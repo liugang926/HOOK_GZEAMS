@@ -8,15 +8,26 @@
       <span>{{ t('system.pageLayout.designer.panel.properties') }}</span>
     </div>
     <div class="panel-content">
-      <div v-if="!selectedItem" class="no-selection">
-        <el-empty :description="t('system.pageLayout.designer.empty.selectTarget')" :image-size="80" />
+      <div
+        v-if="!selectedItem"
+        class="no-selection"
+      >
+        <el-empty
+          :description="t('system.pageLayout.designer.empty.selectTarget')"
+          :image-size="80"
+        />
       </div>
 
-      <div v-else-if="elementType === 'field'" class="property-form">
+      <div
+        v-else-if="elementType === 'field'"
+        class="property-form"
+      >
         <div class="property-header">
           <el-icon><Edit /></el-icon>
           <span>{{ t('system.pageLayout.designer.panel.fieldProperties') }}</span>
-          <el-tag size="small">{{ selectedFieldCode }}</el-tag>
+          <el-tag size="small">
+            {{ selectedFieldCode }}
+          </el-tag>
         </div>
         <FieldPropertyEditor
           :model-value="fieldProps"
@@ -31,7 +42,10 @@
         />
       </div>
 
-      <div v-else class="property-form">
+      <div
+        v-else
+        class="property-form"
+      >
         <div class="property-header">
           <el-icon><Grid /></el-icon>
           <span>{{ t('system.pageLayout.designer.panel.sectionProperties') }}</span>

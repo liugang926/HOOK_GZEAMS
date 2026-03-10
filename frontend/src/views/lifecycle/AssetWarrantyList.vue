@@ -14,14 +14,20 @@
       @row-click="handleRowClick"
     >
       <template #header-actions>
-        <el-button type="primary" @click="handleCreate">
+        <el-button
+          type="primary"
+          @click="handleCreate"
+        >
           {{ $t('assets.lifecycle.assetWarranty.createButton') }}
         </el-button>
       </template>
 
       <!-- Status Column -->
       <template #column-status="{ row }">
-        <el-tag :type="getStatusType(row.status)" size="small">
+        <el-tag
+          :type="getStatusType(row.status)"
+          size="small"
+        >
           {{ $t(`assets.lifecycle.assetWarranty.status.${row.status}`) }}
         </el-tag>
       </template>
@@ -52,11 +58,11 @@
           {{ $t('assets.lifecycle.assetWarranty.actions.renew') }}
         </el-button>
         <el-button
+          v-if="!['cancelled', 'expired'].includes(row.status)"
           type="danger"
           size="small"
           link
           @click.stop="handleCancel(row)"
-          v-if="!['cancelled', 'expired'].includes(row.status)"
         >
           {{ $t('assets.lifecycle.assetWarranty.actions.cancel') }}
         </el-button>

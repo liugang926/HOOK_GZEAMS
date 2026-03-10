@@ -1,6 +1,8 @@
 import { normalizeFieldType } from '@/utils/fieldType'
 
 type AnyRecord = Record<string, any>
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const INTEGER_ID_PATTERN = /^\d+$/
 
 const REFERENCE_TYPE_OBJECT_CODE_MAP: Record<string, string> = {
   user: 'User',
@@ -49,12 +51,16 @@ export const resolveReferenceObjectCode = (field: AnyRecord | null | undefined):
   const explicitCode =
     field.referenceObject ||
     field.reference_object ||
+    field.targetObjectCode ||
+    field.target_object_code ||
     field.reference_model_path ||
     field.referenceModelPath ||
     field.relatedObject ||
     field.related_object ||
     componentProps.referenceObject ||
     componentProps.reference_object ||
+    componentProps.targetObjectCode ||
+    componentProps.target_object_code ||
     componentProps.relatedObject ||
     componentProps.related_object ||
     ''
@@ -117,8 +123,11 @@ export const isReferenceLikeField = (field: AnyRecord | null | undefined): boole
 
 const toIdString = (value: unknown): string => {
   if (value === undefined || value === null) return ''
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
   const id = String(value).trim()
-  return id
+  if (!id) return ''
+  if (UUID_PATTERN.test(id) || INTEGER_ID_PATTERN.test(id)) return id
+  return ''
 }
 
 export const extractReferenceIds = (value: unknown): string[] => {

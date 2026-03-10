@@ -5,8 +5,8 @@
     without losing the user's current context (e.g. List Page or Parent Detail Page).
   -->
   <component
-    v-if="visible"
     :is="displayMode === 'Compact' ? 'el-dialog' : 'el-drawer'"
+    v-if="visible"
     v-model="visible"
     v-focus-trap.autofocus="visible"
     :title="title"

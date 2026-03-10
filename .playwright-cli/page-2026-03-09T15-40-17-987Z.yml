@@ -1,0 +1,15 @@
+- generic [ref=e6]:
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - img [ref=e10]
+      - heading "GZEAMS" [level=2] [ref=e15]
+    - paragraph [ref=e16]: 钩子固定资产管理系统
+    - generic [ref=e17]:
+      - textbox "用户名" [ref=e23]
+      - textbox "密码" [ref=e29]
+      - button "登录" [ref=e32] [cursor=pointer]:
+        - generic [ref=e33]: 登录
+      - generic [ref=e34]:
+        - generic [ref=e35] [cursor=pointer]: 忘记密码?
+        - generic [ref=e36] [cursor=pointer]: 联系管理员
+  - generic [ref=e37]: © 2026 GZEAMS Enterprise Asset Management System. All Rights Reserved.

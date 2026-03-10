@@ -228,6 +228,7 @@ interface SubTableColumn {
 const props = defineProps<{
   field: FieldLike
   value: any
+  deferReferenceResolve?: boolean
 }>()
 const { t } = useI18n()
 
@@ -308,6 +309,14 @@ const referenceEntries = computed<ReferenceEntry[]>(() => {
         return toReferenceEntry(id, candidate)
       })
       .filter((item): item is ReferenceEntry => !!item)
+  }
+
+  const primitiveLabel = resolveReferenceLabel(props.value, referenceDisplayField.value)
+  if (primitiveLabel) {
+    const fallback = toReferenceEntry('', {
+      [referenceDisplayField.value || 'name']: primitiveLabel
+    })
+    return fallback ? [fallback] : []
   }
 
   if (!props.value || typeof props.value !== 'object') return []
@@ -626,6 +635,15 @@ watch(
 
     const missingIds = ids.filter((id) => !referenceValueMap.value[id] && !referenceValueFromInput.value[id])
     if (!missingIds.length) return
+
+    if (props.deferReferenceResolve) {
+      const needsHydration = missingIds.some((id) => {
+        const inputValue = referenceValueFromInput.value[id]
+        const inputLabel = resolveReferenceLabel(inputValue, referenceDisplayField.value)
+        return !inputLabel || inputLabel === id
+      })
+      if (!needsHydration) return
+    }
 
     const token = referenceRequestToken.value + 1
     referenceRequestToken.value = token

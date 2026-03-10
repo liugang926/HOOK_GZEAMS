@@ -4,7 +4,10 @@
     A reusable workflow state transition button bar.
     Dynamically shows/hides action buttons based on the current record status.
   -->
-  <div v-if="visibleActions.length > 0" class="status-action-bar">
+  <div
+    v-if="visibleActions.length > 0"
+    class="status-action-bar"
+  >
     <el-button
       v-for="action in visibleActions"
       :key="action.key"

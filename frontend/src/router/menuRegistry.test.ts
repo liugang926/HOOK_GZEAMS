@@ -30,8 +30,8 @@ describe('MenuRegistryManager', () => {
             makeObj('PurchaseOrder', { menuCategory: 'financial' }),
         ])
 
-        const coreGroup = tree.find(g => g.key === 'core')
-        const financialGroup = tree.find(g => g.key === 'financial')
+        const coreGroup = tree.find(g => g.code === 'core')
+        const financialGroup = tree.find(g => g.code === 'financial')
 
         expect(coreGroup).toBeDefined()
         expect(coreGroup!.items.some(i => i.code === 'Asset')).toBe(true)
@@ -82,7 +82,7 @@ describe('MenuRegistryManager', () => {
             makeObj('CustomWidget'),
         ])
 
-        const otherGroup = tree.find(g => g.key === 'other')
+        const otherGroup = tree.find(g => g.code === 'other')
         expect(otherGroup).toBeDefined()
         expect(otherGroup!.items.some(i => i.code === 'CustomWidget')).toBe(true)
     })

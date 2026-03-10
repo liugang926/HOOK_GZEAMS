@@ -81,9 +81,14 @@ export interface TableColumn {
   fieldCode?: string
   prop: string
   label: string
+  dataKey?: string
   type?: string // Legacy field type (text, user, status, etc.)
   fieldType?: string // Preferred field type for rendering
   options?: SelectOption[]
+  referenceObject?: string
+  targetObjectCode?: string
+  referenceDisplayField?: string
+  referenceSecondaryField?: string
   width?: number | string
   defaultWidth?: number | string
   minWidth?: number | string

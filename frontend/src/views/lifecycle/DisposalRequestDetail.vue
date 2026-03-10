@@ -1,24 +1,52 @@
 <template>
   <div class="page-container">
-    <div v-if="loading" class="loading-container">
-      <el-skeleton :rows="8" animated />
+    <div
+      v-if="loading"
+      class="loading-container"
+    >
+      <el-skeleton
+        :rows="8"
+        animated
+      />
     </div>
-    <div v-else-if="detail" class="detail-wrapper">
+    <div
+      v-else-if="detail"
+      class="detail-wrapper"
+    >
       <!-- Header -->
       <div class="page-header">
         <div class="header-left">
-          <el-button :icon="ArrowLeft" @click="router.back()">{{ $t('common.actions.back') }}</el-button>
-          <h2 class="page-title">{{ detail.requestNo || $t('assets.lifecycle.disposalRequest.detailTitle') }}</h2>
-          <el-tag :type="getStatusType(detail.status)" class="ml-2">{{ getStatusLabel(detail.status) }}</el-tag>
+          <el-button
+            :icon="ArrowLeft"
+            @click="router.back()"
+          >
+            {{ $t('common.actions.back') }}
+          </el-button>
+          <h2 class="page-title">
+            {{ detail.requestNo || $t('assets.lifecycle.disposalRequest.detailTitle') }}
+          </h2>
+          <el-tag
+            :type="getStatusType(detail.status)"
+            class="ml-2"
+          >
+            {{ getStatusLabel(detail.status) }}
+          </el-tag>
         </div>
       </div>
 
       <!-- Workflow Actions -->
-      <StatusActionBar :status="detail.status" :actions="workflowActions" @action-success="handleRefresh" />
+      <StatusActionBar
+        :status="detail.status"
+        :actions="workflowActions"
+        @action-success="handleRefresh"
+      />
 
       <!-- Status Steps -->
       <el-card class="steps-card mb-4">
-        <el-steps :active="getStepIndex(detail.status)" finish-status="success">
+        <el-steps
+          :active="getStepIndex(detail.status)"
+          finish-status="success"
+        >
           <el-step :title="$t('assets.lifecycle.disposalRequest.status.draft')" />
           <el-step :title="$t('assets.lifecycle.disposalRequest.status.submitted')" />
           <el-step :title="$t('assets.lifecycle.disposalRequest.status.appraising')" />
@@ -29,11 +57,25 @@
 
       <!-- Basic Info -->
       <el-card class="info-card">
-        <el-descriptions :column="3" border>
-          <el-descriptions-item :label="$t('assets.lifecycle.disposalRequest.columns.requestNo')">{{ detail.requestNo }}</el-descriptions-item>
-          <el-descriptions-item :label="$t('assets.lifecycle.disposalRequest.columns.requesterDisplay')">{{ detail.requesterDisplay || '—' }}</el-descriptions-item>
-          <el-descriptions-item :label="$t('assets.lifecycle.disposalRequest.columns.createdAt')">{{ detail.createdAt }}</el-descriptions-item>
-          <el-descriptions-item :label="$t('assets.lifecycle.disposalRequest.form.disposalReason')" :span="3">{{ detail.disposalReason }}</el-descriptions-item>
+        <el-descriptions
+          :column="3"
+          border
+        >
+          <el-descriptions-item :label="$t('assets.lifecycle.disposalRequest.columns.requestNo')">
+            {{ detail.requestNo }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('assets.lifecycle.disposalRequest.columns.requesterDisplay')">
+            {{ detail.requesterDisplay || '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="$t('assets.lifecycle.disposalRequest.columns.createdAt')">
+            {{ detail.createdAt }}
+          </el-descriptions-item>
+          <el-descriptions-item
+            :label="$t('assets.lifecycle.disposalRequest.form.disposalReason')"
+            :span="3"
+          >
+            {{ detail.disposalReason }}
+          </el-descriptions-item>
         </el-descriptions>
       </el-card>
 

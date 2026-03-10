@@ -12,17 +12,29 @@
       >
         <div class="sidebar-header">
           <h1 class="logo">
-            <span class="logo-icon">{{ $t('common.brand.icon') }}</span>
+            <img
+              v-if="brandingLogoUrl"
+              :src="brandingLogoUrl"
+              :alt="brandName"
+              class="logo-image"
+            >
+            <span
+              v-else
+              class="logo-icon"
+            >{{ brandIconText }}</span>
             <transition name="fade">
               <span
                 v-if="!isCollapsed"
                 class="logo-text"
-              >{{ $t('common.brand.name') }}</span>
+              >{{ brandName }}</span>
             </transition>
           </h1>
         </div>
 
-        <div v-if="!isCollapsed" class="sidebar-search">
+        <div
+          v-if="!isCollapsed"
+          class="sidebar-search"
+        >
           <el-input
             v-model="menuSearchQuery"
             :placeholder="$t('common.actions.search')"
@@ -130,7 +142,17 @@
       >
         <div class="drawer-menu-container">
           <div class="drawer-logo">
-            <span class="logo-icon">{{ $t('common.brand.icon') }}</span> {{ $t('common.brand.name') }}
+            <img
+              v-if="brandingLogoUrl"
+              :src="brandingLogoUrl"
+              :alt="brandName"
+              class="drawer-logo-image"
+            >
+            <span
+              v-else
+              class="logo-icon"
+            >{{ brandIconText }}</span>
+            {{ brandName }}
           </div>
           <el-menu
             :default-active="activeMenu"
@@ -225,21 +247,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, shallowRef, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Menu, Fold, Expand, Odometer } from '@element-plus/icons-vue'
 import NotificationBell from '@/components/layout/NotificationBell.vue'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
-import { businessObjectApi, menuApi, type BusinessObject, type MenuGroup, type MenuItem } from '@/api/system'
-import { translateObjectCodeLabel, resolveObjectDisplayName } from '@/utils/objectDisplay'
-import { MenuRegistryManager, type RegistryMenuCategory, type RegistryMenuItem } from '@/router/menuRegistry'
+import { resolveObjectDisplayName } from '@/utils/objectDisplay'
+import { useMenuStore } from '@/stores/menu'
+import { useFeatureFlagStore } from '@/stores/featureFlag'
+import { useBrandingStore } from '@/stores/branding'
 import * as ElementPlusIcons from '@element-plus/icons-vue'
-
-type LocalMenuItem = RegistryMenuItem & Partial<MenuItem>
-type LocalMenuGroup = RegistryMenuCategory & Partial<MenuGroup>
-
-type AnyRecord = Record<string, unknown>
 
 const route = useRoute()
 const { t, te } = useI18n()
@@ -248,26 +266,25 @@ const drawerVisible = ref(false)
 const isMobile = ref(false)
 const isCollapsed = ref(false)
 
-// Dynamic menu state
-const menuGroups = shallowRef<LocalMenuGroup[]>([])
-const isLoading = ref(false)
+// ---------------------------------------------------------------------------
+// Menu Store (replaces 170+ lines of inline menu logic)
+// ---------------------------------------------------------------------------
+const menuStore = useMenuStore()
+const featureFlagStore = useFeatureFlagStore()
+const brandingStore = useBrandingStore()
+const brandName = computed(() => brandingStore.brandName)
+const brandIconText = computed(() => brandingStore.brandIconText)
+const brandingLogoUrl = computed(() => brandingStore.sidebarLogoUrl)
 
-const menuSearchQuery = ref('')
-const filteredMenuGroups = computed(() => {
-  if (!menuSearchQuery.value) return menuGroups.value
-  
-  const query = menuSearchQuery.value.toLowerCase()
-  return menuGroups.value.map(group => {
-    const groupMatches = getGroupLabel(group).toLowerCase().includes(query)
-    const filteredItems = group.items.filter(item => 
-      groupMatches ||
-      getItemLabel(item).toLowerCase().includes(query) ||
-      String(item.name || '').toLowerCase().includes(query) || 
-      String(item.code || '').toLowerCase().includes(query)
-    )
-    return { ...group, items: filteredItems }
-  }).filter(group => group.items.length > 0)
+// Bind template refs directly to store
+const menuSearchQuery = computed({
+  get: () => menuStore.searchQuery,
+  set: (val: string) => { menuStore.searchQuery = val },
 })
+const filteredMenuGroups = computed(() => menuStore.filteredMenuGroups)
+const getGroupLabel = menuStore.getGroupLabel
+const getItemLabel = menuStore.getItemLabel
+const getMenuGroupIdentity = menuStore.getMenuGroupIdentity
 
 // ============================================================================
 // Auto-collapse sidebar on designer routes
@@ -349,183 +366,18 @@ const resolveIcon = (iconName: string) => {
 }
 
 // ============================================================================
-// Menu label translation (reused from previous implementation)
-// ============================================================================
-const getGroupLabel = (group: LocalMenuGroup) => {
-  const groupName = String(group.name || '').trim()
-  const explicitTranslationKey = String((group as MenuGroup).translationKey || '').trim()
-
-  if (explicitTranslationKey && te(explicitTranslationKey)) {
-    return t(explicitTranslationKey)
-  }
-
-  if (group.code) {
-    const translationKey = `menu.categories.${group.code}`
-    if (te(translationKey)) {
-      return t(translationKey)
-    }
-    // Fallback if the registry emits the translation key directly
-    if (groupName.startsWith('menu.categories.') && te(groupName)) {
-      return t(groupName)
-    }
-  }
-
-  return groupName
-}
-
-const getItemLabel = (item: LocalMenuItem) => {
-  const itemCode = String(item.code || '').trim()
-  const itemName = String(item.name || '').trim()
-  const explicitTranslationKey = String((item as MenuItem).translationKey || '').trim()
-
-  if (explicitTranslationKey && te(explicitTranslationKey)) {
-    return t(explicitTranslationKey)
-  }
-
-  if (itemCode) {
-    const objectCodeLabel = translateObjectCodeLabel(itemCode, t as (key: string) => string, te)
-    if (objectCodeLabel) {
-      return objectCodeLabel
-    }
-
-    const menuKey = `menu.menu.${itemCode}`
-    if (te(menuKey)) {
-      return t(menuKey)
-    }
-
-    const routeKey = `menu.routes.${itemCode}`
-    if (te(routeKey)) {
-      return t(routeKey)
-    }
-  }
-
-  return itemName
-}
-
-const getMenuGroupIdentity = (group: LocalMenuGroup, index: number): string => {
-  const code = String(group.code || '').trim()
-  if (code) return code
-
-  const name = String(group.name || '').trim()
-  if (name) return `${name}-${index}`
-
-  return `group-${index}`
-}
-
-// ============================================================================
 // Responsive
 // ============================================================================
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 768
 }
 
-// ============================================================================
-// Menu data fetching (unchanged logic)
-// ============================================================================
-const normalizeBusinessObjects = (payload: AnyRecord): BusinessObject[] => {
-  const source: AnyRecord[] = []
-  if (Array.isArray(payload)) source.push(...payload)
-  if (Array.isArray(payload?.results)) source.push(...payload.results)
-  if (Array.isArray(payload?.hardcoded)) source.push(...payload.hardcoded)
-  if (Array.isArray(payload?.custom)) source.push(...payload.custom)
-
-  const normalized: BusinessObject[] = []
-  const seen = new Set<string>()
-  for (const item of source) {
-    const code = String(item?.code || '').trim()
-    if (!code || seen.has(code)) continue
-    seen.add(code)
-    normalized.push({
-      id: String(item?.id || code),
-      code,
-      name: String(item?.name || code),
-      nameEn: String(item?.nameEn || item?.name_en || ''),
-      description: String(item?.description || ''),
-      enableWorkflow: item?.enableWorkflow === true,
-      enableVersion: item?.enableVersion === true,
-      enableSoftDelete: item?.enableSoftDelete !== false,
-      isHardcoded: item?.isHardcoded === true || item?.is_hardcoded === true || item?.type === 'hardcoded',
-      djangoModelPath: String(item?.djangoModelPath || item?.django_model_path || item?.modelPath || ''),
-      tableName: String(item?.tableName || item?.table_name || ''),
-      fieldCount: Number(item?.fieldCount || item?.field_count || 0),
-      layoutCount: Number(item?.layoutCount || item?.layout_count || 0),
-      menuCategory: String(item?.menuCategory || item?.menu_category || ''),
-      isMenuHidden: item?.isMenuHidden === true || item?.is_menu_hidden === true,
-    })
-  }
-  return normalized
-}
-
-const normalizeMenuGroups = (payload: AnyRecord): LocalMenuGroup[] => {
-  const source = Array.isArray(payload?.groups) ? (payload.groups as AnyRecord[]) : []
-
-  return source
-    .map((group, groupIndex) => {
-      const itemsSource = Array.isArray(group?.items) ? (group.items as AnyRecord[]) : []
-      const items: LocalMenuItem[] = itemsSource.map((item, itemIndex) => ({
-        code: String(item?.code || `item-${groupIndex}-${itemIndex}`),
-        name: String(item?.name || item?.translationKey || item?.code || ''),
-        url: String(item?.url || ''),
-        icon: String(item?.icon || ''),
-        order: Number(item?.order || itemIndex + 1),
-        group: String(item?.group || item?.groupCode || group?.code || ''),
-        groupCode: String(item?.groupCode || group?.code || ''),
-        groupTranslationKey: String(item?.groupTranslationKey || group?.translationKey || ''),
-        translationKey: String(item?.translationKey || ''),
-        badge: item?.badge,
-      }))
-
-      return {
-        id: String(group?.code || group?.name || `group-${groupIndex}`),
-        code: String(group?.code || ''),
-        name: String(group?.name || group?.translationKey || ''),
-        translationKey: String(group?.translationKey || ''),
-        icon: String(group?.icon || 'Menu'),
-        order: Number(group?.order || groupIndex + 1),
-        items,
-      }
-    })
-    .filter((group) => group.items.length > 0)
-}
-
-const fetchMenu = async () => {
-  if (isLoading.value) return
-  isLoading.value = true
-
-  try {
-    const menuResponse = await menuApi.get()
-    const normalizedGroups = normalizeMenuGroups((menuResponse || {}) as unknown as AnyRecord)
-
-    if (normalizedGroups.length > 0) {
-      menuGroups.value = normalizedGroups
-      return
-    }
-
-    const objectsResponse = await businessObjectApi.list({ pageSize: 500 })
-    const objects = normalizeBusinessObjects((objectsResponse || {}) as unknown as AnyRecord)
-    const registry = new MenuRegistryManager()
-    menuGroups.value = registry.generateMenuTree(objects)
-  } catch (error) {
-    console.error(error)
-
-    try {
-      const objectsResponse = await businessObjectApi.list({ pageSize: 500 })
-      const objects = normalizeBusinessObjects((objectsResponse || {}) as unknown as AnyRecord)
-      const registry = new MenuRegistryManager()
-      menuGroups.value = registry.generateMenuTree(objects)
-    } catch (fallbackError) {
-      console.error(fallbackError)
-      menuGroups.value = []
-    }
-  } finally {
-    isLoading.value = false
-  }
-}
-
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
-  fetchMenu()
+  brandingStore.initialize(true)
+  menuStore.fetchMenu()
+  featureFlagStore.loadFlags()
 })
 
 onUnmounted(() => {
@@ -540,7 +392,7 @@ onUnmounted(() => {
    ==================================================================== */
 .main-layout {
   min-height: 100vh;
-  --sidebar-bg: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  --sidebar-bg: var(--brand-sidebar-bg, linear-gradient(180deg, #1e293b 0%, #0f172a 100%));
   --sidebar-width: 220px;
   --sidebar-collapsed-width: 64px;
   --header-height: 56px;
@@ -583,10 +435,20 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+.logo-image {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px;
+}
+
 .logo-text {
   font-size: 18px;
   font-weight: 700;
-  background: linear-gradient(135deg, #60a5fa, #a78bfa);
+  background: var(--brand-gradient-primary, linear-gradient(135deg, #60a5fa, #a78bfa));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -738,6 +600,13 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid #e6e6e6;
+}
+
+.drawer-logo-image {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 8px;
 }
 
 .drawer-logo .logo-icon {

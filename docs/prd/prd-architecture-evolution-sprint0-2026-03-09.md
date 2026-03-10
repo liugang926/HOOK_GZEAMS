@@ -18,11 +18,11 @@
 |--------|------|---------|
 | 布局设计器 (`WysiwygLayoutDesigner`) | ✅ 已良好拆解为 38 个子文件，主组件仅 599 行 | 🟢 低 |
 | 菜单注册表 (`menuRegistry.ts`) | ✅ 已实现 `MenuRegistryManager` 类 (133 行) | 🟢 低 |
-| 路由文件 (`router/index.ts`) | ⚠️ 595 行，含大量 Legacy Alias，未接入 `MenuRegistryManager` | 🟡 中 |
+| 路由文件 (`router/index.ts`) | ✅ 已通过 `useMenuStore` 接入 `MenuRegistryManager`，Legacy 路由保留为 redirect | 🟢 低 |
 | 后端 Service 层 | ⚠️ 多文件超 25KB，职责边界模糊 | 🟡 中 |
-| `BaseDetailPage.vue` | ✅ 已拆解为 721 行壳体 + 6 Composables + 3 子组件 | � 低 |
+| `BaseDetailPage.vue` | ✅ 已拆解为 721 行壳体 + 6 Composables + 3 子组件 | 🟢 低 |
 | 前端性能基线 | ❌ 完全缺失 | 🔴 高 |
-| i18n 纪律 | ❌ 无 ESLint 硬编码检测，存量硬编码文案 | 🟡 中 |
+| i18n 纪律 | ✅ 已有完整 i18n 脚本链（`i18n:check`/`i18n:coverage`/`i18n:parity`/`i18n:defects:p1`），动态域覆盖率 100% | 🟢 低 |
 | 测试策略 | ✅ `platform/layout/` 有 1:1 测试覆盖 (20 test files) | 🟢 低 |
 
 ---
@@ -137,20 +137,26 @@ BaseDetailPage.vue                          721 行 (壳体 + 模板 + 骨架屏
 
 **目标**: 将已存在的 `MenuRegistryManager` 接入实际导航流，并开始清退 Legacy 路由。
 
-**Phase A (Sprint 0)**:
-1. 在应用启动时调用 `MenuRegistryManager.generateMenuTree()` 生成菜单数据
-2. Sidebar 组件消费 `RegistryMenuCategory[]` 数据渲染导航
-3. Legacy 路由保留为 **redirect fallback**（`redirect: to => ...`）
-4. 新增 `dynamicRouteLoader.ts` 工具函数，基于 `MenuRegistryManager` 输出调用 `router.addRoute()`
+**Phase A (Sprint 0) — ✅ 已完成**:
+
+> 实际实施方案与原计划略有不同。经代码审计发现 `MainLayout.vue` 已使用 `menuApi.get()` + `MenuRegistryManager` 双重 fallback，实际差距是菜单逻辑耦合在 Layout 内部。
+
+| 原计划 | 实际完成 |
+|--------|---------|
+| 启动时调用 `MenuRegistryManager.generateMenuTree()` | ✅ 已在 `useMenuStore.fetchMenu()` 中实现（Backend API 优先 + Registry fallback） |
+| Sidebar 组件消费 `RegistryMenuCategory[]` | ✅ `MainLayout.vue` 消费 `useMenuStore` 的 `filteredMenuGroups` |
+| 新增 `dynamicRouteLoader.ts` | ⏭ 不再需要 — 统一 `objects/:code` 动态路由已足够，无需运行时 `addRoute()` |
+| Legacy 路由保留为 redirect fallback | ✅ 已确认 3 套 Legacy 别名表正常工作 |
+
+完成的工作：
+1. 新建 `stores/menu.ts` — 提取了 `MainLayout.vue` 中 170+ 行菜单逻辑
+2. 重构 `MainLayout.vue` — script 部分从 ~308 行降至 ~150 行
+3. 修复 `menuRegistry.test.ts` 历史 bug（`g.key` → `g.code`）
+4. 新增 `stores/__tests__/useMenuStore.test.ts`（10 个测试用例）
 
 **Phase B (Sprint 2 后)**:
 1. 逐步删除 `ADDITIONAL_BUSINESS_OBJECT_ROUTES`, `LEGACY_OBJECT_LIST_CREATE_ROUTES`, `LEGACY_OBJECT_LIST_ONLY_ROUTES` 中的条目
 2. 最终 `router/index.ts` 仅保留：认证路由、Dashboard、动态 `objects/:code/` 通配路由、系统管理路由
-
-**验收标准**:
-- [ ] Sidebar 导航由 `MenuRegistryManager` 动态生成
-- [ ] 所有旧 URL 通过 redirect 仍可访问（无断链）
-- [ ] `menuRegistry.test.ts` 扩展覆盖新增逻辑
 
 ### 3.3 功能点 3: 性能基线建立
 
@@ -174,34 +180,47 @@ BaseDetailPage.vue                          721 行 (壳体 + 模板 + 骨架屏
 3. 将基线指标记录到 `docs/performance-baseline.md`
 4. CI 管道中增加性能回归检测（可选）
 
-### 3.4 功能点 4: 渐进式 i18n 纪律
+### 3.4 功能点 4: 渐进式 i18n 纪律 — ✅ 基建已就位
 
-**目标**: 阻止新增硬编码文案，为 Sprint 4 的存量清洗减轻负担。
+> **状态: 基础设施已完备** — 仅需 ESLint 配置文件补充
 
-**实施方案**:
-1. **ESLint 规则**: 添加 `eslint-plugin-vue-i18n` 或自定义规则，检测 `<template>` 中的中文字面量
-2. **CI 门禁**: 新增/修改的文件若引入新的硬编码中文字符串，CI 报 Warning（首期不阻断）
-3. **开发约定**: 所有新增的 UI 组件必须使用 `t()` 函数，新增翻译键写入对应的 locale JSON
+经代码审计发现，项目已具备完整的 i18n 质量保障脚本链：
 
-**验收标准**:
-- [ ] ESLint 规则可对 `.vue` 文件中的硬编码中文发出警告
-- [ ] 项目文档中增加 i18n 开发规范说明
-- [ ] 现有代码的硬编码扫描报告生成（不修复，仅统计）
+| 脚本 | 功能 | CI 阻断变体 |
+|------|------|------------|
+| `i18n:check` | 硬编码中文检测 | `--all` |
+| `i18n:coverage` | 覆盖率指标（阈值 95%） | `--fail-on-threshold` |
+| `i18n:parity` | 中英文 locale 键值一致性 | `--fail-on-issues` |
+| `i18n:defects:p1` | P1 缺陷门禁 | `--fail-on-active` |
+| `i18n:parity:mojibake` | 乱码检测 | `--fail-on-issues` |
 
-### 3.5 功能点 5: 后端 Service 硬编码数据外置
+运行结果（2026-03-09）:
+- `i18n:coverage --scope dynamic --all` → **覆盖率 100%**，`meetsThreshold: true`
+- `i18n:check --all` → 退出码 1（存在存量硬编码，符合预期）
 
-**目标**: 将 `business_object_service.py` 中的 `HARDCODED_OBJECT_NAMES` (60+ 行) 和 `CORE_HARDCODED_MODELS` (80+ 行) 提取到配置。
+**遗留工作** (可选):
+- [ ] 创建 `.eslintrc.cjs` 配置文件使 `npm run lint` 可用
+- [ ] 在 CI 中将 `i18n:coverage:all:strict` 加入 blocking pipeline
+- [ ] Sprint 4 时启动存量硬编码修复
 
-**实施方案**:
-1. 创建 `backend/apps/system/config/object_definitions.py` 集中管理所有标准对象定义
-2. `HARDCODED_OBJECT_NAMES` 迁移为从 `BusinessObject` 数据库记录中读取 `name`/`name_en` 字段，以数据库记录为准（fallback 到配置文件）
-3. `CORE_HARDCODED_MODELS` 保留为代码注册表（因为涉及 import_string 的物理路径），但迁移到独立配置模块
-4. `object_registry.py` 中的 `STANDARD_OBJECT_DEFINITIONS` 与上述统一数据源合并，消除重复定义
+### 3.5 ~~功能点 5: 后端 Service 硬编码数据外置~~ ✅ 已完成
 
-**验收标准**:
-- [ ] `business_object_service.py` 不再包含超过 10 行的硬编码字典
-- [ ] 新增标准对象时只需修改一处配置
-- [ ] 所有现有 API 返回结果不变
+> **状态: 已完成** — 无需 Sprint 0 额外工作
+
+经代码审计发现，团队已完成了该项工作：
+
+| 原 PRD 假设 | 实际现状 |
+|------------|---------|
+| `business_object_service.py` 有 734 行 + 60 行硬编码字典 | **313 行**，通过 `get_hardcoded_object_names()` 导入 |
+| `CORE_HARDCODED_MODELS` 80+ 行字典内嵌 | 已迁移至 `object_catalog.py` 的 `get_hardcoded_model_map()` |
+| 无统一数据源 | `object_catalog.py` (494 行) 提供 `HardcodedObjectDefinition` 数据类，是唯一数据源 |
+
+`object_catalog.py` 提供的接口：
+- `iter_hardcoded_object_definitions()` — 遍历所有定义
+- `get_hardcoded_object_definition(code)` — 按 code 查询
+- `get_hardcoded_model_map()` — Django Model 路径映射
+- `get_hardcoded_viewset_map()` — ViewSet 路径映射
+- `get_hardcoded_object_names()` — 显示名查询
 
 ---
 
@@ -237,42 +256,46 @@ BaseDetailPage.vue                          721 行 (壳体 + 模板 + 骨架屏
 
 ---
 
-## 5. 功能点 7: Feature Flag 机制
+## 5. 功能点 7: Feature Flag 机制 — ✅ 已实现
 
 ### 5.1 问题
 
 大规模架构改造不可能一次性全量上线。新旧渲染路径需要灰度切换能力。
 
-### 5.2 方案
+### 5.2 实际方案（与原提案的差异）
 
-**后端**: 在 Django Settings 中增加 Feature Flag 字典：
+| 原提案 | 实际实现 |
+|--------|---------|
+| Django Settings 中定义 `FEATURE_FLAGS` 字典 | ✅ 使用 `SystemConfig` 数据库模型 (`category='feature_flag'`)，支持运行时修改无需重启 |
+| 新建 `/api/system/feature-flags/` 端点 | ✅ 复用已有 `systemConfigApi.getByCategory('feature_flag')` |
+| 前端 Pinia Store | ✅ 新建 `stores/featureFlag.ts` (`useFeatureFlagStore`) |
 
-```python
-# settings.py
-FEATURE_FLAGS = {
-    'USE_DYNAMIC_MENU': False,        # Sprint 0 Phase A → True
-    'ENABLE_DUAL_MODE_LAYOUT': False,  # Sprint 2 → True
-    'ENABLE_SWR_CACHE': False,         # Sprint 1 → True
-    'ENABLE_ACTIVITY_TIMELINE': False,  # Sprint 3 → True
-}
-```
+**已就绪的 Feature Flags** (通过 migration 0024 种子数据):
 
-**前端**: 通过 `/api/system/feature-flags/` 端点下发，存入 Pinia store，供组件条件渲染：
+| Flag Key | 默认值 | 用途 |
+|----------|--------|------|
+| `runtime_i18n_enabled` | `true` | 运行时 i18n 元数据本地化 |
+| `layout_merge_unified_enabled` | `true` | 统一运行时布局合并路径 |
+| `field_code_strict_mode` | `false` | 仅返回 field_code，停用 legacy code 键 |
 
+**前端使用方式**:
 ```typescript
-// useFeatureFlags.ts
+import { useFeatureFlagStore } from '@/stores/featureFlag'
+
 const flags = useFeatureFlagStore()
 
-if (flags.isEnabled('USE_DYNAMIC_MENU')) {
-  // 使用 MenuRegistryManager 动态菜单
-} else {
-  // 使用旧的硬编码菜单
+if (flags.isEnabled('runtime_i18n_enabled')) {
+  // 使用运行时 i18n 渲染
 }
 ```
 
+**管理界面**: 系统配置页 → Feature Flags 标签页 → 在线修改 → 调用 `flags.refreshFlags()` 获取最新值
+
 **验收标准**:
-- [ ] Feature Flag 支持运行时切换（修改 Django Settings 或数据库后无需重新部署前端）
-- [ ] 所有 Sprint 1-4 的新功能均通过 Feature Flag 控制
+- [x] Feature Flag 支持运行时切换（数据库修改后前端刷新即生效）
+- [x] 前端 Store 在应用启动时自动加载所有 flags
+- [x] `isEnabled()` 对未知 flag 返回 `false`（安全默认值）
+- [ ] 所有 Sprint 1-4 的新功能均通过 Feature Flag 控制（后续 Sprint 逐步添加）
 
 ---
 

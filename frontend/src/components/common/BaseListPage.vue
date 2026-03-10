@@ -43,7 +43,8 @@ import ObjectAvatar from '@/components/common/ObjectAvatar.vue'
 import { dynamicApi } from '@/api/dynamic'
 import { extractLayoutConfig } from '@/adapters/layoutAdapter'
 import { buildColumnsFromLayout } from '@/adapters/listColumnAdapter'
-import { buildFieldKeyCandidates, resolveFieldValue } from '@/utils/fieldKey'
+import { buildFieldKeyCandidates } from '@/utils/fieldKey'
+import { resolveListFieldValue } from '@/utils/listFieldValue'
 // import { useRouter, useRoute } from 'vue-router'
 
 // ============================================================================
@@ -258,13 +259,13 @@ const getColumnValue = (row: any, column: TableColumn) => {
   if (!prop) return undefined
   if (prop.includes('.')) return resolveRowValue(row, prop)
 
-  const resolved = resolveFieldValue(row, {
+  const resolved = resolveListFieldValue(row, {
     fieldCode: column.fieldCode || prop,
-    dataKey: prop,
-    includeWrappedData: true,
-    includeCustomBags: true,
-    treatEmptyAsMissing: false,
-    returnEmptyMatch: true
+    prop,
+    dataKey: column.dataKey || prop,
+    fieldType: column.fieldType || column.type,
+    referenceObject: column.referenceObject || column.targetObjectCode,
+    referenceDisplayField: column.referenceDisplayField
   })
 
   if (resolved !== undefined) return resolved
@@ -329,16 +330,20 @@ const applyFieldDefinitions = (cols: TableColumn[], defs: any[]): TableColumn[] 
       .find(Boolean)
     if (!meta) return col
 
-    const rawType = col.fieldType || col.type || meta.fieldType || meta.field_type
+      const rawType = col.fieldType || col.type || meta.fieldType || meta.field_type
     const normalizedType = rawType ? normalizeFieldType(rawType) : undefined
 
     return {
       ...col,
       fieldCode: col.fieldCode || fieldCode,
+      dataKey: col.dataKey || meta.dataKey || meta.data_key || fieldCode,
       label: col.label || meta.name || meta.label || fieldCode,
       fieldType: col.fieldType || normalizedType,
       type: col.type || normalizedType,
-      options: col.options || meta.options || meta.choices
+      options: col.options || meta.options || meta.choices,
+      referenceObject: col.referenceObject || meta.referenceObject || meta.reference_object || meta.reference_model_path || meta.relatedObject,
+      referenceDisplayField: col.referenceDisplayField || meta.referenceDisplayField || meta.reference_display_field || meta.displayField || meta.display_field,
+      referenceSecondaryField: col.referenceSecondaryField || meta.referenceSecondaryField || meta.reference_secondary_field
     }
   })
 }
@@ -1127,12 +1132,17 @@ defineExpose({
                       v-else
                       :field="{
                         prop: col.fieldCode || col.prop,
+                        dataKey: col.dataKey || col.prop,
                         type: col.fieldType || col.type || 'text',
                         code: col.fieldCode || col.prop,
                         fieldCode: col.fieldCode || col.prop,
                         fieldType: col.fieldType || col.type || 'text',
                         label: col.label,
-                        options: col.options
+                        options: col.options,
+                        referenceObject: col.referenceObject || col.targetObjectCode,
+                        targetObjectCode: col.targetObjectCode || col.referenceObject,
+                        referenceDisplayField: col.referenceDisplayField,
+                        referenceSecondaryField: col.referenceSecondaryField
                       }" 
                       :model-value="getColumnValue(row, col)" 
                       mode="table" 
@@ -1268,12 +1278,17 @@ defineExpose({
                 <FieldRenderer 
                   :field="{
                     prop: column.fieldCode || column.prop,
+                    dataKey: column.dataKey || column.prop,
                     type: column.fieldType || column.type || 'text',
                     code: column.fieldCode || column.prop,
                     fieldCode: column.fieldCode || column.prop,
                     fieldType: column.fieldType || column.type || 'text',
                     label: column.label,
-                    options: column.options
+                    options: column.options,
+                    referenceObject: column.referenceObject || column.targetObjectCode,
+                    targetObjectCode: column.targetObjectCode || column.referenceObject,
+                    referenceDisplayField: column.referenceDisplayField,
+                    referenceSecondaryField: column.referenceSecondaryField
                   }" 
                   :model-value="getColumnValue(scope.row, column)" 
                   mode="table" 

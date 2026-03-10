@@ -168,3 +168,42 @@ def test_object_router_fields_use_relation_definitions_for_hardcoded_reverse_rel
     transfer_relation = next(item for item in reverse_relations if _field_code(item) == 'transfer_orders')
     assert (transfer_relation.get('targetObjectCode') or transfer_relation.get('target_object_code')) == 'AssetTransfer'
     assert (transfer_relation.get('reverseRelationModel') or transfer_relation.get('reverse_relation_model')) == 'apps.assets.models.AssetTransfer'
+
+
+@pytest.mark.django_db
+def test_object_router_runtime_exposes_reference_display_metadata_for_hardcoded_fields():
+    org = Organization.objects.create(name='Hardcoded Runtime Field Org', code='hardcoded-runtime-field-org')
+    user = User.objects.create_user(
+        username='hardcoded_runtime_field_user',
+        password='pass123456',
+        organization=org,
+    )
+
+    _upsert_business_object('Asset', 'Asset', 'apps.assets.models.Asset')
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id))
+
+    response = client.get('/api/system/objects/Asset/runtime/?mode=list')
+    assert response.status_code == 200
+    assert response.data['success'] is True
+
+    fields_payload = response.json().get('data', {}).get('fields', {})
+    editable_fields = fields_payload.get('editableFields')
+    if editable_fields is None:
+        editable_fields = fields_payload.get('editable_fields')
+    editable_fields = editable_fields or []
+
+    department_field = next(item for item in editable_fields if _field_code(item) == 'department')
+    location_field = next(item for item in editable_fields if _field_code(item) == 'location')
+    custodian_field = next(item for item in editable_fields if _field_code(item) == 'custodian')
+
+    assert _field_type(department_field) == 'department'
+    assert (department_field.get('referenceDisplayField') or department_field.get('reference_display_field')) == 'name'
+
+    assert _field_type(location_field) == 'location'
+    assert (location_field.get('referenceDisplayField') or location_field.get('reference_display_field')) == 'path'
+
+    assert _field_type(custodian_field) == 'user'
+    assert (custodian_field.get('referenceDisplayField') or custodian_field.get('reference_display_field')) == 'username'

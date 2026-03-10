@@ -16,16 +16,31 @@
       />
     </div>
     <div class="panel-content">
-      <div v-for="group in filteredFieldGroups" :key="group.type" class="field-group">
-        <div class="group-header" @click="$emit('toggleGroup', group.type)">
+      <div
+        v-for="group in filteredFieldGroups"
+        :key="group.type"
+        class="field-group"
+      >
+        <div
+          class="group-header"
+          @click="$emit('toggleGroup', group.type)"
+        >
           <el-icon><component :is="group.icon" /></el-icon>
           <span>{{ group.label }}</span>
-          <el-tag size="small">{{ group.fields.length }}</el-tag>
-          <el-icon class="expand-icon" :class="{ expanded: isGroupExpanded(group.type) }">
+          <el-tag size="small">
+            {{ group.fields.length }}
+          </el-tag>
+          <el-icon
+            class="expand-icon"
+            :class="{ expanded: isGroupExpanded(group.type) }"
+          >
             <ArrowRight />
           </el-icon>
         </div>
-        <div v-show="isGroupExpanded(group.type)" class="group-fields">
+        <div
+          v-show="isGroupExpanded(group.type)"
+          class="group-fields"
+        >
           <div
             v-for="field in group.fields"
             :key="field.code"
@@ -41,10 +56,17 @@
             @dragend="$emit('dragEnd')"
             @click="$emit('fieldClick', field)"
           >
-            <el-icon class="field-icon"><Edit /></el-icon>
+            <el-icon class="field-icon">
+              <Edit />
+            </el-icon>
             <span class="field-label">{{ field.name }}</span>
             <span class="field-code">{{ field.code }}</span>
-            <el-icon v-if="isFieldAdded(field.code)" class="added-icon"><Check /></el-icon>
+            <el-icon
+              v-if="isFieldAdded(field.code)"
+              class="added-icon"
+            >
+              <Check />
+            </el-icon>
           </div>
         </div>
       </div>

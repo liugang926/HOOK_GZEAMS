@@ -67,7 +67,10 @@
           {{ $t(`assets.lifecycle.assetWarranty.warrantyType.${detail.warranty_type || 'manufacturer'}`) }}
         </el-descriptions-item>
         <el-descriptions-item :label="$t('assets.lifecycle.assetWarranty.columns.status')">
-          <el-tag :type="getStatusType(detail.status)" size="small">
+          <el-tag
+            :type="getStatusType(detail.status)"
+            size="small"
+          >
             {{ $t(`assets.lifecycle.assetWarranty.status.${detail.status || 'draft'}`) }}
           </el-tag>
         </el-descriptions-item>
@@ -128,10 +131,16 @@
         <el-descriptions-item :label="$t('assets.lifecycle.assetWarranty.form.lastClaimDate')">
           {{ detail.last_claim_date || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item :label="$t('assets.lifecycle.assetWarranty.form.coverageDescription')" :span="2">
+        <el-descriptions-item
+          :label="$t('assets.lifecycle.assetWarranty.form.coverageDescription')"
+          :span="2"
+        >
           {{ detail.coverage_description || '-' }}
         </el-descriptions-item>
-        <el-descriptions-item :label="$t('assets.lifecycle.assetWarranty.form.remark')" :span="2">
+        <el-descriptions-item
+          :label="$t('assets.lifecycle.assetWarranty.form.remark')"
+          :span="2"
+        >
           {{ detail.remark || '-' }}
         </el-descriptions-item>
       </el-descriptions>
@@ -165,7 +174,10 @@
         <el-button @click="renewDialogVisible = false">
           {{ $t('common.actions.cancel') }}
         </el-button>
-        <el-button type="primary" @click="submitRenew">
+        <el-button
+          type="primary"
+          @click="submitRenew"
+        >
           {{ $t('common.actions.confirm') }}
         </el-button>
       </template>

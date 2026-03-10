@@ -7,7 +7,10 @@
   <div class="sub-table-panel">
     <div class="sub-table-panel__header">
       <span class="sub-table-panel__title">{{ title }}</span>
-      <span v-if="!loading" class="sub-table-panel__count">{{ data.length }} {{ countLabel }}</span>
+      <span
+        v-if="!loading"
+        class="sub-table-panel__count"
+      >{{ data.length }} {{ countLabel }}</span>
       <slot name="header-actions" />
     </div>
 
@@ -32,8 +35,14 @@
         :formatter="col.formatter"
         show-overflow-tooltip
       >
-        <template v-if="col.slot" #default="scope">
-          <slot :name="col.slot" v-bind="scope" />
+        <template
+          v-if="col.slot"
+          #default="scope"
+        >
+          <slot
+            :name="col.slot"
+            v-bind="scope"
+          />
         </template>
       </el-table-column>
 

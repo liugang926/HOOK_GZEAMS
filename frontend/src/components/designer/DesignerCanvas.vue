@@ -34,10 +34,16 @@
           size="small"
           @update:model-value="$emit('setRenderMode', $event as 'design' | 'preview')"
         >
-          <el-radio-button label="design" data-testid="layout-render-design-button">
+          <el-radio-button
+            label="design"
+            data-testid="layout-render-design-button"
+          >
             {{ t('system.pageLayout.designer.status.designState') }}
           </el-radio-button>
-          <el-radio-button label="preview" data-testid="layout-render-preview-button">
+          <el-radio-button
+            label="preview"
+            data-testid="layout-render-preview-button"
+          >
             {{ t('system.pageLayout.designer.status.previewState') }}
           </el-radio-button>
         </el-radio-group>

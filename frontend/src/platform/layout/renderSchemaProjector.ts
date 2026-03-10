@@ -63,7 +63,10 @@ const projectRuntimeField = (field: AnyRecord): RuntimeField => {
     visible: field.visible !== false && metadata.visible !== false,
     options: (metadata.options || undefined) as RuntimeField['options'],
     referenceObject: String(
-      metadata.referenceObject || metadata.reference_model_path || metadata.relatedObject || ''
+      metadata.referenceObject || metadata.reference_model_path || metadata.relatedObject || metadata.targetObjectCode || metadata.target_object_code || ''
+    ) || undefined,
+    targetObjectCode: String(
+      metadata.targetObjectCode || metadata.target_object_code || metadata.referenceObject || metadata.reference_model_path || metadata.relatedObject || ''
     ) || undefined,
     referenceDisplayField: String(
       field.referenceDisplayField ||
@@ -307,10 +310,23 @@ export const projectListColumnsFromRenderSchema = (
       columns.push({
         fieldCode: code,
         prop: code,
+        dataKey: String(meta.dataKey || meta.data_key || code),
         label: String(field.label || meta.name || meta.label || code),
         fieldType: type,
         type,
         options: meta.options,
+        referenceObject: String(
+          meta.referenceObject || meta.reference_object || meta.targetObjectCode || meta.target_object_code || meta.reference_model_path || meta.relatedObject || ''
+        ) || undefined,
+        targetObjectCode: String(
+          meta.targetObjectCode || meta.target_object_code || meta.referenceObject || meta.reference_object || meta.reference_model_path || meta.relatedObject || ''
+        ) || undefined,
+        referenceDisplayField: String(
+          meta.referenceDisplayField || meta.reference_display_field || meta.displayField || meta.display_field || ''
+        ) || undefined,
+        referenceSecondaryField: String(
+          meta.referenceSecondaryField || meta.reference_secondary_field || ''
+        ) || undefined,
         width: Number(meta.columnWidth || meta.column_width || 0) || undefined,
         minWidth: Number(meta.minColumnWidth || meta.min_column_width || 0) || undefined,
         sortable: meta.sortable !== false,

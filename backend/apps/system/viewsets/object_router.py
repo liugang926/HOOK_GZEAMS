@@ -174,10 +174,12 @@ class ObjectRouterViewSet(viewsets.ViewSet):
 
         field_names = {f.name for f in model_class._meta.fields}
         request_org_id = getattr(request, 'organization_id', None)
+        model_label = str(getattr(model_class._meta, 'label_lower', '')).strip().lower()
+        uses_membership_scope = model_label == 'accounts.user'
 
-        if 'organization' in field_names and request_org_id:
+        if 'organization' in field_names and request_org_id and not uses_membership_scope:
             queryset = queryset.filter(organization_id=request_org_id)
-        elif 'organization' in field_names and not request_org_id:
+        elif 'organization' in field_names and not request_org_id and not uses_membership_scope:
             # Avoid accidental cross-organization leakage when org context is absent.
             queryset = queryset.none()
 
@@ -2491,6 +2493,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             'placeholder': localized_placeholder,
             'default_value': fd.default_value,
             'reference_object': fd.reference_object,
+            'reference_display_field': getattr(fd, 'reference_display_field', 'name'),
             # Reverse relation fields
             'is_reverse_relation': getattr(fd, 'is_reverse_relation', False),
             'reverse_relation_model': getattr(fd, 'reverse_relation_model', ''),
@@ -2568,6 +2571,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             'placeholder': None,
             'default_value': None,
             'reference_object': fd.reference_model_path if fd.field_type == 'reference' else getattr(fd, 'target_object_code', None),
+            'reference_display_field': getattr(fd, 'reference_display_field', 'name'),
             'section_name': section_meta['section_name'],
             'section_title': section_meta['section_title'],
             'section_title_i18n': section_meta['section_title_i18n'],

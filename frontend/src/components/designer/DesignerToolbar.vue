@@ -1,24 +1,39 @@
 <template>
   <div class="designer-toolbar">
     <div class="toolbar-left">
-      <el-button link @click="$emit('cancel')">
+      <el-button
+        link
+        @click="$emit('cancel')"
+      >
         <el-icon><ArrowLeft /></el-icon>
         {{ t('common.actions.back') }}
       </el-button>
       <el-divider direction="vertical" />
       <span class="layout-info">{{ layoutName }} ({{ modeLabel }})</span>
-      <el-tag v-if="!isDefault" type="warning" size="small">
+      <el-tag
+        v-if="!isDefault"
+        type="warning"
+        size="small"
+      >
         {{ t('system.pageLayout.designer.badges.customLayout') }}
       </el-tag>
     </div>
 
     <div class="toolbar-center">
       <el-button-group>
-        <el-button data-testid="layout-undo-button" :disabled="!canUndo" @click="$emit('undo')">
+        <el-button
+          data-testid="layout-undo-button"
+          :disabled="!canUndo"
+          @click="$emit('undo')"
+        >
           <el-icon><RefreshLeft /></el-icon>
           {{ t('system.pageLayout.designer.actions.undo') }}
         </el-button>
-        <el-button data-testid="layout-redo-button" :disabled="!canRedo" @click="$emit('redo')">
+        <el-button
+          data-testid="layout-redo-button"
+          :disabled="!canRedo"
+          @click="$emit('redo')"
+        >
           <el-icon><RefreshRight /></el-icon>
           {{ t('system.pageLayout.designer.actions.redo') }}
         </el-button>
@@ -33,7 +48,10 @@
         style="margin-right: 12px"
         @update:model-value="$emit('update:translationMode', Boolean($event))"
       />
-      <el-button data-testid="layout-reset-button" @click="$emit('reset')">
+      <el-button
+        data-testid="layout-reset-button"
+        @click="$emit('reset')"
+      >
         {{ t('system.pageLayout.designer.actions.reset') }}
       </el-button>
       <el-button-group>
@@ -57,10 +75,17 @@
           {{ t('system.pageLayout.designer.actions.preview') }}
         </el-button>
       </el-button-group>
-      <el-tag size="small" effect="plain">
+      <el-tag
+        size="small"
+        effect="plain"
+      >
         {{ previewMode === 'active' ? t('system.pageLayout.designer.status.previewMode') : t('system.pageLayout.designer.status.customMode') }}
       </el-tag>
-      <el-button :disabled="previewMode === 'active'" data-testid="layout-save-button" @click="$emit('save')">
+      <el-button
+        :disabled="previewMode === 'active'"
+        data-testid="layout-save-button"
+        @click="$emit('save')"
+      >
         {{ t('system.pageLayout.designer.actions.saveDraft') }}
       </el-button>
       <el-button

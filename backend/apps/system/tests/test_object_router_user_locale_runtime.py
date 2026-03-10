@@ -80,6 +80,49 @@ def test_user_me_profile_reads_and_updates_preferred_language():
 
 
 @pytest.mark.django_db
+def test_user_detail_route_uses_membership_scope_instead_of_base_organization_filter():
+    org = Organization.objects.create(name='User Detail Org', code='user-detail-org')
+    user = User.objects.create_user(
+        username='user_detail_member',
+        password='pass123456',
+        organization=None,
+        email='user-detail@example.com',
+    )
+    UserOrganization.objects.create(
+        user=user,
+        organization=org,
+        role='admin',
+        is_active=True,
+        is_primary=True,
+    )
+    user.current_organization = org
+    user.save(update_fields=['current_organization'])
+
+    BusinessObject.objects.get_or_create(
+        code='User',
+        defaults={
+            'name': 'User',
+            'is_hardcoded': False,
+        },
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id))
+
+    list_resp = client.get('/api/system/objects/User/')
+    assert list_resp.status_code == 200
+    assert list_resp.data['success'] is True
+    results = list_resp.data['data']['results']
+    assert any(str(item['id']) == str(user.id) for item in results)
+
+    detail_resp = client.get(f'/api/system/objects/User/{user.id}/')
+    assert detail_resp.status_code == 200
+    assert detail_resp.data['success'] is True
+    assert str(detail_resp.data['data']['id']) == str(user.id)
+
+
+@pytest.mark.django_db
 def test_runtime_returns_locale_and_localized_field_name():
     org = Organization.objects.create(name='Runtime Locale Org', code='runtime-locale-org')
     user = User.objects.create_user(

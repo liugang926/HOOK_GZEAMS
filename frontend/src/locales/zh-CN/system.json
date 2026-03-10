@@ -254,6 +254,42 @@
             }
         }
     },
+    "branding": {
+        "title": "品牌主题管理",
+        "subtitle": "统一管理系统主题、应用名称、Logo、Favicon 和登录页视觉配置。",
+        "entry": "品牌主题",
+        "sections": {
+            "identity": "品牌标识",
+            "theme": "主题变量",
+            "login": "登录体验",
+            "loginI18n": "登录页多语言文案",
+            "assets": "Logo 与图标资源",
+            "preview": "实时预览"
+        },
+        "fields": {
+            "appName": "应用名称",
+            "appShortName": "简称",
+            "appTagline": "品牌副标题",
+            "appIconText": "兜底图标文字",
+            "primaryColor": "主色",
+            "accentColor": "强调色",
+            "sidebarGradientStart": "侧边栏渐变起点",
+            "sidebarGradientEnd": "侧边栏渐变终点",
+            "borderRadius": "圆角",
+            "darkMode": "深色模式",
+            "loginTitle": "登录主标题",
+            "loginSubtitle": "登录副标题",
+            "copyright": "页脚版权文案"
+        },
+        "actions": {
+            "upload": "上传",
+            "remove": "移除"
+        },
+        "preview": {
+            "primaryAction": "主操作按钮",
+            "radius": "组件圆角"
+        }
+    },
     "businessObject": {
         "title": "业务对象管理",
         "create": "新建业务对象",

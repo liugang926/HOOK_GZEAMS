@@ -55,6 +55,26 @@ const mountRelatedObjectTable = async () => {
           name: 'ElButton',
           template: '<button><slot /></button>'
         }),
+        FieldRenderer: defineComponent({
+          name: 'FieldRenderer',
+          template: '<div class="field-renderer-stub"></div>'
+        }),
+        'el-input': defineComponent({
+          name: 'ElInput',
+          template: '<input />'
+        }),
+        'el-select': defineComponent({
+          name: 'ElSelect',
+          template: '<select><slot /></select>'
+        }),
+        'el-option': defineComponent({
+          name: 'ElOption',
+          template: '<option><slot /></option>'
+        }),
+        'el-icon': defineComponent({
+          name: 'ElIcon',
+          template: '<i><slot /></i>'
+        }),
         'el-badge': defineComponent({
           name: 'ElBadge',
           template: '<div><slot /></div>'
@@ -76,17 +96,39 @@ describe('RelatedObjectTable', () => {
     vi.clearAllMocks()
   })
 
-  it('builds related columns from metadata list fields', async () => {
+  it('builds related columns from the target object list runtime model', async () => {
     mockRequest.mockImplementation((config: RequestConfig) => {
-      if (String(config?.url || '').endsWith('/fields/')) {
+      if (String(config?.url || '').endsWith('/runtime/')) {
         return Promise.resolve({
-          editableFields: [
-            { code: 'code', name: 'Code', showInList: true, sortOrder: 1 },
-            { code: 'status', name: 'Status', showInList: true, sortOrder: 2 },
-            { code: 'hidden_note', name: 'Hidden Note', showInList: false, sortOrder: 3 }
-          ],
-          reverseRelations: [],
-          context: 'list'
+          runtimeVersion: 1,
+          fields: {
+            editableFields: [
+              { code: 'code', name: 'Code', showInList: true, sortOrder: 1, isSearchable: true },
+              { code: 'status', name: 'Status', showInList: true, sortOrder: 2 },
+              { code: 'hiddenNote', name: 'Hidden Note', showInList: false, sortOrder: 3 }
+            ],
+            reverseRelations: []
+          },
+          layout: {
+            layoutConfig: {
+              sections: [
+                {
+                  id: 'list_default',
+                  type: 'section',
+                  fields: [
+                    { fieldCode: 'code', visible: true },
+                    { fieldCode: 'status', visible: true }
+                  ]
+                }
+              ]
+            }
+          },
+          permissions: {
+            view: true,
+            add: true,
+            change: true,
+            delete: true
+          }
         })
       }
       return Promise.resolve({
@@ -103,22 +145,23 @@ describe('RelatedObjectTable', () => {
     const props = columns.map((col) => col.prop)
 
     expect(mockRequest).toHaveBeenCalledWith(expect.objectContaining({
-      url: '/system/objects/Maintenance/fields/',
+      url: '/system/objects/Maintenance/runtime/',
       method: 'get',
       params: expect.objectContaining({
-        context: 'list',
+        mode: 'list',
         include_relations: false
       })
     }))
-    expect(props).toContain('id')
     expect(props).toContain('code')
     expect(props).toContain('status')
-    expect(props).not.toContain('hidden_note')
+    expect(props).not.toContain('id')
+    expect(props).not.toContain('hiddenNote')
   })
 
-  it('falls back to record keys when metadata is unavailable', async () => {
+  it('falls back to record keys when runtime metadata is unavailable', async () => {
     mockRequest.mockImplementation((config: RequestConfig) => {
-      if (String(config?.url || '').endsWith('/fields/')) {
+      const url = String(config?.url || '')
+      if (url.endsWith('/runtime/') || url.endsWith('/fields/')) {
         return Promise.reject(new Error('metadata failed'))
       }
       return Promise.resolve({
@@ -134,10 +177,10 @@ describe('RelatedObjectTable', () => {
     const columns = (table.props('columns') || []) as Array<{ prop: string }>
     const props = columns.map((col) => col.prop)
 
-    expect(props).toContain('id')
     expect(props).toContain('code')
     expect(props).toContain('name')
     expect(props).toContain('createdAt')
+    expect(props).not.toContain('id')
     // Ensure no object-specific hardcoded template column leaked in fallback.
     expect(props).not.toContain('maintenanceType')
   })

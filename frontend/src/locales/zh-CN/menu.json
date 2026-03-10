@@ -36,6 +36,7 @@
         "dictionaryTypes": "数据字典管理",
         "sequenceRules": "编号规则管理",
         "systemConfig": "系统配置管理",
+        "systemBranding": "品牌主题管理",
         "systemFiles": "系统文件管理",
         "workflowList": "工作流列表",
         "permissions": "权限管理",

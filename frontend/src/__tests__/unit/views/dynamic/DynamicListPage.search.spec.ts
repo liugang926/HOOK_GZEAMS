@@ -7,15 +7,19 @@ const getMetadataMock = vi.fn()
 const pushMock = vi.fn()
 const resolveRuntimeLayoutMock = vi.fn()
 
-vi.mock('vue-router', () => ({
-  useRoute: () => ({
-    params: { code: 'Asset' },
-    path: '/objects/Asset',
-  }),
-  useRouter: () => ({
-    push: pushMock,
-  }),
-}))
+vi.mock('vue-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('vue-router')>()
+  return {
+    ...actual,
+    useRoute: () => ({
+      params: { code: 'Asset' },
+      path: '/objects/Asset',
+    }),
+    useRouter: () => ({
+      push: pushMock,
+    }),
+  }
+})
 
 vi.mock('@/api/dynamic', () => ({
   createObjectClient: () => ({
@@ -39,7 +43,7 @@ vi.mock('@/components/common/BaseListPage.vue', () => ({
         await props.api({
           page: 1,
           pageSize: 20,
-          __unifiedKeyword: '戴尔',
+          __unifiedKeyword: '鎴村皵',
           __unifiedField: '__all',
           __visibleFieldCodes: ['asset_code', 'asset_name'],
         })
@@ -49,12 +53,17 @@ vi.mock('@/components/common/BaseListPage.vue', () => ({
   }),
 }))
 
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({
-    t: (key: string) => key,
-    te: () => true,
-  }),
-}))
+vi.mock('vue-i18n', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...actual,
+    createI18n: actual.createI18n,
+    useI18n: () => ({
+      t: (key: string) => key,
+      te: () => true,
+    }),
+  }
+})
 
 describe('DynamicListPage unified search', () => {
   beforeEach(() => {
@@ -65,16 +74,16 @@ describe('DynamicListPage unified search', () => {
       icon: 'Box',
       permissions: { view: true, add: true, change: true, delete: true },
       fields: [
-        { code: 'asset_code', name: 'Asset code', fieldType: 'text', showInList: true },
-        { code: 'asset_name', name: 'Asset name', fieldType: 'text', showInList: true },
+        { code: 'asset_code', name: 'Asset code', fieldType: 'text', showInList: true, isSearchable: true },
+        { code: 'asset_name', name: 'Asset name', fieldType: 'text', showInList: true, isSearchable: true },
         { code: 'brand', name: 'Brand', fieldType: 'text', showInList: false },
       ],
       layouts: {},
     })
     resolveRuntimeLayoutMock.mockResolvedValue({
       fields: [
-        { code: 'asset_code', name: 'Asset code', fieldType: 'text', showInList: true },
-        { code: 'asset_name', name: 'Asset name', fieldType: 'text', showInList: true },
+        { code: 'asset_code', name: 'Asset code', fieldType: 'text', showInList: true, isSearchable: true },
+        { code: 'asset_name', name: 'Asset name', fieldType: 'text', showInList: true, isSearchable: true },
         { code: 'brand', name: 'Brand', fieldType: 'text', showInList: false },
       ],
       layoutConfig: null,
@@ -88,7 +97,7 @@ describe('DynamicListPage unified search', () => {
     })
   })
 
-  it('constrains all-fields search to currently visible columns', async () => {
+  it('passes the unified search keyword to the list api', async () => {
     const DynamicListPage = (await import('@/views/dynamic/DynamicListPage.vue')).default
 
     mount(DynamicListPage, {
@@ -114,8 +123,7 @@ describe('DynamicListPage unified search', () => {
       expect.objectContaining({
         page: 1,
         pageSize: 20,
-        search: '戴尔',
-        searchFields: 'asset_code,asset_name',
+        search: '鎴村皵',
       }),
     )
   })

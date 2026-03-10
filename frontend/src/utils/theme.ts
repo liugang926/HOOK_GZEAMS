@@ -6,6 +6,9 @@
 
 export interface ThemeConfig {
     primaryColor?: string;
+    accentColor?: string;
+    sidebarGradientStart?: string;
+    sidebarGradientEnd?: string;
     borderRadius?: number;
     darkMode?: boolean;
 }
@@ -47,16 +50,31 @@ export function adjustBrightness(hex: string, percent: number): string {
  */
 export function injectTheme(config: ThemeConfig) {
     const root = document.documentElement;
+    const primaryColor = config.primaryColor || '';
+    const accentColor = config.accentColor || primaryColor;
 
-    if (config.primaryColor) {
-        root.style.setProperty('--sys-color-primary', config.primaryColor);
+    if (primaryColor) {
+        root.style.setProperty('--sys-color-primary', primaryColor);
+        root.style.setProperty('--sys-color-accent', accentColor);
+        root.style.setProperty('--brand-gradient-primary', `linear-gradient(135deg, ${primaryColor} 0%, ${accentColor} 100%)`);
+        root.style.setProperty('--brand-gradient-primary-soft', `linear-gradient(135deg, ${adjustBrightness(primaryColor, 0.08)} 0%, ${adjustBrightness(accentColor, 0.08)} 100%)`);
 
         // Generate Element Plus internal shades for active/hover states
-        root.style.setProperty('--el-color-primary-light-3', adjustBrightness(config.primaryColor, 0.3));
-        root.style.setProperty('--el-color-primary-light-5', adjustBrightness(config.primaryColor, 0.5));
-        root.style.setProperty('--el-color-primary-light-7', adjustBrightness(config.primaryColor, 0.7));
-        root.style.setProperty('--el-color-primary-light-9', adjustBrightness(config.primaryColor, 0.9));
-        root.style.setProperty('--el-color-primary-dark-2', adjustBrightness(config.primaryColor, -0.2));
+        root.style.setProperty('--el-color-primary', primaryColor);
+        root.style.setProperty('--el-color-primary-light-3', adjustBrightness(primaryColor, 0.3));
+        root.style.setProperty('--el-color-primary-light-5', adjustBrightness(primaryColor, 0.5));
+        root.style.setProperty('--el-color-primary-light-7', adjustBrightness(primaryColor, 0.7));
+        root.style.setProperty('--el-color-primary-light-9', adjustBrightness(primaryColor, 0.9));
+        root.style.setProperty('--el-color-primary-dark-2', adjustBrightness(primaryColor, -0.2));
+    }
+
+    if (config.sidebarGradientStart && config.sidebarGradientEnd) {
+        root.style.setProperty(
+            '--brand-sidebar-bg',
+            `linear-gradient(180deg, ${config.sidebarGradientStart} 0%, ${config.sidebarGradientEnd} 100%)`
+        );
+        root.style.setProperty('--brand-sidebar-start', config.sidebarGradientStart);
+        root.style.setProperty('--brand-sidebar-end', config.sidebarGradientEnd);
     }
 
     if (config.borderRadius !== undefined) {
@@ -79,6 +97,7 @@ export function injectTheme(config: ThemeConfig) {
             root.style.setProperty('--sys-border-color', '#334155');
             root.style.setProperty('--sys-border-light', 'rgba(255, 255, 255, 0.06)');
             root.style.setProperty('--sys-color-bg-hover', '#334155');
+            root.style.setProperty('--brand-login-shell-overlay', 'rgba(15, 23, 42, 0.68)');
 
             // Update element plus table theme specifically for dark mode
             root.style.setProperty('--el-table-header-bg-color', '#1e293b');
@@ -94,6 +113,7 @@ export function injectTheme(config: ThemeConfig) {
             root.style.removeProperty('--sys-border-color');
             root.style.removeProperty('--sys-border-light');
             root.style.removeProperty('--sys-color-bg-hover');
+            root.style.removeProperty('--brand-login-shell-overlay');
 
             root.style.removeProperty('--el-table-header-bg-color');
             root.style.removeProperty('--el-table-header-text-color');

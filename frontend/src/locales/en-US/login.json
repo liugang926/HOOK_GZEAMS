@@ -3,6 +3,8 @@
     "username": "Username",
     "password": "Password",
     "loginButton": "Login",
+    "forgotPassword": "Forgot password?",
+    "contactAdmin": "Contact administrator",
     "success": "Login successful",
     "failed": "Login failed",
     "validation": {

@@ -240,6 +240,9 @@ class AssetAPITest(APITestCase):
             organization=self.org,
             asset_name='Test Laptop',
             asset_category=self.category,
+            department=self.department,
+            location=self.location,
+            custodian=self.user,
             purchase_price=Decimal('1000.00'),
             purchase_date='2024-01-01',
             created_by=self.user
@@ -250,6 +253,13 @@ class AssetAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Standard pagination format wrapped in BaseResponse
         self.assertIn('count', response.data['data'])
+        first = response.data['data']['results'][0]
+        self.assertEqual(first['department'], str(self.department.id))
+        self.assertEqual(first['location'], str(self.location.id))
+        self.assertEqual(first['custodian'], str(self.user.id))
+        self.assertEqual(first['department_name'], self.department.name)
+        self.assertEqual(first['location_path'], self.location.path)
+        self.assertEqual(first['custodian_username'], self.user.username)
 
     def test_create_asset(self):
         """Test POST /api/assets/"""

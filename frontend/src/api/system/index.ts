@@ -58,6 +58,16 @@ export type { SequenceRule } from './sequenceRule'
 export { systemConfigApi } from './systemConfig'
 export type { SystemConfig } from './systemConfig'
 
+// Branding
+export { brandingApi } from './branding'
+export type {
+    BrandingSettings,
+    BrandingThemeSettings,
+    BrandingAssetIds,
+    BrandingLoginSettings,
+    BrandingAssetRef,
+} from './branding'
+
 // Page Layout
 export { pageLayoutApi } from './pageLayout'
 

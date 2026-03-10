@@ -10,13 +10,21 @@ import router from './router'
 import './router/permission' // Permission guard
 import vFocusTrap from './directives/vFocusTrap'
 import App from './App.vue'
+import { useBrandingStore } from '@/stores/branding'
 
-const app = createApp(App)
-const pinia = createPinia()
+const bootstrap = async () => {
+  const app = createApp(App)
+  const pinia = createPinia()
 
-app.use(pinia)
-app.use(i18n)
-app.use(router)
-app.directive('focus-trap', vFocusTrap)
+  app.use(pinia)
+  app.use(i18n)
+  app.use(router)
+  app.directive('focus-trap', vFocusTrap)
 
-app.mount('#app')
+  const brandingStore = useBrandingStore(pinia)
+  await brandingStore.initialize()
+
+  app.mount('#app')
+}
+
+bootstrap()

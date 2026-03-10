@@ -10,7 +10,14 @@ from apps.system.viewsets import (
 )
 from apps.accounts.models import User
 from apps.organizations.models import Organization
-from apps.system.models import BusinessObject, UserColumnPreference, TabConfig, FieldDefinition
+from apps.system.models import (
+    BusinessObject,
+    UserColumnPreference,
+    TabConfig,
+    FieldDefinition,
+    SystemConfig,
+    SystemFile,
+)
 from apps.system.services.column_config_service import ColumnConfigService
 
 
@@ -445,3 +452,109 @@ class TestFieldDefinitionSystemGuard:
         assert create_resp.status_code == 400
         assert create_resp.data['success'] is False
         assert create_resp.data['error']['code'] == 'INVALID_OPERATION'
+
+
+@pytest.mark.django_db
+class TestBrandingSettingsApi:
+    def test_get_branding_returns_defaults_without_auth(self):
+        client = APIClient()
+
+        response = client.get('/api/system/branding/')
+
+        assert response.status_code == 200
+        assert response.data['success'] is True
+        assert response.data['data']['appName'] == 'GZEAMS'
+        assert response.data['data']['theme']['primaryColor'] == '#0f172a'
+
+    def test_put_branding_persists_global_config(self):
+        org = Organization.objects.create(name='Branding Org', code='branding-org')
+        user = User.objects.create(username='branding_admin', organization=org)
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        payload = {
+            'appName': 'Newseams',
+            'appShortName': 'NS',
+            'appTagline': 'Brand workspace',
+            'appIconText': 'NS',
+            'theme': {
+                'primaryColor': '#112233',
+                'accentColor': '#3366ff',
+                'sidebarGradientStart': '#101828',
+                'sidebarGradientEnd': '#0f172a',
+                'borderRadius': 14,
+                'darkMode': False,
+            },
+            'assets': {
+                'sidebarLogoFileId': None,
+                'loginLogoFileId': None,
+                'faviconFileId': None,
+                'loginBackgroundFileId': None,
+            },
+            'login': {
+                'title': 'Welcome to Newseams',
+                'subtitle': 'Unified operations portal',
+                'copyright': '(c) 2026 Newseams',
+            },
+            'loginI18n': {
+                'zh-CN': {
+                    'title': '欢迎来到 Newseams',
+                    'subtitle': '统一运营门户',
+                    'copyright': '(c) 2026 Newseams',
+                },
+                'en-US': {
+                    'title': 'Welcome to Newseams',
+                    'subtitle': 'Unified operations portal',
+                    'copyright': '(c) 2026 Newseams',
+                },
+            },
+        }
+
+        response = client.put('/api/system/branding/', payload, format='json')
+
+        assert response.status_code == 200
+        assert response.data['success'] is True
+
+        config = SystemConfig.objects.get(config_key='BRANDING_SETTINGS')
+        assert config.organization_id is None
+        assert config.category == 'branding'
+        assert config.get_typed_value()['appName'] == 'Newseams'
+
+    def test_get_branding_resolves_uploaded_asset_metadata(self):
+        org = Organization.objects.create(name='Asset Branding Org', code='asset-branding-org')
+        user = User.objects.create(username='asset_branding_admin', organization=org)
+        sidebar_logo = SystemFile.objects.create(
+            organization=org,
+            created_by=user,
+            file_name='brand-logo.png',
+            file_path='branding/brand-logo.png',
+            file_type='image/png',
+            file_extension='.png',
+            file_size=128,
+        )
+
+        SystemConfig.objects.create(
+            config_key='BRANDING_SETTINGS',
+            config_value=(
+                '{'
+                '"appName":"Newseams",'
+                '"appShortName":"NS",'
+                '"appTagline":"Brand workspace",'
+                '"appIconText":"NS",'
+                '"theme":{"primaryColor":"#112233","accentColor":"#3366ff","sidebarGradientStart":"#101828","sidebarGradientEnd":"#0f172a","borderRadius":12,"darkMode":false},'
+                '"assets":{"sidebarLogoFileId":"%s","loginLogoFileId":null,"faviconFileId":null,"loginBackgroundFileId":null},'
+                '"login":{"title":"Welcome","subtitle":"Portal","copyright":"(c) 2026 Newseams"},'
+                '"loginI18n":{"zh-CN":{"title":"欢迎","subtitle":"门户","copyright":"(c) 2026 Newseams"},"en-US":{"title":"Welcome","subtitle":"Portal","copyright":"(c) 2026 Newseams"}}'
+                '}'
+            ) % sidebar_logo.id,
+            value_type='json',
+            name='Branding Settings',
+            category='branding',
+        )
+
+        client = APIClient()
+        response = client.get('/api/system/branding/')
+
+        assert response.status_code == 200
+        assert response.data['data']['resolvedAssets']['sidebarLogo']['id'] == str(sidebar_logo.id)
+        assert response.data['data']['resolvedAssets']['sidebarLogo']['url'] == '/media/branding/brand-logo.png'

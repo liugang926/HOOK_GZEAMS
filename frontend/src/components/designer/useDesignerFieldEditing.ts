@@ -266,7 +266,7 @@ export function useDesignerFieldEditing(options: UseDesignerFieldEditingOptions)
   const toggleSectionCollapse = (sectionId: string) => {
     const section = options.findItemById(options.layoutConfig.value, sectionId)
     if (section && 'collapsible' in section && section.collapsible !== undefined) {
-      ;(section as LayoutSection).collapsed = !(section as LayoutSection).collapsed
+      (section as LayoutSection).collapsed = !(section as LayoutSection).collapsed
     }
   }
 

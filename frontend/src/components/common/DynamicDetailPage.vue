@@ -874,13 +874,22 @@ defineExpose({
 
       <!-- Extension slot pass-throughs for lifecycle/workflow injection -->
       <template #action-bar="actionBarScope">
-        <slot name="action-bar" v-bind="actionBarScope" />
+        <slot
+          name="action-bar"
+          v-bind="actionBarScope"
+        />
       </template>
       <template #header-extra="headerExtraScope">
-        <slot name="header-extra" v-bind="headerExtraScope" />
+        <slot
+          name="header-extra"
+          v-bind="headerExtraScope"
+        />
       </template>
       <template #after-sections="afterSectionsScope">
-        <slot name="after-sections" v-bind="afterSectionsScope" />
+        <slot
+          name="after-sections"
+          v-bind="afterSectionsScope"
+        />
       </template>
     </BaseDetailPage>
 

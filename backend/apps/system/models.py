@@ -653,6 +653,10 @@ class ModelFieldDefinition(BaseModel):
                 return 'user'
             if related_name == 'Department' or 'Organization' in related_name:
                 return 'department'
+            if related_name == 'Location':
+                return 'location'
+            if related_name == 'Asset':
+                return 'asset'
             return 'reference'
 
         # Choices should be rendered as select
@@ -683,8 +687,14 @@ class ModelFieldDefinition(BaseModel):
 
         # Handle ForeignKey special case
         reference_path = ''
+        reference_display_field = 'name'
         if isinstance(field, django_models.ForeignKey):
             reference_path = f"{field.related_model.__module__}.{field.related_model.__name__}"
+            related_name = getattr(field.related_model, '__name__', '')
+            if related_name == 'User':
+                reference_display_field = 'username'
+            elif related_name == 'Location':
+                reference_display_field = 'path'
 
         return cls(
             business_object=business_object,
@@ -698,6 +708,7 @@ class ModelFieldDefinition(BaseModel):
             is_editable=field.editable,
             is_unique=getattr(field, 'unique', False),
             reference_model_path=reference_path,
+            reference_display_field=reference_display_field,
             decimal_places=getattr(field, 'decimal_places', None),
             max_digits=getattr(field, 'max_digits', None),
             max_length=getattr(field, 'max_length', None),

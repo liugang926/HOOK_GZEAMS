@@ -57,7 +57,10 @@
         @loaded="handleRecordLoaded"
       >
         <!-- Lifecycle: action-bar — StatusActionBar replaces default buttons -->
-        <template v-if="isLifecycle" #action-bar>
+        <template
+          v-if="isLifecycle"
+          #action-bar
+        >
           <StatusActionBar
             :actions="lifecycleRendererRef?.workflowActions || []"
             :status="lifecycleRecordData?.status || ''"
@@ -66,8 +69,14 @@
         </template>
 
         <!-- Lifecycle: header-extra — el-steps workflow progress -->
-        <template v-if="isLifecycle && lifecycleExtension?.workflowSteps" #header-extra>
-          <el-card class="lifecycle-steps-card" shadow="never">
+        <template
+          v-if="isLifecycle && lifecycleExtension?.workflowSteps"
+          #header-extra
+        >
+          <el-card
+            class="lifecycle-steps-card"
+            shadow="never"
+          >
             <el-steps
               :active="lifecycleRendererRef?.getStepIndex(lifecycleRecordData?.status || '') || 0"
               finish-status="success"
@@ -82,7 +91,10 @@
         </template>
 
         <!-- Lifecycle: after-sections — SubTable + cost breakdown -->
-        <template v-if="isLifecycle" #after-sections>
+        <template
+          v-if="isLifecycle"
+          #after-sections
+        >
           <LifecycleDetailRenderer
             ref="lifecycleRendererRef"
             :object-code="objectCode"

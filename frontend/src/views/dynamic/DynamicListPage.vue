@@ -89,7 +89,7 @@
       >
         <FieldRenderer
           :field="getFieldDefinition(field)"
-          :model-value="(slotProps as any).row[field.fieldCode]"
+          :model-value="getSlotFieldValue((slotProps as any).row, field)"
           :form-data="(slotProps as any).row"
           :disabled="true"
         />
@@ -208,6 +208,8 @@ import {
 } from '@/platform/layout/renderSchemaProjector'
 import { mergeFieldSources, orderFieldsWithSchema } from '@/platform/layout/unifiedFieldOrder'
 import { compileLayoutSchema } from '@/platform/layout/layoutCompiler'
+import { resolveListFieldValue } from '@/utils/listFieldValue'
+import { isReferenceLikeFieldType } from '@/platform/reference/referenceFieldMeta'
 
 interface BatchAction {
   label: string
@@ -377,10 +379,15 @@ const buildFieldColumn = (field: any, visible = false): TableColumn | null => {
   return {
     prop: fieldCode,
     fieldCode,
+    dataKey: field?.dataKey || field?.data_key || fieldCode,
     label: field?.name || field?.label || fieldCode,
     type: fieldType,
     fieldType,
     options: field?.options || field?.choices || [],
+    referenceObject: field?.referenceObject || field?.reference_object || field?.targetObjectCode || field?.target_object_code || field?.reference_model_path || field?.relatedObject,
+    targetObjectCode: field?.targetObjectCode || field?.target_object_code || field?.referenceObject || field?.reference_object,
+    referenceDisplayField: field?.referenceDisplayField || field?.reference_display_field || field?.displayField || field?.display_field,
+    referenceSecondaryField: field?.referenceSecondaryField || field?.reference_secondary_field,
     sortable: field?.sortable !== false,
     visible
   } as TableColumn
@@ -587,16 +594,23 @@ const slotFields = computed(() => {
 
   return filterSystemFields(orderedVisibleFieldsSource.value)
     .filter((f: any) => {
-      const type = f.fieldType || f.field_type
-      return f.requiresSlot || f.requires_slot || type === 'user' || type === 'department'
+      const fieldType = String(f.fieldType || f.field_type || f.type || '').trim()
+      if (isReferenceLikeFieldType(fieldType)) return false
+      if (f.referenceObject || f.reference_object || f.reference_model_path || f.relatedObject) return false
+      return f.requiresSlot || f.requires_slot
     })
     .map((f: any) => ({
       fieldCode: f.code,
       field_code: f.code,
+      dataKey: f.dataKey || f.data_key || f.code,
       slotName: f.code,
       fieldType: f.fieldType || f.field_type,
       field_type: f.fieldType || f.field_type,
-      options: f.options
+      options: f.options,
+      referenceObject: f.referenceObject || f.reference_object || f.targetObjectCode || f.target_object_code || f.reference_model_path || f.relatedObject,
+      targetObjectCode: f.targetObjectCode || f.target_object_code || f.referenceObject || f.reference_object,
+      referenceDisplayField: f.referenceDisplayField || f.reference_display_field || f.displayField || f.display_field,
+      referenceSecondaryField: f.referenceSecondaryField || f.reference_secondary_field
     }))
 })
 
@@ -727,6 +741,7 @@ const getFieldDefinition = (slotField: any) => {
   return {
     code: slotField.fieldCode,
     name: slotField.fieldCode,
+    dataKey: originalField?.dataKey || originalField?.data_key || slotField.dataKey || slotField.fieldCode,
     fieldType: originalField?.fieldType || originalField?.field_type || slotField.fieldType || 'text',
     field_type: originalField?.fieldType || originalField?.field_type || slotField.fieldType || 'text',
     placeholder: '',
@@ -735,8 +750,23 @@ const getFieldDefinition = (slotField: any) => {
     isReadonly: true,
     is_readonly: true,
     options: slotField.options,
+    referenceObject: originalField?.referenceObject || originalField?.reference_object || originalField?.targetObjectCode || originalField?.target_object_code || originalField?.reference_model_path || originalField?.relatedObject || slotField.referenceObject || slotField.targetObjectCode,
+    targetObjectCode: originalField?.targetObjectCode || originalField?.target_object_code || originalField?.referenceObject || originalField?.reference_object || slotField.targetObjectCode || slotField.referenceObject,
+    referenceDisplayField: originalField?.referenceDisplayField || originalField?.reference_display_field || originalField?.displayField || originalField?.display_field || slotField.referenceDisplayField,
+    referenceSecondaryField: originalField?.referenceSecondaryField || originalField?.reference_secondary_field || slotField.referenceSecondaryField,
     description: undefined
   }
+}
+
+const getSlotFieldValue = (row: any, slotField: any) => {
+  return resolveListFieldValue(row, {
+    fieldCode: slotField.fieldCode,
+    prop: slotField.fieldCode,
+    dataKey: slotField.dataKey || slotField.fieldCode,
+    fieldType: slotField.fieldType || slotField.field_type || 'text',
+    referenceObject: slotField.referenceObject || slotField.reference_object || slotField.targetObjectCode || slotField.target_object_code || slotField.reference_model_path || slotField.relatedObject,
+    referenceDisplayField: slotField.referenceDisplayField
+  })
 }
 
 // Load metadata on mount

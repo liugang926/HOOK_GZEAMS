@@ -1,19 +1,31 @@
 <template>
   <div class="page-container">
     <div v-if="loading">
-      <el-skeleton :rows="8" animated />
+      <el-skeleton
+        :rows="8"
+        animated
+      />
     </div>
-    <div v-else-if="detail" class="detail-wrapper">
+    <div
+      v-else-if="detail"
+      class="detail-wrapper"
+    >
       <!-- Header -->
       <div class="page-header">
         <div class="header-left">
-          <el-button :icon="ArrowLeft" @click="router.back()">
+          <el-button
+            :icon="ArrowLeft"
+            @click="router.back()"
+          >
             {{ $t('common.actions.back') }}
           </el-button>
           <h2 class="page-title">
             {{ detail.receiptNo || $t('assets.lifecycle.assetReceipt.detailTitle') }}
           </h2>
-          <el-tag :type="getStatusType(detail.status)" class="ml-2">
+          <el-tag
+            :type="getStatusType(detail.status)"
+            class="ml-2"
+          >
             {{ getStatusLabel(detail.status) }}
           </el-tag>
         </div>
@@ -28,7 +40,10 @@
 
       <!-- Status Steps -->
       <el-card class="steps-card mb-4">
-        <el-steps :active="getStepIndex(detail.status)" finish-status="success">
+        <el-steps
+          :active="getStepIndex(detail.status)"
+          finish-status="success"
+        >
           <el-step :title="$t('assets.lifecycle.assetReceipt.status.draft')" />
           <el-step :title="$t('assets.lifecycle.assetReceipt.status.submitted')" />
           <el-step :title="$t('assets.lifecycle.assetReceipt.status.inspecting')" />
@@ -38,7 +53,10 @@
 
       <!-- Basic Info -->
       <el-card class="info-card">
-        <el-descriptions :column="3" border>
+        <el-descriptions
+          :column="3"
+          border
+        >
           <el-descriptions-item :label="$t('assets.lifecycle.assetReceipt.columns.receiptNo')">
             {{ detail.receiptNo }}
           </el-descriptions-item>
@@ -73,8 +91,18 @@
         :empty-text="$t('common.messages.noData')"
       >
         <template #assetGenerated="{ row }">
-          <el-icon v-if="row.assetGenerated" color="#67c23a"><Check /></el-icon>
-          <el-icon v-else color="#909399"><Close /></el-icon>
+          <el-icon
+            v-if="row.assetGenerated"
+            color="#67c23a"
+          >
+            <Check />
+          </el-icon>
+          <el-icon
+            v-else
+            color="#909399"
+          >
+            <Close />
+          </el-icon>
         </template>
       </SubTablePanel>
     </div>
@@ -86,7 +114,10 @@
       width="480px"
       destroy-on-close
     >
-      <el-form :model="inspectForm" label-width="120px">
+      <el-form
+        :model="inspectForm"
+        label-width="120px"
+      >
         <el-form-item :label="$t('assets.lifecycle.assetReceipt.form.inspectionResult')">
           <el-input
             v-model="inspectForm.result"
@@ -97,14 +128,25 @@
         </el-form-item>
         <el-form-item :label="$t('assets.lifecycle.assetReceipt.dialog.passed')">
           <el-radio-group v-model="inspectForm.passed">
-            <el-radio :value="true">{{ $t('assets.lifecycle.assetReceipt.dialog.passedYes') }}</el-radio>
-            <el-radio :value="false">{{ $t('assets.lifecycle.assetReceipt.dialog.passedNo') }}</el-radio>
+            <el-radio :value="true">
+              {{ $t('assets.lifecycle.assetReceipt.dialog.passedYes') }}
+            </el-radio>
+            <el-radio :value="false">
+              {{ $t('assets.lifecycle.assetReceipt.dialog.passedNo') }}
+            </el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="inspectDialog = false">{{ $t('common.actions.cancel') }}</el-button>
-        <el-button type="primary" @click="handleInspect">{{ $t('common.actions.confirm') }}</el-button>
+        <el-button @click="inspectDialog = false">
+          {{ $t('common.actions.cancel') }}
+        </el-button>
+        <el-button
+          type="primary"
+          @click="handleInspect"
+        >
+          {{ $t('common.actions.confirm') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
