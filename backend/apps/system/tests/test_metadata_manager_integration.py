@@ -319,6 +319,12 @@ class TestMenuAPICrossOrganization:
             system_category = next(category for category in categories if category['code'] == 'system')
             assert system_category['is_locked'] is False
             assert system_category['supports_delete'] is True
+            assert system_category['translation_target'] == {
+                'content_type': 'system.menugroup',
+                'content_type_model': 'menugroup',
+                'object_id': system_category['id'],
+                'field_name': 'name',
+            }
 
             items = response.data['data']['items']
             menu_management_item = next(item for item in items if item['code'] == 'MenuManagement')

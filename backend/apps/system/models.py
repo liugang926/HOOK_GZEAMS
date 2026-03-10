@@ -815,6 +815,18 @@ class ObjectRelationDefinition(BaseModel):
         default='inline_readonly',
         db_comment='Runtime display mode'
     )
+
+    DISPLAY_TIER_CHOICES = [
+        ('L1', 'Line Item (Inline in Details)'),
+        ('L2', 'Business Related (Default)'),
+        ('L3', 'Extended Related (Collapsed)'),
+    ]
+    display_tier = models.CharField(
+        max_length=2,
+        choices=DISPLAY_TIER_CHOICES,
+        default='L2',
+        db_comment='Display tier: L1=inline detail, L2=related tab, L3=collapsed'
+    )
     sort_order = models.IntegerField(
         default=0,
         db_comment='Display order within parent object'

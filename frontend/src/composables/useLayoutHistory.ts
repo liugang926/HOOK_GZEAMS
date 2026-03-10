@@ -26,6 +26,7 @@ export interface UseLayoutHistoryReturn {
   canRedo: Ref<boolean>
   currentIndex: Ref<number>
   historyLength: Ref<number>
+  entries: Ref<HistoryEntry[]>
 
   // Actions
   push: (config: Record<string, unknown>, description?: string) => void
@@ -123,6 +124,7 @@ export function useLayoutHistory(
     canRedo,
     currentIndex,
     historyLength,
+    entries: computed(() => history.value),
     push,
     undo,
     redo,

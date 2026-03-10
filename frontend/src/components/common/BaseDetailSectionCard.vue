@@ -49,6 +49,7 @@ interface Props {
   getEditFieldValue: (field: DetailFieldLike) => any
   toInlineEditRuntimeField: (field: DetailFieldLike) => Record<string, any>
   getFieldItemStyle: (field: DetailFieldLike) => Record<string, string>
+  getFieldItemClass?: (field: DetailFieldLike, section?: DetailSectionLike) => string[]
   getSectionCanvasStyle: (section: DetailSectionLike) => Record<string, string>
   getFieldColStyle: (field: DetailFieldLike, section: DetailSectionLike) => Record<string, string>
   getFieldPlacementAttrs: (field: DetailFieldLike) => Record<string, string>
@@ -100,7 +101,8 @@ const fieldItemBaseClass = (field: DetailFieldLike) => [
   {
     'sidebar-field-item': props.sidebar,
     'field-image': field.type === 'image'
-  }
+  },
+  ...(props.getFieldItemClass ? props.getFieldItemClass(field, props.section) : [])
 ]
 </script>
 
@@ -203,6 +205,13 @@ const fieldItemBaseClass = (field: DetailFieldLike) => [
                   </div>
 
                   <div
+                    v-else-if="field.type === 'empty'"
+                    class="empty-space-card"
+                    :style="getFieldItemStyle(field)"
+                    v-bind="getFieldPlacementAttrs(field)"
+                  ></div>
+
+                  <div
                     v-else
                     :class="fieldItemBaseClass(field)"
                     :style="getFieldItemStyle(field)"
@@ -268,6 +277,13 @@ const fieldItemBaseClass = (field: DetailFieldLike) => [
                   :value="getFieldValue(field)"
                 />
               </div>
+
+              <div
+                v-else-if="field.type === 'empty'"
+                class="empty-space-card"
+                :style="getFieldItemStyle(field)"
+                v-bind="getFieldPlacementAttrs(field)"
+              ></div>
 
               <div
                 v-else

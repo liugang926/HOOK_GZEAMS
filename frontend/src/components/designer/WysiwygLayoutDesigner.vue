@@ -24,12 +24,14 @@
       :viewport="viewport"
       :can-undo="canUndo"
       :can-redo="canRedo"
+      :render-mode="renderMode"
       :preview-loading="previewLoading"
       :preview-mode="previewMode"
       :publishing="publishing"
       @cancel="handleCancel"
       @undo="undo"
       @redo="redo"
+      @update:render-mode="setRenderMode"
       @reset="handleReset"
       @save="handleSave"
       @publish="handlePublish"
@@ -68,8 +70,6 @@
         @canvas-drop="handleCanvasDrop"
         @canvas-drag-over="handleCanvasDragOver"
         @canvas-drag-leave="handleCanvasDragLeave"
-        @set-render-mode="setRenderMode"
-        @update:layout-mode="layoutMode = $event"
         @add-section="addSection"
       >
         <!-- Render the actual form using real components -->
@@ -171,6 +171,14 @@
         @section-property-update="handleSectionPropertyUpdate"
       />
     </div>
+
+    <!-- History Panel Drawer -->
+    <DesignerHistoryPanel
+      v-model:visible="historyPanelVisible"
+      :entries="historyEntries"
+      :current-index="historyCurrentIndex"
+      @go-to="handleHistoryGoTo"
+    />
   </div>
 </template>
 
@@ -183,6 +191,7 @@ import DesignerFieldPanel from '@/components/designer/DesignerFieldPanel.vue'
 import DesignerPropertyPanel from '@/components/designer/DesignerPropertyPanel.vue'
 import DesignerCanvas from '@/components/designer/DesignerCanvas.vue'
 import DesignerCanvasSectionRenderer from '@/components/designer/DesignerCanvasSectionRenderer.vue'
+import DesignerHistoryPanel from '@/components/designer/DesignerHistoryPanel.vue'
 import BaseDetailPage, { type ReverseRelationField } from '@/components/common/BaseDetailPage.vue'
 import { canAddFieldInDesigner, getFieldDisabledReason } from '@/platform/layout/designerFieldGuard'
 import { useDesignerState } from '@/components/designer/useDesignerState'
@@ -314,6 +323,14 @@ const canvasContentRef = computed(() => canvasShellRef.value?.canvasContentEleme
 // History management
 const history = useDesignerHistory(layoutConfig, { maxHistory: 50 })
 const { canUndo, canRedo, undo, redo, historyLength } = history
+
+// History panel state
+const historyPanelVisible = ref(false)
+const historyEntries = computed(() => history.entries.value)
+const historyCurrentIndex = computed(() => history.currentIndex.value)
+const handleHistoryGoTo = (index: number) => {
+  history.goTo(index)
+}
 const { commitLayoutChange } = useDesignerChangePipeline({
   objectCode: props.objectCode,
   mode: props.mode,

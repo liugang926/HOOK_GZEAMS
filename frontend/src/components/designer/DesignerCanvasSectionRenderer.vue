@@ -322,12 +322,20 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
 
 <style scoped lang="scss">
 .empty-column-placeholder {
-  padding: 30px;
+  padding: 28px;
   text-align: center;
   border: 2px dashed #dcdfe6;
   border-radius: 8px;
   color: #909399;
-  font-size: 14px;
+  font-size: 13px;
+  background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+  transition: all 0.25s ease;
+
+  &:hover {
+    border-color: var(--el-color-primary-light-5, #79bbff);
+    color: var(--el-color-primary, #409eff);
+    background: linear-gradient(135deg, #f0f7ff 0%, #ecf5ff 100%);
+  }
 }
 
 .empty-column-placeholder.compact {
@@ -337,19 +345,27 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
 
 .designer-section-slot {
   position: relative;
+  border-radius: 8px;
+  transition: outline 0.2s ease, outline-offset 0.2s ease;
 }
 
 .designer-section-slot.is-selected {
-  outline: 2px dashed #409eff;
-  outline-offset: 6px;
-  border-radius: 6px;
+  outline: 2px solid var(--el-color-primary, #409eff);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 .designer-section-toolbar {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   justify-content: flex-end;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border-radius: 6px;
+  border: 1px solid #e4e7ed;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
 .designer-section-body,

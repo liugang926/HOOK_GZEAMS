@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Dynamic Object API Client
  *
  * Unified API client for all business objects accessed via /api/objects/{code}/
@@ -82,6 +82,8 @@ export interface ObjectRelationDefinition {
     groupName?: string
     groupOrder?: number
     defaultExpanded?: boolean
+    displayTier?: 'L1' | 'L2' | 'L3'
+    actionLabel?: string
 }
 
 export interface ObjectRelationsResponse {
@@ -105,6 +107,26 @@ export interface RelatedRecordsResponse<T = any> {
     parentObjectCode: string
     parentId: string
     targetObjectCode: string
+}
+
+export interface CompactDetailField {
+    fieldCode: string
+    label: string
+    value: any
+    fieldType: string
+}
+
+export interface GlobalSearchMatch {
+    record_id: string
+    display_name: string
+    match_field: string
+    match_value: string
+}
+
+export interface GlobalSearchResult {
+    object_code: string
+    object_name: string
+    matches: GlobalSearchMatch[]
 }
 
 /**
@@ -339,6 +361,52 @@ class DynamicAPI {
             params
         })
     }
+
+    /**
+     * Get relation counts for a parent record.
+     * GET /api/system/objects/{code}/{id}/relation-counts/
+     */
+    getRelationCounts(
+        code: string,
+        id: string
+    ): Promise<ApiResponse<{ counts: Record<string, number> }>> {
+        return request({
+            url: `${this.baseUrl}/${code}/${id}/relation-counts/`,
+            method: 'get'
+        })
+    }
+
+    /**
+     * Get compact detail fields for a record (used by hover cards).
+     * GET /api/system/objects/{code}/{id}/compact/
+     */
+    getCompactDetail(
+        code: string,
+        id: string
+    ): Promise<ApiResponse<{ fields: CompactDetailField[] }>> {
+        return request({
+            url: `${this.baseUrl}/${code}/${id}/compact/`,
+            method: 'get'
+        })
+    }
+
+    /**
+     * Global search across all business objects.
+     * GET /api/system/global-search/?q=<keyword>&limit=5&object_codes=code1,code2
+     */
+    globalSearch(
+        keyword: string,
+        options?: { limit?: number; objectCodes?: string[] }
+    ): Promise<ApiResponse<GlobalSearchResult[]>> {
+        const params: Record<string, string> = { q: keyword }
+        if (options?.limit) params.limit = String(options.limit)
+        if (options?.objectCodes?.length) params.object_codes = options.objectCodes.join(',')
+        return request({
+            url: '/api/system/global-search/',
+            method: 'get',
+            params
+        })
+    }
 }
 
 /**
@@ -366,6 +434,8 @@ export interface ObjectClient {
     getRuntime(mode?: 'edit' | 'readonly' | 'list' | 'search', params?: Record<string, any>): Promise<any>
     getRelations(): Promise<ObjectRelationsResponse>
     getRelated<T = any>(id: string, relationCode: string, params?: Record<string, any>): Promise<RelatedRecordsResponse<T>>
+    getRelationCounts(id: string): Promise<ApiResponse<{ counts: Record<string, number> }>>
+    getCompactDetail(id: string): Promise<ApiResponse<{ fields: CompactDetailField[] }>>
 }
 
 /**
@@ -399,7 +469,11 @@ export function createObjectClient(code: string): ObjectClient {
             dynamicApi.getRuntime(code, mode, params),
         getRelations: () => dynamicApi.getRelations(code),
         getRelated: <T = any>(id: string, relationCode: string, params?: Record<string, any>) =>
-            dynamicApi.getRelated<T>(code, id, relationCode, params)
+            dynamicApi.getRelated<T>(code, id, relationCode, params),
+        getRelationCounts: (id: string) =>
+            dynamicApi.getRelationCounts(code, id),
+        getCompactDetail: (id: string) =>
+            dynamicApi.getCompactDetail(code, id)
     }
 }
 

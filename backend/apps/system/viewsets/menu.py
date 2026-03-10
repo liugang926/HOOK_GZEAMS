@@ -24,6 +24,8 @@ from apps.system.models import BusinessObject, MenuEntry, MenuGroup, Translation
 class MenuViewSet(viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
+    MENU_GROUP_CONTENT_TYPE = "system.menugroup"
+
     def get_queryset(self):
         return BusinessObject.objects.filter(is_deleted=False).order_by("code")
 
@@ -128,6 +130,12 @@ class MenuViewSet(viewsets.GenericViewSet):
             "is_locked": bool(group.is_locked),
             "entry_count": int(entry_count),
             "supports_delete": True,
+            "translation_target": {
+                "content_type": self.MENU_GROUP_CONTENT_TYPE,
+                "content_type_model": "menugroup",
+                "object_id": str(group.id),
+                "field_name": "name",
+            },
         }
 
     def _get_active_groups(self):
@@ -145,16 +153,16 @@ class MenuViewSet(viewsets.GenericViewSet):
         sync_menu_registry_models()
         groups = [group for group in self._get_active_groups() if group.is_visible]
         allowed_group_codes = {group.code for group in groups}
+        locale_names_by_group_id = self._get_group_locale_names(groups)
         grouped: Dict[str, Dict[str, Any]] = {}
         flat_items: List[Dict[str, Any]] = []
 
         for group in groups:
             grouped[group.code] = {
-                "code": group.code,
-                "name": group.name,
-                "translation_key": group.translation_key,
-                "order": int(group.sort_order),
-                "icon": group.icon,
+                **self._serialize_group(
+                    group,
+                    locale_names=locale_names_by_group_id.get(str(group.id), {}),
+                ),
                 "items": [],
             }
 

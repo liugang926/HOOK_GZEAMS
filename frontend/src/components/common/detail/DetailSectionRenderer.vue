@@ -85,7 +85,7 @@
                   >
                     <div
                       v-if="field.type === 'slot'"
-                      class="field-item"
+                      :class="['field-item', ...getFieldItemClass(field, section)]"
                       :style="getFieldItemStyle(field)"
                       v-bind="getFieldPlacementAttrs(field)"
                     >
@@ -98,8 +98,15 @@
                     </div>
 
                     <div
+                      v-else-if="field.type === 'empty'"
+                      class="empty-space-card"
+                      :style="getFieldItemStyle(field)"
+                      v-bind="getFieldPlacementAttrs(field)"
+                    ></div>
+
+                    <div
                       v-else
-                      :class="['field-item', { 'field-image': field.type === 'image' }]"
+                      :class="['field-item', { 'field-image': field.type === 'image' }, ...getFieldItemClass(field, section)]"
                       :style="getFieldItemStyle(field)"
                       v-bind="getFieldPlacementAttrs(field)"
                     >
@@ -131,7 +138,7 @@
               >
                 <div
                   v-if="field.type === 'slot'"
-                  :class="['field-item', { 'sidebar-field-item': sidebar }]"
+                  :class="['field-item', { 'sidebar-field-item': sidebar }, ...getFieldItemClass(field, section)]"
                   :style="getFieldItemStyle(field)"
                   v-bind="getFieldPlacementAttrs(field)"
                 >
@@ -144,10 +151,18 @@
                 </div>
 
                 <div
+                  v-else-if="field.type === 'empty'"
+                  class="empty-space-card"
+                  :style="getFieldItemStyle(field)"
+                  v-bind="getFieldPlacementAttrs(field)"
+                ></div>
+
+                <div
                   v-else
                   :class="[
                     'field-item',
-                    { 'field-image': field.type === 'image', 'sidebar-field-item': sidebar }
+                    { 'field-image': field.type === 'image', 'sidebar-field-item': sidebar },
+                    ...getFieldItemClass(field, section)
                   ]"
                   :style="getFieldItemStyle(field)"
                   v-bind="getFieldPlacementAttrs(field)"
@@ -212,7 +227,7 @@ const emit = defineEmits<{
 
 const { locale } = useI18n()
 
-const { getSectionCanvasStyle, getFieldColStyle, getFieldItemStyle, getFieldPlacementAttrs } = useDetailGridPlacement({
+const { getSectionCanvasStyle, getFieldColStyle, getFieldItemStyle, getFieldItemClass, getFieldPlacementAttrs } = useDetailGridPlacement({
   fieldSpan: computed(() => props.fieldSpan)
 })
 

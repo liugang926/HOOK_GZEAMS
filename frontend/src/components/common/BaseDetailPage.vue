@@ -257,6 +257,7 @@ const {
   getEditFieldValue,
   toInlineEditRuntimeField,
   getFieldItemStyle,
+  getFieldItemClass,
   getSectionCanvasStyle,
   getFieldColStyle,
   getFieldPlacementAttrs
@@ -528,6 +529,7 @@ defineExpose({
             :get-edit-field-value="getEditFieldValue"
             :to-inline-edit-runtime-field="toInlineEditRuntimeField"
             :get-field-item-style="getFieldItemStyle"
+            :get-field-item-class="getFieldItemClass"
             :get-section-canvas-style="getSectionCanvasStyle"
             :get-field-col-style="getFieldColStyle"
             :get-field-placement-attrs="getFieldPlacementAttrs"
@@ -575,6 +577,7 @@ defineExpose({
                 :get-edit-field-value="getEditFieldValue"
                 :to-inline-edit-runtime-field="toInlineEditRuntimeField"
                 :get-field-item-style="getFieldItemStyle"
+                :get-field-item-class="getFieldItemClass"
                 :get-section-canvas-style="getSectionCanvasStyle"
                 :get-field-col-style="getFieldColStyle"
                 :get-field-placement-attrs="getFieldPlacementAttrs"

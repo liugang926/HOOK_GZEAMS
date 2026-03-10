@@ -48,6 +48,8 @@ class RelationQueryService:
                 locale=resolved_locale,
                 fallback_label=label,
             )
+            action_label = self._resolve_action_label(row, resolved_locale)
+            display_tier = getattr(row, 'display_tier', None) or 'L2'
             payload.append(
                 {
                     'relation_code': row.relation_code,
@@ -55,6 +57,7 @@ class RelationQueryService:
                     'target_object_code': row.target_object_code,
                     'relation_kind': row.relation_kind,
                     'display_mode': row.display_mode,
+                    'display_tier': display_tier,
                     'sort_order': row.sort_order,
                     'target_fk_field': row.target_fk_field,
                     'through_object_code': row.through_object_code,
@@ -67,9 +70,54 @@ class RelationQueryService:
                     'group_name': group_meta['group_name'],
                     'group_order': group_meta['group_order'],
                     'default_expanded': group_meta['default_expanded'],
+                    'action_label': action_label,
                 }
             )
         return payload
+
+    def count_relations(
+        self,
+        *,
+        parent_object_code: str,
+        parent_id: str,
+        organization_id: Optional[str],
+    ) -> dict[str, int]:
+        """
+        Return {relation_code: record_count} for all active relations of a parent.
+        """
+        rows = (
+            ObjectRelationDefinition.objects
+            .filter(parent_object_code=parent_object_code, is_active=True)
+            .order_by('sort_order', 'relation_code')
+        )
+
+        counts: dict[str, int] = {}
+        for row in rows:
+            try:
+                resolution = self.resolve_related_queryset(
+                    parent_object_code=parent_object_code,
+                    parent_id=parent_id,
+                    relation_code=row.relation_code,
+                    organization_id=organization_id,
+                )
+                counts[row.relation_code] = resolution.target_queryset.count()
+            except (ValidationError, Exception):
+                counts[row.relation_code] = 0
+        return counts
+
+    def _resolve_action_label(
+        self,
+        relation: ObjectRelationDefinition,
+        locale: str,
+    ) -> str:
+        """Resolve localized action button label from extra_config.action_label_i18n."""
+        extra = relation.extra_config or {}
+        i18n_map = extra.get('action_label_i18n')
+        if isinstance(i18n_map, dict):
+            localized = self._pick_locale_text(i18n_map, locale)
+            if localized:
+                return str(localized)
+        return ''
 
     def _resolve_relation_label(
         self,

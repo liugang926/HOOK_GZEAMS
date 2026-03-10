@@ -6,8 +6,11 @@ import { useLocaleStore } from '@/stores/locale'
 import SystemMenuManagement from '@/views/system/SystemMenuManagement.vue'
 
 const {
+  mockMenuGet,
+  mockMenuConfig,
   mockMenuManagement,
   mockMenuUpdateManagement,
+  mockBusinessObjectList,
   mockGetActiveLanguages,
   mockMessageSuccess,
   mockMessageError,
@@ -16,8 +19,11 @@ const {
   mockSortableCreate,
   mockSortableDestroy,
 } = vi.hoisted(() => ({
+  mockMenuGet: vi.fn(),
+  mockMenuConfig: vi.fn(),
   mockMenuManagement: vi.fn(),
   mockMenuUpdateManagement: vi.fn(),
+  mockBusinessObjectList: vi.fn(),
   mockGetActiveLanguages: vi.fn(),
   mockMessageSuccess: vi.fn(),
   mockMessageError: vi.fn(),
@@ -34,6 +40,11 @@ vi.mock('sortablejs', () => ({
 }))
 
 vi.mock('element-plus', () => ({
+  ElPopover: {
+    props: ['visible'],
+    emits: ['update:visible'],
+    template: '<div class="popover-stub"><slot name="reference" /></div>',
+  },
   ElMessage: {
     success: mockMessageSuccess,
     error: mockMessageError,
@@ -45,7 +56,12 @@ vi.mock('element-plus', () => ({
 }))
 
 vi.mock('@/api/system', () => ({
+  businessObjectApi: {
+    list: mockBusinessObjectList,
+  },
   menuApi: {
+    get: mockMenuGet,
+    config: mockMenuConfig,
     management: mockMenuManagement,
     updateManagement: mockMenuUpdateManagement,
   },
@@ -59,9 +75,13 @@ vi.mock('@/api/translations', () => ({
 
 const createCategories = (count = 6) =>
   Array.from({ length: count }, (_, index) => ({
+    id: `${index + 1}`,
     code: index === 0 ? 'asset_master' : `custom_group_${index}`,
     name: index === 0 ? 'menu.categories.asset_master' : `Custom Group ${index}`,
     translationKey: index === 0 ? 'menu.categories.asset_master' : '',
+    localeNames: index === 0
+      ? { 'zh-CN': '资产主数据', 'en-US': 'Asset Master' }
+      : { 'zh-CN': `自定义分类 ${index}`, 'en-US': `Custom Group ${index}` },
     icon: 'Menu',
     order: (index + 1) * 10,
     isVisible: true,
@@ -117,9 +137,9 @@ const createWrapper = () => {
           template: '<label><span>{{ label }}</span><slot /></label>',
         },
         'el-input': {
-          props: ['modelValue', 'placeholder'],
+          props: ['modelValue', 'placeholder', 'disabled'],
           emits: ['update:modelValue'],
-          template: '<input :value="modelValue" :placeholder="placeholder" @input="$emit(\'update:modelValue\', $event.target.value)" />',
+          template: '<input :value="modelValue" :placeholder="placeholder" :disabled="disabled" @input="$emit(\'update:modelValue\', $event.target.value)" />',
         },
         'el-input-number': {
           props: ['modelValue'],
@@ -132,6 +152,7 @@ const createWrapper = () => {
           template: '<input type="checkbox" :checked="modelValue" @change="$emit(\'update:modelValue\', $event.target.checked)" />',
         },
         'el-tag': { template: '<span><slot /></span>' },
+        'el-icon': { template: '<span class="el-icon-stub"><slot /></span>' },
         'el-button': {
           props: ['disabled', 'loading', 'type'],
           emits: ['click'],
@@ -159,8 +180,11 @@ const createWrapper = () => {
 describe('SystemMenuManagement', () => {
   beforeEach(() => {
     localStorage.clear()
+    mockMenuGet.mockReset()
+    mockMenuConfig.mockReset()
     mockMenuManagement.mockReset()
     mockMenuUpdateManagement.mockReset()
+    mockBusinessObjectList.mockReset()
     mockGetActiveLanguages.mockReset()
     mockMessageSuccess.mockReset()
     mockMessageError.mockReset()
@@ -174,6 +198,11 @@ describe('SystemMenuManagement', () => {
     })
 
     i18n.global.locale.value = 'zh-CN'
+    mockMenuGet.mockResolvedValue({ groups: [], items: [] })
+    mockMenuConfig.mockResolvedValue({
+      commonIcons: ['Menu', 'FolderOpened', 'Grid', 'Files'],
+    })
+    mockBusinessObjectList.mockResolvedValue([])
     mockGetActiveLanguages.mockResolvedValue([
       { id: '1', code: 'zh-CN', name: 'Chinese', nativeName: '中文', isDefault: true, isActive: true, sortOrder: 1 },
       { id: '2', code: 'en-US', name: 'English', nativeName: 'English', isDefault: false, isActive: true, sortOrder: 2 },
@@ -189,8 +218,17 @@ describe('SystemMenuManagement', () => {
 
     expect(wrapper.text()).toContain('菜单管理')
     const inputValues = wrapper.findAll('input').map((input) => input.element.value)
-    expect(inputValues).toContain('资产台账')
+    expect(inputValues).toContain('资产主数据')
     expect(inputValues).not.toContain('menu.categories.asset_master')
+  })
+
+  it('locks category code editing and renders icon-library selection', async () => {
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    const codeDisplay = wrapper.findAll('.readonly-code').find((node) => node.text() === 'asset_master')
+    expect(codeDisplay).toBeDefined()
+    expect(wrapper.findAll('.icon-picker-trigger').length).toBeGreaterThan(0)
   })
 
   it('renders paginated category and entry layouts', async () => {
@@ -250,11 +288,11 @@ describe('SystemMenuManagement', () => {
 
     const selects = wrapper.findAll('select')
     expect(selects.length).toBeGreaterThan(0)
-    await selects[0].setValue('custom_group_2')
+    await selects[selects.length - 1].setValue('custom_group_2')
     await flushPromises()
 
     expect(wrapper.find('.entry-group').text()).toContain('Asset Master')
-    expect(wrapper.find('[data-testid="empty-group-asset_master"]').exists()).toBe(true)
+    expect(wrapper.find('.entry-group').text()).toContain('No entries yet')
   })
 
   it('shows empty drop zones and supports collapsing entry groups', async () => {
@@ -284,7 +322,7 @@ describe('SystemMenuManagement', () => {
     await flushPromises()
 
     expect(wrapper.find('[data-testid="category-item-custom_group_1"]').classes()).toContain('active')
-    expect(wrapper.find('.entry-group').text()).toContain('Custom Group 1')
+    expect(wrapper.find('.entry-group').text()).toContain('自定义分类 1')
   })
 
   it('surfaces backend migration validation messages when saving fails', async () => {

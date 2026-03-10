@@ -131,7 +131,7 @@ class DynamicDataService(BaseCRUDService):
         # Apply pagination with optimized field selection
         start = (page - 1) * page_size
         items = qs.only(
-            'id', 'data_no', 'status', 'dynamic_fields', 
+            'id', 'data_no', 'status', 'dynamic_fields',
             'created_at', 'updated_at', 'business_object_id', 'created_by_id'
         )[start:start + page_size]
 
@@ -203,6 +203,14 @@ class DynamicDataService(BaseCRUDService):
         # Calculate formula fields
         processed_data = self._calculate_formulas(processed_data, field_defs)
 
+        # Extract sub_table_data before creating record
+        sub_table_payload = {}
+        for fc, fd in field_defs.items():
+            if fd.field_type == 'sub_table' and fc in processed_data:
+                val = processed_data.pop(fc, None)
+                if isinstance(val, list):
+                    sub_table_payload[fc] = val
+
         # Generate data number
         data_no = self._generate_data_no()
 
@@ -213,6 +221,10 @@ class DynamicDataService(BaseCRUDService):
             dynamic_fields=processed_data,
             status=status
         )
+
+        # Sync sub-table rows if any
+        if sub_table_payload:
+            self._sync_sub_tables(dynamic_data, sub_table_payload)
 
         return self._serialize_data(dynamic_data, include_all_fields=True)
 
@@ -249,6 +261,14 @@ class DynamicDataService(BaseCRUDService):
         # Sanitize reference fields in incoming data before merging
         data = self._sanitize_reference_fields(data, field_defs)
 
+        # Extract sub_table_data before merging
+        sub_table_payload = {}
+        for fc, fd in field_defs.items():
+            if fd.field_type == 'sub_table' and fc in data:
+                val = data.pop(fc, None)
+                if isinstance(val, list):
+                    sub_table_payload[fc] = val
+
         current_fields.update(data)
 
         # Recalculate formulas
@@ -257,6 +277,10 @@ class DynamicDataService(BaseCRUDService):
         # Update the record
         dynamic_data.dynamic_fields = current_fields
         dynamic_data.save()
+
+        # Sync sub-table rows if any
+        if sub_table_payload:
+            self._sync_sub_tables(dynamic_data, sub_table_payload)
 
         return self._serialize_data(dynamic_data, include_all_fields=True)
 
@@ -465,6 +489,61 @@ class DynamicDataService(BaseCRUDService):
         except Exception:
             pass
         return None
+
+    def _sync_sub_tables(
+        self,
+        parent: DynamicData,
+        sub_table_payload: Dict[str, List[Dict]],
+    ) -> None:
+        """
+        Batch-sync sub-table rows for a parent record.
+
+        For each sub_table field code, the payload is a list of row dicts.
+        Each row dict may contain:
+          - 'id': existing row ID (update)
+          - 'row_data': cell values
+          - '_deleted': True to soft-delete a row
+
+        Rows without 'id' are treated as new.
+        Existing rows not present in the payload are left untouched
+        (to delete, send _deleted: True explicitly).
+        """
+        for field_code, rows in sub_table_payload.items():
+            if not isinstance(rows, list):
+                continue
+
+            try:
+                field_def = self.business_object.field_definitions.get(
+                    code=field_code,
+                    field_type='sub_table',
+                )
+            except FieldDefinition.DoesNotExist:
+                continue
+
+            for order, row in enumerate(rows):
+                if not isinstance(row, dict):
+                    continue
+
+                row_id = row.get('id')
+                row_data = row.get('row_data', {})
+                is_deleted = row.get('_deleted', False)
+
+                if row_id:
+                    if is_deleted:
+                        self.delete_sub_table_row(row_id)
+                    else:
+                        self.update_sub_table_row(
+                            row_id=row_id,
+                            row_data=row_data,
+                            row_order=order,
+                        )
+                else:
+                    # New row
+                    self.add_sub_table_row(
+                        data_id=str(parent.pk),
+                        field_code=field_code,
+                        row_data=row_data,
+                    )
 
     def get_sub_table_rows(
         self,

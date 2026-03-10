@@ -28,6 +28,7 @@ export interface LocalMenuGroup {
     icon: string
     items: LocalMenuItem[]
     translationKey?: string
+    localeNames?: Record<string, string>
     order?: number
 }
 
@@ -99,10 +100,18 @@ export function normalizeMenuGroups(payload: AnyRecord): LocalMenuGroup[] {
             }))
 
             return {
-                id: String(group?.code || group?.name || `group-${groupIndex}`),
+                id: String(group?.id || group?.code || group?.name || `group-${groupIndex}`),
                 code: String(group?.code || ''),
                 name: String(group?.name || group?.translationKey || ''),
                 translationKey: String(group?.translationKey || ''),
+                localeNames:
+                    group?.localeNames && typeof group.localeNames === 'object'
+                        ? Object.fromEntries(
+                              Object.entries(group.localeNames as Record<string, unknown>)
+                                  .map(([locale, text]) => [String(locale), String(text || '').trim()])
+                                  .filter(([, text]) => Boolean(text))
+                          )
+                        : undefined,
                 icon: String(group?.icon || 'Menu'),
                 order: Number(group?.order || groupIndex + 1),
                 items,
@@ -183,6 +192,10 @@ export function mergeMenuGroups(
             seenItems.add(itemKey)
         }
 
+        existingGroup.localeNames = group.localeNames || existingGroup.localeNames
+        existingGroup.translationKey = group.translationKey || existingGroup.translationKey
+        existingGroup.name = group.name || existingGroup.name
+        existingGroup.icon = group.icon || existingGroup.icon
         existingGroup.items.sort((a, b) => (a.order || 0) - (b.order || 0))
     }
 
@@ -196,7 +209,7 @@ export function mergeMenuGroups(
 // ---------------------------------------------------------------------------
 
 export const useMenuStore = defineStore('menu', () => {
-    const { t, te } = useI18n()
+    const { t, te, locale } = useI18n()
 
     // ----- State -----
     const menuGroups = shallowRef<LocalMenuGroup[]>([])
@@ -227,6 +240,20 @@ export const useMenuStore = defineStore('menu', () => {
     function getGroupLabel(group: LocalMenuGroup): string {
         const groupName = String(group.name || '').trim()
         const explicitTranslationKey = String(group.translationKey || '').trim()
+        const localeNames = group.localeNames || {}
+        const currentLocale = String(locale.value || 'zh-CN')
+
+        if (localeNames[currentLocale]) {
+            return localeNames[currentLocale]
+        }
+
+        if (localeNames['en-US']) {
+            return localeNames['en-US']
+        }
+
+        if (localeNames['zh-CN']) {
+            return localeNames['zh-CN']
+        }
 
         if (explicitTranslationKey && te(explicitTranslationKey)) {
             return t(explicitTranslationKey)

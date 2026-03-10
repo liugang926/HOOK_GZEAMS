@@ -1,0 +1,5 @@
+export { default as MenuManagementHero } from './MenuManagementHero.vue'
+export { default as MenuManagementCategoryPanel } from './MenuManagementCategoryPanel.vue'
+export { default as MenuManagementEntriesPanel } from './MenuManagementEntriesPanel.vue'
+export { default as MenuManagementEntryDetail } from './MenuManagementEntryDetail.vue'
+export { default as MenuManagementIconPicker } from './MenuManagementIconPicker.vue'

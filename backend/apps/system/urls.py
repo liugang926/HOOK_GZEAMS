@@ -16,6 +16,7 @@ from apps.system.viewsets import (
     TranslationViewSet,  # i18n
 )
 from apps.system.viewsets.branding import BrandingSettingsAPIView
+from apps.system.viewsets.global_search import GlobalSearchAPIView
 from apps.system.viewsets.system_file import SystemFileViewSet
 from apps.system.viewsets.menu import MenuViewSet  # Dynamic menu system
 from apps.system.viewsets.activity_log_viewsets import ActivityLogViewSet
@@ -77,6 +78,7 @@ app_name = 'system'
 urlpatterns = [
     path('', include(router.urls)),
     path('branding/', BrandingSettingsAPIView.as_view(), name='branding-settings'),
+    path('global-search/', GlobalSearchAPIView.as_view(), name='global-search'),
     # Custom dynamic object routing patterns with {code} parameter
     # These must come after the router to avoid conflicts
     path('objects/<str:code>/', ObjectRouterViewSet.as_view({'get': 'list', 'post': 'create'}), name='object-router-list'),
@@ -94,6 +96,9 @@ urlpatterns = [
     path('objects/<str:code>/me/', ObjectRouterViewSet.as_view({'get': 'me'}), name='object-router-me'),
     path('objects/<str:code>/me/profile/', ObjectRouterViewSet.as_view({'put': 'me_profile', 'patch': 'me_profile'}), name='object-router-me-profile'),
     path('objects/<str:code>/me/change-password/', ObjectRouterViewSet.as_view({'post': 'me_change_password'}), name='object-router-me-change-password'),
+    path('objects/<str:code>/<uuid:id>/relation-counts/', ObjectRouterViewSet.as_view({'get': 'relation_counts'}), name='object-router-relation-counts'),
+    path('objects/<str:code>/<uuid:id>/compact/', ObjectRouterViewSet.as_view({'get': 'compact_detail'}), name='object-router-compact-detail'),
+    path('objects/<str:code>/<uuid:id>/relationship-graph/', ObjectRouterViewSet.as_view({'get': 'relationship_graph'}), name='object-router-relationship-graph'),
     path('objects/<str:code>/<uuid:id>/', ObjectRouterViewSet.as_view({
         'get': 'retrieve',
         'put': 'update',

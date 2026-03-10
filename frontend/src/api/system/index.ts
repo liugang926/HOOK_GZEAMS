@@ -14,6 +14,7 @@ export { menuApi } from './menu'
 export type {
     MenuItem,
     MenuGroup,
+    MenuTranslationTarget,
     MenuResponse,
     MenuManagementCategory,
     MenuManagementItem,

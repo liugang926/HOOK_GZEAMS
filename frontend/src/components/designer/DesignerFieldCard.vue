@@ -7,6 +7,7 @@ import type { DetailField } from '@/components/common/BaseDetailPage.vue'
 interface DesignerFieldLite {
   id: string
   fieldCode: string
+  fieldType?: string
   label: string
   required?: boolean
   readonly?: boolean
@@ -252,16 +253,24 @@ function handleResizePointerDown(axis: ResizeAxis, event: PointerEvent) {
   position: relative;
   min-width: 0;
   padding: 0;
-  border-radius: 4px;
-  transition: all 0.2s;
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: move;
+  border: 1.5px solid transparent;
   --detail-label-width: var(--gzeams-detail-label-width, 120px);
   --detail-field-gap: var(--gzeams-detail-field-gap, 16px);
 
+  &:hover:not(.is-readonly):not(.is-selected) {
+    background: rgba(64, 158, 255, 0.03);
+    border-color: rgba(64, 158, 255, 0.15);
+    border-left: 2.5px solid var(--el-color-primary-light-5, #79bbff);
+  }
+
   &.is-selected {
-    background: #ecf5ff;
-    border: 1px dashed #409eff;
-    border-radius: 4px;
+    background: var(--el-color-primary-light-9, #ecf5ff);
+    border: 2px solid var(--el-color-primary, #409eff);
+    border-radius: 6px;
+    box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
   }
 
   &.is-size-feedback {
@@ -274,8 +283,8 @@ function handleResizePointerDown(axis: ResizeAxis, event: PointerEvent) {
   }
 
   &.is-field-readonly {
-    background: #f5f7fa;
-    border: 1px solid #e4e7ed;
+    background: #f8f9fb;
+    border: 1px solid #ebedf0;
   }
 
   &.is-field-readonly .field-label,
@@ -386,85 +395,114 @@ function handleResizePointerDown(axis: ResizeAxis, event: PointerEvent) {
 
 .overlay-label {
   position: absolute;
-  top: 2px;
+  top: -10px;
   left: 8px;
-  font-size: 12px;
-  color: #409eff;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 2px 6px;
-  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--el-color-primary, #409eff);
+  background: white;
+  padding: 1px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--el-color-primary-light-7, #a0cfff);
+  box-shadow: 0 1px 3px rgba(64, 158, 255, 0.12);
+  line-height: 1.4;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .overlay-code {
-  margin-left: 6px;
-  font-size: 11px;
+  margin-left: 4px;
+  font-size: 10px;
+  font-weight: 400;
   color: #909399;
 }
 
 .overlay-actions {
   position: absolute;
-  top: 6px;
+  top: -10px;
   right: 4px;
   pointer-events: auto;
   display: flex;
-  gap: 4px;
+  gap: 2px;
+
+  .el-button {
+    background: white;
+    border: 1px solid #e4e7ed;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
 }
 
 .overlay-hint {
   position: absolute;
   left: 8px;
-  bottom: 6px;
-  font-size: 11px;
+  bottom: -10px;
+  font-size: 10px;
   line-height: 1.3;
-  color: #409eff;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 3px;
-  padding: 2px 6px;
+  color: var(--el-color-primary, #409eff);
+  background: white;
+  border: 1px solid var(--el-color-primary-light-7, #a0cfff);
+  border-radius: 4px;
+  padding: 1px 6px;
+  box-shadow: 0 1px 3px rgba(64, 158, 255, 0.12);
 }
 
 .field-resize-handle {
   position: absolute;
   pointer-events: auto;
-  background: #409eff;
-  border: 1px solid #ffffff;
-  border-radius: 2px;
-  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.25);
-  opacity: 0.95;
+  background: var(--el-color-primary, #409eff);
+  border: 1.5px solid #ffffff;
+  border-radius: 3px;
+  box-shadow: 0 1px 4px rgba(64, 158, 255, 0.3);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  .designer-field-card.is-selected & {
+    opacity: 1;
+  }
 }
 
 .field-resize-handle.handle-x {
   top: 50%;
-  right: -6px;
-  width: 10px;
-  height: 28px;
+  right: -5px;
+  width: 8px;
+  height: 24px;
   transform: translateY(-50%);
   cursor: ew-resize;
+  border-radius: 4px;
 }
 
 .field-resize-handle.handle-y {
   left: 50%;
-  bottom: -6px;
-  width: 28px;
-  height: 10px;
+  bottom: -5px;
+  width: 24px;
+  height: 8px;
   transform: translateX(-50%);
   cursor: ns-resize;
+  border-radius: 4px;
 }
 
 .field-resize-handle.handle-xy {
-  right: -6px;
-  bottom: -6px;
-  width: 12px;
-  height: 12px;
+  right: -5px;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
   cursor: nwse-resize;
+  border-radius: 50%;
 }
 
 .readonly-indicator {
   position: absolute;
-  top: 6px;
-  right: 8px;
+  top: 4px;
+  right: 6px;
   color: #909399;
-  font-size: 12px;
+  font-size: 11px;
   pointer-events: none;
+  background: #f5f7fa;
+  border-radius: 3px;
+  padding: 1px 4px;
+  border: 1px solid #e4e7ed;
 }
 </style>
 

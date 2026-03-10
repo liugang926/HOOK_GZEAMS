@@ -14,10 +14,14 @@
         v-if="!isDefault"
         type="warning"
         size="small"
+        effect="light"
+        round
       >
         {{ t('system.pageLayout.designer.badges.customLayout') }}
       </el-tag>
-      <el-divider direction="vertical" />
+    </div>
+
+    <div class="toolbar-center">
       <el-segmented
         :model-value="viewMode"
         :options="viewModeOptions"
@@ -33,26 +37,34 @@
         data-testid="layout-viewport-toggle"
         @update:model-value="$emit('update:viewport', $event as string)"
       />
-    </div>
-
-    <div class="toolbar-center">
+      <el-divider direction="vertical" />
+      <el-segmented
+        :model-value="renderMode"
+        :options="renderModeOptions"
+        size="small"
+        data-testid="layout-render-mode-toggle"
+        @update:model-value="$emit('update:renderMode', $event as string)"
+      />
+      <el-divider direction="vertical" />
       <el-button-group>
-        <el-button
-          data-testid="layout-undo-button"
-          :disabled="!canUndo"
-          @click="$emit('undo')"
-        >
-          <el-icon><RefreshLeft /></el-icon>
-          {{ t('system.pageLayout.designer.actions.undo') }}
-        </el-button>
-        <el-button
-          data-testid="layout-redo-button"
-          :disabled="!canRedo"
-          @click="$emit('redo')"
-        >
-          <el-icon><RefreshRight /></el-icon>
-          {{ t('system.pageLayout.designer.actions.redo') }}
-        </el-button>
+        <el-tooltip :content="t('system.pageLayout.designer.actions.undo') + ' (Ctrl+Z)'" placement="bottom" :show-after="400">
+          <el-button
+            data-testid="layout-undo-button"
+            :disabled="!canUndo"
+            @click="$emit('undo')"
+          >
+            <el-icon><RefreshLeft /></el-icon>
+          </el-button>
+        </el-tooltip>
+        <el-tooltip :content="t('system.pageLayout.designer.actions.redo') + ' (Ctrl+Shift+Z)'" placement="bottom" :show-after="400">
+          <el-button
+            data-testid="layout-redo-button"
+            :disabled="!canRedo"
+            @click="$emit('redo')"
+          >
+            <el-icon><RefreshRight /></el-icon>
+          </el-button>
+        </el-tooltip>
       </el-button-group>
     </div>
 
@@ -61,10 +73,12 @@
         :model-value="translationMode"
         :active-text="t('system.pageLayout.designer.actions.translationMode', 'Trans Mode')"
         inline-prompt
-        style="margin-right: 12px"
+        style="margin-right: 8px"
         @update:model-value="$emit('update:translationMode', Boolean($event))"
       />
       <el-button
+        size="small"
+        text
         data-testid="layout-reset-button"
         @click="$emit('reset')"
       >
@@ -91,21 +105,17 @@
           {{ t('system.pageLayout.designer.actions.preview') }}
         </el-button>
       </el-button-group>
-      <el-tag
-        size="small"
-        effect="plain"
-      >
-        {{ previewMode === 'active' ? t('system.pageLayout.designer.status.previewMode') : t('system.pageLayout.designer.status.customMode') }}
-      </el-tag>
+      <el-divider direction="vertical" />
       <el-button
         :disabled="previewMode === 'active'"
         data-testid="layout-save-button"
+        plain
         @click="$emit('save')"
       >
         {{ t('system.pageLayout.designer.actions.saveDraft') }}
       </el-button>
       <el-button
-        type="success"
+        type="primary"
         :loading="publishing"
         :disabled="previewMode === 'active'"
         data-testid="layout-publish-button"
@@ -129,6 +139,7 @@ defineProps<{
   translationMode: boolean
   canUndo: boolean
   canRedo: boolean
+  renderMode: 'design' | 'preview'
   previewLoading: boolean
   previewMode: 'current' | 'active'
   publishing: boolean
@@ -140,6 +151,7 @@ defineEmits<{
   (e: 'cancel'): void
   (e: 'undo'): void
   (e: 'redo'): void
+  (e: 'update:renderMode', value: string): void
   (e: 'reset'): void
   (e: 'save'): void
   (e: 'publish'): void
@@ -159,5 +171,10 @@ const viewModeOptions = computed(() => [
 const viewportOptions = computed(() => [
   { label: t('system.pageLayout.viewport.desktop', 'Desktop'), value: 'desktop' },
   { label: t('system.pageLayout.viewport.mobile', 'Mobile'), value: 'mobile' }
+])
+
+const renderModeOptions = computed(() => [
+  { label: t('system.pageLayout.designer.status.designState', 'Design'), value: 'design' },
+  { label: t('system.pageLayout.designer.status.previewState', 'Preview'), value: 'preview' }
 ])
 </script>

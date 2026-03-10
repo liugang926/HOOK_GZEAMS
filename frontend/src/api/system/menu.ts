@@ -22,10 +22,20 @@ export interface MenuItem {
     badge?: any
 }
 
+export interface MenuTranslationTarget {
+    contentType: string
+    contentTypeModel: string
+    objectId: string
+    fieldName: string
+}
+
 export interface MenuGroup {
+    id?: string
     code?: string
     name: string
     translationKey?: string
+    localeNames?: Record<string, string>
+    translationTarget?: MenuTranslationTarget
     order: number
     icon: string
     items: MenuItem[]
@@ -37,9 +47,12 @@ export interface MenuResponse {
 }
 
 export interface MenuManagementCategory {
+    id?: string
     code: string
     name: string
     translationKey?: string
+    localeNames?: Record<string, string>
+    translationTarget?: MenuTranslationTarget
     icon: string
     order: number
     isVisible: boolean

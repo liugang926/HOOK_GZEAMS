@@ -83,6 +83,7 @@ interface Props {
   getEditFieldValue: (field: DetailFieldLike) => any
   toInlineEditRuntimeField: (field: DetailFieldLike) => Record<string, any>
   getFieldItemStyle: (field: DetailFieldLike) => Record<string, string>
+  getFieldItemClass: (field: DetailFieldLike, section?: DetailSectionLike) => string[]
   getSectionCanvasStyle: (section: DetailSectionLike) => Record<string, string>
   getFieldColStyle: (field: DetailFieldLike, section: DetailSectionLike) => Record<string, string>
   getFieldPlacementAttrs: (field: DetailFieldLike) => Record<string, string>
@@ -148,6 +149,7 @@ const activeMainTabModel = computed({
               :get-edit-field-value="getEditFieldValue"
               :to-inline-edit-runtime-field="toInlineEditRuntimeField"
               :get-field-item-style="getFieldItemStyle"
+              :get-field-item-class="getFieldItemClass"
               :get-section-canvas-style="getSectionCanvasStyle"
               :get-field-col-style="getFieldColStyle"
               :get-field-placement-attrs="getFieldPlacementAttrs"
