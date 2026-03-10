@@ -11,7 +11,14 @@
 
 // Menu
 export { menuApi } from './menu'
-export type { MenuItem, MenuGroup, MenuResponse } from './menu'
+export type {
+    MenuItem,
+    MenuGroup,
+    MenuResponse,
+    MenuManagementCategory,
+    MenuManagementItem,
+    MenuManagementResponse,
+} from './menu'
 
 // Business Object
 export { businessObjectApi } from './businessObject'

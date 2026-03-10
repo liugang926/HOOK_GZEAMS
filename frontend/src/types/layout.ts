@@ -104,6 +104,12 @@ export interface LayoutSection {
   /** Section position */
   position?: 'main' | 'sidebar'
 
+  /** Label position within the section */
+  labelPosition?: 'left' | 'top'
+
+  /** Custom label width */
+  labelWidth?: string | number
+
   /** Whether section is collapsible */
   collapsible?: boolean
 
@@ -192,6 +198,15 @@ export interface LayoutField {
 
   /** Display order */
   order?: number
+
+  /** Label position */
+  labelPosition?: 'left' | 'top'
+
+  /** Custom label width */
+  labelWidth?: string | number
+
+  /** Full width field */
+  fullWidth?: boolean
 
   /** Field-specific props */
   props?: Record<string, any>

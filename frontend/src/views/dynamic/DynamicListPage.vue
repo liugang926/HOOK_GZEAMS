@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div
     v-loading="loading"
     class="dynamic-list-page"
@@ -42,6 +42,25 @@
         >
           {{ t('common.actions.create') }}
         </el-button>
+        <ExportButton
+          v-if="defaultExportColumns.length > 0"
+          :columns="defaultExportColumns"
+          :fetch-all="(params: any) => apiClient.list({ ...params, ...currentSearchParams })"
+          :filename="objectDisplayName || objectCode"
+        />
+        <el-button
+          v-if="exportableFields.length > 0"
+          @click="showFieldSelector = true"
+        >
+          {{ t('reports.export.customExport', '自定义导出') }}
+        </el-button>
+        <ImportButton
+          v-if="canAdd && defaultExportColumns.length > 0"
+          :columns="defaultExportColumns"
+          :required="requiredFieldCodes"
+          :filename="objectDisplayName || objectCode"
+          @import="handleImport"
+        />
         <el-button
           v-if="objectCode"
           @click="handleLayoutSettings"
@@ -180,6 +199,24 @@
       :record-id="activeRecordId"
       @success="handleDrawerSuccess"
     />
+
+    <!-- Export Field Selector Dialog -->
+    <ExportFieldSelector
+      v-model="showFieldSelector"
+      :fields="exportableFields"
+      :object-name="objectDisplayName || objectCode"
+      @confirm="handleCustomExport"
+    />
+
+    <!-- Import Config + Progress Dialog -->
+    <ImportConfigDialog
+      v-model="showImportConfig"
+      :parse-result="importParseResult"
+      :fields="exportableFields"
+      :object-code="objectCode"
+      :field-source="orderedVisibleFieldsSource"
+      @complete="handleImportComplete"
+    />
   </div>
 </template>
 
@@ -191,6 +228,14 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import BaseListPage from '@/components/common/BaseListPage.vue'
 import FieldRenderer from '@/components/engine/FieldRenderer.vue'
 import ContextDrawer from '@/components/common/ContextDrawer.vue'
+import ExportButton from '@/components/common/ExportButton.vue'
+import ImportButton from '@/components/common/ImportButton.vue'
+import ExportFieldSelector from '@/components/common/ExportFieldSelector.vue'
+import ImportConfigDialog from '@/components/common/ImportConfigDialog.vue'
+import { exportAllPages } from '@/utils/exportService'
+import type { ExportColumn } from '@/utils/exportService'
+import type { ImportResult } from '@/utils/importService'
+import { useExportColumns } from '@/composables/useExportColumns'
 import type { ObjectMetadata } from '@/types'
 import { createObjectClient } from '@/api/dynamic'
 import { resolveObjectDisplayName } from '@/utils/objectDisplay'
@@ -239,6 +284,9 @@ const showListTitleProxy = computed(() => !tableRef.value)
 // Drawer State
 const drawerVisible = ref(false)
 const activeRecordId = ref('')
+const showFieldSelector = ref(false)
+const showImportConfig = ref(false)
+const importParseResult = ref<ImportResult>({ data: [], errors: [], unknownHeaders: [], missingHeaders: [] })
 
 const objectDisplayName = computed(() => {
   return resolveObjectDisplayName(
@@ -709,6 +757,57 @@ const handleDelete = async (row: any) => {
 }
 
 const handleDrawerSuccess = () => {
+  tableRef.value?.refresh()
+}
+
+// ── Export / Import ────────────────────────────────────────────────────────
+
+const {
+  exportableFields,
+  defaultExportColumns,
+  requiredFieldCodes,
+  buildExportColumns
+} = useExportColumns(orderedVisibleFieldsSource)
+
+/** Track current search/filter params for filter-aware export */
+const currentSearchParams = ref<Record<string, any>>({})
+
+/** Handle custom export with user-selected fields + smart formatting */
+const handleCustomExport = async (columns: ExportColumn[]) => {
+  try {
+    // Re-build with smart formatters for the user-selected field codes
+    const selectedCodes = columns.map(c => c.prop)
+    const smartColumns = buildExportColumns(selectedCodes)
+    await exportAllPages(
+      objectDisplayName.value || objectCode.value,
+      smartColumns,
+      (params: any) => apiClient.value.list({ ...params, ...currentSearchParams.value })
+    )
+    ElMessage.success(t('reports.export.successMessage'))
+  } catch (e: any) {
+    ElMessage.error(e?.message || t('reports.export.errorMessage'))
+  }
+}
+
+/** Handle import: open config dialog with parsed data */
+const handleImport = (result: ImportResult) => {
+  importParseResult.value = result
+  showImportConfig.value = true
+}
+
+/** Handle import completion from config dialog */
+const handleImportComplete = (result: { created: number; updated: number; skipped: number; failed: number }) => {
+  const { created, updated, skipped, failed } = result
+  if (failed > 0) {
+    ElMessage.warning(
+      t('reports.import.partialSuccess', { success: created + updated, fail: failed })
+    )
+  } else {
+    const total = created + updated + skipped
+    ElMessage.success(
+      t('reports.import.readyMessage', { count: total })
+    )
+  }
   tableRef.value?.refresh()
 }
 

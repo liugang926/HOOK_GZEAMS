@@ -17,6 +17,22 @@
       >
         {{ t('system.pageLayout.designer.badges.customLayout') }}
       </el-tag>
+      <el-divider direction="vertical" />
+      <el-segmented
+        :model-value="viewMode"
+        :options="viewModeOptions"
+        size="small"
+        data-testid="layout-view-mode-toggle"
+        @update:model-value="$emit('update:viewMode', $event as string)"
+      />
+      <el-divider direction="vertical" />
+      <el-segmented
+        :model-value="viewport"
+        :options="viewportOptions"
+        size="small"
+        data-testid="layout-viewport-toggle"
+        @update:model-value="$emit('update:viewport', $event as string)"
+      />
     </div>
 
     <div class="toolbar-center">
@@ -102,6 +118,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowLeft, RefreshLeft, RefreshRight } from '@element-plus/icons-vue'
 
@@ -115,6 +132,8 @@ defineProps<{
   previewLoading: boolean
   previewMode: 'current' | 'active'
   publishing: boolean
+  viewMode: 'Detail' | 'Compact'
+  viewport?: 'desktop' | 'mobile'
 }>()
 
 defineEmits<{
@@ -126,7 +145,19 @@ defineEmits<{
   (e: 'publish'): void
   (e: 'setPreviewMode', mode: 'current' | 'active'): void
   (e: 'update:translationMode', value: boolean): void
+  (e: 'update:viewMode', value: string): void
+  (e: 'update:viewport', value: string): void
 }>()
 
 const { t } = useI18n()
+
+const viewModeOptions = computed(() => [
+  { label: t('system.pageLayout.viewMode.detail', 'Detail'), value: 'Detail' },
+  { label: t('system.pageLayout.viewMode.compact', 'Compact'), value: 'Compact' }
+])
+
+const viewportOptions = computed(() => [
+  { label: t('system.pageLayout.viewport.desktop', 'Desktop'), value: 'desktop' },
+  { label: t('system.pageLayout.viewport.mobile', 'Mobile'), value: 'mobile' }
+])
 </script>

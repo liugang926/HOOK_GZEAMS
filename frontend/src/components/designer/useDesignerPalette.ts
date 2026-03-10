@@ -150,6 +150,20 @@ export function useDesignerPalette(options: UseDesignerPaletteOptions) {
       groups[groupType].fields.push(field)
     })
 
+    groups['layout'] = {
+      type: 'layout',
+      label: 'Layout',
+      icon: Edit,
+      color: '#409EFF',
+      fields: [
+        {
+          code: '$empty_space$',
+          name: 'Empty Space',
+          fieldType: 'empty'
+        }
+      ]
+    }
+
     return Object.values(groups)
   })
 

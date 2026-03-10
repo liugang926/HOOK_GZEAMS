@@ -21,29 +21,54 @@
 
     <div class="branding-layout">
       <div class="branding-config">
-        <el-card shadow="never" class="config-card">
+        <el-card
+          shadow="never"
+          class="config-card"
+        >
           <template #header>
-            <div class="card-title">{{ pageText.sections.identity }}</div>
+            <div class="card-title">
+              {{ pageText.sections.identity }}
+            </div>
           </template>
           <el-form label-width="120px">
             <el-form-item :label="pageText.fields.appName">
-              <el-input v-model="draft.appName" maxlength="80" show-word-limit />
+              <el-input
+                v-model="draft.appName"
+                maxlength="80"
+                show-word-limit
+              />
             </el-form-item>
             <el-form-item :label="pageText.fields.appShortName">
-              <el-input v-model="draft.appShortName" maxlength="40" show-word-limit />
+              <el-input
+                v-model="draft.appShortName"
+                maxlength="40"
+                show-word-limit
+              />
             </el-form-item>
             <el-form-item :label="pageText.fields.appTagline">
-              <el-input v-model="draft.appTagline" maxlength="120" show-word-limit />
+              <el-input
+                v-model="draft.appTagline"
+                maxlength="120"
+                show-word-limit
+              />
             </el-form-item>
             <el-form-item :label="pageText.fields.appIconText">
-              <el-input v-model="draft.appIconText" maxlength="4" />
+              <el-input
+                v-model="draft.appIconText"
+                maxlength="4"
+              />
             </el-form-item>
           </el-form>
         </el-card>
 
-        <el-card shadow="never" class="config-card">
+        <el-card
+          shadow="never"
+          class="config-card"
+        >
           <template #header>
-            <div class="card-title">{{ pageText.sections.theme }}</div>
+            <div class="card-title">
+              {{ pageText.sections.theme }}
+            </div>
           </template>
           <el-form label-width="150px">
             <el-form-item :label="pageText.fields.primaryColor">
@@ -72,7 +97,11 @@
             </el-form-item>
             <el-form-item :label="pageText.fields.borderRadius">
               <div class="slider-row">
-                <el-slider v-model="draft.theme.borderRadius" :min="0" :max="32" />
+                <el-slider
+                  v-model="draft.theme.borderRadius"
+                  :min="0"
+                  :max="32"
+                />
                 <span>{{ draft.theme.borderRadius }}px</span>
               </div>
             </el-form-item>
@@ -82,13 +111,22 @@
           </el-form>
         </el-card>
 
-        <el-card shadow="never" class="config-card">
+        <el-card
+          shadow="never"
+          class="config-card"
+        >
           <template #header>
-            <div class="card-title">{{ pageText.sections.login }}</div>
+            <div class="card-title">
+              {{ pageText.sections.login }}
+            </div>
           </template>
           <el-form label-width="120px">
             <el-form-item :label="pageText.fields.loginTitle">
-              <el-input v-model="draft.login.title" maxlength="80" show-word-limit />
+              <el-input
+                v-model="draft.login.title"
+                maxlength="80"
+                show-word-limit
+              />
             </el-form-item>
             <el-form-item :label="pageText.fields.loginSubtitle">
               <el-input
@@ -100,15 +138,26 @@
               />
             </el-form-item>
             <el-form-item :label="pageText.fields.copyright">
-              <el-input v-model="draft.login.copyright" maxlength="200" show-word-limit />
+              <el-input
+                v-model="draft.login.copyright"
+                maxlength="200"
+                show-word-limit
+              />
             </el-form-item>
           </el-form>
           <el-divider>{{ pageText.sections.loginI18n }}</el-divider>
           <el-tabs v-model="activeLocaleTab">
-            <el-tab-pane :label="localeTabLabels['zh-CN']" name="zh-CN">
+            <el-tab-pane
+              :label="localeTabLabels['zh-CN']"
+              name="zh-CN"
+            >
               <el-form label-width="120px">
                 <el-form-item :label="pageText.fields.loginTitle">
-                  <el-input v-model="draft.loginI18n['zh-CN'].title" maxlength="80" show-word-limit />
+                  <el-input
+                    v-model="draft.loginI18n['zh-CN'].title"
+                    maxlength="80"
+                    show-word-limit
+                  />
                 </el-form-item>
                 <el-form-item :label="pageText.fields.loginSubtitle">
                   <el-input
@@ -120,14 +169,25 @@
                   />
                 </el-form-item>
                 <el-form-item :label="pageText.fields.copyright">
-                  <el-input v-model="draft.loginI18n['zh-CN'].copyright" maxlength="200" show-word-limit />
+                  <el-input
+                    v-model="draft.loginI18n['zh-CN'].copyright"
+                    maxlength="200"
+                    show-word-limit
+                  />
                 </el-form-item>
               </el-form>
             </el-tab-pane>
-            <el-tab-pane :label="localeTabLabels['en-US']" name="en-US">
+            <el-tab-pane
+              :label="localeTabLabels['en-US']"
+              name="en-US"
+            >
               <el-form label-width="120px">
                 <el-form-item :label="pageText.fields.loginTitle">
-                  <el-input v-model="draft.loginI18n['en-US'].title" maxlength="80" show-word-limit />
+                  <el-input
+                    v-model="draft.loginI18n['en-US'].title"
+                    maxlength="80"
+                    show-word-limit
+                  />
                 </el-form-item>
                 <el-form-item :label="pageText.fields.loginSubtitle">
                   <el-input
@@ -139,16 +199,25 @@
                   />
                 </el-form-item>
                 <el-form-item :label="pageText.fields.copyright">
-                  <el-input v-model="draft.loginI18n['en-US'].copyright" maxlength="200" show-word-limit />
+                  <el-input
+                    v-model="draft.loginI18n['en-US'].copyright"
+                    maxlength="200"
+                    show-word-limit
+                  />
                 </el-form-item>
               </el-form>
             </el-tab-pane>
           </el-tabs>
         </el-card>
 
-        <el-card shadow="never" class="config-card">
+        <el-card
+          shadow="never"
+          class="config-card"
+        >
           <template #header>
-            <div class="card-title">{{ pageText.sections.assets }}</div>
+            <div class="card-title">
+              {{ pageText.sections.assets }}
+            </div>
           </template>
           <div class="asset-grid">
             <div
@@ -156,17 +225,29 @@
               :key="asset.field"
               class="asset-tile"
             >
-              <div class="asset-preview" :class="{ 'is-wide': asset.field === 'loginBackgroundFileId' }">
+              <div
+                class="asset-preview"
+                :class="{ 'is-wide': asset.field === 'loginBackgroundFileId' }"
+              >
                 <img
                   v-if="getAssetUrl(asset.field)"
                   :src="getAssetUrl(asset.field)"
                   :alt="asset.label"
                 >
-                <div v-else class="asset-placeholder">{{ asset.placeholder }}</div>
+                <div
+                  v-else
+                  class="asset-placeholder"
+                >
+                  {{ asset.placeholder }}
+                </div>
               </div>
               <div class="asset-content">
-                <div class="asset-name">{{ asset.label }}</div>
-                <div class="asset-hint">{{ asset.hint }}</div>
+                <div class="asset-name">
+                  {{ asset.label }}
+                </div>
+                <div class="asset-hint">
+                  {{ asset.hint }}
+                </div>
                 <div class="asset-actions">
                   <el-upload
                     :show-file-list="false"
@@ -191,13 +272,21 @@
       </div>
 
       <div class="branding-preview">
-        <el-card shadow="never" class="preview-card">
+        <el-card
+          shadow="never"
+          class="preview-card"
+        >
           <template #header>
-            <div class="card-title">{{ pageText.sections.preview }}</div>
+            <div class="card-title">
+              {{ pageText.sections.preview }}
+            </div>
           </template>
 
           <div class="preview-shell">
-            <div class="preview-sidebar" :style="sidebarStyle">
+            <div
+              class="preview-sidebar"
+              :style="sidebarStyle"
+            >
               <div class="preview-sidebar-brand">
                 <img
                   v-if="previewSidebarLogoUrl"
@@ -205,10 +294,19 @@
                   :alt="draft.appName"
                   class="preview-logo"
                 >
-                <div v-else class="preview-logo-fallback">{{ draft.appIconText || 'G' }}</div>
+                <div
+                  v-else
+                  class="preview-logo-fallback"
+                >
+                  {{ draft.appIconText || 'G' }}
+                </div>
                 <div class="preview-brand-text">
-                  <div class="preview-brand-name">{{ draft.appShortName || draft.appName }}</div>
-                  <div class="preview-brand-tagline">{{ draft.appTagline }}</div>
+                  <div class="preview-brand-name">
+                    {{ draft.appShortName || draft.appName }}
+                  </div>
+                  <div class="preview-brand-tagline">
+                    {{ draft.appTagline }}
+                  </div>
                 </div>
               </div>
               <div class="preview-nav-list">
@@ -219,13 +317,25 @@
             </div>
             <div class="preview-main">
               <div class="preview-topbar">
-                <div class="preview-breadcrumb">{{ draft.appName }}</div>
-                <div class="preview-chip" :style="chipStyle">{{ draft.theme.primaryColor }}</div>
+                <div class="preview-breadcrumb">
+                  {{ draft.appName }}
+                </div>
+                <div
+                  class="preview-chip"
+                  :style="chipStyle"
+                >
+                  {{ draft.theme.primaryColor }}
+                </div>
               </div>
               <div class="preview-content">
                 <div class="preview-stat">
                   <span>{{ pageText.previewStats.primaryAction }}</span>
-                  <el-button type="primary" round>{{ pageText.buttons.save }}</el-button>
+                  <el-button
+                    type="primary"
+                    round
+                  >
+                    {{ pageText.buttons.save }}
+                  </el-button>
                 </div>
                 <div class="preview-stat">
                   <span>{{ pageText.previewStats.radius }}</span>
@@ -235,19 +345,39 @@
             </div>
           </div>
 
-          <div class="preview-login" :style="loginPreviewStyle">
+          <div
+            class="preview-login"
+            :style="loginPreviewStyle"
+          >
             <div class="preview-login-overlay">
-              <div class="preview-login-card" :style="loginCardStyle">
+              <div
+                class="preview-login-card"
+                :style="loginCardStyle"
+              >
                 <img
                   v-if="previewLoginLogoUrl"
                   :src="previewLoginLogoUrl"
                   :alt="draft.appName"
                   class="preview-login-logo"
                 >
-                <div v-else class="preview-login-mark">{{ draft.appIconText || 'G' }}</div>
-                <div class="preview-login-title">{{ previewLoginCopy.title || draft.appName }}</div>
-                <div class="preview-login-subtitle">{{ previewLoginCopy.subtitle }}</div>
-                <div class="preview-login-button" :style="buttonStyle">{{ $t('login.loginButton') }}</div>
+                <div
+                  v-else
+                  class="preview-login-mark"
+                >
+                  {{ draft.appIconText || 'G' }}
+                </div>
+                <div class="preview-login-title">
+                  {{ previewLoginCopy.title || draft.appName }}
+                </div>
+                <div class="preview-login-subtitle">
+                  {{ previewLoginCopy.subtitle }}
+                </div>
+                <div
+                  class="preview-login-button"
+                  :style="buttonStyle"
+                >
+                  {{ $t('login.loginButton') }}
+                </div>
               </div>
             </div>
           </div>

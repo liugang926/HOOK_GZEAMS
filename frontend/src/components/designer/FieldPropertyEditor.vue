@@ -27,7 +27,7 @@
             <el-option
               v-for="span in availableSpans"
               :key="span"
-              :label="`${span} / ${availableSpanColumns}`"
+              :label="`${span} Column(s) / Total ${availableSpanColumns}`"
               :value="span"
             />
           </el-select>

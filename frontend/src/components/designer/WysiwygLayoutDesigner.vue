@@ -20,6 +20,8 @@
       :mode-label="modeLabel"
       :is-default="isDefault"
       :translation-mode="translationMode"
+      :view-mode="layoutMode"
+      :viewport="viewport"
       :can-undo="canUndo"
       :can-redo="canRedo"
       :preview-loading="previewLoading"
@@ -33,6 +35,8 @@
       @publish="handlePublish"
       @set-preview-mode="setPreviewMode"
       @update:translation-mode="translationMode = $event"
+      @update:view-mode="layoutMode = $event as any"
+      @update:viewport="viewport = $event as any"
     />
 
     <!-- Main Area -->
@@ -55,6 +59,7 @@
 
       <DesignerCanvas
         ref="canvasShellRef"
+        :class="[`viewport-${viewport}`]"
         :render-mode="renderMode"
         :layout-mode="layoutMode"
         :is-drag-over-canvas="isDragOverCanvas"
@@ -230,6 +235,7 @@ type AnyRecord = DesignerAnyRecord
 type Props = WysiwygDesignerProps
 
 const translationMode = ref(false)
+const viewport = ref<'desktop' | 'mobile'>('desktop')
 
 const props = withDefaults(defineProps<Props>(), {
   layoutId: '',

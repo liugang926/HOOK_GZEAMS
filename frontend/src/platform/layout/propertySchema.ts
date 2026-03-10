@@ -28,7 +28,20 @@ const FIELD_COMMON_SCHEMA: FieldPropertySchemaItem[] = [
   { key: 'defaultValue', label: 'Default Value', inputType: 'text', section: 'basic' },
   { key: 'helpText', label: 'Help Text', inputType: 'textarea', section: 'basic' },
   { key: 'span', label: 'Span', inputType: 'number', section: 'display' },
+  { key: 'fullWidth', label: 'Full Width', inputType: 'switch', section: 'display' },
   { key: 'minHeight', label: 'Min Height', inputType: 'number', section: 'display' },
+  {
+    key: 'labelPosition',
+    label: 'Label Position',
+    inputType: 'select',
+    section: 'display',
+    options: [
+      { label: 'Inherit/Left', value: '' },
+      { label: 'Left Aligned', value: 'left' },
+      { label: 'Top Aligned', value: 'top' },
+    ]
+  },
+  { key: 'labelWidth', label: 'Custom Label Width (e.g. 150px)', inputType: 'text', section: 'display' },
   { key: 'required', label: 'Required', inputType: 'switch', section: 'display' },
   { key: 'readonly', label: 'Readonly', inputType: 'switch', section: 'display' },
   { key: 'visible', label: 'Visible', inputType: 'switch', section: 'display' },
@@ -156,6 +169,17 @@ const SECTION_COMMON_SCHEMA: SectionPropertySchemaItem[] = [
       { label: '4', value: 4 },
     ],
   },
+  {
+    key: 'labelPosition',
+    label: 'Label Position',
+    inputType: 'select',
+    section: 'display',
+    options: [
+      { label: 'Left Aligned', value: 'left' },
+      { label: 'Top Aligned', value: 'top' },
+    ]
+  },
+  { key: 'labelWidth', label: 'Custom Label Width (e.g. 150px)', inputType: 'text', section: 'display' },
   { key: 'border', label: 'Border', inputType: 'switch', section: 'display', appliesTo: ['section'] },
   { key: 'collapsible', label: 'Collapsible', inputType: 'switch', section: 'display' },
   { key: 'collapsed', label: 'Collapsed', inputType: 'switch', section: 'display' },

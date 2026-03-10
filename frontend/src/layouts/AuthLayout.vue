@@ -5,8 +5,11 @@
     @mousemove="handleMouseMove"
     @mouseleave="handleMouseLeave"
   >
-    <canvas ref="canvasRef" class="bg-canvas"></canvas>
-    <div class="bg-overlay"></div>
+    <canvas
+      ref="canvasRef"
+      class="bg-canvas"
+    />
+    <div class="bg-overlay" />
     <div class="auth-toolbar">
       <LocaleSwitcher />
     </div>
@@ -32,7 +35,7 @@ const particleCount = 80 // Suitable density for standard screens
 const connectionDistance = 150
 const mouseRadius = 180
 
-let mouse = {
+const mouse = {
   x: -1000,
   y: -1000
 }

@@ -3,6 +3,9 @@
     <div class="page-header">
       <h3>{{ $t('system.config.title') }}</h3>
       <div class="header-actions">
+        <el-button @click="router.push('/system/menu-management')">
+          {{ $t('menu.routes.menuManagement') }}
+        </el-button>
         <el-button @click="router.push('/system/branding')">
           {{ $t('system.branding.entry') }}
         </el-button>

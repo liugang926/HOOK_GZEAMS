@@ -17,6 +17,8 @@ import {
   buildNormalizedRuntimeField,
   resolveEngineFieldType
 } from '@/components/engine/fieldRegistry'
+import FieldErrorFallback from '@/components/engine/FieldErrorFallback.vue'
+import FieldLoadingSkeleton from '@/components/engine/FieldLoadingSkeleton.vue'
 
 const props = defineProps({
   field: { type: Object, required: true },
@@ -29,9 +31,24 @@ defineEmits(['update:modelValue'])
 const { t } = useI18n()
 
 const ASYNC_FIELD_COMPONENTS = Object.fromEntries(
-  Object.entries(FIELD_COMPONENT_LOADERS).map(([type, loader]) => [type, defineAsyncComponent(loader)])
+  Object.entries(FIELD_COMPONENT_LOADERS).map(([type, loader]) => [
+    type,
+    defineAsyncComponent({
+      loader,
+      loadingComponent: FieldLoadingSkeleton,
+      errorComponent: FieldErrorFallback,
+      delay: 200,
+      timeout: 30000
+    })
+  ])
 )
-const FALLBACK_TEXT_COMPONENT = defineAsyncComponent(FIELD_COMPONENT_LOADERS.text)
+const FALLBACK_TEXT_COMPONENT = defineAsyncComponent({
+  loader: FIELD_COMPONENT_LOADERS.text,
+  loadingComponent: FieldLoadingSkeleton,
+  errorComponent: FieldErrorFallback,
+  delay: 200,
+  timeout: 30000
+})
 
 const normalizedField = computed(() => {
   return buildNormalizedRuntimeField(props.field || {})

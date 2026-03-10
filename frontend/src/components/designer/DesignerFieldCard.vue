@@ -71,9 +71,27 @@ function handleResetSize() {
 }
 
 const fieldItemStyle = computed(() => {
+  const styles: Record<string, string> = {}
   const rawHeight = Number(props.field?.minHeight)
-  if (!Number.isFinite(rawHeight) || rawHeight <= 0) return {}
-  return { minHeight: `${Math.round(rawHeight)}px` }
+  if (Number.isFinite(rawHeight) && rawHeight > 0) {
+    styles.minHeight = `${Math.round(rawHeight)}px`
+  }
+
+  const fieldAny = props.field as any
+  if (fieldAny.labelWidth) {
+    const width = fieldAny.labelWidth
+    styles['--field-label-width'] = typeof width === 'number' ? `${width}px` : width
+  }
+  return styles
+})
+
+const fieldItemClass = computed(() => {
+  const fieldAny = props.field as any
+  const classes = []
+  if (props.displayField.type === 'image') classes.push('field-image')
+  if (props.sidebar) classes.push('sidebar-field-item')
+  if (fieldAny.labelPosition === 'top') classes.push('label-position-top')
+  return classes
 })
 
 const showSidebarResizeHint = computed(() =>
@@ -130,8 +148,18 @@ function handleResizePointerDown(axis: ResizeAxis, event: PointerEvent) {
     @click.stop="handleSelect"
   >
     <div
+      v-if="field.fieldType === 'empty'"
+      class="empty-space-card"
+      :style="fieldItemStyle"
+    >
+      <div class="empty-space-content">
+        Empty Space
+      </div>
+    </div>
+    <div
+      v-else
       class="field-item"
-      :class="{ 'field-image': displayField.type === 'image', 'sidebar-field-item': sidebar }"
+      :class="fieldItemClass"
       :style="fieldItemStyle"
     >
       <span class="field-label el-form-item__label">
@@ -265,11 +293,44 @@ function handleResizePointerDown(axis: ResizeAxis, event: PointerEvent) {
   }
 }
 
+.empty-space-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  background: repeating-linear-gradient(
+    45deg,
+    #f5f7fa,
+    #f5f7fa 10px,
+    #ffffff 10px,
+    #ffffff 20px
+  );
+  border: 1px dashed #dcdfe6;
+  border-radius: 4px;
+
+  .empty-space-content {
+    color: #909399;
+    font-size: 12px;
+  }
+}
+
 .field-item {
   display: grid;
-  grid-template-columns: var(--detail-label-width) minmax(0, 1fr);
+  grid-template-columns: var(--field-label-width, var(--detail-label-width)) minmax(0, 1fr);
   column-gap: var(--detail-field-gap);
   align-items: flex-start;
+}
+
+.field-item.label-position-top {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .field-label {
+    width: 100%;
+    margin-bottom: 2px;
+  }
 }
 
 .field-item.field-image {

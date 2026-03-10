@@ -34,6 +34,9 @@ export interface LayoutField extends Omit<LayoutFieldConfig, 'fieldType'> {
   minHeight?: number
   min_height?: number
   component_props?: DesignerAnyRecord
+  labelPosition?: 'left' | 'top'
+  labelWidth?: string | number
+  fullWidth?: boolean
   layoutPlacement?: {
     row?: number
     colStart?: number
@@ -91,6 +94,8 @@ export interface LayoutSection {
   columnCount?: number
   column?: number
   position?: 'main' | 'sidebar'
+  labelPosition?: 'left' | 'top'
+  labelWidth?: string | number
   fields?: LayoutField[]
   tabs?: LayoutTab[]
   items?: LayoutCollapseItem[]

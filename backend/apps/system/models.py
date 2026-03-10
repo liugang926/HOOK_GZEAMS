@@ -1746,6 +1746,176 @@ class SystemConfig(BaseModel):
         return self.config_value
 
 
+class MenuGroup(BaseModel):
+    """
+    Menu Group - first-class navigation category model.
+
+    Default groups are hard-locked: they must exist and cannot be deleted,
+    but their visibility and ordering can still be adjusted.
+    """
+
+    objects = GlobalMetadataManager()
+    all_objects = models.Manager()
+
+    code = models.CharField(
+        max_length=100,
+        unique=True,
+        db_index=True,
+        db_comment='Stable menu group code'
+    )
+    name = models.CharField(
+        max_length=100,
+        db_comment='Display name or fallback translation label'
+    )
+    translation_key = models.CharField(
+        max_length=200,
+        blank=True,
+        db_comment='Optional i18n key for group label'
+    )
+    icon = models.CharField(
+        max_length=100,
+        default='Menu',
+        db_comment='Element Plus icon'
+    )
+    sort_order = models.PositiveIntegerField(
+        default=999,
+        db_comment='Display order'
+    )
+    is_visible = models.BooleanField(
+        default=True,
+        db_comment='Whether this group is visible in the navigation'
+    )
+    is_locked = models.BooleanField(
+        default=False,
+        db_comment='Locked groups cannot be deleted'
+    )
+    is_system = models.BooleanField(
+        default=False,
+        db_comment='Default system group'
+    )
+
+    class Meta:
+        db_table = 'menu_groups'
+        verbose_name = 'Menu Group'
+        verbose_name_plural = 'Menu Groups'
+        ordering = ['sort_order', 'code']
+        indexes = [
+            models.Index(fields=['code']),
+            models.Index(fields=['sort_order']),
+            models.Index(fields=['is_visible']),
+        ]
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+
+
+class MenuEntry(BaseModel):
+    """
+    Menu Entry - unified navigation entry model.
+
+    Supports both business-object-backed entries and static/system pages.
+    """
+
+    objects = GlobalMetadataManager()
+    all_objects = models.Manager()
+
+    SOURCE_TYPE_CHOICES = [
+        ('business_object', 'Business Object'),
+        ('static', 'Static Page'),
+    ]
+
+    source_type = models.CharField(
+        max_length=30,
+        choices=SOURCE_TYPE_CHOICES,
+        db_index=True,
+        db_comment='Entry source type'
+    )
+    source_code = models.CharField(
+        max_length=100,
+        db_index=True,
+        db_comment='Stable source identifier'
+    )
+    code = models.CharField(
+        max_length=100,
+        db_index=True,
+        db_comment='Menu entry code'
+    )
+    name = models.CharField(
+        max_length=100,
+        db_comment='Display name fallback'
+    )
+    name_en = models.CharField(
+        max_length=100,
+        blank=True,
+        db_comment='English display name fallback'
+    )
+    translation_key = models.CharField(
+        max_length=200,
+        blank=True,
+        db_comment='Optional i18n key for entry label'
+    )
+    route_path = models.CharField(
+        max_length=255,
+        db_comment='Frontend route path'
+    )
+    icon = models.CharField(
+        max_length=100,
+        default='Document',
+        db_comment='Element Plus icon'
+    )
+    sort_order = models.PositiveIntegerField(
+        default=999,
+        db_comment='Display order within the group'
+    )
+    is_visible = models.BooleanField(
+        default=True,
+        db_comment='Whether this entry is visible in the navigation'
+    )
+    is_locked = models.BooleanField(
+        default=False,
+        db_comment='Locked entries cannot be deleted'
+    )
+    is_system = models.BooleanField(
+        default=False,
+        db_comment='Default system entry'
+    )
+    menu_group = models.ForeignKey(
+        'MenuGroup',
+        on_delete=models.PROTECT,
+        related_name='entries',
+        db_comment='Owning menu group'
+    )
+    business_object = models.ForeignKey(
+        'BusinessObject',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='menu_entries',
+        db_comment='Linked business object for dynamic entries'
+    )
+
+    class Meta:
+        db_table = 'menu_entries'
+        verbose_name = 'Menu Entry'
+        verbose_name_plural = 'Menu Entries'
+        ordering = ['menu_group__sort_order', 'sort_order', 'code']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['source_type', 'source_code'],
+                name='uniq_menu_entry_source'
+            )
+        ]
+        indexes = [
+            models.Index(fields=['source_type', 'source_code']),
+            models.Index(fields=['code']),
+            models.Index(fields=['sort_order']),
+            models.Index(fields=['is_visible']),
+        ]
+
+    def __str__(self):
+        return f"{self.code} ({self.source_type})"
+
+
 class SystemFile(BaseModel):
     """
     System File - unified attachment/file management.

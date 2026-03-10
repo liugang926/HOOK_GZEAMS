@@ -6,7 +6,7 @@ import { MenuRegistryManager } from '@/router/menuRegistry'
 import { translateObjectCodeLabel } from '@/utils/objectDisplay'
 
 // ---------------------------------------------------------------------------
-// Standalone types – compatible with both MenuRegistryManager output and API
+// Standalone types - compatible with both MenuRegistryManager output and API
 // ---------------------------------------------------------------------------
 export interface LocalMenuItem {
     code: string
@@ -33,8 +33,16 @@ export interface LocalMenuGroup {
 
 type AnyRecord = Record<string, unknown>
 
+const normalizeMenuUrl = (value: unknown): string => {
+    const raw = String(value || '').trim()
+    if (!raw) return ''
+    if (raw.startsWith('/')) return raw
+    if (/^[a-z]+:\/\//i.test(raw)) return raw
+    return `/${raw.replace(/^\/+/, '')}`
+}
+
 // ---------------------------------------------------------------------------
-// Normalizers (pure functions – no Vue reactivity dependency)
+// Normalizers (pure functions - no Vue reactivity dependency)
 // ---------------------------------------------------------------------------
 
 export function normalizeBusinessObjects(payload: AnyRecord): BusinessObject[] {
@@ -80,7 +88,7 @@ export function normalizeMenuGroups(payload: AnyRecord): LocalMenuGroup[] {
             const items: LocalMenuItem[] = itemsSource.map((item, itemIndex) => ({
                 code: String(item?.code || `item-${groupIndex}-${itemIndex}`),
                 name: String(item?.name || item?.translationKey || item?.code || ''),
-                url: String(item?.url || ''),
+                url: normalizeMenuUrl(item?.url),
                 icon: String(item?.icon || ''),
                 order: Number(item?.order || itemIndex + 1),
                 group: String(item?.group || item?.groupCode || group?.code || ''),
@@ -101,6 +109,86 @@ export function normalizeMenuGroups(payload: AnyRecord): LocalMenuGroup[] {
             }
         })
         .filter((group) => group.items.length > 0)
+}
+
+export function mergeMenuGroups(
+    baseGroups: LocalMenuGroup[],
+    supplementGroups: LocalMenuGroup[]
+): LocalMenuGroup[] {
+    const mergedGroups = new Map<string, LocalMenuGroup>()
+    const normalizeCode = (value: unknown) => String(value || '').trim().toLowerCase()
+    const toItemIdentity = (item: LocalMenuItem) =>
+        `${normalizeCode(item.code)}::${normalizeMenuUrl(item.url).toLowerCase()}`
+
+    for (const group of baseGroups) {
+        const key = String(group.code || group.id || '').trim()
+        if (!key) continue
+
+        mergedGroups.set(key, {
+            ...group,
+            items: group.items.map((item) => ({
+                ...item,
+                url: normalizeMenuUrl(item.url),
+            })),
+        })
+    }
+
+    for (const group of supplementGroups) {
+        const key = String(group.code || group.id || '').trim()
+        if (!key) continue
+
+        const existingGroup = mergedGroups.get(key)
+        if (!existingGroup) {
+            mergedGroups.set(key, {
+                ...group,
+                items: [...group.items],
+            })
+            continue
+        }
+
+        const seenItems = new Set(
+            existingGroup.items.map((item) => toItemIdentity(item))
+        )
+        const existingItemIndexByCode = new Map(
+            existingGroup.items.map((item, index) => [normalizeCode(item.code), index] as const)
+        )
+
+        for (const item of group.items) {
+            const normalizedItem: LocalMenuItem = {
+                ...item,
+                url: normalizeMenuUrl(item.url),
+            }
+            const itemCode = normalizeCode(normalizedItem.code)
+            const existingIndexByCode = itemCode ? existingItemIndexByCode.get(itemCode) : undefined
+
+            if (existingIndexByCode !== undefined) {
+                const existingItem = existingGroup.items[existingIndexByCode]
+                existingGroup.items[existingIndexByCode] = {
+                    ...existingItem,
+                    ...normalizedItem,
+                    badge: normalizedItem.badge ?? existingItem.badge,
+                }
+                seenItems.delete(toItemIdentity(existingItem))
+                seenItems.add(toItemIdentity(existingGroup.items[existingIndexByCode]))
+                continue
+            }
+
+            const itemKey = toItemIdentity(normalizedItem)
+            if (seenItems.has(itemKey)) continue
+
+            existingGroup.items.push(normalizedItem)
+            if (itemCode) {
+                existingItemIndexByCode.set(itemCode, existingGroup.items.length - 1)
+            }
+            seenItems.add(itemKey)
+        }
+
+        existingGroup.items.sort((a, b) => (a.order || 0) - (b.order || 0))
+    }
+
+    return Array.from(mergedGroups.values())
+        .filter((group) => group.items.length > 0)
+        .sort((a, b) => (a.order || 0) - (b.order || 0))
 }
 
 // ---------------------------------------------------------------------------
@@ -210,7 +298,6 @@ export const useMenuStore = defineStore('menu', () => {
                 return
             }
 
-            // Backend returned empty menu → fallback to MenuRegistryManager
             const objectsResponse = await businessObjectApi.list({ pageSize: 500 })
             const objects = normalizeBusinessObjects((objectsResponse || {}) as unknown as AnyRecord)
             const registry = new MenuRegistryManager()

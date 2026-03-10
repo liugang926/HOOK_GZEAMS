@@ -284,9 +284,20 @@
 
       .field-item {
         display: grid;
-        grid-template-columns: var(--detail-label-width) minmax(0, 1fr);
+        grid-template-columns: var(--field-label-width, var(--detail-label-width)) minmax(0, 1fr);
         column-gap: var(--detail-field-gap);
         align-items: flex-start;
+
+        &.label-position-top {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          .field-label {
+            width: 100%;
+            margin-bottom: 2px;
+          }
+        }
 
         &.field-image {
           display: flex;
@@ -330,6 +341,12 @@
           line-height: 22px;
           overflow-wrap: anywhere;
           word-break: break-word;
+        }
+
+        &.empty-space-card {
+          min-height: 44px;
+          width: 100%;
+          display: block;
         }
       }
     }

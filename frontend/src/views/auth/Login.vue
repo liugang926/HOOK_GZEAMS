@@ -8,7 +8,10 @@
       @mousemove="onMouseMove"
       @mouseleave="onMouseLeave"
     >
-      <div class="logo-container stagger-item" style="--stagger-idx: 1">
+      <div
+        class="logo-container stagger-item"
+        style="--stagger-idx: 1"
+      >
         <img
           v-if="loginLogoUrl"
           :src="loginLogoUrl"
@@ -22,21 +25,63 @@
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path d="M50 5 L90 25 L90 75 L50 95 L10 75 L10 25 Z" stroke="url(#logoGradient)" stroke-width="8" stroke-linejoin="round" />
-          <path d="M50 5 L50 50 L90 25" stroke="url(#logoGradient)" stroke-width="8" stroke-linejoin="round" />
-          <path d="M50 50 L10 25" stroke="url(#logoGradient)" stroke-width="8" stroke-linejoin="round" />
-          <path d="M50 50 L50 95" stroke="url(#logoGradient)" stroke-width="8" stroke-linejoin="round" />
-          <circle cx="50" cy="50" r="12" fill="url(#logoGradient)" />
+          <path
+            d="M50 5 L90 25 L90 75 L50 95 L10 75 L10 25 Z"
+            stroke="url(#logoGradient)"
+            stroke-width="8"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M50 5 L50 50 L90 25"
+            stroke="url(#logoGradient)"
+            stroke-width="8"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M50 50 L10 25"
+            stroke="url(#logoGradient)"
+            stroke-width="8"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M50 50 L50 95"
+            stroke="url(#logoGradient)"
+            stroke-width="8"
+            stroke-linejoin="round"
+          />
+          <circle
+            cx="50"
+            cy="50"
+            r="12"
+            fill="url(#logoGradient)"
+          />
           <defs>
-            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="var(--el-color-primary)" />
-              <stop offset="100%" stop-color="var(--sys-color-accent, #36cfc9)" />
+            <linearGradient
+              id="logoGradient"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
+              <stop
+                offset="0%"
+                stop-color="var(--el-color-primary)"
+              />
+              <stop
+                offset="100%"
+                stop-color="var(--sys-color-accent, #36cfc9)"
+              />
             </linearGradient>
           </defs>
         </svg>
-        <h2 class="login-title">{{ localizedLogin.title || brandingStore.settings.appName }}</h2>
+        <h2 class="login-title">
+          {{ localizedLogin.title || brandingStore.settings.appName }}
+        </h2>
       </div>
-      <p class="login-subtitle stagger-item" style="--stagger-idx: 2">
+      <p
+        class="login-subtitle stagger-item"
+        style="--stagger-idx: 2"
+      >
         {{ localizedLogin.subtitle || $t('login.subtitle') }}
       </p>
 
@@ -46,7 +91,10 @@
         label-width="0"
         @submit.prevent="handleLogin"
       >
-        <el-form-item class="stagger-item" style="--stagger-idx: 3">
+        <el-form-item
+          class="stagger-item"
+          style="--stagger-idx: 3"
+        >
           <el-input
             v-model="form.username"
             :placeholder="$t('login.username')"
@@ -56,7 +104,10 @@
             @blur="onBlur"
           />
         </el-form-item>
-        <el-form-item class="stagger-item" style="--stagger-idx: 4">
+        <el-form-item
+          class="stagger-item"
+          style="--stagger-idx: 4"
+        >
           <el-input
             v-model="form.password"
             type="password"
@@ -68,7 +119,10 @@
             @blur="onBlur"
           />
         </el-form-item>
-        <el-form-item class="stagger-item btn-container" style="--stagger-idx: 5">
+        <el-form-item
+          class="stagger-item btn-container"
+          style="--stagger-idx: 5"
+        >
           <el-button
             type="primary"
             size="large"
@@ -78,18 +132,27 @@
             :loading="loading"
             @mousedown="createRipple"
           >
-            <span class="btn-text" :class="{ 'is-hidden': loading }">{{ $t('login.loginButton') }}</span>
+            <span
+              class="btn-text"
+              :class="{ 'is-hidden': loading }"
+            >{{ $t('login.loginButton') }}</span>
           </el-button>
         </el-form-item>
 
-        <div class="login-footer stagger-item" style="--stagger-idx: 6">
+        <div
+          class="login-footer stagger-item"
+          style="--stagger-idx: 6"
+        >
           <a class="forgot-password">{{ $t('login.forgotPassword') }}</a>
           <a class="forgot-password">{{ $t('login.contactAdmin') }}</a>
         </div>
       </el-form>
     </el-card>
 
-    <div class="copyright stagger-item" style="--stagger-idx: 7">
+    <div
+      class="copyright stagger-item"
+      style="--stagger-idx: 7"
+    >
       {{ localizedLogin.copyright }}
     </div>
   </div>

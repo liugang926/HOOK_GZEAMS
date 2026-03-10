@@ -285,6 +285,91 @@ class TestMenuAPICrossOrganization:
         finally:
             clear_current_organization()
 
+    def test_menu_api_includes_system_branding_static_entry(self, db, org1, user_org1):
+        """System branding should be exposed as a first-class static system menu item."""
+        client = APIClient()
+        client.force_authenticate(user=user_org1)
+
+        set_current_organization(str(org1.id))
+
+        try:
+            response = client.get('/api/system/menu/')
+            assert response.status_code == 200
+
+            items = response.data['data']['items']
+            branding_item = next(item for item in items if item['code'] == 'SystemBranding')
+            assert branding_item['url'] == '/system/branding'
+            assert branding_item['group_code'] == 'system'
+            assert branding_item['translation_key'] == 'menu.routes.systemBranding'
+        finally:
+            clear_current_organization()
+
+    def test_menu_management_endpoint_keeps_categories_editable_but_locks_default_objects(self, db, org1, user_org1):
+        """Categories are editable, while only default business-object entries remain locked."""
+        client = APIClient()
+        client.force_authenticate(user=user_org1)
+
+        set_current_organization(str(org1.id))
+
+        try:
+            response = client.get('/api/system/menu/management/')
+            assert response.status_code == 200
+
+            categories = response.data['data']['categories']
+            system_category = next(category for category in categories if category['code'] == 'system')
+            assert system_category['is_locked'] is False
+            assert system_category['supports_delete'] is True
+
+            items = response.data['data']['items']
+            menu_management_item = next(item for item in items if item['code'] == 'MenuManagement')
+            assert menu_management_item['is_locked'] is False
+            assert menu_management_item['source_type'] == 'static'
+            assert menu_management_item['path'] == '/system/menu-management'
+
+            asset_item = next(item for item in items if item['code'] == 'Asset')
+            assert asset_item['is_locked'] is True
+            assert asset_item['source_type'] == 'business_object'
+        finally:
+            clear_current_organization()
+
+    def test_menu_management_rejects_deleting_custom_group_with_remaining_entries(self, db, org1, user_org1):
+        """Custom groups must not be deleted until all entries are migrated away."""
+        client = APIClient()
+        client.force_authenticate(user=user_org1)
+
+        set_current_organization(str(org1.id))
+
+        try:
+            initial = client.get('/api/system/menu/management/')
+            assert initial.status_code == 200
+            payload = initial.data['data']
+
+            payload['categories'].append({
+                'code': 'custom_ops',
+                'name': 'Custom Ops',
+                'icon': 'Menu',
+                'order': 999,
+                'is_visible': True,
+            })
+
+            first_object_item = next(item for item in payload['items'] if item['source_type'] == 'business_object')
+            first_object_item['group_code'] = 'custom_ops'
+
+            create_response = client.put('/api/system/menu/management/', payload, format='json')
+            assert create_response.status_code == 200
+
+            delete_payload = create_response.data['data']
+            delete_payload['categories'] = [
+                category for category in delete_payload['categories']
+                if category['code'] != 'custom_ops'
+            ]
+
+            delete_response = client.put('/api/system/menu/management/', delete_payload, format='json')
+            assert delete_response.status_code == 400
+            assert 'Move them before deleting the category' in delete_response.data['error']['message']
+        finally:
+            clear_current_organization()
+
 
 class TestMetadataServicesIntegration:
     """Test metadata services work correctly with GlobalMetadataManager."""

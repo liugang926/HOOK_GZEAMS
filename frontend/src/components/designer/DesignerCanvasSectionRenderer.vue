@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { DetailField } from '@/components/common/BaseDetailPage.vue'
 import DesignerCanvasFieldRenderer from '@/components/designer/DesignerCanvasFieldRenderer.vue'
+import { useDetailGridPlacement } from '@/composables/useDetailGridPlacement'
 import type {
   DesignerRenderSection,
   LayoutField,
@@ -49,6 +50,10 @@ const emit = defineEmits<{
   'update:active-tab-name': [value: string]
   'update:active-collapse-names': [value: string[]]
 }>()
+
+const { getSectionCanvasStyle } = useDetailGridPlacement({
+  fieldSpan: computed(() => 1) // default field span is 1 column in grid
+})
 
 const activeTabModel = computed({
   get: () => props.activeTabName || '',
@@ -119,9 +124,9 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
           @dragover="handleSectionDragOver"
           @dragleave="handleSectionDragLeave"
         >
-          <el-row
-            :gutter="24"
-            class="tab-fields designer-fields-container dynamic-form-section__fields"
+          <div
+            class="tab-fields designer-fields-container detail-canvas-grid dynamic-form-section__fields"
+            :style="getSectionCanvasStyle(renderSection.section)"
             data-container-kind="tab"
             :data-section-id="renderSection.id"
             :data-tab-id="tab.id"
@@ -148,14 +153,14 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
               :on-reset-size="handleFieldSizeReset"
               :on-resize-start="handleFieldResizeStart"
             />
-            <el-col
+            <div
               v-if="tab.fields.length === 0"
-              :span="24"
               class="empty-column-placeholder compact"
+              style="grid-column: 1 / -1;"
             >
               {{ t('system.pageLayout.designer.hints.dropToTab') }}
-            </el-col>
-          </el-row>
+            </div>
+          </div>
         </el-tab-pane>
       </el-tabs>
     </template>
@@ -183,9 +188,9 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
             @dragover="handleSectionDragOver"
             @dragleave="handleSectionDragLeave"
           >
-            <el-row
-              :gutter="24"
-              class="designer-fields-container"
+            <div
+              class="designer-fields-container detail-canvas-grid"
+              :style="getSectionCanvasStyle(renderSection.section)"
               data-container-kind="collapse"
               :data-section-id="renderSection.id"
               :data-collapse-id="item.id"
@@ -212,14 +217,14 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
                 :on-reset-size="handleFieldSizeReset"
                 :on-resize-start="handleFieldResizeStart"
               />
-            </el-row>
-            <el-col
-              v-if="item.fields.length === 0"
-              :span="24"
-              class="empty-column-placeholder compact"
-            >
-              {{ t('system.pageLayout.designer.hints.dropToCollapse') }}
-            </el-col>
+              <div
+                v-if="item.fields.length === 0"
+                class="empty-column-placeholder compact"
+                style="grid-column: 1 / -1;"
+              >
+                {{ t('system.pageLayout.designer.hints.dropToCollapse') }}
+              </div>
+            </div>
           </div>
         </el-collapse-item>
       </el-collapse>
@@ -235,7 +240,8 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
       >
         <template v-if="renderSection.position === 'sidebar'">
           <div
-            class="section-fields-sidebar designer-fields-container dynamic-form-section__fields"
+            class="section-fields-sidebar designer-fields-container detail-canvas-grid sidebar-canvas-grid dynamic-form-section__fields"
+            :style="getSectionCanvasStyle(renderSection.section)"
             data-container-kind="section"
             :data-section-id="renderSection.id"
           >
@@ -262,19 +268,19 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
               :on-reset-size="handleFieldSizeReset"
               :on-resize-start="handleFieldResizeStart"
             />
-            <el-col
+            <div
               v-if="renderSection.fields.length === 0"
-              :span="24"
               class="empty-column-placeholder compact"
+              style="grid-column: 1 / -1;"
             >
               {{ t('system.pageLayout.designer.hints.dropToSection') }}
-            </el-col>
+            </div>
           </div>
         </template>
         <template v-else>
-          <el-row
-            :gutter="24"
-            class="section-fields designer-fields-container dynamic-form-section__fields"
+          <div
+            class="section-fields designer-fields-container detail-canvas-grid dynamic-form-section__fields"
+            :style="getSectionCanvasStyle(renderSection.section)"
             data-container-kind="section"
             :data-section-id="renderSection.id"
           >
@@ -303,10 +309,11 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
             <div
               v-if="renderSection.fields.length === 0"
               class="empty-column-placeholder compact"
+              style="grid-column: 1 / -1;"
             >
               {{ t('system.pageLayout.designer.hints.dropToSection') }}
             </div>
-          </el-row>
+          </div>
         </template>
       </div>
     </template>

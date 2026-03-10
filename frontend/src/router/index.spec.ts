@@ -41,6 +41,8 @@ describe('router coverage', () => {
     const router = buildTestRouter()
 
     expect(router.resolve('/system/page-layouts').name).toBe('PageLayoutList')
+    expect(router.resolve('/system/menu-management').name).toBe('MenuManagement')
+    expect(router.resolve('/system/branding').name).toBe('SystemBranding')
     expect(router.resolve('/system/module-workbench').name).toBe('ModuleWorkbench')
     expect(router.resolve('/finance/vouchers').name).toBe('VoucherList')
     expect(router.resolve('/it-assets').name).toBe('ITAssetList')

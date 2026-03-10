@@ -424,6 +424,12 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: 'menu.routes.systemConfig' }
       },
       {
+        path: 'system/menu-management',
+        name: 'MenuManagement',
+        component: () => import('@/views/system/SystemMenuManagement.vue'),
+        meta: { title: 'menu.routes.menuManagement' }
+      },
+      {
         path: 'system/branding',
         name: 'SystemBranding',
         component: () => import('@/views/system/SystemBranding.vue'),

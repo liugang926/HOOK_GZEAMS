@@ -12,6 +12,9 @@ export interface RenderField {
   fieldType: string
   span: number
   minHeight?: number
+  fullWidth?: boolean
+  labelPosition?: 'left' | 'top'
+  labelWidth?: string | number
   layoutPlacement?: Partial<CanvasPlacement>
   componentProps?: AnyRecord
   required: boolean
@@ -32,6 +35,8 @@ export interface RenderSection {
   itemTitle?: any
   collapsible: boolean
   collapsed: boolean
+  labelPosition?: 'left' | 'top'
+  labelWidth?: string | number
   fields: RenderField[]
 }
 
@@ -155,6 +160,9 @@ const buildRenderField = (
     fieldType: normalizeFieldType(rawType),
     span,
     minHeight,
+    fullWidth: layoutField?.fullWidth === true,
+    labelPosition: layoutField?.labelPosition || undefined,
+    labelWidth: layoutField?.labelWidth || undefined,
     layoutPlacement: layoutPlacement || undefined,
     componentProps: Object.keys(mergedComponentProps).length > 0 ? mergedComponentProps : undefined,
     required: Boolean(layoutField?.required ?? meta?.required ?? meta?.isRequired ?? meta?.is_required ?? false),
@@ -180,6 +188,8 @@ const buildSectionFromFields = (
     containerTitle?: any
     itemId?: string
     itemTitle?: any
+    labelPosition?: 'left' | 'top'
+    labelWidth?: string | number
   } = {}
 ): RenderSection | null => {
   const renderFields = (fields || [])
@@ -199,6 +209,8 @@ const buildSectionFromFields = (
     containerTitle: options.containerTitle,
     itemId: options.itemId,
     itemTitle: options.itemTitle,
+    labelPosition: options.labelPosition,
+    labelWidth: options.labelWidth,
     fields: renderFields
   }
 }
@@ -394,7 +406,9 @@ export function buildRenderSchema(input: {
             containerId: sectionId,
             containerTitle: sectionTitle || tabTitle,
             itemId: tabId,
-            itemTitle: tabTitle
+            itemTitle: tabTitle,
+            labelPosition: rawSection?.labelPosition || undefined,
+            labelWidth: rawSection?.labelWidth || undefined
           }
         )
         if (section) sections.push(section)
@@ -422,7 +436,9 @@ export function buildRenderSchema(input: {
             containerId: sectionId,
             containerTitle: sectionTitle || itemTitle,
             itemId: itemId,
-            itemTitle: itemTitle
+            itemTitle: itemTitle,
+            labelPosition: rawSection?.labelPosition || undefined,
+            labelWidth: rawSection?.labelWidth || undefined
           }
         )
         if (section) sections.push(section)
@@ -441,7 +457,9 @@ export function buildRenderSchema(input: {
       {
         position: rawSection?.position as 'main' | 'sidebar' | undefined,
         collapsible: rawSection?.collapsible === true,
-        collapsed: rawSection?.collapsed === true
+        collapsed: rawSection?.collapsed === true,
+        labelPosition: rawSection?.labelPosition || undefined,
+        labelWidth: rawSection?.labelWidth || undefined
       }
     )
     if (section) sections.push(section)

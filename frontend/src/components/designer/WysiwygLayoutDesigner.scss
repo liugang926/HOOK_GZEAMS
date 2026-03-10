@@ -58,6 +58,25 @@
   display: flex;
   flex: 1;
   overflow: hidden;
+
+  // Mobile Viewport Preview
+  .viewport-mobile {
+    max-width: 375px;
+    margin: 0 auto;
+    border-left: 1px solid #dcdfe6;
+    border-right: 1px solid #dcdfe6;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    background-color: white;
+
+    // Force all fields to 1 column in mobile mode
+    :deep(.detail-canvas-grid) {
+      grid-template-columns: 1fr !important;
+      
+      .field-col {
+        grid-column: span 1 !important;
+      }
+    }
+  }
 }
 
 .field-panel {

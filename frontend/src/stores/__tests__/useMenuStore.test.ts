@@ -122,6 +122,20 @@ describe('normalizeMenuGroups', () => {
         expect(result[0].items[0].url).toBe('')
     })
 
+    it('normalizes relative urls into absolute app routes', () => {
+        const result = normalizeMenuGroups({
+            groups: [
+                {
+                    code: 'system',
+                    name: 'System',
+                    items: [{ code: 'SystemBranding', url: 'system/branding' }],
+                },
+            ],
+        })
+
+        expect(result[0].items[0].url).toBe('/system/branding')
+    })
+
     it('returns empty array when groups is not present', () => {
         expect(normalizeMenuGroups({})).toEqual([])
         expect(normalizeMenuGroups({ groups: null } as any)).toEqual([])

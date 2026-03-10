@@ -36,6 +36,45 @@ export interface MenuResponse {
     items: MenuItem[]
 }
 
+export interface MenuManagementCategory {
+    code: string
+    name: string
+    translationKey?: string
+    icon: string
+    order: number
+    isVisible: boolean
+    isLocked: boolean
+    isDefault: boolean
+    entryCount: number
+    supportsDelete: boolean
+}
+
+export interface MenuManagementItem {
+    code: string
+    name: string
+    nameEn?: string
+    translationKey?: string
+    sourceType: 'business_object' | 'static'
+    sourceCode: string
+    path: string
+    icon: string
+    groupCode: string
+    groupTranslationKey?: string
+    order: number
+    isVisible: boolean
+    isLocked: boolean
+    isDefault: boolean
+    supportsDelete: boolean
+    supportsVisibility: boolean
+    supportsReorder: boolean
+    supportsGroupChange: boolean
+}
+
+export interface MenuManagementResponse {
+    categories: MenuManagementCategory[]
+    items: MenuManagementItem[]
+}
+
 export const menuApi = {
     /**
      * Get full menu structure grouped by category
@@ -71,6 +110,21 @@ export const menuApi = {
         }>({
             url: '/system/menu/config/',
             method: 'get'
+        })
+    },
+
+    management: () => {
+        return request<MenuManagementResponse>({
+            url: '/system/menu/management/',
+            method: 'get'
+        })
+    },
+
+    updateManagement: (data: MenuManagementResponse) => {
+        return request<MenuManagementResponse>({
+            url: '/system/menu/management/',
+            method: 'put',
+            data
         })
     }
 }

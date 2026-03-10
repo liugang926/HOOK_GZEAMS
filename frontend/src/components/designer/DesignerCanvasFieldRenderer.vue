@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { DetailField } from '@/components/common/BaseDetailPage.vue'
 import DesignerFieldCard from '@/components/designer/DesignerFieldCard.vue'
+import { useDetailGridPlacement } from '@/composables/useDetailGridPlacement'
 import type {
   DesignerRenderField,
   LayoutField,
@@ -41,6 +43,10 @@ const emit = defineEmits<{
   select: []
 }>()
 
+const { getFieldColStyle } = useDetailGridPlacement({
+  fieldSpan: computed(() => 1)
+})
+
 function handleSelect() {
   props.onSelect(props.renderField.field, props.section)
   emit('select')
@@ -80,10 +86,10 @@ function handleSelect() {
     />
   </div>
 
-  <el-col
+  <div
     v-else
     class="field-renderer field-col"
-    :span="renderField.span24"
+    :style="getFieldColStyle(toCanvasField(renderField.field), section)"
     :data-field-id="renderField.field.id"
     :data-field-code="renderField.field.fieldCode"
     :data-field-span="renderField.semanticSpan"
@@ -110,7 +116,7 @@ function handleSelect() {
       @reset-size="onResetSize"
       @resize-start="onResizeStart"
     />
-  </el-col>
+  </div>
 </template>
 
 <style scoped lang="scss">

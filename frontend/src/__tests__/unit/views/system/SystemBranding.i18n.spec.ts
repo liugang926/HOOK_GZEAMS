@@ -5,11 +5,19 @@ import i18n from '@/locales'
 import { useLocaleStore } from '@/stores/locale'
 import SystemBranding from '@/views/system/SystemBranding.vue'
 
-const mockBrandingGet = vi.fn()
-const mockBrandingUpdate = vi.fn()
-const mockGetActiveLanguages = vi.fn()
-const mockMessageSuccess = vi.fn()
-const mockMessageError = vi.fn()
+const {
+  mockBrandingGet,
+  mockBrandingUpdate,
+  mockGetActiveLanguages,
+  mockMessageSuccess,
+  mockMessageError,
+} = vi.hoisted(() => ({
+  mockBrandingGet: vi.fn(),
+  mockBrandingUpdate: vi.fn(),
+  mockGetActiveLanguages: vi.fn(),
+  mockMessageSuccess: vi.fn(),
+  mockMessageError: vi.fn(),
+}))
 
 vi.mock('element-plus', () => ({
   ElMessage: {

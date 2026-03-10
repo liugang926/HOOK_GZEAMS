@@ -86,4 +86,11 @@ describe('MenuRegistryManager', () => {
         expect(otherGroup).toBeDefined()
         expect(otherGroup!.items.some(i => i.code === 'CustomWidget')).toBe(true)
     })
+
+    it('does not inject static system routes in frontend fallback registry', () => {
+        const registry = new MenuRegistryManager()
+        const tree = registry.generateMenuTree([])
+
+        expect(tree.find(g => g.code === 'system')).toBeUndefined()
+    })
 })
