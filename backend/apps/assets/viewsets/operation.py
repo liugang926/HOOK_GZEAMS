@@ -122,6 +122,27 @@ class AssetPickupViewSet(BaseModelViewSetWithBatch):
             http_status=status.HTTP_201_CREATED
         )
 
+    def update(self, request, *args, **kwargs):
+        """Update pickup order with nested items."""
+        data = dict(request.data)
+        items = data.pop('items', None)
+        organization_id = getattr(request, 'organization_id', None)
+        pk = kwargs.get('pk') or kwargs.get('id')
+
+        pickup = self.service.update_with_items(
+            pk, data, items, request.user, organization_id
+        )
+
+        response_serializer = AssetPickupDetailSerializer(pickup)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Pickup order updated successfully'
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        """Partial update pickup order with nested items."""
+        return self.update(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'], url_path='submit')
     def submit(self, request, pk=None):
         """
@@ -344,6 +365,27 @@ class AssetTransferViewSet(BaseModelViewSetWithBatch):
             http_status=status.HTTP_201_CREATED
         )
 
+    def update(self, request, *args, **kwargs):
+        """Update transfer order with nested items."""
+        data = dict(request.data)
+        items = data.pop('items', None)
+        organization_id = getattr(request, 'organization_id', None)
+        pk = kwargs.get('pk') or kwargs.get('id')
+
+        transfer = self.service.update_with_items(
+            pk, data, items, request.user, organization_id
+        )
+
+        response_serializer = AssetTransferDetailSerializer(transfer)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Transfer order updated successfully'
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        """Partial update transfer order with nested items."""
+        return self.update(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'], url_path='submit')
     def submit(self, request, pk=None):
         """Submit transfer order for approval."""
@@ -452,6 +494,27 @@ class AssetReturnViewSet(BaseModelViewSetWithBatch):
             http_status=status.HTTP_201_CREATED
         )
 
+    def update(self, request, *args, **kwargs):
+        """Update return order with nested items."""
+        data = dict(request.data)
+        items = data.pop('items', None)
+        organization_id = getattr(request, 'organization_id', None)
+        pk = kwargs.get('pk') or kwargs.get('id')
+
+        return_order = self.service.update_with_items(
+            pk, data, items, request.user, organization_id
+        )
+
+        response_serializer = AssetReturnDetailSerializer(return_order)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Return order updated successfully'
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        """Partial update return order with nested items."""
+        return self.update(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'], url_path='confirm')
     def confirm(self, request, pk=None):
         """Confirm and complete return order."""
@@ -526,6 +589,27 @@ class AssetLoanViewSet(BaseModelViewSetWithBatch):
             message='Loan order created successfully',
             http_status=status.HTTP_201_CREATED
         )
+
+    def update(self, request, *args, **kwargs):
+        """Update loan order with nested items."""
+        data = dict(request.data)
+        items = data.pop('items', None)
+        organization_id = getattr(request, 'organization_id', None)
+        pk = kwargs.get('pk') or kwargs.get('id')
+
+        loan = self.service.update_with_items(
+            pk, data, items, request.user, organization_id
+        )
+
+        response_serializer = AssetLoanDetailSerializer(loan)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Loan order updated successfully'
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        """Partial update loan order with nested items."""
+        return self.update(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'], url_path='approve')
     def approve(self, request, pk=None):

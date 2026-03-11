@@ -101,3 +101,62 @@ const selectedFieldCode = computed(() => {
   return String((props.selectedItem as LayoutField).fieldCode || '')
 })
 </script>
+
+<style scoped lang="scss">
+.property-panel {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-left: 1px solid #e4e7ed;
+}
+
+.panel-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e4e7ed;
+  font-size: 13px;
+  font-weight: 700;
+  color: #303133;
+  flex-shrink: 0;
+}
+
+.panel-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 16px 40px;
+  overscroll-behavior: contain;
+}
+
+.panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.14);
+  border-radius: 999px;
+}
+
+.property-form {
+  min-width: 0;
+}
+
+.property-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.no-selection {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>

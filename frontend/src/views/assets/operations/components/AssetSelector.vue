@@ -1,19 +1,22 @@
-﻿<template>
+<template>
   <el-dialog
     v-model="visible"
     :title="t('assets.selector.selectAsset')"
-    width="800px"
+    width="860px"
+    destroy-on-close
     @open="handleOpen"
   >
     <el-form
       :model="filterForm"
       inline
+      class="selector-filter-form"
     >
       <el-form-item :label="t('assets.search.keyword')">
         <el-input
           v-model="filterForm.search"
           :placeholder="t('assets.search.keywordPlaceholder')"
           clearable
+          @input="handleSearchDebounced"
           @keyup.enter="handleSearch"
         />
       </el-form-item>
@@ -26,6 +29,18 @@
           clearable
           check-strictly
           style="width: 200px"
+          @change="handleSearch"
+        />
+      </el-form-item>
+      <el-form-item
+        v-if="showDepartmentFilter"
+        :label="t('assets.search.department')"
+      >
+        <DeptPicker
+          v-model="filterForm.departmentId"
+          :placeholder="t('assets.search.departmentPlaceholder')"
+          style="width: 200px"
+          @change="handleSearch"
         />
       </el-form-item>
       <el-form-item>
@@ -43,14 +58,16 @@
 
     <el-table
       v-loading="loading"
-      :data="tableData"
+      :data="filteredTableData"
       border
       height="400"
+      row-key="id"
       @selection-change="handleSelectionChange"
     >
       <el-table-column
         type="selection"
         width="55"
+        :selectable="isRowSelectable"
       />
       <el-table-column
         prop="code"
@@ -73,6 +90,15 @@
         width="120"
         show-overflow-tooltip
       />
+      <el-table-column
+        :label="t('assets.search.location')"
+        width="120"
+        show-overflow-tooltip
+      >
+        <template #default="{ row }">
+          {{ row.location?.name || row.locationName || '—' }}
+        </template>
+      </el-table-column>
       <el-table-column
         prop="status"
         :label="t('assets.search.status')"
@@ -115,6 +141,7 @@
 import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { assetApi, categoryApi } from '@/api/assets'
+import DeptPicker from '@/components/common/DeptPicker.vue'
 import type { Asset } from '@/types/assets'
 
 const { t } = useI18n()
@@ -128,6 +155,14 @@ const props = defineProps({
   excludeAssetIds: {
     type: Array as () => (string | number)[],
     default: () => []
+  },
+  departmentId: {
+    type: String,
+    default: ''
+  },
+  showDepartmentFilter: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -145,16 +180,43 @@ const selectedRows = ref<Asset[]>([])
 
 const filterForm = reactive({
   search: '',
-  categoryId: ''
+  categoryId: '',
+  departmentId: ''
 })
 
 const pagination = reactive({
   page: 1,
-  pageSize: 10,
+  pageSize: 20,
   total: 0
 })
 
+// Debounced search — triggers after 300ms if ≥2 chars
+let searchTimer: ReturnType<typeof setTimeout> | null = null
+const handleSearchDebounced = () => {
+  if (searchTimer) clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    if (filterForm.search.length >= 2 || filterForm.search.length === 0) {
+      handleSearch()
+    }
+  }, 300)
+}
+
+// Filter out already-selected assets from table display
+const filteredTableData = computed(() => {
+  if (props.excludeAssetIds.length === 0) return tableData.value
+  const excludeSet = new Set(props.excludeAssetIds.map(String))
+  return tableData.value.filter(item => !excludeSet.has(String(item.id)))
+})
+
+const isRowSelectable = (row: Asset) => {
+  return !props.excludeAssetIds.map(String).includes(String(row.id))
+}
+
 const handleOpen = async () => {
+  // Pre-fill department filter if passed
+  if (props.departmentId) {
+    filterForm.departmentId = props.departmentId
+  }
   await loadCategories()
   fetchData()
 }
@@ -180,13 +242,18 @@ const buildTree = (items: any[], parentId: string | null = null): any[] => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const params = {
+    const params: Record<string, any> = {
       page: pagination.page,
-      page_size: pagination.pageSize,
-      search: filterForm.search,
-      categoryId: filterForm.categoryId,
-      status: props.statusFilter.join(',')
+      pageSize: pagination.pageSize,
+      search: filterForm.search || undefined,
+      categoryId: filterForm.categoryId || undefined,
+      status: props.statusFilter.length > 0 ? props.statusFilter.join(',') : undefined,
+      departmentId: filterForm.departmentId || undefined
     }
+    // Clean undefined params
+    Object.keys(params).forEach(key => {
+      if (params[key] === undefined) delete params[key]
+    })
     const res = await assetApi.list(params)
     tableData.value = res.results || []
     pagination.total = res.count || 0
@@ -203,6 +270,7 @@ const handleSearch = () => {
 const resetFilter = () => {
   filterForm.search = ''
   filterForm.categoryId = ''
+  filterForm.departmentId = ''
   handleSearch()
 }
 
@@ -211,6 +279,7 @@ const handleSelectionChange = (rows: Asset[]) => {
 }
 
 const confirmSelect = () => {
+  // Emit full asset objects for auto-fill (location, custodian, etc.)
   emit('confirm', selectedRows.value)
   visible.value = false
   selectedRows.value = []
@@ -237,7 +306,11 @@ const getStatusLabel = (status: string) => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+.selector-filter-form {
+  margin-bottom: 12px;
+}
+
 .pagination-container {
   margin-top: 15px;
   display: flex;

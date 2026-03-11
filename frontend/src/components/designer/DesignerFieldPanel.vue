@@ -162,19 +162,19 @@ defineExpose({
 
 <style scoped>
 .field-panel {
-  width: 268px;
-  min-width: 268px;
-  background: #ffffff;
-  border-right: 1px solid #e4e7ed;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
   display: flex;
   flex-direction: column;
   min-height: 0;
-  box-shadow: 1px 0 4px rgba(0, 0, 0, 0.04);
 }
 
 .panel-header {
-  padding: 14px 16px;
+  padding: 16px 16px 14px;
   border-bottom: 1px solid #e4e7ed;
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .assignment-summary {
@@ -202,7 +202,8 @@ defineExpose({
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 0;
+  padding: 10px 0 28px;
+  overscroll-behavior: contain;
 }
 
 .panel-content::-webkit-scrollbar {
@@ -221,7 +222,7 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 14px;
+  padding: 9px 14px;
   cursor: pointer;
   transition: all 0.15s ease;
   font-size: 13px;
@@ -247,7 +248,7 @@ defineExpose({
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  padding: 4px 12px 14px;
+  padding: 6px 12px 16px;
 }
 
 .field-tile {

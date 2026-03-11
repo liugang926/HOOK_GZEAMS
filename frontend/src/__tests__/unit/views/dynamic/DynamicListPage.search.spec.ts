@@ -2,26 +2,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, onMounted } from 'vue'
 import {
-  createClickableButtonStub,
-  createElementResultStub,
-  createObjectAvatarStub,
-  createPlainButtonStub,
-  loadingDirectiveStubs,
+  createDynamicListGlobalOptions,
 } from './testUtils'
+import { createRouteMockContext } from './routerTestUtils'
+import {
+  createListApiMockContext,
+  createRuntimeLayoutMockContext,
+} from './apiTestUtils'
+import { createPassthroughI18nMock } from './i18nTestUtils'
 
-const listMock = vi.fn()
-const getMetadataMock = vi.fn()
-const pushMock = vi.fn()
-const resolveRuntimeLayoutMock = vi.fn()
+const { listMock, getMetadataMock, batchDeleteMock, deleteMock } = createListApiMockContext()
+const { resolveRuntimeLayoutMock } = createRuntimeLayoutMockContext()
+const { pushMock, routeState } = createRouteMockContext({
+  params: { code: 'Asset' },
+  path: '/objects/Asset',
+})
 
 vi.mock('vue-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-router')>()
   return {
     ...actual,
-    useRoute: () => ({
-      params: { code: 'Asset' },
-      path: '/objects/Asset',
-    }),
+    useRoute: () => routeState,
     useRouter: () => ({
       push: pushMock,
     }),
@@ -32,8 +33,8 @@ vi.mock('@/api/dynamic', () => ({
   createObjectClient: () => ({
     list: listMock,
     getMetadata: getMetadataMock,
-    batchDelete: vi.fn(),
-    delete: vi.fn(),
+    batchDelete: batchDeleteMock,
+    delete: deleteMock,
   }),
 }))
 
@@ -67,35 +68,15 @@ vi.mock('vue-i18n', async (importOriginal) => {
   return {
     ...actual,
     createI18n: actual.createI18n,
-    useI18n: () => ({
-      t: (key: string) => key,
-      te: () => true,
-      locale: { value: 'zh-CN' },
-    }),
+    useI18n: () => createPassthroughI18nMock('zh-CN', true),
   }
-})
-
-const createListWrapperStubs = (clickableButtons = false) => ({
-  ContextDrawer: defineComponent({ template: '<div class="drawer-stub" />' }),
-  FieldRenderer: defineComponent({ template: '<div class="field-stub" />' }),
-  ObjectAvatar: createObjectAvatarStub(),
-  ExportButton: defineComponent({ template: '<div class="export-button-stub" />' }),
-  ImportButton: defineComponent({ template: '<div class="import-button-stub" />' }),
-  ExportFieldSelector: defineComponent({ template: '<div class="export-selector-stub" />' }),
-  ImportConfigDialog: defineComponent({ template: '<div class="import-config-stub" />' }),
-  'el-alert': defineComponent({ template: '<div />' }),
-  'el-input': defineComponent({ template: '<input />' }),
-  'el-option': defineComponent({ template: '<option />' }),
-  'el-result': createElementResultStub(),
-  'el-select': defineComponent({ template: '<select><slot /></select>' }),
-  'el-skeleton': defineComponent({ template: '<div />' }),
-  'el-button': clickableButtons ? createClickableButtonStub() : createPlainButtonStub(),
-  'el-tag': defineComponent({ template: '<span><slot /></span>' }),
 })
 
 describe('DynamicListPage unified search', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    routeState.params = { code: 'Asset' }
+    routeState.path = '/objects/Asset'
     getMetadataMock.mockResolvedValue({
       code: 'Asset',
       name: 'Asset',
@@ -129,10 +110,7 @@ describe('DynamicListPage unified search', () => {
     const DynamicListPage = (await import('@/views/dynamic/DynamicListPage.vue')).default
 
     mount(DynamicListPage, {
-      global: {
-        directives: loadingDirectiveStubs,
-        stubs: createListWrapperStubs(),
-      },
+      global: createDynamicListGlobalOptions(),
     })
 
     await flushPromises()
@@ -150,10 +128,7 @@ describe('DynamicListPage unified search', () => {
     const DynamicListPage = (await import('@/views/dynamic/DynamicListPage.vue')).default
 
     const wrapper = mount(DynamicListPage, {
-      global: {
-        directives: loadingDirectiveStubs,
-        stubs: createListWrapperStubs(true),
-      },
+      global: createDynamicListGlobalOptions(true),
     })
 
     await flushPromises()
@@ -171,10 +146,7 @@ describe('DynamicListPage unified search', () => {
     const DynamicListPage = (await import('@/views/dynamic/DynamicListPage.vue')).default
 
     const wrapper = mount(DynamicListPage, {
-      global: {
-        directives: loadingDirectiveStubs,
-        stubs: createListWrapperStubs(),
-      },
+      global: createDynamicListGlobalOptions(),
     })
 
     await flushPromises()
@@ -191,10 +163,7 @@ describe('DynamicListPage unified search', () => {
     const DynamicListPage = (await import('@/views/dynamic/DynamicListPage.vue')).default
 
     const wrapper = mount(DynamicListPage, {
-      global: {
-        directives: loadingDirectiveStubs,
-        stubs: createListWrapperStubs(),
-      },
+      global: createDynamicListGlobalOptions(),
     })
 
     await flushPromises()

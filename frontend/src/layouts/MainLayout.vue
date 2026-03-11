@@ -231,7 +231,10 @@
         </el-header>
 
         <!-- Page content -->
-        <el-main class="page-main">
+        <el-main
+          class="page-main"
+          :class="{ 'page-main--designer': route.name === 'PageLayoutDesigner' }"
+        >
           <router-view v-slot="{ Component }">
             <transition
               name="page-fade"
@@ -575,12 +578,28 @@ onUnmounted(() => {
 .main-container {
   flex-direction: column;
   min-height: 100vh;
+  height: 100vh;
+  min-width: 0;
 }
 
 .page-main {
   background: $bg-body;
   padding: 20px;
   flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.page-main--designer {
+  padding: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.page-main--designer :deep(.page-layout-designer) {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 
 /* ====================================================================

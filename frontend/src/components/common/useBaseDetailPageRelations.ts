@@ -11,6 +11,7 @@ interface ReverseRelationFieldLike {
   code: string
   label: string
   displayMode: 'inline_editable' | 'inline_readonly' | 'tab_readonly' | 'hidden'
+  displayTier?: 'L1' | 'L2' | 'L3'
   relatedObjectCode?: string
   reverseRelationField?: string
   sortOrder?: number
@@ -40,7 +41,7 @@ export function useBaseDetailPageRelations(options: UseBaseDetailPageRelationsOp
   const { props, runtimeRelations } = options
   const { t } = useI18n()
 
-  const visibleReverseRelations = computed(() => {
+  const allVisibleRelations = computed(() => {
     if (!props.showRelatedObjects) {
       return []
     }
@@ -56,6 +57,16 @@ export function useBaseDetailPageRelations(options: UseBaseDetailPageRelationsOp
       })
   })
 
+  // L1 relations → inline in Details tab
+  const lineItemRelations = computed(() =>
+    allVisibleRelations.value.filter((rel) => rel.displayTier === 'L1')
+  )
+
+  // L2/L3 relations → Related tab (excludes L1 to avoid duplication)
+  const visibleReverseRelations = computed(() =>
+    allVisibleRelations.value.filter((rel) => rel.displayTier !== 'L1')
+  )
+
   const mapRuntimeRelation = (raw: Record<string, any>): ReverseRelationFieldLike | null => {
     const code = String(raw.relationCode || '').trim()
     if (!code) return null
@@ -69,6 +80,7 @@ export function useBaseDetailPageRelations(options: UseBaseDetailPageRelationsOp
       code,
       label,
       displayMode,
+      displayTier: (String(raw.displayTier || 'L2').trim() as ReverseRelationFieldLike['displayTier']),
       relatedObjectCode,
       reverseRelationField: String(raw.targetFkField || '').trim(),
       sortOrder: Number(raw.sortOrder || 0) || 0,
@@ -134,6 +146,7 @@ export function useBaseDetailPageRelations(options: UseBaseDetailPageRelationsOp
   }
 
   return {
+    lineItemRelations,
     visibleReverseRelations,
     groupedReverseRelationSections,
     isRelationGroupExpanded: relationGroupExpansion.isExpanded,

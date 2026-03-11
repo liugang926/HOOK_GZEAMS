@@ -43,158 +43,173 @@
     />
 
     <!-- Main Area -->
-    <div class="designer-main">
-      <DesignerFieldPanel
-        ref="fieldPanelRef"
-        :render-mode="renderMode"
-        :search-query="searchQuery"
-        :filtered-field-groups="filteredFieldGroups"
-        :assigned-field-count="assignedFieldCount"
-        :total-field-count="totalAvailableFieldCount"
-        :is-group-expanded="isGroupExpanded"
-        :can-add-field="canAddField"
-        :get-disabled-reason="getDisabledReason"
-        :is-field-added="isFieldAdded"
-        @update:search-query="searchQuery = $event"
-        @toggle-group="toggleGroup"
-        @field-click="handleFieldClick"
-        @field-drag-start="handleFieldDragStart"
-        @drag-end="handleDragEnd"
-      />
-
-      <DesignerCanvas
-        ref="canvasShellRef"
-        :class="[`viewport-${viewport}`]"
-        :render-mode="renderMode"
-        :layout-mode="layoutMode"
-        :is-drag-over-canvas="isDragOverCanvas"
-        :resize-hint="resizeHint"
-        :resize-hint-style="resizeHintStyle"
-        :total-fields="canvasFieldCount"
-        :required-fields="canvasRequiredFieldCount"
-        :section-count="canvasSectionCount"
-        @canvas-drop="handleCanvasDrop"
-        @canvas-drag-over="handleCanvasDragOver"
-        @canvas-drag-leave="handleCanvasDragLeave"
-        @add-section="addSection"
+    <div
+      class="designer-main"
+      :class="{ 'designer-main--preview': renderMode === 'preview' }"
+    >
+      <aside
+        v-if="renderMode === 'design'"
+        class="designer-pane designer-pane--left"
       >
-        <!-- Render the actual form using real components -->
-        <div
-          v-if="designerRenderSections.length > 0"
-          class="runtime-preview-card detail-mode-preview dynamic-detail-page"
+        <DesignerFieldPanel
+          ref="fieldPanelRef"
+          :render-mode="renderMode"
+          :search-query="searchQuery"
+          :filtered-field-groups="filteredFieldGroups"
+          :assigned-field-count="assignedFieldCount"
+          :total-field-count="totalAvailableFieldCount"
+          :is-group-expanded="isGroupExpanded"
+          :can-add-field="canAddField"
+          :get-disabled-reason="getDisabledReason"
+          :is-field-added="isFieldAdded"
+          @update:search-query="searchQuery = $event"
+          @toggle-group="toggleGroup"
+          @field-click="handleFieldClick"
+          @field-drag-start="handleFieldDragStart"
+          @drag-end="handleDragEnd"
+        />
+      </aside>
+
+      <section class="designer-pane designer-pane--center">
+        <DesignerCanvas
+          ref="canvasShellRef"
+          :class="[`viewport-${viewport}`]"
+          :render-mode="renderMode"
+          :layout-mode="layoutMode"
+          :is-drag-over-canvas="isDragOverCanvas"
+          :resize-hint="resizeHint"
+          :resize-hint-style="resizeHintStyle"
+          :total-fields="canvasFieldCount"
+          :required-fields="canvasRequiredFieldCount"
+          :section-count="canvasSectionCount"
+          @canvas-drop="handleCanvasDrop"
+          @canvas-drag-over="handleCanvasDragOver"
+          @canvas-drag-leave="handleCanvasDragLeave"
+          @add-section="addSection"
         >
-          <BaseDetailPage
-            :title="previewPageTitle"
-            :sections="designerCanvasSections"
-            :data="sampleData"
-            :audit-info="previewAuditInfo"
-            :show-back="false"
-            :show-edit="false"
-            :show-delete="false"
-            section-header-test-id="layout-section-header"
-            :show-related-objects="true"
-            :resolve-runtime-relations="false"
-            :disable-related-object-fetch="true"
-            :object-code="objectCode"
-            :object-name="previewObjectName"
-            :reverse-relations="previewReverseRelations"
-            :relation-group-scope-id="previewRelationGroupScopeId"
-            @section-click="maybeSelectSection"
+          <!-- Render the actual form using real components -->
+          <div
+            v-if="designerRenderSections.length > 0"
+            class="runtime-preview-card detail-mode-preview dynamic-detail-page"
           >
-            <template
-              v-for="renderSection in designerRenderSections"
-              :key="`header-${renderSection.id}`"
-              #[`section-header-${renderSection.id}`]
+            <BaseDetailPage
+              :title="previewPageTitle"
+              :sections="designerCanvasSections"
+              :data="sampleData"
+              :audit-info="previewAuditInfo"
+              :show-back="false"
+              :show-edit="false"
+              :show-delete="false"
+              section-header-test-id="layout-section-header"
+              :show-related-objects="true"
+              :resolve-runtime-relations="false"
+              :disable-related-object-fetch="true"
+              :object-code="objectCode"
+              :object-name="previewObjectName"
+              :reverse-relations="previewReverseRelations"
+              :relation-group-scope-id="previewRelationGroupScopeId"
+              @section-click="maybeSelectSection"
             >
-              <DesignerSectionHeader
-                :section-id="renderSection.id"
-                :title="String(renderSection.title || '')"
-                :selected="isDesignMode && selectedId === renderSection.id"
-                :interactive="isDesignMode"
-                :select-section="selectSection"
-                @title-update="updateSectionTitle"
-              />
-            </template>
-            <template
-              v-for="(renderSection, sectionIndex) in designerRenderSections"
-              :key="`slot-${renderSection.id}`"
-              #[`section-${renderSection.id}`]
-            >
-              <DesignerCanvasSectionRenderer
-                class="designer-section-slot"
-                :data-section-id="renderSection.id"
-                :data-section-position="renderSection.position"
-                :render-section="renderSection"
-                :section-index="sectionIndex"
-                :total-section-count="designerRenderSections.length"
-                :is-design-mode="isDesignMode"
-                :selected-id="selectedId"
-                :active-tab-name="activeTabs[renderSection.id]"
-                :active-collapse-names="activeCollapses[renderSection.id] || []"
-                :size-feedback-field-id="sizeFeedbackFieldId"
-                :sample-data="sampleData"
-                :card-titles="designerCardTitles"
-                :section-action-labels="designerSectionActionLabels"
-                :to-canvas-field="toCanvasField"
-                :field-to-design-display-field="fieldToDesignDisplayField"
-                :get-sample-value="getSampleValue"
-                :select-section="selectSection"
-                :maybe-select-section="maybeSelectSection"
-                :maybe-select-field="maybeSelectField"
-                :remove-field="removeField"
-                :update-field-label="updateFieldLabel"
-                :handle-field-size-reset="handleFieldSizeReset"
-                :handle-field-resize-start="handleFieldResizeStart"
-                :toggle-section-collapse="toggleSectionCollapse"
-                :move-section="moveSection"
-                :delete-section="deleteSection"
-                :handle-tab-drop="handleTabDrop"
-                :handle-collapse-drop="handleCollapseDrop"
-                :handle-section-drop="handleSectionDrop"
-                :handle-section-drag-over="handleSectionDragOver"
-                :handle-section-drag-leave="handleSectionDragLeave"
-                :t="t"
-                @update:active-tab-name="activeTabs[renderSection.id] = $event"
-                @update:active-collapse-names="activeCollapses[renderSection.id] = $event"
-              />
-            </template>
-          </BaseDetailPage>
-        </div>
+              <template
+                v-for="renderSection in designerRenderSections"
+                :key="`header-${renderSection.id}`"
+                #[`section-header-${renderSection.id}`]
+              >
+                <DesignerSectionHeader
+                  :section-id="renderSection.id"
+                  :title="String(renderSection.title || '')"
+                  :selected="isDesignMode && selectedId === renderSection.id"
+                  :interactive="isDesignMode"
+                  :select-section="selectSection"
+                  @title-update="updateSectionTitle"
+                />
+              </template>
+              <template
+                v-for="(renderSection, sectionIndex) in designerRenderSections"
+                :key="`slot-${renderSection.id}`"
+                #[`section-${renderSection.id}`]
+              >
+                <DesignerCanvasSectionRenderer
+                  class="designer-section-slot"
+                  :data-section-id="renderSection.id"
+                  :data-section-position="renderSection.position"
+                  :render-section="renderSection"
+                  :section-index="sectionIndex"
+                  :total-section-count="designerRenderSections.length"
+                  :is-design-mode="isDesignMode"
+                  :selected-id="selectedId"
+                  :active-tab-name="activeTabs[renderSection.id]"
+                  :active-collapse-names="activeCollapses[renderSection.id] || []"
+                  :size-feedback-field-id="sizeFeedbackFieldId"
+                  :sample-data="sampleData"
+                  :card-titles="designerCardTitles"
+                  :section-action-labels="designerSectionActionLabels"
+                  :to-canvas-field="toCanvasField"
+                  :field-to-design-display-field="fieldToDesignDisplayField"
+                  :get-sample-value="getSampleValue"
+                  :select-section="selectSection"
+                  :maybe-select-section="maybeSelectSection"
+                  :maybe-select-field="maybeSelectField"
+                  :remove-field="removeField"
+                  :update-field-label="updateFieldLabel"
+                  :handle-field-size-reset="handleFieldSizeReset"
+                  :handle-field-resize-start="handleFieldResizeStart"
+                  :toggle-section-collapse="toggleSectionCollapse"
+                  :move-section="moveSection"
+                  :delete-section="deleteSection"
+                  :handle-tab-drop="handleTabDrop"
+                  :handle-collapse-drop="handleCollapseDrop"
+                  :handle-section-drop="handleSectionDrop"
+                  :handle-section-drag-over="handleSectionDragOver"
+                  :handle-section-drag-leave="handleSectionDragLeave"
+                  :t="t"
+                  @update:active-tab-name="activeTabs[renderSection.id] = $event"
+                  @update:active-collapse-names="activeCollapses[renderSection.id] = $event"
+                />
+              </template>
+            </BaseDetailPage>
+          </div>
 
-        <!-- Empty State -->
-        <div
-          v-else
-          class="empty-canvas"
-        >
-          <el-empty :description="t('system.pageLayout.designer.empty.layoutEmpty')">
-            <el-button
-              v-if="isDesignMode"
-              type="primary"
-              @click="addSection"
-            >
-              {{ t('system.pageLayout.designer.actions.addSection') }}
-            </el-button>
-          </el-empty>
-        </div>
-      </DesignerCanvas>
+          <!-- Empty State -->
+          <div
+            v-else
+            class="empty-canvas"
+          >
+            <el-empty :description="t('system.pageLayout.designer.empty.layoutEmpty')">
+              <el-button
+                v-if="isDesignMode"
+                type="primary"
+                @click="addSection"
+              >
+                {{ t('system.pageLayout.designer.actions.addSection') }}
+              </el-button>
+            </el-empty>
+          </div>
+        </DesignerCanvas>
+      </section>
 
-      <DesignerPropertyPanel
-        :render-mode="renderMode"
-        :selected-item="selectedItem"
-        :element-type="elementType"
-        :field-props="fieldProps"
-        :section-props="sectionProps"
-        :available-spans="availableSpans"
-        :available-span-columns="availableSpanColumns"
-        :visibility-field-options="visibilityFieldOptions"
-        :layout-mode="layoutMode"
-        :mode="mode"
-        :translation-mode="translationMode"
-        @update:field-props="fieldProps = $event"
-        @update:section-props="sectionProps = $event"
-        @field-property-update="handleFieldPropertyUpdate"
-        @section-property-update="handleSectionPropertyUpdate"
-      />
+      <aside
+        v-if="renderMode === 'design'"
+        class="designer-pane designer-pane--right"
+      >
+        <DesignerPropertyPanel
+          :render-mode="renderMode"
+          :selected-item="selectedItem"
+          :element-type="elementType"
+          :field-props="fieldProps"
+          :section-props="sectionProps"
+          :available-spans="availableSpans"
+          :available-span-columns="availableSpanColumns"
+          :visibility-field-options="visibilityFieldOptions"
+          :layout-mode="layoutMode"
+          :mode="mode"
+          :translation-mode="translationMode"
+          @update:field-props="fieldProps = $event"
+          @update:section-props="sectionProps = $event"
+          @field-property-update="handleFieldPropertyUpdate"
+          @section-property-update="handleSectionPropertyUpdate"
+        />
+      </aside>
     </div>
 
     <!-- History Panel Drawer -->

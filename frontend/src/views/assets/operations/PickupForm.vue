@@ -220,8 +220,10 @@ const validateAndGetPayload = async () => {
         pickup_date: form.pickupDate,
         pickup_reason: form.reason,
         items: form.items.map((i: any) => ({
-            asset_id: i.asset.id,
-            remark: i.remark
+            ...(i.id ? { id: i.id } : {}),
+            asset_id: i.asset?.id || i.assetId,
+            quantity: i.quantity || 1,
+            remark: i.remark || ''
         }))
     }
 }
@@ -307,10 +309,11 @@ onMounted(async () => {
             form.pickupDate = data.pickup_date
             form.reason = data.pickup_reason
             form.items = (data.items || []).map((i: any) => ({
+                id: i.id,
                 asset: i.asset,
-                assetId: i.asset.id,
-                quantity: 1,
-                remark: i.remark
+                assetId: i.asset?.id || i.assetId,
+                quantity: i.quantity || 1,
+                remark: i.remark || ''
             }))
         } catch (e) {
             console.error(e)

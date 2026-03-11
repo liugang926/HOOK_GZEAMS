@@ -6,6 +6,7 @@ import RelatedObjectTable from './RelatedObjectTable.vue'
 import ActivityTimeline from './ActivityTimeline.vue'
 import BaseDetailSectionCard from './BaseDetailSectionCard.vue'
 import BaseDetailAuditCard from './BaseDetailAuditCard.vue'
+import InlineLineItemTabs from './InlineLineItemTabs.vue'
 import type { FieldDefinition } from '@/types'
 
 interface DetailFieldLike {
@@ -72,6 +73,7 @@ interface Props {
   activityRecordId?: string
   hasActivityHistory: boolean
   visibleReverseRelations: ReverseRelationLike[]
+  lineItemRelations?: ReverseRelationLike[]
   groupedReverseRelationSections: RelationGroupLike[]
   disableRelatedObjectFetch: boolean
   getSectionDisplayTitle: (section: DetailSectionLike) => string
@@ -99,7 +101,8 @@ const props = withDefaults(defineProps<Props>(), {
   sectionHeaderTestId: '',
   auditInfo: null,
   objectCode: '',
-  activityRecordId: ''
+  activityRecordId: '',
+  lineItemRelations: () => []
 })
 
 const emit = defineEmits<{
@@ -171,6 +174,19 @@ const activeMainTabModel = computed({
           <slot
             name="after-sections"
             :data="data"
+          />
+
+          <!-- L1 line item relations inline -->
+          <InlineLineItemTabs
+            v-if="lineItemRelations && lineItemRelations.length > 0"
+            :line-item-relations="lineItemRelations"
+            :parent-object-code="objectCode || ''"
+            :parent-id="data.id || data.code"
+            :data="data"
+            :edit-mode="editMode"
+            @record-click="(code, record, target) => onRelatedRecordClick(code, record, target)"
+            @record-edit="(code, record, target) => onRelatedRecordEdit(code, record, target)"
+            @refresh="(code) => onRelatedRefresh(code)"
           />
 
           <BaseDetailAuditCard

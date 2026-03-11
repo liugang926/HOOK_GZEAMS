@@ -2,17 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import {
-  createElementResultStub,
-  createObjectAvatarStub,
-  createPlainButtonStub,
-  createPlainCardStub,
-  createPlainStepsStub,
-  loadingDirectiveStubs,
+  createDynamicDetailGlobalOptions,
 } from './testUtils'
+import { createRouteMockContext } from './routerTestUtils'
+import {
+  createMetadataApiMockContext,
+  createRuntimeLayoutMockContext,
+} from './apiTestUtils'
+import { createPassthroughI18nMock } from './i18nTestUtils'
 
-const pushMock = vi.fn()
-const getMetadataMock = vi.fn()
-const resolveRuntimeLayoutMock = vi.fn()
+const { getMetadataMock } = createMetadataApiMockContext()
+const { resolveRuntimeLayoutMock } = createRuntimeLayoutMockContext()
+const { pushMock, routeState } = createRouteMockContext({
+  params: { code: 'Asset', id: 'asset-1' },
+})
 
 const CommonDynamicDetailPageStub = defineComponent({
   name: 'CommonDynamicDetailPage',
@@ -35,9 +38,7 @@ vi.mock('vue-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-router')>()
   return {
     ...actual,
-    useRoute: () => ({
-      params: { code: 'Asset', id: 'asset-1' }
-    }),
+    useRoute: () => routeState,
     useRouter: () => ({
       push: pushMock
     })
@@ -62,34 +63,21 @@ vi.mock('vue-i18n', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-i18n')>()
   return {
     ...actual,
-    useI18n: () => ({
-      t: (key: string) => key,
-      te: () => false,
-      locale: { value: 'zh-CN' }
-    })
+    useI18n: () => createPassthroughI18nMock(),
   }
 })
 
 const buildWrapper = async () => {
   const DynamicDetailPage = (await import('@/views/dynamic/DynamicDetailPage.vue')).default
   return mount(DynamicDetailPage, {
-    global: {
-      directives: loadingDirectiveStubs,
-      stubs: {
-        ObjectAvatar: createObjectAvatarStub(),
-        'el-card': createPlainCardStub(),
-        'el-result': createElementResultStub(),
-        'el-button': createPlainButtonStub(),
-        'el-step': defineComponent({ template: '<div />' }),
-        'el-steps': createPlainStepsStub(),
-      }
-    }
+    global: createDynamicDetailGlobalOptions()
   })
 }
 
 describe('DynamicDetailPage navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    routeState.params = { code: 'Asset', id: 'asset-1' }
     getMetadataMock.mockResolvedValue({
       code: 'Asset',
       name: 'Asset',

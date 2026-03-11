@@ -255,6 +255,7 @@ const { activityRecordId, hasActivityHistory } = useBaseDetailPageHistory({
 })
 
 const {
+  lineItemRelations,
   visibleReverseRelations,
   groupedReverseRelationSections,
   isRelationGroupExpanded,
@@ -570,6 +571,7 @@ defineExpose({
             :activity-record-id="activityRecordId"
             :has-activity-history="hasActivityHistory"
             :visible-reverse-relations="visibleReverseRelations"
+            :line-item-relations="lineItemRelations"
             :grouped-reverse-relation-sections="groupedReverseRelationSections"
             :disable-related-object-fetch="disableRelatedObjectFetch"
             :get-section-display-title="getSectionDisplayTitle"

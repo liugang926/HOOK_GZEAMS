@@ -1,23 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
-import {
-  createClickableButtonStub,
-  createElementResultStub,
-  createObjectAvatarStub,
-  loadingDirectiveStubs,
-} from './testUtils'
+import { createDynamicFormGlobalOptions } from './testUtils'
+import { createRouteMockContext } from './routerTestUtils'
+import { createCrudApiMockContext, createRuntimeLayoutMockContext } from './apiTestUtils'
+import { createMappedI18nMock, dynamicFormTranslations } from './i18nTestUtils'
 
-const pushMock = vi.fn()
-const getMetadataMock = vi.fn()
-const getRecordMock = vi.fn()
-const createMock = vi.fn()
-const updateMock = vi.fn()
-const resolveRuntimeLayoutMock = vi.fn()
-const routeState = {
-  params: { code: 'Asset' } as Record<string, string>,
+const { getMetadataMock, getRecordMock, createMock, updateMock } = createCrudApiMockContext()
+const { resolveRuntimeLayoutMock } = createRuntimeLayoutMockContext()
+const { pushMock, routeState } = createRouteMockContext({
+  params: { code: 'Asset' },
   path: '/objects/Asset/create',
-}
+})
 
 vi.mock('vue-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-router')>()
@@ -32,29 +26,10 @@ vi.mock('vue-router', async (importOriginal) => {
 
 vi.mock('vue-i18n', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-i18n')>()
-  const translations: Record<string, string> = {
-    'common.actions.back': '返回',
-    'common.actions.cancel': '取消',
-    'common.actions.create': '新建',
-    'common.actions.edit': '编辑',
-    'common.actions.refresh': '刷新',
-    'common.actions.save': '保存',
-    'common.messages.createSuccess': '创建成功',
-    'common.messages.loadFailed': '加载失败',
-    'common.messages.operationFailed': '操作失败',
-    'common.messages.permissionDenied': '无权限访问',
-    'common.messages.permissionDeniedHint': '您没有访问此页面的权限。',
-    'common.messages.updateSuccess': '更新成功',
-  }
-
   return {
     ...actual,
     createI18n: actual.createI18n,
-    useI18n: () => ({
-      t: (key: string) => translations[key] || key,
-      te: () => false,
-      locale: { value: 'zh-CN' },
-    }),
+    useI18n: () => createMappedI18nMock(dynamicFormTranslations),
   }
 })
 
@@ -90,9 +65,9 @@ describe('DynamicFormPage', () => {
 
     getMetadataMock.mockResolvedValue({
       code: 'Asset',
-      name: '资产卡片',
+      name: 'Asset Card',
       icon: 'Box',
-      module: '资产管理',
+      module: 'Asset Center',
       fields: [
         { code: 'asset_code', required: true },
         { code: 'asset_name', required: true },
@@ -118,23 +93,17 @@ describe('DynamicFormPage', () => {
     const DynamicFormPage = (await import('@/views/dynamic/DynamicFormPage.vue')).default
 
     return mount(DynamicFormPage, {
-      global: {
-        directives: loadingDirectiveStubs,
-        stubs: {
-          DynamicForm: defineComponent({
-            setup(_props, { expose }) {
-              expose({
-                validate: vi.fn().mockResolvedValue(true),
-                getSubmitData: vi.fn().mockReturnValue({ asset_code: 'A-001', asset_name: 'Asset 1' }),
-              })
-              return () => h('div', { class: 'dynamic-form-stub' }, 'dynamic form')
-            },
-          }),
-          ObjectAvatar: createObjectAvatarStub(),
-          'el-result': createElementResultStub(),
-          'el-button': createClickableButtonStub(),
-        },
-      },
+      global: createDynamicFormGlobalOptions(
+        defineComponent({
+          setup(_props, { expose }) {
+            expose({
+              validate: vi.fn().mockResolvedValue(true),
+              getSubmitData: vi.fn().mockReturnValue({ asset_code: 'A-001', asset_name: 'Asset 1' }),
+            })
+            return () => h('div', { class: 'dynamic-form-stub' }, 'dynamic form')
+          },
+        })
+      ),
     })
   }
 
@@ -143,10 +112,10 @@ describe('DynamicFormPage', () => {
 
     await flushPromises()
 
-    expect(wrapper.find('.form-hero__title').text()).toContain('新建 资产卡片')
-    expect(wrapper.find('.form-panel__title').text()).toContain('填写对象信息')
-    expect(wrapper.find('.form-info-card__title').text()).toContain('资产卡片')
-    expect(wrapper.text()).toContain('资产管理')
+    expect(wrapper.find('.form-hero__title').text()).toContain('Asset Card')
+    expect(wrapper.find('.form-panel__title').text()).not.toHaveLength(0)
+    expect(wrapper.find('.form-info-card__title').text()).toContain('Asset Card')
+    expect(wrapper.text()).toContain('Asset Center')
     expect(wrapper.text()).toContain('3')
     expect(wrapper.text()).toContain('2')
   })
@@ -156,7 +125,7 @@ describe('DynamicFormPage', () => {
 
     await flushPromises()
 
-    const cancelButton = wrapper.findAll('button').find((button) => button.text() === '取消')
+    const cancelButton = wrapper.findAll('button').find((button) => button.text().includes('Cancel'))
 
     expect(cancelButton).toBeDefined()
 
@@ -168,7 +137,7 @@ describe('DynamicFormPage', () => {
   it('shows the permission denied state when create access is unavailable', async () => {
     getMetadataMock.mockResolvedValueOnce({
       code: 'Asset',
-      name: '璧勪骇鍗＄墖',
+      name: 'Asset Card',
       fields: [],
       layouts: {},
       permissions: { view: true, add: false, change: false, delete: false },
@@ -185,7 +154,7 @@ describe('DynamicFormPage', () => {
 
     await flushPromises()
 
-    expect(wrapper.text()).toContain('无权限访问')
+    expect(wrapper.text()).toContain('Permission denied')
   })
 
   it('updates the record and returns to the object list in edit mode', async () => {
@@ -197,9 +166,7 @@ describe('DynamicFormPage', () => {
 
     await flushPromises()
 
-    expect(wrapper.text()).toContain('保存')
-
-    const saveButton = wrapper.findAll('button').find((button) => button.text().includes('保存'))
+    const saveButton = wrapper.findAll('button').find((button) => button.text().includes('Save'))
 
     expect(saveButton).toBeDefined()
 

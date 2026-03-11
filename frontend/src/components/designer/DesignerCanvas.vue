@@ -99,3 +99,67 @@ defineExpose({
 })
 </script>
 
+<style scoped lang="scss">
+.canvas-area {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f0f2f5;
+}
+
+.canvas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid #e4e7ed;
+  flex-shrink: 0;
+}
+
+.canvas-header-left {
+  min-width: 0;
+}
+
+.canvas-hint-text {
+  font-size: 12px;
+  color: #606266;
+}
+
+.canvas-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 24px 200px;
+  overscroll-behavior: contain;
+}
+
+.canvas-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.canvas-content::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.16);
+  border-radius: 999px;
+}
+
+.canvas-render-shell {
+  min-height: calc(100% - 60px);
+}
+
+.compact-canvas-mode {
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.canvas-stats-bar {
+  flex-shrink: 0;
+}
+</style>

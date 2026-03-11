@@ -41,16 +41,18 @@
       {{ $t('system.pageLayout.designer.hints.singleLayoutModel') }}
     </el-alert>
 
-    <WysiwygLayoutDesigner
-      v-if="objectCode"
-      :layout-id="layoutId"
-      :mode="mode"
-      :layout-name="layoutName || $t('system.pageLayout.designer.title')"
-      :object-code="objectCode"
-      :business-object-id="businessObjectId"
-      :initial-preview-mode="initialPreviewMode"
-      @cancel="goBack"
-    />
+    <div class="designer-stage">
+      <WysiwygLayoutDesigner
+        v-if="objectCode"
+        :layout-id="layoutId"
+        :mode="mode"
+        :layout-name="layoutName || $t('system.pageLayout.designer.title')"
+        :object-code="objectCode"
+        :business-object-id="businessObjectId"
+        :initial-preview-mode="initialPreviewMode"
+        @cancel="goBack"
+      />
+    </div>
   </div>
 </template>
 
@@ -121,13 +123,20 @@ const goBack = () => {
 
 <style scoped>
 .page-layout-designer {
+  width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 12px;
+  overflow: hidden;
+  background: #f0f2f5;
 }
 
 .designer-hint {
-  margin: 12px 16px 0;
+  margin: 0 16px;
+  flex-shrink: 0;
 }
 
 .page-header {
@@ -137,6 +146,7 @@ const goBack = () => {
   padding: 12px 16px;
   border-bottom: 1px solid #e4e7ed;
   background: #fff;
+  flex-shrink: 0;
 }
 
 .header-title {
@@ -160,5 +170,12 @@ const goBack = () => {
 .subtitle {
   font-size: 14px;
   color: #909399;
+}
+
+.designer-stage {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 </style>
