@@ -15,7 +15,7 @@ const metadataFields = [
     code: 'asset_code',
     name: 'Asset Code',
     fieldType: 'text',
-    isSearchable: false,
+    isSearchable: true,
     showInList: true
   },
   {
@@ -31,6 +31,13 @@ const runtimeListFields = [
   {
     code: 'asset_name',
     name: 'Asset Name',
+    fieldType: 'text',
+    isSearchable: true,
+    showInList: true
+  },
+  {
+    code: 'asset_code',
+    name: 'Asset Code',
     fieldType: 'text',
     isSearchable: true,
     showInList: true
@@ -120,7 +127,10 @@ async function mockListPageApis(page: Page, requestQueries: Array<Record<string,
           layout: {
             layout_type: 'list',
             layout_config: {
-              columns: [{ fieldCode: 'asset_name', label: 'Asset Name', visible: true }]
+              columns: [
+                { fieldCode: 'asset_name', label: 'Asset Name', visible: true },
+                { fieldCode: 'asset_code', label: 'Asset Code', visible: true }
+              ]
             },
             status: 'published',
             version: '1.0.0'
@@ -167,7 +177,7 @@ test.describe('List Unified Search And Column Config Regression', () => {
     await page.locator('.unified-search-field').click()
     await page.getByRole('option', { name: 'Asset Code' }).click()
     await keywordInput.fill('ASSET-SEARCH-001')
-    await page.locator('.search-form-container .el-button--primary').click()
+    await page.locator('.search-form-container .search-actions .el-button--primary').click()
 
     await expect.poll(() => requestQueries.at(-1)?.asset_code || '').toBe('ASSET-SEARCH-001')
     await expect.poll(() => requestQueries.at(-1)?.search || '').toBe('')
@@ -175,7 +185,7 @@ test.describe('List Unified Search And Column Config Regression', () => {
     await page.locator('.unified-search-field').click()
     await page.locator('.el-select-dropdown__item').filter({ hasText: /All|全部|鍏ㄩ儴/i }).first().click()
     await keywordInput.fill('Regression')
-    await page.locator('.search-form-container .el-button--primary').click()
+    await page.locator('.search-form-container .search-actions .el-button--primary').click()
 
     await expect.poll(() => requestQueries.at(-1)?.search || '').toBe('Regression')
     await expect.poll(() => requestQueries.at(-1)?.asset_code || '').toBe('')
@@ -190,7 +200,7 @@ test.describe('List Unified Search And Column Config Regression', () => {
       requireColumnManagerTrigger: true
     })
 
-    await page.locator('.column-manager-trigger .el-button').click()
+    await page.locator('.column-manager-trigger .el-button:visible').first().click()
     const manager = page.locator('.column-manager')
     await expect(manager).toBeVisible()
     await expect(manager).toContainText('Asset Name', { timeout: 15000 })

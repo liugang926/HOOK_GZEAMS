@@ -1,4 +1,4 @@
-﻿import type { TableColumn, SearchField } from '@/types/common'
+import type { TableColumn, SearchField } from '@/types/common'
 import type { RuntimeField, RuntimeLayoutConfig, RuntimeSection } from '@/types/runtime'
 import { buildSearchFields } from '@/platform/layout/searchFieldBuilder'
 import { filterSystemFields } from '@/utils/transform'
@@ -10,7 +10,7 @@ import { placeCanvasFields, type CanvasPlacement } from '@/platform/layout/canva
 type AnyRecord = Record<string, any>
 
 const getFieldCode = (field: AnyRecord): string =>
-  String(field?.code || field?.fieldCode || field?.field_code || field?.fieldName || '').trim()
+  String(field?.code || field?.fieldCode || field?.fieldName || '').trim()
 
 const toFieldMap = (fields: AnyRecord[]): Map<string, AnyRecord> => {
   const map = new Map<string, AnyRecord>()
@@ -26,27 +26,23 @@ const projectRuntimeField = (field: AnyRecord): RuntimeField => {
   const metadata = (field.metadata || {}) as AnyRecord
   const code = String(field.code || metadata.code || '').trim()
   const dataKey = String(
-    metadata.dataKey || metadata.data_key || (code.includes('_') ? snakeToCamel(code) : code)
+    metadata.dataKey || (code.includes('_') ? snakeToCamel(code) : code)
   ).trim()
   const fieldType = normalizeFieldType(
-    String(field.fieldType || metadata.fieldType || metadata.field_type || 'text')
+    String(field.fieldType || metadata.fieldType || 'text')
   )
   const componentProps = {
-    ...(metadata.component_props || {}),
     ...(metadata.componentProps || {}),
-    ...(field.component_props || {}),
     ...(field.componentProps || {})
   }
-  const rawMinHeight = field.minHeight ?? componentProps.minHeight ?? componentProps.min_height ?? metadata.minHeight ?? metadata.min_height
+  const rawMinHeight = field.minHeight ?? componentProps.minHeight ?? metadata.minHeight
   const minHeight = Number.isFinite(Number(rawMinHeight)) && Number(rawMinHeight) > 0
     ? Math.round(Number(rawMinHeight))
     : undefined
   const layoutPlacement = (
     field.layoutPlacement ||
-    field.layout_placement ||
     field.placement ||
     metadata.layoutPlacement ||
-    metadata.layout_placement ||
     null
   ) as Partial<CanvasPlacement> | null
 
@@ -57,35 +53,30 @@ const projectRuntimeField = (field: AnyRecord): RuntimeField => {
     fieldType,
     span: Number(field.span || metadata.span || 1),
     minHeight,
-    required: field.required === true || metadata.required === true || metadata.isRequired === true || metadata.is_required === true,
-    readonly: field.readonly === true || metadata.readonly === true || metadata.isReadonly === true || metadata.is_readonly === true,
-    hidden: metadata.hidden === true || metadata.isHidden === true || metadata.is_hidden === true,
+    required: field.required === true || metadata.required === true || metadata.isRequired === true,
+    readonly: field.readonly === true || metadata.readonly === true || metadata.isReadonly === true,
+    hidden: metadata.hidden === true || metadata.isHidden === true,
     visible: field.visible !== false && metadata.visible !== false,
     options: (metadata.options || undefined) as RuntimeField['options'],
     referenceObject: String(
-      metadata.referenceObject || metadata.reference_model_path || metadata.relatedObject || metadata.targetObjectCode || metadata.target_object_code || ''
+      metadata.referenceObject || metadata.relatedObject || metadata.targetObjectCode || ''
     ) || undefined,
     targetObjectCode: String(
-      metadata.targetObjectCode || metadata.target_object_code || metadata.referenceObject || metadata.reference_model_path || metadata.relatedObject || ''
+      metadata.targetObjectCode || metadata.referenceObject || metadata.relatedObject || ''
     ) || undefined,
     referenceDisplayField: String(
       field.referenceDisplayField ||
-      field.reference_display_field ||
       metadata.referenceDisplayField ||
-      metadata.reference_display_field ||
       metadata.displayField ||
-      metadata.display_field ||
       ''
     ) || undefined,
     referenceSecondaryField: String(
       field.referenceSecondaryField ||
-      field.reference_secondary_field ||
       metadata.referenceSecondaryField ||
-      metadata.reference_secondary_field ||
       ''
     ) || undefined,
-    objectCode: metadata.objectCode || metadata.object_code,
-    instanceId: metadata.instanceId || metadata.instance_id,
+    objectCode: metadata.objectCode,
+    instanceId: metadata.instanceId,
     componentProps,
     placement: layoutPlacement ? (layoutPlacement as RuntimeField['placement']) : undefined,
     layoutPlacement: layoutPlacement || undefined,
@@ -193,7 +184,7 @@ const groupRenderSections = (sections: RenderSection[], kind: RenderSection['kin
 }
 
 const resolveFieldCode = (entry: AnyRecord): string => {
-  return String(entry?.fieldCode || entry?.field_code || entry?.code || entry?.prop || entry?.field || '').trim()
+  return String(entry?.fieldCode || entry?.code || entry?.prop || entry?.field || '').trim()
 }
 
 /**
@@ -310,25 +301,25 @@ export const projectListColumnsFromRenderSchema = (
       columns.push({
         fieldCode: code,
         prop: code,
-        dataKey: String(meta.dataKey || meta.data_key || code),
+        dataKey: String(meta.dataKey || code),
         label: String(field.label || meta.name || meta.label || code),
         fieldType: type,
         type,
         options: meta.options,
         referenceObject: String(
-          meta.referenceObject || meta.reference_object || meta.targetObjectCode || meta.target_object_code || meta.reference_model_path || meta.relatedObject || ''
+          meta.referenceObject || meta.targetObjectCode || meta.relatedObject || ''
         ) || undefined,
         targetObjectCode: String(
-          meta.targetObjectCode || meta.target_object_code || meta.referenceObject || meta.reference_object || meta.reference_model_path || meta.relatedObject || ''
+          meta.targetObjectCode || meta.referenceObject || meta.relatedObject || ''
         ) || undefined,
         referenceDisplayField: String(
-          meta.referenceDisplayField || meta.reference_display_field || meta.displayField || meta.display_field || ''
+          meta.referenceDisplayField || meta.displayField || ''
         ) || undefined,
         referenceSecondaryField: String(
-          meta.referenceSecondaryField || meta.reference_secondary_field || ''
+          meta.referenceSecondaryField || ''
         ) || undefined,
-        width: Number(meta.columnWidth || meta.column_width || 0) || undefined,
-        minWidth: Number(meta.minColumnWidth || meta.min_column_width || 0) || undefined,
+        width: Number(meta.columnWidth || 0) || undefined,
+        minWidth: Number(meta.minColumnWidth || 0) || undefined,
         sortable: meta.sortable !== false,
         visible: field.visible !== false
       })

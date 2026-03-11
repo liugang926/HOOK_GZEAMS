@@ -48,6 +48,18 @@
       <span data-testid="layout-field-resize-hint-span">{{ resizeHint.span }} / {{ resizeHint.columns }}</span>
       <span data-testid="layout-field-resize-hint-height">{{ resizeHint.minHeight }}px</span>
     </div>
+
+    <div
+      v-if="renderMode === 'design'"
+      class="canvas-stats-bar"
+      data-testid="layout-canvas-stats"
+    >
+      <span>{{ totalFields }} {{ t('system.pageLayout.designer.stats.fields', '个字段') }}</span>
+      <span class="stats-separator">·</span>
+      <span>{{ requiredFields }} {{ t('system.pageLayout.designer.stats.required', '个必填') }}</span>
+      <span class="stats-separator">·</span>
+      <span>{{ sectionCount }} {{ t('system.pageLayout.designer.stats.sections', '个分组') }}</span>
+    </div>
   </div>
 </template>
 
@@ -63,6 +75,9 @@ const props = defineProps<{
   isDragOverCanvas: boolean
   resizeHint: ResizeHintState | null
   resizeHintStyle: Record<string, string>
+  totalFields?: number
+  requiredFields?: number
+  sectionCount?: number
 }>()
 
 defineEmits<{

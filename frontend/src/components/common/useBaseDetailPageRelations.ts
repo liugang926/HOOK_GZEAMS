@@ -57,24 +57,24 @@ export function useBaseDetailPageRelations(options: UseBaseDetailPageRelationsOp
   })
 
   const mapRuntimeRelation = (raw: Record<string, any>): ReverseRelationFieldLike | null => {
-    const code = String(raw.relationCode || raw.relation_code || '').trim()
+    const code = String(raw.relationCode || '').trim()
     if (!code) return null
 
-    const displayMode = String(raw.displayMode || raw.display_mode || 'inline_readonly') as ReverseRelationFieldLike['displayMode']
-    const relatedObjectCode = String(raw.targetObjectCode || raw.target_object_code || '').trim()
-    const label = String(raw.relationName || raw.relation_name || relatedObjectCode || code).trim()
-    const defaultExpandedRaw = raw.defaultExpanded ?? raw.default_expanded
+    const displayMode = String(raw.displayMode || 'inline_readonly') as ReverseRelationFieldLike['displayMode']
+    const relatedObjectCode = String(raw.targetObjectCode || '').trim()
+    const label = String(raw.relationName || relatedObjectCode || code).trim()
+    const defaultExpandedRaw = raw.defaultExpanded
 
     return {
       code,
       label,
       displayMode,
       relatedObjectCode,
-      reverseRelationField: String(raw.targetFkField || raw.target_fk_field || '').trim(),
-      sortOrder: Number(raw.sortOrder || raw.sort_order || 0) || 0,
-      groupKey: String(raw.groupKey || raw.group_key || '').trim(),
-      groupName: String(raw.groupName || raw.group_name || '').trim(),
-      groupOrder: Number(raw.groupOrder || raw.group_order || 0) || undefined,
+      reverseRelationField: String(raw.targetFkField || '').trim(),
+      sortOrder: Number(raw.sortOrder || 0) || 0,
+      groupKey: String(raw.groupKey || '').trim(),
+      groupName: String(raw.groupName || '').trim(),
+      groupOrder: Number(raw.groupOrder || 0) || undefined,
       defaultExpanded:
         defaultExpandedRaw === undefined
           ? undefined

@@ -903,10 +903,11 @@ const handleCustomize = async (row: PageLayout) => {
 // Handle preview button for layouts
 const handlePreview = (row: PageLayout) => {
   const rowBusinessObjectId = (row.business_object || row.businessObject || businessObjectId.value || '') as string
+  const isSystemPreview = Boolean((row as any).isSystem)
   router.push({
     name: 'PageLayoutDesigner',
     query: {
-      layoutId: row.id,
+      ...(isSystemPreview ? {} : { layoutId: row.id }),
       layoutName: row.layoutName,
       layoutType: DESIGNER_LAYOUT_TYPE,
       objectCode: objectCode.value,

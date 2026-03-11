@@ -399,6 +399,14 @@ STATIC_MENU_ITEMS: List[Dict[str, Any]] = [
         "icon": "Grid",
     },
     {
+        "code": "MenuLayoutManagement",
+        "translation_key": "menu.routes.menuLayoutManagement",
+        "url": "/system/menu-layout-management",
+        "group_code": "system",
+        "item_order": 103,
+        "icon": "Sort",
+    },
+    {
         "code": "SystemBranding",
         "translation_key": "menu.routes.systemBranding",
         "url": "/system/branding",

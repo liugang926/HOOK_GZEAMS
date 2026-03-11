@@ -263,15 +263,15 @@ const toFieldName = (field: RawField): string =>
 
 function isReverseRelationField(field: RawField): boolean {
   if (!field || typeof field !== 'object') return false
-  if (field.isReverseRelation === true || field.is_reverse_relation === true) return true
-  if (field.reverseRelationModel || field.reverse_relation_model) return true
-  if (field.reverseRelationField || field.reverse_relation_field) return true
-  if (field.relationDisplayMode || field.relation_display_mode) return true
+  if (field.isReverseRelation === true) return true
+  if (field.reverseRelationModel) return true
+  if (field.reverseRelationField) return true
+  if (field.relationDisplayMode) return true
 
   // Fallback guard for legacy payloads that miss explicit relation flags.
   const code = toFieldCode(field)
   const name = toFieldName(field)
-  const editable = field.isEditable ?? field.is_editable
+  const editable = field.isEditable
   if (RELATION_SUFFIX_RE.test(code) && editable === false && name.toLowerCase() === code.toLowerCase()) {
     return true
   }
@@ -326,24 +326,24 @@ function normalizeFieldRows(source: unknown): FieldTableRow[] {
     .map((field): FieldTableRow => {
       const code = toFieldCode(field)
       const name = toFieldName(field)
-      const sortOrder = Number(field.sortOrder ?? field.sort_order ?? 0)
-      const isEditable = field.isEditable ?? field.is_editable
-      const backendIsSystem = field.isSystem ?? field.is_system
+      const sortOrder = Number(field.sortOrder ?? 0)
+      const isEditable = field.isEditable
+      const backendIsSystem = field.isSystem
       const isSystem = toBooleanOrDefault(backendIsSystem, isEditable === false || isBuiltinSystemFieldCode(code))
       return {
         id: toOptionalString(field.id) || code,
         code,
         name,
-        fieldType: toOptionalString(field.fieldType) || toOptionalString(field.field_type) || 'text',
-        isRequired: toBooleanOrDefault(field.isRequired ?? field.is_required, false),
-        isReadonly: toBooleanOrDefault(field.isReadonly ?? field.is_readonly, isSystem ? true : isEditable === false),
+        fieldType: toOptionalString(field.fieldType) || 'text',
+        isRequired: toBooleanOrDefault(field.isRequired, false),
+        isReadonly: toBooleanOrDefault(field.isReadonly, isSystem ? true : isEditable === false),
         isSystem,
         sortOrder: Number.isFinite(sortOrder) ? sortOrder : 0,
         description: toOptionalString(field.description) || toOptionalString(field.helpText) || toOptionalString(field.displayNameEn) || '',
-        showInList: toOptionalBoolean(field.showInList ?? field.show_in_list),
-        showInForm: toOptionalBoolean(field.showInForm ?? field.show_in_form),
-        showInDetail: toOptionalBoolean(field.showInDetail ?? field.show_in_detail),
-        referenceModelPath: toOptionalString(field.referenceModelPath) || toOptionalString(field.reference_model_path)
+        showInList: toOptionalBoolean(field.showInList),
+        showInForm: toOptionalBoolean(field.showInForm),
+        showInDetail: toOptionalBoolean(field.showInDetail),
+        referenceModelPath: toOptionalString(field.referenceModelPath)
       }
     })
     .sort((a, b) => {

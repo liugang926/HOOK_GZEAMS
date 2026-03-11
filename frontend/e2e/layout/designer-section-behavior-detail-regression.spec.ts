@@ -229,7 +229,7 @@ test.describe('Layout Designer Section Behavior -> Detail Regression', () => {
 
     const firstSection = page.locator('.detail-sections .detail-section').first()
     await expect(firstSection).toHaveClass(/is-collapsed/)
-    await expect(firstSection.locator('.field-col.el-col-24')).toHaveCount(1)
+    await expect(firstSection.locator('.field-col')).toHaveCount(1)
   })
 })
 

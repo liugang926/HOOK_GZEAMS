@@ -283,7 +283,7 @@ const activeMainTabModel = computed({
 .detail-sections {
   display: flex;
   flex-direction: column;
-  gap: $spacing-md;
+  gap: 20px;
 }
 
 .record-history-section {
@@ -292,11 +292,11 @@ const activeMainTabModel = computed({
 
 .related-objects-section {
   margin-top: $spacing-md;
-  background-color: $bg-card;
-  border-radius: $radius-large;
-  box-shadow: $shadow-sm;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border-radius: 22px;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.04);
   overflow: hidden;
-  border: 1px solid $border-light;
+  border: 1px solid rgba(148, 163, 184, 0.18);
 
   .related-objects-body {
     .related-groups-collapse {
@@ -305,7 +305,7 @@ const activeMainTabModel = computed({
     }
 
     .related-group-item {
-      border-bottom: 1px solid #eef2f7;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 
       &:last-child {
         border-bottom: none;
@@ -314,9 +314,9 @@ const activeMainTabModel = computed({
 
     .related-group-header {
       width: 100%;
-      height: 48px;
-      padding: 0 16px;
-      background: #fbfcff;
+      min-height: 52px;
+      padding: 0 18px;
+      background: rgba(248, 250, 252, 0.82);
       border: none;
       display: flex;
       align-items: center;
@@ -344,7 +344,7 @@ const activeMainTabModel = computed({
 
       .group-name {
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 700;
         color: $text-main;
       }
     }
@@ -364,6 +364,34 @@ const activeMainTabModel = computed({
       }
     }
   }
+}
+
+:deep(.record-main-tabs > .el-tabs__header) {
+  margin-bottom: 18px;
+}
+
+:deep(.record-main-tabs > .el-tabs__header .el-tabs__nav-wrap::after) {
+  display: none;
+}
+
+:deep(.record-main-tabs > .el-tabs__header .el-tabs__item) {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(248, 250, 252, 0.85);
+  color: $text-secondary;
+  font-weight: 700;
+}
+
+:deep(.record-main-tabs > .el-tabs__header .el-tabs__item.is-active) {
+  border-color: rgba(59, 130, 246, 0.24);
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+}
+
+:deep(.record-main-tabs > .el-tabs__header .el-tabs__active-bar) {
+  display: none;
 }
 
 @media (max-width: 768px) {

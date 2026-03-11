@@ -1,5 +1,5 @@
 import { expect, test, type Route } from '@playwright/test'
-import { waitForDesignerReady } from '../helpers/page-ready.helpers'
+import { setDesignerRenderMode, waitForDesignerReady } from '../helpers/page-ready.helpers'
 
 const OBJECT_CODE = 'Asset'
 const LAYOUT_ID = 'layout-asset-preview-related-objects'
@@ -213,7 +213,8 @@ test.describe('Layout Designer Preview Related Objects Regression', () => {
     await expect(page.getByTestId('layout-palette-field-assetName')).toHaveCount(1)
     await expect(page.getByTestId('layout-palette-field-internalNote')).toHaveCount(0)
     await expect(page.getByTestId('layout-palette-field-maintenance_records')).toHaveCount(0)
-    await page.getByRole('tab', { name: /Related/i }).click()
+    await setDesignerRenderMode(page, 'preview')
+    await page.locator('.record-main-tabs .el-tabs__item').filter({ hasText: /Related/i }).first().click()
 
     await expect(page.locator('.el-message--error')).toHaveCount(0)
     await expect.poll(() => relationsEndpointCalls).toBe(0)

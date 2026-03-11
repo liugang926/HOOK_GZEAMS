@@ -26,6 +26,20 @@ type DesignerActionOptions = {
 
 const DEFAULT_TIMEOUT = 30000
 
+async function clickSegmentedOption(
+  page: Page,
+  testId: string,
+  labelPattern: RegExp,
+  timeout: number
+): Promise<void> {
+  const toggle = page.getByTestId(testId)
+  await expect(toggle).toBeVisible({ timeout })
+
+  const option = toggle.locator('.el-segmented__item').filter({ hasText: labelPattern }).first()
+  await expect(option).toBeVisible({ timeout })
+  await option.click()
+}
+
 export async function waitForObjectListReady(
   page: Page,
   options: ObjectListReadyOptions = {}
@@ -33,7 +47,8 @@ export async function waitForObjectListReady(
   const timeout = options.timeout ?? DEFAULT_TIMEOUT
   const listRoot = page.locator('.dynamic-list-page').first()
 
-  await expect(page.getByRole('heading', { level: 2 }).first()).toBeVisible({ timeout })
+  const visibleHeading = page.locator('.dynamic-list-page h1:visible, .dynamic-list-page h2:visible').first()
+  await expect(visibleHeading).toBeVisible({ timeout })
   await expect(listRoot).toBeVisible({ timeout })
 
   if (options.expectedContent) {
@@ -45,7 +60,9 @@ export async function waitForObjectListReady(
   }
 
   if (options.requireColumnManagerTrigger === true) {
-    await expect(page.locator('.column-manager-trigger .el-button').first()).toBeVisible({ timeout })
+    const trigger = page.locator('.column-manager-trigger .el-button:visible').first()
+    await trigger.scrollIntoViewIfNeeded()
+    await expect(trigger).toBeVisible({ timeout })
   }
 }
 
@@ -114,12 +131,12 @@ export async function setDesignerRenderMode(
   mode: DesignerRenderMode,
   timeout = 5000
 ): Promise<void> {
-  const toggle = page.getByTestId(
-    mode === 'design' ? 'layout-render-design-button' : 'layout-render-preview-button'
+  await clickSegmentedOption(
+    page,
+    'layout-render-mode-toggle',
+    mode === 'design' ? /Design|设计态/i : /Preview|预览态/i,
+    timeout
   )
-
-  await expect(toggle).toBeVisible({ timeout })
-  await toggle.click()
 
   if (mode === 'design') {
     await expect(page.getByTestId('layout-field-panel')).toBeVisible({ timeout })
@@ -171,11 +188,21 @@ export async function clickDesignerResetAndConfirm(
   options: DesignerActionOptions = {}
 ): Promise<void> {
   const timeout = options.timeout ?? 5000
-  const button = page.getByTestId('layout-reset-button').first()
-  await expect(button).toBeVisible({ timeout })
-  if (options.ensureEnabled !== false) {
-    await expect(button).toBeEnabled({ timeout })
+  const moreButton = page.locator('.designer-toolbar .toolbar-right .el-dropdown > .el-button').first()
+  await expect(moreButton).toBeVisible({ timeout })
+  await moreButton.click()
+
+  const resetCandidates = page.locator('.el-dropdown-menu__item:visible')
+  await expect(resetCandidates.first()).toBeVisible({ timeout })
+
+  let resetItem = resetCandidates.filter({ hasText: /Restore Default|Reset|恢复默认/i }).first()
+  if (await resetItem.count() === 0) {
+    const count = await resetCandidates.count()
+    resetItem = resetCandidates.nth(Math.max(0, count - 1))
   }
-  await button.click()
+
+  await expect(resetItem).toBeVisible({ timeout })
+  await resetItem.click()
+
   await confirmDialogPrimary(page, timeout)
 }

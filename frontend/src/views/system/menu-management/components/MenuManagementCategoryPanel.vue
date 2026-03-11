@@ -73,6 +73,13 @@
           <div class="category-actions">
             <el-button
               link
+              type="primary"
+              @click="handleOpenCategoryTranslations(category, $event)"
+            >
+              {{ copy.actions.manageTranslations }}
+            </el-button>
+            <el-button
+              link
               :disabled="!canMoveCategory(category.originalCode, -1)"
               @click="$emit('move-category', category.originalCode, -1)"
             >
@@ -190,6 +197,7 @@ const emit = defineEmits<{
   (event: 'select-category', category: EditableCategory): void
   (event: 'move-category', originalCode: string, offset: -1 | 1): void
   (event: 'remove-category', originalCode: string): void
+  (event: 'open-category-translations', category: EditableCategory): void
   (event: 'update-locale-name', category: EditableCategory, locale: LocaleKey, value: string): void
   (event: 'update:category-page', value: number): void
   (event: 'page-size-change', value: number): void
@@ -198,6 +206,11 @@ const emit = defineEmits<{
 
 const categoryListRef = ref<HTMLElement | null>(null)
 let sortable: Sortable | null = null
+
+const handleOpenCategoryTranslations = (category: EditableCategory, event?: Event) => {
+  event?.stopPropagation()
+  emit('open-category-translations', category)
+}
 
 const rebuildSortable = async () => {
   await nextTick()

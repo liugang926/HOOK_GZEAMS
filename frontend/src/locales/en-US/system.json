@@ -1217,7 +1217,8 @@
             "businessObject": "Business Object",
             "dictionaryType": "Dictionary Type",
             "dictionaryItem": "Dictionary Item",
-            "modelFieldDefinition": "Model Field Definition"
+            "modelFieldDefinition": "Model Field Definition",
+            "menuGroup": "Menu Category"
         },
         "types": {
             "label": "Label",
@@ -1238,6 +1239,10 @@
         "fieldNamePlaceholder": "Enter field name",
         "contextPlaceholder": "Context for disambiguation (optional)",
         "isSystemLabel": "System translation (read-only)",
+        "focusObject": "Viewing object translations: {target}",
+        "focusCoverage": "Configured languages: {configured}/{total}",
+        "clearFocus": "Clear filter",
+        "addFocusedObject": "Add Current Object Translation",
         "messages": {
             "createSuccess": "Translation created successfully",
             "updateSuccess": "Translation updated successfully",

@@ -1,6 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h, onMounted } from 'vue'
+import {
+  createClickableButtonStub,
+  createElementResultStub,
+  createObjectAvatarStub,
+  createPlainButtonStub,
+  loadingDirectiveStubs,
+} from './testUtils'
 
 const listMock = vi.fn()
 const getMetadataMock = vi.fn()
@@ -38,7 +45,7 @@ vi.mock('@/components/common/BaseListPage.vue', () => ({
   default: defineComponent({
     name: 'BaseListPageStub',
     props: ['api'],
-    setup(props) {
+    setup(props, { slots }) {
       onMounted(async () => {
         await props.api({
           page: 1,
@@ -48,7 +55,9 @@ vi.mock('@/components/common/BaseListPage.vue', () => ({
           __visibleFieldCodes: ['asset_code', 'asset_name'],
         })
       })
-      return () => h('div', { class: 'base-list-page-stub' })
+      return () => h('div', { class: 'base-list-page-stub' }, [
+        slots.toolbar ? slots.toolbar() : null,
+      ])
     },
   }),
 }))
@@ -61,8 +70,27 @@ vi.mock('vue-i18n', async (importOriginal) => {
     useI18n: () => ({
       t: (key: string) => key,
       te: () => true,
+      locale: { value: 'zh-CN' },
     }),
   }
+})
+
+const createListWrapperStubs = (clickableButtons = false) => ({
+  ContextDrawer: defineComponent({ template: '<div class="drawer-stub" />' }),
+  FieldRenderer: defineComponent({ template: '<div class="field-stub" />' }),
+  ObjectAvatar: createObjectAvatarStub(),
+  ExportButton: defineComponent({ template: '<div class="export-button-stub" />' }),
+  ImportButton: defineComponent({ template: '<div class="import-button-stub" />' }),
+  ExportFieldSelector: defineComponent({ template: '<div class="export-selector-stub" />' }),
+  ImportConfigDialog: defineComponent({ template: '<div class="import-config-stub" />' }),
+  'el-alert': defineComponent({ template: '<div />' }),
+  'el-input': defineComponent({ template: '<input />' }),
+  'el-option': defineComponent({ template: '<option />' }),
+  'el-result': createElementResultStub(),
+  'el-select': defineComponent({ template: '<select><slot /></select>' }),
+  'el-skeleton': defineComponent({ template: '<div />' }),
+  'el-button': clickableButtons ? createClickableButtonStub() : createPlainButtonStub(),
+  'el-tag': defineComponent({ template: '<span><slot /></span>' }),
 })
 
 describe('DynamicListPage unified search', () => {
@@ -102,18 +130,8 @@ describe('DynamicListPage unified search', () => {
 
     mount(DynamicListPage, {
       global: {
-        directives: {
-          loading: () => undefined,
-        },
-        stubs: {
-          ContextDrawer: defineComponent({ template: '<div class="drawer-stub" />' }),
-          FieldRenderer: defineComponent({ template: '<div class="field-stub" />' }),
-          'el-alert': defineComponent({ template: '<div />' }),
-          'el-result': defineComponent({ template: '<div><slot /><slot name="extra" /></div>' }),
-          'el-skeleton': defineComponent({ template: '<div />' }),
-          'el-button': defineComponent({ template: '<button><slot /></button>' }),
-          'el-tag': defineComponent({ template: '<span><slot /></span>' }),
-        },
+        directives: loadingDirectiveStubs,
+        stubs: createListWrapperStubs(),
       },
     })
 
@@ -126,5 +144,63 @@ describe('DynamicListPage unified search', () => {
         search: '鎴村皵',
       }),
     )
+  })
+
+  it('navigates to the create route when clicking the create button', async () => {
+    const DynamicListPage = (await import('@/views/dynamic/DynamicListPage.vue')).default
+
+    const wrapper = mount(DynamicListPage, {
+      global: {
+        directives: loadingDirectiveStubs,
+        stubs: createListWrapperStubs(true),
+      },
+    })
+
+    await flushPromises()
+
+    const createButton = wrapper.findAll('button').find((button) => button.text() === 'common.actions.create')
+
+    expect(createButton).toBeDefined()
+
+    await createButton!.trigger('click')
+
+    expect(pushMock).toHaveBeenCalledWith('/objects/Asset/create')
+  })
+
+  it('renders the unified list hero shell', async () => {
+    const DynamicListPage = (await import('@/views/dynamic/DynamicListPage.vue')).default
+
+    const wrapper = mount(DynamicListPage, {
+      global: {
+        directives: loadingDirectiveStubs,
+        stubs: createListWrapperStubs(),
+      },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.find('.list-hero__title').exists()).toBe(true)
+    expect(wrapper.find('.list-panel__title').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Asset')
+  })
+
+  it('renders the load failed state when metadata and runtime layout both fail', async () => {
+    getMetadataMock.mockRejectedValueOnce(new Error('metadata failed'))
+    resolveRuntimeLayoutMock.mockRejectedValueOnce(new Error('runtime failed'))
+
+    const DynamicListPage = (await import('@/views/dynamic/DynamicListPage.vue')).default
+
+    const wrapper = mount(DynamicListPage, {
+      global: {
+        directives: loadingDirectiveStubs,
+        stubs: createListWrapperStubs(),
+      },
+    })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('common.messages.loadFailed')
+    expect(wrapper.text()).toContain('runtime failed')
+    expect(wrapper.find('.base-list-page-stub').exists()).toBe(false)
   })
 })

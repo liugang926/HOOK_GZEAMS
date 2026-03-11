@@ -17,9 +17,15 @@ interface DesignerCardTitles {
   sidebarOnlyHeight: string
 }
 
+interface DesignerSectionActionLabels {
+  moveUp: string
+  moveDown: string
+}
+
 const props = defineProps<{
   renderSection: DesignerRenderSection
   sectionIndex: number
+  totalSectionCount: number
   isDesignMode: boolean
   selectedId: string
   activeTabName?: string
@@ -27,6 +33,7 @@ const props = defineProps<{
   sizeFeedbackFieldId: string
   sampleData: Record<string, unknown>
   cardTitles: DesignerCardTitles
+  sectionActionLabels: DesignerSectionActionLabels
   toCanvasField: (field: LayoutField) => LayoutField
   fieldToDesignDisplayField: (field: LayoutField) => DetailField
   getSampleValue: (field: LayoutField) => unknown
@@ -34,9 +41,11 @@ const props = defineProps<{
   maybeSelectSection: (sectionId: string) => void
   maybeSelectField: (field: LayoutField, section: LayoutSection) => void
   removeField: (fieldId: string, sectionId: string, sectionIndex?: number) => void
+  updateFieldLabel: (fieldId: string, label: string) => void
   handleFieldSizeReset: (fieldId: string) => void
   handleFieldResizeStart: (payload: ResizeStartPayload) => void
   toggleSectionCollapse: (sectionId: string) => void
+  moveSection: (sectionId: string, direction: 'up' | 'down') => void
   deleteSection: (sectionId: string) => void
   handleTabDrop: (event: DragEvent) => void
   handleCollapseDrop: (event: DragEvent) => void
@@ -66,6 +75,8 @@ const activeCollapseModel = computed({
 })
 
 const isSelected = computed(() => props.isDesignMode && props.selectedId === props.renderSection.id)
+const canMoveUp = computed(() => props.sectionIndex > 0)
+const canMoveDown = computed(() => props.sectionIndex < props.totalSectionCount - 1)
 </script>
 
 <template>
@@ -88,6 +99,22 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
         @click="selectSection(renderSection.id)"
       >
         {{ t('system.pageLayout.designer.actions.editSection') }}
+      </el-button>
+      <el-button
+        size="small"
+        text
+        :disabled="!canMoveUp"
+        @click="moveSection(renderSection.id, 'up')"
+      >
+        {{ sectionActionLabels.moveUp }}
+      </el-button>
+      <el-button
+        size="small"
+        text
+        :disabled="!canMoveDown"
+        @click="moveSection(renderSection.id, 'down')"
+      >
+        {{ sectionActionLabels.moveDown }}
       </el-button>
       <el-button
         v-if="renderSection.collapsible"
@@ -150,6 +177,7 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
               :get-sample-value="getSampleValue"
               :on-select="maybeSelectField"
               :on-remove="removeField"
+              :on-label-update="updateFieldLabel"
               :on-reset-size="handleFieldSizeReset"
               :on-resize-start="handleFieldResizeStart"
             />
@@ -214,6 +242,7 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
                 :get-sample-value="getSampleValue"
                 :on-select="maybeSelectField"
                 :on-remove="removeField"
+                :on-label-update="updateFieldLabel"
                 :on-reset-size="handleFieldSizeReset"
                 :on-resize-start="handleFieldResizeStart"
               />
@@ -265,6 +294,7 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
               :get-sample-value="getSampleValue"
               :on-select="maybeSelectField"
               :on-remove="removeField"
+              :on-label-update="updateFieldLabel"
               :on-reset-size="handleFieldSizeReset"
               :on-resize-start="handleFieldResizeStart"
             />
@@ -303,6 +333,7 @@ const isSelected = computed(() => props.isDesignMode && props.selectedId === pro
               :get-sample-value="getSampleValue"
               :on-select="maybeSelectField"
               :on-remove="removeField"
+              :on-label-update="updateFieldLabel"
               :on-reset-size="handleFieldSizeReset"
               :on-resize-start="handleFieldResizeStart"
             />

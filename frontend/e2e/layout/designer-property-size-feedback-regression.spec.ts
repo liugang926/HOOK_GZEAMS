@@ -178,7 +178,7 @@ test.describe('Layout Designer Property Size Feedback Regression', () => {
     await fieldCard.click()
 
     await page.locator('[data-testid="field-prop-span"] .el-select').first().click()
-    await page.locator('.el-select-dropdown__item').filter({ hasText: '2 / 2' }).first().click()
+    await page.locator('.el-select-dropdown__item').filter({ hasText: /2 Column\(s\) \/ Total 2/i }).first().click()
 
     await expect(page.getByTestId('layout-field-resize-hint')).toBeVisible()
     await expect(page.getByTestId('layout-field-resize-hint-span')).toContainText('2 / 2')
@@ -196,4 +196,3 @@ test.describe('Layout Designer Property Size Feedback Regression', () => {
     await expect(fieldCard).toHaveClass(/is-size-feedback/)
   })
 })
-

@@ -895,7 +895,8 @@
             "businessObject": "业务对象",
             "dictionaryType": "字典类型",
             "dictionaryItem": "字典项",
-            "modelFieldDefinition": "模型字段定义"
+            "modelFieldDefinition": "模型字段定义",
+            "menuGroup": "菜单分类"
         },
         "types": {
             "label": "标签",
@@ -916,6 +917,10 @@
         "fieldNamePlaceholder": "输入字段名",
         "contextPlaceholder": "用于消歧义的上下文说明（可选）",
         "isSystemLabel": "系统翻译（不可被用户编辑）",
+        "focusObject": "正在查看对象翻译: {target}",
+        "focusCoverage": "已配置语言: {configured}/{total}",
+        "clearFocus": "清除筛选",
+        "addFocusedObject": "新增当前对象翻译",
         "messages": {
             "createSuccess": "翻译创建成功",
             "updateSuccess": "翻译更新成功",

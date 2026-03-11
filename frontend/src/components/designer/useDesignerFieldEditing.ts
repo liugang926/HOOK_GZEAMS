@@ -24,6 +24,7 @@ interface UseDesignerFieldEditingOptions {
   selectedSection: Ref<LayoutSection | null>
   elementType: ComputedRef<'field' | 'section' | null>
   fieldProps: Ref<Partial<LayoutField>>
+  sectionProps: Ref<Partial<LayoutSection>>
   activeTabs: Ref<Record<string, string>>
   canAddField: (field: DesignerFieldDefinition) => boolean
   notifyUnsupportedField: (field: DesignerFieldDefinition) => void
@@ -42,6 +43,22 @@ export function useDesignerFieldEditing(options: UseDesignerFieldEditingOptions)
   const clearSelection = () => {
     options.selectedId.value = ''
     options.selectedSection.value = null
+    options.fieldProps.value = {}
+    options.sectionProps.value = {}
+  }
+
+  const selectSectionFallback = (section: LayoutSection | null) => {
+    if (!section) {
+      clearSelection()
+      return
+    }
+
+    options.selectedId.value = section.id
+    options.selectedSection.value = section
+    options.fieldProps.value = {}
+    options.sectionProps.value = {
+      ...section
+    }
   }
 
   const addSection = () => {
@@ -145,6 +162,14 @@ export function useDesignerFieldEditing(options: UseDesignerFieldEditingOptions)
     const itemRecord = item as Record<string, unknown>
     if (key === 'fieldType') {
       itemRecord[key] = normalizeFieldType(String(value || 'text'))
+    } else if (key === 'visibilityRule') {
+      if (value && typeof value === 'object') {
+        itemRecord.visibilityRule = value
+        itemRecord.visibility_rule = value
+      } else {
+        delete itemRecord.visibilityRule
+        delete itemRecord.visibility_rule
+      }
     } else if (key === 'span') {
       const columns = options.selectedSection.value ? options.getColumns(options.selectedSection.value) : 2
       itemRecord[key] = Math.max(1, Math.min(columns, Number(value || 1)))
@@ -164,6 +189,53 @@ export function useDesignerFieldEditing(options: UseDesignerFieldEditingOptions)
 
   const handleFieldPropertyUpdate = (payload: { key: string; value: unknown }) => {
     updateField(payload.key, payload.value)
+  }
+
+  const updateFieldLabel = (fieldId: string, label: string) => {
+    const nextLabel = String(label || '').trim()
+    if (!fieldId || !nextLabel) return
+
+    const previousConfig = cloneLayoutConfig(options.layoutConfig.value)
+    const nextConfig = cloneLayoutConfig(options.layoutConfig.value) as LayoutConfig
+    const item = options.findItemById(nextConfig, fieldId)
+    if (!item || !('fieldCode' in item)) return
+
+    const field = item as LayoutField
+    if (field.label === nextLabel) return
+
+    field.label = nextLabel
+    options.commitLayoutChange(nextConfig, `Rename field ${field.fieldCode || fieldId}`, previousConfig)
+
+    if (options.selectedId.value === fieldId) {
+      options.fieldProps.value = {
+        ...options.fieldProps.value,
+        label: nextLabel
+      }
+    }
+  }
+
+  const updateSectionTitle = (sectionId: string, title: string) => {
+    const nextTitle = String(title || '').trim()
+    if (!sectionId || !nextTitle) return
+
+    const previousConfig = cloneLayoutConfig(options.layoutConfig.value)
+    const nextConfig = cloneLayoutConfig(options.layoutConfig.value) as LayoutConfig
+    const item = options.findItemById(nextConfig, sectionId)
+    if (!item || !('fields' in item)) return
+
+    const section = item as LayoutSection
+    if (section.title === nextTitle) return
+
+    section.title = nextTitle
+    options.commitLayoutChange(nextConfig, `Rename section ${sectionId}`, previousConfig)
+
+    if (options.selectedId.value === sectionId) {
+      options.selectedSection.value = section
+      options.sectionProps.value = {
+        ...options.sectionProps.value,
+        title: nextTitle
+      }
+    }
   }
 
   const handleFieldSizeReset = (fieldId: string) => {
@@ -222,11 +294,45 @@ export function useDesignerFieldEditing(options: UseDesignerFieldEditingOptions)
     updateSection(payload.key, payload.value)
   }
 
+  const moveSection = (sectionId: string, direction: 'up' | 'down') => {
+    if (!sectionId) return
+
+    const previousConfig = cloneLayoutConfig(options.layoutConfig.value)
+    const nextConfig = cloneLayoutConfig(options.layoutConfig.value) as LayoutConfig
+    const sections = nextConfig.sections || []
+    const currentIndex = sections.findIndex((section) => section.id === sectionId)
+    if (currentIndex === -1) return
+
+    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+    if (targetIndex < 0 || targetIndex >= sections.length) return
+
+    const [movedSection] = sections.splice(currentIndex, 1)
+    sections.splice(targetIndex, 0, movedSection)
+    nextConfig.sections = sections
+
+    if (options.selectedSection.value?.id === sectionId) {
+      options.selectedSection.value = movedSection
+      if (options.selectedId.value === sectionId) {
+        options.sectionProps.value = {
+          ...options.sectionProps.value,
+          ...movedSection
+        }
+      }
+    }
+
+    options.commitLayoutChange(
+      nextConfig,
+      `Move section ${direction} ${movedSection.title || sectionId}`,
+      previousConfig
+    )
+  }
+
   const removeField = (fieldId: string, sectionId: string, _sectionIndex?: number) => {
     const previousConfig = cloneLayoutConfig(options.layoutConfig.value)
     const nextConfig = cloneLayoutConfig(options.layoutConfig.value) as LayoutConfig
     const section = nextConfig.sections?.find((item) => item.id === sectionId)
     if (!section) return
+    const shouldRelocateSelection = options.selectedId.value === fieldId
 
     if (section.type === 'tab') {
       for (const tab of section.tabs || []) {
@@ -241,7 +347,9 @@ export function useDesignerFieldEditing(options: UseDesignerFieldEditingOptions)
     }
 
     options.commitLayoutChange(nextConfig, `Remove field ${fieldId}`, previousConfig)
-    clearSelection()
+    if (shouldRelocateSelection) {
+      selectSectionFallback(section)
+    }
   }
 
   const deleteSection = async (sectionId: string) => {
@@ -254,9 +362,20 @@ export function useDesignerFieldEditing(options: UseDesignerFieldEditingOptions)
 
       const previousConfig = cloneLayoutConfig(options.layoutConfig.value)
       const nextConfig = cloneLayoutConfig(options.layoutConfig.value) as LayoutConfig
-      nextConfig.sections = nextConfig.sections?.filter((section) => section.id !== sectionId) || []
+      const sections = nextConfig.sections || []
+      const sectionIndex = sections.findIndex((section) => section.id === sectionId)
+      if (sectionIndex === -1) return
+
+      const shouldRelocateSelection = options.selectedSection.value?.id === sectionId
+      sections.splice(sectionIndex, 1)
+      nextConfig.sections = sections
       options.commitLayoutChange(nextConfig, `Delete section ${sectionId}`, previousConfig)
-      clearSelection()
+
+      if (shouldRelocateSelection) {
+        const fallbackSection = sections[sectionIndex] || sections[sectionIndex - 1] || null
+        selectSectionFallback(fallbackSection)
+      }
+
       ElMessage.success(options.t('system.pageLayout.designer.messages.sectionDeleted'))
     } catch {
       return
@@ -274,8 +393,11 @@ export function useDesignerFieldEditing(options: UseDesignerFieldEditingOptions)
     addSection,
     handleFieldClick,
     handleFieldPropertyUpdate,
+    updateFieldLabel,
+    updateSectionTitle,
     handleFieldSizeReset,
     handleSectionPropertyUpdate,
+    moveSection,
     removeField,
     deleteSection,
     toggleSectionCollapse

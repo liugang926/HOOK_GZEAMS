@@ -39,13 +39,11 @@ const internalValue = computed({
 })
 
 const componentProps = computed(() => ({
-  ...(props.field?.component_props || {}),
   ...(props.field?.componentProps || {})
 }))
 
 const isMultiple = computed(() => {
-  // Support both camelCase (fieldType) and snake_case (field_type)
-  const fieldType = props.field.fieldType || props.field.field_type
+  const fieldType = props.field.fieldType
   return fieldType === 'multi_select' || fieldType === 'multiSelect' || props.field.multiple
 })
 

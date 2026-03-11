@@ -47,29 +47,22 @@ export const normalizeReferenceObjectCode = (raw: unknown): string => {
 
 export const resolveReferenceObjectCode = (field: AnyRecord | null | undefined): string => {
   if (!field) return ''
-  const componentProps = field.componentProps || field.component_props || {}
+  const componentProps = field.componentProps || {}
   const explicitCode =
     field.referenceObject ||
-    field.reference_object ||
     field.targetObjectCode ||
-    field.target_object_code ||
-    field.reference_model_path ||
     field.referenceModelPath ||
     field.relatedObject ||
-    field.related_object ||
     componentProps.referenceObject ||
-    componentProps.reference_object ||
     componentProps.targetObjectCode ||
-    componentProps.target_object_code ||
     componentProps.relatedObject ||
-    componentProps.related_object ||
     ''
 
   const normalizedExplicit = normalizeReferenceObjectCode(explicitCode)
   if (normalizedExplicit) return normalizedExplicit
 
   const fieldType = normalizeFieldType(
-    String(field.editorType || field.fieldType || field.field_type || field.type || '')
+    String(field.editorType || field.fieldType || field.type || '')
   )
   return REFERENCE_TYPE_OBJECT_CODE_MAP[fieldType] || ''
 }
@@ -79,16 +72,12 @@ export const resolveReferenceDisplayField = (
   fallback = 'name'
 ): string => {
   if (!field) return fallback
-  const componentProps = field.componentProps || field.component_props || {}
+  const componentProps = field.componentProps || {}
   const value =
     field.referenceDisplayField ||
-    field.reference_display_field ||
     field.displayField ||
-    field.display_field ||
     componentProps.referenceDisplayField ||
-    componentProps.reference_display_field ||
     componentProps.displayField ||
-    componentProps.display_field ||
     fallback
   return String(value || fallback).trim() || fallback
 }
@@ -98,14 +87,11 @@ export const resolveReferenceSecondaryField = (
   fallback = 'code'
 ): string => {
   if (!field) return fallback
-  const componentProps = field.componentProps || field.component_props || {}
+  const componentProps = field.componentProps || {}
   const value =
     field.referenceSecondaryField ||
-    field.reference_secondary_field ||
     componentProps.referenceSecondaryField ||
-    componentProps.reference_secondary_field ||
     componentProps.secondaryField ||
-    componentProps.secondary_field ||
     fallback
   return String(value || fallback).trim() || fallback
 }
@@ -118,7 +104,7 @@ export const isReferenceLikeFieldType = (rawType: unknown): boolean => {
 export const isReferenceLikeField = (field: AnyRecord | null | undefined): boolean => {
   if (!field) return false
   if (resolveReferenceObjectCode(field)) return true
-  return isReferenceLikeFieldType(field.editorType || field.fieldType || field.field_type || field.type)
+  return isReferenceLikeFieldType(field.editorType || field.fieldType || field.type)
 }
 
 const toIdString = (value: unknown): string => {

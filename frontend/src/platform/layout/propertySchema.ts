@@ -1,4 +1,4 @@
-﻿import { normalizeFieldType } from '@/utils/fieldType'
+import { normalizeFieldType } from '@/utils/fieldType'
 
 export type PropertyInputType = 'text' | 'number' | 'switch' | 'select' | 'textarea' | 'json' | 'tabs'
 
@@ -9,6 +9,8 @@ export interface FieldPropertySchemaItem {
   inputType: PropertyInputType
   section: FieldPropertySection
   options?: Array<{ label: string; value: unknown }>
+  appliesTo?: string[]
+  hiddenFor?: string[]
 }
 
 export type SectionPropertySection = 'basic' | 'display' | 'advanced'
@@ -24,8 +26,20 @@ export interface SectionPropertySchemaItem {
 const FIELD_COMMON_SCHEMA: FieldPropertySchemaItem[] = [
   { key: 'fieldType', label: 'Field Type', inputType: 'select', section: 'basic' },
   { key: 'label', label: 'Label', inputType: 'text', section: 'basic' },
-  { key: 'placeholder', label: 'Placeholder', inputType: 'text', section: 'basic' },
-  { key: 'defaultValue', label: 'Default Value', inputType: 'text', section: 'basic' },
+  {
+    key: 'placeholder',
+    label: 'Placeholder',
+    inputType: 'text',
+    section: 'basic',
+    hiddenFor: ['boolean', 'switch', 'checkbox', 'radio', 'tag', 'image', 'file', 'attachment', 'related_object', 'sub_table', 'qr_code', 'barcode']
+  },
+  {
+    key: 'defaultValue',
+    label: 'Default Value',
+    inputType: 'text',
+    section: 'basic',
+    hiddenFor: ['file', 'image', 'attachment', 'related_object', 'sub_table', 'qr_code', 'barcode']
+  },
   { key: 'helpText', label: 'Help Text', inputType: 'textarea', section: 'basic' },
   { key: 'span', label: 'Span', inputType: 'number', section: 'display' },
   { key: 'fullWidth', label: 'Full Width', inputType: 'switch', section: 'display' },
@@ -42,9 +56,10 @@ const FIELD_COMMON_SCHEMA: FieldPropertySchemaItem[] = [
     ]
   },
   { key: 'labelWidth', label: 'Custom Label Width (e.g. 150px)', inputType: 'text', section: 'display' },
-  { key: 'required', label: 'Required', inputType: 'switch', section: 'display' },
-  { key: 'readonly', label: 'Readonly', inputType: 'switch', section: 'display' },
+  { key: 'required', label: 'Required', inputType: 'switch', section: 'basic' },
+  { key: 'readonly', label: 'Readonly', inputType: 'switch', section: 'basic' },
   { key: 'visible', label: 'Visible', inputType: 'switch', section: 'display' },
+  { key: 'visibilityRule', label: 'Visibility Rule', inputType: 'json', section: 'display', hiddenFor: ['sub_table', 'related_object'] },
 ]
 
 const FIELD_TYPE_SPECIFIC_SCHEMA: Record<string, FieldPropertySchemaItem[]> = {
@@ -52,17 +67,20 @@ const FIELD_TYPE_SPECIFIC_SCHEMA: Record<string, FieldPropertySchemaItem[]> = {
     { key: 'min_length', label: 'Min Length', inputType: 'number', section: 'validation' },
     { key: 'max_length', label: 'Max Length', inputType: 'number', section: 'validation' },
     { key: 'regex_pattern', label: 'Regex', inputType: 'text', section: 'validation' },
+    { key: 'validation_message', label: 'Error Message', inputType: 'text', section: 'validation' },
   ],
   textarea: [
     { key: 'rows', label: 'Rows', inputType: 'number', section: 'display' },
     { key: 'min_length', label: 'Min Length', inputType: 'number', section: 'validation' },
     { key: 'max_length', label: 'Max Length', inputType: 'number', section: 'validation' },
+    { key: 'validation_message', label: 'Error Message', inputType: 'text', section: 'validation' },
   ],
   rich_text: [{ key: 'toolbar', label: 'Toolbar', inputType: 'select', section: 'advanced' }],
   number: [
     { key: 'min_value', label: 'Min Value', inputType: 'number', section: 'validation' },
     { key: 'max_value', label: 'Max Value', inputType: 'number', section: 'validation' },
     { key: 'precision', label: 'Precision', inputType: 'number', section: 'validation' },
+    { key: 'validation_message', label: 'Error Message', inputType: 'text', section: 'validation' },
   ],
   currency: [
     { key: 'min_value', label: 'Min Value', inputType: 'number', section: 'validation' },
@@ -93,7 +111,8 @@ const FIELD_TYPE_SPECIFIC_SCHEMA: Record<string, FieldPropertySchemaItem[]> = {
   dictionary: [{ key: 'dictionaryType', label: 'Dictionary Type', inputType: 'text', section: 'advanced' }],
   reference: [
     { key: 'referenceObject', label: 'Reference Object', inputType: 'text', section: 'advanced' },
-    { key: 'lookupCompactKeys', label: 'Lookup Compact Keys', inputType: 'json', section: 'advanced' }
+    { key: 'lookupCompactKeys', label: 'Lookup Compact Keys', inputType: 'json', section: 'advanced' },
+    { key: 'lookupColumns', label: 'Lookup Columns', inputType: 'json', section: 'advanced' }
   ],
   sub_table: [
     { key: 'relatedFields', label: 'Related Fields', inputType: 'json', section: 'advanced' },
@@ -199,7 +218,11 @@ const dedupeByKey = <T extends { key: string }>(items: T[]): T[] => {
 export const getFieldPropertySchema = (rawFieldType?: string): FieldPropertySchemaItem[] => {
   const fieldType = normalizeFieldType(rawFieldType || 'text')
   const typeSchema = FIELD_TYPE_SPECIFIC_SCHEMA[fieldType] || []
-  return dedupeByKey([...FIELD_COMMON_SCHEMA, ...typeSchema])
+  return dedupeByKey([...FIELD_COMMON_SCHEMA, ...typeSchema]).filter((item) => {
+    if (item.appliesTo && !item.appliesTo.includes(fieldType)) return false
+    if (item.hiddenFor && item.hiddenFor.includes(fieldType)) return false
+    return true
+  })
 }
 
 export const getFieldPropertyKeys = (rawFieldType?: string): string[] =>

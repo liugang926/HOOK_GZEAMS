@@ -124,10 +124,11 @@ const { t } = useI18n()
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-  padding: $spacing-md $spacing-lg;
-  background-color: $bg-card;
-  border-radius: $radius-large;
-  box-shadow: $shadow-md;
+  padding: 20px 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.92));
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 22px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.04);
 
   .header-left {
     display: flex;
@@ -138,6 +139,8 @@ const { t } = useI18n()
       font-size: 14px;
       margin-right: 8px;
       color: $text-secondary;
+      padding: 0;
+      font-weight: 600;
     }
 
     .profile-identity {
@@ -155,14 +158,16 @@ const { t } = useI18n()
         font-size: 12px;
         color: $text-secondary;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 2px;
+        letter-spacing: 0.12em;
+        margin-bottom: 4px;
+        font-weight: 700;
       }
 
       .page-title {
         margin: 0;
-        font-size: 20px;
-        font-weight: 700;
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
         color: $text-main;
       }
     }
@@ -176,10 +181,10 @@ const { t } = useI18n()
     .header-audit-info {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
       text-align: right;
-      padding-right: $spacing-md;
-      border-right: 1px solid $border-color;
+      padding: 8px 16px 8px 0;
+      border-right: 1px solid rgba(148, 163, 184, 0.14);
 
       .audit-item {
         font-size: 12px;
@@ -195,6 +200,7 @@ const { t } = useI18n()
     .header-actions {
       display: flex;
       gap: $spacing-sm;
+      flex-wrap: wrap;
     }
   }
 }

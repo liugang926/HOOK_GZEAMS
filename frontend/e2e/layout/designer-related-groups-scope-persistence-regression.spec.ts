@@ -1,9 +1,9 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
-import { waitForDesignerReady } from '../helpers/page-ready.helpers'
+import { setDesignerRenderMode, waitForDesignerReady } from '../helpers/page-ready.helpers'
 
 const OBJECT_CODE = 'Asset'
 const LAYOUT_ID = 'layout-asset-related-groups-preview'
-const STORAGE_KEY = `gzeams:detail:related-groups:${OBJECT_CODE}:designer-preview:edit:${LAYOUT_ID}`
+const STORAGE_KEY = `gzeams:detail:related-groups:${OBJECT_CODE}:designer-preview:readonly:${LAYOUT_ID}`
 
 function fulfillSuccess(route: Route, data: unknown) {
   return route.fulfill({
@@ -227,6 +227,7 @@ test.describe('Layout Designer Related Groups Scope Persistence Regression', () 
       `/system/page-layouts/designer?layoutId=${LAYOUT_ID}&objectCode=${OBJECT_CODE}&layoutType=readonly&layoutName=Asset%20Readonly&businessObjectId=bo-asset`
     )
     await waitForDesignerReady(page)
+    await setDesignerRenderMode(page, 'preview')
     await openRelatedObjectsTab(page)
     await expect(page.locator('.related-groups-collapse')).toBeVisible()
 
@@ -241,6 +242,7 @@ test.describe('Layout Designer Related Groups Scope Persistence Regression', () 
 
     await page.reload()
     await waitForDesignerReady(page)
+    await setDesignerRenderMode(page, 'preview')
     await openRelatedObjectsTab(page)
     await expect(groupItem(page, 'Workflow')).toHaveClass(/is-active/)
     await expect(groupItem(page, 'Finance')).toHaveClass(/is-active/)

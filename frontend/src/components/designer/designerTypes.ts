@@ -28,11 +28,24 @@ export interface DesignerFieldDefinition {
 
 export type DesignerAnyRecord = Record<string, unknown>
 
+export interface FieldVisibilityRule {
+  field: string
+  operator: 'eq' | 'neq' | 'in' | 'notIn'
+  value: unknown
+}
+
 export interface LayoutField extends Omit<LayoutFieldConfig, 'fieldType'> {
   fieldType?: string
   field_type?: string
+  isSystem?: boolean
   minHeight?: number
   min_height?: number
+  minLength?: number
+  maxLength?: number
+  minValue?: number
+  maxValue?: number
+  regexPattern?: string
+  validationMessage?: string
   component_props?: DesignerAnyRecord
   labelPosition?: 'left' | 'top'
   labelWidth?: string | number
@@ -66,6 +79,9 @@ export interface LayoutField extends Omit<LayoutFieldConfig, 'fieldType'> {
   min_value?: number
   max_value?: number
   regex_pattern?: string
+  validation_message?: string
+  visibilityRule?: FieldVisibilityRule
+  visibility_rule?: FieldVisibilityRule
 }
 
 export interface LayoutTab {

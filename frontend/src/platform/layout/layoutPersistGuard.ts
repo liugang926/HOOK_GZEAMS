@@ -71,6 +71,80 @@ const normalizeFieldForPersist = (rawField: any, dropFieldCode?: (code: string) 
     ...(field.component_props || {}),
     ...(field.componentProps || {})
   }
+  const readFinitePositive = (...values: unknown[]): number | undefined => {
+    for (const value of values) {
+      if (value === undefined || value === null || value === '') continue
+      const num = Number(value)
+      if (Number.isFinite(num) && num > 0) return Math.floor(num)
+    }
+    return undefined
+  }
+  const readTrimmedString = (...values: unknown[]): string | undefined => {
+    for (const value of values) {
+      if (typeof value !== 'string') continue
+      const normalized = value.trim()
+      if (normalized) return normalized
+    }
+    return undefined
+  }
+  const normalizedRelatedObjectCode = readTrimmedString(
+    field.relatedObjectCode,
+    field.related_object_code,
+    field.targetObjectCode,
+    field.target_object_code,
+    componentProps.relatedObjectCode,
+    componentProps.related_object_code,
+    componentProps.targetObjectCode,
+    componentProps.target_object_code
+  )
+  const normalizedDisplayMode = readTrimmedString(
+    field.displayMode,
+    field.display_mode,
+    componentProps.displayMode,
+    componentProps.display_mode
+  )
+  const normalizedPageSize = readFinitePositive(
+    field.pageSize,
+    field.page_size,
+    componentProps.pageSize,
+    componentProps.page_size
+  )
+  const normalizedLookupColumns = Array.isArray(field.lookupColumns)
+    ? field.lookupColumns
+    : (Array.isArray(field.lookup_columns) ? field.lookup_columns : (
+      Array.isArray(componentProps.lookupColumns)
+        ? componentProps.lookupColumns
+        : (Array.isArray(componentProps.lookup_columns) ? componentProps.lookup_columns : undefined)
+    ))
+  const normalizedRelatedFields = Array.isArray(field.relatedFields)
+    ? field.relatedFields
+    : (Array.isArray(field.related_fields) ? field.related_fields : (
+      Array.isArray(componentProps.relatedFields)
+        ? componentProps.relatedFields
+        : (Array.isArray(componentProps.related_fields) ? componentProps.related_fields : undefined)
+    ))
+  if (normalizedRelatedObjectCode) {
+    componentProps.relatedObjectCode = normalizedRelatedObjectCode
+    componentProps.related_object_code = normalizedRelatedObjectCode
+    componentProps.targetObjectCode = normalizedRelatedObjectCode
+    componentProps.target_object_code = normalizedRelatedObjectCode
+  }
+  if (normalizedDisplayMode) {
+    componentProps.displayMode = normalizedDisplayMode
+    componentProps.display_mode = normalizedDisplayMode
+  }
+  if (normalizedPageSize !== undefined) {
+    componentProps.pageSize = normalizedPageSize
+    componentProps.page_size = normalizedPageSize
+  }
+  if (normalizedLookupColumns) {
+    componentProps.lookupColumns = normalizedLookupColumns
+    componentProps.lookup_columns = normalizedLookupColumns
+  }
+  if (normalizedRelatedFields) {
+    componentProps.relatedFields = normalizedRelatedFields
+    componentProps.related_fields = normalizedRelatedFields
+  }
   const rawMinHeight = field.minHeight ?? field.min_height ?? componentProps.minHeight ?? componentProps.min_height
   const normalizedMinHeight = rawMinHeight === undefined
     ? undefined
@@ -91,9 +165,50 @@ const normalizeFieldForPersist = (rawField: any, dropFieldCode?: (code: string) 
     label: field.label || field.name || fieldCode,
     span: Number.isFinite(Number(field.span)) ? Number(field.span) : 1,
     minHeight: normalizedMinHeight,
+    fieldType: String(field.fieldType || field.field_type || field.type || 'text').trim() || 'text',
     componentProps,
     component_props: componentProps
   }
+  const readFiniteNumber = (...values: unknown[]): number | undefined => {
+    for (const value of values) {
+      if (value === undefined || value === null || value === '') continue
+      const num = Number(value)
+      if (Number.isFinite(num)) return num
+    }
+    return undefined
+  }
+  const readString = (...values: unknown[]): string | undefined => {
+    for (const value of values) {
+      if (typeof value !== 'string') continue
+      const normalized = value.trim()
+      if (normalized) return normalized
+    }
+    return undefined
+  }
+  const minLength = readFiniteNumber(field.minLength, field.min_length)
+  const maxLength = readFiniteNumber(field.maxLength, field.max_length)
+  const minValue = readFiniteNumber(field.minValue, field.min_value)
+  const maxValue = readFiniteNumber(field.maxValue, field.max_value)
+  const regexPattern = readString(field.regexPattern, field.regex_pattern)
+  const validationMessage = readString(field.validationMessage, field.validation_message)
+  const visibilityRule = typeof field.visibilityRule === 'object' && field.visibilityRule
+    ? field.visibilityRule
+    : (typeof field.visibility_rule === 'object' && field.visibility_rule ? field.visibility_rule : undefined)
+  ;(normalizedField as any).field_type = (normalizedField as any).fieldType
+  ;(normalizedField as any).minLength = minLength
+  ;(normalizedField as any).min_length = minLength
+  ;(normalizedField as any).maxLength = maxLength
+  ;(normalizedField as any).max_length = maxLength
+  ;(normalizedField as any).minValue = minValue
+  ;(normalizedField as any).min_value = minValue
+  ;(normalizedField as any).maxValue = maxValue
+  ;(normalizedField as any).max_value = maxValue
+  ;(normalizedField as any).regexPattern = regexPattern
+  ;(normalizedField as any).regex_pattern = regexPattern
+  ;(normalizedField as any).validationMessage = validationMessage
+  ;(normalizedField as any).validation_message = validationMessage
+  ;(normalizedField as any).visibilityRule = visibilityRule
+  ;(normalizedField as any).visibility_rule = visibilityRule
   const normalizedPlacement = normalizePlacementSnapshot(
     field.layoutPlacement ||
     field.layout_placement ||

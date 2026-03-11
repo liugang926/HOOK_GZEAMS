@@ -15,6 +15,7 @@
       <el-form-item :label="$t('system.translations.mode')">
         <el-radio-group
           v-model="mode"
+          :disabled="Boolean(props.lockObjectTarget && !isEdit)"
           @change="handleModeChange"
         >
           <el-radio value="namespace">
@@ -75,6 +76,7 @@
           <el-select
             v-model="formData.contentTypeModel"
             style="width: 100%"
+            :disabled="Boolean(props.lockObjectTarget && !isEdit)"
           >
             <el-option
               value="businessobject"
@@ -92,6 +94,10 @@
               value="modelfielddefinition"
               :label="$t('system.translations.contentTypes.modelFieldDefinition')"
             />
+            <el-option
+              value="menugroup"
+              :label="$t('system.translations.contentTypes.menuGroup')"
+            />
           </el-select>
         </el-form-item>
         <el-form-item
@@ -102,6 +108,7 @@
             v-model="formData.objectId"
             :placeholder="$t('system.translations.objectIdPlaceholder')"
             style="width: 100%"
+            :disabled="Boolean(props.lockObjectTarget && !isEdit)"
           />
         </el-form-item>
         <el-form-item
@@ -111,6 +118,7 @@
           <el-input
             v-model="formData.fieldName"
             :placeholder="$t('system.translations.fieldNamePlaceholder')"
+            :disabled="Boolean(props.lockObjectTarget && !isEdit)"
           />
         </el-form-item>
       </template>
@@ -196,6 +204,8 @@ import type { Translation, Language } from '@/api/translations'
 interface Props {
   visible: boolean
   translation?: Translation | null
+  preset?: Partial<Translation> | null
+  lockObjectTarget?: boolean
   languages: Language[]
 }
 
@@ -255,6 +265,21 @@ const rules = {
 // Computed
 const isEdit = computed(() => !!props.translation)
 
+const applyPreset = () => {
+  formData.namespace = ''
+  formData.key = ''
+  formData.contentTypeModel = String(props.preset?.contentTypeModel || '')
+  formData.objectId = props.preset?.objectId ? String(props.preset.objectId) : null
+  formData.fieldName = String(props.preset?.fieldName || '')
+  formData.languageCode = props.languages.find((lang) => lang.isDefault)?.code || 'zh-CN'
+  formData.text = ''
+  formData.context = ''
+  formData.type = String(props.preset?.type || 'object_field')
+  formData.isSystem = false
+  mode.value = formData.contentTypeModel && formData.objectId ? 'object' : 'namespace'
+  formRef.value?.clearValidate()
+}
+
 // Watch for translation prop changes
 watch(
   () => props.translation,
@@ -275,11 +300,18 @@ watch(
       // Determine mode
       mode.value = val.namespace && val.key ? 'namespace' : 'object'
     } else {
-      // Create mode - reset form
-      resetForm()
+      props.visible ? applyPreset() : resetForm()
     }
   },
   { immediate: true }
+)
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (!visible || props.translation) return
+    applyPreset()
+  }
 )
 
 // Handle mode change

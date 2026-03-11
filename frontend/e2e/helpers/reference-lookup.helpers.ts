@@ -43,7 +43,9 @@ export async function openReferenceAdvancedLookup(
 }
 
 export async function openLookupColumnSettings(page: Page, dialog: Locator): Promise<Locator> {
-  await dialog.locator('.lookup-toolbar__columns-trigger').click()
+  const trigger = dialog.getByRole('button', { name: /Columns/i }).first()
+  await expect(trigger).toBeVisible()
+  await trigger.click({ force: true })
   const settings = page.locator('.lookup-column-settings:visible').last()
   await expect(settings).toBeVisible()
   return settings

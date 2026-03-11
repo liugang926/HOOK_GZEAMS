@@ -1,6 +1,7 @@
 import { placeCanvasFields, type CanvasPlacement } from '@/platform/layout/canvasLayout'
 import { cloneLayoutConfig } from '@/utils/layoutValidation'
 import type {
+  FieldVisibilityRule,
   DesignerAnyRecord,
   DesignerFieldDefinition,
   LayoutConfig,
@@ -35,10 +36,181 @@ export const readErrorMessage = (error: unknown): string | null => {
 export const readComponentProps = (
   field: Partial<DesignerFieldDefinition & LayoutField> | null | undefined
 ): DesignerAnyRecord => {
-  return {
+  const componentProps = {
     ...((isRecord(field?.componentProps) ? field.componentProps : {}) as DesignerAnyRecord),
     ...((isRecord(field?.component_props) ? field.component_props : {}) as DesignerAnyRecord)
   }
+
+  const relatedObjectCode = readOptionalString(
+    (field as DesignerAnyRecord | undefined)?.relatedObjectCode,
+    (field as DesignerAnyRecord | undefined)?.related_object_code,
+    (field as DesignerAnyRecord | undefined)?.targetObjectCode,
+    (field as DesignerAnyRecord | undefined)?.target_object_code
+  )
+  const displayMode = readOptionalString(
+    (field as DesignerAnyRecord | undefined)?.displayMode,
+    (field as DesignerAnyRecord | undefined)?.display_mode
+  )
+  const pageSize = readOptionalNumber(
+    (field as DesignerAnyRecord | undefined)?.pageSize,
+    (field as DesignerAnyRecord | undefined)?.page_size
+  )
+  const lookupColumns =
+    (field as DesignerAnyRecord | undefined)?.lookupColumns ??
+    (field as DesignerAnyRecord | undefined)?.lookup_columns
+  const relatedFields =
+    (field as DesignerAnyRecord | undefined)?.relatedFields ??
+    (field as DesignerAnyRecord | undefined)?.related_fields
+
+  if (relatedObjectCode) {
+    componentProps.relatedObjectCode = relatedObjectCode
+    componentProps.related_object_code = relatedObjectCode
+    componentProps.targetObjectCode = relatedObjectCode
+    componentProps.target_object_code = relatedObjectCode
+  }
+  if (displayMode) {
+    componentProps.displayMode = displayMode
+    componentProps.display_mode = displayMode
+  }
+  if (pageSize !== undefined) {
+    componentProps.pageSize = pageSize
+    componentProps.page_size = pageSize
+  }
+  if (Array.isArray(lookupColumns)) {
+    componentProps.lookupColumns = lookupColumns
+    componentProps.lookup_columns = lookupColumns
+  }
+  if (Array.isArray(relatedFields)) {
+    componentProps.relatedFields = relatedFields
+    componentProps.related_fields = relatedFields
+  }
+
+  return componentProps
+}
+
+const readOptionalBoolean = (...values: unknown[]): boolean | undefined => {
+  for (const value of values) {
+    if (value === undefined || value === null || value === '') continue
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'number') return value !== 0
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase()
+      if (['true', '1', 'yes', 'on'].includes(normalized)) return true
+      if (['false', '0', 'no', 'off'].includes(normalized)) return false
+    }
+  }
+  return undefined
+}
+
+const readOptionalNumber = (...values: unknown[]): number | undefined => {
+  for (const value of values) {
+    if (value === undefined || value === null || value === '') continue
+    const num = Number(value)
+    if (Number.isFinite(num)) return num
+  }
+  return undefined
+}
+
+const readOptionalString = (...values: unknown[]): string | undefined => {
+  for (const value of values) {
+    if (typeof value !== 'string') continue
+    const normalized = value.trim()
+    if (normalized) return normalized
+  }
+  return undefined
+}
+
+const normalizeVisibilityOperator = (value: unknown): FieldVisibilityRule['operator'] | undefined => {
+  if (value === 'eq' || value === 'neq' || value === 'in' || value === 'notIn') return value
+  return undefined
+}
+
+const normalizeVisibilityRule = (...values: unknown[]): FieldVisibilityRule | undefined => {
+  for (const value of values) {
+    if (!isRecord(value)) continue
+    const field = readOptionalString(value.field)
+    const operator = normalizeVisibilityOperator(value.operator)
+    if (!field || !operator) continue
+    return {
+      field,
+      operator,
+      value: value.value
+    }
+  }
+  return undefined
+}
+
+export const normalizeLayoutFieldAliases = (field: LayoutField): LayoutField => {
+  const componentProps = readComponentProps(field)
+  const fieldType = String(field.fieldType || field.field_type || 'text').trim() || 'text'
+  const minHeight = resolveLayoutFieldMinHeight(field)
+  const minLength = readOptionalNumber(field.minLength, field.min_length)
+  const maxLength = readOptionalNumber(field.maxLength, field.max_length)
+  const minValue = readOptionalNumber(field.minValue, field.min_value)
+  const maxValue = readOptionalNumber(field.maxValue, field.max_value)
+  const regexPattern = readOptionalString(field.regexPattern, field.regex_pattern)
+  const validationMessage = readOptionalString(field.validationMessage, field.validation_message)
+  const required = readOptionalBoolean(field.required)
+  const readonly = readOptionalBoolean(field.readonly)
+  const visible = readOptionalBoolean(field.visible)
+  const visibilityRule = normalizeVisibilityRule(field.visibilityRule, field.visibility_rule)
+
+  return {
+    ...field,
+    fieldType,
+    field_type: fieldType,
+    componentProps,
+    component_props: componentProps,
+    minHeight,
+    min_height: minHeight,
+    minLength,
+    min_length: minLength,
+    maxLength,
+    max_length: maxLength,
+    minValue,
+    min_value: minValue,
+    maxValue,
+    max_value: maxValue,
+    regexPattern,
+    regex_pattern: regexPattern,
+    validationMessage,
+    validation_message: validationMessage,
+    required,
+    readonly,
+    visible,
+    visibilityRule,
+    visibility_rule: visibilityRule
+  }
+}
+
+const normalizeLayoutFieldList = (fields: LayoutField[] | undefined): LayoutField[] => {
+  return (fields || []).map((field) => normalizeLayoutFieldAliases(field))
+}
+
+export const normalizeLayoutConfigFieldAliases = (rawConfig: LayoutConfig): LayoutConfig => {
+  const next = cloneLayoutConfig(rawConfig || { sections: [] }) as LayoutConfig
+  next.sections = (next.sections || []).map((rawSection) => {
+    const section = { ...(rawSection || {}) }
+    if (section.type === 'tab') {
+      section.tabs = (section.tabs || []).map((tab) => ({
+        ...(tab || {}),
+        fields: normalizeLayoutFieldList(tab.fields)
+      }))
+      return section
+    }
+
+    if (section.type === 'collapse') {
+      section.items = (section.items || []).map((item) => ({
+        ...(item || {}),
+        fields: normalizeLayoutFieldList(item.fields)
+      }))
+      return section
+    }
+
+    section.fields = normalizeLayoutFieldList(section.fields)
+    return section
+  })
+  return next
 }
 
 export const readLayoutPlacement = (
@@ -100,12 +272,7 @@ export const setLayoutFieldMinHeight = (field: LayoutField, value: unknown) => {
 }
 
 export const toCanvasField = (field: LayoutField): LayoutField => {
-  const minHeight = resolveLayoutFieldMinHeight(field)
-  return {
-    ...field,
-    minHeight,
-    min_height: minHeight
-  }
+  return normalizeLayoutFieldAliases(field)
 }
 
 export function getColumns(section: Partial<LayoutSection> | null | undefined): number {

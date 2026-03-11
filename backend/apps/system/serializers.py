@@ -205,7 +205,7 @@ class FieldDefinitionSerializer(BaseModelSerializer):
             'regex_pattern',
             'formula',
             'sub_table_fields',
-            # Reverse relation handling fields
+            # Reverse relation handling fields (DEPRECATED — use ObjectRelationDefinition)
             'is_reverse_relation',
             'reverse_relation_model',
             'reverse_relation_field',
@@ -266,7 +266,7 @@ class FieldDefinitionDetailSerializer(BaseModelSerializer):
             'regex_pattern',
             'formula',
             'sub_table_fields',
-            # Reverse relation handling fields
+            # Reverse relation handling fields (DEPRECATED — use ObjectRelationDefinition)
             'is_reverse_relation',
             'reverse_relation_model',
             'reverse_relation_field',

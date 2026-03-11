@@ -42,6 +42,7 @@ describe('router coverage', () => {
 
     expect(router.resolve('/system/page-layouts').name).toBe('PageLayoutList')
     expect(router.resolve('/system/menu-management').name).toBe('MenuManagement')
+    expect(router.resolve('/system/menu-layout-management').name).toBe('MenuLayoutManagement')
     expect(router.resolve('/system/branding').name).toBe('SystemBranding')
     expect(router.resolve('/system/module-workbench').name).toBe('ModuleWorkbench')
     expect(router.resolve('/finance/vouchers').name).toBe('VoucherList')

@@ -31,7 +31,8 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 .wysiwyg-layout-designer {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 90px);
+  min-height: 0;
   background: $designer-bg;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
@@ -41,56 +42,43 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  row-gap: 8px;
-  padding: 10px 20px;
+  padding: 8px 16px;
   background: $toolbar-bg;
   border-bottom: 1px solid $border-main;
   box-shadow: $shadow-sm;
   position: relative;
   z-index: 10;
+  gap: 12px;
 
   .toolbar-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     min-width: 0;
-    flex: 1 1 auto;
+    flex-shrink: 1;
 
     .layout-info {
       display: inline-block;
-      max-width: 420px;
+      max-width: 280px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       color: $text-main;
-      letter-spacing: -0.01em;
-    }
-  }
-
-  .toolbar-center {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    .el-button-group {
-      .el-button {
-        font-size: 13px;
-        padding: 6px 12px;
-      }
     }
   }
 
   .toolbar-right {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 8px;
-    flex: 0 0 auto;
+    gap: 6px;
+    flex-shrink: 0;
+
+    .el-button-group .el-button {
+      font-size: 13px;
+      padding: 5px 10px;
+    }
   }
 }
 
@@ -98,6 +86,7 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 .designer-main {
   display: flex;
   flex: 1;
+  min-height: 0;
   overflow: hidden;
 
   // Mobile Viewport Preview
@@ -123,10 +112,12 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 // ═══ Left: Field Panel ═══
 .field-panel {
   width: 268px;
+  min-width: 268px;
   background: $panel-bg;
   border-right: 1px solid $border-light;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   box-shadow: 1px 0 4px rgba(0, 0, 0, 0.04);
 
   .panel-header {
@@ -141,6 +132,7 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
   .panel-content {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 8px 0;
 
@@ -161,32 +153,31 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
 // ─── Field Groups ───
 .field-group {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 
   .group-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
     padding: 8px 14px;
     cursor: pointer;
-    border-radius: $radius-sm;
     transition: all $transition-fast;
-    margin: 0 6px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    color: $text-secondary;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    color: $text-main;
 
     &:hover {
       background: #f5f7fa;
-      color: $text-regular;
+    }
+
+    .group-title {
+      flex: 1;
     }
 
     .expand-icon {
-      margin-left: auto;
       transition: transform $transition-normal;
       font-size: 12px;
+      color: $text-secondary;
 
       &.expanded {
         transform: rotate(90deg);
@@ -194,84 +185,80 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
   }
 
-  .group-fields {
-    padding: 0 6px 6px;
+  .group-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 4px 10px 10px;
   }
 }
 
-// ─── Palette Field Items ───
-.palette-field-item {
+// ─── Field Tiles (Icon Grid) ───
+.field-tile {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  margin-bottom: 2px;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
   border-radius: $radius-sm;
   cursor: grab;
   transition: all $transition-fast;
   border: 1px solid transparent;
   position: relative;
+  background: #fafbfc;
+  min-height: 56px;
 
-  .field-icon {
-    color: $text-secondary;
-    font-size: 16px;
-    flex-shrink: 0;
+  .tile-icon {
+    font-size: 20px;
     transition: color $transition-fast;
   }
 
-  .field-label {
-    flex: 1;
-    font-size: 13px;
-    color: $text-main;
+  .tile-label {
+    font-size: 11px;
+    color: $text-regular;
+    text-align: center;
+    line-height: 1.2;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-weight: 450;
   }
 
-  .field-code {
-    font-size: 11px;
-    color: $text-secondary;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-    opacity: 0;
-    transition: opacity $transition-fast;
-  }
-
-  .added-icon {
-    margin-left: auto;
+  .tile-check {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
     color: #67c23a;
   }
 
   &:hover {
     background: $accent-light-9;
     border-color: $accent-light-7;
+    box-shadow: 0 1px 4px rgba(64, 158, 255, 0.1);
 
-    .field-icon {
-      color: $accent;
-    }
-
-    .field-code {
-      opacity: 1;
+    .tile-icon {
+      transform: scale(1.1);
     }
   }
 
   &:active {
     cursor: grabbing;
-    transform: scale(0.98);
-    box-shadow: $shadow-sm;
+    transform: scale(0.95);
   }
 
-  &.is-selected {
-    background: $accent-light-9;
-    border-color: $accent;
+  &.is-added {
+    background: #f0f9eb;
+    border-color: #e1f3d8;
 
-    .field-icon {
-      color: $accent;
+    .tile-label {
+      color: #67c23a;
     }
   }
 
   &.is-disabled {
-    opacity: 0.4;
+    opacity: 0.35;
     cursor: not-allowed;
     pointer-events: none;
   }
@@ -320,22 +307,16 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   .canvas-content {
     flex: 1;
     overflow-y: auto;
-    padding: 24px;
-    background:
-      repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 19px,
-        rgba(0, 0, 0, 0.02) 19px,
-        rgba(0, 0, 0, 0.02) 20px
-      ),
-      repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 19px,
-        rgba(0, 0, 0, 0.02) 19px,
-        rgba(0, 0, 0, 0.02) 20px
-      );
+    padding: 24px 24px 200px; /* Large bottom padding for easy drag-n-drop at the very bottom */
+    background: #f0f2f5;
+
+    .canvas-render-shell {
+      background: #ffffff;
+      border-radius: 4px;
+      padding: 16px 24px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+      min-height: calc(100% - 100px);
+    }
 
     &::-webkit-scrollbar {
       width: 6px;
@@ -388,10 +369,12 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 // ═══ Right: Property Panel ═══
 .property-panel {
   width: 288px;
+  min-width: 288px;
   background: $panel-bg;
   border-left: 1px solid $border-light;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   box-shadow: -1px 0 4px rgba(0, 0, 0, 0.04);
 
   .panel-header {
@@ -406,6 +389,7 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
   .panel-content {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding: 16px;
 
@@ -466,6 +450,98 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
   :deep(.base-detail-page) {
     background: transparent;
+    padding: 8px;
+  }
+
+  // ── Hide page chrome — ACTUAL DOM class names ──
+
+  :deep(.page-header),
+  :deep(.record-profile-header) {
+    display: none !important;
+  }
+
+  :deep(.record-main-tabs > .el-tabs__content) {
+    padding-top: 0;
+  }
+
+  :deep(.audit-info-card),
+  :deep(.base-detail-audit-card),
+  :deep(.audit-info) {
+    display: none !important;
+  }
+
+  // ── Ensure sections container has proper layout ──
+  :deep(.detail-sections) {
+    display: flex;
+    flex-direction: column;
+    gap: 0; // Flat layout, no gaps
+  }
+
+  // ── FormCreate Style: Seamless flat sections ──
+  :deep(.detail-section) {
+    background-color: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+    overflow: visible;
+    margin-bottom: 24px;
+
+    /* Extend the last section's drop zone so SortableJS works in empty bottom space */
+    &:last-child .detail-canvas-grid {
+      padding-bottom: 200px;
+    }
+  }
+
+  :deep(.detail-section .section-header) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 0 12px 0;
+    margin-bottom: 16px;
+    background-color: transparent;
+    border-bottom: 1px solid #f1f2f3;
+    border-left: none;
+    cursor: default;
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #303133;
+    }
+  }
+
+  :deep(.detail-section .section-content) {
+    padding: 20px;
+  }
+}
+
+.wysiwyg-layout-designer.render-mode-design {
+  .runtime-preview-card {
+    :deep(.record-main-tabs > .el-tabs__header) {
+      display: none !important;
+    }
+
+    :deep(.record-main-tabs > .el-tabs__content > .el-tab-pane:not(:first-child)) {
+      display: none !important;
+    }
+  }
+}
+
+// ─── Canvas header ultra-minimal ───
+.canvas-area .canvas-header {
+  padding: 4px 16px;
+  min-height: 0;
+  background: transparent;
+  border-bottom: none;
+  font-size: 11px;
+  color: $text-secondary;
+  opacity: 0.7;
+
+  .canvas-hint-text {
+    font-style: italic;
   }
 }
 
@@ -477,6 +553,23 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px dashed $border-main;
     border-radius: $radius-md;
     padding: 12px;
+  }
+}
+
+// ─── FP-6.1 Canvas statistics bar ───
+.canvas-stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: $text-secondary;
+  background: #f8fafc;
+  border-top: 1px solid $border-light;
+
+  .stats-separator {
+    color: #d0d5dd;
   }
 }
 
@@ -555,4 +648,78 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   50% {
     box-shadow: inset 0 0 12px 2px rgba(64, 158, 255, 0.06);
   }
+}
+
+// ─── FP-3.1 Insertion line indicator ───
+// Shown between items during drag to indicate exact drop position
+.sortable-ghost {
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    background: $accent;
+    border-radius: 1px;
+    z-index: 20;
+    box-shadow: 0 0 4px rgba(64, 158, 255, 0.4);
+  }
+}
+
+// ─── FP-3.3 Drop animation ───
+// Newly dropped fields get a fade-in + slide-up animation
+.field-just-dropped {
+  animation: field-drop-in 0.25s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.field-renderer.drag-insert-before,
+.field-renderer.drag-insert-after {
+  position: relative;
+}
+
+.field-renderer.drag-insert-before::before,
+.field-renderer.drag-insert-after::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(64, 158, 255, 0.16) 0%, $accent 20%, $accent 80%, rgba(64, 158, 255, 0.16) 100%);
+  border-radius: 999px;
+  z-index: 20;
+  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.08), 0 0 8px rgba(64, 158, 255, 0.25);
+  pointer-events: none;
+}
+
+.field-renderer.drag-insert-before::before {
+  top: -7px;
+}
+
+.field-renderer.drag-insert-after::after {
+  bottom: -7px;
+}
+
+@keyframes field-drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ─── FP-3.4 Cross-section drag highlight ───
+// When dragging a field over a different section, highlight the target
+.designer-section-slot.drag-over-target {
+  border: 2px dashed $accent !important;
+  border-radius: $radius-md;
+  background: rgba(64, 158, 255, 0.02);
+  transition: all 0.15s ease;
+}
+
+.designer-section-slot.drag-over-target > .designer-section-toolbar + * {
+  pointer-events: none;
 }

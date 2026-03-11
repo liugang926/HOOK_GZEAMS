@@ -26,6 +26,17 @@ import { useBaseDetailPageFields } from './useBaseDetailPageFields'
 export interface DetailField {
   prop: string
   label: string
+  visible?: boolean
+  visibilityRule?: {
+    field: string
+    operator: 'eq' | 'neq' | 'in' | 'notIn'
+    value: unknown
+  }
+  visibility_rule?: {
+    field: string
+    operator: 'eq' | 'neq' | 'in' | 'notIn'
+    value: unknown
+  }
   editorType?: string
   type?:
     | 'text'
@@ -67,6 +78,19 @@ export interface DetailField {
   href?: string
   hidden?: boolean
   readonly?: boolean
+  required?: boolean
+  minLength?: number
+  maxLength?: number
+  minValue?: number
+  maxValue?: number
+  regexPattern?: string
+  validationMessage?: string
+  min_length?: number
+  max_length?: number
+  min_value?: number
+  max_value?: number
+  regex_pattern?: string
+  validation_message?: string
   labelClass?: string
   valueClass?: string
   referenceObject?: string
@@ -202,6 +226,14 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const emit = defineEmits<Emits>()
+
+const getSectionFields = (section: any): any[] => {
+  if (section?.type === 'tab') {
+    return section.tabs?.[0]?.fields || []
+  }
+  return section?.fields || []
+}
+
 const formRef = ref<any>(null)
 const runtimeRelations = ref<ReverseRelationField[]>([])
 const { locale } = useI18n()
@@ -216,23 +248,6 @@ const {
   props,
   emit,
   formRef
-})
-
-const {
-  activeTabs,
-  activeMainTab,
-  getSectionDisplayTitle,
-  getSectionErrorTitle,
-  toggleSection,
-  handleSectionHeaderClick,
-  isSectionCollapsed
-} = useBaseDetailPageSections({
-  sections: computed(() => props.sections),
-  emitSectionClick: (sectionName) => emit('section-click', sectionName)
-})
-
-const { mainSections, sidebarSections } = useBaseDetailPageLayout({
-  sections: () => props.sections
 })
 
 const { activityRecordId, hasActivityHistory } = useBaseDetailPageHistory({
@@ -251,7 +266,21 @@ const {
 })
 
 const {
+  activeTabs,
+  activeMainTab,
+  getSectionDisplayTitle,
+  getSectionErrorTitle,
+  toggleSection,
+  handleSectionHeaderClick,
+  isSectionCollapsed
+} = useBaseDetailPageSections({
+  sections: computed(() => props.sections),
+  emitSectionClick: (sectionName) => emit('section-click', sectionName)
+})
+
+const {
   getDisplayText,
+  resolvedSections,
   editDrawerProxyFields,
   getFieldValue,
   getEditFieldValue,
@@ -260,11 +289,34 @@ const {
   getFieldItemClass,
   getSectionCanvasStyle,
   getFieldColStyle,
-  getFieldPlacementAttrs
+  getFieldPlacementAttrs,
+  generatedFormRules
 } = useBaseDetailPageFields({
   props,
   activeTabs
 })
+
+const {
+  mainSections,
+  sidebarSections
+} = useBaseDetailPageLayout({
+  sections: () => resolvedSections.value
+})
+
+watch(
+  resolvedSections,
+  (sections) => {
+    for (const section of sections || []) {
+      if (section.type !== 'tab' || !Array.isArray(section.tabs) || section.tabs.length === 0) continue
+      const current = activeTabs.value[section.name]
+      const exists = section.tabs.some((tab) => tab.id === current)
+      if (!exists) {
+        activeTabs.value[section.name] = section.tabs[0].id
+      }
+    }
+  },
+  { immediate: true }
+)
 
 watch(
   () => [props.objectCode, props.showRelatedObjects, props.resolveRuntimeRelations],
@@ -355,7 +407,7 @@ defineExpose({
                     :style="getSectionCanvasStyle(section)"
                   >
                     <div
-                      v-for="field in (section.type === 'tab' ? (section.tabs?.[0]?.fields || []) : section.fields)"
+                      v-for="field in getSectionFields(section)"
                       :key="field.prop"
                       class="field-item"
                       :style="getFieldColStyle(field, section)"
@@ -424,7 +476,7 @@ defineExpose({
               <div class="section-content">
                 <div class="detail-canvas-grid sidebar-canvas-grid">
                   <div
-                    v-for="field in section.fields"
+                    v-for="field in getSectionFields(section)"
                     :key="field.prop"
                     class="field-item"
                     :style="getFieldColStyle(field, section)"
@@ -498,7 +550,7 @@ defineExpose({
         ref="formRef"
         class="dynamic-form"
         :model="formData"
-        :rules="formRules"
+        :rules="generatedFormRules"
         @submit.prevent
       >
         <div
@@ -507,7 +559,7 @@ defineExpose({
         >
           <BaseDetailMainTabs
             :active-main-tab="activeMainTab"
-            :main-sections="mainSections"
+            :main-sections="mainSections as any"
             :data="data"
             :edit-mode="editMode"
             :active-tabs="activeTabs"
@@ -562,7 +614,7 @@ defineExpose({
               :key="section.name"
             >
               <BaseDetailSectionCard
-                :section="section"
+                :section="section as any"
                 :data="data"
                 :edit-mode="editMode"
                 :active-tabs="activeTabs"
@@ -606,8 +658,8 @@ defineExpose({
 @use '@/styles/variables.scss' as *;
 
 .base-detail-page {
-  padding: $spacing-lg;
-  background-color: $bg-body;
+  padding: 0;
+  background: transparent;
   min-height: 100%;
   --detail-label-width: var(--gzeams-detail-label-width, 120px);
   --detail-field-gap: var(--gzeams-detail-field-gap, 16px);
@@ -651,7 +703,7 @@ defineExpose({
   .detail-layout-container {
     display: flex;
     flex-direction: column;
-    gap: $spacing-md;
+    gap: 20px;
     width: 100%;
 
     &.has-sidebar {
@@ -668,25 +720,25 @@ defineExpose({
         flex-shrink: 0;
         display: flex;
         flex-direction: column;
-        gap: $spacing-md;
+        gap: 20px;
       }
     }
   }
 }
 
 .detail-section-skeleton {
-  background-color: $bg-card;
-  border-radius: $radius-large;
-  box-shadow: $shadow-sm;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border-radius: 22px;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.04);
   overflow: hidden;
-  border: 1px solid $border-light;
+  border: 1px solid rgba(148, 163, 184, 0.18);
 
   .section-header {
     display: flex;
     align-items: center;
-    padding: 14px $spacing-lg;
-    background-color: #f8fafc;
-    border-bottom: 1px solid $border-light;
+    padding: 16px 20px;
+    background: rgba(248, 250, 252, 0.9);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
   }
 
   .section-content {
@@ -707,7 +759,7 @@ defineExpose({
 
 @media (max-width: 768px) {
   .base-detail-page {
-    padding: 12px;
+    padding: 0;
 
     .detail-content {
       .detail-layout-container.has-sidebar {

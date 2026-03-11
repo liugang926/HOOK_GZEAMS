@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
+import {
+  createElementResultStub,
+  createObjectAvatarStub,
+  createPlainButtonStub,
+  createPlainCardStub,
+  createPlainStepsStub,
+  loadingDirectiveStubs,
+} from './testUtils'
 
 const pushMock = vi.fn()
 const getMetadataMock = vi.fn()
@@ -23,14 +31,18 @@ const CommonDynamicDetailPageStub = defineComponent({
   }
 })
 
-vi.mock('vue-router', () => ({
-  useRoute: () => ({
-    params: { code: 'Asset', id: 'asset-1' }
-  }),
-  useRouter: () => ({
-    push: pushMock
-  })
-}))
+vi.mock('vue-router', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('vue-router')>()
+  return {
+    ...actual,
+    useRoute: () => ({
+      params: { code: 'Asset', id: 'asset-1' }
+    }),
+    useRouter: () => ({
+      push: pushMock
+    })
+  }
+})
 
 vi.mock('@/api/dynamic', () => ({
   createObjectClient: () => ({
@@ -46,11 +58,34 @@ vi.mock('@/components/common/DynamicDetailPage.vue', () => ({
   default: CommonDynamicDetailPageStub
 }))
 
-vi.mock('vue-i18n', () => ({
-  useI18n: () => ({
-    t: (key: string) => key
+vi.mock('vue-i18n', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('vue-i18n')>()
+  return {
+    ...actual,
+    useI18n: () => ({
+      t: (key: string) => key,
+      te: () => false,
+      locale: { value: 'zh-CN' }
+    })
+  }
+})
+
+const buildWrapper = async () => {
+  const DynamicDetailPage = (await import('@/views/dynamic/DynamicDetailPage.vue')).default
+  return mount(DynamicDetailPage, {
+    global: {
+      directives: loadingDirectiveStubs,
+      stubs: {
+        ObjectAvatar: createObjectAvatarStub(),
+        'el-card': createPlainCardStub(),
+        'el-result': createElementResultStub(),
+        'el-button': createPlainButtonStub(),
+        'el-step': defineComponent({ template: '<div />' }),
+        'el-steps': createPlainStepsStub(),
+      }
+    }
   })
-}))
+}
 
 describe('DynamicDetailPage navigation', () => {
   beforeEach(() => {
@@ -58,6 +93,7 @@ describe('DynamicDetailPage navigation', () => {
     getMetadataMock.mockResolvedValue({
       code: 'Asset',
       name: 'Asset',
+      module: 'Asset Center',
       permissions: { view: true, add: true, change: true, delete: true }
     })
     resolveRuntimeLayoutMock.mockResolvedValue({
@@ -66,18 +102,7 @@ describe('DynamicDetailPage navigation', () => {
   })
 
   it('navigates to related detail using target object code', async () => {
-    const DynamicDetailPage = (await import('@/views/dynamic/DynamicDetailPage.vue')).default
-    const wrapper = mount(DynamicDetailPage, {
-      global: {
-        directives: {
-          loading: () => undefined
-        },
-        stubs: {
-          'el-result': defineComponent({ template: '<div><slot /><slot name="extra" /></div>' }),
-          'el-button': defineComponent({ template: '<button><slot /></button>' })
-        }
-      }
-    })
+    const wrapper = await buildWrapper()
 
     await flushPromises()
     await wrapper.get('.emit-related-click').trigger('click')
@@ -86,22 +111,53 @@ describe('DynamicDetailPage navigation', () => {
   })
 
   it('navigates to related edit using derived object code fallback', async () => {
-    const DynamicDetailPage = (await import('@/views/dynamic/DynamicDetailPage.vue')).default
-    const wrapper = mount(DynamicDetailPage, {
-      global: {
-        directives: {
-          loading: () => undefined
-        },
-        stubs: {
-          'el-result': defineComponent({ template: '<div><slot /><slot name="extra" /></div>' }),
-          'el-button': defineComponent({ template: '<button><slot /></button>' })
-        }
-      }
-    })
+    const wrapper = await buildWrapper()
 
     await flushPromises()
     await wrapper.get('.emit-related-edit').trigger('click')
 
     expect(pushMock).toHaveBeenCalledWith('/objects/Loan/loan%2F1/edit')
+  })
+
+  it('renders the unified detail hero shell', async () => {
+    const wrapper = await buildWrapper()
+
+    await flushPromises()
+
+    expect(wrapper.find('.detail-hero__title').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Asset Center')
+    expect(wrapper.text()).toContain('对象详情')
+  })
+
+  it('shows the permission denied state when view access is unavailable', async () => {
+    getMetadataMock.mockResolvedValueOnce({
+      code: 'Asset',
+      name: 'Asset',
+      module: 'Asset Center',
+      permissions: { view: false, add: false, change: false, delete: false }
+    })
+    resolveRuntimeLayoutMock.mockResolvedValueOnce({
+      permissions: { view: false, add: false, change: false, delete: false }
+    })
+
+    const wrapper = await buildWrapper()
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('common.messages.permissionDenied')
+    expect(wrapper.find('.dynamic-detail-page-stub').exists()).toBe(false)
+  })
+
+  it('shows the load failed state when metadata and runtime layout both fail', async () => {
+    getMetadataMock.mockRejectedValueOnce(new Error('metadata failed'))
+    resolveRuntimeLayoutMock.mockRejectedValueOnce(new Error('runtime failed'))
+
+    const wrapper = await buildWrapper()
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('common.messages.loadFailed')
+    expect(wrapper.text()).toContain('metadata failed')
+    expect(wrapper.find('.dynamic-detail-page-stub').exists()).toBe(false)
   })
 })

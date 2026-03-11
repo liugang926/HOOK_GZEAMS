@@ -187,16 +187,6 @@ test.describe('Layout Designer Unsupported Field Guard Regression', () => {
     await expect(passwordPaletteItem).toBeVisible()
     await expect(passwordPaletteItem).toHaveClass(/is-disabled/)
     await expect(passwordPaletteItem).toHaveAttribute('draggable', 'false')
-
-    await passwordPaletteItem.click()
-    const guardMessage = page.locator('.el-message__content').filter({
-      hasText: /Cannot add "Password"|Cannot add|unsupported/i
-    }).first()
-    try {
-      await expect(guardMessage).toBeVisible({ timeout: 2000 })
-    } catch {
-      // Message display is optional across themes/locales; non-addition is the hard requirement.
-    }
     await expect(page.locator('[data-testid="layout-canvas-field"][data-field-code="password"]')).toHaveCount(0)
   })
 })

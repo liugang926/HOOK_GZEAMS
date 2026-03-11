@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Layout Fields Composable
  *
  * Provides field metadata access for the layout designer.
@@ -211,11 +211,10 @@ export function useLayoutFields(objectCode: string): UseLayoutFieldsReturn {
       if (rawFields.length > 0) {
         // Transform editable fields to available fields
         const fields: AvailableField[] = rawFields.map((field: any) => {
-          const normalizedType = normalizeFieldType(field.fieldType || field.field_type || field.type || 'text')
+          const normalizedType = normalizeFieldType(field.fieldType || field.type || 'text')
           return {
             ...field,
             fieldType: normalizedType,
-            field_type: normalizedType,
             fieldTypeDisplay: getFieldTypeDisplay(normalizedType),
             showInForm: (field as any).showInForm !== false,
             showInList: (field as any).showInList !== false,

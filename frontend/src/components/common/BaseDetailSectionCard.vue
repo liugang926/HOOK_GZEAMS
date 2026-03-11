@@ -10,6 +10,7 @@ interface DetailFieldLike {
   prop: string
   label: string
   hidden?: boolean
+  visible?: boolean
   readonly?: boolean
   type?: string
   labelClass?: string
@@ -70,8 +71,10 @@ const activeTabModel = computed({
   }
 })
 
+const isFieldVisible = (field: DetailFieldLike) => field.hidden !== true && field.visible !== false
+
 const visibleSectionFields = computed(() => {
-  return (props.section.fields || []).filter((field) => !field.hidden)
+  return (props.section.fields || []).filter((field) => isFieldVisible(field))
 })
 
 const sectionClass = computed(() => [
@@ -115,13 +118,22 @@ const fieldItemBaseClass = (field: DetailFieldLike) => [
       @click="handleSectionHeaderClick(section)"
     >
       <div class="section-title">
-        <el-icon
-          v-if="section.icon"
-          class="section-icon"
+        <slot
+          v-if="$slots[`section-header-${section.name}`]"
+          :name="`section-header-${section.name}`"
+          :section="section"
         >
-          <component :is="section.icon" />
-        </el-icon>
-        <span>{{ getSectionDisplayTitle(section) }}</span>
+          <span>{{ getSectionDisplayTitle(section) }}</span>
+        </slot>
+        <template v-else>
+          <el-icon
+            v-if="section.icon"
+            class="section-icon"
+          >
+            <component :is="section.icon" />
+          </el-icon>
+          <span>{{ getSectionDisplayTitle(section) }}</span>
+        </template>
       </div>
       <el-icon
         v-if="section.collapsible"
@@ -185,7 +197,7 @@ const fieldItemBaseClass = (field: DetailFieldLike) => [
                 :style="getSectionCanvasStyle(section)"
               >
                 <div
-                  v-for="field in tab.fields.filter((item) => !item.hidden)"
+                  v-for="field in tab.fields.filter((item) => isFieldVisible(item))"
                   :key="field.prop"
                   :class="fieldColClass"
                   :style="getFieldColStyle(field, section)"
@@ -333,11 +345,11 @@ const fieldItemBaseClass = (field: DetailFieldLike) => [
 @use '@/styles/variables.scss' as *;
 
 .detail-section {
-  background-color: $bg-card;
-  border-radius: $radius-large;
-  box-shadow: $shadow-sm;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border-radius: 22px;
+  box-shadow: 0 12px 34px rgba(15, 23, 42, 0.04);
   overflow: hidden;
-  border: 1px solid $border-light;
+  border: 1px solid rgba(148, 163, 184, 0.18);
 
   &.is-collapsed {
     .section-content {
@@ -353,28 +365,28 @@ const fieldItemBaseClass = (field: DetailFieldLike) => [
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px $spacing-lg;
-    background-color: #f8fafc;
-    border-bottom: 1px solid $border-light;
-    border-left: 3px solid $primary-color;
+    padding: 16px 20px;
+    background: rgba(248, 250, 252, 0.9);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    border-left: 0;
     cursor: default;
-    transition: background-color 0.15s;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
 
     &:hover {
-      background-color: #f1f5f9;
+      background-color: #f8fbff;
     }
 
     .section-title {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 700;
       color: $text-main;
 
       .section-icon {
         font-size: 16px;
-        color: $primary-color;
+        color: #1d4ed8;
       }
     }
 
@@ -409,6 +421,17 @@ const fieldItemBaseClass = (field: DetailFieldLike) => [
       grid-template-columns: var(--detail-label-width) minmax(0, 1fr);
       column-gap: var(--detail-field-gap);
       align-items: flex-start;
+      padding: 14px 16px;
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.84);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+
+      &:hover {
+        border-color: rgba(59, 130, 246, 0.18);
+        box-shadow: 0 12px 24px rgba(148, 163, 184, 0.12);
+        transform: translateY(-1px);
+      }
 
       &.field-image {
         display: flex;
@@ -439,7 +462,7 @@ const fieldItemBaseClass = (field: DetailFieldLike) => [
         font-size: 13px;
         color: $text-secondary;
         line-height: 22px;
-        font-weight: 500;
+        font-weight: 700;
         white-space: normal;
         overflow-wrap: anywhere;
         word-break: break-word;
@@ -463,12 +486,13 @@ const fieldItemBaseClass = (field: DetailFieldLike) => [
       display: flex;
       flex-direction: column;
       align-items: flex-start;
+      width: 100%;
 
       .field-label {
-        margin-bottom: 4px;
+        margin-bottom: 6px;
         color: $text-secondary;
         font-size: 13px;
-        font-weight: 500;
+        font-weight: 700;
         white-space: normal;
         overflow-wrap: anywhere;
         word-break: break-word;
@@ -481,6 +505,13 @@ const fieldItemBaseClass = (field: DetailFieldLike) => [
         overflow-wrap: anywhere;
         word-break: break-word;
       }
+    }
+
+    .empty-space-card {
+      min-height: 100%;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(248, 250, 252, 0.75), rgba(255, 255, 255, 0.45));
+      border: 1px dashed rgba(148, 163, 184, 0.24);
     }
   }
 }

@@ -13,6 +13,7 @@
 <template>
   <div
     class="wysiwyg-layout-designer"
+    :class="`render-mode-${renderMode}`"
     data-testid="layout-designer"
   >
     <DesignerToolbar
@@ -48,6 +49,8 @@
         :render-mode="renderMode"
         :search-query="searchQuery"
         :filtered-field-groups="filteredFieldGroups"
+        :assigned-field-count="assignedFieldCount"
+        :total-field-count="totalAvailableFieldCount"
         :is-group-expanded="isGroupExpanded"
         :can-add-field="canAddField"
         :get-disabled-reason="getDisabledReason"
@@ -67,6 +70,9 @@
         :is-drag-over-canvas="isDragOverCanvas"
         :resize-hint="resizeHint"
         :resize-hint-style="resizeHintStyle"
+        :total-fields="canvasFieldCount"
+        :required-fields="canvasRequiredFieldCount"
+        :section-count="canvasSectionCount"
         @canvas-drop="handleCanvasDrop"
         @canvas-drag-over="handleCanvasDragOver"
         @canvas-drag-leave="handleCanvasDragLeave"
@@ -96,6 +102,20 @@
             @section-click="maybeSelectSection"
           >
             <template
+              v-for="renderSection in designerRenderSections"
+              :key="`header-${renderSection.id}`"
+              #[`section-header-${renderSection.id}`]
+            >
+              <DesignerSectionHeader
+                :section-id="renderSection.id"
+                :title="String(renderSection.title || '')"
+                :selected="isDesignMode && selectedId === renderSection.id"
+                :interactive="isDesignMode"
+                :select-section="selectSection"
+                @title-update="updateSectionTitle"
+              />
+            </template>
+            <template
               v-for="(renderSection, sectionIndex) in designerRenderSections"
               :key="`slot-${renderSection.id}`"
               #[`section-${renderSection.id}`]
@@ -106,6 +126,7 @@
                 :data-section-position="renderSection.position"
                 :render-section="renderSection"
                 :section-index="sectionIndex"
+                :total-section-count="designerRenderSections.length"
                 :is-design-mode="isDesignMode"
                 :selected-id="selectedId"
                 :active-tab-name="activeTabs[renderSection.id]"
@@ -113,6 +134,7 @@
                 :size-feedback-field-id="sizeFeedbackFieldId"
                 :sample-data="sampleData"
                 :card-titles="designerCardTitles"
+                :section-action-labels="designerSectionActionLabels"
                 :to-canvas-field="toCanvasField"
                 :field-to-design-display-field="fieldToDesignDisplayField"
                 :get-sample-value="getSampleValue"
@@ -120,9 +142,11 @@
                 :maybe-select-section="maybeSelectSection"
                 :maybe-select-field="maybeSelectField"
                 :remove-field="removeField"
+                :update-field-label="updateFieldLabel"
                 :handle-field-size-reset="handleFieldSizeReset"
                 :handle-field-resize-start="handleFieldResizeStart"
                 :toggle-section-collapse="toggleSectionCollapse"
+                :move-section="moveSection"
                 :delete-section="deleteSection"
                 :handle-tab-drop="handleTabDrop"
                 :handle-collapse-drop="handleCollapseDrop"
@@ -162,6 +186,7 @@
         :section-props="sectionProps"
         :available-spans="availableSpans"
         :available-span-columns="availableSpanColumns"
+        :visibility-field-options="visibilityFieldOptions"
         :layout-mode="layoutMode"
         :mode="mode"
         :translation-mode="translationMode"
@@ -191,6 +216,7 @@ import DesignerFieldPanel from '@/components/designer/DesignerFieldPanel.vue'
 import DesignerPropertyPanel from '@/components/designer/DesignerPropertyPanel.vue'
 import DesignerCanvas from '@/components/designer/DesignerCanvas.vue'
 import DesignerCanvasSectionRenderer from '@/components/designer/DesignerCanvasSectionRenderer.vue'
+import DesignerSectionHeader from '@/components/designer/DesignerSectionHeader.vue'
 import DesignerHistoryPanel from '@/components/designer/DesignerHistoryPanel.vue'
 import BaseDetailPage, { type ReverseRelationField } from '@/components/common/BaseDetailPage.vue'
 import { canAddFieldInDesigner, getFieldDisabledReason } from '@/platform/layout/designerFieldGuard'
@@ -364,6 +390,11 @@ const designerCardTitles = computed(() => ({
   sidebarOnlyHeight: fallbackText('system.pageLayout.designer.hints.sidebarHeightOnly', 'Sidebar field supports height resize only')
 }))
 
+const designerSectionActionLabels = computed(() => ({
+  moveUp: fallbackText('system.pageLayout.designer.actions.moveSectionUp', 'Move up'),
+  moveDown: fallbackText('system.pageLayout.designer.actions.moveSectionDown', 'Move down')
+}))
+
 const { filteredFieldGroups, normalizeAvailableFields } = useDesignerPalette({
   mode: computed(() => props.mode),
   availableFields,
@@ -449,6 +480,7 @@ function canAddField(field: FieldDefinition): boolean {
 
 const {
   isFieldAdded,
+  addedFieldCodes,
   notifyUnsupportedField,
   buildLayoutField,
   addFieldToContainer,
@@ -465,14 +497,79 @@ const {
   t
 })
 
+const totalAvailableFieldCount = computed(() =>
+  availableFields.value.filter((field) => canAddField(field) && field.code !== '$empty_space$').length
+)
+const assignedFieldCount = computed(() =>
+  [...new Set(addedFieldCodes.value)].filter((code) => code !== '$empty_space$').length
+)
+
+const countSectionFields = (config: LayoutConfig): { total: number; required: number } => {
+  const countFields = (fields: LayoutField[] | undefined) =>
+    (fields || []).reduce(
+      (acc, field) => {
+        if (!field || field.fieldType === 'empty' || field.fieldCode === '$empty_space$') return acc
+        acc.total += 1
+        if (field.required) acc.required += 1
+        return acc
+      },
+      { total: 0, required: 0 }
+    )
+
+  return (config.sections || []).reduce(
+    (acc, section) => {
+      if (section.type === 'tab') {
+        for (const tab of section.tabs || []) {
+          const counts = countFields(tab.fields)
+          acc.total += counts.total
+          acc.required += counts.required
+        }
+        return acc
+      }
+
+      if (section.type === 'collapse') {
+        for (const item of section.items || []) {
+          const counts = countFields(item.fields)
+          acc.total += counts.total
+          acc.required += counts.required
+        }
+        return acc
+      }
+
+      const counts = countFields(section.fields)
+      acc.total += counts.total
+      acc.required += counts.required
+      return acc
+    },
+    { total: 0, required: 0 }
+  )
+}
+
+const canvasFieldStats = computed(() => countSectionFields(layoutConfig.value))
+const canvasFieldCount = computed(() => canvasFieldStats.value.total)
+const canvasRequiredFieldCount = computed(() => canvasFieldStats.value.required)
+const canvasSectionCount = computed(() => (layoutConfig.value.sections || []).length)
+const visibilityFieldOptions = computed(() =>
+  availableFields.value
+    .filter((field) => field.code !== '$empty_space$' && field.code !== fieldProps.value.fieldCode)
+    .map((field) => ({
+      label: String(field.name || field.displayName || field.code),
+      value: String(field.code)
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label))
+)
+
 let showPropertySizeFeedbackFromCanvas: (fieldId: string) => Promise<void> | void = () => {}
 
 const {
   addSection,
   handleFieldClick,
   handleFieldPropertyUpdate,
+  updateFieldLabel,
+  updateSectionTitle,
   handleFieldSizeReset,
   handleSectionPropertyUpdate,
+  moveSection,
   removeField,
   deleteSection,
   toggleSectionCollapse
@@ -485,6 +582,7 @@ const {
   selectedSection,
   elementType,
   fieldProps,
+  sectionProps,
   activeTabs,
   canAddField,
   notifyUnsupportedField,

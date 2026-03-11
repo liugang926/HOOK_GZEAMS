@@ -38,9 +38,10 @@ function buildInvalidLayoutConfig() {
 }
 
 test.describe('Layout Designer MinHeight Validation Regression', () => {
-  test('should block save when layout contains invalid minHeight and avoid API patch', async ({ page }) => {
+  test('should normalize invalid minHeight on load and save corrected layout config', async ({ page }) => {
     const layoutConfig = buildInvalidLayoutConfig()
     let patchCalls = 0
+    let patchedLayoutConfig: Record<string, any> | null = null
 
     await page.addInitScript(() => {
       localStorage.setItem('access_token', 'e2e-designer-min-height-token')
@@ -96,9 +97,11 @@ test.describe('Layout Designer MinHeight Validation Regression', () => {
 
       if (pathname.endsWith(`/api/system/page-layouts/${LAYOUT_ID}/`) && method === 'PATCH') {
         patchCalls += 1
+        const body = route.request().postDataJSON() as Record<string, any>
+        patchedLayoutConfig = (body.layoutConfig || body.layout_config || null) as Record<string, any> | null
         return fulfillSuccess(route, {
           id: LAYOUT_ID,
-          layoutConfig
+          layoutConfig: patchedLayoutConfig || layoutConfig
         })
       }
 
@@ -161,9 +164,17 @@ test.describe('Layout Designer MinHeight Validation Regression', () => {
     )
     await waitForDesignerReady(page)
 
+    const assetNameField = page.locator('[data-testid="layout-canvas-field"][data-field-code="assetName"]').first()
+    await expect(assetNameField).toBeVisible()
+    await assetNameField.click({ position: { x: 4, y: 4 } })
+
+    const minHeightInput = page.locator('[data-testid="field-prop-minHeight"] input').first()
+    await expect(minHeightInput).toHaveValue('48')
+
     await page.getByTestId('layout-save-button').click()
 
-    await expect(page.locator('.el-message--error')).toContainText('minHeight must be an integer between 44-720')
-    expect(patchCalls).toBe(0)
+    await expect.poll(() => patchCalls).toBeGreaterThan(0)
+    await expect(page.locator('.el-message--error')).toHaveCount(0)
+    await expect.poll(() => patchedLayoutConfig?.sections?.[0]?.fields?.[0]?.minHeight).toBe(48)
   })
 })

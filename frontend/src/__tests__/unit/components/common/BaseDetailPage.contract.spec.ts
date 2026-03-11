@@ -89,6 +89,7 @@ const mountPage = async (
         }),
         'el-form': defineComponent({
           name: 'ElForm',
+          props: ['model', 'rules'],
           template: '<form><slot /></form>'
         }),
         'el-form-item': defineComponent({
@@ -201,5 +202,101 @@ describe('BaseDetailPage contract', () => {
 
     expect(wrapper.text()).toContain('变更记录')
     expect(wrapper.text()).toContain('Organization::org-1')
+  })
+  it('builds runtime validation rules from layout field config in edit mode', async () => {
+    const wrapper = await mountPage({
+      editMode: true,
+      formData: {
+        name: ''
+      },
+      sections: [
+        {
+          name: 'basic',
+          title: 'Basic',
+          fields: [
+            {
+              prop: 'name',
+              label: 'Name',
+              required: true,
+              min_length: 2,
+              max_length: 10,
+              regex_pattern: '^[A-Z].*$'
+            }
+          ]
+        }
+      ]
+    })
+
+    const form = wrapper.findComponent({ name: 'ElForm' })
+    const rules = form.props('rules') as Record<string, any[]>
+
+    expect(Array.isArray(rules.name)).toBe(true)
+    expect(rules.name).toHaveLength(4)
+  })
+
+  it('skips generated validation rules for hidden fields', async () => {
+    const wrapper = await mountPage({
+      editMode: true,
+      formData: {
+        secret: ''
+      },
+      sections: [
+        {
+          name: 'basic',
+          title: 'Basic',
+          fields: [
+            {
+              prop: 'secret',
+              label: 'Secret',
+              required: true,
+              hidden: true
+            }
+          ]
+        }
+      ]
+    })
+
+    const form = wrapper.findComponent({ name: 'ElForm' })
+    const rules = form.props('rules') as Record<string, any[]>
+
+    expect(rules.secret).toBeUndefined()
+  })
+
+  it('evaluates visibility rules against form data and skips hidden-by-rule validation', async () => {
+    const wrapper = await mountPage({
+      editMode: true,
+      formData: {
+        status: 'draft',
+        publishNote: ''
+      },
+      sections: [
+        {
+          name: 'basic',
+          title: 'Basic',
+          fields: [
+            {
+              prop: 'status',
+              label: 'Status'
+            },
+            {
+              prop: 'publishNote',
+              label: 'Publish Note',
+              required: true,
+              visibilityRule: {
+                field: 'status',
+                operator: 'eq',
+                value: 'published'
+              }
+            }
+          ]
+        }
+      ]
+    })
+
+    const form = wrapper.findComponent({ name: 'ElForm' })
+    const rules = form.props('rules') as Record<string, any[]>
+
+    expect(rules.publishNote).toBeUndefined()
+    expect(wrapper.text()).not.toContain('Publish Note')
   })
 })

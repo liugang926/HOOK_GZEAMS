@@ -187,4 +187,44 @@ describe('detailSchemaProjector', () => {
       relatedObjectCode: 'Maintenance'
     })
   })
+
+  it('combines collapse container and item titles for detail section headers', () => {
+    const schema: RenderSchema = {
+      mode: 'readonly',
+      fieldOrder: ['memo'],
+      sections: [
+        {
+          id: 'notes::collapse::memo',
+          title: 'Memo',
+          kind: 'collapse',
+          containerId: 'notes',
+          containerTitle: 'Notes',
+          itemId: 'memo',
+          itemTitle: 'Memo',
+          columns: 1,
+          collapsible: true,
+          collapsed: false,
+          fields: [
+            { code: 'memo', label: 'Memo', fieldType: 'textarea', span: 1, required: false, readonly: true, visible: true }
+          ]
+        }
+      ]
+    }
+
+    const sections = projectDetailSectionsFromRenderSchema(
+      schema,
+      [{ code: 'memo', name: 'Memo', fieldType: 'textarea' } as any],
+      {
+        fieldToDetailField: (field: any) => ({
+          prop: field.code,
+          label: field.name,
+          type: 'rich_text'
+        }),
+        shouldSkipField: () => false
+      }
+    )
+
+    expect(sections).toHaveLength(1)
+    expect(sections[0].title).toBe('Notes / Memo')
+  })
 })

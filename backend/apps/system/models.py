@@ -292,21 +292,26 @@ class FieldDefinition(BaseModel):
         db_comment='Display order'
     )
 
-    # === Reverse Relation Handling ===
-    # These fields identify reverse relations (e.g., maintenance_records from Maintenance -> Asset)
+    # === Reverse Relation Handling (DEPRECATED) ===
+    # These fields are superseded by ObjectRelationDefinition.
+    # Kept for backward compatibility; will be removed in a future version.
+    # New code should use ObjectRelationDefinition exclusively.
     is_reverse_relation = models.BooleanField(
         default=False,
-        db_comment='True if this field represents a reverse relation (related_name)'
+        help_text='DEPRECATED: Use ObjectRelationDefinition instead.',
+        db_comment='[DEPRECATED] True if this field represents a reverse relation (related_name)'
     )
     reverse_relation_model = models.CharField(
         max_length=200,
         blank=True,
-        db_comment='Path to model that owns this relation (e.g., apps.lifecycle.models.Maintenance)'
+        help_text='DEPRECATED: Use ObjectRelationDefinition.target_object_code instead.',
+        db_comment='[DEPRECATED] Path to model that owns this relation'
     )
     reverse_relation_field = models.CharField(
         max_length=100,
         blank=True,
-        db_comment='FK field name on related model (e.g., asset)'
+        help_text='DEPRECATED: Use ObjectRelationDefinition.target_fk_field instead.',
+        db_comment='[DEPRECATED] FK field name on related model'
     )
     RELATION_DISPLAY_CHOICES = [
         ('inline_editable', 'Inline Editable Table'),
@@ -318,7 +323,8 @@ class FieldDefinition(BaseModel):
         max_length=20,
         choices=RELATION_DISPLAY_CHOICES,
         default='tab_readonly',
-        db_comment='How to display reverse relations'
+        help_text='DEPRECATED: Use ObjectRelationDefinition.display_mode instead.',
+        db_comment='[DEPRECATED] How to display reverse relations'
     )
 
     # === Column Display Configuration (List View) ===

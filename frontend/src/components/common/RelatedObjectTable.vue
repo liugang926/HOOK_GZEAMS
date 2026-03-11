@@ -107,7 +107,6 @@ const relatedObjectCode = computed(() => {
     explicitTarget:
       props.targetObjectCode ||
       fieldAny.targetObjectCode ||
-      fieldAny.target_object_code ||
       relationTargetObjectCode.value,
     reverseRelationModel: props.field.reverseRelationModel,
     relationCode: props.field.code
@@ -318,7 +317,6 @@ function extractRecordPageFromResponse(payload: unknown): {
     source.targetObjectCode ||
     source.target_object_code ||
     ((source.relation as AnyRecord | undefined)?.targetObjectCode) ||
-    ((source.relation as AnyRecord | undefined)?.target_object_code) ||
     ''
   ).trim()
   return {

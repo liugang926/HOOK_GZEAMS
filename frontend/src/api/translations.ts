@@ -126,6 +126,7 @@ export const translationApi = {
     type?: string
     is_system?: boolean
     content_type_model?: string
+    object_id?: string
     field_name?: string
     page?: number
     page_size?: number

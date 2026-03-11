@@ -5,6 +5,7 @@ import { cloneLayoutConfig, generateId } from '@/utils/layoutValidation'
 import { resolveRelationTargetObjectCode } from '@/platform/reference/relationObjectCode'
 import { getDesignerFieldArrayRef } from '@/components/designer/designerContainerUtils'
 import { collectAddedFieldCodes } from '@/components/designer/designerTreeUtils'
+import { normalizeLayoutFieldAliases } from '@/components/designer/designerLayoutAdapters'
 import type { ReverseRelationField } from '@/components/common/BaseDetailPage.vue'
 import type {
   ContainerMeta,
@@ -42,12 +43,16 @@ export function useDesignerFieldCatalog(options: UseDesignerFieldCatalogOptions)
   function buildLayoutField(field: DesignerFieldDefinition): LayoutField {
     const fieldType = normalizeFieldType(field.fieldType || 'text')
     const componentProps = options.readComponentProps(field)
-
-    return {
+    const readNumericMeta = (value: unknown): number | undefined => {
+      const num = Number(value)
+      return Number.isFinite(num) ? num : undefined
+    }
+    const nextField: LayoutField = {
       id: generateId('field'),
       fieldCode: field.code,
       label: field.name,
       span: 1,
+      isSystem: field.isSystem,
       readonly: field.isReadonly || options.mode === 'readonly',
       visible: true,
       required: field.isRequired,
@@ -55,11 +60,24 @@ export function useDesignerFieldCatalog(options: UseDesignerFieldCatalogOptions)
       options: field.options,
       referenceObject: field.referenceObject || field.relatedObject,
       componentProps,
+      component_props: componentProps,
       dictionaryType: field.dictionaryType,
       defaultValue: field.defaultValue,
       placeholder: field.placeholder,
-      helpText: field.helpText
+      helpText: field.helpText,
+      minLength: readNumericMeta((field as any).minLength),
+      min_length: readNumericMeta((field as any).min_length),
+      maxLength: readNumericMeta((field as any).maxLength),
+      max_length: readNumericMeta((field as any).max_length),
+      minValue: readNumericMeta((field as any).minValue),
+      min_value: readNumericMeta((field as any).min_value),
+      maxValue: readNumericMeta((field as any).maxValue),
+      max_value: readNumericMeta((field as any).max_value),
+      regexPattern: typeof (field as any).regexPattern === 'string' ? (field as any).regexPattern : undefined,
+      regex_pattern: typeof (field as any).regex_pattern === 'string' ? (field as any).regex_pattern : undefined
     }
+
+    return normalizeLayoutFieldAliases(nextField)
   }
 
   function addFieldToContainer(field: DesignerFieldDefinition, meta: ContainerMeta) {

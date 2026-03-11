@@ -4,6 +4,7 @@ import {
   clickDesignerSectionHeader,
   waitForDesignerReady
 } from '../helpers/page-ready.helpers'
+import { waitForDetailPageReady } from '../helpers/detail-page.helpers'
 type AnyRecord = Record<string, any>
 
 const OBJECT_CODE = 'Asset'
@@ -218,8 +219,7 @@ test.describe('Layout Designer Section Save -> Detail Rendering Regression', () 
     await expect.poll(() => getFirstSectionTitle(activeLayoutConfig)).toBe(UPDATED_SECTION_TITLE)
 
     await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
-    await expect(page.locator('.dynamic-detail-page').first()).toBeVisible()
-    await expect(page.locator('.load-error')).toHaveCount(0)
+    await waitForDetailPageReady(page)
     await expect(page.locator('.detail-sections .section-title', { hasText: UPDATED_SECTION_TITLE }).first()).toBeVisible()
     await expect(page.locator('.detail-content')).toContainText(recordPayload.assetName)
   })

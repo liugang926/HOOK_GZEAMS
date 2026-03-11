@@ -83,6 +83,8 @@ interface Props {
   objectIcon?: string
   /** Whether to show index column */
   showIndex?: boolean
+  /** Where toolbar actions should be rendered */
+  toolbarPlacement?: 'header' | 'table'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -92,7 +94,8 @@ const props = withDefaults(defineProps<Props>(), {
   defaultPageSize: 20,
   pageSizes: () => [10, 20, 50, 100],
   showIndex: true,
-  batchActions: () => []
+  batchActions: () => [],
+  toolbarPlacement: 'header'
 })
 
 // ============================================================================
@@ -192,6 +195,11 @@ const hasSelection = computed(() => selectedRows.value.length > 0)
 
 /** Whether batch actions are available */
 const hasBatchActions = computed(() => props.batchActions && props.batchActions.length > 0)
+
+/** Whether the main action toolbar should be rendered */
+const shouldRenderToolbar = computed(() => {
+  return Boolean(slots.toolbar) || objectActions.value.length > 0 || activeColumns.value.length > 0
+})
 
 /** Pagination layout */
 const paginationLayout = computed(() => {
@@ -867,29 +875,31 @@ defineExpose({
           </span>
         </div>
         <div class="page-toolbar">
-          <slot
-            name="toolbar"
-            :selected-rows="selectedRows"
-            :has-selection="hasSelection"
-          />
-          
-          <!-- Dynamic Actions -->
-          <el-button
-            v-for="action in objectActions"
-            :key="action.code"
-            :type="action.type === 'primary' ? 'primary' : 'default'"
-            @click="handleDynamicAction(action)"
-          >
-            {{ action.label }}
-          </el-button>
-          
-          <!-- Column Manager Integration -->
-          <ColumnManager 
-            :columns="activeColumns" 
-            :object-code="objectCode"
-            @save="handleColumnSave"
-            @reset="handleColumnReset"
-          />
+          <template v-if="props.toolbarPlacement === 'header' && shouldRenderToolbar">
+            <slot
+              name="toolbar"
+              :selected-rows="selectedRows"
+              :has-selection="hasSelection"
+            />
+
+            <!-- Dynamic Actions -->
+            <el-button
+              v-for="action in objectActions"
+              :key="action.code"
+              :type="action.type === 'primary' ? 'primary' : 'default'"
+              @click="handleDynamicAction(action)"
+            >
+              {{ action.label }}
+            </el-button>
+
+            <!-- Column Manager Integration -->
+            <ColumnManager
+              :columns="activeColumns"
+              :object-code="objectCode"
+              @save="handleColumnSave"
+              @reset="handleColumnReset"
+            />
+          </template>
         </div>
       </div>
 
@@ -1032,30 +1042,89 @@ defineExpose({
             </template>
           </div><!-- end .search-grid -->
 
-          <!-- Actions -->
-          <div class="search-actions">
-            <el-button
-              type="primary"
-              @click="handleSearch"
-            >
-              {{ $t('common.actions.search') }}
-            </el-button>
-            <el-button @click="handleReset">
-              {{ $t('common.actions.reset') }}
-            </el-button>
-            <el-button
-              v-if="needExpand"
-              link
-              type="primary"
-              @click="toggleSearchExpand"
-            >
-              {{ searchExpanded ? $t('common.actions.collapse') : $t('common.actions.expand') }}
-              <el-icon>
-                <component :is="searchExpanded ? 'arrow-up' : 'arrow-down'" />
-              </el-icon>
-            </el-button>
+          <div class="search-toolbar-row">
+            <ul class="search-toolbar-list">
+              <li class="search-toolbar-list__item search-toolbar-list__item--left">
+                <div class="search-actions">
+                  <el-button
+                    type="primary"
+                    @click="handleSearch"
+                  >
+                    {{ $t('common.actions.search') }}
+                  </el-button>
+                  <el-button @click="handleReset">
+                    {{ $t('common.actions.reset') }}
+                  </el-button>
+                  <el-button
+                    v-if="needExpand"
+                    link
+                    type="primary"
+                    @click="toggleSearchExpand"
+                  >
+                    {{ searchExpanded ? $t('common.actions.collapse') : $t('common.actions.expand') }}
+                    <el-icon>
+                      <component :is="searchExpanded ? 'arrow-up' : 'arrow-down'" />
+                    </el-icon>
+                  </el-button>
+                </div>
+              </li>
+
+              <li
+                v-if="props.toolbarPlacement === 'table' && shouldRenderToolbar"
+                class="search-toolbar-list__item search-toolbar-list__item--right"
+              >
+                <slot
+                  name="toolbar"
+                  :selected-rows="selectedRows"
+                  :has-selection="hasSelection"
+                />
+
+                <el-button
+                  v-for="action in objectActions"
+                  :key="action.code"
+                  :type="action.type === 'primary' ? 'primary' : 'default'"
+                  @click="handleDynamicAction(action)"
+                >
+                  {{ action.label }}
+                </el-button>
+
+                <ColumnManager
+                  :columns="activeColumns"
+                  :object-code="objectCode"
+                  @save="handleColumnSave"
+                  @reset="handleColumnReset"
+                />
+              </li>
+            </ul>
           </div>
         </el-form>
+      </div>
+
+      <div
+        v-if="props.toolbarPlacement === 'table' && shouldRenderToolbar && normalizedSearchFields.length === 0"
+        class="table-toolbar"
+      >
+        <slot
+          name="toolbar"
+          :selected-rows="selectedRows"
+          :has-selection="hasSelection"
+        />
+
+        <el-button
+          v-for="action in objectActions"
+          :key="action.code"
+          :type="action.type === 'primary' ? 'primary' : 'default'"
+          @click="handleDynamicAction(action)"
+        >
+          {{ action.label }}
+        </el-button>
+
+        <ColumnManager
+          :columns="activeColumns"
+          :object-code="objectCode"
+          @save="handleColumnSave"
+          @reset="handleColumnReset"
+        />
       </div>
 
       <!-- Batch Actions Toolbar -->
@@ -1346,8 +1415,9 @@ defineExpose({
 /* ==== Unified Card ==== */
 .list-card {
   background-color: $bg-card;
-  border-radius: $radius-large;
-  box-shadow: $shadow-md;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 22px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.04);
   overflow: hidden;
 }
 
@@ -1356,8 +1426,9 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: $spacing-md $spacing-lg;
-  border-bottom: 1px solid $border-light;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.92));
 
   .page-title-group {
     display: flex;
@@ -1367,8 +1438,9 @@ defineExpose({
 
   .page-title {
     margin: 0;
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     color: $text-main;
   }
 
@@ -1382,13 +1454,15 @@ defineExpose({
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: wrap;
   }
 }
 
 /* ==== Search ==== */
 .search-form-container {
-  padding: $spacing-md $spacing-lg;
-  border-bottom: 1px solid $border-light;
+  padding: 18px 22px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
 
   .search-form {
     .search-grid {
@@ -1408,14 +1482,53 @@ defineExpose({
     }
 
     :deep(.el-form-item) {
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+    }
+
+    .search-toolbar-row {
+      padding-top: 6px;
+    }
+
+    .search-toolbar-list {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      flex-wrap: wrap;
+
+      @media (max-width: 1200px) {
+        align-items: flex-start;
+      }
+    }
+
+    .search-toolbar-list__item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .search-toolbar-list__item--right {
+      margin-left: auto;
+      justify-content: flex-end;
+
+      @media (max-width: 1200px) {
+        width: 100%;
+        margin-left: 0;
+        justify-content: flex-start;
+      }
     }
 
     .search-actions {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding-top: 4px;
+      flex-wrap: wrap;
     }
   }
 }
@@ -1434,14 +1547,26 @@ defineExpose({
   }
 }
 
+/* ==== Table Toolbar ==== */
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 22px 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  flex-wrap: wrap;
+}
+
 /* ==== Batch Toolbar ==== */
 .batch-toolbar {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px $spacing-lg;
-  background-color: $primary-light;
-  border-bottom: 1px solid #d9ecff;
+  padding: 12px 22px;
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.08), rgba(255, 255, 255, 0.92));
+  border-bottom: 1px solid rgba(59, 130, 246, 0.14);
+  flex-wrap: wrap;
 
   .selection-info {
     margin-right: 10px;
@@ -1456,21 +1581,24 @@ defineExpose({
   overflow: auto;
 
   :deep(.el-table) {
+    --el-table-border-color: rgba(148, 163, 184, 0.14);
+    --el-table-header-bg-color: #f8fafc;
+    --el-table-row-hover-bg-color: rgba(37, 99, 235, 0.03);
+
     /* Compact rows */
     .el-table__row {
       td {
-        padding: 8px 0;
+        padding: 10px 0;
       }
     }
 
     /* Header */
     th.el-table__cell {
-      background-color: #f8fafc;
       color: $text-main;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 13px;
       letter-spacing: 0.3px;
-      padding: 10px 0;
+      padding: 12px 0;
       border-bottom: 2px solid $border-color;
     }
 
@@ -1496,20 +1624,22 @@ defineExpose({
 .pagination-container {
   display: flex;
   justify-content: flex-end;
-  padding: $spacing-md $spacing-lg;
-  border-top: 1px solid $border-light;
+  padding: 16px 22px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(248, 250, 252, 0.72);
 }
 
 /* ==== Mobile Cards ==== */
 .mobile-card-container {
-  padding: $spacing-md;
+  padding: 18px;
 
   .mobile-card {
     background: $bg-card;
     margin-bottom: 12px;
-    padding: 12px;
-    border-radius: $radius-base;
-    box-shadow: $shadow-sm;
+    padding: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 18px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
 
     .card-header-row {
       display: flex;

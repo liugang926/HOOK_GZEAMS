@@ -1,4 +1,4 @@
-﻿"""
+"""
 Business Object Service for hybrid architecture.
 
 Provides unified access to both hardcoded Django models and low-code
@@ -35,6 +35,8 @@ class BusinessObjectService:
     @staticmethod
     def _iter_supported_model_fields(model_class):
         for field in model_class._meta.get_fields():
+            # NOTE: is_reverse_relation detection is used here only for filtering.
+            # Reverse relation metadata is now managed by ObjectRelationDefinition.
             is_reverse_relation = bool(field.auto_created and getattr(field, 'one_to_many', False))
             if is_reverse_relation:
                 continue

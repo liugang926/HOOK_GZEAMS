@@ -26,11 +26,10 @@ defineEmits(['update:modelValue', 'change'])
 
 const isMultiple = computed(() => {
   const field = (props.field || {}) as AnyRecord
-  const fieldType = String(field.fieldType || field.field_type || '').toLowerCase()
+  const fieldType = String(field.fieldType || '').toLowerCase()
   return (
     field.multiple === true ||
     field.componentProps?.multiple === true ||
-    field.component_props?.multiple === true ||
     fieldType === 'multi_department' ||
     fieldType === 'multidepartment'
   )
@@ -39,27 +38,22 @@ const isMultiple = computed(() => {
 const lookupField = computed(() => {
   const field = (props.field || {}) as AnyRecord
   const componentProps = {
-    ...(field.component_props || {}),
     ...(field.componentProps || {}),
     multiple: isMultiple.value
   }
 
   return {
     ...field,
-    fieldType: field.fieldType || field.field_type || 'department',
-    referenceObject: field.referenceObject || field.reference_object || 'Department',
+    fieldType: field.fieldType || 'department',
+    referenceObject: field.referenceObject || 'Department',
     referenceDisplayField:
       field.referenceDisplayField ||
-      field.reference_display_field ||
       field.displayField ||
-      field.display_field ||
       'name',
     referenceSecondaryField:
       field.referenceSecondaryField ||
-      field.reference_secondary_field ||
       'code',
-    componentProps,
-    component_props: componentProps
+    componentProps
   }
 })
 </script>

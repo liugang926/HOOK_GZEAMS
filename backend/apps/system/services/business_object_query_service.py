@@ -325,6 +325,20 @@ class BusinessObjectQueryService:
         normalized_context = context if context in {"form", "detail", "list"} else "form"
         rows = []
         queryset = obj.field_definitions.filter(is_deleted=False).order_by("sort_order")
+
+        def _snake_to_camel(name: str) -> str:
+            parts = name.split('_')
+            return parts[0] + ''.join(p.capitalize() for p in parts[1:])
+
+        def _with_camel_keys(d: dict) -> dict:
+            extra = {}
+            for k, v in d.items():
+                ck = _snake_to_camel(k)
+                if ck != k and ck not in d:
+                    extra[ck] = v
+            d.update(extra)
+            return d
+
         for field in queryset:
             if getattr(field, "is_reverse_relation", False) and not include_relations:
                 continue
@@ -332,7 +346,7 @@ class BusinessObjectQueryService:
                 continue
             section_meta = get_field_section_metadata(obj.code, field.code, locale=locale)
             rows.append(
-                {
+                _with_camel_keys({
                     "field_name": field.code,
                     "display_name": field.name,
                     "field_type": field.field_type,
@@ -355,7 +369,7 @@ class BusinessObjectQueryService:
                     "section_title_i18n": section_meta["section_title_i18n"],
                     "section_translation_key": section_meta["section_translation_key"],
                     "section_icon": section_meta["section_icon"],
-                }
+                })
             )
 
         return {

@@ -116,6 +116,22 @@ const defaultNormalizeDetailSpan = (rawSpan: unknown, rawColumns: unknown): numb
   return normalizeGridSpan24(rawSpan, rawColumns)
 }
 
+const resolveProjectedSectionTitle = (
+  section: RenderSchema['sections'][number],
+  fallbackTitle: any
+): any => {
+  if (section.kind !== 'collapse') return fallbackTitle
+
+  const containerTitle = typeof section.containerTitle === 'string' ? section.containerTitle.trim() : ''
+  const itemTitle = typeof section.itemTitle === 'string' ? section.itemTitle.trim() : ''
+
+  if (containerTitle && itemTitle && containerTitle !== itemTitle) {
+    return `${containerTitle} / ${itemTitle}`
+  }
+
+  return fallbackTitle
+}
+
 export function projectDetailSectionsFromRenderSchema(
   renderSchema: RenderSchema,
   fields: FieldDefinition[],
@@ -237,9 +253,13 @@ export function projectDetailSectionsFromRenderSchema(
     if (placedDetailFields.length === 0 && section.kind !== 'tab') continue
 
     const sectionName = String(section.id || `section_${sections.length + 1}`)
+    const projectedTitle = resolveProjectedSectionTitle(
+      section,
+      section.title || (getSectionTitle?.(sectionName) || sectionName)
+    )
     sections.push({
       name: sectionName,
-      title: section.title || (getSectionTitle?.(sectionName) || sectionName),
+      title: projectedTitle,
       type: section.kind || 'section',
       position: section.position,
       icon: getSectionIcon?.(sectionName),
@@ -251,4 +271,3 @@ export function projectDetailSectionsFromRenderSchema(
 
   return sections
 }
-

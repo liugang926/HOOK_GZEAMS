@@ -2661,7 +2661,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             )
             relation_name = str(item.get('relation_name') or target_object_code or relation_code).strip()
 
-            payload.append({
+            payload.append(self._with_camel_case_keys({
                 **self._build_field_identifier_payload(relation_code, force_strict=strict_identifier),
                 'name': relation_name,
                 'label': relation_name,
@@ -2687,7 +2687,6 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 'reverse_relation_model': reverse_relation_model,
                 'reverse_relation_field': str(item.get('target_fk_field') or '').strip(),
                 'relation_display_mode': str(item.get('display_mode') or 'tab_readonly'),
-                'locale': request_locale,
                 'target_object_code': target_object_code,
                 'target_fk_field': str(item.get('target_fk_field') or '').strip(),
                 'relation_kind': str(item.get('relation_kind') or '').strip(),
@@ -2697,7 +2696,8 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 'group_name': str(item.get('group_name') or '').strip(),
                 'group_order': int(item.get('group_order') or 0),
                 'default_expanded': bool(item.get('default_expanded')),
-            })
+                'locale': request_locale,
+            }))
 
         return payload
 
@@ -2743,6 +2743,28 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             return True
         return False
 
+    @staticmethod
+    def _snake_to_camel(name: str) -> str:
+        """Convert snake_case key to camelCase."""
+        parts = name.split('_')
+        return parts[0] + ''.join(p.capitalize() for p in parts[1:])
+
+    @classmethod
+    def _with_camel_case_keys(cls, payload: dict) -> dict:
+        """Add camelCase aliases for all snake_case keys in the payload.
+
+        Keys that are already camelCase or single-word are left unchanged.
+        If a camelCase version already exists in the payload it is NOT
+        overwritten, so manually-set canonical keys take precedence.
+        """
+        extra = {}
+        for key, value in payload.items():
+            camel = cls._snake_to_camel(key)
+            if camel != key and camel not in payload:
+                extra[camel] = value
+        payload.update(extra)
+        return payload
+
     def _format_field_definition(
         self,
         fd,
@@ -2764,7 +2786,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             localized_options = fd.options
         section_meta = get_field_section_metadata(self._object_meta.code, fd.code, locale=resolved_locale)
 
-        return {
+        return self._with_camel_case_keys({
             **self._build_field_identifier_payload(fd.code, force_strict=strict_identifier),
             'name': localized_name,
             'label': localized_name,
@@ -2802,7 +2824,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             'section_translation_key': section_meta['section_translation_key'],
             'section_icon': section_meta['section_icon'],
             'locale': resolved_locale,
-        }
+        })
 
     def _format_model_field(
         self,
@@ -2842,7 +2864,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         )
         section_meta = get_field_section_metadata(self._object_meta.code, fd.field_name, locale=resolved_locale)
 
-        return {
+        return self._with_camel_case_keys({
             **self._build_field_identifier_payload(fd.field_name, force_strict=strict_identifier),
             'name': localized_display_name,
             'label': localized_display_name,
@@ -2880,7 +2902,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 model_path=str(getattr(fd, 'reverse_relation_model', '') or getattr(fd, 'reference_model_path', '') or ''),
             ),
             'locale': resolved_locale,
-        }
+        })
 
     def _get_model_field_choices(self, fd) -> list:
         """

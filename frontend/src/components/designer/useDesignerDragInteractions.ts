@@ -17,6 +17,8 @@ type SortableMoveEvent = {
   oldIndex?: number
   newIndex?: number
   item?: Element | null
+  related?: Element | null
+  willInsertAfter?: boolean
 }
 
 interface UseDesignerDragInteractionsOptions {
@@ -33,12 +35,77 @@ interface UseDesignerDragInteractionsOptions {
   commitLayoutChange: (newConfig: LayoutConfig, description: string, previousConfig?: LayoutConfig) => void
 }
 
+const INSERT_BEFORE_CLASS = 'drag-insert-before'
+const INSERT_AFTER_CLASS = 'drag-insert-after'
+const JUST_DROPPED_CLASS = 'field-just-dropped'
+const DROP_ZONE_CLASS = 'drop-zone-active'
+
+const removeClasses = (root: ParentNode | null | undefined, selectors: string[]) => {
+  if (!root) return
+  for (const selector of selectors) {
+    root.querySelectorAll<HTMLElement>(selector).forEach((node) => node.classList.remove(selector.slice(1)))
+  }
+}
+
+export const clearDesignerDragMarkers = (root: ParentNode | null | undefined) => {
+  if (!root) return
+  removeClasses(root, [
+    `.${INSERT_BEFORE_CLASS}`,
+    `.${INSERT_AFTER_CLASS}`,
+    `.${DROP_ZONE_CLASS}`
+  ])
+}
+
+export const applyDesignerInsertIndicator = (
+  root: ParentNode | null | undefined,
+  target: Element | null | undefined,
+  willInsertAfter: boolean
+) => {
+  if (!root) return
+  clearDesignerDragMarkers(root)
+  const targetField = target instanceof HTMLElement ? target.closest('.field-renderer') as HTMLElement | null : null
+  if (targetField) {
+    targetField.classList.add(willInsertAfter ? INSERT_AFTER_CLASS : INSERT_BEFORE_CLASS)
+    return
+  }
+
+  const targetContainer = target instanceof HTMLElement ? target.closest('.designer-fields-container') as HTMLElement | null : null
+  targetContainer?.classList.add(DROP_ZONE_CLASS)
+}
+
+export const flashDroppedField = (
+  root: ParentNode | null | undefined,
+  fieldId: string | null | undefined,
+  durationMs = 650
+) => {
+  if (!root || !fieldId) return
+  const target = root.querySelector<HTMLElement>(`.field-renderer[data-field-id="${fieldId}"]`)
+  if (!target) return
+  target.classList.remove(JUST_DROPPED_CLASS)
+  void target.offsetWidth
+  target.classList.add(JUST_DROPPED_CLASS)
+  window.setTimeout(() => {
+    target.classList.remove(JUST_DROPPED_CLASS)
+  }, durationMs)
+}
+
 export function useDesignerDragInteractions(options: UseDesignerDragInteractionsOptions) {
   let sortableInstances: Sortable[] = []
 
   const destroySortables = () => {
     for (const inst of sortableInstances) inst.destroy()
     sortableInstances = []
+  }
+
+  const getCanvasRoot = () => options.canvasContentElement.value
+
+  const clearDragMarkers = () => {
+    clearDesignerDragMarkers(getCanvasRoot())
+  }
+
+  const showDroppedFeedback = async (fieldId: string | null | undefined) => {
+    await nextTick()
+    flashDroppedField(getCanvasRoot(), fieldId)
   }
 
   const applySortableMove = (evt: SortableMoveEvent) => {
@@ -69,6 +136,7 @@ export function useDesignerDragInteractions(options: UseDesignerDragInteractions
     toArr.splice(insertIndex, 0, moved)
 
     options.commitLayoutChange(newConfig, `Move field ${moved.fieldCode || moved.id}`, previousConfig)
+    void showDroppedFeedback(moved.id)
   }
 
   const initSortables = async () => {
@@ -89,9 +157,22 @@ export function useDesignerDragInteractions(options: UseDesignerDragInteractions
         group: { name: 'layout-fields', pull: true, put: true },
         animation: 180,
         draggable: '.field-renderer',
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
         filter: 'input, textarea, button, select, option, .el-input, .el-textarea, .el-select, .el-date-editor, .field-resize-handle',
         preventOnFilter: true,
-        onEnd: applySortableMove
+        onMove: (evt) => {
+          applyDesignerInsertIndicator(getCanvasRoot(), evt.related, Boolean(evt.willInsertAfter))
+          return true
+        },
+        onStart: () => {
+          clearDragMarkers()
+        },
+        onEnd: (evt) => {
+          clearDragMarkers()
+          applySortableMove(evt as SortableMoveEvent)
+        }
       })
       sortableInstances.push(inst)
     }
@@ -113,6 +194,7 @@ export function useDesignerDragInteractions(options: UseDesignerDragInteractions
     options.draggedField.value = null
     options.isDragOverCanvas.value = false
     options.dragOverSection.value = null
+    clearDragMarkers()
   }
 
   function handleCanvasDragOver(event: DragEvent) {
@@ -142,17 +224,26 @@ export function useDesignerDragInteractions(options: UseDesignerDragInteractions
     if (options.renderMode.value !== 'design') return
     event.preventDefault()
     event.stopPropagation()
+    // FP-3.4: highlight target section during cross-section drag
+    const sectionEl = (event.currentTarget as HTMLElement)?.closest('.designer-section-slot')
+    sectionEl?.classList.add('drag-over-target')
   }
 
   function handleSectionDragLeave(event: DragEvent) {
     if (options.renderMode.value !== 'design') return
     event.stopPropagation()
+    // FP-3.4: remove highlight when leaving section
+    const sectionEl = (event.currentTarget as HTMLElement)?.closest('.designer-section-slot')
+    sectionEl?.classList.remove('drag-over-target')
   }
 
   function handleSectionDrop(event: DragEvent) {
     if (options.renderMode.value !== 'design') return
     event.preventDefault()
     event.stopPropagation()
+    // FP-3.4: remove highlight on drop
+    const sectionEl = (event.currentTarget as HTMLElement)?.closest('.designer-section-slot')
+    sectionEl?.classList.remove('drag-over-target')
 
     const data = event.dataTransfer?.getData('field')
     if (!data) return
@@ -166,6 +257,12 @@ export function useDesignerDragInteractions(options: UseDesignerDragInteractions
       return
     }
     options.addFieldToContainer(field, { kind: 'section', sectionId })
+    void nextTick().then(() => {
+      const root = getCanvasRoot()
+      const target = Array.from(root?.querySelectorAll<HTMLElement>('.field-renderer[data-field-code]') || [])
+        .find((node) => node.dataset.fieldCode === field.code)
+      flashDroppedField(root, target?.dataset.fieldId || null)
+    })
   }
 
   function handleTabDrop(event: DragEvent) {
@@ -186,6 +283,12 @@ export function useDesignerDragInteractions(options: UseDesignerDragInteractions
       return
     }
     options.addFieldToContainer(field, { kind: 'tab', sectionId, tabId })
+    void nextTick().then(() => {
+      const root = getCanvasRoot()
+      const target = Array.from(root?.querySelectorAll<HTMLElement>('.field-renderer[data-field-code]') || [])
+        .find((node) => node.dataset.fieldCode === field.code)
+      flashDroppedField(root, target?.dataset.fieldId || null)
+    })
   }
 
   function handleCollapseDrop(event: DragEvent) {
@@ -206,6 +309,12 @@ export function useDesignerDragInteractions(options: UseDesignerDragInteractions
       return
     }
     options.addFieldToContainer(field, { kind: 'collapse', sectionId, collapseId })
+    void nextTick().then(() => {
+      const root = getCanvasRoot()
+      const target = Array.from(root?.querySelectorAll<HTMLElement>('.field-renderer[data-field-code]') || [])
+        .find((node) => node.dataset.fieldCode === field.code)
+      flashDroppedField(root, target?.dataset.fieldId || null)
+    })
   }
 
   return {

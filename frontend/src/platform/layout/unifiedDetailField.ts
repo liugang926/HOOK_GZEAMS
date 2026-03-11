@@ -91,12 +91,11 @@ const resolveMinHeight = (field: Record<string, any>): number | undefined => {
 
 export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailField {
   const code = String(field.code || field.fieldCode || '').trim()
-  const rawType = field.fieldType || field.field_type || field.type || 'text'
+  const rawType = field.fieldType || field.type || 'text'
   const normalizedType = normalizeFieldType(rawType)
   const options = field.options || []
   const componentProps = {
-    ...(field.componentProps || {}),
-    ...(field.component_props || {})
+    ...(field.componentProps || {})
   }
 
   const detailField: UnifiedDetailField = {
@@ -185,8 +184,6 @@ export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailF
 
     detailField.referenceObject = String(
       field.referenceObject ||
-      field.reference_object ||
-      field.reference_model_path ||
       field.referenceModelPath ||
       field.relatedObject ||
       componentProps.referenceObject ||
@@ -196,7 +193,6 @@ export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailF
 
     detailField.referenceDisplayField = String(
       field.referenceDisplayField ||
-      field.reference_display_field ||
       field.displayField ||
       componentProps.referenceDisplayField ||
       componentProps.displayField ||
@@ -205,7 +201,6 @@ export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailF
 
     detailField.referenceSecondaryField = String(
       field.referenceSecondaryField ||
-      field.reference_secondary_field ||
       componentProps.referenceSecondaryField ||
       componentProps.secondaryField ||
       'code'
@@ -233,7 +228,7 @@ export function toUnifiedDetailField(field: Record<string, any>): UnifiedDetailF
 export function buildRequiredFormRules(fields: Array<Record<string, any>>): Record<string, any> {
   const rules: Record<string, any> = {}
   for (const field of fields || []) {
-    const required = field.is_required || field.isRequired || field.required
+    const required = field.isRequired || field.required
     if (!required) continue
     const code = String(field.code || field.fieldCode || '').trim()
     if (!code) continue

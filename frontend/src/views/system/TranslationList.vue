@@ -7,6 +7,15 @@
     >
       <template #extra>
         <el-space>
+          <el-button
+            v-if="isFocusedObjectMode"
+            type="primary"
+            plain
+            @click="handleCreateFocusedObjectTranslation"
+          >
+            <el-icon><Plus /></el-icon>
+            {{ $t('system.translations.addFocusedObject') }}
+          </el-button>
           <el-button @click="handleExport">
             <el-icon><Download /></el-icon>
             {{ $t('common.actions.export') }}
@@ -47,6 +56,10 @@
             style="width: 150px"
             @change="loadTranslations"
           >
+            <el-option
+              value=""
+              :label="$t('common.all')"
+            />
             <el-option
               v-for="lang in languages"
               :key="lang.code"
@@ -99,6 +112,31 @@
         </el-form-item>
       </el-form>
     </el-card>
+
+    <el-alert
+      v-if="focusTargetLabel"
+      class="focus-alert"
+      type="info"
+      :closable="false"
+      show-icon
+    >
+      <template #title>
+        {{ $t('system.translations.focusObject', { target: focusTargetLabel }) }}
+      </template>
+      <template #default>
+        <el-space>
+          <span>{{ focusTargetCode }}</span>
+          <span>{{ $t('system.translations.focusCoverage', { configured: configuredLanguageCount, total: activeLanguageCount }) }}</span>
+          <el-button
+            link
+            type="primary"
+            @click="clearObjectFocus"
+          >
+            {{ $t('system.translations.clearFocus') }}
+          </el-button>
+        </el-space>
+      </template>
+    </el-alert>
 
     <!-- Statistics -->
     <el-row
@@ -166,7 +204,7 @@
             v-else
             class="key-text object-ref"
           >
-            {{ row.contentTypeModel }} #{{ row.objectId }}.{{ row.fieldName }}
+            {{ getContentTypeLabel(row.contentTypeModel) }} #{{ row.objectId }}.{{ row.fieldName }}
           </span>
         </template>
       </el-table-column>
@@ -272,6 +310,8 @@
     <TranslationDialog
       v-model:visible="dialogVisible"
       :translation="currentTranslation"
+      :preset="dialogPreset"
+      :lock-object-target="isFocusedObjectMode"
       :languages="languages"
       @success="loadTranslations"
     />
@@ -279,16 +319,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Download, Upload, Plus } from '@element-plus/icons-vue'
+import { useRoute, useRouter } from 'vue-router'
 import SectionBlock from '@/components/common/SectionBlock.vue'
 import TranslationDialog from '@/components/common/TranslationDialog.vue'
 import { translationApi, languageApi } from '@/api/translations'
 import type { Translation, Language } from '@/api/translations'
 
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 
 // State
 const loading = ref(false)
@@ -302,7 +345,10 @@ const filters = reactive({
   languageCode: 'zh-CN',
   namespace: '',
   type: '',
-  isSystem: false
+  isSystem: false,
+  contentTypeModel: '',
+  objectId: '',
+  fieldName: '',
 })
 
 // Pagination
@@ -324,6 +370,34 @@ const coverage = computed(() => {
   return Math.round((stats.system / stats.total) * 100)
 })
 
+const isFocusedObjectMode = computed(() => !!filters.contentTypeModel && !!filters.objectId)
+const focusTargetLabel = computed(() => String(route.query.focus_label || '').trim())
+const focusTargetCode = computed(() => String(route.query.focus_code || '').trim())
+const activeLanguageCount = computed(() => languages.value.length)
+const configuredLanguageCount = computed(() => new Set(translations.value.map((row) => row.languageCode).filter(Boolean)).size)
+const dialogPreset = computed(() => {
+  if (!filters.contentTypeModel || !filters.objectId) return null
+  return {
+    contentTypeModel: filters.contentTypeModel,
+    objectId: filters.objectId,
+    fieldName: filters.fieldName || 'name',
+    type: filters.type || 'object_field',
+  }
+})
+
+const syncFiltersFromRoute = () => {
+  filters.contentTypeModel = String(route.query.content_type_model || '').trim()
+  filters.objectId = String(route.query.object_id || '').trim()
+  filters.fieldName = String(route.query.field_name || '').trim()
+  filters.type = String(route.query.type || '').trim()
+  if (route.query.show_all_languages === '1' && filters.contentTypeModel && filters.objectId) {
+    filters.languageCode = ''
+  } else if (!filters.languageCode && languages.value.length > 0) {
+    filters.languageCode = languages.value.find((lang) => lang.isDefault)?.code || 'zh-CN'
+  }
+  pagination.page = 1
+}
+
 // Load languages
 const loadLanguages = async () => {
   const { data } = await languageApi.getActive()
@@ -340,10 +414,13 @@ const loadTranslations = async () => {
   loading.value = true
   try {
     const { data } = await translationApi.list({
-      language_code: filters.languageCode,
+      language_code: filters.languageCode || undefined,
       namespace: filters.namespace || undefined,
       type: filters.type || undefined,
       is_system: filters.isSystem,
+      content_type_model: filters.contentTypeModel || undefined,
+      object_id: filters.objectId || undefined,
+      field_name: filters.fieldName || undefined,
       page: pagination.page,
       page_size: pagination.pageSize
     })
@@ -388,8 +465,28 @@ const getTypeColor = (type: string) => {
   return colors[type] || ''
 }
 
+const getContentTypeLabel = (contentTypeModel?: string) => {
+  const model = String(contentTypeModel || '').trim()
+  if (!model) return ''
+
+  const labelMap: Record<string, string> = {
+    businessobject: t('system.translations.contentTypes.businessObject'),
+    dictionarytype: t('system.translations.contentTypes.dictionaryType'),
+    dictionaryitem: t('system.translations.contentTypes.dictionaryItem'),
+    modelfielddefinition: t('system.translations.contentTypes.modelFieldDefinition'),
+    menugroup: t('system.translations.contentTypes.menuGroup'),
+  }
+
+  return labelMap[model] || model
+}
+
 // Create translation
 const handleCreate = () => {
+  currentTranslation.value = null
+  dialogVisible.value = true
+}
+
+const handleCreateFocusedObjectTranslation = () => {
   currentTranslation.value = null
   dialogVisible.value = true
 }
@@ -455,12 +552,36 @@ const handleImport = async (file: File) => {
   return false // Prevent auto upload
 }
 
+const clearObjectFocus = async () => {
+  await router.replace({
+    query: {
+      ...route.query,
+      content_type_model: undefined,
+      object_id: undefined,
+      field_name: undefined,
+      type: undefined,
+      show_all_languages: undefined,
+      focus_label: undefined,
+      focus_code: undefined,
+    },
+  })
+}
+
 // Initialize
 onMounted(async () => {
+  syncFiltersFromRoute()
   await loadLanguages()
   loadTranslations()
   loadStats()
 })
+
+watch(
+  () => route.query,
+  () => {
+    syncFiltersFromRoute()
+    loadTranslations()
+  },
+)
 </script>
 
 <style scoped lang="scss">
@@ -470,6 +591,10 @@ onMounted(async () => {
   }
 
   .filter-card {
+    margin-bottom: 16px;
+  }
+
+  .focus-alert {
     margin-bottom: 16px;
   }
 

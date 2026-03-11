@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { preparePersistLayoutConfig } from '@/platform/layout/layoutPersistGuard'
 import { buildLayoutFieldDropper, compileLayoutSchema } from '@/platform/layout/layoutCompiler'
+import { normalizeLayoutConfigFieldAliases } from '@/components/designer/designerLayoutAdapters'
 import {
   cloneLayoutConfig,
   type LayoutType
@@ -43,12 +44,14 @@ export function useDesignerPersistenceShared(
   }
 
   function normalizeAndEnsureLayoutConfig(rawConfig: LayoutConfig): LayoutConfig {
-    return compileLayoutSchema({
+    const compiled = compileLayoutSchema({
       mode: resolveDesignerRuntimeMode(),
       fields: options.availableFields.value as Array<Record<string, unknown>>,
       layoutConfig: rawConfig || { sections: [] },
       ensureIds: true
     }).layoutConfig as LayoutConfig
+
+    return normalizeLayoutConfigFieldAliases(compiled)
   }
 
   function extractConfigPayload(raw: unknown): LayoutConfig {

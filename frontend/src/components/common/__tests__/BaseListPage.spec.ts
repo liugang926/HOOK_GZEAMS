@@ -9,14 +9,30 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, config } from '@vue/test-utils'
 import BaseListPage from '../BaseListPage.vue'
 
 // Mock Vue Router
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: {}, query: {} }),
   useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
-  createRouter: () => ({})
+  createRouter: () => ({}),
+  createWebHistory: () => ({})
+}))
+
+vi.mock('vue-i18n', () => ({
+  createI18n: () => ({
+    global: {
+      t: (key: string) => key,
+      te: () => true,
+      locale: { value: 'en-US' }
+    },
+    install: () => undefined
+  }),
+  useI18n: () => ({
+    t: (key: string) => key,
+    te: () => true
+  })
 }))
 
 // Mock Element Plus components (stub them)
@@ -33,7 +49,15 @@ const stubs = {
   'el-pagination': true,
   'el-empty': true,
   'el-tag': true,
-  'el-icon': true
+  'el-icon': true,
+  'el-skeleton': true,
+  ColumnManager: true,
+  ObjectAvatar: true,
+  FieldRenderer: true
+}
+
+config.global.mocks = {
+  $t: (key: string) => key
 }
 
 describe('BaseListPage Component', () => {
@@ -371,6 +395,24 @@ describe('BaseListPage Component', () => {
 
       expect(wrapper.find('.custom-button').exists()).toBe(true)
       expect(wrapper.find('.custom-button').text()).toBe('Add New')
+    })
+
+    it('should render toolbar slot in table toolbar when toolbarPlacement is table', () => {
+      const wrapper = mount(BaseListPage, {
+        props: {
+          title: 'Test Page',
+          tableColumns: [{ prop: 'name', label: 'Name' }],
+          api: mockApi,
+          toolbarPlacement: 'table'
+        },
+        slots: {
+          toolbar: '<button class="custom-button">Add New</button>'
+        },
+        global: { stubs }
+      })
+
+      expect(wrapper.find('.table-toolbar .custom-button').exists()).toBe(true)
+      expect(wrapper.find('.page-toolbar .custom-button').exists()).toBe(false)
     })
 
     it('should render actions slot content', () => {

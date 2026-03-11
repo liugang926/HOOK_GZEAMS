@@ -310,7 +310,9 @@ class InventorySnapshot(BaseModel):
     )
     asset = models.ForeignKey(
         'assets.Asset',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='inventory_snapshots',
         help_text=_('Related asset')
     )

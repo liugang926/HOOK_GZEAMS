@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div
     v-loading="loading"
     class="dynamic-form-page"
@@ -43,193 +43,200 @@
       </el-result>
     </div>
 
-    <div v-else>
-      <DynamicForm
-        ref="dynamicFormRef"
-        :business-object="objectCode"
-        layout-code="form"
-        :model-value="formData"
-        :readonly="!canEdit"
-        :show-actions="false"
-        :instance-id="recordId || null"
-        @update:model-value="handleModelUpdate"
-        @request-save="handleFormRequestSave"
+    <div
+      v-else
+      class="dynamic-form-page__shell"
+    >
+      <ObjectWorkspaceHero
+        variant="form"
+        :object-code="objectCode"
+        :icon="objectMetadata?.icon || ''"
+        :eyebrow="moduleLabel"
+        :title="pageTitle"
+        :description="pageDescription"
+        :chips="heroChips"
+        :stats="heroStats"
+        :show-back="true"
+        :back-label="t('common.actions.back')"
+        :back-icon="ArrowLeft"
+        @back="handleCancel"
       />
 
+      <div class="form-layout">
+        <section class="form-panel form-panel--main">
+          <header class="form-panel__header">
+            <div>
+              <p class="form-panel__kicker">
+                {{ modeLabel }}
+              </p>
+              <h2 class="form-panel__title">
+                {{ formPanelTitle }}
+              </h2>
+            </div>
+            <p class="form-panel__text">
+              {{ formPanelDescription }}
+            </p>
+          </header>
+
+          <DynamicForm
+            ref="dynamicFormRef"
+            class="form-panel__renderer"
+            :business-object="objectCode"
+            layout-code="form"
+            :model-value="formData"
+            :readonly="!canEdit"
+            :show-actions="false"
+            :instance-id="recordId || null"
+            label-position="top"
+            label-width="auto"
+            @update:model-value="handleModelUpdate"
+            @request-save="handleFormRequestSave"
+          />
+        </section>
+
+        <aside class="form-panel form-panel--aside">
+          <ObjectWorkspaceInfoCard
+            variant="form"
+            :eyebrow="summaryLabel"
+            :title="objectDisplayName"
+            :rows="infoRows"
+          />
+
+          <ObjectWorkspaceInfoCard
+            variant="form"
+            :eyebrow="tipsLabel"
+            :tips="tips"
+            soft
+          />
+        </aside>
+      </div>
+
       <div class="form-actions">
-        <el-button
-          v-if="canEdit"
-          type="primary"
-          :loading="submitting"
-          @click="handleSubmit"
-        >
-          {{ t('common.actions.save') }}
-        </el-button>
-        <el-button
-          :disabled="submitting"
-          @click="handleCancel"
-        >
-          {{ t('common.actions.cancel') }}
-        </el-button>
+        <div class="form-actions__summary">
+          <span class="form-actions__badge">{{ modeLabel }}</span>
+          <p class="form-actions__text">
+            {{ actionBarText }}
+          </p>
+        </div>
+
+        <div class="form-actions__buttons">
+          <el-button
+            :icon="ArrowLeft"
+            :disabled="submitting"
+            @click="handleCancel"
+          >
+            {{ t('common.actions.cancel') }}
+          </el-button>
+          <el-button
+            v-if="canEdit"
+            type="primary"
+            :icon="Check"
+            :loading="submitting"
+            @click="handleSubmit"
+          >
+            {{ t('common.actions.save') }}
+          </el-button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ArrowLeft, Check } from '@element-plus/icons-vue'
 import DynamicForm from '@/components/engine/DynamicForm.vue'
-import { createObjectClient, type ObjectMetadata } from '@/api/dynamic'
-import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
-import type { RuntimePermissions } from '@/platform/layout/runtimeLayoutResolver'
+import ObjectWorkspaceHero from '@/components/common/object-workspace/ObjectWorkspaceHero.vue'
+import ObjectWorkspaceInfoCard from '@/components/common/object-workspace/ObjectWorkspaceInfoCard.vue'
+import { resolveObjectDisplayName } from '@/utils/objectDisplay'
+import {
+  useDynamicFormAccess,
+  useDynamicFormController,
+  useDynamicFormWorkspace,
+} from '@/views/dynamic/workspace'
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
+const { t, te, locale } = useI18n()
 
 const objectCode = ref<string>((route.params.code as string) || '')
 const recordId = ref<string>((route.params.id as string) || '')
-const metadataPermissions = ref<ObjectMetadata['permissions'] | null>(null)
-const runtimePermissions = ref<RuntimePermissions | null>(null)
-const loading = ref(false)
-const loadError = ref<string | null>(null)
-const submitting = ref(false)
-
-const apiClient = computed(() => createObjectClient(objectCode.value))
-const formData = ref<Record<string, any>>({})
-const dynamicFormRef = ref<any>(null)
 
 const isEdit = computed(() => !!recordId.value)
-const effectivePermissions = computed<RuntimePermissions>(() => {
-  return runtimePermissions.value || metadataPermissions.value || {
-    view: true,
-    add: true,
-    change: true,
-    delete: true
-  }
+const isZhLocale = computed(() => String(locale.value || '').toLowerCase().startsWith('zh'))
+
+const {
+  dynamicFormRef,
+  formData,
+  handleCancel,
+  handleModelUpdate,
+  handleSubmit,
+  loadData,
+  loadError,
+  loading,
+  metadataPermissions,
+  objectMetadata,
+  retryLoad,
+  runtimePermissions,
+  submitting,
+} = useDynamicFormController({
+  objectCode,
+  recordId,
+  isEdit,
+  router,
+  shouldLoadRecord: () => canView.value,
+  t: t as (key: string) => string,
 })
 
-const canEdit = computed(() => {
-  return isEdit.value
-    ? effectivePermissions.value.change
-    : effectivePermissions.value.add
+const {
+  canEdit,
+  canView,
+  showPermissionDenied,
+} = useDynamicFormAccess({
+  isEdit,
+  loadError,
+  metadataPermissions,
+  runtimePermissions,
 })
-
-const canView = computed(() => {
-  return effectivePermissions.value.view !== false
-})
-
-const canAccessForm = computed(() => {
-  return isEdit.value ? canView.value : effectivePermissions.value.add !== false
-})
-
-const showPermissionDenied = computed(() => {
-  return !loadError.value && !canAccessForm.value
-})
-
-const buildFallbackMetadata = (): ObjectMetadata => ({
-  code: objectCode.value,
-  name: objectCode.value,
-  isHardcoded: true,
-  enableWorkflow: false,
-  enableVersion: false,
-  enableSoftDelete: true,
-  fields: [],
-  layouts: {},
-  permissions: {
-    view: true,
-    add: true,
-    change: true,
-    delete: true
-  }
-} as ObjectMetadata)
-
-const handleModelUpdate = (data: Record<string, any>) => {
-  formData.value = data
-}
-
-const handleSubmit = async () => {
-  submitting.value = true
-  try {
-    const valid = await dynamicFormRef.value?.validate?.()
-    if (valid === false) {
-      submitting.value = false
-      return
-    }
-
-    const payload = dynamicFormRef.value?.getSubmitData?.() || formData.value
-
-    if (isEdit.value) {
-      await apiClient.value.update(recordId.value, payload)
-      ElMessage.success(t('common.messages.updateSuccess'))
-    } else {
-      await apiClient.value.create(payload)
-      ElMessage.success(t('common.messages.createSuccess'))
-    }
-
-    router.push(`/objects/${objectCode.value}`)
-  } catch (error: any) {
-    ElMessage.error(error.message || t('common.messages.operationFailed'))
-  } finally {
-    submitting.value = false
-  }
-}
 
 const handleFormRequestSave = () => {
   if (submitting.value || !canEdit.value || !!loadError.value) return
   void handleSubmit()
 }
 
-const handleCancel = () => {
-  router.push(`/objects/${objectCode.value}`)
-}
+const objectDisplayName = computed(() => {
+  return resolveObjectDisplayName(
+    objectCode.value,
+    objectMetadata.value?.name || objectMetadata.value?.nameEn || '',
+    t as (key: string) => string,
+    te
+  )
+})
 
-const loadData = async () => {
-  loading.value = true
-  loadError.value = null
-  try {
-    const [runtimeResult, metadataResult] = await Promise.allSettled([
-      resolveRuntimeLayout(objectCode.value, 'edit', { includeRelations: false }),
-      apiClient.value.getMetadata()
-    ])
-
-    runtimePermissions.value = runtimeResult.status === 'fulfilled'
-      ? (runtimeResult.value.permissions || null)
-      : null
-
-    if (metadataResult.status === 'fulfilled') {
-      const metadata = (metadataResult.value as ObjectMetadata) || buildFallbackMetadata()
-      metadataPermissions.value = metadata.permissions || null
-    } else {
-      metadataPermissions.value = buildFallbackMetadata().permissions
-      console.warn('[DynamicFormPage] Metadata load failed, runtime permissions remain active')
-    }
-
-    if (runtimeResult.status === 'rejected' && metadataResult.status === 'rejected') {
-      const runtimeError = runtimeResult.reason instanceof Error ? runtimeResult.reason.message : ''
-      const metadataError = metadataResult.reason instanceof Error ? metadataResult.reason.message : ''
-      loadError.value = metadataError || runtimeError || t('system.businessObject.messages.loadMetadataFailed')
-      return
-    }
-
-    if (isEdit.value && canView.value) {
-      const recordResponse = await apiClient.value.get(recordId.value)
-      formData.value = recordResponse || {}
-    }
-  } catch (error: any) {
-    loadError.value = error.message || t('common.messages.operationFailed')
-    if (!error?.isHandled) ElMessage.error(loadError.value || t('common.messages.operationFailed'))
-  } finally {
-    loading.value = false
-  }
-}
-
-const retryLoad = () => {
-  loadData()
-}
+const {
+  moduleLabel,
+  modeLabel,
+  pageTitle,
+  pageDescription,
+  formPanelTitle,
+  formPanelDescription,
+  summaryLabel,
+  tipsLabel,
+  heroChips,
+  heroStats,
+  infoRows,
+  tips,
+  actionBarText,
+} = useDynamicFormWorkspace({
+  isZhLocale,
+  isEdit,
+  canEdit,
+  objectCode,
+  objectMetadata,
+  objectDisplayName,
+})
 
 onMounted(() => {
   loadData()
@@ -237,18 +244,7 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-@use '@/styles/variables.scss' as *;
+@use '@/views/dynamic/styles/dynamic-form-page' as formPage;
 
-.dynamic-form-page {
-  height: 100%;
-  background-color: $bg-body;
-}
-
-.form-actions {
-  margin-top: 24px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 20px;
-}
+@include formPage.dynamic-form-page-styles();
 </style>

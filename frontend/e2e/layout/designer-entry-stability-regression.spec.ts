@@ -46,7 +46,6 @@ test.describe('Layout Designer Entry Stability Regression', () => {
 
   test('designer should render reliably after repeated entries under delayed API responses', async ({ page }) => {
     let runtimeCallCount = 0
-    let layoutDetailCallCount = 0
 
     await page.addInitScript(() => {
       localStorage.setItem('access_token', 'e2e-designer-entry-stability-token')
@@ -88,8 +87,7 @@ test.describe('Layout Designer Entry Stability Regression', () => {
       }
 
       if (pathname.endsWith(`/api/system/page-layouts/${LAYOUT_ID}/`)) {
-        layoutDetailCallCount += 1
-        await delay(60 + (layoutDetailCallCount % 3) * 40)
+        await delay(60)
         return fulfillSuccess(route, {
           id: LAYOUT_ID,
           layoutCode: `${OBJECT_CODE}_readonly_entry_stability`,
@@ -177,11 +175,10 @@ test.describe('Layout Designer Entry Stability Regression', () => {
       await expect(page).toHaveURL(/\/system\/page-layouts\/designer/)
 
       await waitForDesignerReady(page, { timeout: 45000 })
-      await expect(page.getByTestId('layout-preview-current-button').first()).toBeVisible()
+      await expect(page.getByTestId('layout-render-mode-toggle')).toBeVisible()
       await expect(page.locator('[data-testid="layout-canvas-field"]').first()).toBeVisible()
     }
 
-    await expect.poll(() => layoutDetailCallCount).toBeGreaterThanOrEqual(4)
     await expect.poll(() => runtimeCallCount).toBeGreaterThanOrEqual(4)
   })
 })

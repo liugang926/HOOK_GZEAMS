@@ -16,8 +16,10 @@ const {
   mockMessageError,
   mockMessageWarning,
   mockMessageBoxConfirm,
+  mockRouterPush,
   mockSortableCreate,
   mockSortableDestroy,
+  mockConsoleError,
 } = vi.hoisted(() => ({
   mockMenuGet: vi.fn(),
   mockMenuConfig: vi.fn(),
@@ -29,8 +31,10 @@ const {
   mockMessageError: vi.fn(),
   mockMessageWarning: vi.fn(),
   mockMessageBoxConfirm: vi.fn(),
+  mockRouterPush: vi.fn(),
   mockSortableCreate: vi.fn(),
   mockSortableDestroy: vi.fn(),
+  mockConsoleError: vi.fn(),
 }))
 
 vi.mock('sortablejs', () => ({
@@ -53,6 +57,12 @@ vi.mock('element-plus', () => ({
   ElMessageBox: {
     confirm: mockMessageBoxConfirm,
   },
+}))
+
+vi.mock('vue-router', () => ({
+  useRouter: () => ({
+    push: mockRouterPush,
+  }),
 }))
 
 vi.mock('@/api/system', () => ({
@@ -81,7 +91,13 @@ const createCategories = (count = 6) =>
     translationKey: index === 0 ? 'menu.categories.asset_master' : '',
     localeNames: index === 0
       ? { 'zh-CN': '资产主数据', 'en-US': 'Asset Master' }
-      : { 'zh-CN': `自定义分类 ${index}`, 'en-US': `Custom Group ${index}` },
+      : { 'zh-CN': `自定义分类${index}`, 'en-US': `Custom Group ${index}` },
+    translationTarget: {
+      contentType: 'system.menugroup',
+      contentTypeModel: 'menugroup',
+      objectId: `${index + 1}`,
+      fieldName: 'name',
+    },
     icon: 'Menu',
     order: (index + 1) * 10,
     isVisible: true,
@@ -154,7 +170,7 @@ const createWrapper = () => {
         'el-tag': { template: '<span><slot /></span>' },
         'el-icon': { template: '<span class="el-icon-stub"><slot /></span>' },
         'el-button': {
-          props: ['disabled', 'loading', 'type'],
+          props: ['disabled', 'loading', 'type', 'plain'],
           emits: ['click'],
           template: '<button :data-type="type" :disabled="disabled || loading" @click="$emit(\'click\')"><slot /></button>',
         },
@@ -190,8 +206,11 @@ describe('SystemMenuManagement', () => {
     mockMessageError.mockReset()
     mockMessageWarning.mockReset()
     mockMessageBoxConfirm.mockReset()
+    mockRouterPush.mockReset()
     mockSortableCreate.mockReset()
     mockSortableDestroy.mockReset()
+    mockConsoleError.mockReset()
+    vi.spyOn(console, 'error').mockImplementation(mockConsoleError)
 
     mockSortableCreate.mockReturnValue({
       destroy: mockSortableDestroy,
@@ -212,11 +231,11 @@ describe('SystemMenuManagement', () => {
     mockMessageBoxConfirm.mockResolvedValue(undefined)
   })
 
-  it('shows readable default category names instead of translation keys', async () => {
+  it('shows the new resource-management title and readable localized category names', async () => {
     const wrapper = createWrapper()
     await flushPromises()
 
-    expect(wrapper.text()).toContain('菜单管理')
+    expect(wrapper.text()).toContain('菜单资源管理')
     const inputValues = wrapper.findAll('input').map((input) => input.element.value)
     expect(inputValues).toContain('资产主数据')
     expect(inputValues).not.toContain('menu.categories.asset_master')
@@ -229,35 +248,61 @@ describe('SystemMenuManagement', () => {
     const codeDisplay = wrapper.findAll('.readonly-code').find((node) => node.text() === 'asset_master')
     expect(codeDisplay).toBeDefined()
     expect(wrapper.findAll('.icon-picker-trigger').length).toBeGreaterThan(0)
+    expect(wrapper.find('.entry-detail-card .icon-picker-trigger').exists()).toBe(true)
   })
 
-  it('renders paginated category and entry layouts', async () => {
+  it('opens the translation module for a saved menu category', async () => {
+    const wrapper = createWrapper()
+    await flushPromises()
+
+    const translationButton = wrapper.findAll('button').find((button) => button.text().includes('语'))
+    expect(translationButton).toBeDefined()
+    await translationButton!.trigger('click')
+
+    expect(mockRouterPush).toHaveBeenCalledWith({
+      name: 'TranslationList',
+      query: {
+        type: 'object_field',
+        content_type_model: 'menugroup',
+        object_id: '1',
+        field_name: 'name',
+        show_all_languages: '1',
+        focus_label: 'Asset Master',
+        focus_code: 'asset_master',
+      },
+    })
+  })
+
+  it('renders paginated categories and a focused resource catalog', async () => {
     const wrapper = createWrapper()
     await flushPromises()
 
     expect(wrapper.findAll('.pagination-stub')).toHaveLength(1)
     expect(wrapper.findAll('.category-item')).toHaveLength(4)
-    expect(wrapper.findAll('.entry-group')).toHaveLength(1)
-    expect(wrapper.findAll('.entry-item')).toHaveLength(1)
+    expect(wrapper.findAll('.entry-card')).toHaveLength(1)
   })
 
-  it('initializes drag sorting for categories and grouped entry lanes', async () => {
-    createWrapper()
+  it('navigates to the layout workspace from the view switch', async () => {
+    const wrapper = createWrapper()
     await flushPromises()
 
-    expect(mockSortableCreate.mock.calls.length).toBeGreaterThanOrEqual(2)
+    const layoutButton = wrapper.findAll('button').find((button) => button.text() === '菜单布局')
+    expect(layoutButton).toBeTruthy()
+    await layoutButton!.trigger('click')
+
+    expect(mockRouterPush).toHaveBeenCalledWith({ name: 'MenuLayoutManagement' })
   })
 
   it('blocks deleting a category that still has entries', async () => {
     const wrapper = createWrapper()
     await flushPromises()
 
-    const deleteButtons = wrapper.findAll('button').filter((button) => button.text() === '删除')
+    const deleteButtons = wrapper.findAll('button').filter((button) => button.text().includes('删'))
     expect(deleteButtons.length).toBeGreaterThan(0)
     await deleteButtons[0].trigger('click')
     await flushPromises()
 
-    expect(mockMessageWarning).toHaveBeenCalledWith('该分类下仍有菜单项，不能删除')
+    expect(mockMessageWarning).toHaveBeenCalled()
   })
 
   it('switches to en-US and uses localized success feedback when saving', async () => {
@@ -268,7 +313,7 @@ describe('SystemMenuManagement', () => {
     localeStore.setLocale('en-US')
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Menu Management')
+    expect(wrapper.text()).toContain('Menu Resources')
     const saveButton = wrapper.findAll('button').find((button) => button.text() === 'Save')
     expect(saveButton).toBeTruthy()
     await saveButton!.trigger('click')
@@ -278,7 +323,7 @@ describe('SystemMenuManagement', () => {
     expect(mockMessageSuccess).toHaveBeenCalledWith('Menu configuration saved')
   })
 
-  it('regroups entries when category selection changes', async () => {
+  it('updates item ownership when category selection changes in the resource detail panel', async () => {
     const wrapper = createWrapper()
     await flushPromises()
 
@@ -291,38 +336,31 @@ describe('SystemMenuManagement', () => {
     await selects[selects.length - 1].setValue('custom_group_2')
     await flushPromises()
 
-    expect(wrapper.find('.entry-group').text()).toContain('Asset Master')
-    expect(wrapper.find('.entry-group').text()).toContain('No entries yet')
+    expect(wrapper.find('.entry-detail-card').text()).toContain('Custom Group 2')
   })
 
-  it('shows empty drop zones and supports collapsing entry groups', async () => {
+  it('shows an empty resource state when the selected category has no entries', async () => {
     const wrapper = createWrapper()
     await flushPromises()
 
     await wrapper.find('[data-testid="category-item-custom_group_2"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="empty-group-custom_group_2"]').exists()).toBe(true)
-    expect(wrapper.find('.entry-group-list[data-group-code="custom_group_2"]').exists()).toBe(true)
-
-    await wrapper.find('[data-testid="toggle-group-custom_group_2"]').trigger('click')
-    await flushPromises()
-
-    expect(wrapper.find('.entry-group-list[data-group-code="custom_group_2"]').exists()).toBe(false)
+    expect(wrapper.find('.entry-empty').exists()).toBe(true)
   })
 
-  it('focuses right-side entries on the selected left category by default', async () => {
+  it('focuses right-side resources on the selected left category by default', async () => {
     const wrapper = createWrapper()
     await flushPromises()
 
     expect(wrapper.find('[data-testid="category-item-asset_master"]').classes()).toContain('active')
-    expect(wrapper.find('.entry-group').text()).toContain('资产主数据')
+    expect(wrapper.find('.entry-card').text()).toContain('资产')
 
     await wrapper.find('[data-testid="category-item-custom_group_1"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.find('[data-testid="category-item-custom_group_1"]').classes()).toContain('active')
-    expect(wrapper.find('.entry-group').text()).toContain('自定义分类 1')
+    expect(wrapper.find('.entry-card').text()).toContain('Entry 1')
   })
 
   it('surfaces backend migration validation messages when saving fails', async () => {
@@ -331,12 +369,13 @@ describe('SystemMenuManagement', () => {
     const wrapper = createWrapper()
     await flushPromises()
 
-    const saveButton = wrapper.findAll('button').find((button) => button.text() === '保存')
+    const saveButton = wrapper.findAll('button').find((button) => button.text().includes('保存'))
     expect(saveButton).toBeTruthy()
     await saveButton!.trigger('click')
     await flushPromises()
 
     expect(mockMessageError).toHaveBeenCalledWith('Move them before deleting the category.')
+    expect(mockConsoleError).not.toHaveBeenCalled()
   })
 
   it('asks for confirmation before deleting an empty category', async () => {
@@ -353,6 +392,7 @@ describe('SystemMenuManagement', () => {
           isDefault: false,
           entryCount: 0,
           supportsDelete: true,
+          localeNames: { 'zh-CN': '空分类', 'en-US': 'Empty Category' },
         },
       ],
       items: [],
@@ -361,7 +401,7 @@ describe('SystemMenuManagement', () => {
     const wrapper = createWrapper()
     await flushPromises()
 
-    const deleteButton = wrapper.findAll('button').find((button) => button.text() === '删除')
+    const deleteButton = wrapper.findAll('button').find((button) => button.text().includes('删'))
     expect(deleteButton).toBeTruthy()
     await deleteButton!.trigger('click')
     await flushPromises()

@@ -5,6 +5,7 @@ import {
   clickDesignerSectionHeader,
   waitForDesignerReady
 } from '../helpers/page-ready.helpers'
+import { waitForDetailPageReady } from '../helpers/detail-page.helpers'
 interface LayoutField {
   id: string
   fieldCode: string
@@ -310,8 +311,7 @@ test.describe('Layout Designer Reset -> Save Regression', () => {
     await expect.poll(() => getFieldOrder(activeLayoutConfig).join(',')).toBe('assetName,assetCode')
 
     await page.goto(`/objects/${OBJECT_CODE}/${RECORD_ID}`)
-    await expect(page.locator('.dynamic-detail-page').first()).toBeVisible()
-    await expect(page.locator('.load-error')).toHaveCount(0)
+    await waitForDetailPageReady(page)
     await expect(
       page.locator('.detail-sections .section-title')
         .filter({ hasText: new RegExp(`(${RESET_TITLE}|${RESET_TITLE_KEY})`) })

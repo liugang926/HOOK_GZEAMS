@@ -57,6 +57,13 @@ const iterateLayoutFields = (config: LayoutConfig): LayoutField[] => {
 export function useDesignerPreview(options: UseDesignerPreviewOptions) {
   const { t, locale } = useI18n()
 
+  const buildSectionSlotField = (sectionId: string): DetailField => ({
+    prop: `__designer_section_slot__${sectionId}`,
+    label: '',
+    type: 'slot',
+    visible: true
+  })
+
   function getDesignerPlacementAttrs(placement: DesignerFieldPlacement | null): Record<string, string> {
     return getCanvasPlacementAttrs(placement as CanvasPlacement | null)
   }
@@ -278,15 +285,34 @@ export function useDesignerPreview(options: UseDesignerPreviewOptions) {
   })
 
   const designerCanvasSections = computed<DetailSection[]>(() => {
-    return designerRenderSections.value.map((renderSection) => ({
-      name: renderSection.id,
-      title: renderSection.title,
-      type: renderSection.type,
-      position: renderSection.position,
-      fields: [],
-      collapsible: renderSection.collapsible === true,
-      collapsed: renderSection.collapsed === true
-    }))
+    return designerRenderSections.value.map((renderSection) => {
+      if (renderSection.type === 'tab') {
+        return {
+          name: renderSection.id,
+          title: renderSection.title,
+          type: renderSection.type,
+          position: renderSection.position,
+          fields: [],
+          tabs: (renderSection.tabs || []).map((tab) => ({
+            id: tab.id,
+            title: tab.title,
+            fields: [buildSectionSlotField(`${renderSection.id}_${tab.id}`)]
+          })),
+          collapsible: renderSection.collapsible === true,
+          collapsed: renderSection.collapsed === true
+        }
+      }
+
+      return {
+        name: renderSection.id,
+        title: renderSection.title,
+        type: renderSection.type,
+        position: renderSection.position,
+        fields: [buildSectionSlotField(renderSection.id)],
+        collapsible: renderSection.collapsible === true,
+        collapsed: renderSection.collapsed === true
+      }
+    })
   })
 
   const previewAuditInfo = computed(() => ({

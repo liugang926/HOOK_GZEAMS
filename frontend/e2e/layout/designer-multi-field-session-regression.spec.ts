@@ -327,8 +327,7 @@ test.describe('Layout Designer Multi-field Session Regression', () => {
     await labelInput.press('Tab')
 
     const spanSelect = page.getByTestId('field-prop-span').first()
-    await spanSelect.click({ force: true })
-    await page.locator('.el-select-dropdown__item').filter({ hasText: /^2\s*\/\s*2$/ }).first().click()
+    await spanSelect.getByRole('button', { name: 'increase number' }).click()
 
     const readonlySwitch = page.getByTestId('field-prop-readonly').locator('.el-switch').first()
     if ((await readonlySwitch.getAttribute('aria-checked')) !== 'false') {

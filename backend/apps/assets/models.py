@@ -761,6 +761,7 @@ class PickupItem(BaseModel):
         db_table = 'pickup_items'
         verbose_name = 'Pickup Item'
         verbose_name_plural = 'Pickup Items'
+        unique_together = [['pickup', 'asset']]
         indexes = [
             models.Index(fields=['pickup', 'asset']),
         ]
@@ -970,6 +971,7 @@ class TransferItem(BaseModel):
         db_table = 'transfer_items'
         verbose_name = 'Transfer Item'
         verbose_name_plural = 'Transfer Items'
+        unique_together = [['transfer', 'asset']]
         indexes = [
             models.Index(fields=['transfer', 'asset']),
         ]
@@ -1075,14 +1077,6 @@ class AssetReturn(BaseModel):
         related_name='asset_returns',
         help_text='Storage location for returned assets'
     )
-
-    # Status and Confirmation
-    status = models.CharField(
-        max_length=50,
-        default='draft',
-        db_index=True,
-        help_text='Return order status (references Dictionary: RETURN_STATUS)'
-    )
     confirmed_by = models.ForeignKey(
         'accounts.User',
         on_delete=models.SET_NULL,
@@ -1169,6 +1163,7 @@ class ReturnItem(BaseModel):
         db_table = 'return_items'
         verbose_name = 'Return Item'
         verbose_name_plural = 'Return Items'
+        unique_together = [['asset_return', 'asset']]
         indexes = [
             models.Index(fields=['asset_return', 'asset']),
         ]
@@ -1411,6 +1406,7 @@ class LoanItem(BaseModel):
         db_table = 'loan_items'
         verbose_name = 'Loan Item'
         verbose_name_plural = 'Loan Items'
+        unique_together = [['loan', 'asset']]
         indexes = [
             models.Index(fields=['loan', 'asset']),
         ]

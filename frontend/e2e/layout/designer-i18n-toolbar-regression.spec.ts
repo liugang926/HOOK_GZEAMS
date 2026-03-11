@@ -156,14 +156,16 @@ test.describe('Layout Designer i18n Toolbar Regression', () => {
     await waitForDesignerReady(page)
 
     const toolbar = page.locator('.designer-toolbar')
-    await expect(toolbar).toContainText('撤销')
-    await expect(toolbar).toContainText('重做')
-    await expect(toolbar).toContainText('恢复默认')
+    await expect(page.getByTestId('layout-undo-button')).toHaveAttribute('aria-label', '撤销')
+    await expect(page.getByTestId('layout-redo-button')).toHaveAttribute('aria-label', '重做')
     await expect(toolbar).toContainText('保存草稿')
     await expect(toolbar).toContainText('发布')
+
+    await page.getByTestId('layout-more-button').click()
+    await expect(page.locator('.el-dropdown-menu__item:visible').filter({ hasText: '翻译模式' }).first()).toBeVisible()
+    await expect(page.locator('.el-dropdown-menu__item:visible').filter({ hasText: '恢复默认' }).first()).toBeVisible()
 
     const text = await page.locator('.page-layout-designer').innerText()
     expect(text).not.toContain('???')
   })
 })
-

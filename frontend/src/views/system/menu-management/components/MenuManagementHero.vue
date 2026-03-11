@@ -2,17 +2,17 @@
   <section class="page-hero">
     <div class="hero-content">
       <div class="hero-kicker">
-        Navigation Control Center
+        {{ kicker || 'Navigation Control Center' }}
       </div>
-      <h2>{{ copy.title }}</h2>
-      <p>{{ copy.subtitle }}</p>
+      <h2>{{ title || copy.title }}</h2>
+      <p>{{ subtitle || copy.subtitle }}</p>
       <div class="hero-stats">
         <div class="hero-stat">
-          <span class="hero-stat-label">{{ copy.sections.categories }}</span>
+          <span class="hero-stat-label">{{ primaryStatLabel || copy.sections.categories }}</span>
           <strong>{{ categoryCount }}</strong>
         </div>
         <div class="hero-stat">
-          <span class="hero-stat-label">{{ copy.sections.entries }}</span>
+          <span class="hero-stat-label">{{ secondaryStatLabel || copy.sections.entries }}</span>
           <strong>{{ entryCount }}</strong>
         </div>
         <div class="hero-stat">
@@ -48,6 +48,11 @@ defineProps<{
   visibleEntryCount: number
   lockedEntryCount: number
   saving: boolean
+  title?: string
+  subtitle?: string
+  kicker?: string
+  primaryStatLabel?: string
+  secondaryStatLabel?: string
 }>()
 
 defineEmits<{

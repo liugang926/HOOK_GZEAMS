@@ -37,6 +37,7 @@
           :translation-mode="translationMode"
           :available-spans="availableSpans"
           :available-span-columns="availableSpanColumns"
+          :visibility-field-options="visibilityFieldOptions"
           @update:model-value="$emit('update:fieldProps', $event)"
           @update-property="$emit('fieldPropertyUpdate', $event)"
         />
@@ -80,6 +81,7 @@ const props = defineProps<{
   sectionProps: Partial<LayoutSection>
   availableSpans: number[]
   availableSpanColumns: number
+  visibilityFieldOptions: Array<{ label: string; value: string }>
   layoutMode: 'Detail' | 'Compact'
   mode: LayoutMode
   translationMode: boolean

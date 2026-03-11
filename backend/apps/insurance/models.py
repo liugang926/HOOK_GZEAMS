@@ -318,7 +318,7 @@ class InsuredAsset(BaseModel):
     )
     asset = models.ForeignKey(
         'assets.Asset',
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='insurance_coverages',
         help_text='Insured asset'
     )

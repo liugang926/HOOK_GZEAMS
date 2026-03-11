@@ -434,12 +434,15 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
 
       await waitForDesignerReady(page, { timeout: 30000 })
 
-      const fieldCard = page
-        .locator('[data-testid="layout-canvas-field"][data-field-code="assetName"]')
+      let fieldCard = page
+        .locator('[data-testid="layout-canvas-field"][data-field-code="assetName"]:visible')
         .first()
 
-      if (!(await fieldCard.isVisible()) && scenario.type === 'collapse') {
-        await page.locator('.el-collapse-item__header', { hasText: scenario.nestedTitle }).first().click({ force: true })
+      if ((await fieldCard.count()) === 0 && scenario.type === 'collapse') {
+        await page.getByRole('button', { name: scenario.nestedTitle }).first().click({ force: true })
+        fieldCard = page
+          .locator('[data-testid="layout-canvas-field"][data-field-code="assetName"]:visible')
+          .first()
       }
 
       await expect(fieldCard).toBeVisible()
@@ -447,7 +450,7 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
 
       const fieldPropertyEditor = page.getByTestId('layout-field-property-editor')
       if (!(await fieldPropertyEditor.isVisible().catch(() => false))) {
-        await page.locator('.canvas-content .el-form-item__label').first().click({ force: true })
+        await fieldCard.click({ position: { x: 4, y: 4 }, force: true })
       }
       await expect(fieldPropertyEditor).toBeVisible()
 
@@ -625,12 +628,15 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
 
       await waitForDesignerReady(page, { timeout: 30000 })
 
-      const fieldCard = page
-        .locator('[data-testid="layout-canvas-field"][data-field-code="assetName"]')
+      let fieldCard = page
+        .locator('[data-testid="layout-canvas-field"][data-field-code="assetName"]:visible')
         .first()
 
-      if (!(await fieldCard.isVisible()) && scenario.type === 'collapse') {
-        await page.locator('.el-collapse-item__header', { hasText: scenario.nestedTitle }).first().click({ force: true })
+      if ((await fieldCard.count()) === 0 && scenario.type === 'collapse') {
+        await page.getByRole('button', { name: scenario.nestedTitle }).first().click({ force: true })
+        fieldCard = page
+          .locator('[data-testid="layout-canvas-field"][data-field-code="assetName"]:visible')
+          .first()
       }
 
       await expect(fieldCard).toBeVisible()
@@ -638,7 +644,7 @@ test.describe('Layout Designer Tab/Collapse -> Detail Regression', () => {
 
       const fieldPropertyEditor = page.getByTestId('layout-field-property-editor')
       if (!(await fieldPropertyEditor.isVisible().catch(() => false))) {
-        await page.locator('.canvas-content .el-form-item__label').first().click({ force: true })
+        await fieldCard.click({ position: { x: 4, y: 4 }, force: true })
       }
       await expect(fieldPropertyEditor).toBeVisible()
 

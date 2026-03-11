@@ -7,8 +7,8 @@
       ref="formRef"
       :model="activeFormData"
       :rules="activeFormRules"
-      label-width="120px"
-      label-position="right"
+      :label-width="labelWidth"
+      :label-position="labelPosition"
       class="dynamic-form__form"
     >
       <DynamicFormRenderer
@@ -20,8 +20,8 @@
         :business-object="businessObject"
         :instance-id="instanceId"
         :use-form-item="true"
-        label-width="120px"
-        label-position="right"
+        :label-width="labelWidth"
+        :label-position="labelPosition"
         @update:model-value="handleModelUpdate"
         @request-save="emit('request-save')"
       />
@@ -51,6 +51,8 @@ interface Props {
   fieldPermissions?: Record<string, { readonly?: boolean; visible?: boolean; hidden?: boolean }>
   schema?: Record<string, any> | null
   data?: Record<string, any> | null
+  labelWidth?: string | number
+  labelPosition?: 'left' | 'right' | 'top'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -59,7 +61,9 @@ const props = withDefaults(defineProps<Props>(), {
   showActions: true,
   instanceId: null,
   schema: null,
-  data: null
+  data: null,
+  labelWidth: '120px',
+  labelPosition: 'right'
 })
 
 const emit = defineEmits<{
@@ -268,7 +272,7 @@ const buildFieldsFromSchema = (schema: Record<string, any>): RuntimeField[] => {
       return {
         code,
         label,
-        fieldType: normalizeFieldType(field.fieldType || field.type || field.field_type || 'text'),
+        fieldType: normalizeFieldType(field.fieldType || field.type || 'text'),
         required: field.isRequired ?? field.required ?? false,
         readonly: field.isReadonly ?? field.readonly ?? false,
         hidden: field.isHidden ?? field.hidden ?? false,
@@ -279,7 +283,7 @@ const buildFieldsFromSchema = (schema: Record<string, any>): RuntimeField[] => {
         defaultValue: field.defaultValue,
         options: field.options || field.enum || [],
         referenceObject: field.referenceObject || field.relatedObject,
-        componentProps: field.componentProps || field.component_props || {},
+        componentProps: field.componentProps || {},
         metadata: { ...(field || {}) }
       }
     })
@@ -353,7 +357,7 @@ const buildSectionsFromSchema = (schema: Record<string, any>, fields: RuntimeFie
             visible: entry.visible,
             options: entry.options,
             referenceObject: entry.referenceObject || entry.relatedObject,
-            componentProps: entry.componentProps || entry.component_props,
+            componentProps: entry.componentProps,
             placeholder: entry.placeholder,
             helpText: entry.helpText,
             defaultValue: entry.defaultValue
@@ -378,7 +382,7 @@ const buildSectionsFromSchema = (schema: Record<string, any>, fields: RuntimeFie
           defaultValue: entry.defaultValue,
           options: entry.options,
           referenceObject: entry.referenceObject || entry.relatedObject,
-          componentProps: entry.componentProps || entry.component_props,
+          componentProps: entry.componentProps,
           metadata: { ...(entry || {}) }
         }
       }),

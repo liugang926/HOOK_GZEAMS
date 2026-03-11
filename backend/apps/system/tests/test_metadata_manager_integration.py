@@ -304,6 +304,25 @@ class TestMenuAPICrossOrganization:
         finally:
             clear_current_organization()
 
+    def test_menu_api_includes_menu_layout_static_entry(self, db, org1, user_org1):
+        """Menu layout should be exposed as a first-class static system menu item."""
+        client = APIClient()
+        client.force_authenticate(user=user_org1)
+
+        set_current_organization(str(org1.id))
+
+        try:
+            response = client.get('/api/system/menu/')
+            assert response.status_code == 200
+
+            items = response.data['data']['items']
+            layout_item = next(item for item in items if item['code'] == 'MenuLayoutManagement')
+            assert layout_item['url'] == '/system/menu-layout-management'
+            assert layout_item['group_code'] == 'system'
+            assert layout_item['translation_key'] == 'menu.routes.menuLayoutManagement'
+        finally:
+            clear_current_organization()
+
     def test_menu_management_endpoint_keeps_categories_editable_but_locks_default_objects(self, db, org1, user_org1):
         """Categories are editable, while only default business-object entries remain locked."""
         client = APIClient()
@@ -331,6 +350,11 @@ class TestMenuAPICrossOrganization:
             assert menu_management_item['is_locked'] is False
             assert menu_management_item['source_type'] == 'static'
             assert menu_management_item['path'] == '/system/menu-management'
+
+            menu_layout_item = next(item for item in items if item['code'] == 'MenuLayoutManagement')
+            assert menu_layout_item['is_locked'] is False
+            assert menu_layout_item['source_type'] == 'static'
+            assert menu_layout_item['path'] == '/system/menu-layout-management'
 
             asset_item = next(item for item in items if item['code'] == 'Asset')
             assert asset_item['is_locked'] is True

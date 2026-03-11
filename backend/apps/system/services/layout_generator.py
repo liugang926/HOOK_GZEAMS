@@ -60,6 +60,8 @@ class LayoutGenerator:
     def _is_dynamic_field_candidate(cls, field_def: FieldDefinition) -> bool:
         return (
             field_def.code not in cls.EXCLUDED_FIELDS
+            # NOTE: is_reverse_relation is DEPRECATED (see ObjectRelationDefinition).
+            # Kept here to exclude legacy reverse-relation FieldDefinition rows from layouts.
             and not getattr(field_def, 'is_reverse_relation', False)
             and getattr(field_def, 'field_type', '') != 'sub_table'
         )

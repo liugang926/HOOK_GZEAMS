@@ -113,6 +113,16 @@ function buildEditableFields(layoutConfig: AnyRecord) {
   ]
 }
 
+async function ensureFieldPropertyGroupExpanded(page: import('@playwright/test').Page, titlePattern: RegExp) {
+  const header = page.locator('.property-collapse .el-collapse-item__header').filter({ hasText: titlePattern }).first()
+  await expect(header).toBeVisible()
+  const item = header.locator('xpath=ancestor::*[contains(@class, "el-collapse-item")]').first()
+  const className = (await item.getAttribute('class')) || ''
+  if (!className.includes('is-active')) {
+    await header.click({ force: true })
+  }
+}
+
 test.describe('Layout Designer Reference Compact Keys Save Regression', () => {
   test('designer saved lookupCompactKeys should take effect in runtime compact profile', async ({ page }) => {
     let activeLayoutConfig = buildInitialLayoutConfig()
@@ -222,6 +232,7 @@ test.describe('Layout Designer Reference Compact Keys Save Regression', () => {
     await expect(ownerCanvasField).toBeVisible()
     await ownerCanvasField.click({ position: { x: 4, y: 4 } })
 
+    await ensureFieldPropertyGroupExpanded(page, /Advanced/i)
     const compactKeysEditor = page.getByTestId('field-prop-lookupCompactKeys').first()
     await expect(compactKeysEditor).toBeVisible()
     await compactKeysEditor.scrollIntoViewIfNeeded()

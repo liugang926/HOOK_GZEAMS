@@ -1,4 +1,4 @@
-﻿<!--
+<!--
   DynamicDetailPage Component
 
   A metadata-driven detail page component that:
@@ -323,17 +323,17 @@ const visibleReverseRelations = computed<ReverseRelationField[]>(() => {
       .map((rel: any) => ({
       code: getRuntimeFieldCode(rel),
       label: rel.label || rel.name || getRuntimeFieldCode(rel),
-      displayMode: rel.relationDisplayMode || rel.relation_display_mode || 'inline_readonly',
+      displayMode: rel.relationDisplayMode || 'inline_readonly',
       relatedObjectCode: extractObjectCode(rel),
-      reverseRelationField: rel.reverseRelationField || rel.reverse_relation_field,
-      reverseRelationModel: rel.reverseRelationModel || rel.reverse_relation_model,
-      sortOrder: Number(rel.sortOrder || rel.sort_order || 0) || 0,
-      groupKey: rel.groupKey || rel.group_key || '',
-      groupName: rel.groupName || rel.group_name || '',
-      groupOrder: Number(rel.groupOrder || rel.group_order || 0) || undefined,
-      defaultExpanded: rel.defaultExpanded ?? rel.default_expanded,
+      reverseRelationField: rel.reverseRelationField,
+      reverseRelationModel: rel.reverseRelationModel,
+      sortOrder: Number(rel.sortOrder || 0) || 0,
+      groupKey: rel.groupKey || '',
+      groupName: rel.groupName || '',
+      groupOrder: Number(rel.groupOrder || 0) || undefined,
+      defaultExpanded: rel.defaultExpanded,
       title: rel.label || rel.name || getRuntimeFieldCode(rel),
-      showCreate: (rel.relationDisplayMode || rel.relation_display_mode) === 'inline_editable',
+      showCreate: rel.relationDisplayMode === 'inline_editable',
       position: rel.position
     }))
   }
@@ -347,17 +347,17 @@ const visibleReverseRelations = computed<ReverseRelationField[]>(() => {
     .map(rel => ({
     code: rel.code,
     label: rel.label || rel.name,
-    displayMode: rel.relationDisplayMode || rel.relation_display_mode || 'inline_readonly',
+    displayMode: rel.relationDisplayMode || 'inline_readonly',
     relatedObjectCode: extractObjectCode(rel),
-    reverseRelationField: rel.reverseRelationField || rel.reverse_relation_field,
-    reverseRelationModel: rel.reverseRelationModel || rel.reverse_relation_model,
-    sortOrder: Number((rel as any).sortOrder || (rel as any).sort_order || 0) || 0,
-    groupKey: (rel as any).groupKey || (rel as any).group_key || '',
-    groupName: (rel as any).groupName || (rel as any).group_name || '',
-    groupOrder: Number((rel as any).groupOrder || (rel as any).group_order || 0) || undefined,
-    defaultExpanded: (rel as any).defaultExpanded ?? (rel as any).default_expanded,
+    reverseRelationField: rel.reverseRelationField,
+    reverseRelationModel: rel.reverseRelationModel,
+    sortOrder: Number((rel as any).sortOrder || 0) || 0,
+    groupKey: (rel as any).groupKey || '',
+    groupName: (rel as any).groupName || '',
+    groupOrder: Number((rel as any).groupOrder || 0) || undefined,
+    defaultExpanded: (rel as any).defaultExpanded,
     title: rel.label || rel.name,
-    showCreate: (rel.relationDisplayMode || rel.relation_display_mode) === 'inline_editable',
+    showCreate: rel.relationDisplayMode === 'inline_editable',
     position: rel.position
   }))
 })
@@ -598,8 +598,8 @@ function buildInlineEditFormSeed(record: Record<string, any>, sections: DetailSe
 function extractObjectCode(field: FieldDefinition): string {
   const fieldAny = field as unknown as Record<string, unknown>
   return resolveRelationTargetObjectCode({
-    explicitTarget: fieldAny.relatedObjectCode || fieldAny.related_object_code || fieldAny.targetObjectCode || fieldAny.target_object_code,
-    reverseRelationModel: field.reverseRelationModel || fieldAny.reverse_relation_model,
+    explicitTarget: fieldAny.relatedObjectCode || fieldAny.targetObjectCode,
+    reverseRelationModel: field.reverseRelationModel,
     relationCode: field.code
   })
 }

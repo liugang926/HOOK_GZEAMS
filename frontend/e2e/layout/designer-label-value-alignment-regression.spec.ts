@@ -30,13 +30,13 @@ function buildLayoutConfig() {
         id: 'alignment-section',
         type: 'section',
         title: 'Alignment Section',
-        columns: 1,
+        columns: 2,
         fields: fields.map((field) => ({
           id: `field-${field.code}`,
           fieldCode: field.code,
           label: field.label,
           fieldType: field.fieldType,
-          span: 1,
+          span: 2,
           visible: true,
           required: false,
           readonly: false

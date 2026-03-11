@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Field type normalization utilities.
  *
  * Keeps field type aliases consistent across:
@@ -70,9 +70,7 @@ export const resolveFieldType = (field: any, fallback = 'text'): string => {
   const raw =
     field.fieldType ??
     field.type ??
-    field.field_type ??
     field.dataType ??
-    field.data_type ??
     fallback
   return normalizeFieldType(raw) || fallback
 }

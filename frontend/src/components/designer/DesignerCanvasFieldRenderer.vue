@@ -37,6 +37,7 @@ const props = defineProps<{
   onRemove: (fieldId: string, sectionId: string, sectionIndex?: number) => void
   onResetSize: (fieldId: string) => void
   onResizeStart: (payload: ResizeStartPayload) => void
+  onLabelUpdate: (fieldId: string, label: string) => void
 }>()
 
 const emit = defineEmits<{
@@ -83,6 +84,7 @@ function handleSelect() {
       @remove="onRemove"
       @reset-size="onResetSize"
       @resize-start="onResizeStart"
+      @label-update="onLabelUpdate"
     />
   </div>
 
@@ -115,6 +117,7 @@ function handleSelect() {
       @remove="onRemove"
       @reset-size="onResetSize"
       @resize-start="onResizeStart"
+      @label-update="onLabelUpdate"
     />
   </div>
 </template>

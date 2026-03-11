@@ -16,7 +16,7 @@ from rest_framework import status
 
 from apps.organizations.models import Organization
 from apps.accounts.models import User
-from apps.system.models import Language, Translation, BusinessObject
+from apps.system.models import Language, Translation, BusinessObject, MenuGroup
 from apps.common.services.i18n_service import TranslationService as I18nService
 
 
@@ -336,6 +336,48 @@ class TestTranslationAPI:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()['data']
         assert data['count'] == 2
+
+    def test_list_object_translations_for_menu_group(self, authenticated_client, organization):
+        """Menu groups should be queryable as first-class object translations."""
+        menu_group = MenuGroup.objects.create(
+            organization=organization,
+            code='asset_master',
+            name='资产主数据',
+            icon='FolderOpened',
+            sort_order=10,
+            is_visible=True,
+            is_system=True,
+        )
+        content_type = ContentType.objects.get_for_model(MenuGroup, for_concrete_model=False)
+
+        Translation.objects.create(
+            organization=organization,
+            content_type=content_type,
+            object_id=menu_group.id,
+            field_name='name',
+            language_code='en-US',
+            text='Asset Master',
+            type='object_field',
+        )
+
+        response = authenticated_client.get(
+            '/api/system/translations/',
+            {
+                'type': 'object_field',
+                'content_type_model': 'menugroup',
+                'object_id': str(menu_group.id),
+                'field_name': 'name',
+                'language_code': 'en-US',
+            },
+        )
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()['data']
+        assert data['count'] == 1
+        row = data['results'][0]
+        assert row['contentTypeModel'] == 'menugroup'
+        assert row['objectId'] == str(menu_group.id)
+        assert row['fieldName'] == 'name'
+        assert row['text'] == 'Asset Master'
 
     def test_create_translation(self, authenticated_client, organization):
         """Test POST /api/system/translations/"""

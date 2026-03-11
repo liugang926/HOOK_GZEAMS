@@ -32,22 +32,15 @@ interface FieldMeta {
   name?: string
   label?: string
   fieldCode?: string
-  field_code?: string
   fieldType?: string
-  field_type?: string
   type?: string
   options?: Array<{ label: string; value: any; color?: string }>
   choices?: Array<{ label: string; value: any }>
   isRequired?: boolean
-  is_required?: boolean
   referenceObject?: string
-  reference_object?: string
   targetObjectCode?: string
-  target_object_code?: string
   referenceDisplayField?: string
-  reference_display_field?: string
   referenceSecondaryField?: string
-  reference_secondary_field?: string
   [key: string]: any
 }
 
@@ -80,14 +73,12 @@ function createReferenceFormatter(field: FieldMeta): ExportColumn['format'] {
   const fieldType = resolveFieldType(field)
 
   return (_value: any, row: any) => {
-    // Use the full list field value resolver (handles display aliases)
     const resolved = resolveListFieldValue(row, {
       fieldCode,
       fieldType,
-      referenceObject: field.referenceObject || field.reference_object || field.targetObjectCode || field.target_object_code,
-      referenceDisplayField: field.referenceDisplayField || field.reference_display_field,
+      referenceObject: field.referenceObject || field.targetObjectCode,
+      referenceDisplayField: field.referenceDisplayField,
     })
-    // Extract label from the resolved reference
     return resolveReferenceLabel(resolved, displayField) || ''
   }
 }
@@ -161,10 +152,10 @@ export function useExportColumns(fieldSource: Ref<any[]>) {
   const exportableFields = computed<ExportableField[]>(() => {
     return filterSystemFields(fieldSource.value || [])
       .map((field: any) => ({
-        code: String(field?.code || field?.fieldCode || field?.field_code || '').trim(),
+        code: String(field?.code || field?.fieldCode || '').trim(),
         label: String(field?.name || field?.label || field?.code || ''),
         fieldType: resolveFieldType(field),
-        isRequired: !!(field?.isRequired || field?.is_required)
+        isRequired: !!(field?.isRequired)
       }))
       .filter(f => f.code && f.label)
   })
@@ -180,11 +171,11 @@ export function useExportColumns(fieldSource: Ref<any[]>) {
 
     return fields
       .filter(f => {
-        const code = String(f?.code || f?.fieldCode || f?.field_code || '').trim()
+        const code = String(f?.code || f?.fieldCode || '').trim()
         return code && (!codeSet || codeSet.has(code))
       })
       .map(field => {
-        const code = String(field.code || field.fieldCode || field.field_code || '').trim()
+        const code = String(field.code || field.fieldCode || '').trim()
         const label = String(field.name || field.label || code)
         const fieldType = normalizeFieldType(resolveFieldType(field))
 
@@ -192,8 +183,8 @@ export function useExportColumns(fieldSource: Ref<any[]>) {
 
         // Reference fields → resolve display name
         if (isReferenceLikeFieldType(fieldType) ||
-            field.referenceObject || field.reference_object ||
-            field.targetObjectCode || field.target_object_code) {
+            field.referenceObject ||
+            field.targetObjectCode) {
           format = createReferenceFormatter(field)
         }
         // Select / dictionary → option label

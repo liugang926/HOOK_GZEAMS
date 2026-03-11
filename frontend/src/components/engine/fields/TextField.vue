@@ -3,8 +3,8 @@
     :model-value="modelValue"
     :placeholder="placeholder"
     :disabled="disabled"
-    :maxlength="field.maxLength || field.max_length"
-    :show-word-limit="field.showWordLimit || field.show_word_limit"
+    :maxlength="field.maxLength"
+    :show-word-limit="field.showWordLimit"
     :type="inputType"
     :rows="field.rows || 3"
     clearable
@@ -24,9 +24,9 @@ const props = defineProps({
 
 defineEmits(['update:modelValue'])
 
-// Support both camelCase (fieldType) and snake_case (field_type)
+// Determine input type from camelCase field metadata
 const inputType = computed(() => {
-  const fieldType = props.field.fieldType || props.field.field_type
+  const fieldType = props.field.fieldType
   return fieldType === 'textarea' ? 'textarea' : 'text'
 })
 </script>

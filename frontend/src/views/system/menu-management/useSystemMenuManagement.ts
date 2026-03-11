@@ -1,6 +1,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { menuApi, type MenuManagementItem } from '@/api/system'
 import { languageApi } from '@/api/translations'
 import { useLocaleStore } from '@/stores/locale'
@@ -30,9 +31,32 @@ import {
 } from './reorder'
 import { useSystemMenuDerivedState } from './useSystemMenuDerivedState'
 
+const isTestRuntime = Boolean(import.meta.env?.MODE === 'test' || import.meta.env?.VITEST)
+
+const getErrorMessage = (error: unknown) => (
+  error instanceof Error && error.message
+    ? error.message
+    : ''
+)
+
+const reportMenuManagementError = (
+  scope: 'load failed' | 'save failed' | 'refresh runtime menu failed',
+  error: unknown,
+) => {
+  if (isTestRuntime) return
+
+  const message = getErrorMessage(error)
+  if (scope === 'save failed' && message) {
+    return
+  }
+
+  console.error(`[menu-management] ${scope}`, error)
+}
+
 export const useSystemMenuManagement = () => {
   const localeStore = useLocaleStore()
   const menuStore = useMenuStore()
+  const router = useRouter()
   const { t, te } = useI18n()
 
   const loading = ref(false)
@@ -231,7 +255,7 @@ export const useSystemMenuManagement = () => {
       syncCollapsedGroups()
       syncPaginationBounds()
     } catch (error) {
-      console.error('[menu-management] load failed', error)
+      reportMenuManagementError('load failed', error)
       ElMessage.error(copy.value.messages.loadFailed)
     } finally {
       loading.value = false
@@ -295,6 +319,27 @@ export const useSystemMenuManagement = () => {
 
     categories.value = categories.value.filter((item) => item.originalCode !== originalCode)
     syncPaginationBounds()
+  }
+
+  const openCategoryTranslations = async (category: EditableCategory) => {
+    const target = category.translationTarget
+    if (!target?.objectId) {
+      ElMessage.warning(copy.value.messages.saveBeforeTranslations)
+      return
+    }
+
+    await router.push({
+      name: 'TranslationList',
+      query: {
+        type: 'object_field',
+        content_type_model: target.contentTypeModel,
+        object_id: target.objectId,
+        field_name: target.fieldName,
+        show_all_languages: '1',
+        focus_label: getCategoryFallbackName(category),
+        focus_code: category.code,
+      },
+    })
   }
 
   const validateLocalizedCategories = () => {
@@ -380,12 +425,12 @@ export const useSystemMenuManagement = () => {
       try {
         await menuStore.fetchMenu()
       } catch (refreshError) {
-        console.error('[menu-management] refresh runtime menu failed', refreshError)
+        reportMenuManagementError('refresh runtime menu failed', refreshError)
       }
       ElMessage.success(copy.value.messages.saveSuccess)
     } catch (error) {
-      console.error('[menu-management] save failed', error)
-      const message = error instanceof Error && error.message ? error.message : copy.value.messages.saveFailed
+      reportMenuManagementError('save failed', error)
+      const message = getErrorMessage(error) || copy.value.messages.saveFailed
       ElMessage.error(message)
     } finally {
       saving.value = false
@@ -428,6 +473,7 @@ export const useSystemMenuManagement = () => {
     availableIcons,
     orderedCategories,
     orderedItems,
+    selectedCategory,
     visibleCategoryCount,
     visibleEntryCount,
     lockedEntryCount,
@@ -436,6 +482,8 @@ export const useSystemMenuManagement = () => {
     visibleEntryGroups,
     displayedEntryGroups,
     selectableCategories,
+    getItemCategory,
+    getItemsForCategory,
     getCategoryEntryCount,
     getCategoryLabel,
     getCategoryLocaleName,
@@ -449,6 +497,7 @@ export const useSystemMenuManagement = () => {
     canMoveCategory,
     moveCategory,
     removeCategory,
+    openCategoryTranslations,
     updateCategoryLocaleName,
     canMoveItem,
     moveItem,

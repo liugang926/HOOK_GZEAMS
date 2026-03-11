@@ -32,9 +32,9 @@ const props = defineProps({
 
 defineEmits(['update:modelValue'])
 
-// Support both camelCase (fieldType) and snake_case (field_type)
+// Determine multi-select from camelCase field metadata
 const isMultiSelect = computed(() => {
-  const fieldType = props.field.fieldType || props.field.field_type
+  const fieldType = props.field.fieldType
   return fieldType === 'multi_select' || fieldType === 'multiSelect' || props.field.multiple
 })
 

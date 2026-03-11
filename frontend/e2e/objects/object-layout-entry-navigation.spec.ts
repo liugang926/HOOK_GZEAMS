@@ -177,7 +177,7 @@ test.describe('Object Layout Entry Navigation', () => {
 
     for (const entry of OBJECT_CASES) {
       await page.goto(`/objects/${entry.code}`)
-      await expect(page.getByRole('heading', { level: 2, name: entry.expectedTitle }).first()).toBeVisible({
+      await expect(page.locator('.dynamic-list-page h1:visible, .dynamic-list-page h2:visible').filter({ hasText: entry.expectedTitle }).first()).toBeVisible({
         timeout: 15000
       })
 
