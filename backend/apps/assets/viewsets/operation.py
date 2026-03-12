@@ -77,6 +77,70 @@ def _get_operation_instance(model_class, pk, organization_id=None):
     return get_object_or_404(queryset, id=pk)
 
 
+class _BaseLineItemReadOnlyViewSet(BaseModelViewSetWithBatch):
+    """
+    Read-only line-item ViewSet used by ObjectRouter related tabs.
+
+    Line items are edited through their parent documents via the unified `items`
+    payload, so we only expose GET endpoints here. The dedicated serializers keep
+    relation tables aligned with the same field names used by the parent detail API.
+    """
+
+    http_method_names = ['get', 'head', 'options']
+
+    def get_serializer_class(self):
+        return self.serializer_class
+
+
+class PickupItemViewSet(_BaseLineItemReadOnlyViewSet):
+    queryset = PickupItem.objects.select_related(
+        'pickup',
+        'asset',
+        'snapshot_original_location',
+        'snapshot_original_custodian',
+        'organization',
+        'created_by',
+        'updated_by',
+    ).order_by('created_at', 'id')
+    serializer_class = PickupItemSerializer
+
+
+class TransferItemViewSet(_BaseLineItemReadOnlyViewSet):
+    queryset = TransferItem.objects.select_related(
+        'transfer',
+        'asset',
+        'from_location',
+        'from_custodian',
+        'to_location',
+        'organization',
+        'created_by',
+        'updated_by',
+    ).order_by('created_at', 'id')
+    serializer_class = TransferItemSerializer
+
+
+class ReturnItemViewSet(_BaseLineItemReadOnlyViewSet):
+    queryset = ReturnItem.objects.select_related(
+        'asset_return',
+        'asset',
+        'organization',
+        'created_by',
+        'updated_by',
+    ).order_by('created_at', 'id')
+    serializer_class = ReturnItemSerializer
+
+
+class LoanItemViewSet(_BaseLineItemReadOnlyViewSet):
+    queryset = LoanItem.objects.select_related(
+        'loan',
+        'asset',
+        'organization',
+        'created_by',
+        'updated_by',
+    ).order_by('created_at', 'id')
+    serializer_class = LoanItemSerializer
+
+
 # ========== Pickup Order ViewSet ==========
 
 class AssetPickupViewSet(BaseModelViewSetWithBatch):

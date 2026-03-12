@@ -22,9 +22,11 @@ const bootstrap = async () => {
   app.directive('focus-trap', vFocusTrap)
 
   const brandingStore = useBrandingStore(pinia)
-  await brandingStore.initialize()
+  // Render immediately with cached/default branding, then refresh branding in the background.
+  brandingStore.applyBranding(brandingStore.settings)
 
   app.mount('#app')
+  void brandingStore.initialize()
 }
 
 bootstrap()

@@ -1,0 +1,94 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e81]:
+    - complementary [ref=e82]:
+      - heading "G GZEAMS" [level=1] [ref=e84]:
+        - generic [ref=e85]: G
+        - generic [ref=e86]: GZEAMS
+      - generic [ref=e89]:
+        - generic [ref=e90]:
+          - generic:
+            - search
+        - textbox "搜索" [ref=e91]
+      - menubar [ref=e95]:
+        - menuitem "工作台" [ref=e96] [cursor=pointer]:
+          - img [ref=e98]
+          - text: 工作台
+      - generic [ref=e102] [cursor=pointer]:
+        - img [ref=e104]
+        - generic [ref=e106]: 收起
+    - generic [ref=e107]:
+      - generic [ref=e108]:
+        - navigation "面包屑" [ref=e110]:
+          - link "工作台" [ref=e112]
+        - generic [ref=e113]:
+          - button "🌐 zh-CN" [ref=e115] [cursor=pointer]:
+            - generic [ref=e116]: 🌐
+            - generic [ref=e117]: zh-CN
+            - img [ref=e119]
+          - button "通知" [ref=e123] [cursor=pointer]:
+            - img [ref=e125]
+      - main [ref=e129]:
+        - generic [ref=e130]:
+          - generic [ref=e131]:
+            - generic [ref=e134]:
+              - generic [ref=e135]:
+                - generic [ref=e136]: 资产总数
+                - generic [ref=e138]: Piece
+              - generic [ref=e139]: "0"
+            - generic [ref=e142]:
+              - generic [ref=e143]:
+                - generic [ref=e144]: 资产总值
+                - generic [ref=e146]: Yuan
+              - generic [ref=e147]: ¥ 0
+            - generic [ref=e150]:
+              - generic [ref=e151]:
+                - generic [ref=e152]: 库存预警
+                - generic [ref=e154]: Item
+              - generic [ref=e155]: "0"
+            - generic [ref=e158]:
+              - generic [ref=e159]:
+                - generic [ref=e160]: 待办审批
+                - generic [ref=e162]: Pending
+              - generic [ref=e163]: "0"
+          - generic [ref=e164]:
+            - generic [ref=e167]: 资产状态分布
+            - generic [ref=e174]: 资产分类统计
+          - generic [ref=e179]:
+            - img [ref=e181]
+            - text: 资产生命周期概览
+          - generic [ref=e183]:
+            - generic [ref=e186] [cursor=pointer]:
+              - generic [ref=e187]:
+                - generic [ref=e188]: 待审批采购申请
+                - img [ref=e190]
+              - generic [ref=e192]: …
+              - generic [ref=e193]: 查看全部 →
+            - generic [ref=e196] [cursor=pointer]:
+              - generic [ref=e197]:
+                - generic [ref=e198]: 进行中维修工单
+                - img [ref=e200]
+              - generic [ref=e202]: …
+              - generic [ref=e203]: 查看全部 →
+            - generic [ref=e206] [cursor=pointer]:
+              - generic [ref=e207]:
+                - generic [ref=e208]: 逾期维保任务
+                - img [ref=e210]
+              - generic [ref=e212]: …
+              - generic [ref=e213]: 查看全部 →
+            - generic [ref=e216] [cursor=pointer]:
+              - generic [ref=e217]:
+                - generic [ref=e218]: 待审批报废申请
+                - img [ref=e220]
+              - generic [ref=e222]: …
+              - generic [ref=e223]: 查看全部 →
+          - generic [ref=e224]:
+            - generic [ref=e227]: 生命周期状态分布
+            - generic [ref=e233]:
+              - generic [ref=e234]: 最近动态
+              - list [ref=e236]
+  - alert [ref=e237]:
+    - img [ref=e239]
+    - paragraph [ref=e241]: 登录成功
+  - alert [ref=e242]:
+    - img [ref=e244]
+    - paragraph [ref=e246]: 请求的资源不存在

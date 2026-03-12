@@ -443,6 +443,8 @@
                 "saveDraft": "保存草稿",
                 "publish": "发布",
                 "addSection": "新增分组",
+                "moveSectionUp": "上移分组",
+                "moveSectionDown": "下移分组",
                 "editSection": "编辑分组",
                 "deleteSection": "删除分组",
                 "removeField": "移除字段",

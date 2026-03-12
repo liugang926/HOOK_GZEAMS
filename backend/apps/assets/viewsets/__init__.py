@@ -10,9 +10,13 @@ from .asset import (
 )
 from .operation import (
     AssetPickupViewSet,
+    PickupItemViewSet,
     AssetTransferViewSet,
+    TransferItemViewSet,
     AssetReturnViewSet,
+    ReturnItemViewSet,
     AssetLoanViewSet,
+    LoanItemViewSet,
 )
 
 __all__ = [
@@ -22,7 +26,11 @@ __all__ = [
     'LocationViewSet',
     'AssetStatusLogViewSet',
     'AssetPickupViewSet',
+    'PickupItemViewSet',
     'AssetTransferViewSet',
+    'TransferItemViewSet',
     'AssetReturnViewSet',
+    'ReturnItemViewSet',
     'AssetLoanViewSet',
+    'LoanItemViewSet',
 ]

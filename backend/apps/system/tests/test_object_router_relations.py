@@ -1,4 +1,6 @@
 import importlib
+from datetime import date
+from decimal import Decimal
 
 import pytest
 from django.apps import apps as django_apps
@@ -6,7 +8,7 @@ from django.db import connection
 from rest_framework.test import APIClient
 
 from apps.accounts.models import User
-from apps.assets.models import Supplier
+from apps.assets.models import Asset, AssetCategory, AssetPickup, PickupItem, Supplier
 from apps.consumables.models import Consumable, ConsumableCategory, ConsumablePurchase, PurchaseItem
 from apps.organizations.models import Department, Organization
 from apps.system.models import BusinessObject, ObjectRelationDefinition
@@ -231,6 +233,98 @@ def test_asset_pickup_relations_endpoint_keeps_assets_out_of_l1_line_items():
     assert _pick(items_relation, 'relationKind', 'relation_kind') == 'direct_fk'
     assert _pick(assets_relation, 'displayTier', 'display_tier') == 'L2'
     assert _pick(assets_relation, 'relationKind', 'relation_kind') == 'through_line_item'
+
+
+@pytest.mark.django_db
+def test_line_item_business_objects_bind_to_dedicated_viewsets():
+    _upsert_business_object('PickupItem', 'Pickup Item', 'apps.assets.models.PickupItem')
+    _upsert_business_object('TransferItem', 'Transfer Item', 'apps.assets.models.TransferItem')
+    _upsert_business_object('ReturnItem', 'Return Item', 'apps.assets.models.ReturnItem')
+    _upsert_business_object('LoanItem', 'Loan Item', 'apps.assets.models.LoanItem')
+
+    assert ObjectRegistry.get_or_create_from_db('PickupItem').viewset_class.__name__ == 'PickupItemViewSet'
+    assert ObjectRegistry.get_or_create_from_db('TransferItem').viewset_class.__name__ == 'TransferItemViewSet'
+    assert ObjectRegistry.get_or_create_from_db('ReturnItem').viewset_class.__name__ == 'ReturnItemViewSet'
+    assert ObjectRegistry.get_or_create_from_db('LoanItem').viewset_class.__name__ == 'LoanItemViewSet'
+
+
+@pytest.mark.django_db
+def test_asset_pickup_related_endpoint_returns_line_item_business_fields():
+    org = Organization.objects.create(name='Pickup Related Data Org', code='pickup-related-data-org')
+    user = User.objects.create_user(username='pickup_related_data_user', password='pass123456', organization=org)
+    department = Department.objects.create(organization=org, name='IT', code='IT')
+
+    _upsert_business_object('AssetPickup', 'Asset Pickup', 'apps.assets.models.AssetPickup')
+    _upsert_business_object('PickupItem', 'Pickup Item', 'apps.assets.models.PickupItem')
+    _upsert_business_object('Asset', 'Asset', 'apps.assets.models.Asset')
+
+    ObjectRelationDefinition.objects.update_or_create(
+        parent_object_code='AssetPickup',
+        relation_code='pickup_items',
+        defaults={
+            'target_object_code': 'PickupItem',
+            'relation_kind': 'direct_fk',
+            'target_fk_field': 'pickup',
+            'relation_name': 'Pickup Items',
+            'relation_name_en': 'Pickup Items',
+            'display_mode': 'inline_editable',
+            'display_tier': 'L1',
+            'sort_order': 1,
+            'is_active': True,
+            'extra_config': {},
+        },
+    )
+
+    category = AssetCategory.objects.create(
+        organization=org,
+        code='PICKUP_ITEM_CAT',
+        name='Pickup Category',
+        created_by=user,
+    )
+    asset = Asset.objects.create(
+        organization=org,
+        asset_name='Related Pickup Asset',
+        asset_category=category,
+        purchase_price=Decimal('1000.00'),
+        purchase_date=date.today(),
+        asset_status='idle',
+        created_by=user,
+    )
+    pickup = AssetPickup.objects.create(
+        organization=org,
+        applicant=user,
+        department=department,
+        pickup_date=date.today(),
+        pickup_reason='Need laptop',
+        created_by=user,
+    )
+    PickupItem.objects.create(
+        organization=org,
+        pickup=pickup,
+        asset=asset,
+        quantity=2,
+        remark='Related row remark',
+        created_by=user,
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id))
+
+    resp = client.get(f'/api/system/objects/AssetPickup/{pickup.id}/related/pickup_items/')
+    assert resp.status_code == 200
+    assert resp.data['success'] is True
+
+    results = _pick(resp.data.get('data', {}), 'results') or []
+    assert len(results) == 1
+
+    row = results[0]
+    asset_payload = _pick(row, 'asset')
+    assert isinstance(asset_payload, dict)
+    assert _pick(asset_payload, 'id') == str(asset.id)
+    assert _pick(asset_payload, 'asset_name', 'assetName') == 'Related Pickup Asset'
+    assert _pick(row, 'quantity') == 2
+    assert _pick(row, 'remark') == 'Related row remark'
 
 
 @pytest.mark.django_db

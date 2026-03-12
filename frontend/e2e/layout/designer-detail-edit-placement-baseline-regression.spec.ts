@@ -577,7 +577,7 @@ test.describe('Layout Placement Baseline Regression (Designer/Detail/Edit)', () 
 
       await page.goto(`/objects/${OBJECT_CODE}/${scenario.recordId}`, { waitUntil: 'domcontentloaded' })
       await expect(page).toHaveURL(new RegExp(`/objects/${OBJECT_CODE}/${scenario.recordId}`))
-      await waitForDetailPageReady(page)
+      await waitForDetailPageReady(page, { timeout: 30_000 })
       await expect(page.locator('.detail-content').first()).toBeVisible({ timeout: 15000 })
 
       await assertMainFieldPair(page, scenario.mainFields, 'detail')

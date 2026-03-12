@@ -443,6 +443,8 @@
                 "saveDraft": "Save Draft",
                 "publish": "Publish",
                 "addSection": "Add Section",
+                "moveSectionUp": "Move Section Up",
+                "moveSectionDown": "Move Section Down",
                 "editSection": "Edit Section",
                 "deleteSection": "Delete Section",
                 "removeField": "Remove Field",
