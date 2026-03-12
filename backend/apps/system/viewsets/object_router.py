@@ -570,6 +570,33 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         viewset.initial(request, *self.args, **self.kwargs)
         return viewset
 
+    def _apply_delegate_default_ordering(self, queryset, delegate):
+        """Apply delegate ordering when `related()` passes in an external queryset."""
+        try:
+            if getattr(queryset, 'ordered', False):
+                return queryset
+        except Exception:
+            return queryset
+
+        try:
+            template_queryset = getattr(delegate, 'queryset', None)
+            order_by = tuple(getattr(getattr(template_queryset, 'query', None), 'order_by', ()) or ())
+            if order_by:
+                return queryset.order_by(*order_by)
+        except Exception:
+            pass
+
+        try:
+            ordering = getattr(delegate, 'ordering', None)
+            if isinstance(ordering, str) and ordering:
+                return queryset.order_by(ordering)
+            if isinstance(ordering, (list, tuple)) and ordering:
+                return queryset.order_by(*ordering)
+        except Exception:
+            pass
+
+        return queryset
+
     # Delegate all standard CRUD methods to the delegate ViewSet
 
     def _get_lookup_search_params(self, request) -> Optional[dict]:
@@ -2336,6 +2363,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         queryset = resolution.target_queryset
         if hasattr(delegate, 'filter_queryset'):
             queryset = delegate.filter_queryset(queryset)
+        queryset = self._apply_delegate_default_ordering(queryset, delegate)
 
         page = delegate.paginate_queryset(queryset) if hasattr(delegate, 'paginate_queryset') else None
         if page is not None:
@@ -2901,6 +2929,34 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             )
         )
 
+    def _get_hidden_line_item_list_fields(self, object_code: str) -> set[str]:
+        return {
+            'PickupItem': {
+                'asset',
+                'quantity',
+                'remark',
+                'snapshot_original_location',
+                'snapshot_original_custodian',
+            },
+            'TransferItem': {
+                'asset',
+                'from_location',
+                'from_custodian',
+                'to_location',
+                'remark',
+            },
+            'ReturnItem': {
+                'asset',
+                'asset_status',
+                'condition_description',
+                'remark',
+            },
+            'LoanItem': {
+                'asset',
+                'remark',
+            },
+        }.get(str(object_code or '').strip(), set())
+
     def _merge_runtime_model_field(self, generated, existing=None, runtime_index: int = 0):
         """
         Overlay persisted display configuration onto a live-generated field.
@@ -2926,6 +2982,16 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             or getattr(generated, 'display_name_en', '')
             or ''
         )
+
+        object_code = str(
+            getattr(getattr(generated, 'business_object', None), 'code', None)
+            or getattr(self._object_meta, 'code', '')
+            or ''
+        ).strip()
+        field_name = str(getattr(generated, 'field_name', '') or '').strip()
+        if field_name and field_name in self._get_hidden_line_item_list_fields(object_code):
+            generated.show_in_list = True
+
         setattr(generated, '__runtime_sort_index', runtime_index)
         return generated
 

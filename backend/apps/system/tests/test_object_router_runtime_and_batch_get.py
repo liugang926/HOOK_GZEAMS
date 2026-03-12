@@ -452,3 +452,41 @@ def test_asset_pickup_runtime_promotes_l1_items_to_editable_subtable():
         (field.get('fieldCode') or field.get('field_code') or field.get('code')) != 'items'
         for field in reverse_relations
     )
+
+
+@pytest.mark.django_db
+def test_hidden_pickup_item_runtime_list_keeps_business_columns_visible():
+    org = Organization.objects.create(name='Line Item List Org', code='line-item-list-org')
+    user = User.objects.create(username='line_item_list_user', organization=org)
+
+    BusinessObject.objects.update_or_create(
+        code='PickupItem',
+        defaults={
+            'name': 'Pickup Item',
+            'name_en': 'Pickup Item',
+            'is_hardcoded': True,
+            'is_menu_hidden': True,
+            'django_model_path': 'apps.assets.models.PickupItem',
+        },
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id))
+
+    resp = client.get('/api/system/objects/PickupItem/runtime/?mode=list&include_relations=false')
+    assert resp.status_code == 200
+
+    payload = resp.json()
+    assert payload['success'] is True
+    editable_fields = (
+        payload['data']['fields'].get('editableFields')
+        or payload['data']['fields'].get('editable_fields')
+        or []
+    )
+    field_codes = {
+        str(field.get('fieldCode') or field.get('field_code') or field.get('code') or '')
+        for field in editable_fields
+    }
+
+    assert {'asset', 'quantity', 'remark'}.issubset(field_codes)

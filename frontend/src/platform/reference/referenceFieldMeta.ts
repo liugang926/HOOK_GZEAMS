@@ -22,6 +22,8 @@ const CANONICAL_REFERENCE_OBJECT_CODE_MAP: Record<string, string> = {
 
 const LABEL_FALLBACK_FIELDS = [
   'name',
+  'assetName',
+  'asset_name',
   'label',
   'title',
   'displayName',
@@ -29,6 +31,8 @@ const LABEL_FALLBACK_FIELDS = [
   'fullName',
   'full_name',
   'username',
+  'assetCode',
+  'asset_code',
   'code',
   'id'
 ]
@@ -73,13 +77,17 @@ export const resolveReferenceDisplayField = (
 ): string => {
   if (!field) return fallback
   const componentProps = field.componentProps || {}
+  const fieldType = normalizeFieldType(
+    String(field.editorType || field.fieldType || field.type || '')
+  )
+  const resolvedFallback = fieldType === 'asset' ? 'assetName' : fallback
   const value =
     field.referenceDisplayField ||
     field.displayField ||
     componentProps.referenceDisplayField ||
     componentProps.displayField ||
-    fallback
-  return String(value || fallback).trim() || fallback
+    resolvedFallback
+  return String(value || resolvedFallback).trim() || resolvedFallback
 }
 
 export const resolveReferenceSecondaryField = (
@@ -88,12 +96,16 @@ export const resolveReferenceSecondaryField = (
 ): string => {
   if (!field) return fallback
   const componentProps = field.componentProps || {}
+  const fieldType = normalizeFieldType(
+    String(field.editorType || field.fieldType || field.type || '')
+  )
+  const resolvedFallback = fieldType === 'asset' ? 'assetCode' : fallback
   const value =
     field.referenceSecondaryField ||
     componentProps.referenceSecondaryField ||
     componentProps.secondaryField ||
-    fallback
-  return String(value || fallback).trim() || fallback
+    resolvedFallback
+  return String(value || resolvedFallback).trim() || resolvedFallback
 }
 
 export const isReferenceLikeFieldType = (rawType: unknown): boolean => {
