@@ -11,7 +11,7 @@ DEBUG = True
 test_database_url = os.getenv('TEST_DATABASE_URL', '').strip()
 if test_database_url:
     parsed_test_db = dj_database_url.parse(test_database_url, conn_max_age=0)
-    parsed_test_db['ATOMIC_REQUESTS'] = True
+    parsed_test_db['ATOMIC_REQUESTS'] = False
     DATABASES = {'default': parsed_test_db}
 else:
     DATABASES = {
@@ -22,7 +22,7 @@ else:
             'PASSWORD': os.getenv('TEST_DB_PASSWORD', 'postgres'),
             'HOST': os.getenv('TEST_DB_HOST', 'db'),
             'PORT': os.getenv('TEST_DB_PORT', '5432'),
-            'ATOMIC_REQUESTS': True,
+            'ATOMIC_REQUESTS': False,
         }
     }
 

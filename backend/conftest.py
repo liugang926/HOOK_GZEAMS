@@ -84,13 +84,13 @@ def pytest_configure(config):
 
 def pytest_runtest_teardown(item, nextitem):
     """
-    Hook to clean up after each test.
-    Ensures database transactions are properly reset.
+    Hook reserved for future per-test teardown.
+
+    Database connection lifecycle is managed by Django's own test runner.
+    Touching connections here interferes with transactional TestCase/APITestCase
+    tests and can leave the next test with a closed connection.
     """
-    # Clear any pending database transactions
-    from django.db import connections
-    for conn in connections.all():
-        conn.close()
+    return None
 
 
 @pytest.fixture

@@ -1,4 +1,7 @@
+import importlib
+
 import pytest
+from django.apps import apps as django_apps
 from django.db import connection
 from rest_framework.test import APIClient
 
@@ -34,6 +37,55 @@ def _upsert_business_object(code: str, name: str, model_path: str):
         },
     )
     ObjectRegistry.invalidate_cache(code)
+
+
+@pytest.mark.django_db
+def test_realign_line_item_display_tiers_migration_demotes_through_relations():
+    migration = importlib.import_module('apps.system.migrations.0040_realign_line_item_display_tiers')
+
+    ObjectRelationDefinition.objects.update_or_create(
+        parent_object_code='AssetPickup',
+        relation_code='assets',
+        defaults={
+            'target_object_code': 'Asset',
+            'relation_kind': 'through_line_item',
+            'through_object_code': 'PickupItem',
+            'through_parent_fk_field': 'pickup',
+            'through_target_fk_field': 'asset',
+            'display_mode': 'inline_readonly',
+            'display_tier': 'L1',
+            'sort_order': 10,
+            'is_active': True,
+        },
+    )
+    ObjectRelationDefinition.objects.update_or_create(
+        parent_object_code='AssetPickup',
+        relation_code='pickup_items',
+        defaults={
+            'target_object_code': 'PickupItem',
+            'relation_kind': 'direct_fk',
+            'target_fk_field': 'pickup',
+            'display_mode': 'inline_readonly',
+            'display_tier': 'L2',
+            'sort_order': 1,
+            'is_active': True,
+        },
+    )
+
+    migration.realign_line_item_display_tiers(apps=django_apps, schema_editor=None)
+
+    assets_relation = ObjectRelationDefinition.objects.get(
+        parent_object_code='AssetPickup',
+        relation_code='assets',
+    )
+    item_relation = ObjectRelationDefinition.objects.get(
+        parent_object_code='AssetPickup',
+        relation_code='pickup_items',
+    )
+
+    assert assets_relation.display_tier == 'L2'
+    assert item_relation.display_tier == 'L1'
+    assert item_relation.display_mode == 'inline_editable'
 
 
 @pytest.mark.django_db
@@ -102,6 +154,83 @@ def test_relations_endpoint_returns_locale_aware_relation_name():
     assert isinstance(_pick(zh_relation, 'groupOrder', 'group_order'), int)
     assert isinstance(_pick(zh_relation, 'defaultExpanded', 'default_expanded'), bool)
     assert _pick(zh_data, 'locale') == 'zh-CN'
+
+
+@pytest.mark.django_db
+def test_asset_pickup_relations_endpoint_keeps_assets_out_of_l1_line_items():
+    org = Organization.objects.create(name='Pickup Relation Org', code='pickup-relation-org')
+    user = User.objects.create_user(username='pickup_relation_user', password='pass123456', organization=org)
+
+    _upsert_business_object('AssetPickup', 'Asset Pickup', 'apps.assets.models.AssetPickup')
+    _upsert_business_object('PickupItem', 'Pickup Item', 'apps.assets.models.PickupItem')
+    _upsert_business_object('Asset', 'Asset', 'apps.assets.models.Asset')
+
+    ObjectRelationDefinition.objects.update_or_create(
+        parent_object_code='AssetPickup',
+        relation_code='pickup_items',
+        defaults={
+            'target_object_code': 'PickupItem',
+            'relation_kind': 'direct_fk',
+            'target_fk_field': 'pickup',
+            'relation_name': 'Pickup Items',
+            'relation_name_en': 'Pickup Items',
+            'display_mode': 'inline_editable',
+            'display_tier': 'L1',
+            'sort_order': 1,
+            'is_active': True,
+            'extra_config': {},
+        },
+    )
+    ObjectRelationDefinition.objects.update_or_create(
+        parent_object_code='AssetPickup',
+        relation_code='assets',
+        defaults={
+            'target_object_code': 'Asset',
+            'relation_kind': 'through_line_item',
+            'through_object_code': 'PickupItem',
+            'through_parent_fk_field': 'pickup',
+            'through_target_fk_field': 'asset',
+            'relation_name': 'Pickup Assets',
+            'relation_name_en': 'Pickup Assets',
+            'display_mode': 'inline_readonly',
+            'display_tier': 'L2',
+            'sort_order': 2,
+            'is_active': True,
+            'extra_config': {},
+        },
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id), HTTP_ACCEPT_LANGUAGE='en-US,en;q=0.9')
+
+    resp = client.get('/api/system/objects/AssetPickup/relations/')
+    assert resp.status_code == 200
+    assert resp.data['success'] is True
+
+    relations = _pick(resp.data['data'], 'relations') or []
+
+    items_relation = next(
+        (
+            item for item in relations
+            if _pick(item, 'relationCode', 'relation_code') == 'pickup_items'
+        ),
+        None,
+    )
+    assets_relation = next(
+        (
+            item for item in relations
+            if _pick(item, 'relationCode', 'relation_code') == 'assets'
+        ),
+        None,
+    )
+
+    assert items_relation is not None
+    assert assets_relation is not None
+    assert _pick(items_relation, 'displayTier', 'display_tier') == 'L1'
+    assert _pick(items_relation, 'relationKind', 'relation_kind') == 'direct_fk'
+    assert _pick(assets_relation, 'displayTier', 'display_tier') == 'L2'
+    assert _pick(assets_relation, 'relationKind', 'relation_kind') == 'through_line_item'
 
 
 @pytest.mark.django_db

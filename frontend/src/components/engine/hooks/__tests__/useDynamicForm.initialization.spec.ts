@@ -41,4 +41,40 @@ describe('useDynamicForm initialization strategy', () => {
 
     expect(Object.prototype.hasOwnProperty.call(form.formData.value, 'assetCode')).toBe(false)
   })
+
+  it('injects runtime line items into form layout and initializes sub tables to empty arrays', async () => {
+    vi.mocked(resolveRuntimeLayout).mockResolvedValue({
+      fields: [
+        { code: 'pickupReason', name: 'Pickup Reason', fieldType: 'text', sortOrder: 1 },
+        {
+          code: 'items',
+          name: 'Items',
+          fieldType: 'sub_table',
+          sortOrder: 2,
+          relatedFields: [
+            { code: 'asset', name: 'Asset', fieldType: 'asset' },
+            { code: 'quantity', name: 'Quantity', fieldType: 'number' }
+          ]
+        }
+      ],
+      layoutConfig: {
+        sections: [
+          {
+            id: 'main',
+            type: 'section',
+            fields: [{ fieldCode: 'pickupReason', label: 'Pickup Reason' }]
+          }
+        ]
+      }
+    } as any)
+
+    const form = useDynamicForm('AssetPickup', 'form', null, null, null)
+    await form.loadMetadata()
+
+    const firstSection = form.runtimeLayout.value.sections?.[0]
+    const fieldCodes = (firstSection?.fields || []).map((field: any) => field.code)
+
+    expect(fieldCodes).toContain('items')
+    expect(form.formData.value.items).toEqual([])
+  })
 })

@@ -312,6 +312,39 @@ describe('FieldPropertyEditor', () => {
       value: [{ code: 'amount', label: 'Amount', fieldType: 'number' }]
     })
   })
+
+  it('preserves earlier changes when multiple field properties update quickly', async () => {
+    const wrapper = mount(FieldPropertyEditor, {
+      props: {
+        modelValue: {
+          fieldType: 'text',
+          label: 'Name',
+          required: false
+        },
+        fieldType: 'text',
+        availableSpans: [1, 2],
+        availableSpanColumns: 2
+      },
+      global: { stubs }
+    })
+
+    const labelItem = wrapper.findAll('.form-item-stub').find((node) => node.attributes('data-label') === 'Label')
+    const requiredItem = wrapper.findAll('.form-item-stub').find((node) => node.attributes('data-label') === 'Required')
+
+    expect(labelItem).toBeTruthy()
+    expect(requiredItem).toBeTruthy()
+
+    labelItem!.findComponent({ name: 'el-input' }).vm.$emit('input', 'Customer Name')
+    await nextTick()
+    requiredItem!.findComponent({ name: 'el-switch' }).vm.$emit('change', true)
+    await nextTick()
+
+    const emittedModelValues = wrapper.emitted('update:modelValue') || []
+    expect(emittedModelValues.at(-1)?.[0]).toMatchObject({
+      label: 'Customer Name',
+      required: true
+    })
+  })
 })
 
 

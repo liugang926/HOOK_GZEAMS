@@ -184,4 +184,60 @@ describe('RelatedObjectTable', () => {
     // Ensure no object-specific hardcoded template column leaked in fallback.
     expect(props).not.toContain('maintenanceType')
   })
+
+  it('localizes object-style column labels from runtime metadata', async () => {
+    mockRequest.mockImplementation((config: RequestConfig) => {
+      if (String(config?.url || '').endsWith('/runtime/')) {
+        return Promise.resolve({
+          runtimeVersion: 1,
+          fields: {
+            editableFields: [
+              {
+                code: 'asset',
+                label: { 'zh-cn': '资产', 'en-us': 'Asset' },
+                fieldType: 'asset',
+                showInList: true,
+                sortOrder: 1
+              }
+            ],
+            reverseRelations: []
+          },
+          layout: {
+            layoutConfig: {
+              sections: [
+                {
+                  id: 'list_default',
+                  type: 'section',
+                  fields: [
+                    { fieldCode: 'asset', visible: true }
+                  ]
+                }
+              ]
+            }
+          },
+          permissions: {
+            view: true,
+            add: true,
+            change: true,
+            delete: true
+          }
+        })
+      }
+      return Promise.resolve({
+        count: 1,
+        results: [
+          { id: 'r-3', asset: { id: 'a-1', name: 'Laptop 01' } }
+        ]
+      })
+    })
+
+    const wrapper = await mountRelatedObjectTable()
+    const table = wrapper.findComponent({ name: 'BaseTable' })
+    const columns = (table.props('columns') || []) as Array<{ prop: string; label: string }>
+
+    expect(columns).toHaveLength(1)
+    expect(columns[0].prop).toBe('asset')
+    expect(columns[0].label).not.toBe('[object Object]')
+    expect(['Asset', '资产']).toContain(columns[0].label)
+  })
 })

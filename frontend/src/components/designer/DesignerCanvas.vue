@@ -109,7 +109,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #f0f2f5;
+  background: linear-gradient(180deg, #f7f8fb 0%, #eef2f7 100%);
 }
 
 .canvas-header {
@@ -117,8 +117,8 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 20px;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.94);
   border-bottom: 1px solid #e4e7ed;
   flex-shrink: 0;
 }
@@ -129,14 +129,15 @@ defineExpose({
 
 .canvas-hint-text {
   font-size: 12px;
-  color: #606266;
+  color: #475569;
+  letter-spacing: 0.01em;
 }
 
 .canvas-content {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 24px 24px 200px;
+  padding: 22px clamp(18px, 2vw, 28px) 180px;
   overscroll-behavior: contain;
 }
 
@@ -150,11 +151,13 @@ defineExpose({
 }
 
 .canvas-render-shell {
+  width: min(100%, 1280px);
+  margin: 0 auto;
   min-height: calc(100% - 60px);
 }
 
 .compact-canvas-mode {
-  max-width: 640px;
+  max-width: 680px;
   margin: 0 auto;
   width: 100%;
 }

@@ -5,9 +5,10 @@
  * Fetches related records via dynamicApi.getRelated() and displays them
  * in a read-only table with count badge and empty state.
  */
-import { ref, watch, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { dynamicApi } from '@/api/dynamic'
 import RelatedObjectTable from './RelatedObjectTable.vue'
+import ContextDrawer from './ContextDrawer.vue'
 import type { FieldDefinition } from '@/types'
 
 interface LineItemRelation {
@@ -40,6 +41,14 @@ const emit = defineEmits<{
 }>()
 
 const activeLineItemTab = ref('')
+const editDrawerVisible = ref(false)
+const relationTableVersions = ref<Record<string, number>>({})
+
+const draftStatuses = new Set(['draft'])
+const isDraftEditable = computed(() => {
+  const rawStatus = String(props.data?.status || '').trim().toLowerCase()
+  return !!props.parentId && draftStatuses.has(rawStatus)
+})
 
 // Set first tab as active on mount
 onMounted(() => {
@@ -80,6 +89,22 @@ const getTabLabel = (relation: LineItemRelation) => {
   return count !== undefined ? `${relation.label} (${count})` : relation.label
 }
 
+const bumpRelationTable = (relationCode?: string) => {
+  if (relationCode) {
+    relationTableVersions.value = {
+      ...relationTableVersions.value,
+      [relationCode]: (relationTableVersions.value[relationCode] || 0) + 1
+    }
+    return
+  }
+
+  const nextVersions: Record<string, number> = { ...relationTableVersions.value }
+  for (const relation of props.lineItemRelations) {
+    nextVersions[relation.code] = (nextVersions[relation.code] || 0) + 1
+  }
+  relationTableVersions.value = nextVersions
+}
+
 const onRecordClick = (relationCode: string, record: any, targetObjectCode?: string) => {
   emit('recordClick', relationCode, record, targetObjectCode)
 }
@@ -90,7 +115,22 @@ const onRecordEdit = (relationCode: string, record: any, targetObjectCode?: stri
 
 const onRefresh = (relationCode: string) => {
   fetchRelationCounts()
+  bumpRelationTable(relationCode)
   emit('refresh', relationCode)
+}
+
+const openEditDrawer = () => {
+  if (!isDraftEditable.value) return
+  editDrawerVisible.value = true
+}
+
+const handleDrawerSuccess = () => {
+  editDrawerVisible.value = false
+  fetchRelationCounts()
+  bumpRelationTable()
+  for (const relation of props.lineItemRelations) {
+    emit('refresh', relation.code)
+  }
 }
 </script>
 
@@ -99,6 +139,22 @@ const onRefresh = (relationCode: string) => {
     v-if="lineItemRelations.length > 0"
     class="inline-line-item-tabs"
   >
+    <div
+      v-if="isDraftEditable"
+      class="line-item-actions"
+    >
+      <div class="line-item-actions__copy">
+        <span class="line-item-actions__title">Line Items</span>
+        <span class="line-item-actions__hint">Edit draft line items without leaving this page.</span>
+      </div>
+      <el-button
+        type="primary"
+        @click="openEditDrawer"
+      >
+        Edit Line Items
+      </el-button>
+    </div>
+
     <el-tabs
       v-model="activeLineItemTab"
       type="border-card"
@@ -111,6 +167,7 @@ const onRefresh = (relationCode: string) => {
         :label="getTabLabel(relation)"
       >
         <RelatedObjectTable
+          :key="`${relation.code}-${relationTableVersions[relation.code] || 0}`"
           :parent-object-code="parentObjectCode"
           :parent-id="parentId"
           :target-object-code="relation.relatedObjectCode || ''"
@@ -133,6 +190,14 @@ const onRefresh = (relationCode: string) => {
         />
       </el-tab-pane>
     </el-tabs>
+
+    <ContextDrawer
+      v-model="editDrawerVisible"
+      :object-code="parentObjectCode"
+      :record-id="parentId"
+      title-override="Edit Line Items"
+      @success="handleDrawerSuccess"
+    />
   </div>
 </template>
 
@@ -141,6 +206,35 @@ const onRefresh = (relationCode: string) => {
 
 .inline-line-item-tabs {
   margin-top: 16px;
+
+  .line-item-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(37, 99, 235, 0.12);
+    background: linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(248, 250, 252, 0.98));
+  }
+
+  .line-item-actions__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .line-item-actions__title {
+    font-size: 13px;
+    font-weight: 700;
+    color: $text-main;
+  }
+
+  .line-item-actions__hint {
+    font-size: 12px;
+    color: $text-secondary;
+  }
 
   .line-item-tabs {
     border-radius: 12px;

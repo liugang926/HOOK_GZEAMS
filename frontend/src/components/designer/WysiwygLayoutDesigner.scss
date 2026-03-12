@@ -743,8 +743,8 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 .designer-main {
   display: grid;
   grid-template-columns: minmax(264px, 304px) minmax(0, 1fr) minmax(320px, 368px);
-  gap: 12px;
-  padding: 12px;
+  gap: 14px;
+  padding: 4px 0 0;
   min-height: 0;
   overflow: hidden;
   background:

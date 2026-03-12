@@ -165,6 +165,9 @@ export interface FieldDefinition {
 
   /** Sub-table field definitions */
   subTableFields?: FieldDefinition[]
+  relatedFields?: FieldDefinition[]
+  related_fields?: FieldDefinition[]
+  displayTier?: string
 
   /** Additional validation rules */
   validationRules?: ValidationRule[]
@@ -211,6 +214,7 @@ export type FieldType =
   | 'reference'      // Reference to another business object
   | 'user'           // User picker
   | 'department'     // Department/organization picker
+  | 'asset'          // Asset picker
   | 'file'           // File upload
   | 'image'          // Image upload
   | 'attachment'     // Generic attachment
@@ -218,8 +222,10 @@ export type FieldType =
   | 'barcode'        // Barcode display
   | 'formula'        // Calculated field
   | 'subtable'       // Sub-table/master-detail
+  | 'sub_table'      // Sub-table/master-detail
   | 'location'       // Location picker
   | 'organization'   // Organization picker
+  | 'related_object' // Embedded related table
 
 /**
  * Field option for select/radio/checkbox fields

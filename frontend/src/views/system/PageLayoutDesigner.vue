@@ -9,11 +9,12 @@
         {{ $t('common.actions.back') }}
       </el-button>
       <div class="header-title">
+        <span class="eyebrow">{{ $t('system.pageLayout.list.title') }}</span>
         <span class="title">{{ $t('system.pageLayout.designer.title') }}</span>
         <span
           v-if="layoutName"
           class="subtitle"
-        >- {{ layoutName }}</span>
+        >{{ layoutName }}</span>
       </div>
       <div class="header-meta">
         <el-tag
@@ -131,28 +132,51 @@ const goBack = () => {
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 12px;
   overflow: hidden;
-  background: #f0f2f5;
+  padding: 12px;
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 28%),
+    linear-gradient(180deg, #eef2f7 0%, #f7f9fc 100%);
 }
 
 .designer-hint {
-  margin: 0 16px;
+  margin: 0;
   flex-shrink: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  background: rgba(239, 246, 255, 0.88);
+}
+
+.designer-hint:deep(.el-alert__content) {
+  color: #475569;
+  line-height: 1.6;
 }
 
 .page-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e4e7ed;
-  background: #fff;
+  padding: 14px 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
   flex-shrink: 0;
 }
 
 .header-title {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
 }
 
 .header-meta {
@@ -160,16 +184,23 @@ const goBack = () => {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
 }
 
 .subtitle {
-  font-size: 14px;
-  color: #909399;
+  max-width: 520px;
+  font-size: 13px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .designer-stage {

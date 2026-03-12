@@ -9,7 +9,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import inspect
 import re
 import logging
@@ -76,6 +76,343 @@ class ObjectRouterViewSet(viewsets.ViewSet):
         'organization_id',
         'tenant_id',
     }
+
+    _LINE_ITEM_RUNTIME_CONFIGS = {
+        'AssetPickup': {
+            'columns': [
+                {
+                    'code': 'asset',
+                    'name': 'Asset',
+                    'field_type': 'asset',
+                    'is_required': True,
+                    'reference_object': 'Asset',
+                    'sort_order': 10,
+                    'component_props': {
+                        'filters': {
+                            'assetStatus': 'idle',
+                            'department': {'fromParent': 'department'},
+                        },
+                        'excludeSelected': True,
+                        'autoFillMappings': {
+                            'assetCode': 'assetCode',
+                            'assetName': 'assetName',
+                            'specification': 'specification',
+                        },
+                    },
+                },
+                {
+                    'code': 'assetCode',
+                    'name': 'Asset Code',
+                    'field_type': 'text',
+                    'is_readonly': True,
+                    'sort_order': 20,
+                },
+                {
+                    'code': 'assetName',
+                    'name': 'Asset Name',
+                    'field_type': 'text',
+                    'is_readonly': True,
+                    'sort_order': 30,
+                },
+                {
+                    'code': 'specification',
+                    'name': 'Specification',
+                    'field_type': 'text',
+                    'is_readonly': True,
+                    'sort_order': 40,
+                },
+                {
+                    'code': 'quantity',
+                    'name': 'Quantity',
+                    'field_type': 'number',
+                    'is_required': True,
+                    'default_value': 1,
+                    'sort_order': 50,
+                    'component_props': {
+                        'min': 1,
+                    },
+                },
+                {
+                    'code': 'remark',
+                    'name': 'Remark',
+                    'field_type': 'text',
+                    'sort_order': 60,
+                },
+            ],
+        },
+        'AssetTransfer': {
+            'columns': [
+                {
+                    'code': 'asset',
+                    'name': 'Asset',
+                    'field_type': 'asset',
+                    'is_required': True,
+                    'reference_object': 'Asset',
+                    'sort_order': 10,
+                    'component_props': {
+                        'filters': {
+                            'department': {'fromParent': ['from_department', 'fromDepartment']},
+                        },
+                        'excludeSelected': True,
+                        'autoFillMappings': {
+                            'assetCode': 'assetCode',
+                            'assetName': 'assetName',
+                            'specification': 'specification',
+                            'location': 'fromLocation',
+                            'custodian': 'fromCustodian',
+                        },
+                    },
+                },
+                {
+                    'code': 'assetCode',
+                    'name': 'Asset Code',
+                    'field_type': 'text',
+                    'is_readonly': True,
+                    'sort_order': 20,
+                },
+                {
+                    'code': 'assetName',
+                    'name': 'Asset Name',
+                    'field_type': 'text',
+                    'is_readonly': True,
+                    'sort_order': 30,
+                },
+                {
+                    'code': 'specification',
+                    'name': 'Specification',
+                    'field_type': 'text',
+                    'is_readonly': True,
+                    'sort_order': 40,
+                },
+                {
+                    'code': 'fromLocation',
+                    'name': 'From Location',
+                    'field_type': 'location',
+                    'is_readonly': True,
+                    'reference_object': 'Location',
+                    'sort_order': 50,
+                },
+                {
+                    'code': 'fromCustodian',
+                    'name': 'From Custodian',
+                    'field_type': 'user',
+                    'is_readonly': True,
+                    'reference_object': 'User',
+                    'sort_order': 60,
+                },
+                {
+                    'code': 'toLocation',
+                    'name': 'To Location',
+                    'field_type': 'location',
+                    'reference_object': 'Location',
+                    'sort_order': 70,
+                },
+                {
+                    'code': 'remark',
+                    'name': 'Remark',
+                    'field_type': 'text',
+                    'sort_order': 80,
+                },
+            ],
+        },
+        'AssetReturn': {
+            'columns': [
+                {
+                    'code': 'asset',
+                    'name': 'Asset',
+                    'field_type': 'asset',
+                    'is_required': True,
+                    'reference_object': 'Asset',
+                    'sort_order': 10,
+                    'component_props': {
+                        'filters': {
+                            'custodian': {
+                                'fromParent': ['returner'],
+                                'fallback': '$currentUser',
+                            },
+                        },
+                        'excludeSelected': True,
+                        'autoFillMappings': {
+                            'assetCode': 'assetCode',
+                            'assetName': 'assetName',
+                            'specification': 'specification',
+                        },
+                    },
+                },
+                {
+                    'code': 'assetCode',
+                    'name': 'Asset Code',
+                    'field_type': 'text',
+                    'is_readonly': True,
+                    'sort_order': 20,
+                },
+                {
+                    'code': 'assetName',
+                    'name': 'Asset Name',
+                    'field_type': 'text',
+                    'is_readonly': True,
+                    'sort_order': 30,
+                },
+                {
+                    'code': 'specification',
+                    'name': 'Specification',
+                    'field_type': 'text',
+                    'is_readonly': True,
+                    'sort_order': 40,
+                },
+                {
+                    'code': 'assetStatus',
+                    'name': 'Asset Status',
+                    'field_type': 'select',
+                    'is_required': True,
+                    'default_value': 'idle',
+                    'sort_order': 50,
+                    'options': [
+                        {'label': 'Idle', 'value': 'idle'},
+                        {'label': 'In Use', 'value': 'in_use'},
+                        {'label': 'Maintenance', 'value': 'maintenance'},
+                        {'label': 'Scrapped', 'value': 'scrapped'},
+                    ],
+                },
+                {
+                    'code': 'conditionDescription',
+                    'name': 'Condition Description',
+                    'field_type': 'textarea',
+                    'sort_order': 60,
+                    'component_props': {
+                        'rows': 2,
+                    },
+                },
+                {
+                    'code': 'remark',
+                    'name': 'Remark',
+                    'field_type': 'text',
+                    'sort_order': 70,
+                },
+            ],
+        },
+        'AssetLoan': {
+            'columns': [
+                {
+                    'code': 'asset',
+                    'name': 'Asset',
+                    'field_type': 'asset',
+                    'is_required': True,
+                    'reference_object': 'Asset',
+                    'sort_order': 10,
+                    'component_props': {
+                        'filters': {
+                            'assetStatus': 'idle',
+                        },
+                        'excludeSelected': True,
+                        'autoFillMappings': {
+                            'assetCode': 'assetCode',
+                            'assetName': 'assetName',
+                            'specification': 'specification',
+                        },
+                    },
+                },
+                {
+                    'code': 'assetCode',
+                    'name': 'Asset Code',
+                    'field_type': 'text',
+                    'is_readonly': True,
+                    'sort_order': 20,
+                },
+                {
+                    'code': 'assetName',
+                    'name': 'Asset Name',
+                    'field_type': 'text',
+                    'is_readonly': True,
+                    'sort_order': 30,
+                },
+                {
+                    'code': 'specification',
+                    'name': 'Specification',
+                    'field_type': 'text',
+                    'is_readonly': True,
+                    'sort_order': 40,
+                },
+                {
+                    'code': 'remark',
+                    'name': 'Remark',
+                    'field_type': 'text',
+                    'sort_order': 50,
+                },
+            ],
+        },
+    }
+
+    @staticmethod
+    def _to_runtime_bool(value: Any, default: bool = False) -> bool:
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return value != 0
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {'true', '1', 'yes', 'on'}:
+                return True
+            if normalized in {'false', '0', 'no', 'off'}:
+                return False
+        return default
+
+    def _build_line_item_related_field_payload(
+        self,
+        definition: Dict[str, Any],
+        *,
+        strict_identifier: bool,
+    ) -> dict:
+        component_props = {
+            **(definition.get('component_props') or {}),
+            **(definition.get('componentProps') or {}),
+        }
+        payload = {
+            **self._build_field_identifier_payload(str(definition.get('code') or '').strip(), force_strict=strict_identifier),
+            'name': str(definition.get('name') or definition.get('label') or definition.get('code') or '').strip(),
+            'label': str(definition.get('label') or definition.get('name') or definition.get('code') or '').strip(),
+            'field_type': str(definition.get('field_type') or definition.get('fieldType') or 'text').strip(),
+            'is_required': self._to_runtime_bool(definition.get('is_required') or definition.get('isRequired'), False),
+            'is_readonly': self._to_runtime_bool(definition.get('is_readonly') or definition.get('isReadonly'), False),
+            'show_in_form': self._to_runtime_bool(definition.get('show_in_form'), True),
+            'show_in_detail': self._to_runtime_bool(definition.get('show_in_detail'), True),
+            'sort_order': int(definition.get('sort_order') or definition.get('sortOrder') or 0),
+            'default_value': definition.get('default_value', definition.get('defaultValue')),
+            'reference_object': definition.get('reference_object', definition.get('referenceObject')),
+            'options': definition.get('options'),
+            'component_props': component_props,
+        }
+        return self._with_camel_case_keys(payload)
+
+    def _partition_runtime_relation_fields(
+        self,
+        runtime_fields: List[dict],
+        *,
+        context: str,
+    ) -> Tuple[List[dict], List[dict]]:
+        editable_fields: List[dict] = []
+        reverse_relations: List[dict] = []
+
+        for item in runtime_fields or []:
+            display_tier = str(item.get('display_tier') or item.get('displayTier') or '').strip().upper()
+            show_in_form = self._to_runtime_bool(item.get('show_in_form') or item.get('showInForm'), False)
+            show_in_detail = self._to_runtime_bool(item.get('show_in_detail') or item.get('showInDetail'), False)
+
+            should_promote = (
+                display_tier == 'L1'
+                and (
+                    (context == 'form' and show_in_form)
+                    or (context == 'detail' and show_in_detail)
+                )
+            )
+
+            if should_promote:
+                editable_fields.append(item)
+                continue
+
+            reverse_relations.append(item)
+
+        return editable_fields, reverse_relations
 
     def initial(self, request, *args, **kwargs):
         """
@@ -1510,6 +1847,12 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             if self._object_meta.is_hardcoded and include_relations
             else []
         )
+        runtime_editable_relations = []
+        if runtime_relations:
+            runtime_editable_relations, runtime_relations = self._partition_runtime_relation_fields(
+                runtime_relations,
+                context=context,
+            )
 
         if self._object_meta.is_hardcoded:
             # For hardcoded objects, get fields from ModelFieldDefinition
@@ -1524,7 +1867,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 )
                 # Check if this is a reverse relation (sub_table type)
                 if fd.field_type == 'sub_table':
-                    if include_relations and not runtime_relations:
+                    if include_relations and not runtime_relations and not runtime_editable_relations:
                         reverse_relations.append(field_data)
                 else:
                     # Apply context filtering
@@ -1581,6 +1924,8 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                         )
                     )
 
+        if runtime_editable_relations:
+            editable_fields.extend(runtime_editable_relations)
         if runtime_relations:
             reverse_relations = runtime_relations
 
@@ -2096,6 +2441,12 @@ class ObjectRouterViewSet(viewsets.ViewSet):
             if self._object_meta.is_hardcoded and include_relations
             else []
         )
+        runtime_editable_relations = []
+        if runtime_relations:
+            runtime_editable_relations, runtime_relations = self._partition_runtime_relation_fields(
+                runtime_relations,
+                context=context,
+            )
 
         if self._object_meta.is_hardcoded:
             model_fields = self._get_hardcoded_model_fields()
@@ -2109,7 +2460,7 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                     strict_identifier=True,
                 )
                 if fd.field_type == 'sub_table':
-                    if include_relations and not runtime_relations:
+                    if include_relations and not runtime_relations and not runtime_editable_relations:
                         reverse_relations.append(field_data)
                 else:
                     if self._should_show_field(fd, context, is_model_field=True):
@@ -2164,6 +2515,8 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                         )
                     )
 
+        if runtime_editable_relations:
+            editable_fields.extend(runtime_editable_relations)
         if runtime_relations:
             reverse_relations = runtime_relations
 
@@ -2660,6 +3013,79 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 or target_path_map.get(target_object_code, '')
             )
             relation_name = str(item.get('relation_name') or target_object_code or relation_code).strip()
+            display_tier = str(item.get('display_tier') or item.get('displayTier') or 'L2').strip() or 'L2'
+            relation_kind = str(item.get('relation_kind') or '').strip()
+            target_fk_field = str(item.get('target_fk_field') or '').strip()
+            relation_display_mode = str(item.get('display_mode') or 'tab_readonly')
+
+            line_item_config = self._LINE_ITEM_RUNTIME_CONFIGS.get(self._object_meta.code)
+            is_line_item_relation = (
+                display_tier.upper() == 'L1'
+                and relation_kind == 'direct_fk'
+                and bool(line_item_config)
+            )
+
+            if is_line_item_relation:
+                related_fields = [
+                    self._build_line_item_related_field_payload(
+                        definition,
+                        strict_identifier=strict_identifier,
+                    )
+                    for definition in (line_item_config or {}).get('columns', [])
+                ]
+                component_props = {
+                    'relation_code': relation_code,
+                    'relationCode': relation_code,
+                    'target_object_code': target_object_code,
+                    'targetObjectCode': target_object_code,
+                    'target_fk_field': target_fk_field,
+                    'targetFkField': target_fk_field,
+                    'display_tier': display_tier,
+                    'displayTier': display_tier,
+                    'related_fields': related_fields,
+                    'relatedFields': related_fields,
+                }
+                payload.append(self._with_camel_case_keys({
+                    **self._build_field_identifier_payload('items', force_strict=strict_identifier),
+                    'name': relation_name,
+                    'label': relation_name,
+                    'field_type': 'sub_table',
+                    'is_required': False,
+                    'is_readonly': False,
+                    'is_system': True,
+                    'is_searchable': False,
+                    'sortable': False,
+                    'show_in_filter': False,
+                    'show_in_list': False,
+                    'show_in_detail': True,
+                    'show_in_form': True,
+                    'sort_order': int(item.get('sort_order') or 0),
+                    'column_width': None,
+                    'min_column_width': None,
+                    'fixed': False,
+                    'options': None,
+                    'placeholder': None,
+                    'default_value': [],
+                    'reference_object': target_object_code,
+                    'is_reverse_relation': True,
+                    'reverse_relation_model': reverse_relation_model,
+                    'reverse_relation_field': target_fk_field,
+                    'relation_display_mode': relation_display_mode,
+                    'target_object_code': target_object_code,
+                    'target_fk_field': target_fk_field,
+                    'relation_kind': relation_kind,
+                    'relation_name': relation_name,
+                    'relation_code': relation_code,
+                    'display_tier': display_tier,
+                    'related_fields': related_fields,
+                    'component_props': component_props,
+                    'group_key': str(item.get('group_key') or '').strip(),
+                    'group_name': str(item.get('group_name') or '').strip(),
+                    'group_order': int(item.get('group_order') or 0),
+                    'default_expanded': bool(item.get('default_expanded')),
+                    'locale': request_locale,
+                }))
+                continue
 
             payload.append(self._with_camel_case_keys({
                 **self._build_field_identifier_payload(relation_code, force_strict=strict_identifier),
@@ -2685,13 +3111,14 @@ class ObjectRouterViewSet(viewsets.ViewSet):
                 'reference_object': target_object_code,
                 'is_reverse_relation': True,
                 'reverse_relation_model': reverse_relation_model,
-                'reverse_relation_field': str(item.get('target_fk_field') or '').strip(),
-                'relation_display_mode': str(item.get('display_mode') or 'tab_readonly'),
+                'reverse_relation_field': target_fk_field,
+                'relation_display_mode': relation_display_mode,
                 'target_object_code': target_object_code,
-                'target_fk_field': str(item.get('target_fk_field') or '').strip(),
-                'relation_kind': str(item.get('relation_kind') or '').strip(),
+                'target_fk_field': target_fk_field,
+                'relation_kind': relation_kind,
                 'relation_name': relation_name,
                 'relation_code': relation_code,
+                'display_tier': display_tier,
                 'group_key': str(item.get('group_key') or '').strip(),
                 'group_name': str(item.get('group_name') or '').strip(),
                 'group_order': int(item.get('group_order') or 0),

@@ -205,8 +205,7 @@ test.describe('Layout Designer Section Behavior -> Detail Regression', () => {
 
     const columnsProp = page.getByTestId('section-prop-columns').first()
     await expect(columnsProp).toBeVisible()
-    await columnsProp.click({ force: true })
-    await page.locator('.el-select-dropdown__item').filter({ hasText: /^1$/ }).first().click()
+    await columnsProp.locator('.el-radio-button').filter({ hasText: /^1$/ }).first().click({ force: true })
 
     const collapsibleSwitch = page.getByTestId('section-prop-collapsible').locator('.el-switch').first()
     await expect(collapsibleSwitch).toBeVisible()

@@ -22,6 +22,181 @@ from apps.assets.models import (
 )
 
 
+def _extract_reference_id(value):
+    """Normalize nested reference payloads into scalar ids."""
+    if isinstance(value, dict):
+        return value.get('id') or value.get('value') or value.get('code')
+    return getattr(value, 'id', value)
+
+
+def _normalize_item_id(value) -> str:
+    return str(value or '').strip()
+
+
+def _resolve_first_present(item_data: Dict[str, Any], *keys: str, fallback=None):
+    for key in keys:
+        if key not in item_data:
+            continue
+        value = _extract_reference_id(item_data.get(key))
+        if value in (None, ''):
+            continue
+        return value
+    return fallback
+
+
+def _resolve_line_item_asset_id(item_data: Dict[str, Any], *, fallback=None):
+    return _resolve_first_present(
+        item_data,
+        'asset_id',
+        'assetId',
+        'asset',
+        fallback=fallback,
+    )
+
+
+def _resolve_line_item_location_id(item_data: Dict[str, Any], *, fallback=None):
+    return _resolve_first_present(
+        item_data,
+        'to_location_id',
+        'toLocationId',
+        'to_location',
+        'toLocation',
+        fallback=fallback,
+    )
+
+
+def _is_blank_line_item(item_data: Dict[str, Any]) -> bool:
+    if not isinstance(item_data, dict):
+        return True
+
+    for key, value in item_data.items():
+        if key in {'id', '_isNew', '_is_new'}:
+            continue
+        normalized = _extract_reference_id(value)
+        if normalized in (None, '', []):
+            continue
+        return False
+    return True
+
+
+def _ensure_asset_selected(item_data: Dict[str, Any], *, fallback=None):
+    asset_id = _resolve_line_item_asset_id(item_data, fallback=fallback)
+    if asset_id:
+        return str(asset_id)
+    if _is_blank_line_item(item_data):
+        return ''
+    raise ValidationError({
+        'items': 'Asset is required for each line item'
+    })
+
+
+def _validate_unique_asset_selection(
+    items: Optional[List[Dict[str, Any]]],
+    *,
+    existing_items: Optional[Dict[str, Any]] = None,
+):
+    seen_asset_ids = {}
+    for index, raw_item in enumerate(items or []):
+        item_data = raw_item or {}
+        item_id = _normalize_item_id(item_data.get('id'))
+        existing_item = existing_items.get(item_id) if existing_items and item_id else None
+        asset_id = _resolve_line_item_asset_id(
+            item_data,
+            fallback=getattr(existing_item, 'asset_id', None),
+        )
+        if not asset_id:
+            continue
+        normalized_asset_id = str(asset_id)
+        previous_index = seen_asset_ids.get(normalized_asset_id)
+        if previous_index is not None:
+            raise ValidationError({
+                'items': (
+                    'Duplicate asset selection is not allowed '
+                    f'(rows {previous_index + 1} and {index + 1})'
+                )
+            })
+        seen_asset_ids[normalized_asset_id] = index
+
+
+def _get_asset_or_raise(asset_id: str, organization_id: str) -> Asset:
+    try:
+        return Asset.objects.get(
+            id=asset_id,
+            organization_id=organization_id,
+            is_deleted=False
+        )
+    except Asset.DoesNotExist as exc:
+        raise ValidationError({
+            'asset': f'Asset with ID {asset_id} not found'
+        }) from exc
+
+
+def _get_operation_instance_or_raise(model_class, instance_id: str, organization_id: Optional[str]):
+    queryset = model_class.all_objects.filter(id=instance_id, is_deleted=False)
+    if organization_id:
+        queryset = queryset.filter(organization_id=organization_id)
+    return queryset.get()
+
+
+def _prepare_line_item_operations(
+    items: Optional[List[Dict[str, Any]]],
+    *,
+    existing_items: Dict[str, Any],
+    parent_label: str,
+):
+    """
+    Normalize nested line item payloads before applying mutations.
+
+    We compute the full final state up front so updates can safely delete rows
+    whose current asset occupancy would otherwise violate the parent+asset
+    unique constraint during in-place replacement.
+    """
+    _validate_unique_asset_selection(items, existing_items=existing_items)
+
+    operations = []
+    submitted_ids = set()
+
+    for raw_item in items or []:
+        item_data = raw_item or {}
+        item_id = _normalize_item_id(item_data.get('id'))
+        existing_item = existing_items.get(item_id) if item_id else None
+
+        if item_id and existing_item is None:
+            raise ValidationError({
+                'items': f'Line item {item_id} does not belong to this {parent_label}'
+            })
+
+        asset_id = _ensure_asset_selected(
+            item_data,
+            fallback=getattr(existing_item, 'asset_id', None),
+        )
+        normalized_asset_id = str(asset_id) if asset_id else ''
+
+        if item_id:
+            submitted_ids.add(item_id)
+
+        operations.append({
+            'item_data': item_data,
+            'item_id': item_id,
+            'existing_item': existing_item,
+            'asset_id': normalized_asset_id,
+        })
+
+    deleted_ids = {
+        item_id for item_id in existing_items.keys()
+        if item_id not in submitted_ids
+    }
+    recreated_ids = {
+        operation['item_id']
+        for operation in operations
+        if operation['item_id']
+        and operation['asset_id']
+        and str(operation['existing_item'].asset_id) != operation['asset_id']
+    }
+
+    return operations, deleted_ids, recreated_ids
+
+
 # ========== Pickup Order Service ==========
 
 class AssetPickupService(BaseCRUDService):
@@ -66,35 +241,31 @@ class AssetPickupService(BaseCRUDService):
         with transaction.atomic():
             pickup = self.create(data, user)
 
+            _validate_unique_asset_selection(items)
+
             # Create items with snapshots
             for item_data in items:
-                asset_id = item_data.get('asset_id')
-                try:
-                    asset = Asset.objects.get(
-                        id=asset_id,
-                        organization_id=organization_id,
-                        is_deleted=False
-                    )
+                asset_id = _ensure_asset_selected(item_data)
+                if not asset_id:
+                    continue
 
-                    # Validate asset is available for pickup
-                    if asset.asset_status not in ['idle', 'pending']:
-                        raise ValidationError({
-                            'asset': f'Asset {asset.asset_name} is not available (status: {asset.get_status_label()})'
-                        })
+                asset = _get_asset_or_raise(asset_id, organization_id)
 
-                    PickupItem.objects.create(
-                        pickup=pickup,
-                        asset=asset,
-                        quantity=item_data.get('quantity', 1),
-                        remark=item_data.get('remark', ''),
-                        snapshot_original_location=asset.location,
-                        snapshot_original_custodian=asset.custodian,
-                        organization_id=organization_id
-                    )
-                except Asset.DoesNotExist:
+                # Validate asset is available for pickup
+                if asset.asset_status not in ['idle', 'pending']:
                     raise ValidationError({
-                        'asset': f'Asset with ID {asset_id} not found'
+                        'asset': f'Asset {asset.asset_name} is not available (status: {asset.get_status_label()})'
                     })
+
+                PickupItem.objects.create(
+                    pickup=pickup,
+                    asset=asset,
+                    quantity=item_data.get('quantity', 1),
+                    remark=item_data.get('remark', ''),
+                    snapshot_original_location=asset.location,
+                    snapshot_original_custodian=asset.custodian,
+                    organization_id=organization_id
+                )
 
             # Auto-start workflow if enabled
             self._auto_start_workflow(pickup, user, organization_id)
@@ -128,7 +299,7 @@ class AssetPickupService(BaseCRUDService):
             Updated pickup order
         """
         with transaction.atomic():
-            pickup = self.get(pickup_id)
+            pickup = _get_operation_instance_or_raise(AssetPickup, pickup_id, organization_id)
 
             if pickup.status != 'draft':
                 raise ValidationError({
@@ -144,49 +315,59 @@ class AssetPickupService(BaseCRUDService):
             # Diff-patch items
             if items is not None:
                 existing_items = {str(item.id): item for item in pickup.items.all()}
-                submitted_ids = set()
+                operations, deleted_ids, recreated_ids = _prepare_line_item_operations(
+                    items,
+                    existing_items=existing_items,
+                    parent_label='pickup order',
+                )
 
-                for item_data in items:
-                    item_id = str(item_data.get('id', '')).strip()
-                    asset_id = item_data.get('asset_id') or item_data.get('asset')
+                for item_id in deleted_ids | recreated_ids:
+                    existing_items[item_id].delete()
 
-                    if item_id and item_id in existing_items:
-                        # Update existing item
-                        existing_item = existing_items[item_id]
+                for operation in operations:
+                    item_data = operation['item_data']
+                    item_id = operation['item_id']
+                    existing_item = operation['existing_item']
+                    asset_id = operation['asset_id']
+
+                    if item_id and item_id not in recreated_ids:
                         if item_data.get('quantity') is not None:
                             existing_item.quantity = item_data['quantity']
                         if 'remark' in item_data:
                             existing_item.remark = item_data.get('remark', '')
                         existing_item.save()
-                        submitted_ids.add(item_id)
-                    else:
-                        # Create new item
-                        if not asset_id:
-                            continue
-                        try:
-                            asset = Asset.objects.get(
-                                id=asset_id,
-                                organization_id=organization_id,
-                                is_deleted=False
-                            )
-                            PickupItem.objects.create(
-                                pickup=pickup,
-                                asset=asset,
-                                quantity=item_data.get('quantity', 1),
-                                remark=item_data.get('remark', ''),
-                                snapshot_original_location=asset.location,
-                                snapshot_original_custodian=asset.custodian,
-                                organization_id=organization_id
-                            )
-                        except Asset.DoesNotExist:
-                            raise ValidationError({
-                                'asset': f'Asset with ID {asset_id} not found'
-                            })
+                        continue
 
-                # Delete items not in submission
-                for item_id, item in existing_items.items():
-                    if item_id not in submitted_ids:
-                        item.delete()
+                    if not asset_id:
+                        continue
+
+                    asset = _get_asset_or_raise(asset_id, organization_id)
+                    if asset.asset_status not in ['idle', 'pending']:
+                        raise ValidationError({
+                            'asset': f'Asset {asset.asset_name} is not available (status: {asset.get_status_label()})'
+                        })
+
+                    create_kwargs = {
+                        'pickup': pickup,
+                        'asset': asset,
+                        'quantity': item_data.get(
+                            'quantity',
+                            existing_item.quantity if existing_item else 1,
+                        ),
+                        'remark': (
+                            item_data.get('remark', '')
+                            if existing_item is None
+                            else item_data.get('remark', existing_item.remark)
+                        ),
+                        'snapshot_original_location': asset.location,
+                        'snapshot_original_custodian': asset.custodian,
+                        'organization_id': organization_id,
+                    }
+                    if existing_item is not None:
+                        create_kwargs['id'] = item_id
+                        create_kwargs['custom_fields'] = existing_item.custom_fields
+
+                    PickupItem.objects.create(**create_kwargs)
 
         pickup.refresh_from_db()
         return pickup
@@ -429,29 +610,25 @@ class AssetTransferService(BaseCRUDService):
         with transaction.atomic():
             transfer = self.create(data, user)
 
+            _validate_unique_asset_selection(items)
+
             # Create items with snapshots
             for item_data in items:
-                asset_id = item_data.get('asset_id')
-                try:
-                    asset = Asset.objects.get(
-                        id=asset_id,
-                        organization_id=organization_id,
-                        is_deleted=False
-                    )
+                asset_id = _ensure_asset_selected(item_data)
+                if not asset_id:
+                    continue
 
-                    TransferItem.objects.create(
-                        transfer=transfer,
-                        asset=asset,
-                        from_location=asset.location,
-                        from_custodian=asset.custodian,
-                        to_location_id=item_data.get('to_location_id'),
-                        remark=item_data.get('remark', ''),
-                        organization_id=organization_id
-                    )
-                except Asset.DoesNotExist:
-                    raise ValidationError({
-                        'asset': f'Asset with ID {asset_id} not found'
-                    })
+                asset = _get_asset_or_raise(asset_id, organization_id)
+
+                TransferItem.objects.create(
+                    transfer=transfer,
+                    asset=asset,
+                    from_location=asset.location,
+                    from_custodian=asset.custodian,
+                    to_location_id=_resolve_line_item_location_id(item_data),
+                    remark=item_data.get('remark', ''),
+                    organization_id=organization_id
+                )
 
         return transfer
 
@@ -465,7 +642,7 @@ class AssetTransferService(BaseCRUDService):
     ) -> AssetTransfer:
         """Update a transfer order with diff-patch items logic."""
         with transaction.atomic():
-            transfer = self.get(transfer_id)
+            transfer = _get_operation_instance_or_raise(AssetTransfer, transfer_id, organization_id)
 
             if transfer.status != 'draft':
                 raise ValidationError({
@@ -479,46 +656,56 @@ class AssetTransferService(BaseCRUDService):
 
             if items is not None:
                 existing_items = {str(item.id): item for item in transfer.items.all()}
-                submitted_ids = set()
+                operations, deleted_ids, recreated_ids = _prepare_line_item_operations(
+                    items,
+                    existing_items=existing_items,
+                    parent_label='transfer order',
+                )
 
-                for item_data in items:
-                    item_id = str(item_data.get('id', '')).strip()
-                    asset_id = item_data.get('asset_id') or item_data.get('asset')
+                for item_id in deleted_ids | recreated_ids:
+                    existing_items[item_id].delete()
 
-                    if item_id and item_id in existing_items:
-                        existing_item = existing_items[item_id]
-                        if item_data.get('to_location_id') is not None:
-                            existing_item.to_location_id = item_data['to_location_id']
+                for operation in operations:
+                    item_data = operation['item_data']
+                    item_id = operation['item_id']
+                    existing_item = operation['existing_item']
+                    asset_id = operation['asset_id']
+
+                    if item_id and item_id not in recreated_ids:
+                        existing_item.to_location_id = _resolve_line_item_location_id(
+                            item_data,
+                            fallback=existing_item.to_location_id,
+                        )
                         if 'remark' in item_data:
                             existing_item.remark = item_data.get('remark', '')
                         existing_item.save()
-                        submitted_ids.add(item_id)
-                    else:
-                        if not asset_id:
-                            continue
-                        try:
-                            asset = Asset.objects.get(
-                                id=asset_id,
-                                organization_id=organization_id,
-                                is_deleted=False
-                            )
-                            TransferItem.objects.create(
-                                transfer=transfer,
-                                asset=asset,
-                                from_location=asset.location,
-                                from_custodian=asset.custodian,
-                                to_location_id=item_data.get('to_location_id'),
-                                remark=item_data.get('remark', ''),
-                                organization_id=organization_id
-                            )
-                        except Asset.DoesNotExist:
-                            raise ValidationError({
-                                'asset': f'Asset with ID {asset_id} not found'
-                            })
+                        continue
 
-                for item_id, item in existing_items.items():
-                    if item_id not in submitted_ids:
-                        item.delete()
+                    if not asset_id:
+                        continue
+
+                    asset = _get_asset_or_raise(asset_id, organization_id)
+                    create_kwargs = {
+                        'transfer': transfer,
+                        'asset': asset,
+                        'from_location': asset.location,
+                        'from_custodian': asset.custodian,
+                        'to_location_id': _resolve_line_item_location_id(
+                            item_data,
+                            fallback=existing_item.to_location_id if existing_item else None,
+                        ),
+                        'remark': (
+                            item_data.get('remark', '')
+                            if existing_item is None
+                            else item_data.get('remark', existing_item.remark)
+                        ),
+                        'organization_id': organization_id,
+                    }
+                    if existing_item is not None:
+                        create_kwargs['id'] = item_id
+                        create_kwargs['custom_fields'] = existing_item.custom_fields
+
+                    TransferItem.objects.create(**create_kwargs)
 
         transfer.refresh_from_db()
         return transfer
@@ -648,34 +835,30 @@ class AssetReturnService(BaseCRUDService):
         with transaction.atomic():
             return_order = self.create(data, user)
 
+            _validate_unique_asset_selection(items)
+
             # Create items
             for item_data in items:
-                asset_id = item_data.get('asset_id')
-                try:
-                    asset = Asset.objects.get(
-                        id=asset_id,
-                        organization_id=organization_id,
-                        is_deleted=False
-                    )
+                asset_id = _ensure_asset_selected(item_data)
+                if not asset_id:
+                    continue
 
-                    # Validate asset custodian
-                    if asset.custodian_id != user.id:
-                        raise ValidationError({
-                            'asset': f'Asset {asset.asset_name} is not assigned to you'
-                        })
+                asset = _get_asset_or_raise(asset_id, organization_id)
 
-                    ReturnItem.objects.create(
-                        asset_return=return_order,
-                        asset=asset,
-                        asset_status=item_data.get('asset_status', 'idle'),
-                        condition_description=item_data.get('condition_description', ''),
-                        remark=item_data.get('remark', ''),
-                        organization_id=organization_id
-                    )
-                except Asset.DoesNotExist:
+                # Validate asset custodian
+                if asset.custodian_id != user.id:
                     raise ValidationError({
-                        'asset': f'Asset with ID {asset_id} not found'
+                        'asset': f'Asset {asset.asset_name} is not assigned to you'
                     })
+
+                ReturnItem.objects.create(
+                    asset_return=return_order,
+                    asset=asset,
+                    asset_status=item_data.get('asset_status') or item_data.get('assetStatus', 'idle'),
+                    condition_description=item_data.get('condition_description') or item_data.get('conditionDescription', ''),
+                    remark=item_data.get('remark', ''),
+                    organization_id=organization_id
+                )
 
         return return_order
 
@@ -689,7 +872,7 @@ class AssetReturnService(BaseCRUDService):
     ) -> AssetReturn:
         """Update a return order with diff-patch items logic."""
         with transaction.atomic():
-            return_order = self.get(return_id)
+            return_order = _get_operation_instance_or_raise(AssetReturn, return_id, organization_id)
 
             if return_order.status != 'draft':
                 raise ValidationError({
@@ -703,47 +886,81 @@ class AssetReturnService(BaseCRUDService):
 
             if items is not None:
                 existing_items = {str(item.id): item for item in return_order.items.all()}
-                submitted_ids = set()
+                operations, deleted_ids, recreated_ids = _prepare_line_item_operations(
+                    items,
+                    existing_items=existing_items,
+                    parent_label='return order',
+                )
 
-                for item_data in items:
-                    item_id = str(item_data.get('id', '')).strip()
-                    asset_id = item_data.get('asset_id') or item_data.get('asset')
+                for item_id in deleted_ids | recreated_ids:
+                    existing_items[item_id].delete()
 
-                    if item_id and item_id in existing_items:
-                        existing_item = existing_items[item_id]
-                        if item_data.get('asset_status') is not None:
-                            existing_item.asset_status = item_data['asset_status']
-                        if 'condition_description' in item_data:
-                            existing_item.condition_description = item_data.get('condition_description', '')
+                for operation in operations:
+                    item_data = operation['item_data']
+                    item_id = operation['item_id']
+                    existing_item = operation['existing_item']
+                    asset_id = operation['asset_id']
+
+                    if item_id and item_id not in recreated_ids:
+                        asset_status = item_data.get('asset_status')
+                        if asset_status is None:
+                            asset_status = item_data.get('assetStatus')
+                        if asset_status is not None:
+                            existing_item.asset_status = asset_status
+                        if 'condition_description' in item_data or 'conditionDescription' in item_data:
+                            existing_item.condition_description = (
+                                item_data.get('condition_description')
+                                if 'condition_description' in item_data
+                                else item_data.get('conditionDescription', '')
+                            )
                         if 'remark' in item_data:
                             existing_item.remark = item_data.get('remark', '')
                         existing_item.save()
-                        submitted_ids.add(item_id)
-                    else:
-                        if not asset_id:
-                            continue
-                        try:
-                            asset = Asset.objects.get(
-                                id=asset_id,
-                                organization_id=organization_id,
-                                is_deleted=False
-                            )
-                            ReturnItem.objects.create(
-                                asset_return=return_order,
-                                asset=asset,
-                                asset_status=item_data.get('asset_status', 'idle'),
-                                condition_description=item_data.get('condition_description', ''),
-                                remark=item_data.get('remark', ''),
-                                organization_id=organization_id
-                            )
-                        except Asset.DoesNotExist:
-                            raise ValidationError({
-                                'asset': f'Asset with ID {asset_id} not found'
-                            })
+                        continue
 
-                for item_id, item in existing_items.items():
-                    if item_id not in submitted_ids:
-                        item.delete()
+                    if not asset_id:
+                        continue
+
+                    asset = _get_asset_or_raise(asset_id, organization_id)
+                    if asset.custodian_id != user.id:
+                        raise ValidationError({
+                            'asset': f'Asset {asset.asset_name} is not assigned to you'
+                        })
+
+                    asset_status = item_data.get('asset_status')
+                    if asset_status is None:
+                        asset_status = item_data.get('assetStatus')
+                    if asset_status is None and existing_item is not None:
+                        asset_status = existing_item.asset_status
+                    if asset_status is None:
+                        asset_status = 'idle'
+
+                    if 'condition_description' in item_data:
+                        condition_description = item_data.get('condition_description')
+                    elif 'conditionDescription' in item_data:
+                        condition_description = item_data.get('conditionDescription', '')
+                    elif existing_item is not None:
+                        condition_description = existing_item.condition_description
+                    else:
+                        condition_description = ''
+
+                    create_kwargs = {
+                        'asset_return': return_order,
+                        'asset': asset,
+                        'asset_status': asset_status,
+                        'condition_description': condition_description,
+                        'remark': (
+                            item_data.get('remark', '')
+                            if existing_item is None
+                            else item_data.get('remark', existing_item.remark)
+                        ),
+                        'organization_id': organization_id,
+                    }
+                    if existing_item is not None:
+                        create_kwargs['id'] = item_id
+                        create_kwargs['custom_fields'] = existing_item.custom_fields
+
+                    ReturnItem.objects.create(**create_kwargs)
 
         return_order.refresh_from_db()
         return return_order
@@ -866,32 +1083,28 @@ class AssetLoanService(BaseCRUDService):
         with transaction.atomic():
             loan = self.create(data, user)
 
+            _validate_unique_asset_selection(items)
+
             # Create items
             for item_data in items:
-                asset_id = item_data.get('asset_id')
-                try:
-                    asset = Asset.objects.get(
-                        id=asset_id,
-                        organization_id=organization_id,
-                        is_deleted=False
-                    )
+                asset_id = _ensure_asset_selected(item_data)
+                if not asset_id:
+                    continue
 
-                    # Validate asset is available
-                    if asset.asset_status not in ['idle', 'pending']:
-                        raise ValidationError({
-                            'asset': f'Asset {asset.asset_name} is not available'
-                        })
+                asset = _get_asset_or_raise(asset_id, organization_id)
 
-                    LoanItem.objects.create(
-                        loan=loan,
-                        asset=asset,
-                        remark=item_data.get('remark', ''),
-                        organization_id=organization_id
-                    )
-                except Asset.DoesNotExist:
+                # Validate asset is available
+                if asset.asset_status not in ['idle', 'pending']:
                     raise ValidationError({
-                        'asset': f'Asset with ID {asset_id} not found'
+                        'asset': f'Asset {asset.asset_name} is not available'
                     })
+
+                LoanItem.objects.create(
+                    loan=loan,
+                    asset=asset,
+                    remark=item_data.get('remark', ''),
+                    organization_id=organization_id
+                )
 
         return loan
 
@@ -905,7 +1118,7 @@ class AssetLoanService(BaseCRUDService):
     ) -> AssetLoan:
         """Update a loan order with diff-patch items logic."""
         with transaction.atomic():
-            loan = self.get(loan_id)
+            loan = _get_operation_instance_or_raise(AssetLoan, loan_id, organization_id)
 
             if loan.status != 'draft':
                 raise ValidationError({
@@ -919,41 +1132,51 @@ class AssetLoanService(BaseCRUDService):
 
             if items is not None:
                 existing_items = {str(item.id): item for item in loan.items.all()}
-                submitted_ids = set()
+                operations, deleted_ids, recreated_ids = _prepare_line_item_operations(
+                    items,
+                    existing_items=existing_items,
+                    parent_label='loan order',
+                )
 
-                for item_data in items:
-                    item_id = str(item_data.get('id', '')).strip()
-                    asset_id = item_data.get('asset_id') or item_data.get('asset')
+                for item_id in deleted_ids | recreated_ids:
+                    existing_items[item_id].delete()
 
-                    if item_id and item_id in existing_items:
-                        existing_item = existing_items[item_id]
+                for operation in operations:
+                    item_data = operation['item_data']
+                    item_id = operation['item_id']
+                    existing_item = operation['existing_item']
+                    asset_id = operation['asset_id']
+
+                    if item_id and item_id not in recreated_ids:
                         if 'remark' in item_data:
                             existing_item.remark = item_data.get('remark', '')
                         existing_item.save()
-                        submitted_ids.add(item_id)
-                    else:
-                        if not asset_id:
-                            continue
-                        try:
-                            asset = Asset.objects.get(
-                                id=asset_id,
-                                organization_id=organization_id,
-                                is_deleted=False
-                            )
-                            LoanItem.objects.create(
-                                loan=loan,
-                                asset=asset,
-                                remark=item_data.get('remark', ''),
-                                organization_id=organization_id
-                            )
-                        except Asset.DoesNotExist:
-                            raise ValidationError({
-                                'asset': f'Asset with ID {asset_id} not found'
-                            })
+                        continue
 
-                for item_id, item in existing_items.items():
-                    if item_id not in submitted_ids:
-                        item.delete()
+                    if not asset_id:
+                        continue
+
+                    asset = _get_asset_or_raise(asset_id, organization_id)
+                    if asset.asset_status not in ['idle', 'pending']:
+                        raise ValidationError({
+                            'asset': f'Asset {asset.asset_name} is not available'
+                        })
+
+                    create_kwargs = {
+                        'loan': loan,
+                        'asset': asset,
+                        'remark': (
+                            item_data.get('remark', '')
+                            if existing_item is None
+                            else item_data.get('remark', existing_item.remark)
+                        ),
+                        'organization_id': organization_id,
+                    }
+                    if existing_item is not None:
+                        create_kwargs['id'] = item_id
+                        create_kwargs['custom_fields'] = existing_item.custom_fields
+
+                    LoanItem.objects.create(**create_kwargs)
 
         loan.refresh_from_db()
         return loan

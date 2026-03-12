@@ -4,6 +4,7 @@ ViewSets for Asset Operation Models (Pickup, Transfer, Return, Loan).
 All ViewSets inherit from BaseModelViewSetWithBatch for standard CRUD operations
 and batch operation support.
 """
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -32,6 +33,7 @@ from apps.assets.serializers.operation import (
     AssetTransferListSerializer,
     AssetTransferDetailSerializer,
     AssetTransferCreateSerializer,
+    AssetTransferUpdateSerializer,
     AssetTransferSerializer,
     TransferApprovalSerializer,
     TransferItemSerializer,
@@ -39,6 +41,7 @@ from apps.assets.serializers.operation import (
     AssetReturnListSerializer,
     AssetReturnDetailSerializer,
     AssetReturnCreateSerializer,
+    AssetReturnUpdateSerializer,
     AssetReturnSerializer,
     ReturnConfirmSerializer,
     ReturnItemSerializer,
@@ -46,6 +49,7 @@ from apps.assets.serializers.operation import (
     AssetLoanListSerializer,
     AssetLoanDetailSerializer,
     AssetLoanCreateSerializer,
+    AssetLoanUpdateSerializer,
     AssetLoanSerializer,
     LoanApprovalSerializer,
     LoanReturnConfirmSerializer,
@@ -64,6 +68,13 @@ from apps.assets.filters.operation import (
     AssetReturnFilter,
     AssetLoanFilter,
 )
+
+
+def _get_operation_instance(model_class, pk, organization_id=None):
+    queryset = model_class.all_objects.filter(is_deleted=False)
+    if organization_id:
+        queryset = queryset.filter(organization_id=organization_id)
+    return get_object_or_404(queryset, id=pk)
 
 
 # ========== Pickup Order ViewSet ==========
@@ -93,7 +104,7 @@ class AssetPickupViewSet(BaseModelViewSetWithBatch):
             return AssetPickupListSerializer
         elif self.action == 'create':
             return AssetPickupCreateSerializer
-        elif self.action == 'update':
+        elif self.action in {'update', 'partial_update'}:
             return AssetPickupUpdateSerializer
         elif self.action == 'retrieve':
             return AssetPickupDetailSerializer
@@ -124,13 +135,17 @@ class AssetPickupViewSet(BaseModelViewSetWithBatch):
 
     def update(self, request, *args, **kwargs):
         """Update pickup order with nested items."""
-        data = dict(request.data)
-        items = data.pop('items', None)
+        partial = kwargs.pop('partial', False)
         organization_id = getattr(request, 'organization_id', None)
         pk = kwargs.get('pk') or kwargs.get('id')
+        instance = _get_operation_instance(AssetPickup, pk, organization_id)
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        items = data.pop('items', None)
+        serializer = self.get_serializer(instance, data=data, partial=True if not partial else partial)
+        serializer.is_valid(raise_exception=True)
 
         pickup = self.service.update_with_items(
-            pk, data, items, request.user, organization_id
+            pk, serializer.validated_data, items, request.user, organization_id
         )
 
         response_serializer = AssetPickupDetailSerializer(pickup)
@@ -141,6 +156,7 @@ class AssetPickupViewSet(BaseModelViewSetWithBatch):
 
     def partial_update(self, request, *args, **kwargs):
         """Partial update pickup order with nested items."""
+        kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'], url_path='submit')
@@ -339,6 +355,8 @@ class AssetTransferViewSet(BaseModelViewSetWithBatch):
             return AssetTransferListSerializer
         elif self.action == 'create':
             return AssetTransferCreateSerializer
+        elif self.action in {'update', 'partial_update'}:
+            return AssetTransferUpdateSerializer
         elif self.action == 'retrieve':
             return AssetTransferDetailSerializer
         return AssetTransferSerializer
@@ -367,13 +385,17 @@ class AssetTransferViewSet(BaseModelViewSetWithBatch):
 
     def update(self, request, *args, **kwargs):
         """Update transfer order with nested items."""
-        data = dict(request.data)
-        items = data.pop('items', None)
+        partial = kwargs.pop('partial', False)
         organization_id = getattr(request, 'organization_id', None)
         pk = kwargs.get('pk') or kwargs.get('id')
+        instance = _get_operation_instance(AssetTransfer, pk, organization_id)
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        items = data.pop('items', None)
+        serializer = self.get_serializer(instance, data=data, partial=True if not partial else partial)
+        serializer.is_valid(raise_exception=True)
 
         transfer = self.service.update_with_items(
-            pk, data, items, request.user, organization_id
+            pk, serializer.validated_data, items, request.user, organization_id
         )
 
         response_serializer = AssetTransferDetailSerializer(transfer)
@@ -384,6 +406,7 @@ class AssetTransferViewSet(BaseModelViewSetWithBatch):
 
     def partial_update(self, request, *args, **kwargs):
         """Partial update transfer order with nested items."""
+        kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'], url_path='submit')
@@ -468,6 +491,8 @@ class AssetReturnViewSet(BaseModelViewSetWithBatch):
             return AssetReturnListSerializer
         elif self.action == 'create':
             return AssetReturnCreateSerializer
+        elif self.action in {'update', 'partial_update'}:
+            return AssetReturnUpdateSerializer
         elif self.action == 'retrieve':
             return AssetReturnDetailSerializer
         return AssetReturnSerializer
@@ -496,13 +521,17 @@ class AssetReturnViewSet(BaseModelViewSetWithBatch):
 
     def update(self, request, *args, **kwargs):
         """Update return order with nested items."""
-        data = dict(request.data)
-        items = data.pop('items', None)
+        partial = kwargs.pop('partial', False)
         organization_id = getattr(request, 'organization_id', None)
         pk = kwargs.get('pk') or kwargs.get('id')
+        instance = _get_operation_instance(AssetReturn, pk, organization_id)
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        items = data.pop('items', None)
+        serializer = self.get_serializer(instance, data=data, partial=True if not partial else partial)
+        serializer.is_valid(raise_exception=True)
 
         return_order = self.service.update_with_items(
-            pk, data, items, request.user, organization_id
+            pk, serializer.validated_data, items, request.user, organization_id
         )
 
         response_serializer = AssetReturnDetailSerializer(return_order)
@@ -513,6 +542,7 @@ class AssetReturnViewSet(BaseModelViewSetWithBatch):
 
     def partial_update(self, request, *args, **kwargs):
         """Partial update return order with nested items."""
+        kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'], url_path='confirm')
@@ -564,6 +594,8 @@ class AssetLoanViewSet(BaseModelViewSetWithBatch):
             return AssetLoanListSerializer
         elif self.action == 'create':
             return AssetLoanCreateSerializer
+        elif self.action in {'update', 'partial_update'}:
+            return AssetLoanUpdateSerializer
         elif self.action == 'retrieve':
             return AssetLoanDetailSerializer
         return AssetLoanSerializer
@@ -592,13 +624,17 @@ class AssetLoanViewSet(BaseModelViewSetWithBatch):
 
     def update(self, request, *args, **kwargs):
         """Update loan order with nested items."""
-        data = dict(request.data)
-        items = data.pop('items', None)
+        partial = kwargs.pop('partial', False)
         organization_id = getattr(request, 'organization_id', None)
         pk = kwargs.get('pk') or kwargs.get('id')
+        instance = _get_operation_instance(AssetLoan, pk, organization_id)
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        items = data.pop('items', None)
+        serializer = self.get_serializer(instance, data=data, partial=True if not partial else partial)
+        serializer.is_valid(raise_exception=True)
 
         loan = self.service.update_with_items(
-            pk, data, items, request.user, organization_id
+            pk, serializer.validated_data, items, request.user, organization_id
         )
 
         response_serializer = AssetLoanDetailSerializer(loan)
@@ -609,6 +645,7 @@ class AssetLoanViewSet(BaseModelViewSetWithBatch):
 
     def partial_update(self, request, *args, **kwargs):
         """Partial update loan order with nested items."""
+        kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'], url_path='approve')

@@ -1,6 +1,6 @@
 <template>
   <el-form
-    :model="modelValue"
+    :model="modelDraft"
     label-position="top"
     size="small"
     class="field-property-editor"
@@ -17,7 +17,14 @@
           v-if="groupedSchema[section]?.length > 0"
           :name="section"
           :title="sectionLabels[section]"
+          class="property-collapse-item"
         >
+          <template #title>
+            <DesignerPropertySectionHeading
+              :label="sectionLabels[section]"
+              :count="groupedSchema[section].length"
+            />
+          </template>
           <el-form-item
             v-for="item in groupedSchema[section]"
             :key="item.key"
@@ -29,7 +36,7 @@
               <el-select
                 v-if="item.key === 'span'"
                 :data-testid="`field-prop-${item.key}`"
-                :model-value="modelValue?.span"
+                :model-value="numberValue(item.key) ?? 1"
                 @change="handleSelectChange(item.key, $event)"
               >
                 <el-option
@@ -43,7 +50,7 @@
               <el-switch
                 v-else-if="item.inputType === 'switch'"
                 :data-testid="`field-prop-${item.key}`"
-                :model-value="modelValue?.[item.key]"
+                :model-value="booleanValue(item.key)"
                 :disabled="isSwitchDisabled(item.key)"
                 :active-text="item.key === 'readonly' && mode === 'readonly' ? readonlyDefaultHintText : ''"
                 :active-value="item.key === 'visible' ? true : undefined"
@@ -176,7 +183,7 @@
               <el-select
                 v-else-if="item.inputType === 'select'"
                 :data-testid="`field-prop-${item.key}`"
-                :model-value="modelValue?.[item.key]"
+                :model-value="propertyValue(item.key)"
                 @change="handleSelectChange(item.key, $event)"
               >
                 <el-option
@@ -193,7 +200,7 @@
                 :data-testid="`field-prop-${item.key}`"
                 :model-value="stringValue(item.key)"
                 type="textarea"
-                :rows="item.key === 'helpText' ? 2 : 4"
+                :rows="item.key === 'helpText' ? 2 : 3"
                 @input="handleTextChange(item.key, $event)"
               />
 
@@ -202,7 +209,7 @@
                 :data-testid="`field-prop-${item.key}`"
                 :model-value="jsonValue(item.key)"
                 type="textarea"
-                :rows="4"
+                :rows="3"
                 @input="handleJsonChange(item.key, $event)"
               />
 
@@ -223,7 +230,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import DesignerPropertySectionHeading from '@/components/designer/DesignerPropertySectionHeading.vue'
 import { getFieldPropertySchema } from '@/composables/useFieldPropertySchema'
+import { usePropertyEditorDraft } from '@/components/designer/usePropertyEditorDraft'
 import { normalizeFieldType } from '@/utils/fieldType'
 import { getCoreFieldTypes } from '@/platform/layout/fieldCapabilityMatrix'
 import { getFieldDisabledReason } from '@/platform/layout/designerFieldGuard'
@@ -261,7 +270,15 @@ const tr = (key: string, fallback: string) => {
   return text === key ? fallback : text
 }
 
-const normalizedFieldType = computed(() => normalizeFieldType(props.fieldType || props.modelValue?.fieldType || 'text'))
+const {
+  modelDraft,
+  updateDraft,
+  propertyValue,
+  stringValue,
+  numberValue,
+  booleanValue
+} = usePropertyEditorDraft(() => props.modelValue)
+const normalizedFieldType = computed(() => normalizeFieldType(props.fieldType || propertyValue('fieldType') || 'text'))
 const schema = computed(() => getFieldPropertySchema(normalizedFieldType.value))
 const fieldTypeOptions = computed(() => {
   const baseTypes = getCoreFieldTypes()
@@ -349,10 +366,10 @@ const toBoolean = (value: unknown, fallback: boolean): boolean => {
 }
 
 const showShortcutHelpEnabled = computed(() =>
-  toBoolean(props.modelValue?.showShortcutHelp ?? props.modelValue?.show_shortcut_help, true)
+  toBoolean(propertyValue('showShortcutHelp') ?? propertyValue('show_shortcut_help'), true)
 )
 const isShortcutPinnedDisabled = computed(() => !showShortcutHelpEnabled.value)
-const isReadonlyLocked = computed(() => props.modelValue?.isSystem === true)
+const isReadonlyLocked = computed(() => propertyValue('isSystem') === true)
 const isSwitchDisabled = (key: string): boolean => {
   if (key === 'readonly') return isReadonlyLocked.value
   if (key === 'defaultShortcutHelpPinned') return isShortcutPinnedDisabled.value
@@ -372,7 +389,7 @@ const normalizeVisibilityOperator = (value: unknown): VisibilityOperator | undef
 }
 
 const currentVisibilityRule = computed<VisibilityRule | undefined>(() => {
-  const raw = props.modelValue?.visibilityRule ?? props.modelValue?.visibility_rule
+  const raw = modelDraft.value.visibilityRule ?? modelDraft.value.visibility_rule
   if (!raw || typeof raw !== 'object') return undefined
   const field = String((raw as VisibilityRule).field || '').trim()
   const operator = normalizeVisibilityOperator((raw as VisibilityRule).operator)
@@ -404,17 +421,20 @@ watch(
 )
 
 const emitUpdate = (key: string, value: any) => {
-  const next = { ...(props.modelValue || {}), [key]: value }
-  if (key === 'visibilityRule') {
-    visibilityRuleDraft.value = value
-    if (value && typeof value === 'object') {
-      next.visibilityRule = value
-      next.visibility_rule = value
-    } else {
-      delete next.visibilityRule
-      delete next.visibility_rule
+  const next = updateDraft((draft) => {
+    draft[key] = value
+    if (key === 'visibilityRule') {
+      visibilityRuleDraft.value = value
+      if (value && typeof value === 'object') {
+        draft.visibilityRule = value
+        draft.visibility_rule = value
+      } else {
+        delete draft.visibilityRule
+        delete draft.visibility_rule
+      }
     }
-  }
+    return draft
+  })
   emit('update:modelValue', next)
   emit('update-property', { key, value })
 }
@@ -481,15 +501,8 @@ const emitJsonUpdate = (key: string, value: any) => {
   emitUpdate(key, parsed)
 }
 
-const stringValue = (key: string): string => String(props.modelValue?.[key] ?? '')
-const numberValue = (key: string): number | undefined => {
-  const value = props.modelValue?.[key]
-  if (value === null || value === undefined || value === '') return undefined
-  const num = Number(value)
-  return Number.isFinite(num) ? num : undefined
-}
 const jsonValue = (key: string): string => {
-  const value = props.modelValue?.[key]
+  const value = propertyValue(key)
   if (typeof value === 'string') return value
   if (value === null || value === undefined) return ''
   try {
@@ -514,17 +527,17 @@ const normalizeStringArray = (value: unknown): string[] => {
 }
 
 const compactKeysValue = (key: string): string[] => {
-  return normalizeStringArray(props.modelValue?.[key])
+  return normalizeStringArray(propertyValue(key))
 }
 
 const lookupCompactKeyOptions = computed<Array<{ label: string; value: string }>>(() => {
   const raw =
-    props.modelValue?.lookupColumns ??
-    props.modelValue?.lookup_columns ??
-    props.modelValue?.componentProps?.lookupColumns ??
-    props.modelValue?.componentProps?.lookup_columns ??
-    props.modelValue?.component_props?.lookupColumns ??
-    props.modelValue?.component_props?.lookup_columns ??
+    propertyValue('lookupColumns') ??
+    propertyValue('lookup_columns') ??
+    modelDraft.value.componentProps?.lookupColumns ??
+    modelDraft.value.componentProps?.lookup_columns ??
+    modelDraft.value.component_props?.lookupColumns ??
+    modelDraft.value.component_props?.lookup_columns ??
     []
   if (!Array.isArray(raw)) return []
 
@@ -595,13 +608,17 @@ const getSelectOptions = (key: string): Array<{ label: string; value: string; di
   padding: 0;
 }
 .field-property-editor :deep(.el-form-item) {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+}
+.field-property-editor :deep(.el-form-item:last-child) {
+  margin-bottom: 0;
 }
 .field-property-editor :deep(.el-form-item__label) {
-  padding-bottom: 4px;
+  padding-bottom: 3px;
   font-size: 12px;
-  line-height: 1.4;
-  color: #606266;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #5b6472;
 }
 .field-property-editor :deep(.el-input),
 .field-property-editor :deep(.el-select),
@@ -611,36 +628,44 @@ const getSelectOptions = (key: string): Array<{ label: string; value: string; di
 }
 .property-collapse {
   border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: transparent;
+}
+.property-collapse :deep(.el-collapse-item) {
+  margin-bottom: 0;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.04);
 }
 .property-collapse :deep(.el-collapse-item__header) {
-  font-size: 13px;
-  font-weight: 600;
-  color: #333333;
-  padding: 0 4px;
-  height: 38px;
-  line-height: 38px;
-  background: #ffffff;
-  border-radius: 0;
+  padding: 0 12px;
+  height: 40px;
+  line-height: 40px;
+  background: rgba(248, 250, 252, 0.92);
   margin-bottom: 0;
-  border-bottom: 1px solid #f1f2f3;
+  border-bottom: 1px solid transparent;
 }
 .property-collapse :deep(.el-collapse-item__wrap) {
   border-bottom: none;
+  background: #ffffff;
 }
 .property-collapse :deep(.el-collapse-item__content) {
-  padding: 12px 4px 4px;
+  padding: 10px 12px 12px;
 }
-.property-collapse :deep(.el-collapse-item) {
-  border-bottom: none;
-  margin-bottom: 0;
+.property-collapse :deep(.el-collapse-item.is-active .el-collapse-item__header) {
+  border-bottom-color: rgba(15, 23, 42, 0.08);
 }
 .is-translation-target {
   position: relative;
-  padding: 8px;
+  padding: 7px 8px;
   background-color: var(--el-color-primary-light-9);
   border: 1px dashed var(--el-color-primary-light-5);
   border-radius: var(--el-border-radius-base);
-  margin-bottom: 8px !important;
+  margin-bottom: 6px !important;
 }
 .is-translation-target :deep(.el-form-item__label) {
   color: var(--el-color-primary);
@@ -663,7 +688,7 @@ const getSelectOptions = (key: string): Array<{ label: string; value: string; di
 .visibility-rule-editor {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 .visibility-rule-editor__actions {
   display: flex;

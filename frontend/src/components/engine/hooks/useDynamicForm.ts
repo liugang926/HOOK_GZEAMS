@@ -91,8 +91,9 @@ export function useDynamicForm(
   const FIELD_TYPES: FieldType[] = [
     'text', 'textarea', 'richtext', 'number', 'currency', 'percent',
     'date', 'datetime', 'time', 'boolean', 'switch', 'select', 'multi_select',
-    'radio', 'checkbox', 'reference', 'user', 'department', 'file', 'image',
-    'attachment', 'qr_code', 'barcode', 'formula', 'subtable', 'location', 'organization'
+    'radio', 'checkbox', 'reference', 'user', 'department', 'asset', 'file', 'image',
+    'attachment', 'qr_code', 'barcode', 'formula', 'subtable', 'sub_table',
+    'location', 'organization', 'related_object'
   ]
 
   const toFieldType = (value: unknown): FieldType => {
@@ -114,6 +115,116 @@ export function useDynamicForm(
   const toNumber = (value: unknown, fallback: number): number => {
     const parsed = Number(value)
     return Number.isFinite(parsed) ? parsed : fallback
+  }
+
+  const isLineItemSubtableField = (field: Record<string, unknown> | null | undefined): boolean => {
+    if (!field || typeof field !== 'object') return false
+    const code = String(field.code || field.fieldCode || field.field_code || '').trim()
+    const fieldType = normalizeFieldType(String(field.fieldType || field.field_type || field.type || 'text'))
+    return code === 'items' && (fieldType === 'sub_table' || fieldType === 'subtable')
+  }
+
+  const layoutContainsFieldCode = (layout: Record<string, unknown> | null | undefined, fieldCode: string): boolean => {
+    const sections = Array.isArray(layout?.sections) ? (layout?.sections as Array<Record<string, unknown>>) : []
+    for (const section of sections) {
+      const sectionType = String(section?.type || 'section')
+      if (sectionType === 'tab') {
+        const tabs = Array.isArray(section?.tabs) ? (section.tabs as Array<Record<string, unknown>>) : []
+        for (const tab of tabs) {
+          const fields = Array.isArray(tab?.fields) ? (tab.fields as Array<Record<string, unknown>>) : []
+          if (fields.some((field) => String(field?.fieldCode || field?.field_code || field?.code || '').trim() === fieldCode)) {
+            return true
+          }
+        }
+        continue
+      }
+
+      if (sectionType === 'collapse') {
+        const items = Array.isArray(section?.items) ? (section.items as Array<Record<string, unknown>>) : []
+        for (const item of items) {
+          const fields = Array.isArray(item?.fields) ? (item.fields as Array<Record<string, unknown>>) : []
+          if (fields.some((field) => String(field?.fieldCode || field?.field_code || field?.code || '').trim() === fieldCode)) {
+            return true
+          }
+        }
+        continue
+      }
+
+      const fields = Array.isArray(section?.fields) ? (section.fields as Array<Record<string, unknown>>) : []
+      if (fields.some((field) => String(field?.fieldCode || field?.field_code || field?.code || '').trim() === fieldCode)) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const injectLineItemFieldIntoLayout = (
+    rawLayout: Record<string, unknown> | null,
+    fields: FieldDefinition[]
+  ): Record<string, unknown> | null => {
+    if (layoutCode !== 'form') return rawLayout
+    const lineItemField = fields.find((field) => isLineItemSubtableField(field as unknown as Record<string, unknown>))
+    if (!lineItemField) return rawLayout
+    if (!rawLayout || typeof rawLayout !== 'object') return rawLayout
+    if (layoutContainsFieldCode(rawLayout, 'items')) return rawLayout
+
+    const nextLayout = JSON.parse(JSON.stringify(rawLayout)) as Record<string, unknown>
+    const sections = Array.isArray(nextLayout.sections) ? (nextLayout.sections as Array<Record<string, unknown>>) : []
+    const injectedField = {
+      fieldCode: 'items',
+      code: 'items',
+      label: lineItemField.label || lineItemField.name || 'Items',
+      span: 24,
+      componentProps: {
+        ...(lineItemField.componentProps || {})
+      }
+    }
+
+    let inserted = false
+    for (const section of sections) {
+      if (String(section?.position || '').trim() === 'sidebar') continue
+      const sectionType = String(section?.type || 'section')
+
+      if (sectionType === 'tab') {
+        const tabs = Array.isArray(section?.tabs) ? (section.tabs as Array<Record<string, unknown>>) : []
+        if (tabs.length === 0) continue
+        const targetTab = tabs[0]
+        const fields = Array.isArray(targetTab.fields) ? [...(targetTab.fields as Array<Record<string, unknown>>)] : []
+        fields.push(injectedField)
+        targetTab.fields = fields
+        inserted = true
+        break
+      }
+
+      if (sectionType === 'collapse') {
+        const items = Array.isArray(section?.items) ? (section.items as Array<Record<string, unknown>>) : []
+        if (items.length === 0) continue
+        const targetItem = items[0]
+        const fields = Array.isArray(targetItem.fields) ? [...(targetItem.fields as Array<Record<string, unknown>>)] : []
+        fields.push(injectedField)
+        targetItem.fields = fields
+        inserted = true
+        break
+      }
+
+      const fields = Array.isArray(section?.fields) ? [...(section.fields as Array<Record<string, unknown>>)] : []
+      section.fields = [...fields, injectedField]
+      inserted = true
+      break
+    }
+
+    if (!inserted) {
+      sections.push({
+        id: 'runtime-line-items',
+        type: 'section',
+        title: '',
+        columns: 1,
+        fields: [injectedField]
+      })
+      nextLayout.sections = sections
+    }
+
+    return nextLayout
   }
 
   const renderSchema = computed<RenderSchema>(() => {
@@ -220,12 +331,17 @@ export function useDynamicForm(
     try {
       // Use local config if provided (preview mode)
       if (layoutConfig && availableFields) {
-        fieldDefinitions.value = buildAndOrderFields({
-          fields: availableFields as unknown as Record<string, unknown>[],
+        const transformedPreviewFields = availableFields as FieldDefinition[]
+        const normalizedPreviewLayout = injectLineItemFieldIntoLayout(
           layoutConfig,
+          transformedPreviewFields
+        )
+        fieldDefinitions.value = buildAndOrderFields({
+          fields: transformedPreviewFields as unknown as Record<string, unknown>[],
+          layoutConfig: normalizedPreviewLayout,
           mode: toRuntimeMode(layoutCode)
         }) as FieldDefinition[]
-        layoutConfigState.value = normalizeLayoutConfig(layoutConfig)
+        layoutConfigState.value = normalizedPreviewLayout ? normalizeLayoutConfig(normalizedPreviewLayout) : null
         initializeFormData()
         return
       }
@@ -246,17 +362,17 @@ export function useDynamicForm(
         const transformedFields = fieldsData
           .filter((field): field is Record<string, unknown> => !!field && typeof field === 'object')
           .map(transformFieldDefinition)
+        const normalizedLayoutData = injectLineItemFieldIntoLayout(layoutData, transformedFields)
         fieldDefinitions.value = buildAndOrderFields({
           fields: transformedFields as unknown as Record<string, unknown>[],
-          layoutConfig: layoutData,
+          layoutConfig: normalizedLayoutData,
           mode: toRuntimeMode(layoutCode)
         }) as FieldDefinition[]
+        layoutConfigState.value = normalizedLayoutData ? normalizeLayoutConfig(normalizedLayoutData) : null
       } else {
         fieldDefinitions.value = []
+        layoutConfigState.value = layoutData ? normalizeLayoutConfig(layoutData) : null
       }
-
-      // Process layout configuration
-      layoutConfigState.value = layoutData ? normalizeLayoutConfig(layoutData) : null
 
       // Initialize form data with default values
       initializeFormData()
@@ -310,6 +426,15 @@ export function useDynamicForm(
       defaultValue: apiField.defaultValue ?? apiField.default_value,
       options: Array.isArray(apiField.options) ? (apiField.options as any[]) : [],
       componentProps,
+      relatedFields: Array.isArray(apiField.relatedFields)
+        ? (apiField.relatedFields as FieldDefinition[])
+        : (Array.isArray(apiField.related_fields) ? (apiField.related_fields as FieldDefinition[]) : undefined),
+      related_fields: Array.isArray(apiField.related_fields)
+        ? (apiField.related_fields as FieldDefinition[])
+        : (Array.isArray(apiField.relatedFields) ? (apiField.relatedFields as FieldDefinition[]) : undefined),
+      displayTier: typeof apiField.displayTier === 'string'
+        ? apiField.displayTier
+        : (typeof apiField.display_tier === 'string' ? apiField.display_tier : undefined),
       description: typeof apiField.description === 'string' ? apiField.description : undefined,
       placeholder: typeof apiField.placeholder === 'string' ? apiField.placeholder : undefined,
       span: toNumber(apiField.span ?? componentProps.span, 12),
@@ -374,6 +499,8 @@ export function useDynamicForm(
         case 'switch':
           data[field.code] = false
           break
+        case 'sub_table':
+        case 'subtable':
         case 'multi_select':
         case 'checkbox':
           data[field.code] = []

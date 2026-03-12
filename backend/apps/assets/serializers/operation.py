@@ -192,8 +192,10 @@ class AssetPickupUpdateSerializer(BaseModelSerializer):
 
     class Meta(BaseModelSerializer.Meta):
         model = AssetPickup
-        fields = BaseModelSerializer.Meta.fields + [
-            'department', 'pickup_date', 'pickup_reason'
+        fields = '__all__'
+        read_only_fields = BaseModelSerializer.Meta.read_only_fields + [
+            'pickup_no', 'status', 'approved_by', 'approved_at',
+            'approval_comment', 'completed_at', 'workflow_instance'
         ]
 
 
@@ -355,6 +357,28 @@ class TransferApprovalSerializer(serializers.Serializer):
     )
 
 
+class AssetTransferUpdateSerializer(BaseModelSerializer):
+    """Serializer for updating transfer orders."""
+
+    class Meta(BaseModelSerializer.Meta):
+        model = AssetTransfer
+        fields = '__all__'
+        read_only_fields = BaseModelSerializer.Meta.read_only_fields + [
+            'transfer_no', 'status', 'from_approved_by', 'from_approved_at',
+            'from_approve_comment', 'to_approved_by', 'to_approved_at',
+            'to_approve_comment', 'completed_at'
+        ]
+
+    def validate(self, data):
+        from_department = data.get('from_department') or getattr(self.instance, 'from_department', None)
+        to_department = data.get('to_department') or getattr(self.instance, 'to_department', None)
+        if from_department and to_department and from_department == to_department:
+            raise serializers.ValidationError({
+                'to_department': 'Source and target departments must be different'
+            })
+        return data
+
+
 # ========== Return Order Serializers ==========
 
 class ReturnItemSerializer(BaseModelSerializer):
@@ -484,6 +508,18 @@ class ReturnConfirmSerializer(serializers.Serializer):
         allow_blank=True,
         help_text='Reason for rejection (if rejected)'
     )
+
+
+class AssetReturnUpdateSerializer(BaseModelSerializer):
+    """Serializer for updating return orders."""
+
+    class Meta(BaseModelSerializer.Meta):
+        model = AssetReturn
+        fields = '__all__'
+        read_only_fields = BaseModelSerializer.Meta.read_only_fields + [
+            'return_no', 'status', 'confirmed_by', 'confirmed_at',
+            'reject_reason', 'completed_at'
+        ]
 
 
 # ========== Loan Order Serializers ==========
@@ -659,6 +695,40 @@ class LoanReturnConfirmSerializer(serializers.Serializer):
         required=False,
         allow_blank=True
     )
+
+
+class AssetLoanUpdateSerializer(BaseModelSerializer):
+    """Serializer for updating loan orders."""
+
+    class Meta(BaseModelSerializer.Meta):
+        model = AssetLoan
+        fields = '__all__'
+        read_only_fields = BaseModelSerializer.Meta.read_only_fields + [
+            'loan_no', 'status', 'approved_by', 'approved_at',
+            'approval_comment', 'lent_by', 'lent_at', 'returned_at',
+            'return_confirmed_by', 'actual_return_date',
+            'asset_condition', 'return_comment'
+        ]
+
+    def validate(self, data):
+        from datetime import timedelta
+
+        borrow_date = data.get('borrow_date') or getattr(self.instance, 'borrow_date', None)
+        return_date = data.get('expected_return_date') or getattr(self.instance, 'expected_return_date', None)
+
+        if borrow_date and return_date and return_date < borrow_date:
+            raise serializers.ValidationError({
+                'expected_return_date': 'Return date must be after borrow date'
+            })
+
+        if borrow_date and return_date:
+            max_date = borrow_date + timedelta(days=90)
+            if return_date > max_date:
+                raise serializers.ValidationError({
+                    'expected_return_date': 'Loan duration cannot exceed 90 days'
+                })
+
+        return data
 
 
 # ========== Dynamic Serializers for ViewSets ==========

@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 from apps.organizations.models import Organization
-from apps.system.models import BusinessObject, FieldDefinition, PageLayout
+from apps.system.models import BusinessObject, FieldDefinition, ObjectRelationDefinition, PageLayout
 
 pytestmark = pytest.mark.skipif(
     connection.vendor == 'sqlite',
@@ -334,6 +334,22 @@ def test_object_router_runtime_relations_use_relation_definitions_for_hardcoded_
             'django_model_path': 'apps.assets.models.AssetTransfer',
         },
     )
+    ObjectRelationDefinition.objects.update_or_create(
+        parent_object_code='Asset',
+        relation_code='transfer_orders',
+        defaults={
+            'target_object_code': 'AssetTransfer',
+            'relation_name': 'Transfer Orders',
+            'relation_kind': 'through_line_item',
+            'through_object_code': 'TransferItem',
+            'through_parent_fk_field': 'asset',
+            'through_target_fk_field': 'transfer',
+            'display_mode': 'inline_readonly',
+            'display_tier': 'L2',
+            'sort_order': 30,
+            'is_active': True,
+        },
+    )
 
     client = APIClient()
     client.force_authenticate(user=user)
@@ -359,3 +375,80 @@ def test_object_router_runtime_relations_use_relation_definitions_for_hardcoded_
     )
     assert transfer_relation is not None
     assert (transfer_relation.get('targetObjectCode') or transfer_relation.get('target_object_code')) == 'AssetTransfer'
+
+
+@pytest.mark.django_db
+def test_asset_pickup_runtime_promotes_l1_items_to_editable_subtable():
+    org = Organization.objects.create(name='Line Item Runtime Org', code='line-item-runtime-org')
+    user = User.objects.create(username='line_item_runtime_user', organization=org)
+
+    BusinessObject.objects.update_or_create(
+        code='AssetPickup',
+        defaults={
+            'name': 'Asset Pickup',
+            'name_en': 'Asset Pickup',
+            'is_hardcoded': True,
+            'django_model_path': 'apps.assets.models.AssetPickup',
+        },
+    )
+    BusinessObject.objects.update_or_create(
+        code='PickupItem',
+        defaults={
+            'name': 'Pickup Item',
+            'name_en': 'Pickup Item',
+            'is_hardcoded': True,
+            'is_menu_hidden': True,
+            'django_model_path': 'apps.assets.models.PickupItem',
+        },
+    )
+    ObjectRelationDefinition.objects.update_or_create(
+        parent_object_code='AssetPickup',
+        relation_code='pickup_items',
+        defaults={
+            'target_object_code': 'PickupItem',
+            'relation_name': 'Pickup Items',
+            'relation_kind': 'direct_fk',
+            'target_fk_field': 'pickup',
+            'display_mode': 'inline_editable',
+            'display_tier': 'L1',
+            'sort_order': 10,
+            'is_active': True,
+        },
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id))
+
+    resp = client.get('/api/system/objects/AssetPickup/runtime/?mode=edit&include_relations=true')
+    assert resp.status_code == 200
+
+    payload = resp.json()
+    assert payload['success'] is True
+    fields_payload = payload['data']['fields']
+    editable_fields = fields_payload.get('editableFields') or fields_payload.get('editable_fields') or []
+    reverse_relations = fields_payload.get('reverseRelations') or fields_payload.get('reverse_relations') or []
+
+    items_field = next(
+        (
+            field for field in editable_fields
+            if (field.get('fieldCode') or field.get('field_code') or field.get('code')) == 'items'
+        ),
+        None,
+    )
+
+    assert items_field is not None
+    assert (items_field.get('fieldType') or items_field.get('field_type')) == 'sub_table'
+    assert items_field.get('displayTier') == 'L1' or items_field.get('display_tier') == 'L1'
+    assert (items_field.get('componentProps') or items_field.get('component_props') or {}).get('relationCode') == 'pickup_items'
+
+    related_fields = items_field.get('relatedFields') or items_field.get('related_fields') or []
+    related_codes = {
+        str(field.get('fieldCode') or field.get('field_code') or field.get('code') or '')
+        for field in related_fields
+    }
+    assert {'asset', 'quantity', 'remark'}.issubset(related_codes)
+    assert all(
+        (field.get('fieldCode') or field.get('field_code') or field.get('code')) != 'items'
+        for field in reverse_relations
+    )

@@ -112,8 +112,8 @@
             <FieldRenderer
               v-model="row[getColumnCode(col)]"
               :field="buildColumnField(col)"
-              :disabled="disabled"
-              :readonly="readonly"
+              :form-data="buildRowFieldContext(row)"
+              :disabled="disabled || readonly || isColumnReadonly(col)"
             />
           </div>
         </template>
@@ -187,6 +187,7 @@ interface SubTableFieldDefinition {
 const props = defineProps<{
   modelValue: SubTableFieldModel[]
   field: SubTableFieldDefinition
+  formData?: Record<string, unknown>
   disabled?: boolean
   readonly?: boolean
 }>()
@@ -354,6 +355,32 @@ const handleRootKeydown = (event: KeyboardEvent) => {
 
 const getColumnCode = (col: ColumnDefinition): string => col.code || col.fieldCode || ''
 
+const isColumnReadonly = (col: ColumnDefinition): boolean => {
+  const componentProps = {
+    ...(col.component_props || {}),
+    ...(col.componentProps || {})
+  } as Record<string, unknown>
+  return toBoolean(
+    (col as Record<string, unknown>).readonly ??
+    (col as Record<string, unknown>).isReadonly ??
+    (col as Record<string, unknown>).is_readonly ??
+    componentProps.readonly ??
+    componentProps.isReadonly ??
+    componentProps.is_readonly,
+    false
+  )
+}
+
+const buildRowFieldContext = (row: SubTableFieldModel): Record<string, unknown> => {
+  return {
+    ...(props.formData || {}),
+    ...row,
+    __row: row,
+    __rows: internalValue.value,
+    __parent: props.formData || {}
+  }
+}
+
 const buildColumnField = (col: ColumnDefinition) => {
   const componentProps = {
     ...(col.component_props || {}),
@@ -367,6 +394,8 @@ const buildColumnField = (col: ColumnDefinition) => {
     label: col.label || col.name || getColumnCode(col),
     fieldType: normalizeFieldType(col.fieldType || col.field_type || col.type || 'text'),
     field_type: normalizeFieldType(col.fieldType || col.field_type || col.type || 'text'),
+    isReadonly: isColumnReadonly(col),
+    is_readonly: isColumnReadonly(col),
     componentProps,
     component_props: componentProps
   }

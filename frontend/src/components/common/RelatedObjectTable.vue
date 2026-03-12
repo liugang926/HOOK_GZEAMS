@@ -38,6 +38,7 @@ import {
 } from '@/platform/layout/renderSchemaProjector'
 import { buildSearchFields } from '@/platform/layout/searchFieldBuilder'
 import { resolveRelationTargetObjectCode } from '@/platform/reference/relationObjectCode'
+import { resolveTranslatableText } from '@/utils/localeText'
 import { filterSystemFields } from '@/utils/transform'
 import { resolveListFieldValue } from '@/utils/listFieldValue'
 
@@ -114,7 +115,7 @@ const relatedObjectCode = computed(() => {
 })
 
 const relatedObjectDisplay = computed(() => {
-  return props.field.label || props.field.name || relatedObjectCode.value
+  return resolveDisplayText(props.field.label, resolveDisplayText(props.field.name, relatedObjectCode.value))
 })
 
 const modelFieldMap = computed(() => {
@@ -132,7 +133,7 @@ const searchableFieldOptions = computed(() => {
       const value = String(field?.prop || field?.field || '').trim()
       if (!value) return null
       return {
-        label: String(field?.label || value),
+        label: resolveDisplayText(field?.label, value),
         value
       }
     })
@@ -154,12 +155,12 @@ const searchPlaceholder = computed(() => {
 })
 
 const tableColumns = computed<TableColumn[]>(() => {
-  const fromModel = Array.isArray(modelColumns.value) ? modelColumns.value : []
+  const fromModel = Array.isArray(modelColumns.value) ? modelColumns.value.map((column) => normalizeTableColumn(column)) : []
   if (fromModel.length > 0) {
     return fromModel
   }
 
-  const fallback = buildFallbackColumnsFromRecords(records.value)
+  const fallback = buildFallbackColumnsFromRecords(records.value).map((column) => normalizeTableColumn(column))
   if (fallback.length > 0) return fallback
 
   return [
@@ -183,12 +184,39 @@ function toPositiveNumber(value: unknown): number | undefined {
   return Number.isFinite(num) && num > 0 ? num : undefined
 }
 
+function resolveDisplayText(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (trimmed) return trimmed
+  }
+
+  const localized = resolveTranslatableText(value)
+  if (localized) {
+    const trimmed = localized.trim()
+    if (trimmed) return trimmed
+  }
+
+  return fallback
+}
+
+function resolveFieldLabel(field: AnyRecord, fallback = ''): string {
+  return resolveDisplayText(field?.label, resolveDisplayText(field?.name, fallback))
+}
+
 function getFieldCode(field: AnyRecord): string {
   return String(field?.fieldCode || field?.field_code || field?.code || field?.field || '').trim()
 }
 
 function normalizeFieldProp(column: TableColumn): string {
   return String(column.fieldCode || column.prop || '').trim()
+}
+
+function normalizeTableColumn(column: TableColumn): TableColumn {
+  const fallback = normalizeFieldProp(column) || String(column.dataKey || '').trim() || 'field'
+  return {
+    ...column,
+    label: resolveDisplayText(column.label, fallback)
+  }
 }
 
 function limitColumns(columns: TableColumn[]): TableColumn[] {
@@ -219,7 +247,7 @@ function buildColumnsFromMetadata(fields: AnyRecord[]): TableColumn[] {
           prop: code,
           fieldCode: code,
           dataKey: String(field?.dataKey || field?.data_key || code),
-          label: String(field?.label || field?.name || code),
+          label: resolveFieldLabel(field, code),
           fieldType: String(field?.fieldType || field?.field_type || field?.type || 'text'),
           type: String(field?.fieldType || field?.field_type || field?.type || 'text'),
           options: field?.options || field?.choices || [],

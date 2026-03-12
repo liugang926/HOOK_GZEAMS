@@ -23,9 +23,15 @@
         class="property-form"
       >
         <div class="property-header">
-          <el-icon><Edit /></el-icon>
-          <span>{{ t('system.pageLayout.designer.panel.fieldProperties') }}</span>
-          <el-tag size="small">
+          <div class="property-header__title">
+            <el-icon><Edit /></el-icon>
+            <span>{{ t('system.pageLayout.designer.panel.fieldProperties') }}</span>
+          </div>
+          <el-tag
+            size="small"
+            effect="plain"
+            class="property-header__tag"
+          >
             {{ selectedFieldCode }}
           </el-tag>
         </div>
@@ -48,8 +54,10 @@
         class="property-form"
       >
         <div class="property-header">
-          <el-icon><Grid /></el-icon>
-          <span>{{ t('system.pageLayout.designer.panel.sectionProperties') }}</span>
+          <div class="property-header__title">
+            <el-icon><Grid /></el-icon>
+            <span>{{ t('system.pageLayout.designer.panel.sectionProperties') }}</span>
+          </div>
         </div>
         <SectionPropertyEditor
           :model-value="sectionProps"
@@ -110,24 +118,26 @@ const selectedFieldCode = computed(() => {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: #ffffff;
-  border-left: 1px solid #e4e7ed;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
 }
 
 .panel-header {
-  padding: 14px 16px;
+  padding: 12px 14px 10px;
   border-bottom: 1px solid #e4e7ed;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
-  color: #303133;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4b5563;
   flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.94);
 }
 
 .panel-content {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 16px 16px 40px;
+  padding: 14px 14px 40px;
   overscroll-behavior: contain;
 }
 
@@ -142,15 +152,37 @@ const selectedFieldCode = computed(() => {
 
 .property-form {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .property-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 0 2px 12px;
   border-bottom: 1px solid #ebeef5;
+}
+
+.property-header__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.property-header__title :deep(.el-icon) {
+  color: #2563eb;
+}
+
+.property-header__tag {
+  flex-shrink: 0;
+  border-radius: 999px;
 }
 
 .no-selection {

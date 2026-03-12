@@ -246,8 +246,8 @@ defineExpose({
 
 .group-fields-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   padding: 6px 12px 16px;
 }
 
@@ -256,15 +256,15 @@ defineExpose({
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 10px 4px;
+  gap: 8px;
+  padding: 12px 8px;
   border-radius: 4px;
   cursor: grab;
   transition: all 0.2s ease;
   border: 1px solid #f1f2f3;
   position: relative;
   background: #fdfdfe;
-  min-height: 64px;
+  min-height: 78px;
 }
 .tile-icon {
   font-size: 20px;
@@ -272,7 +272,7 @@ defineExpose({
   color: #555555 !important;
 }
 .tile-label {
-  font-size: 11px;
+  font-size: 12px;
   color: #333333;
   text-align: center;
   line-height: 1.2;

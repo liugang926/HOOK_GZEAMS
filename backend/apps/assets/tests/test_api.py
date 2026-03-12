@@ -8,7 +8,7 @@ import uuid
 import pytest
 from django.test import TestCase
 from django.urls import reverse
-from rest_framework.test import APITestCase, APIClient
+from rest_framework.test import APITestCase, APIClient, APITransactionTestCase
 from rest_framework import status
 from decimal import Decimal
 from datetime import date, timedelta
@@ -769,11 +769,14 @@ class LocationAPITest(APITestCase):
 # ========== Operation API Tests ==========
 
 
-class AssetPickupAPITest(APITestCase):
+class AssetPickupAPITest(APITransactionTestCase):
     """Test Asset Pickup API endpoints."""
 
     def setUp(self):
         """Set up test data with unique codes."""
+        from apps.common.middleware import clear_current_organization, set_current_organization
+
+        clear_current_organization()
         self.client = APIClient()
         self.unique_suffix = uuid.uuid4().hex[:8]
         self.org = Organization.objects.create(
@@ -812,6 +815,7 @@ class AssetPickupAPITest(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
         self.client.credentials(HTTP_X_ORGANIZATION_ID=str(self.org.id))
+        set_current_organization(str(self.org.id))
 
     def test_create_pickup(self):
         """Test POST /api/assets/pickups/"""
@@ -826,6 +830,188 @@ class AssetPickupAPITest(APITestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_update_pickup_items_supports_add_update_delete(self):
+        """PUT should update existing pickup items, create new ones, and delete omitted ones."""
+        pickup = AssetPickup.objects.create(
+            organization=self.org,
+            applicant=self.user,
+            department=self.dept,
+            pickup_date=date.today(),
+            pickup_reason='Old reason'
+        )
+        item_keep = PickupItem.objects.create(
+            organization=self.org,
+            pickup=pickup,
+            asset=self.asset,
+            quantity=1,
+            remark='Old remark'
+        )
+        asset_2 = Asset.objects.create(
+            organization=self.org,
+            asset_name='Second Laptop',
+            asset_category=self.category,
+            purchase_price=Decimal('1200'),
+            purchase_date=date.today(),
+            asset_status='idle',
+            created_by=self.user
+        )
+        asset_3 = Asset.objects.create(
+            organization=self.org,
+            asset_name='Third Laptop',
+            asset_category=self.category,
+            purchase_price=Decimal('1300'),
+            purchase_date=date.today(),
+            asset_status='idle',
+            created_by=self.user
+        )
+        PickupItem.objects.create(
+            organization=self.org,
+            pickup=pickup,
+            asset=asset_2,
+            quantity=1,
+            remark='Delete me'
+        )
+
+        response = self.client.put(
+            f'/api/assets/pickups/{pickup.id}/',
+            {
+                'department': str(self.dept.id),
+                'pickup_date': str(date.today()),
+                'pickup_reason': 'Updated reason',
+                'items': [
+                    {
+                        'id': str(item_keep.id),
+                        'asset': str(asset_3.id),
+                        'quantity': 2,
+                        'remark': 'Updated remark'
+                    },
+                    {
+                        'asset': str(asset_2.id),
+                        'quantity': 1,
+                        'remark': 'Created item'
+                    }
+                ]
+            },
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        pickup.refresh_from_db()
+        updated_items = list(pickup.items.order_by('created_at'))
+        self.assertEqual(len(updated_items), 2)
+        item_keep.refresh_from_db()
+        self.assertEqual(item_keep.asset_id, asset_3.id)
+        self.assertEqual(item_keep.quantity, 2)
+        self.assertEqual(item_keep.remark, 'Updated remark')
+        self.assertTrue(any(item.asset_id == asset_2.id and item.remark == 'Created item' for item in updated_items))
+
+    def test_update_pickup_rejects_cross_document_item_id(self):
+        """PUT should reject nested item ids that belong to a different pickup order."""
+        pickup = AssetPickup.objects.create(
+            organization=self.org,
+            applicant=self.user,
+            department=self.dept,
+            pickup_date=date.today()
+        )
+        other_pickup = AssetPickup.objects.create(
+            organization=self.org,
+            applicant=self.user,
+            department=self.dept,
+            pickup_date=date.today()
+        )
+        foreign_item = PickupItem.objects.create(
+            organization=self.org,
+            pickup=other_pickup,
+            asset=self.asset,
+            quantity=1
+        )
+
+        response = self.client.put(
+            f'/api/assets/pickups/{pickup.id}/',
+            {
+                'department': str(self.dept.id),
+                'pickup_date': str(date.today()),
+                'pickup_reason': 'Updated reason',
+                'items': [
+                    {
+                        'id': str(foreign_item.id),
+                        'asset': str(self.asset.id),
+                        'quantity': 1
+                    }
+                ]
+            },
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_pickup_items_supports_swapping_existing_assets(self):
+        """PUT should allow two existing pickup rows to swap assets without unique conflicts."""
+        pickup = AssetPickup.objects.create(
+            organization=self.org,
+            applicant=self.user,
+            department=self.dept,
+            pickup_date=date.today(),
+            pickup_reason='Swap reason'
+        )
+        asset_2 = Asset.objects.create(
+            organization=self.org,
+            asset_name='Swap Laptop',
+            asset_category=self.category,
+            purchase_price=Decimal('1200'),
+            purchase_date=date.today(),
+            asset_status='idle',
+            created_by=self.user
+        )
+        item_a = PickupItem.objects.create(
+            organization=self.org,
+            pickup=pickup,
+            asset=self.asset,
+            quantity=1,
+            remark='Row A'
+        )
+        item_b = PickupItem.objects.create(
+            organization=self.org,
+            pickup=pickup,
+            asset=asset_2,
+            quantity=2,
+            remark='Row B'
+        )
+
+        response = self.client.put(
+            f'/api/assets/pickups/{pickup.id}/',
+            {
+                'department': str(self.dept.id),
+                'pickup_date': str(date.today()),
+                'pickup_reason': 'Swap updated',
+                'items': [
+                    {
+                        'id': str(item_a.id),
+                        'asset': str(asset_2.id),
+                        'quantity': 10,
+                        'remark': 'Row A swapped'
+                    },
+                    {
+                        'id': str(item_b.id),
+                        'asset': str(self.asset.id),
+                        'quantity': 20,
+                        'remark': 'Row B swapped'
+                    }
+                ]
+            },
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        item_a.refresh_from_db()
+        item_b.refresh_from_db()
+        self.assertEqual(item_a.asset_id, asset_2.id)
+        self.assertEqual(item_a.quantity, 10)
+        self.assertEqual(item_a.remark, 'Row A swapped')
+        self.assertEqual(item_b.asset_id, self.asset.id)
+        self.assertEqual(item_b.quantity, 20)
+        self.assertEqual(item_b.remark, 'Row B swapped')
 
     def test_list_pickups(self):
         """Test GET /api/assets/pickups/"""
@@ -905,11 +1091,14 @@ class AssetPickupAPITest(APITestCase):
         super().tearDown()
 
 
-class AssetTransferAPITest(APITestCase):
+class AssetTransferAPITest(APITransactionTestCase):
     """Test Asset Transfer API endpoints."""
 
     def setUp(self):
         """Set up test data with unique codes."""
+        from apps.common.middleware import clear_current_organization, set_current_organization
+
+        clear_current_organization()
         self.client = APIClient()
         self.unique_suffix = uuid.uuid4().hex[:8]
         self.org = Organization.objects.create(
@@ -955,6 +1144,7 @@ class AssetTransferAPITest(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
         self.client.credentials(HTTP_X_ORGANIZATION_ID=str(self.org.id))
+        set_current_organization(str(self.org.id))
 
     def test_create_transfer(self):
         """Test POST /api/assets/transfers/"""
@@ -969,6 +1159,96 @@ class AssetTransferAPITest(APITestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_update_transfer_items_supports_add_update_delete(self):
+        """PUT should diff transfer line items using the unified items contract."""
+        transfer = AssetTransfer.objects.create(
+            organization=self.org,
+            from_department=self.from_dept,
+            to_department=self.to_dept,
+            transfer_date=date.today(),
+            transfer_reason='Old transfer reason'
+        )
+        from apps.assets.models import TransferItem
+        item_keep = TransferItem.objects.create(
+            organization=self.org,
+            transfer=transfer,
+            asset=self.asset,
+            from_location=self.location,
+            from_custodian=self.user,
+            to_location=self.location,
+            remark='Old transfer item'
+        )
+        asset_2 = Asset.objects.create(
+            organization=self.org,
+            asset_name='Transfer Laptop B',
+            asset_category=self.category,
+            purchase_price=Decimal('1100'),
+            purchase_date=date.today(),
+            department=self.from_dept,
+            location=self.location,
+            custodian=self.user,
+            created_by=self.user
+        )
+        asset_3 = Asset.objects.create(
+            organization=self.org,
+            asset_name='Transfer Laptop C',
+            asset_category=self.category,
+            purchase_price=Decimal('1250'),
+            purchase_date=date.today(),
+            department=self.from_dept,
+            location=self.location,
+            custodian=self.user,
+            created_by=self.user
+        )
+        TransferItem.objects.create(
+            organization=self.org,
+            transfer=transfer,
+            asset=asset_2,
+            from_location=self.location,
+            from_custodian=self.user,
+            to_location=self.location,
+            remark='Delete me'
+        )
+        target_location = Location.objects.create(
+            organization=self.org,
+            name='Branch Office',
+            location_type='area'
+        )
+
+        response = self.client.put(
+            f'/api/assets/transfers/{transfer.id}/',
+            {
+                'from_department': str(self.from_dept.id),
+                'to_department': str(self.to_dept.id),
+                'transfer_date': str(date.today()),
+                'transfer_reason': 'Updated transfer reason',
+                'items': [
+                    {
+                        'id': str(item_keep.id),
+                        'asset': str(asset_3.id),
+                        'toLocation': str(target_location.id),
+                        'remark': 'Updated transfer item'
+                    },
+                    {
+                        'asset': str(asset_2.id),
+                        'toLocation': str(target_location.id),
+                        'remark': 'Created transfer item'
+                    }
+                ]
+            },
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        transfer.refresh_from_db()
+        updated_items = list(transfer.items.order_by('created_at'))
+        self.assertEqual(len(updated_items), 2)
+        item_keep.refresh_from_db()
+        self.assertEqual(item_keep.asset_id, asset_3.id)
+        self.assertEqual(item_keep.to_location_id, target_location.id)
+        self.assertEqual(item_keep.remark, 'Updated transfer item')
+        self.assertTrue(any(item.asset_id == asset_2.id and item.remark == 'Created transfer item' for item in updated_items))
 
     def test_approve_from(self):
         """Test POST /api/assets/transfers/{id}/approve-from/"""
@@ -993,11 +1273,14 @@ class AssetTransferAPITest(APITestCase):
         super().tearDown()
 
 
-class AssetReturnAPITest(APITestCase):
+class AssetReturnAPITest(APITransactionTestCase):
     """Test Asset Return API endpoints."""
 
     def setUp(self):
         """Set up test data with unique codes."""
+        from apps.common.middleware import clear_current_organization, set_current_organization
+
+        clear_current_organization()
         self.client = APIClient()
         self.unique_suffix = uuid.uuid4().hex[:8]
         self.org = Organization.objects.create(
@@ -1036,6 +1319,7 @@ class AssetReturnAPITest(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
         self.client.credentials(HTTP_X_ORGANIZATION_ID=str(self.org.id))
+        set_current_organization(str(self.org.id))
 
     def test_create_return(self):
         """Test POST /api/assets/returns/"""
@@ -1049,6 +1333,85 @@ class AssetReturnAPITest(APITestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_update_return_items_supports_add_update_delete(self):
+        """PUT should diff return line items and accept camelCase nested fields."""
+        return_order = AssetReturn.objects.create(
+            organization=self.org,
+            returner=self.user,
+            return_date=date.today(),
+            return_location=self.location,
+            return_reason='Old return reason'
+        )
+        from apps.assets.models import ReturnItem
+        item_keep = ReturnItem.objects.create(
+            organization=self.org,
+            asset_return=return_order,
+            asset=self.asset,
+            asset_status='idle',
+            condition_description='Old condition',
+            remark='Old return item'
+        )
+        asset_2 = Asset.objects.create(
+            organization=self.org,
+            asset_name='Return Laptop B',
+            asset_category=self.category,
+            purchase_price=Decimal('1100'),
+            purchase_date=date.today(),
+            custodian=self.user,
+            created_by=self.user
+        )
+        asset_3 = Asset.objects.create(
+            organization=self.org,
+            asset_name='Return Laptop C',
+            asset_category=self.category,
+            purchase_price=Decimal('1200'),
+            purchase_date=date.today(),
+            custodian=self.user,
+            created_by=self.user
+        )
+        ReturnItem.objects.create(
+            organization=self.org,
+            asset_return=return_order,
+            asset=asset_2,
+            asset_status='idle',
+            remark='Delete me'
+        )
+
+        response = self.client.put(
+            f'/api/assets/returns/{return_order.id}/',
+            {
+                'return_date': str(date.today()),
+                'return_location': str(self.location.id),
+                'return_reason': 'Updated return reason',
+                'items': [
+                    {
+                        'id': str(item_keep.id),
+                        'asset': str(asset_3.id),
+                        'assetStatus': 'maintenance',
+                        'conditionDescription': 'Updated condition',
+                        'remark': 'Updated return item'
+                    },
+                    {
+                        'asset': str(asset_2.id),
+                        'assetStatus': 'idle',
+                        'remark': 'Created return item'
+                    }
+                ]
+            },
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return_order.refresh_from_db()
+        updated_items = list(return_order.items.order_by('created_at'))
+        self.assertEqual(len(updated_items), 2)
+        item_keep.refresh_from_db()
+        self.assertEqual(item_keep.asset_id, asset_3.id)
+        self.assertEqual(item_keep.asset_status, 'maintenance')
+        self.assertEqual(item_keep.condition_description, 'Updated condition')
+        self.assertEqual(item_keep.remark, 'Updated return item')
+        self.assertTrue(any(item.asset_id == asset_2.id and item.remark == 'Created return item' for item in updated_items))
 
     def test_confirm_return(self):
         """Test POST /api/assets/returns/{id}/confirm/"""
@@ -1080,11 +1443,14 @@ class AssetReturnAPITest(APITestCase):
         super().tearDown()
 
 
-class AssetLoanAPITest(APITestCase):
+class AssetLoanAPITest(APITransactionTestCase):
     """Test Asset Loan API endpoints."""
 
     def setUp(self):
         """Set up test data with unique codes."""
+        from apps.common.middleware import clear_current_organization, set_current_organization
+
+        clear_current_organization()
         self.client = APIClient()
         self.unique_suffix = uuid.uuid4().hex[:8]
         self.org = Organization.objects.create(
@@ -1118,6 +1484,7 @@ class AssetLoanAPITest(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
         self.client.credentials(HTTP_X_ORGANIZATION_ID=str(self.org.id))
+        set_current_organization(str(self.org.id))
 
     def test_create_loan(self):
         """Test POST /api/assets/loans/"""
@@ -1131,6 +1498,77 @@ class AssetLoanAPITest(APITestCase):
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_update_loan_items_supports_add_update_delete(self):
+        """PUT should diff loan line items and allow asset replacement."""
+        loan = AssetLoan.objects.create(
+            organization=self.org,
+            borrower=self.user,
+            borrow_date=date.today(),
+            expected_return_date=date.today() + timedelta(days=30),
+            loan_reason='Old loan reason'
+        )
+        from apps.assets.models import LoanItem
+        item_keep = LoanItem.objects.create(
+            organization=self.org,
+            loan=loan,
+            asset=self.asset,
+            remark='Old loan item'
+        )
+        asset_2 = Asset.objects.create(
+            organization=self.org,
+            asset_name='Loan Laptop B',
+            asset_category=self.category,
+            purchase_price=Decimal('1200'),
+            purchase_date=date.today(),
+            asset_status='idle',
+            created_by=self.user
+        )
+        asset_3 = Asset.objects.create(
+            organization=self.org,
+            asset_name='Loan Laptop C',
+            asset_category=self.category,
+            purchase_price=Decimal('1300'),
+            purchase_date=date.today(),
+            asset_status='idle',
+            created_by=self.user
+        )
+        LoanItem.objects.create(
+            organization=self.org,
+            loan=loan,
+            asset=asset_2,
+            remark='Delete me'
+        )
+
+        response = self.client.put(
+            f'/api/assets/loans/{loan.id}/',
+            {
+                'borrow_date': str(date.today()),
+                'expected_return_date': str(date.today() + timedelta(days=20)),
+                'loan_reason': 'Updated loan reason',
+                'items': [
+                    {
+                        'id': str(item_keep.id),
+                        'asset': str(asset_3.id),
+                        'remark': 'Updated loan item'
+                    },
+                    {
+                        'asset': str(asset_2.id),
+                        'remark': 'Created loan item'
+                    }
+                ]
+            },
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        loan.refresh_from_db()
+        updated_items = list(loan.items.order_by('created_at'))
+        self.assertEqual(len(updated_items), 2)
+        item_keep.refresh_from_db()
+        self.assertEqual(item_keep.asset_id, asset_3.id)
+        self.assertEqual(item_keep.remark, 'Updated loan item')
+        self.assertTrue(any(item.asset_id == asset_2.id and item.remark == 'Created loan item' for item in updated_items))
 
     def test_approve_loan(self):
         """Test POST /api/assets/loans/{id}/approve/"""

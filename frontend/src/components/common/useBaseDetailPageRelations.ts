@@ -12,6 +12,7 @@ interface ReverseRelationFieldLike {
   label: string
   displayMode: 'inline_editable' | 'inline_readonly' | 'tab_readonly' | 'hidden'
   displayTier?: 'L1' | 'L2' | 'L3'
+  relationKind?: string
   relatedObjectCode?: string
   reverseRelationField?: string
   sortOrder?: number
@@ -41,6 +42,15 @@ export function useBaseDetailPageRelations(options: UseBaseDetailPageRelationsOp
   const { props, runtimeRelations } = options
   const { t } = useI18n()
 
+  const isLineItemRelation = (relation: ReverseRelationFieldLike) => {
+    if (relation.displayTier !== 'L1') {
+      return false
+    }
+
+    const rawRelation = relation as ReverseRelationFieldLike & Record<string, any>
+    return String(rawRelation.relationKind || rawRelation.relation_kind || '').trim() !== 'through_line_item'
+  }
+
   const allVisibleRelations = computed(() => {
     if (!props.showRelatedObjects) {
       return []
@@ -59,34 +69,35 @@ export function useBaseDetailPageRelations(options: UseBaseDetailPageRelationsOp
 
   // L1 relations → inline in Details tab
   const lineItemRelations = computed(() =>
-    allVisibleRelations.value.filter((rel) => rel.displayTier === 'L1')
+    allVisibleRelations.value.filter((rel) => isLineItemRelation(rel))
   )
 
   // L2/L3 relations → Related tab (excludes L1 to avoid duplication)
   const visibleReverseRelations = computed(() =>
-    allVisibleRelations.value.filter((rel) => rel.displayTier !== 'L1')
+    allVisibleRelations.value.filter((rel) => !isLineItemRelation(rel))
   )
 
   const mapRuntimeRelation = (raw: Record<string, any>): ReverseRelationFieldLike | null => {
     const code = String(raw.relationCode || '').trim()
     if (!code) return null
 
-    const displayMode = String(raw.displayMode || 'inline_readonly') as ReverseRelationFieldLike['displayMode']
-    const relatedObjectCode = String(raw.targetObjectCode || '').trim()
-    const label = String(raw.relationName || relatedObjectCode || code).trim()
+    const displayMode = String(raw.displayMode || raw.display_mode || 'inline_readonly') as ReverseRelationFieldLike['displayMode']
+    const relatedObjectCode = String(raw.targetObjectCode || raw.target_object_code || '').trim()
+    const label = String(raw.relationName || raw.relation_name || relatedObjectCode || code).trim()
     const defaultExpandedRaw = raw.defaultExpanded
 
     return {
       code,
       label,
       displayMode,
-      displayTier: (String(raw.displayTier || 'L2').trim() as ReverseRelationFieldLike['displayTier']),
+      displayTier: (String(raw.displayTier || raw.display_tier || 'L2').trim() as ReverseRelationFieldLike['displayTier']),
+      relationKind: String(raw.relationKind || raw.relation_kind || '').trim(),
       relatedObjectCode,
-      reverseRelationField: String(raw.targetFkField || '').trim(),
-      sortOrder: Number(raw.sortOrder || 0) || 0,
-      groupKey: String(raw.groupKey || '').trim(),
-      groupName: String(raw.groupName || '').trim(),
-      groupOrder: Number(raw.groupOrder || 0) || undefined,
+      reverseRelationField: String(raw.targetFkField || raw.target_fk_field || '').trim(),
+      sortOrder: Number(raw.sortOrder || raw.sort_order || 0) || 0,
+      groupKey: String(raw.groupKey || raw.group_key || '').trim(),
+      groupName: String(raw.groupName || raw.group_name || '').trim(),
+      groupOrder: Number(raw.groupOrder || raw.group_order || 0) || undefined,
       defaultExpanded:
         defaultExpandedRaw === undefined
           ? undefined

@@ -11,6 +11,13 @@
       <el-divider direction="vertical" />
       <span class="layout-info">{{ layoutName }}</span>
       <el-tag
+        size="small"
+        effect="plain"
+        class="mode-tag"
+      >
+        {{ modeLabel }}
+      </el-tag>
+      <el-tag
         v-if="!isDefault"
         type="warning"
         size="small"
@@ -202,7 +209,7 @@ const renderModeOptions = computed(() => [
 <style scoped lang="scss">
 .designer-toolbar {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) auto minmax(320px, 1fr);
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
@@ -217,6 +224,7 @@ const renderModeOptions = computed(() => [
 .toolbar-right {
   display: flex;
   align-items: center;
+  width: 100%;
   min-width: 0;
   min-height: 52px;
   padding: 6px 10px;
@@ -234,12 +242,14 @@ const renderModeOptions = computed(() => [
   justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
+  justify-self: center;
 }
 
 .toolbar-right {
   justify-content: flex-end;
   gap: 8px;
   flex-wrap: wrap;
+  justify-self: end;
 }
 
 .layout-info {
@@ -251,6 +261,12 @@ const renderModeOptions = computed(() => [
   font-size: 14px;
   font-weight: 600;
   color: #303133;
+}
+
+.mode-tag {
+  border-color: #d6e4ff;
+  color: #1d4ed8;
+  background: #eff6ff;
 }
 
 @media (max-width: 1440px) {
