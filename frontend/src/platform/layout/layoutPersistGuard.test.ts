@@ -1,0 +1,229 @@
+﻿import { describe, expect, it } from 'vitest'
+import {
+  ensureLayoutConfigIds,
+  preparePersistLayoutConfig,
+  resolveRawLayoutConfig
+} from './layoutPersistGuard'
+
+describe('layoutPersistGuard', () => {
+  it('ensures required ids for sections and fields', () => {
+    const prepared = ensureLayoutConfigIds({
+      sections: [
+        {
+          type: 'section',
+          title: 'Basic',
+          fields: [{ fieldCode: 'assetName', label: 'Asset Name', span: 1 }]
+        },
+        {
+          type: 'tab',
+          tabs: [
+            {
+              title: 'Overview',
+              fields: [{ fieldCode: 'assetCode', label: 'Asset Code', span: 1 }]
+            }
+          ]
+        },
+        {
+          type: 'collapse',
+          items: [
+            {
+              title: 'Ops',
+              fields: [{ fieldCode: 'status', label: 'Status', span: 1 }]
+            }
+          ]
+        }
+      ]
+    })
+
+    expect(prepared.sections[0].id).toBeTruthy()
+    expect(prepared.sections[0].fields[0].id).toBeTruthy()
+    expect(prepared.sections[1].tabs[0].id).toBeTruthy()
+    expect(prepared.sections[1].tabs[0].fields[0].id).toBeTruthy()
+    expect(prepared.sections[2].items[0].id).toBeTruthy()
+    expect(prepared.sections[2].items[0].fields[0].id).toBeTruthy()
+  })
+
+  it('extracts layout config from response payload', () => {
+    const config = resolveRawLayoutConfig({
+      data: {
+        layoutConfig: {
+          sections: [{ id: 'basic', type: 'section', fields: [] }]
+        }
+      }
+    })
+
+    expect(config.sections).toHaveLength(1)
+    expect(config.sections[0].id).toBe('basic')
+  })
+
+  it('drops filtered fields and rejects unknown references', () => {
+    const prepared = preparePersistLayoutConfig(
+      {
+        layoutConfig: {
+          sections: [
+            {
+              type: 'section',
+              fields: [
+                { fieldCode: 'assetName', label: 'Asset Name', span: 1 },
+                { fieldCode: 'created_at', label: 'Created At', span: 1 }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        layoutType: 'form',
+        availableFieldCodes: ['assetName'],
+        dropFieldCode: (code) => code === 'created_at'
+      }
+    )
+
+    expect(prepared.sections[0].fields.map((field: any) => field.fieldCode)).toEqual(['assetName'])
+
+    expect(() =>
+      preparePersistLayoutConfig(
+        {
+          sections: [
+            {
+              type: 'section',
+              fields: [{ fieldCode: 'ghostField', label: 'Ghost', span: 1 }]
+            }
+          ]
+        },
+        {
+          layoutType: 'form',
+          availableFieldCodes: ['assetName']
+        }
+      )
+    ).toThrow('Layout contains unknown fields: ghostField')
+  })
+
+  it('normalizes field minHeight alias during persist prepare', () => {
+    const prepared = ensureLayoutConfigIds({
+      sections: [
+        {
+          id: 'section-basic',
+          type: 'section',
+          fields: [
+            { id: 'field-name', fieldCode: 'assetName', label: 'Asset Name', span: 1, min_height: '120' }
+          ]
+        }
+      ]
+    })
+
+    expect(prepared.sections[0].fields[0].minHeight).toBe(120)
+    expect(prepared.sections[0].fields[0].min_height).toBeUndefined()
+    expect(prepared.sections[0].fields[0].componentProps.minHeight).toBe(120)
+    expect(prepared.sections[0].fields[0].component_props.minHeight).toBe(120)
+  })
+
+  it('preserves detail-region metadata and referenced field codes', () => {
+    const prepared = ensureLayoutConfigIds({
+      sections: [
+        {
+          id: 'detail-items',
+          type: 'detail-region',
+          title: 'Items',
+          relation_code: 'pickup_items',
+          field_code: 'items',
+          target_object_code: 'PickupItem',
+          detail_edit_mode: 'inline_table',
+          lookup_columns: [{ key: 'asset', label: 'Asset', minWidth: 180 }],
+          related_fields: [{ code: 'quantity', label: 'Quantity', fieldType: 'number' }]
+        }
+      ]
+    })
+
+    expect(prepared.sections[0].relationCode).toBe('pickup_items')
+    expect(prepared.sections[0].fieldCode).toBe('items')
+    expect(prepared.sections[0].targetObjectCode).toBe('PickupItem')
+    expect(prepared.sections[0].detailEditMode).toBe('inline_table')
+    expect(prepared.sections[0].columns).toBe(1)
+    expect(prepared.sections[0].lookupColumns).toEqual([{ key: 'asset', label: 'Asset', minWidth: 180 }])
+    expect(prepared.sections[0].relatedFields).toEqual([
+      { code: 'quantity', label: 'Quantity', fieldType: 'number' }
+    ])
+
+    expect(() =>
+      preparePersistLayoutConfig(
+        prepared,
+        {
+          layoutType: 'form',
+          availableFieldCodes: ['name']
+        }
+      )
+    ).toThrow('Layout contains unknown fields: items')
+  })
+
+  it('normalizes componentProps minHeight alias during persist prepare', () => {
+    const prepared = ensureLayoutConfigIds({
+      sections: [
+        {
+          id: 'section-basic',
+          type: 'section',
+          fields: [
+            {
+              id: 'field-name',
+              fieldCode: 'assetName',
+              label: 'Asset Name',
+              span: 1,
+              component_props: { min_height: '168' }
+            }
+          ]
+        }
+      ]
+    })
+
+    expect(prepared.sections[0].fields[0].minHeight).toBe(168)
+    expect(prepared.sections[0].fields[0].componentProps.minHeight).toBe(168)
+    expect(prepared.sections[0].fields[0].componentProps.min_height).toBeUndefined()
+  })
+
+  it('preserves and normalizes layout placement snapshot', () => {
+    const prepared = ensureLayoutConfigIds({
+      sections: [
+        {
+          id: 'section-basic',
+          type: 'section',
+          fields: [
+            {
+              id: 'field-name',
+              fieldCode: 'assetName',
+              label: 'Asset Name',
+              span: 1,
+              layout_placement: {
+                row: '1',
+                col_start: '2',
+                col_span: '1',
+                row_span: '2',
+                columns: '2',
+                total_rows: '3',
+                order: '1'
+              }
+            }
+          ]
+        }
+      ]
+    })
+
+    expect(prepared.sections[0].fields[0].layoutPlacement).toMatchObject({
+      row: 1,
+      colStart: 2,
+      colSpan: 1,
+      rowSpan: 2,
+      columns: 2,
+      totalRows: 3,
+      order: 1
+    })
+    expect(prepared.sections[0].fields[0].layout_placement).toMatchObject({
+      row: 1,
+      col_start: 2,
+      col_span: 1,
+      row_span: 2,
+      columns: 2,
+      total_rows: 3,
+      order: 1
+    })
+  })
+})
+

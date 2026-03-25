@@ -1,0 +1,139 @@
+{
+    "catalog": {
+        "title": "软件目录",
+        "add": "新建软件",
+        "edit": "编辑软件",
+        "viewLicenses": "许可证",
+        "fields": {
+            "code": "代码",
+            "name": "软件名称",
+            "version": "版本",
+            "vendor": "厂商",
+            "type": "类型",
+            "licenseType": "许可类型",
+            "status": "状态"
+        },
+        "types": {
+            "os": "操作系统",
+            "office": "办公软件",
+            "professional": "专业软件",
+            "development": "开发工具",
+            "security": "安全软件",
+            "database": "数据库",
+            "other": "其他"
+        },
+        "placeholders": {
+            "code": "如: WIN11, OFF365",
+            "name": "软件产品名称",
+            "version": "如: 2021, Pro",
+            "vendor": "软件厂商",
+            "licenseType": "如: perpetual, subscription",
+            "search": "代码/名称/厂商"
+        },
+        "messages": {
+            "deleteConfirm": "确定要删除选中的软件吗？"
+        }
+    },
+    "licenses": {
+        "title": "软件许可证",
+        "add": "新建许可证",
+        "edit": "编辑许可证",
+        "refreshStats": "刷新统计",
+        "allocate": "分配",
+        "sections": {
+            "term": "许可期限",
+            "financial": "财务信息",
+            "status": "状态信息"
+        },
+        "systemUpdate": "系统自动更新",
+        "fields": {
+            "licenseNo": "许可证编号",
+            "software": "软件",
+            "licenseKey": "许可证密钥",
+            "totalUnits": "总数量",
+            "usedUnits": "已用",
+            "availableUnits": "可用",
+            "utilization": "使用率",
+            "purchaseDate": "购买日期",
+            "expiryDate": "到期日期",
+            "purchasePrice": "购买价格",
+            "annualCost": "年维护成本",
+            "status": "状态",
+            "agreementNo": "协议编号",
+            "notes": "备注"
+        },
+        "status": {
+            "active": "生效中",
+            "expired": "已过期",
+            "suspended": "暂停",
+            "revoked": "撤销"
+        },
+        "tags": {
+            "perpetual": "永久",
+            "expired": "已过期",
+            "expiringSoon": "即将过期"
+        },
+        "compliance": {
+            "title": "合规概览",
+            "totalLicenses": "许可证总数",
+            "expiringLicenses": "即将过期",
+            "days30": "30天内",
+            "overUtilized": "过度分配",
+            "noOverUtilized": "无过度分配"
+        },
+        "placeholders": {
+            "licenseNo": "如: OFF365-2024-001",
+            "key": "可选，加密存储",
+            "type": "如: perpetual, subscription, OEM",
+            "agreement": "企业协议编号",
+            "notes": "许可证相关备注",
+            "search": "许可证号/软件名称"
+        },
+        "messages": {
+            "deleteConfirm": "确定要删除选中的许可证吗？"
+        }
+    },
+    "allocations": {
+        "title": "许可证分配记录",
+        "add": "新建分配",
+        "deallocate": "解除分配",
+        "fields": {
+            "software": "软件",
+            "licenseNo": "许可证编号",
+            "assetCode": "资产编码",
+            "assetName": "资产名称",
+            "allocatedDate": "分配日期",
+            "allocatedBy": "分配人",
+            "status": "状态"
+        },
+        "status": {
+            "allocated": "已分配",
+            "revoked": "已解除"
+        },
+        "messages": {
+            "deallocateConfirm": "确定要解除 {software} 在 {asset} 上的分配吗？"
+        }
+    },
+    "allocationDialog": {
+        "title": "分配许可证 - {name}",
+        "availableUnits": "可用数量",
+        "asset": "资产",
+        "allocationKey": "分配密钥",
+        "notes": "备注",
+        "placeholders": {
+            "assetSearch": "搜索资产编码或名称",
+            "allocationKey": "可选，此分配专用密钥",
+            "notes": "分配备注"
+        },
+        "actions": {
+            "allocate": "分配"
+        },
+        "messages": {
+            "allocateSuccess": "分配成功",
+            "allocateFailed": "分配失败"
+        },
+        "validation": {
+            "assetRequired": "请选择资产"
+        }
+    }
+}

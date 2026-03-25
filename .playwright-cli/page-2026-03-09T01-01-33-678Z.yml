@@ -1,0 +1,253 @@
+- generic [ref=e5]:
+  - complementary [ref=e6]:
+    - heading "G GZEAMS" [level=1] [ref=e8]:
+      - generic [ref=e9]: G
+      - generic [ref=e10]: GZEAMS
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic:
+          - search
+      - textbox "搜索" [ref=e15]
+    - menubar [ref=e19]:
+      - menuitem "工作台" [ref=e20] [cursor=pointer]:
+        - img [ref=e22]
+        - text: 工作台
+      - menuitem "资产主数据" [expanded] [ref=e153]:
+        - generic [ref=e154] [cursor=pointer]:
+          - img [ref=e156]
+          - generic [ref=e158]: 资产主数据
+          - img [ref=e160]
+        - menu [ref=e162]:
+          - menuitem "资产卡片" [ref=e163] [cursor=pointer]:
+            - img [ref=e165]
+            - text: 资产卡片
+          - menuitem "资产分类" [ref=e167] [cursor=pointer]:
+            - img [ref=e169]
+            - text: 资产分类
+          - menuitem "存放地点" [ref=e171] [cursor=pointer]:
+            - img [ref=e173]
+            - text: 存放地点
+          - menuitem "供应商" [ref=e176] [cursor=pointer]:
+            - img [ref=e178]
+            - text: 供应商
+          - menuitem "IT资产" [ref=e182] [cursor=pointer]:
+            - img [ref=e184]
+            - text: IT资产
+      - menuitem "资产业务" [ref=e186]:
+        - generic [ref=e187] [cursor=pointer]:
+          - img [ref=e189]
+          - generic [ref=e191]: 资产业务
+          - img [ref=e193]
+      - menuitem "资产生命周期" [ref=e195]:
+        - generic [ref=e196] [cursor=pointer]:
+          - img [ref=e198]
+          - generic [ref=e200]: 资产生命周期
+          - img [ref=e202]
+      - menuitem "耗材管理" [ref=e204]:
+        - generic [ref=e205] [cursor=pointer]:
+          - img [ref=e207]
+          - generic [ref=e211]: 耗材管理
+          - img [ref=e213]
+      - menuitem "盘点任务" [ref=e215] [cursor=pointer]: 盘点任务
+      - menuitem "财务管理" [ref=e217]:
+        - generic [ref=e218] [cursor=pointer]:
+          - img [ref=e220]
+          - generic [ref=e224]: 财务管理
+          - img [ref=e226]
+      - menuitem "部门" [ref=e228] [cursor=pointer]:
+        - img [ref=e230]
+        - text: 部门
+      - menuitem "工作流" [ref=e233]:
+        - generic [ref=e234] [cursor=pointer]:
+          - img [ref=e236]
+          - generic [ref=e239]: 工作流
+          - img [ref=e241]
+      - menuitem "系统管理" [ref=e243]:
+        - generic [ref=e244] [cursor=pointer]:
+          - img [ref=e246]
+          - generic [ref=e248]: 系统管理
+          - img [ref=e250]
+      - menuitem "报表中心" [ref=e252] [cursor=pointer]:
+        - img [ref=e254]
+        - text: 报表中心
+    - generic [ref=e26] [cursor=pointer]:
+      - img [ref=e28]
+      - generic [ref=e30]: 收起
+  - generic [ref=e31]:
+    - generic [ref=e32]:
+      - navigation "面包屑" [ref=e34]:
+        - generic [ref=e35]:
+          - link "工作台" [ref=e36]
+          - text: /
+        - link "资产卡片" [ref=e38]
+      - generic [ref=e39]:
+        - button "🌐 简体中文" [ref=e256] [cursor=pointer]:
+          - generic [ref=e42]: 🌐
+          - generic [ref=e43]: 简体中文
+          - img [ref=e45]
+        - button "通知" [ref=e49] [cursor=pointer]:
+          - img [ref=e51]
+    - main [ref=e55]:
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - generic [ref=e62]: AS
+            - heading "资产卡片" [level=2] [ref=e63]
+            - generic [ref=e257]: 2 条记录
+          - generic [ref=e64]:
+            - button "新建" [ref=e65] [cursor=pointer]:
+              - generic [ref=e66]: 新建
+            - button "布局管理" [ref=e67] [cursor=pointer]:
+              - generic [ref=e68]: 布局管理
+            - button [ref=e70] [cursor=pointer]:
+              - img [ref=e72]
+        - generic [ref=e75]:
+          - group "搜索" [ref=e77]:
+            - generic [ref=e79]: 搜索
+            - generic [ref=e81]:
+              - generic [ref=e83] [cursor=pointer]:
+                - generic:
+                  - combobox [ref=e85]
+                  - generic [ref=e86]: 全部字段
+                - img [ref=e89]
+              - textbox "Search Keyword" [ref=e93]: 戴尔
+          - generic [ref=e94]:
+            - button "搜索" [active] [ref=e95] [cursor=pointer]:
+              - generic [ref=e96]: 搜索
+            - button "重置" [ref=e97] [cursor=pointer]:
+              - generic [ref=e98]: 重置
+        - generic [ref=e101]:
+          - table [ref=e103]:
+            - rowgroup [ref=e108]:
+              - row "选择所有行 序号 asset code 按 asset code 排序 purchase price 按 purchase price 排序 asset name 按 asset name 排序 asset category 按 asset category 排序 current value 按 current value 排序 department 按 department 排序 location 按 location 排序 custodian 按 custodian 排序 asset status 按 asset status 排序 操作" [ref=e267]:
+                - columnheader "选择所有行" [ref=e110]:
+                  - generic "选择所有行" [ref=e112] [cursor=pointer]:
+                    - generic [ref=e113]:
+                      - checkbox "选择所有行"
+                - columnheader "序号" [ref=e115]:
+                  - generic [ref=e116]: 序号
+                - columnheader "asset code 按 asset code 排序" [ref=e268] [cursor=pointer]:
+                  - generic [ref=e269]:
+                    - text: asset code
+                    - button "按 asset code 排序" [ref=e270]
+                - columnheader "purchase price 按 purchase price 排序" [ref=e271] [cursor=pointer]:
+                  - generic [ref=e272]:
+                    - text: purchase price
+                    - button "按 purchase price 排序" [ref=e273]
+                - columnheader "asset name 按 asset name 排序" [ref=e274] [cursor=pointer]:
+                  - generic [ref=e275]:
+                    - text: asset name
+                    - button "按 asset name 排序" [ref=e276]
+                - columnheader "asset category 按 asset category 排序" [ref=e277] [cursor=pointer]:
+                  - generic [ref=e278]:
+                    - text: asset category
+                    - button "按 asset category 排序" [ref=e279]
+                - columnheader "current value 按 current value 排序" [ref=e280] [cursor=pointer]:
+                  - generic [ref=e281]:
+                    - text: current value
+                    - button "按 current value 排序" [ref=e282]
+                - columnheader "department 按 department 排序" [ref=e283] [cursor=pointer]:
+                  - generic [ref=e284]:
+                    - text: department
+                    - button "按 department 排序" [ref=e285]
+                - columnheader "location 按 location 排序" [ref=e286] [cursor=pointer]:
+                  - generic [ref=e287]:
+                    - text: location
+                    - button "按 location 排序" [ref=e288]
+                - columnheader "custodian 按 custodian 排序" [ref=e289] [cursor=pointer]:
+                  - generic [ref=e290]:
+                    - text: custodian
+                    - button "按 custodian 排序" [ref=e291]
+                - columnheader "asset status 按 asset status 排序" [ref=e292] [cursor=pointer]:
+                  - generic [ref=e293]:
+                    - text: asset status
+                    - button "按 asset status 排序" [ref=e294]
+                - columnheader "操作" [ref=e117]:
+                  - generic [ref=e118]: 操作
+          - table [ref=e295]:
+            - rowgroup [ref=e309]:
+              - row "选择当前行 1 ZC2024040005 ¥11,929.00 戴尔 MacBook - ¥9,076.00 - - - idle 查看 编辑 删除" [ref=e1293]:
+                - cell "选择当前行" [ref=e1294]:
+                  - generic "选择当前行" [ref=e1296] [cursor=pointer]:
+                    - generic [ref=e1297]:
+                      - checkbox "选择当前行"
+                - cell "1" [ref=e1299]:
+                  - generic [ref=e1301]: "1"
+                - cell "ZC2024040005" [ref=e1302]:
+                  - generic [ref=e1304]: ZC2024040005
+                - cell "¥11,929.00" [ref=e1305]:
+                  - generic [ref=e1307]: ¥11,929.00
+                - cell "戴尔 MacBook" [ref=e1308]:
+                  - generic [ref=e1310]: 戴尔 MacBook
+                - cell "-" [ref=e1311]:
+                  - generic [ref=e1313]: "-"
+                - cell "¥9,076.00" [ref=e1314]:
+                  - generic [ref=e1316]: ¥9,076.00
+                - cell "-" [ref=e1317]:
+                  - generic [ref=e1321]: "-"
+                - cell "-" [ref=e1322]:
+                  - generic [ref=e1324]: "-"
+                - cell "-" [ref=e1325]:
+                  - generic [ref=e1329]: "-"
+                - cell "idle" [ref=e1330]:
+                  - generic [ref=e1332]: idle
+                - cell "查看 编辑 删除" [ref=e1333]:
+                  - generic [ref=e1334]:
+                    - button "查看" [ref=e1335] [cursor=pointer]:
+                      - generic [ref=e1336]: 查看
+                    - button "编辑" [ref=e1337] [cursor=pointer]:
+                      - generic [ref=e1338]: 编辑
+                    - button "删除" [ref=e1339] [cursor=pointer]:
+                      - generic [ref=e1340]: 删除
+              - row "选择当前行 2 ZC2024110002 ¥18,597.00 戴尔 ThinkPad - ¥9,862.00 - - - idle 查看 编辑 删除" [ref=e1341]:
+                - cell "选择当前行" [ref=e1342]:
+                  - generic "选择当前行" [ref=e1344] [cursor=pointer]:
+                    - generic [ref=e1345]:
+                      - checkbox "选择当前行"
+                - cell "2" [ref=e1347]:
+                  - generic [ref=e1349]: "2"
+                - cell "ZC2024110002" [ref=e1350]:
+                  - generic [ref=e1352]: ZC2024110002
+                - cell "¥18,597.00" [ref=e1353]:
+                  - generic [ref=e1355]: ¥18,597.00
+                - cell "戴尔 ThinkPad" [ref=e1356]:
+                  - generic [ref=e1358]: 戴尔 ThinkPad
+                - cell "-" [ref=e1359]:
+                  - generic [ref=e1361]: "-"
+                - cell "¥9,862.00" [ref=e1362]:
+                  - generic [ref=e1364]: ¥9,862.00
+                - cell "-" [ref=e1365]:
+                  - generic [ref=e1369]: "-"
+                - cell "-" [ref=e1370]:
+                  - generic [ref=e1372]: "-"
+                - cell "-" [ref=e1373]:
+                  - generic [ref=e1377]: "-"
+                - cell "idle" [ref=e1378]:
+                  - generic [ref=e1380]: idle
+                - cell "查看 编辑 删除" [ref=e1381]:
+                  - generic [ref=e1382]:
+                    - button "查看" [ref=e1383] [cursor=pointer]:
+                      - generic [ref=e1384]: 查看
+                    - button "编辑" [ref=e1385] [cursor=pointer]:
+                      - generic [ref=e1386]: 编辑
+                    - button "删除" [ref=e1387] [cursor=pointer]:
+                      - generic [ref=e1388]: 删除
+        - generic [ref=e1271]:
+          - generic [ref=e1272]: 共 2 条
+          - generic [ref=e1275] [cursor=pointer]:
+            - generic:
+              - combobox [ref=e1277]
+              - generic [ref=e1278]: 20条/页
+            - img [ref=e1281]
+          - button "上一页" [disabled] [ref=e1283]:
+            - generic:
+              - img
+          - list [ref=e1284]:
+            - listitem "第 1 页" [ref=e1285]: "1"
+          - button "下一页" [disabled] [ref=e1286]:
+            - generic:
+              - img
+          - generic [ref=e1287]:
+            - generic [ref=e1288]: 前往
+            - spinbutton "页" [ref=e1291]: "1"
+            - generic [ref=e1292]: 页

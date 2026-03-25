@@ -1,0 +1,142 @@
+{
+  "actions": {
+    "refreshRollups": "Refresh summary",
+    "closeProject": "Close project",
+    "viewAssets": "Assets ({count})",
+    "viewMembers": "Members ({count})",
+    "viewAllAssets": "View all assets",
+    "viewAllMembers": "View all members",
+    "viewAllReturns": "View all returns",
+    "addAsset": "Add asset",
+    "addMember": "Add member",
+    "recycleAsset": "Recycle asset",
+    "transferToProject": "Transfer to project",
+    "confirmReturnOrder": "Confirm return"
+  },
+  "panels": {
+    "overview": "Workspace overview",
+    "assets": "Project assets",
+    "members": "Project members",
+    "pendingReturns": "Pending return orders",
+    "returnHistory": "Return history",
+    "returnTrend": "Return trend",
+    "overviewHint": "Unified project, asset, member, and return summary for this workspace.",
+    "assetsHint": "Allocated assets, usage status, and cost snapshots.",
+    "membersHint": "Active team, roles, and access scope.",
+    "returnsHint": "Return orders waiting for confirmation in the project context.",
+    "returnHistoryHint": "Recent processed return orders and status totals for this project."
+  },
+  "summary": {
+    "plannedBudget": "Planned budget",
+    "actualCost": "Actual cost",
+    "assetCost": "Allocated asset cost",
+    "inUseAssets": "In use",
+    "returnedAssets": "Returned",
+    "transferredAssets": "Transferred",
+    "activeMembers": "Active",
+    "primaryMembers": "Primary",
+    "allocators": "Allocators",
+    "pendingReturns": "Pending return orders",
+    "processedReturns": "Processed returns",
+    "completedReturns": "Completed returns",
+    "rejectedReturns": "Rejected returns"
+  },
+  "overview": {
+    "projectManager": "Project manager",
+    "department": "Department",
+    "projectType": "Project type",
+    "timeline": "Timeline",
+    "actualClosure": "Actual closure",
+    "milestones": "Milestones",
+    "overdue": "Overdue"
+  },
+  "ranges": {
+    "last7Days": "Last 7 days",
+    "last30Days": "Last 30 days",
+    "last90Days": "Last 90 days"
+  },
+  "messages": {
+    "confirmCloseProject": "Close this project? The system will verify that no active project assets remain.",
+    "loadAssetsFailed": "Failed to load project assets.",
+    "loadMembersFailed": "Failed to load project members.",
+    "loadReturnsFailed": "Failed to load project return orders.",
+    "emptyAssets": "No assets have been allocated to this project yet.",
+    "emptyMembers": "No project members have been assigned yet.",
+    "emptyReturns": "No pending return orders require confirmation for this project.",
+    "emptyReturnHistory": "No processed return history for this project yet.",
+    "emptyReturnTrend": "No return activity in the selected time window.",
+    "lazyPanelHint": "This panel loads when it enters view. Click to load it immediately.",
+    "loadOverviewFailed": "Failed to load project workspace overview.",
+    "loadTransferTargetsFailed": "Failed to load available target projects.",
+    "loadReturnHistoryFailed": "Failed to load project return history.",
+    "returnTrendWindow": "Window: {start} to {end}",
+    "transferTargetRequired": "Select a target project first.",
+    "transferSuccess": "Project asset transferred successfully.",
+    "transferFailed": "Project asset transfer failed.",
+    "confirmReturnOrder": "Confirm this return order now?",
+    "confirmReturnSuccess": "Return order confirmed successfully.",
+    "confirmRejectReturnOrder": "Provide a rejection reason before rejecting this return order.",
+    "rejectReasonRequired": "A rejection reason is required.",
+    "rejectReturnSuccess": "Return order rejected successfully."
+  },
+  "columns": {
+    "allocationNo": "Allocation No",
+    "returnNo": "Return No",
+    "assetCode": "Asset Code",
+    "assetName": "Asset Name",
+    "allocationType": "Allocation Type",
+    "returnStatus": "Return Status",
+    "processingNote": "Processing note",
+    "processedAt": "Processed at",
+    "latestReturn": "Recent return",
+    "returnDate": "Return Date",
+    "returnReason": "Return Reason",
+    "allocationCost": "Allocation Cost",
+    "allocationDate": "Allocation Date",
+    "custodian": "Custodian",
+    "returner": "Returner",
+    "itemsCount": "Items",
+    "member": "Member",
+    "role": "Role",
+    "primary": "Primary",
+    "active": "Active",
+    "joinDate": "Join Date",
+    "responsibilities": "Responsibilities",
+    "permissions": "Permissions",
+    "projectManager": "Project manager",
+    "department": "Department",
+    "plannedBudget": "Planned budget",
+    "activeAssets": "Active assets",
+    "members": "Members"
+  },
+  "allocationType": {
+    "permanent": "Permanent",
+    "temporary": "Temporary",
+    "shared": "Shared"
+  },
+  "returnStatus": {
+    "in_use": "In use",
+    "returned": "Returned",
+    "transferred": "Transferred"
+  },
+  "role": {
+    "manager": "Manager",
+    "member": "Member",
+    "observer": "Observer"
+  },
+  "flags": {
+    "primary": "Primary",
+    "active": "Active",
+    "inactive": "Inactive",
+    "canAllocateAsset": "Can allocate assets",
+    "canViewCost": "Can view cost"
+  },
+  "transferDialog": {
+    "title": "Cross-project transfer",
+    "asset": "Current asset",
+    "targetProject": "Target project",
+    "targetProjectPlaceholder": "Select a target project",
+    "reason": "Transfer reason",
+    "reasonPlaceholder": "Describe why this asset is moving"
+  }
+}

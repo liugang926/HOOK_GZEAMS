@@ -1,0 +1,66 @@
+{
+  "title": "单点登录管理",
+  "subtitle": "企业微信 · 钉钉 · 飞书",
+  "tabs": {
+    "providers": "SSO 提供商",
+    "mappings": "用户映射",
+    "syncLogs": "同步日志"
+  },
+  "providers": {
+    "add": "添加提供商",
+    "createTitle": "添加 SSO 提供商",
+    "editTitle": "编辑 SSO 提供商",
+    "test": "测试",
+    "testSuccess": "连接测试成功",
+    "testFailed": "连接测试失败",
+    "cols": {
+      "platform": "平台",
+      "name": "名称",
+      "appId": "App ID",
+      "enabled": "启用",
+      "actions": "操作"
+    },
+    "form": {
+      "platform": "平台类型",
+      "name": "配置名称",
+      "appId": "App ID / Corp ID",
+      "appSecret": "App Secret",
+      "redirectUri": "回调地址",
+      "enabled": "启用"
+    }
+  },
+  "mappings": {
+    "searchPlaceholder": "搜索用户...",
+    "triggerSync": "触发同步",
+    "syncTriggered": "同步任务已触发",
+    "syncFailed": "同步触发失败",
+    "allPlatforms": "全部平台",
+    "cols": {
+      "localUser": "本地用户",
+      "platform": "平台",
+      "externalId": "外部 ID",
+      "externalName": "外部名称",
+      "syncStatus": "同步状态",
+      "lastSyncAt": "最后同步",
+      "actions": "操作"
+    }
+  },
+  "syncLogs": {
+    "allPlatforms": "全部平台",
+    "cols": {
+      "platform": "平台",
+      "syncType": "同步类型",
+      "status": "状态",
+      "totalCount": "总数",
+      "successCount": "成功",
+      "failedCount": "失败",
+      "startTime": "开始时间",
+      "errorMsg": "错误信息"
+    }
+  },
+  "platforms": {
+    "wework": "企业微信",
+    "dingtalk": "钉钉",
+    "feishu": "飞书"
+  }
+}

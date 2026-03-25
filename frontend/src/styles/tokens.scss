@@ -1,0 +1,60 @@
+// Design Tokens for GZEAMS
+// Follows System CSS Variable standard (--sys-) and overrides Element Plus (--el-)
+@use './variables.scss' as *;
+
+:root {
+    // System Semantic Tokens
+    --sys-color-primary: #{$primary-color};
+    --sys-color-success: #{$success-color};
+    --sys-color-warning: #{$warning-color};
+    --sys-color-danger: #{$danger-color};
+    --sys-color-info: #{$info-color};
+
+    --sys-color-bg-base: #{$bg-body};
+    --sys-color-bg-card: #{$bg-card};
+    --sys-color-bg-hover: #{$bg-hover};
+
+    --sys-color-text-main: #{$text-main};
+    --sys-color-text-regular: #{$text-regular};
+    --sys-color-text-secondary: #{$text-secondary};
+    --sys-color-text-placeholder: #{$text-placeholder};
+
+    --sys-border-color: #{$border-color};
+    --sys-border-light: #{$border-light};
+
+    --sys-radius-base: #{$radius-base};
+    --sys-radius-large: #{$radius-large};
+    --sys-radius-round: #{$radius-round};
+
+    // Map to Element Plus Tokens
+    --el-color-primary: var(--sys-color-primary);
+    --el-color-success: var(--sys-color-success);
+    --el-color-warning: var(--sys-color-warning);
+    --el-color-danger: var(--sys-color-danger);
+    --el-color-info: var(--sys-color-info);
+
+    --el-bg-color: var(--sys-color-bg-card);
+    --el-bg-color-page: var(--sys-color-bg-base);
+
+    --el-text-color-primary: var(--sys-color-text-main);
+    --el-text-color-regular: var(--sys-color-text-regular);
+    --el-text-color-secondary: var(--sys-color-text-secondary);
+    --el-text-color-placeholder: var(--sys-color-text-placeholder);
+
+    --el-border-color: var(--sys-border-color);
+    --el-border-color-light: var(--sys-border-light);
+    --el-border-color-lighter: var(--sys-border-light);
+
+    --el-border-radius-base: var(--sys-radius-base);
+    --el-border-radius-small: calc(var(--sys-radius-base) - 2px);
+
+    // Element Plus Box Shadow
+    --el-box-shadow-light: #{$shadow-md};
+
+    // Base text sizing
+    --el-font-size-base: 13px;
+
+    // Detail layout tokens
+    --gzeams-detail-label-width: 120px;
+    --gzeams-detail-field-gap: 16px;
+}

@@ -1,0 +1,79 @@
+{
+    "finance": {
+        "voucherList": "财务凭证",
+        "depreciationList": "折旧管理",
+        "columns": {
+            "voucherNo": "凭证号",
+            "businessType": "业务类型",
+            "voucherDate": "凭证日期",
+            "summary": "摘要",
+            "totalAmount": "总金额",
+            "status": "状态",
+            "assetCode": "资产编码",
+            "assetName": "资产名称",
+            "period": "期间",
+            "currentDepreciation": "本期折旧",
+            "accumulatedDepreciation": "累计折旧",
+            "netValue": "净值",
+            "lineNo": "行号",
+            "accountCode": "科目编码",
+            "accountName": "科目名称",
+            "debitAmount": "借方金额",
+            "creditAmount": "贷方金额",
+            "description": "说明",
+            "requestMethod": "请求方法",
+            "httpStatus": "HTTP状态",
+            "taskId": "任务ID",
+            "integrationType": "集成类型",
+            "errorMessage": "错误信息",
+            "durationMs": "耗时(ms)"
+        },
+        "status": {
+            "draft": "草稿",
+            "pending": "待审批",
+            "submitted": "已提交",
+            "approved": "已审批",
+            "posted": "已入账",
+            "rejected": "已驳回"
+        },
+        "businessType": {
+            "assetPurchase": "资产采购",
+            "depreciation": "折旧计提",
+            "assetDisposal": "资产处置"
+        },
+        "actions": {
+            "createVoucher": "新增凭证",
+            "batchPushToERP": "批量推送到ERP",
+            "batchPush": "批量推送",
+            "detail": "详情",
+            "post": "入账",
+            "retryPush": "重试推送",
+            "calculateDepreciation": "计提折旧"
+        },
+        "messages": {
+            "confirmPost": "确认将该凭证入账吗？",
+            "confirmRetryPush": "确认重试推送该凭证吗？",
+            "noSyncTask": "暂无同步任务记录"
+        },
+        "panels": {
+            "entries": "凭证明细",
+            "syncStatus": "同步状态",
+            "integrationLogs": "集成日志"
+        },
+        "depreciationDialog": {
+            "title": "计提折旧",
+            "period": "计提期间",
+            "periodPlaceholder": "选择月份",
+            "calculating": "正在计算中...",
+            "start": "开始计算",
+            "messages": {
+                "startFailed": "启动计算失败",
+                "completed": "计算完成",
+                "failed": "计算失败"
+            },
+            "validation": {
+                "periodRequired": "请选择期间"
+            }
+        }
+    }
+}

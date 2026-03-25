@@ -1,0 +1,44 @@
+<testsuites id="" name="" tests="10" failures="0" skipped="10" errors="0" time="0.040588999999999945">
+<testsuite name="navigation/navigation.spec.ts" timestamp="2026-03-23T04:28:43.495Z" hostname="chromium" tests="10" failures="0" skipped="10" time="0" errors="0">
+<testcase name="Navigation and Routing › should display main navigation menu" classname="navigation/navigation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Navigation and Routing › should navigate to assets page via menu" classname="navigation/navigation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Navigation and Routing › should navigate to dashboard page" classname="navigation/navigation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Navigation and Routing › should navigate to settings pages" classname="navigation/navigation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Navigation and Routing › should navigate through nested menu items" classname="navigation/navigation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Navigation and Routing › should display breadcrumbs on detail pages" classname="navigation/navigation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Navigation and Routing › should support browser back navigation" classname="navigation/navigation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Navigation and Routing › should support browser forward navigation" classname="navigation/navigation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Navigation and Routing › should highlight active menu item" classname="navigation/navigation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Navigation and Routing › should preserve navigation state across page reloads" classname="navigation/navigation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+</testsuites>

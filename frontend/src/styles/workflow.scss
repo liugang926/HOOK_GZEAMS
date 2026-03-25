@@ -1,0 +1,606 @@
+// NIIMBOT Design System - Workflow Module
+// Sprint 2 Task 2: Frontend Visual Polish
+
+// ============================================
+// Color System
+// ============================================
+
+// Primary Colors
+$niimbot-primary: #3498db;
+$niimbot-secondary: #2ecc71;
+$niimbot-danger: #e74c3c;
+$niimbot-warning: #f39c12;
+$niimbot-info: #9b59b6;
+$niimbot-light: #ecf0f1;
+$niimbot-dark: #2c3e50;
+$niimbot-white: #ffffff;
+$niimbot-black: #000000;
+
+// Workflow-specific colors
+$workflow-gradient: linear-gradient(135deg, $niimbot-primary, $niimbot-secondary);
+$workflow-gradient-reverse: linear-gradient(135deg, $niimbot-secondary, $niimbot-primary);
+$workflow-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+$workflow-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.15);
+$workflow-border-radius: 8px;
+$workflow-border-radius-lg: 12px;
+
+// Status Colors
+$status-draft: #95a5a6;
+$status-pending: #f39c12;
+$status-approved: #2ecc71;
+$status-rejected: #e74c3c;
+$status-cancelled: #7f8c8d;
+
+// ============================================
+// Typography
+// ============================================
+
+$font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+$font-size-base: 14px;
+$font-size-lg: 16px;
+$font-size-sm: 12px;
+$font-size-xs: 10px;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// ============================================
+// Spacing
+// ============================================
+
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-xxl: 48px;
+
+// ============================================
+// Breakpoints
+// ============================================
+
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+
+// ============================================
+// Mixins
+// ============================================
+
+@mixin niimbot-gradient {
+  background: $workflow-gradient;
+  color: $niimbot-white;
+}
+
+@mixin niimbot-card {
+  background: $niimbot-white;
+  border-radius: $workflow-border-radius;
+  box-shadow: $workflow-shadow;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+
+  &:hover {
+    box-shadow: $workflow-shadow-lg;
+    transform: translateY(-2px);
+  }
+}
+
+@mixin niimbot-button {
+  padding: $spacing-sm $spacing-md;
+  border-radius: $workflow-border-radius;
+  font-weight: $font-weight-medium;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: $workflow-shadow;
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@mixin status-badge($color) {
+  background: $color;
+  color: $niimbot-white;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: 12px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  text-transform: uppercase;
+}
+
+// ============================================
+// Workflow Components
+// ============================================
+
+// Approval Panel
+.approval-panel {
+  @include niimbot-card;
+  overflow: hidden;
+
+  .panel-header {
+    @include niimbot-gradient;
+    padding: $spacing-lg;
+    
+    .task-title {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-bold;
+      margin: 0 0 $spacing-sm 0;
+    }
+
+    .task-meta {
+      display: flex;
+      align-items: center;
+      gap: $spacing-md;
+      flex-wrap: wrap;
+      font-size: $font-size-sm;
+      opacity: 0.9;
+    }
+  }
+
+  .panel-content {
+    padding: $spacing-lg;
+  }
+}
+
+// Priority Badges
+.priority-badge {
+  padding: $spacing-xs $spacing-sm;
+  border-radius: 12px;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+
+  &.high {
+    background: $niimbot-danger;
+    color: $niimbot-white;
+  }
+
+  &.medium {
+    background: $niimbot-warning;
+    color: $niimbot-white;
+  }
+
+  &.low {
+    background: $niimbot-secondary;
+    color: $niimbot-white;
+  }
+}
+
+// Status Badges
+.status-badge {
+  &.draft {
+    @include status-badge($status-draft);
+  }
+
+  &.pending {
+    @include status-badge($status-pending);
+  }
+
+  &.approved {
+    @include status-badge($status-approved);
+  }
+
+  &.rejected {
+    @include status-badge($status-rejected);
+  }
+
+  &.cancelled {
+    @include status-badge($status-cancelled);
+  }
+}
+
+// Action Buttons
+.action-buttons {
+  display: flex;
+  gap: $spacing-md;
+  margin-top: $spacing-lg;
+  flex-wrap: wrap;
+
+  .btn-approve {
+    @include niimbot-button;
+    @include niimbot-gradient;
+    
+    &:hover {
+      background: $workflow-gradient-reverse;
+    }
+  }
+
+  .btn-reject {
+    @include niimbot-button;
+    background: $niimbot-danger;
+    color: $niimbot-white;
+
+    &:hover {
+      background: darken($niimbot-danger, 5%);
+    }
+  }
+
+  .btn-return {
+    @include niimbot-button;
+    background: $niimbot-warning;
+    color: $niimbot-white;
+
+    &:hover {
+      background: darken($niimbot-warning, 5%);
+    }
+  }
+}
+
+// Timeline
+.approval-timeline {
+  margin: $spacing-lg 0;
+  padding-left: $spacing-lg;
+  border-left: 2px solid $niimbot-light;
+
+  .timeline-item {
+    position: relative;
+    padding-bottom: $spacing-lg;
+    padding-left: $spacing-md;
+
+    &:last-child {
+      padding-bottom: 0;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: -$spacing-lg + $spacing-xs;
+      top: 4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: $niimbot-light;
+      border: 2px solid $niimbot-primary;
+    }
+
+    &.completed::before {
+      background: $niimbot-secondary;
+      border-color: $niimbot-secondary;
+    }
+
+    &.pending::before {
+      background: $niimbot-warning;
+      border-color: $niimbot-warning;
+    }
+
+    &.rejected::before {
+      background: $niimbot-danger;
+      border-color: $niimbot-danger;
+    }
+
+    .timeline-title {
+      font-weight: $font-weight-semibold;
+      margin-bottom: $spacing-xs;
+    }
+
+    .timeline-meta {
+      font-size: $font-size-sm;
+      color: lighten($niimbot-dark, 30%);
+    }
+  }
+}
+
+// Dashboard Widgets
+.workflow-dashboard {
+  padding: $spacing-lg;
+
+  .widget-card {
+    @include niimbot-card;
+    padding: $spacing-lg;
+    margin-bottom: $spacing-lg;
+
+    .widget-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: $spacing-md;
+
+      .widget-title {
+        font-size: $font-size-lg;
+        font-weight: $font-weight-bold;
+        margin: 0;
+      }
+    }
+
+    .widget-content {
+      // Widget specific content styles
+    }
+  }
+
+  // Stats Grid
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: $spacing-md;
+
+    .stat-card {
+      @include niimbot-card;
+      padding: $spacing-lg;
+      text-align: center;
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: $font-weight-bold;
+        margin-bottom: $spacing-xs;
+      }
+
+      .stat-label {
+        font-size: $font-size-sm;
+        color: lighten($niimbot-dark, 30%);
+      }
+
+      &.within-sla .stat-value {
+        color: $niimbot-secondary;
+      }
+
+      &.overdue .stat-value {
+        color: $niimbot-danger;
+      }
+
+      &.escalated .stat-value {
+        color: $niimbot-warning;
+      }
+    }
+  }
+
+  // Trends Chart (CSS-based bars)
+  .trends-chart {
+    .trend-bar {
+      margin-bottom: $spacing-md;
+
+      .trend-label {
+        font-size: $font-size-sm;
+        margin-bottom: $spacing-xs;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .bar-container {
+        background: $niimbot-light;
+        border-radius: 4px;
+        height: 24px;
+        overflow: hidden;
+
+        .bar-fill {
+          height: 100%;
+          border-radius: 4px;
+          transition: width 0.5s ease;
+
+          &.started {
+            background: $niimbot-info;
+          }
+
+          &.completed {
+            background: $niimbot-secondary;
+          }
+
+          &.rejected {
+            background: $niimbot-danger;
+          }
+        }
+      }
+    }
+  }
+
+  // Bottleneck Table
+  .bottleneck-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th, td {
+      padding: $spacing-sm $spacing-md;
+      text-align: left;
+      border-bottom: 1px solid $niimbot-light;
+    }
+
+    th {
+      font-weight: $font-weight-semibold;
+      background: $niimbot-light;
+    }
+
+    tr:hover {
+      background: rgba($niimbot-primary, 0.05);
+    }
+
+    .avg-duration {
+      .duration-bar {
+        background: $niimbot-light;
+        border-radius: 4px;
+        height: 8px;
+        overflow: hidden;
+        margin-top: $spacing-xs;
+
+        .duration-fill {
+          height: 100%;
+          background: $niimbot-warning;
+          border-radius: 4px;
+        }
+      }
+    }
+  }
+}
+
+// Designer Permissions Panel
+.permissions-panel {
+  @include niimbot-card;
+  padding: $spacing-lg;
+  margin-top: $spacing-md;
+
+  .panel-title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    margin-bottom: $spacing-md;
+  }
+
+  .field-permission {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-sm 0;
+    border-bottom: 1px solid $niimbot-light;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .field-label {
+      font-weight: $font-weight-medium;
+    }
+
+    .permission-options {
+      display: flex;
+      gap: $spacing-md;
+    }
+  }
+}
+
+// Permission Badges (Designer)
+.permission-badges {
+  display: flex;
+  gap: 2px;
+  margin-left: $spacing-sm;
+
+  .badge {
+    font-size: 9px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: $font-weight-semibold;
+  }
+
+  .badge.editable {
+    background: $niimbot-secondary;
+    color: $niimbot-white;
+  }
+
+  .badge.read-only {
+    background: $niimbot-warning;
+    color: $niimbot-white;
+  }
+
+  .badge.hidden {
+    background: $niimbot-danger;
+    color: $niimbot-white;
+  }
+}
+
+// ============================================
+// Responsive Styles
+// ============================================
+
+@media (max-width: $breakpoint-md) {
+  .workflow-dashboard {
+    padding: $spacing-md;
+
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .action-buttons {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .approval-panel {
+    .panel-header {
+      padding: $spacing-md;
+    }
+
+    .panel-content {
+      padding: $spacing-md;
+    }
+  }
+}
+
+@media (max-width: $breakpoint-sm) {
+  .workflow-dashboard {
+    padding: $spacing-sm;
+
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .task-meta {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: $spacing-xs !important;
+  }
+}
+
+// ============================================
+// Loading & Error States
+// ============================================
+
+.skeleton-loading {
+  background: linear-gradient(90deg, $niimbot-light 25%, lighten($niimbot-light, 5%) 50%, $niimbot-light 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: $workflow-border-radius;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.error-state {
+  text-align: center;
+  padding: $spacing-xxl;
+  color: $niimbot-danger;
+
+  .error-icon {
+    font-size: 3rem;
+    margin-bottom: $spacing-md;
+  }
+
+  .error-message {
+    font-size: $font-size-lg;
+    margin-bottom: $spacing-md;
+  }
+
+  .retry-button {
+    @include niimbot-button;
+    @include niimbot-gradient;
+  }
+}
+
+// ============================================
+// Utility Classes
+// ============================================
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.mt-sm { margin-top: $spacing-sm; }
+.mt-md { margin-top: $spacing-md; }
+.mt-lg { margin-top: $spacing-lg; }
+
+.mb-sm { margin-bottom: $spacing-sm; }
+.mb-md { margin-bottom: $spacing-md; }
+.mb-lg { margin-bottom: $spacing-lg; }
+
+.p-sm { padding: $spacing-sm; }
+.p-md { padding: $spacing-md; }
+.p-lg { padding: $spacing-lg; }
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-sm { gap: $spacing-sm; }
+.gap-md { gap: $spacing-md; }

@@ -1,0 +1,142 @@
+{
+  "actions": {
+    "refreshRollups": "刷新汇总",
+    "closeProject": "结项",
+    "viewAssets": "项目资产（{count}）",
+    "viewMembers": "项目成员（{count}）",
+    "viewAllAssets": "查看全部资产",
+    "viewAllMembers": "查看全部成员",
+    "viewAllReturns": "查看全部归还单",
+    "addAsset": "新增资产分配",
+    "addMember": "新增项目成员",
+    "recycleAsset": "资产回收",
+    "transferToProject": "跨项目转移",
+    "confirmReturnOrder": "确认归还"
+  },
+  "panels": {
+    "overview": "项目总览",
+    "assets": "项目资产",
+    "members": "项目成员",
+    "pendingReturns": "待确认归还单",
+    "returnHistory": "项目回收历史",
+    "returnTrend": "回收趋势",
+    "overviewHint": "统一查看项目基础信息、资产分配、成员配置和回收状态。",
+    "assetsHint": "查看当前项目的已分配资产、使用状态与成本快照。",
+    "membersHint": "查看项目团队成员、角色与权限范围。",
+    "returnsHint": "查看当前项目待确认的归还单，并可直接推进确认。",
+    "returnHistoryHint": "查看当前项目最近处理的归还单和各状态数量。"
+  },
+  "summary": {
+    "plannedBudget": "计划预算",
+    "actualCost": "实际成本",
+    "assetCost": "资产分配成本",
+    "inUseAssets": "在用",
+    "returnedAssets": "已归还",
+    "transferredAssets": "已转移",
+    "activeMembers": "在岗",
+    "primaryMembers": "主成员",
+    "allocators": "可分配成员",
+    "pendingReturns": "待确认归还单",
+    "processedReturns": "已处理归还",
+    "completedReturns": "已完成归还",
+    "rejectedReturns": "已驳回归还"
+  },
+  "overview": {
+    "projectManager": "项目经理",
+    "department": "所属部门",
+    "projectType": "项目类型",
+    "timeline": "计划周期",
+    "actualClosure": "实际结项",
+    "milestones": "里程碑",
+    "overdue": "已逾期"
+  },
+  "ranges": {
+    "last7Days": "近 7 天",
+    "last30Days": "近 30 天",
+    "last90Days": "近 90 天"
+  },
+  "messages": {
+    "confirmCloseProject": "确认结项？系统会校验当前项目是否仍有在用资产。",
+    "loadAssetsFailed": "加载项目资产失败。",
+    "loadMembersFailed": "加载项目成员失败。",
+    "loadReturnsFailed": "加载项目归还单失败。",
+    "emptyAssets": "当前项目还没有分配资产。",
+    "emptyMembers": "当前项目还没有配置成员。",
+    "emptyReturns": "当前项目没有待确认的归还单。",
+    "emptyReturnHistory": "当前项目还没有已处理的归还历史。",
+    "emptyReturnTrend": "所选时间范围内没有回收处理记录。",
+    "lazyPanelHint": "该面板会在滚动进入可见区域后加载，也可以立即手动加载。",
+    "loadOverviewFailed": "加载项目工作区总览失败。",
+    "loadTransferTargetsFailed": "加载可转移目标项目失败。",
+    "loadReturnHistoryFailed": "加载项目回收历史失败。",
+    "returnTrendWindow": "时间窗口：{start} 至 {end}",
+    "transferTargetRequired": "请选择目标项目。",
+    "transferSuccess": "项目资产转移成功。",
+    "transferFailed": "项目资产转移失败。",
+    "confirmReturnOrder": "确认立即完成这张归还单？",
+    "confirmReturnSuccess": "归还单确认成功。",
+    "confirmRejectReturnOrder": "请输入驳回原因后再驳回这张归还单。",
+    "rejectReasonRequired": "请填写驳回原因。",
+    "rejectReturnSuccess": "归还单驳回成功。"
+  },
+  "columns": {
+    "allocationNo": "分配单号",
+    "returnNo": "归还单号",
+    "assetCode": "资产编码",
+    "assetName": "资产名称",
+    "allocationType": "分配类型",
+    "returnStatus": "归还状态",
+    "processingNote": "处理说明",
+    "processedAt": "处理时间",
+    "latestReturn": "最近归还记录",
+    "returnDate": "归还日期",
+    "returnReason": "归还原因",
+    "allocationCost": "分配成本",
+    "allocationDate": "分配日期",
+    "custodian": "保管人",
+    "returner": "归还人",
+    "itemsCount": "资产数",
+    "member": "成员",
+    "role": "角色",
+    "primary": "主成员",
+    "active": "状态",
+    "joinDate": "加入日期",
+    "responsibilities": "职责说明",
+    "permissions": "权限",
+    "projectManager": "项目经理",
+    "department": "所属部门",
+    "plannedBudget": "计划预算",
+    "activeAssets": "在用资产",
+    "members": "成员数"
+  },
+  "allocationType": {
+    "permanent": "永久分配",
+    "temporary": "临时分配",
+    "shared": "共享分配"
+  },
+  "returnStatus": {
+    "in_use": "使用中",
+    "returned": "已归还",
+    "transferred": "已转移"
+  },
+  "role": {
+    "manager": "项目经理",
+    "member": "项目成员",
+    "observer": "观察者"
+  },
+  "flags": {
+    "primary": "主成员",
+    "active": "在岗",
+    "inactive": "离岗",
+    "canAllocateAsset": "可分配资产",
+    "canViewCost": "可查看成本"
+  },
+  "transferDialog": {
+    "title": "跨项目转移",
+    "asset": "当前资产",
+    "targetProject": "目标项目",
+    "targetProjectPlaceholder": "请选择目标项目",
+    "reason": "转移原因",
+    "reasonPlaceholder": "请输入转移原因"
+  }
+}

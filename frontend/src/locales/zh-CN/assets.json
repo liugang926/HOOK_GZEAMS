@@ -1,0 +1,912 @@
+{
+    "title": "资产管理",
+    "list": {
+        "title": "资产列表",
+        "createButton": "新增资产",
+        "selected": "已选择 {count} 项",
+        "batchDelete": "批量删除",
+        "batchExport": "批量导出"
+    },
+    "form": {
+        "title": "资产信息",
+        "create": "新建资产",
+        "edit": "编辑资产",
+        "sections": {
+            "basicInfo": "基本信息",
+            "valueInfo": "价值信息",
+            "useInfo": "使用信息",
+            "image": "图片"
+        }
+    },
+    "detail": {
+        "title": "资产详情",
+        "unknownAsset": "未知资产"
+    },
+    "relations": {
+        "maintenanceRecords": "维护记录",
+        "loanRecords": "借用记录",
+        "pickupRecords": "领用记录",
+        "returnRecords": "归还记录"
+    },
+    "messages": {
+        "loadFailed": "加载资产详情失败"
+    },
+    "status": {
+        "idle": "闲置",
+        "inUse": "使用中",
+        "maintenance": "维修中",
+        "scrapped": "报废",
+        "borrowed": "借用中",
+        "disposed": "已处置",
+        "draft": "草稿",
+        "pending": "待审批",
+        "approved": "已审批",
+        "rejected": "已拒绝",
+        "loaned": "借出中",
+        "returned": "已归还",
+        "cancelled": "已取消",
+        "completed": "已完成"
+    },
+    "operations": {
+        "pickup": "领用",
+        "transfer": "调拨",
+        "return": "归还",
+        "loan": "借用",
+        "maintenance": "维修",
+        "scrap": "报废"
+    },
+    "fields": {
+        "assetCode": "资产编号",
+        "assetName": "资产名称",
+        "category": "资产分类",
+        "department": "所属部门",
+        "user": "使用人",
+        "location": "存放位置",
+        "purchaseDate": "购买日期",
+        "purchasePrice": "购买价格",
+        "supplier": "供应商",
+        "warrantyDate": "保修期至",
+        "serialNumber": "序列号",
+        "brand": "品牌",
+        "model": "型号",
+        "unit": "计量单位",
+        "invoiceNo": "发票号",
+        "currentValue": "当前净值",
+        "usefulLife": "使用年限(月)",
+        "returnDate": "归还日期",
+        "borrower": "借用人",
+        "loanQuantity": "借用数量",
+        "custodian": "领用人",
+        "pickupDate": "领用日期",
+        "pickupQuantity": "领用数量",
+        "returner": "归还人",
+        "returnQuantity": "归还数量",
+        "fromDept": "调出部门",
+        "toDept": "调入部门",
+        "transferDate": "调拨日期",
+        "receiver": "接收人"
+    },
+    "search": {
+        "keyword": "关键词",
+        "keywordPlaceholder": "资产编码/名称",
+        "status": "状态",
+        "dateRange": "采购日期"
+    },
+    "loan": {
+        "title": "资产借出单",
+        "createButton": "新建借出单",
+        "editTitle": "编辑借出单",
+        "createTitle": "新建借出单",
+        "detailTitle": "借出单详情",
+        "columns": {
+            "loanNo": "借出单号",
+            "borrower": "借用人",
+            "department": "部门",
+            "loanDate": "借出日期",
+            "expectedReturnDate": "预计归还日期",
+            "actualReturnDate": "实际归还日期",
+            "status": "状态",
+            "assetCount": "资产数量"
+        },
+        "form": {
+            "borrower": "借用人",
+            "borrowerPlaceholder": "请选择借用人",
+            "loanDate": "借出日期",
+            "expectedReturnDate": "预计归还日期",
+            "requiresDeposit": "是否需要押金",
+            "depositAmount": "押金金额",
+            "reason": "借出原因",
+            "reasonPlaceholder": "请输入借出原因",
+            "assetDetails": "借出资产明细",
+            "addAsset": "添加资产",
+            "quantity": "数量",
+            "remark": "备注"
+        },
+        "dialog": {
+            "returnTitle": "资产归还",
+            "returnDate": "归还日期",
+            "returnDatePlaceholder": "请选择归还日期",
+            "returnRemark": "归还说明",
+            "returnRemarkPlaceholder": "请输入归还说明",
+            "confirmReturn": "确认归还"
+        },
+        "messages": {
+            "confirmCancel": "确定要取消此借出单吗？",
+            "returnSuccess": "归还成功",
+            "returnFailed": "归还失败",
+            "submitApproveSuccess": "提交审批成功",
+            "submitApproveFailed": "提交审批失败",
+            "selectAssetWarning": "请至少添加一项资产"
+        }
+    },
+    "return": {
+        "title": "资产退库",
+        "listTitle": "资产退库单",
+        "createButton": "新建退库单",
+        "createTitle": "新建退库单",
+        "columns": {
+            "returnNo": "退库单号",
+            "assetName": "资产名称",
+            "returnDate": "退库日期",
+            "applicant": "退库人",
+            "applyTime": "申请时间",
+            "status": "状态"
+        },
+        "form": {
+            "selectAsset": "选择资产",
+            "selectAssetButton": "点击选择资产",
+            "reselectAsset": "重新选择",
+            "returnDate": "退库日期",
+            "reason": "退库原因",
+            "reasonPlaceholder": "请输入退库原因"
+        },
+        "messages": {
+            "confirmApprove": "确定批准此退库申请吗？",
+            "confirmReject": "请输入拒绝理由",
+            "rejectReasonRequired": "理由不能为空",
+            "approveSuccess": "已批准",
+            "rejectSuccess": "已拒绝",
+            "submitSuccess": "提交成功",
+            "submitApproveSuccess": "提交审批成功",
+            "submitFailed": "提交失败"
+        }
+    },
+    "pickup": {
+        "title": "资产领用",
+        "listTitle": "资产领用单",
+        "createButton": "新建领用单",
+        "createTitle": "新建领用单",
+        "editTitle": "编辑领用单",
+        "columns": {
+            "pickupNo": "领用单号",
+            "applicant": "申请人",
+            "department": "领用部门",
+            "pickupDate": "领用日期",
+            "status": "状态",
+            "assetCount": "资产数量",
+            "createdAt": "创建时间"
+        },
+        "form": {
+            "department": "领用部门",
+            "departmentPlaceholder": "请选择领用部门",
+            "pickupDate": "领用日期",
+            "reason": "领用原因",
+            "reasonPlaceholder": "请输入领用原因",
+            "assetDetails": "领用资产明细",
+            "addAsset": "添加资产",
+            "quantity": "数量",
+            "remark": "备注",
+            "submitForApproval": "提交审批"
+        },
+        "messages": {
+            "confirmCancel": "确定要取消此领用单吗？",
+            "selectAssetWarning": "请至少添加一项资产",
+            "submitApproveSuccess": "提交审批成功",
+            "submitApproveFailed": "提交审批失败"
+        }
+    },
+    "transfer": {
+        "title": "资产调拨",
+        "listTitle": "资产调拨单",
+        "createButton": "新建调拨单",
+        "createTitle": "新建调拨单",
+        "columns": {
+            "transferNo": "调拨单号",
+            "assetName": "资产名称",
+            "fromLocation": "原位置",
+            "toLocation": "目标位置",
+            "applicant": "申请人",
+            "applyTime": "申请时间",
+            "status": "状态"
+        },
+        "form": {
+            "selectAsset": "选择资产",
+            "selectAssetButton": "点击选择资产",
+            "reselectAsset": "重新选择",
+            "toLocation": "调入位置",
+            "toLocationPlaceholder": "请输入目标位置ID",
+            "receiver": "接收人",
+            "receiverPlaceholder": "请选择接收人",
+            "reason": "调拨原因",
+            "reasonPlaceholder": "请输入调拨原因"
+        },
+        "messages": {
+            "confirmApprove": "确定批准此调拨申请吗？",
+            "confirmReject": "请输入拒绝理由",
+            "rejectReasonRequired": "理由不能为空",
+            "approveSuccess": "已批准",
+            "rejectSuccess": "已拒绝",
+            "submitSuccess": "提交成功",
+            "submitApproveSuccess": "提交审批成功",
+            "submitFailed": "提交失败"
+        }
+    },
+    "location": {
+        "title": "存放位置",
+        "code": "位置编码",
+        "name": "位置名称",
+        "parent": "上级位置",
+        "fullPath": "完整路径",
+        "status": "状态",
+        "sort": "排序",
+        "description": "描述",
+        "manage": "存放位置管理",
+        "create": "新建位置",
+        "edit": "编辑存放位置",
+        "createChild": "新建子位置",
+        "current": "当前位置",
+        "tree": "位置树",
+        "enterCode": "请输入位置编码",
+        "enterName": "请输入位置名称",
+        "selectParent": "请选择上级位置（不选则为根位置）"
+    },
+    "supplier": {
+        "title": "供应商",
+        "code": "供应商编码",
+        "name": "供应商名称",
+        "contact": "联系人",
+        "phone": "联系电话",
+        "email": "邮箱",
+        "address": "地址",
+        "manage": "供应商管理",
+        "create": "新建供应商",
+        "edit": "编辑供应商",
+        "enterCode": "请输入供应商编码",
+        "enterName": "请输入供应商名称",
+        "enterContact": "请输入联系人",
+        "enterPhone": "请输入联系电话"
+    },
+    "category": {
+        "title": "资产分类",
+        "code": "分类编码",
+        "name": "分类名称",
+        "parent": "上级分类",
+        "depreciation": "折旧设置",
+        "method": "折旧方法",
+        "usefulLife": "预计使用年限",
+        "salvageRate": "残值率",
+        "months": "月",
+        "usefulLifeHint": "请输入月数 (例如: 5年 = 60月)",
+        "enterCode": "请输入唯一编码",
+        "enterName": "请输入分类名称",
+        "selectMethod": "请选择折旧方法",
+        "addRoot": "新增根分类",
+        "addChild": "新增子级",
+        "create": "新建分类",
+        "edit": "编辑分类",
+        "search": "搜索分类",
+        "deleteChildrenFirst": "请先删除子分类"
+    },
+    "depreciation": {
+        "straightLine": "年限平均法",
+        "doubleDeclining": "双倍余额递减法",
+        "sumOfYears": "年数总和法",
+        "noDepreciation": "不计提折旧"
+    },
+    "statusLog": {
+        "title": "资产状态日志",
+        "listTitle": "资产状态日志",
+        "selectAsset": "请选择资产",
+        "statusChange": "状态变更",
+        "allTypes": "全部类型",
+        "dateRange": "日期范围",
+        "startDate": "开始日期",
+        "endDate": "结束日期",
+        "searchPlaceholder": "资产编码/名称",
+        "assetCode": "资产编码",
+        "assetName": "资产名称",
+        "previousStatus": "变更前状态",
+        "newStatus": "变更后状态",
+        "operator": "操作人",
+        "operationTime": "操作时间",
+        "remark": "备注",
+        "relatedBusiness": "关联业务",
+        "relatedNo": "关联单号",
+        "ipAddress": "IP地址",
+        "userAgent": "用户代理",
+        "detailTitle": "状态变更详情",
+        "changeTypes": {
+            "inbound": "入库",
+            "pickup": "领用",
+            "transfer": "调拨",
+            "return": "退库",
+            "loan": "借出",
+            "loanReturn": "归还",
+            "disposal": "报废",
+            "inventory": "盘点",
+            "maintenance": "维修"
+        },
+        "assetStatus": {
+            "idle": "空闲",
+            "inUse": "在用",
+            "pickupPending": "待领用",
+            "transferPending": "待调拨",
+            "returnPending": "待退库",
+            "onLoan": "借出",
+            "maintenance": "维修中",
+            "disposal": "报废",
+            "lost": "丢失"
+        },
+        "businessTypes": {
+            "pickup": "领用单",
+            "transfer": "调拨单",
+            "return": "退库单",
+            "loan": "借出单",
+            "inventory": "盘点任务",
+            "maintenance": "维修单"
+        }
+    },
+    "selector": {
+        "selectAsset": "请选择资产"
+    },
+    "lifecycle": {
+        "title": "资产生命周期",
+        "tabs": {
+            "purchaseRequest": "采购申请",
+            "maintenance": "维修工单",
+            "disposalRequest": "报废申请"
+        },
+        "purchaseRequest": {
+            "title": "采购申请单",
+            "createButton": "新建采购申请",
+            "createTitle": "新建采购申请",
+            "editTitle": "编辑采购申请",
+            "detailTitle": "采购申请详情",
+            "columns": {
+                "requestNo": "申请单号",
+                "requester": "申请人",
+                "department": "申请部门",
+                "totalAmount": "总金额",
+                "status": "状态",
+                "createdAt": "申请时间"
+            },
+            "form": {
+                "reason": "采购原因",
+                "reasonPlaceholder": "请输入采购原因",
+                "itemsTitle": "采购明细",
+                "addItem": "添加明细",
+                "assetName": "资产名称",
+                "assetNamePlaceholder": "请输入资产名称",
+                "specification": "规格型号",
+                "quantity": "数量",
+                "estimatedUnitPrice": "预估单价",
+                "supplier": "供应商",
+                "remark": "备注"
+            },
+            "status": {
+                "draft": "草稿",
+                "submitted": "待审批",
+                "approved": "已审批",
+                "rejected": "已拒绝",
+                "processing": "处理中",
+                "completed": "已完成",
+                "cancelled": "已取消"
+            },
+            "actions": {
+                "submit": "提交审批",
+                "approve": "批准",
+                "reject": "拒绝",
+                "cancel": "取消申请",
+                "complete": "标记完成",
+                "createReceipt": "创建到货验收"
+            },
+            "dialog": {
+                "approveTitle": "审批确认",
+                "rejectTitle": "拒绝确认",
+                "commentLabel": "审批意见",
+                "commentPlaceholder": "请输入审批意见（选填）",
+                "rejectCommentPlaceholder": "请输入拒绝原因（必填）"
+            },
+            "messages": {
+                "submitSuccess": "提交审批成功",
+                "submitFailed": "提交审批失败",
+                "approveSuccess": "审批通过",
+                "rejectSuccess": "已拒绝",
+                "cancelSuccess": "已取消",
+                "cancelConfirm": "确定要取消此采购申请吗？",
+                "noItems": "请至少添加一项采购明细",
+                "loadFailed": "加载采购申请失败"
+            }
+        },
+        "maintenance": {
+            "title": "维修工单",
+            "createButton": "新建维修工单",
+            "createTitle": "新建维修工单",
+            "detailTitle": "维修工单详情",
+            "columns": {
+                "maintenanceNo": "工单号",
+                "assetDisplay": "关联资产",
+                "faultDescription": "故障描述",
+                "priority": "优先级",
+                "status": "状态",
+                "technicianDisplay": "维修技术员",
+                "createdAt": "创建时间"
+            },
+            "form": {
+                "asset": "关联资产",
+                "assetPlaceholder": "请选择资产",
+                "faultDescription": "故障描述",
+                "faultDescriptionPlaceholder": "请描述故障现象",
+                "priority": "优先级",
+                "remark": "备注",
+                "completionDate": "完成日期",
+                "costBreakdown": "费用明细",
+                "laborCost": "人工费用",
+                "materialCost": "材料费用",
+                "otherCost": "其他费用",
+                "totalCost": "费用合计"
+            },
+            "priority": {
+                "low": "低",
+                "normal": "普通",
+                "high": "高",
+                "urgent": "紧急"
+            },
+            "status": {
+                "pending": "待分配",
+                "assigned": "已分配",
+                "in_progress": "维修中",
+                "completed": "待验收",
+                "verified": "已验收",
+                "cancelled": "已取消"
+            },
+            "actions": {
+                "assign": "分配技术员",
+                "startWork": "开始维修",
+                "completeWork": "完成维修",
+                "verify": "验收",
+                "cancel": "取消工单"
+            },
+            "dialog": {
+                "assignTitle": "分配技术员",
+                "technicianLabel": "技术员",
+                "technicianPlaceholder": "请选择技术员",
+                "completeTitle": "完成维修",
+                "costLabel": "维修费用",
+                "resultLabel": "维修结果",
+                "resultPlaceholder": "请描述维修结果",
+                "verifyTitle": "验收工单",
+                "verifyResultPlaceholder": "请输入验收意见"
+            },
+            "messages": {
+                "assignSuccess": "技术员分配成功",
+                "startWorkSuccess": "已开始维修",
+                "completeWorkSuccess": "维修完成，等待验收",
+                "verifySuccess": "验收通过",
+                "cancelSuccess": "工单已取消",
+                "cancelConfirm": "确定要取消此维修工单吗？",
+                "loadFailed": "加载维修工单失败"
+            }
+        },
+        "disposalRequest": {
+            "title": "报废申请单",
+            "createButton": "新建报废申请",
+            "createTitle": "新建报废申请",
+            "detailTitle": "报废申请详情",
+            "columns": {
+                "requestNo": "申请单号",
+                "requesterDisplay": "申请人",
+                "disposalReason": "报废原因",
+                "itemsCount": "资产数量",
+                "status": "状态",
+                "createdAt": "申请时间"
+            },
+            "form": {
+                "disposalReason": "报废原因",
+                "disposalReasonPlaceholder": "请输入报废原因",
+                "itemsTitle": "报废资产明细",
+                "addItem": "添加资产",
+                "assetLabel": "资产",
+                "assetPlaceholder": "请选择资产",
+                "disposalMethod": "处置方式",
+                "appraisalValue": "评估价值",
+                "disposalValue": "处置价值",
+                "assetCode": "资产编码"
+            },
+            "status": {
+                "draft": "草稿",
+                "submitted": "待审批",
+                "appraising": "鉴定中",
+                "approved": "已审批",
+                "rejected": "已拒绝",
+                "executing": "执行中",
+                "completed": "已完成",
+                "cancelled": "已取消"
+            },
+            "actions": {
+                "submit": "提交审批",
+                "startAppraisal": "开始鉴定",
+                "approve": "批准报废",
+                "reject": "拒绝",
+                "cancel": "取消申请"
+            },
+            "messages": {
+                "submitSuccess": "提交审批成功",
+                "approveSuccess": "已批准报废",
+                "rejectSuccess": "已拒绝",
+                "cancelSuccess": "已取消",
+                "cancelConfirm": "确定要取消此报废申请吗？",
+                "noItems": "请至少添加一项报废资产",
+                "loadFailed": "加载报废申请失败"
+            }
+        },
+        "assetReceipt": {
+            "title": "入库验收单",
+            "createButton": "新建入库单",
+            "createTitle": "新建入库验收",
+            "detailTitle": "入库验收详情",
+            "columns": {
+                "receiptNo": "入库单号",
+                "supplier": "供应商",
+                "deliveryNo": "送货单号",
+                "receiptDate": "入库日期",
+                "status": "状态",
+                "createdAt": "创建时间"
+            },
+            "form": {
+                "receiptDate": "入库日期",
+                "inspectionResult": "验收结论",
+                "inspectionResultPlaceholder": "请输入验收结论",
+                "itemsTitle": "入库明细",
+                "itemName": "物品名称",
+                "specification": "规格型号",
+                "orderedQuantity": "订购数量",
+                "receivedQuantity": "实收数量",
+                "qualifiedQuantity": "合格数量",
+                "unitPrice": "单价",
+                "totalAmount": "总金额",
+                "assetGenerated": "已建卡"
+            },
+            "status": {
+                "draft": "草稿",
+                "submitted": "待验收",
+                "inspecting": "验收中",
+                "passed": "已通过",
+                "rejected": "已拒绝",
+                "cancelled": "已取消"
+            },
+            "actions": {
+                "submitInspection": "提交验收",
+                "inspect": "录入验收结果",
+                "generateAssets": "生成资产卡片",
+                "cancel": "取消"
+            },
+            "dialog": {
+                "inspectTitle": "录入验收结果",
+                "inspectionResultPlaceholder": "请描述验收情况",
+                "passed": "验收结果",
+                "passedYes": "合格",
+                "passedNo": "不合格"
+            },
+            "messages": {
+                "submitInspectionConfirm": "确定提交验收吗？",
+                "submitInspectionSuccess": "已提交验收",
+                "inspectPassSuccess": "验收通过，已生成入库记录",
+                "inspectFailSuccess": "已记录为不合格",
+                "generateAssetsConfirm": "确定为合格物品生成资产卡片吗？",
+                "generateAssetsSuccess": "资产卡片已生成",
+                "cancelConfirm": "确定要取消此入库单吗？",
+                "cancelSuccess": "入库单已取消",
+                "loadFailed": "加载入库验收记录失败"
+            }
+        },
+        "maintenancePlan": {
+            "title": "维保计划",
+            "createButton": "新建维保计划",
+            "createTitle": "新建维保计划",
+            "detailTitle": "维保计划详情",
+            "columns": {
+                "planCode": "计划编号",
+                "planName": "计划名称",
+                "cycleType": "周期类型",
+                "startDate": "开始日期",
+                "estimatedHours": "预计工时(h)",
+                "status": "状态"
+            },
+            "form": {
+                "endDate": "结束日期",
+                "maintenanceContent": "维保内容",
+                "remark": "备注",
+                "remindDaysBefore": "提前提醒",
+                "daysBefore": "提前 {days} 天提醒"
+            },
+            "cycle": {
+                "daily": "每日",
+                "weekly": "每周",
+                "monthly": "每月",
+                "quarterly": "每季度",
+                "yearly": "每年",
+                "custom": "自定义"
+            },
+            "status": {
+                "active": "启用",
+                "paused": "暂停",
+                "archived": "已归档"
+            },
+            "actions": {
+                "activate": "启用",
+                "pause": "暂停",
+                "archive": "归档",
+                "generateTasks": "生成任务"
+            },
+            "messages": {
+                "activateSuccess": "计划已启用",
+                "pauseSuccess": "计划已暂停",
+                "archiveConfirm": "归档后将无法继续生成任务，确定吗？",
+                "archiveSuccess": "计划已归档",
+                "generateTasksConfirm": "确定生成维保任务吗？",
+                "generateTasksSuccess": "已生成 {count} 个维保任务",
+                "loadFailed": "加载维保计划失败"
+            }
+        },
+        "maintenanceTask": {
+            "title": "维保任务",
+            "createTitle": "新建维保任务",
+            "detailTitle": "维保任务详情",
+            "columns": {
+                "taskNo": "任务编号",
+                "asset": "资产",
+                "maintenanceContent": "维保内容",
+                "scheduledDate": "计划日期",
+                "status": "状态"
+            },
+            "filter": {
+                "all": "全部",
+                "overdue": "逾期",
+                "today": "今日"
+            },
+            "form": {
+                "executionResult": "执行结果",
+                "actualHours": "实际工时(h)",
+                "verifyResult": "验收意见"
+            },
+            "status": {
+                "pending": "待执行",
+                "in_progress": "执行中",
+                "completed": "待验收",
+                "verified": "已验收",
+                "skipped": "已跳过"
+            },
+            "actions": {
+                "execute": "执行",
+                "verify": "验收",
+                "skip": "跳过"
+            },
+            "dialog": {
+                "executeTitle": "执行维保",
+                "executionResultPlaceholder": "请描述维保执行情况",
+                "verifyTitle": "验收维保",
+                "verifyResultPlaceholder": "请输入验收意见",
+                "skipReasonPlaceholder": "请输入跳过原因"
+            },
+            "messages": {
+                "executeSuccess": "维保已执行",
+                "verifySuccess": "验收完成",
+                "skipSuccess": "任务已跳过",
+                "loadFailed": "加载维保任务失败"
+            }
+        },
+        "assetWarranty": {
+            "title": "保修管理",
+            "createButton": "新建保修",
+            "createTitle": "新建保修记录",
+            "editTitle": "编辑保修记录",
+            "detailTitle": "保修详情",
+            "columns": {
+                "warrantyNo": "保修编号",
+                "assetName": "资产名称",
+                "warrantyType": "保修类型",
+                "warrantyProvider": "保修提供商",
+                "startDate": "开始日期",
+                "endDate": "结束日期",
+                "warrantyCost": "保修费用",
+                "status": "状态",
+                "claimCount": "索赔次数"
+            },
+            "form": {
+                "providerContact": "联系人",
+                "providerPhone": "联系电话",
+                "providerEmail": "联系邮箱",
+                "contractNo": "合同编号",
+                "coverageDescription": "保修覆盖范围",
+                "lastClaimDate": "最近索赔日期",
+                "newEndDate": "新到期日期",
+                "remark": "备注"
+            },
+            "warrantyType": {
+                "manufacturer": "制造商保修",
+                "extended": "延保",
+                "third_party": "第三方保修",
+                "service_contract": "服务合同"
+            },
+            "status": {
+                "draft": "草稿",
+                "active": "生效中",
+                "expiring": "即将到期",
+                "expired": "已过期",
+                "claimed": "已索赔",
+                "cancelled": "已取消"
+            },
+            "actions": {
+                "activate": "激活",
+                "expire": "标记过期",
+                "renew": "续保",
+                "recordClaim": "记录索赔",
+                "cancel": "取消"
+            },
+            "sections": {
+                "providerInfo": "供应商信息",
+                "coverageInfo": "保修覆盖与财务"
+            },
+            "dialog": {
+                "renewTitle": "续保"
+            },
+            "messages": {
+                "activateConfirm": "确定要激活此保修吗？",
+                "activateSuccess": "保修已激活",
+                "renewSuccess": "续保成功",
+                "claimConfirm": "确定要记录一次索赔吗？",
+                "claimSuccess": "索赔已记录",
+                "cancelConfirm": "确定要取消此保修吗？",
+                "cancelSuccess": "保修已取消",
+                "endDateRequired": "请选择新的到期日期",
+                "loadFailed": "加载保修记录失败"
+            }
+        },
+        "insurance": {
+            "dashboard": {
+                "title": "保险管理概览",
+                "expiring30": "30天内到期",
+                "expiring90": "90天内到期",
+                "pendingClaims": "待处理理赔",
+                "activePolicies": "有效保单",
+                "days30": "近30天",
+                "days60": "近60天",
+                "days90": "近90天",
+                "viewClaims": "查看理赔",
+                "totalActive": "当前有效",
+                "expiringPolicies": "即将到期保单",
+                "allPolicies": "全部保单"
+            },
+            "columns": {
+                "policyNo": "保单编号",
+                "insuredObject": "被保险资产",
+                "insuranceCompany": "保险公司",
+                "expiryDate": "到期日期",
+                "daysLeft": "剩余天数",
+                "premium": "保费"
+            },
+            "claim": {
+                "title": "理赔管理",
+                "createButton": "新建理赔",
+                "columns": {
+                    "claimNo": "理赔编号",
+                    "policy": "保单",
+                    "incidentDate": "事故日期",
+                    "claimAmount": "申请金额",
+                    "approvedAmount": "批准金额",
+                    "status": "状态"
+                },
+                "status": {
+                    "draft": "草稿",
+                    "reported": "已报案",
+                    "under_review": "审核中",
+                    "approved": "已批准",
+                    "rejected": "已拒绝",
+                    "paid": "已赔付"
+                },
+                "actions": {
+                    "submit": "报案",
+                    "approve": "批准处理"
+                },
+                "form": {
+                    "approvedAmount": "批准金额",
+                    "approveComment": "处理意见"
+                },
+                "dialog": {
+                    "approveTitle": "批准理赔"
+                },
+                "messages": {
+                    "submitConfirm": "确定提交报案吗？",
+                    "submitSuccess": "已提交报案",
+                    "approveSuccess": "理赔已批准"
+                }
+            }
+        },
+        "leasing": {
+            "dashboard": {
+                "title": "租赁管理",
+                "newContract": "新建合同",
+                "activeContracts": "有效合同",
+                "expiringContracts": "即将到期",
+                "pendingPayments": "待付款项",
+                "monthlyRent": "月租金合计",
+                "within30": "30天内",
+                "viewAll": "查看全部",
+                "contractList": "合同列表"
+            },
+            "columns": {
+                "contractNo": "合同编号",
+                "lessor": "出租方",
+                "startDate": "开始日期",
+                "endDate": "到期日期",
+                "monthlyRent": "月租金",
+                "status": "状态"
+            },
+            "status": {
+                "draft": "草稿",
+                "active": "有效",
+                "expiring": "即将到期",
+                "terminated": "已终止",
+                "expired": "已过期"
+            },
+            "actions": {
+                "terminate": "终止合同"
+            },
+            "messages": {
+                "terminateReason": "请输入终止原因",
+                "terminateSuccess": "合同已终止"
+            },
+            "payment": {
+                "title": "租金管理",
+                "columns": {
+                    "contract": "合同",
+                    "dueDate": "应付日期",
+                    "amount": "应付金额",
+                    "period": "账期",
+                    "status": "状态"
+                },
+                "status": {
+                    "pending": "待支付",
+                    "paid": "已支付",
+                    "overdue": "已逾期",
+                    "partial": "部分支付"
+                },
+                "actions": {
+                    "confirm": "确认付款"
+                },
+                "form": {
+                    "actualAmount": "实付金额",
+                    "paymentDate": "付款日期",
+                    "paymentMethod": "付款方式",
+                    "remark": "备注"
+                },
+                "dialog": {
+                    "confirmTitle": "确认租金支付"
+                },
+                "messages": {
+                    "confirmSuccess": "租金支付已记录"
+                }
+            }
+        }
+    },
+    "leasing": {
+        "payment": {
+            "methods": {
+                "bankTransfer": "银行转账",
+                "check": "支票",
+                "cash": "现金"
+            }
+        }
+    }
+}

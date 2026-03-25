@@ -1,0 +1,212 @@
+{
+    "itAssets": {
+        "title": "IT Asset Management",
+        "actions": {
+            "add": "Add IT Asset",
+            "view": "View",
+            "edit": "Edit",
+            "delete": "Delete"
+        },
+        "filters": {
+            "search": "Search",
+            "searchPlaceholder": "Asset code, name, CPU, OS...",
+            "os": "OS",
+            "allOs": "All OS",
+            "options": {
+                "windows": "Windows",
+                "macos": "macOS",
+                "linux": "Linux"
+            }
+        },
+        "columns": {
+            "assetCode": "Asset Code",
+            "assetName": "Asset Name",
+            "cpu": "CPU",
+            "ram": "RAM",
+            "disk": "Disk",
+            "os": "OS",
+            "ipAddress": "IP Address",
+            "macAddress": "MAC Address",
+            "security": "Security",
+            "actions": "Actions"
+        },
+        "detail": {
+            "title": "IT Asset Details",
+            "status": "Status",
+            "hardwareConfig": "Hardware Configuration",
+            "coresThreads": "Cores/Threads",
+            "ramType": "RAM Type",
+            "diskType": "Disk Type",
+            "gpu": "GPU",
+            "networkInfo": "Network Information",
+            "hostname": "Hostname",
+            "operatingSystem": "Operating System",
+            "osName": "OS Name",
+            "version": "Version",
+            "architecture": "Architecture",
+            "licenseKey": "License Key",
+            "diskEncrypted": "Disk Encrypted",
+            "antivirus": "Antivirus",
+            "antivirusEnabled": "Antivirus Enabled",
+            "activeDirectory": "Active Directory",
+            "domain": "Domain",
+            "computerName": "Computer Name",
+            "configSummary": "Configuration Summary"
+        },
+        "status": {
+            "secure": "Secure",
+            "attentionNeeded": "Attention Needed",
+            "encrypted": "Encrypted",
+            "notEncrypted": "Not Encrypted",
+            "yes": "Yes",
+            "no": "No"
+        },
+        "messages": {
+            "deleteConfirm": "Are you sure to delete this IT asset?",
+            "deleteRecordConfirm": "Are you sure to delete this record?",
+            "deleteSuccess": "Deleted successfully",
+            "deleteFailed": "Failed to delete",
+            "loadFailed": "Failed to load IT assets",
+            "loadMaintenanceFailed": "Failed to load maintenance records",
+            "loadConfigFailed": "Failed to load configuration changes",
+            "saveSuccess": "Saved successfully",
+            "addSuccess": "Added successfully",
+            "updateSuccess": "Updated successfully",
+            "operationFailed": "Operation failed"
+        },
+        "form": {
+            "addTitle": "Add IT Asset Info",
+            "editTitle": "Edit IT Asset Info",
+            "sections": {
+                "hardware": "Hardware Configuration",
+                "network": "Network Information",
+                "os": "Operating System",
+                "security": "Security",
+                "activeDirectory": "Active Directory"
+            },
+            "fields": {
+                "cpuModel": "CPU Model",
+                "cpuCores": "CPU Cores",
+                "cpuThreads": "CPU Threads",
+                "ramCapacity": "RAM Capacity (GB)",
+                "ramType": "RAM Type",
+                "ramSlots": "RAM Slots",
+                "diskType": "Disk Type",
+                "diskCapacity": "Disk Capacity (GB)",
+                "diskCount": "Disk Count",
+                "gpuModel": "GPU Model",
+                "gpuMemory": "GPU Memory (MB)",
+                "macAddress": "MAC Address",
+                "ipAddress": "IP Address",
+                "hostname": "Hostname",
+                "osName": "OS Name",
+                "osVersion": "OS Version",
+                "osArch": "OS Architecture",
+                "osLicense": "OS License Key",
+                "diskEncrypted": "Disk Encrypted",
+                "antivirus": "Antivirus Enabled",
+                "antivirusSoftware": "Antivirus Software",
+                "adDomain": "AD Domain",
+                "adComputer": "AD Computer Name"
+            },
+            "maintenance": {
+                "addTitle": "Add Maintenance Record",
+                "editTitle": "Edit Maintenance Record",
+                "placeholders": {
+                    "title": "Brief title of the maintenance activity",
+                    "description": "Detailed description of work performed",
+                    "vendor": "External vendor (if applicable)",
+                    "notes": "Additional notes"
+                },
+                "validation": {
+                    "selectType": "Please select maintenance type",
+                    "enterTitle": "Please enter title",
+                    "selectDate": "Please select maintenance date"
+                }
+            },
+            "placeholders": {
+                "selectAsset": "Select asset",
+                "cpuModel": "e.g., Intel Core i7-12700K",
+                "selectType": "Select type",
+                "gpuModel": "e.g., NVIDIA GeForce RTX 3080",
+                "macAddress": "XX:XX:XX:XX:XX:XX",
+                "ipAddress": "192.168.1.1",
+                "hostname": "e.g., PC-DESKTOP-001",
+                "selectOs": "Select OS",
+                "osVersion": "e.g., 11, 22.04, 10.0.19043",
+                "selectArch": "Select architecture",
+                "licenseKey": "XXXXX-XXXXX-XXXXX-XXXXX",
+                "antivirusSoftware": "e.g., Windows Defender",
+                "domain": "e.g., corp.local",
+                "computerName": "e.g., DESKTOP-001"
+            },
+            "validation": {
+                "selectAsset": "Please select asset",
+                "invalidMac": "Invalid MAC address format",
+                "invalidIp": "Invalid IP address format"
+            },
+            "configChange": {
+                "addTitle": "Add Configuration Change",
+                "editTitle": "Edit Configuration Change",
+                "placeholders": {
+                    "changeReason": "Explain why this change was made"
+                },
+                "validation": {
+                    "enterFieldName": "Please enter field name",
+                    "selectDate": "Please select change date"
+                }
+            }
+        },
+        "maintenance": {
+            "title": "IT Maintenance Records",
+            "type": "Type",
+            "allTypes": "All Types",
+            "types": {
+                "preventive": "Preventive",
+                "corrective": "Corrective",
+                "upgrade": "Upgrade",
+                "replacement": "Replacement",
+                "inspection": "Inspection",
+                "cleaning": "Cleaning",
+                "other": "Other"
+            }
+        },
+        "configChange": {
+            "title": "Configuration Changes",
+            "field": "Field",
+            "fieldName": "Field Name",
+            "allFields": "All Fields",
+            "changeDetails": "Change Details",
+            "oldValue": "Old Value",
+            "previousValue": "Previous Value",
+            "newValue": "New Value",
+            "changeDate": "Change Date",
+            "reason": "Change Reason",
+            "empty": "(empty)",
+            "fields": {
+                "cpuModel": "CPU Model",
+                "ramCapacity": "RAM",
+                "diskCapacity": "Disk",
+                "osName": "OS",
+                "ipAddress": "IP Address"
+            }
+        },
+        "common": {
+            "asset": "Asset",
+            "title": "Title",
+            "date": "Date",
+            "cost": "Cost",
+            "vendor": "Vendor",
+            "performedBy": "Performed By",
+            "changedBy": "Changed By",
+            "reason": "Reason",
+            "description": "Description",
+            "notes": "Notes",
+            "change": "Change",
+            "addRecord": "Add Record",
+            "addChange": "Add Change",
+            "searchMaintenancePlaceholder": "Asset code, title, vendor...",
+            "searchConfigPlaceholder": "Asset code, field name..."
+        }
+    }
+}

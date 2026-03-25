@@ -1,0 +1,39 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - button "🌐 zh-CN" [ref=e7] [cursor=pointer]:
+      - generic [ref=e8]: 🌐
+      - generic [ref=e9]: zh-CN
+      - img [ref=e11]
+    - generic [ref=e14]:
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - img [ref=e18]
+          - heading "GZEAMS" [level=2] [ref=e23]
+        - paragraph [ref=e24]: 企业资产运营统一工作台
+        - generic [ref=e25]:
+          - generic [ref=e29]:
+            - img [ref=e32]
+            - textbox "用户名" [ref=e34]
+          - generic [ref=e38]:
+            - img [ref=e41]
+            - textbox "密码" [ref=e44]
+          - button "登录" [ref=e47] [cursor=pointer]:
+            - generic [ref=e49]: 登录
+          - generic [ref=e50]:
+            - generic [ref=e51] [cursor=pointer]: 忘记密码？
+            - generic [ref=e52] [cursor=pointer]: 联系管理员
+      - generic [ref=e53]: © 2026 GZEAMS 企业资产管理系统
+  - dialog "提示" [ref=e55]:
+    - generic [ref=e56]:
+      - generic [ref=e57]:
+        - generic [ref=e58]: 提示
+        - button "关闭此对话框" [ref=e59] [cursor=pointer]:
+          - img [ref=e61]
+      - generic [ref=e64]:
+        - img [ref=e66]
+        - paragraph [ref=e69]: 登录已过期，是否重新登录？
+      - generic [ref=e70]:
+        - button "取消" [ref=e71] [cursor=pointer]:
+          - generic [ref=e72]: 取消
+        - button "确认" [active] [ref=e73] [cursor=pointer]:
+          - generic [ref=e74]: 确认

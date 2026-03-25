@@ -1,0 +1,1494 @@
+{
+    "title": "System Management",
+    "department": {
+        "title": "Department Management",
+        "createButton": "Create Department",
+        "addSubDept": "Add Sub-Department",
+        "columns": {
+            "name": "Department Name",
+            "code": "Code",
+            "manager": "Manager",
+            "phone": "Phone",
+            "sortOrder": "Sort",
+            "status": "Status"
+        },
+        "status": {
+            "enabled": "Enabled",
+            "disabled": "Disabled"
+        },
+        "messages": {
+            "confirmDelete": "Are you sure to delete this department?"
+        },
+        "parent": "Parent Department",
+        "namePlaceholder": "Please enter department name",
+        "codePlaceholder": "Please enter department code",
+        "parentPlaceholder": "Please select parent department (leave empty for top-level)",
+        "managerPlaceholder": "Please select manager",
+        "phonePlaceholder": "Please enter phone number",
+        "descriptionPlaceholder": "Please enter description",
+        "validation": {
+            "nameRequired": "Please enter department name",
+            "codeRequired": "Please enter department code"
+        }
+    },
+    "dictionary": {
+        "title": "Dictionary Management",
+        "createTypButton": "Create Dictionary Type",
+        "columns": {
+            "code": "Dictionary Code",
+            "name": "Dictionary Name",
+            "description": "Description",
+            "isSystem": "System Dict",
+            "status": "Status",
+            "itemCount": "Item Count",
+            "sortOrder": "Sort"
+        },
+        "status": {
+            "enabled": "Enabled",
+            "disabled": "Disabled"
+        },
+        "isSystem": {
+            "yes": "Yes",
+            "no": "No"
+        },
+        "actions": {
+            "viewItems": "Items"
+        },
+        "messages": {
+            "confirmDelete": "Are you sure to delete dictionary type \"{name}\"? Associated items will also be deleted.",
+            "confirmDeleteTitle": "Confirm Delete",
+            "loadFailed": "Failed to load data",
+            "loadItemsFailed": "Failed to load dictionary items",
+            "enabled": "Enabled",
+            "disabled": "Disabled",
+            "updateSortFailed": "Failed to update sort order",
+            "confirmBatchSort": "Reorder all dictionary items by the current sort order?",
+            "batchSortSuccess": "Batch sort successful",
+            "batchSortFailed": "Batch sort failed",
+            "confirmDeleteItem": "Are you sure to delete dictionary item \"{name}\"?"
+        },
+        "type": "Dictionary Type",
+        "code": "Dictionary Code",
+        "name": "Dictionary Name",
+        "englishName": "English Name",
+        "sortOrder": "Sort Order",
+        "itemManagement": "Item Management",
+        "addItem": "Add Item",
+        "batchSort": "Batch Sort",
+        "item": "Item",
+        "itemCode": "Item Code",
+        "displayName": "Display Name",
+        "color": "Color",
+        "icon": "Icon",
+        "isDefault": "Set as Default",
+        "isDefaultTip": "Default option will be selected automatically",
+        "enabled": "Enabled",
+        "default": "Default",
+        "codePlaceholder": "Please enter dictionary code (e.g., ASSET_STATUS)",
+        "codeTip": "Code must be unique. Use uppercase letters and underscores.",
+        "namePlaceholder": "Please enter dictionary name",
+        "englishNamePlaceholder": "Please enter English name",
+        "descriptionPlaceholder": "Please enter description",
+        "itemCodePlaceholder": "Please enter item code",
+        "displayNamePlaceholder": "Please enter display name",
+        "colorPlaceholder": "Please enter color value (e.g., #409EFF)",
+        "iconPlaceholder": "Select icon",
+        "validation": {
+            "codeRequired": "Please enter dictionary code",
+            "codePattern": "Code can include uppercase letters, numbers, and underscores, and must start with a letter or underscore",
+            "nameRequired": "Please enter dictionary name",
+            "itemCodeRequired": "Please enter item code",
+            "itemCodePattern": "Code can include letters, numbers, and underscores, and must start with a letter or underscore",
+            "displayNameRequired": "Please enter display name"
+        }
+    },
+    "common": {
+        "all": "All",
+        "item": "Item",
+        "actions": {
+            "search": "Search",
+            "reset": "Reset",
+            "edit": "Edit",
+            "delete": "Delete",
+            "cancel": "Cancel",
+            "save": "Save",
+            "create": "Create",
+            "confirm": "Confirm",
+            "detail": "Detail"
+        },
+        "messages": {
+            "loadFailed": "Load failed",
+            "operationFailed": "Operation failed",
+            "saveSuccess": "Saved successfully",
+            "deleteSuccess": "Deleted successfully",
+            "confirmDelete": "Are you sure you want to delete this?"
+        }
+    },
+    "messages": {
+        "unsavedChanges": "You have unsaved changes",
+        "validationFailed": "Validation failed, please check required fields or input format."
+    },
+    "config": {
+        "title": "System Configuration",
+        "addConfig": "Add Config",
+        "tabs": {
+            "all": "All",
+            "general": "General",
+            "qrcode": "QR Code",
+            "notification": "Notification",
+            "asset": "Asset",
+            "inventory": "Inventory",
+            "featureFlags": "Feature Flags",
+            "finance": "Finance",
+            "workflow": "Workflow",
+            "integration": "Integration"
+        },
+        "columns": {
+            "key": "Key",
+            "name": "Name",
+            "value": "Value",
+            "type": "Type",
+            "category": "Category",
+            "isSystem": "System",
+            "description": "Description"
+        },
+        "status": {
+            "enabled": "Enabled",
+            "disabled": "Disabled"
+        },
+        "tags": {
+            "system": "System"
+        },
+        "valueTypes": {
+            "string": "String",
+            "integer": "Integer",
+            "float": "Float",
+            "boolean": "Boolean",
+            "json": "JSON"
+        },
+        "categories": {
+            "general": "General",
+            "qrcode": "QR Code",
+            "notification": "Notification",
+            "asset": "Asset",
+            "inventory": "Inventory",
+            "feature_flag": "Feature Flags",
+            "finance": "Finance",
+            "workflow": "Workflow",
+            "integration": "Integration"
+        },
+        "featureFlags": {
+            "runtime_i18n_enabled": {
+                "name": "Runtime i18n Enabled",
+                "description": "Enable runtime localization for object/layout metadata."
+            },
+            "layout_merge_unified_enabled": {
+                "name": "Layout Merge Unified Enabled",
+                "description": "Enable unified runtime layout merge and normalization path."
+            },
+            "field_code_strict_mode": {
+                "name": "Field Code Strict Mode",
+                "description": "Return field_code only and stop emitting legacy code key."
+            }
+        },
+        "messages": {
+            "loadFailed": "Failed to load system configs",
+            "confirmDelete": "Are you sure to delete this config?"
+        },
+        "searchPlaceholder": "Search by key or name",
+        "form": {
+            "titles": {
+                "create": "Add Configuration",
+                "edit": "Edit Configuration"
+            },
+            "labels": {
+                "configKey": "Config Key",
+                "displayName": "Display Name",
+                "valueType": "Value Type",
+                "value": "Value",
+                "category": "Category",
+                "description": "Description",
+                "isSystem": "Is System",
+                "isEncrypted": "Is Encrypted"
+            },
+            "placeholders": {
+                "configKey": "e.g., QR_CODE_TEMPLATE, ENABLE_EMAIL",
+                "displayName": "e.g., QR Code Template, Enable Email Notifications",
+                "valueType": "Select value type",
+                "jsonValue": "e.g., {\"key\": \"value\"}",
+                "category": "Select category",
+                "description": "Describe what this configuration does"
+            },
+            "valuePlaceholders": {
+                "string": "Enter text value",
+                "integer": "Enter integer value",
+                "float": "Enter decimal value",
+                "default": "Enter value"
+            },
+            "switches": {
+                "systemConfig": "System Config",
+                "userConfig": "User Config",
+                "encrypted": "Encrypted",
+                "plainText": "Plain Text"
+            },
+            "tips": {
+                "configKey": "Unique identifier for the configuration (uppercase recommended)",
+                "isSystem": "System configs cannot be deleted by users",
+                "isEncrypted": "Encrypt value for sensitive data (passwords, API keys)"
+            },
+            "validation": {
+                "configKeyRequired": "Please enter config key",
+                "configKeyPattern": "Key must be uppercase letters, numbers, and underscores only",
+                "displayNameRequired": "Please enter display name",
+                "valueTypeRequired": "Please select value type",
+                "valueRequired": "Please enter config value"
+            },
+            "messages": {
+                "invalidJson": "Invalid JSON format",
+                "updateSuccess": "Updated successfully",
+                "createSuccess": "Added successfully",
+                "operationFailed": "Operation failed"
+            },
+            "actions": {
+                "add": "Add"
+            }
+        }
+    },
+    "branding": {
+        "title": "Branding Settings",
+        "subtitle": "Manage the system theme, application identity, logo assets, and login experience from one place.",
+        "entry": "Branding",
+        "sections": {
+            "identity": "Identity",
+            "theme": "Theme Tokens",
+            "login": "Login Experience",
+            "loginI18n": "Login Copy by Locale",
+            "assets": "Logo & Icon Assets",
+            "preview": "Live Preview"
+        },
+        "fields": {
+            "appName": "Application Name",
+            "appShortName": "Short Name",
+            "appTagline": "Tagline",
+            "appIconText": "Fallback Mark",
+            "primaryColor": "Primary Color",
+            "accentColor": "Accent Color",
+            "sidebarGradientStart": "Sidebar Gradient Start",
+            "sidebarGradientEnd": "Sidebar Gradient End",
+            "borderRadius": "Border Radius",
+            "darkMode": "Dark Mode",
+            "loginTitle": "Login Title",
+            "loginSubtitle": "Login Subtitle",
+            "copyright": "Footer Copyright"
+        },
+        "actions": {
+            "upload": "Upload",
+            "remove": "Remove"
+        },
+        "preview": {
+            "primaryAction": "Primary Action",
+            "radius": "Component Radius"
+        }
+    },
+    "businessObject": {
+        "title": "Business Objects",
+        "create": "Create Business Object",
+        "createTitle": "Create Business Object",
+        "editTitle": "Edit Business Object",
+        "tabs": {
+            "basic": "Basic Info",
+            "actions": "Custom Actions"
+        },
+        "columns": {
+            "name": "Object Name",
+            "code": "Object Code",
+            "description": "Description",
+            "type": "Type",
+            "fieldCount": "Fields",
+            "layoutCount": "Layouts",
+            "workflow": "Workflow"
+        },
+        "fields": {
+            "code": "Object Code",
+            "name": "Object Name",
+            "description": "Description",
+            "tableName": "Table Name",
+            "pkField": "Primary Key",
+            "enableWorkflow": "Enable Workflow",
+            "enableVersion": "Enable Versioning",
+            "enableSoftDelete": "Enable Soft Delete",
+            "isSystem": "System Object"
+        },
+        "placeholders": {
+            "code": "Enter object code (English, e.g., Asset)",
+            "name": "Enter object name (e.g., Fixed Asset)",
+            "description": "Enter object description",
+            "tableName": "Database table name (e.g., assets_asset)",
+            "pkField": "Default: id"
+        },
+        "tips": {
+            "workflow": "Enable to configure approval workflows",
+            "version": "Enable to track data history",
+            "softDelete": "Logical delete instead of physical delete",
+            "system": "System objects cannot be deleted"
+        },
+        "type": {
+            "custom": "Custom",
+            "system": "System"
+        },
+        "actions": {
+            "fields": "Fields",
+            "layouts": "Layouts"
+        },
+        "validation": {
+            "codeRequired": "Please enter object code",
+            "codePattern": "Must start with uppercase letter, alphanumeric only",
+            "nameRequired": "Please enter object name",
+            "tableNameRequired": "Please enter table name"
+        },
+        "info": {
+            "customActions": "Define custom actions (buttons/triggers) for this object.",
+            "customActionsExample": "Example: [{\"code\": \"approve\", \"label\": \"Approve\", \"type\": \"api\"}]"
+        },
+        "messages": {
+            "loadFailed": "Failed to load business objects",
+            "noBusinessFields": "No business fields are configured for this object layout.",
+            "loadMetadataFailed": "Failed to load object metadata"
+        }
+    },
+    "pageLayout": {
+        "title": "{name} - Layout Management",
+        "create": "New Layout",
+        "createTitle": "Create Layout",
+        "modes": {
+            "edit": "Edit Mode",
+            "readonly": "Readonly Mode",
+            "search": "Search Mode"
+        },
+        "columns": {
+            "name": "Layout Name",
+            "code": "Layout Code",
+            "mode": "Mode",
+            "description": "Description",
+            "version": "Version",
+            "isDefault": "Default",
+            "status": "Status"
+        },
+        "tags": {
+            "systemDefault": "System Default",
+            "default": "Default"
+        },
+        "status": {
+            "draft": "Draft",
+            "published": "Published",
+            "archived": "Archived"
+        },
+        "types": {
+            "form": "Form",
+            "edit": "Edit",
+            "readonly": "Readonly",
+            "detail": "Detail",
+            "list": "List",
+            "search": "Search"
+        },
+        "actions": {
+            "customize": "Customize",
+            "preview": "Preview",
+            "design": "Design",
+            "duplicate": "Duplicate",
+            "publish": "Publish",
+            "rollback": "Rollback",
+            "createAndDesign": "Create & Design"
+        },
+        "fields": {
+            "code": "Layout Code",
+            "name": "Layout Name",
+            "type": "Layout Type",
+            "isDefault": "Set as Default",
+            "description": "Description"
+        },
+        "placeholders": {
+            "code": "e.g., asset_form_custom",
+            "name": "e.g., Custom Asset Form",
+            "description": "Describe the usage of this layout"
+        },
+        "tips": {
+            "default": "Default layout will be the preferred choice for this type"
+        },
+        "alert": {
+            "autoGenerated": "List layouts are auto-generated based on field definitions. Please configure 'show_in_list' property in Field Management."
+        },
+        "messages": {
+            "emptyState": "No {mode} layouts found, click button below to create",
+            "createSuccess": "Layout created successfully",
+            "confirmPublish": "Are you sure to publish layout \"{name}\"? A new version will be created.",
+            "publishSuccess": "Published successfully",
+            "confirmRollback": "Are you sure to rollback layout \"{name}\" to the previous version?",
+            "rollbackSuccess": "Rollback successful",
+            "rollbackFailed": "Rollback failed",
+            "noRollbackTarget": "No previous version available for rollback",
+            "required": "Please enter layout code and name"
+        },
+        "designer": {
+            "title": "Layout Designer",
+            "badges": {
+                "customLayout": "Custom Layout"
+            },
+            "actions": {
+                "undo": "Undo",
+                "redo": "Redo",
+                "reset": "Restore Default",
+                "custom": "Custom",
+                "preview": "Preview",
+                "saveDraft": "Save Draft",
+                "publish": "Publish",
+                "addSection": "Add Section",
+                "moveSectionUp": "Move Section Up",
+                "moveSectionDown": "Move Section Down",
+                "editSection": "Edit Section",
+                "deleteSection": "Delete Section",
+                "addTabPage": "Add Tab Page",
+                "removeField": "Remove Field",
+                "translationMode": "Translation Mode",
+                "resetSize": "Reset Size"
+            },
+            "status": {
+                "previewMode": "Preview Mode",
+                "customMode": "Custom Mode",
+                "designState": "Design",
+                "previewState": "Preview"
+            },
+            "placeholders": {
+                "searchField": "Search field, template, or code..."
+            },
+            "hints": {
+                "designCanvas": "Layout design canvas (click fields to edit properties)",
+                "previewCanvas": "Preview rendering (aligned with detail page rendering)",
+                "dropToTab": "Drag fields into the current tab",
+                "dropToCollapse": "Drag fields into the current collapse item",
+                "dropToSection": "Drag fields into the current section",
+                "sectionTemplateSection": "Standard section with editable fields",
+                "sectionTemplateTab": "Tabbed section for switching grouped content",
+                "sectionTemplateCollapse": "Collapsible section with foldable content groups",
+                "detailRegionRelation": "Relation",
+                "detailRegionField": "Field",
+                "detailRegionTarget": "Target Object",
+                "detailRegionMode": "Table Mode",
+                "detailRegionColumns": "Columns",
+                "detailRegionSummary": "This region renders a master-detail child table in the aggregate page.",
+                "dragToReorderSection": "Drag to reorder section",
+                "dragToResize": "Drag to resize field size",
+                "sidebarHeightOnly": "Sidebar field supports height resize only",
+                "singleLayoutModel": "Single layout model: configure edit layout here; detail reuses it. List pages are field-driven (`show_in_list` + `sort_order`)."
+            },
+            "templates": {
+                "sectionMain": {
+                    "title": "Main Form Section",
+                    "description": "Two-column primary section for editable master fields."
+                },
+                "sectionSidebar": {
+                    "title": "Sidebar Summary",
+                    "description": "One-column sidebar summary for read-mostly supporting fields."
+                },
+                "tabMain": {
+                    "title": "Tabbed Workspace",
+                    "description": "Main canvas tabs for grouping complex form content."
+                },
+                "collapseMain": {
+                    "title": "Collapsible Group",
+                    "description": "Foldable main section for secondary or optional content."
+                }
+            },
+            "panel": {
+                "properties": "Properties",
+                "fieldProperties": "Field Properties",
+                "sectionProperties": "Section Properties",
+                "sectionTemplates": "Section Templates"
+            },
+            "empty": {
+                "layoutEmpty": "Layout is empty. Add a section to start designing.",
+                "selectTarget": "Select a field or section to edit its properties."
+            },
+            "defaults": {
+                "untitledSection": "Untitled Section",
+                "tabTitle": "Tab {index}",
+                "newTab": "New Tab",
+                "newSection": "New Section",
+                "detailRegion": "Detail Region",
+                "basicInformation": "Basic Information"
+            },
+            "sectionProperties": {
+                "fields": {
+                    "title": "Title",
+                    "titleEn": "English Title",
+                    "translationKey": "Translation Key",
+                    "type": "Section Type",
+                    "relationCode": "Relation Code",
+                    "fieldCode": "Field Code",
+                    "targetObjectCode": "Target Object Code",
+                    "detailEditMode": "Detail Edit Mode",
+                    "position": "Position",
+                    "columns": "Columns",
+                    "labelPosition": "Label Position",
+                    "labelWidth": "Custom Label Width (e.g. 150px)",
+                    "border": "Border",
+                    "collapsible": "Collapsible",
+                    "collapsed": "Collapsed",
+                    "tabs": "Tab Pages",
+                    "relatedFields": "Related Fields",
+                    "lookupColumns": "Lookup Columns",
+                    "toolbarConfig": "Toolbar Config",
+                    "summaryRules": "Summary Rules",
+                    "validationRules": "Validation Rules"
+                },
+                "options": {
+                    "types": {
+                        "section": "Standard",
+                        "tab": "Tab Pages",
+                        "collapse": "Collapsible Group",
+                        "detailRegion": "Detail Region"
+                    },
+                    "position": {
+                        "main": "Main Activity",
+                        "sidebar": "Sidebar (Right)"
+                    },
+                    "labelPosition": {
+                        "left": "Left Aligned",
+                        "top": "Top Aligned"
+                    },
+                    "detailEditMode": {
+                        "inlineTable": "Inline Table",
+                        "nestedForm": "Nested Form",
+                        "readonlyTable": "Readonly Table"
+                    }
+                }
+            },
+            "detailRegionConfigurator": {
+                "preset": "Preset",
+                "sectionPreset": "Section Template",
+                "columnWidth": "Width",
+                "minColumnWidth": "Min Width",
+                "columnAlign": "Align",
+                "fixedColumn": "Fixed",
+                "ellipsis": "Ellipsis",
+                "formatter": "Formatter",
+                "emptyText": "Empty Text",
+                "tooltipTemplate": "Tooltip Template",
+                "preview": "Preview",
+                "tryPresets": "Try presets",
+                "previewHint": "Previewing {preset}. Click a preset to apply.",
+                "sectionPreviewHint": "Previewing {preset}. Click a template to apply.",
+                "recommendedPresets": "Recommended: {presets}",
+                "moveUp": "Up",
+                "moveDown": "Down",
+                "remove": "Remove",
+                "alignOptions": {
+                    "default": "Default",
+                    "center": "Center",
+                    "right": "Right"
+                },
+                "fixedOptions": {
+                    "default": "Default",
+                    "right": "Right"
+                },
+                "formatterOptions": {
+                    "default": "Default",
+                    "uppercase": "Uppercase",
+                    "lowercase": "Lowercase",
+                    "number": "Number",
+                    "date": "Date",
+                    "datetime": "DateTime",
+                    "boolean": "Boolean"
+                },
+                "presetOptions": {
+                    "default": "Default",
+                    "amount": "Amount",
+                    "amountSummary": "Amount Summary",
+                    "date": "Date",
+                    "datetime": "DateTime",
+                    "auditDatetime": "Audit DateTime",
+                    "status": "Status",
+                    "statusCompact": "Compact Status"
+                },
+                "sectionPresetOptions": {
+                    "editableDetail": "Editable Detail",
+                    "reviewTable": "Review Table",
+                    "sidebarSummary": "Sidebar Summary"
+                },
+                "presetDescriptions": {
+                    "amount": "Right-aligned amount column for row-level numeric values.",
+                    "amountSummary": "Right-aligned summary amount column for totals or rollups.",
+                    "date": "Standard date column for planned or effective dates.",
+                    "datetime": "Timestamp column for detailed event records.",
+                    "auditDatetime": "Pinned audit timestamp column for update history and traceability.",
+                    "status": "Centered status column with tooltip support for longer labels.",
+                    "statusCompact": "Compact centered status column for dense operational tables."
+                },
+                "sectionPresetDescriptions": {
+                    "editableDetail": "Main-area editable child table with metadata-backed detail columns and toolbar actions.",
+                    "reviewTable": "Readonly review table that prefers lookup columns for quick checking.",
+                    "sidebarSummary": "Compact sidebar summary with a focused subset of child columns."
+                },
+                "sectionPreviewItems": {
+                    "columns": "{count} columns",
+                    "position": {
+                        "main": "Main area",
+                        "sidebar": "Sidebar"
+                    },
+                    "toolbar": {
+                        "enabled": "Toolbar enabled",
+                        "hidden": "Toolbar hidden"
+                    }
+                },
+                "previewItems": {
+                    "minWidth": "Min {value}px",
+                    "ellipsis": "Ellipsis",
+                    "emptyText": "Empty: {value}",
+                    "tooltipTemplate": "Tooltip: {value}",
+                    "align": {
+                        "left": "Left aligned",
+                        "center": "Center aligned",
+                        "right": "Right aligned"
+                    },
+                    "fixed": {
+                        "left": "Fixed left",
+                        "right": "Fixed right"
+                    },
+                    "formatter": {
+                        "uppercase": "Uppercase",
+                        "lowercase": "Lowercase",
+                        "number": "Number",
+                        "date": "Date",
+                        "datetime": "DateTime",
+                        "boolean": "Boolean"
+                    }
+                }
+            },
+            "messages": {
+                "previewSampleUpdated": "Preview mode: sample data updated (not saved to backend)",
+                "previewEditCancelled": "Preview mode: edit cancelled",
+                "previewDeleteDemoOnly": "Preview mode: delete is only a UI demo and will not remove real data",
+                "cannotAddField": "Cannot add \"{name}\": {reason}",
+                "fieldAlreadyAdded": "Field already added",
+                "cannotSwitchFieldType": "Cannot switch field type: {reason}",
+                "deleteSectionConfirm": "Delete this section? Fields in this section will be removed.",
+                "deleteSectionTitle": "Delete section",
+                "sectionDeleted": "Section deleted",
+                "invalidLayoutConfig": "Layout configuration is invalid",
+                "layoutSaved": "Layout saved",
+                "saveFailed": "Save failed",
+                "layoutPublished": "Layout published",
+                "publishFailed": "Publish failed",
+                "resetConfirm": "Reset layout to system default? Unsaved changes will be lost.",
+                "resetConfirmTitle": "Reset confirmation",
+                "resetToDefaultSuccess": "Reset to system default layout",
+                "resetFailedRefresh": "Reset failed, please refresh and try again",
+                "switchedToCustomMode": "Switched to custom mode",
+                "noPreviewLayoutFallback": "No previewable layout found. Fallback to custom mode.",
+                "switchedToPreviewMode": "Switched to preview mode"
+            }
+        }
+    },
+    "fieldDefinition": {
+        "title": "{name} - Field Management",
+        "create": "Add Field",
+        "createTitle": "Add Field",
+        "editTitle": "Edit Field",
+        "groups": {
+            "basic": "Basic Types",
+            "datetime": "Date & Time",
+            "selection": "Selection Types",
+            "reference": "Reference Types",
+            "media": "Media Files",
+            "advanced": "Advanced Types"
+        },
+        "types": {
+            "text": "Text",
+            "textarea": "Text Area",
+            "number": "Number",
+            "currency": "Currency",
+            "percent": "Percentage",
+            "date": "Date",
+            "datetime": "Date Time",
+            "time": "Time",
+            "select": "Select",
+            "multi_select": "Multi Select",
+            "radio": "Radio",
+            "checkbox": "Checkbox",
+            "boolean": "Switch",
+            "user": "User Select",
+            "department": "Department Select",
+            "reference": "Reference",
+            "asset": "Asset Select",
+            "location": "Location Select",
+            "file": "File Upload",
+            "image": "Image Upload",
+            "qr_code": "QR Code",
+            "barcode": "Barcode",
+            "formula": "Formula",
+            "sub_table": "Sub Table",
+            "rich_text": "Rich Text",
+            "auto_number": "Auto Number",
+            "json": "JSON"
+        },
+        "columns": {
+            "sortOrder": "Sort",
+            "name": "Field Name",
+            "code": "Field Code",
+            "type": "Type",
+            "description": "Description",
+            "required": "Required",
+            "readonly": "Readonly",
+            "system": "System"
+        },
+        "fields": {
+            "code": "Field Code",
+            "name": "Field Name",
+            "type": "Field Type",
+            "referenceObject": "Reference Object",
+            "options": "Options Configuration",
+            "formula": "Formula Expression",
+            "sortOrder": "Sort Order",
+            "defaultValue": "Default Value",
+            "placeholder": "Placeholder",
+            "description": "Description",
+            "required": "Required",
+            "readonly": "Readonly",
+            "unique": "Unique",
+            "showInList": "Show in List",
+            "listWidth": "List Width",
+            "maxLength": "Max Length",
+            "numericRange": "Numeric Range",
+            "decimalPlaces": "Decimal Places"
+        },
+        "placeholders": {
+            "code": "Enter field code (English, e.g., userName)",
+            "name": "Enter field name (e.g., User Name)",
+            "type": "Select field type",
+            "referenceObject": "Select reference object",
+            "optionLabel": "Option Name",
+            "optionValue": "Option Value",
+            "formula": "e.g., {quantity} * {price}",
+            "description": "Field description",
+            "placeholder": "Placeholder text for input",
+            "minValue": "Min",
+            "maxValue": "Max",
+            "defaultValue": {
+                "text": "Default text",
+                "number": "Default number",
+                "date": "e.g., 2024-01-01",
+                "switch": "true/false",
+                "select": "Option value"
+            }
+        },
+        "tips": {
+            "formula": "Use {fieldCode} to reference other fields",
+            "showInList": "Show in list view by default",
+            "listWidth": "Column width in pixels"
+        },
+        "tags": {
+            "system": "System"
+        },
+        "actions": {
+            "addOption": "Add Option",
+            "retry": "Retry"
+        },
+        "validation": {
+            "codeRequired": "Please enter field code",
+            "codePattern": "Must start with lowercase letter, alphanumeric only",
+            "nameRequired": "Please enter field name",
+            "typeRequired": "Please select field type",
+            "referenceObjectRequired": "Please select reference object"
+        },
+        "messages": {
+            "confirmDelete": "Are you sure to delete this field?",
+            "noObjectCode": "No business object specified",
+            "noData": "No field data retrieved",
+            "loadFailed": "Failed to load field definitions",
+            "systemFieldReadOnly": "System fields cannot be edited or deleted.",
+            "hardcodedReadonly": "Hardcoded object fields are read-only.",
+            "missingObjectMeta": "Missing business object metadata. Please refresh and try again.",
+            "readOnlySubmitBlocked": "This field is read-only and cannot be modified."
+        }
+    },
+    "businessRule": {
+        "title": "Business Rules",
+        "create": "Create Rule",
+        "editTitle": "Edit Rule",
+        "createTitle": "Create Rule",
+        "types": {
+            "validation": "Validation",
+            "visibility": "Visibility",
+            "computed": "Computed",
+            "linkage": "Linkage",
+            "trigger": "Trigger",
+            "all": "All"
+        },
+        "columns": {
+            "code": "Rule Code",
+            "name": "Rule Name",
+            "type": "Type",
+            "priority": "Priority",
+            "status": "Status"
+        },
+        "messages": {
+            "confirmDelete": "Are you sure to delete this rule?",
+            "enabled": "Rule Enabled",
+            "disabled": "Rule Disabled",
+            "testTitle": "Test Rule",
+            "testData": "Test Data",
+            "testDataPlaceholder": "Enter JSON format test data",
+            "testResult": "Test Result",
+            "testPassed": "Passed",
+            "testFailed": "Failed",
+            "invalidJson": "Invalid JSON format"
+        },
+        "placeholders": {
+            "empty": "No business rules",
+            "emptyType": "No {type} rules"
+        },
+        "designer": {
+            "triggerConfig": "Trigger Configuration",
+            "triggerEvents": "Trigger Events",
+            "watchFields": "Watch Fields",
+            "watchFieldsPlaceholder": "Select fields to watch",
+            "triggerCondition": "Trigger Conditions",
+            "conditionExpression": "Condition Expression",
+            "ruleActions": "Rule Actions",
+            "events": {
+                "update": "Update",
+                "submit": "Submit",
+                "approve": "Approve",
+                "fieldChange": "Field Change"
+            },
+            "placeholders": {
+                "ruleCode": "e.g., validate_amount_limit",
+                "ruleName": "Please enter rule name",
+                "description": "Optional: describe rule purpose and scope"
+            },
+            "actionConfigurator": {
+                "title": "Action Configuration",
+                "labels": {
+                    "errorMessageLocal": "Error Message (Local)",
+                    "errorMessageEnglish": "Error Message (English)",
+                    "severity": "Severity",
+                    "targetFields": "Target Fields",
+                    "visibility": "Visibility",
+                    "targetField": "Target Field",
+                    "formula": "Formula",
+                    "linkageType": "Linkage Type",
+                    "targetValue": "Target Value",
+                    "actionType": "Action Type",
+                    "apiEndpoint": "API Endpoint",
+                    "apiMethod": "Request Method",
+                    "ruleConfigJson": "Rule Config (JSON)"
+                },
+                "placeholders": {
+                    "errorMessageLocal": "Enter localized message for validation failure",
+                    "errorMessageEnglish": "Enter English message for validation failure",
+                    "targetFields": "Select fields to control visibility",
+                    "computedTargetField": "Select field to store computed result",
+                    "formula": "e.g., {amount} * 1.13",
+                    "linkageTargetField": "Select linkage target field",
+                    "targetValue": "Set a new value for target field (optional)",
+                    "apiEndpoint": "https://example.com/hooks/rule"
+                },
+                "severity": {
+                    "error": "Error",
+                    "warning": "Warning",
+                    "info": "Info"
+                },
+                "visibility": {
+                    "show": "Show",
+                    "hide": "Hide"
+                },
+                "linkageTypes": {
+                    "setValue": "Set Value",
+                    "loadOptions": "Load Options",
+                    "clear": "Clear"
+                },
+                "actionTypes": {
+                    "webhook": "Webhook",
+                    "notify": "Notification"
+                },
+                "formulaHint": "Use {field_code} to reference field values.",
+                "unknownRule": "Rule"
+            },
+            "conditionBuilder": {
+                "defaultTitle": "Condition Configuration",
+                "conditionCount": "{count} Conditions",
+                "emptyState": "No conditions",
+                "addCondition": "Add Condition",
+                "addGroup": "Add Group",
+                "previewJson": "View JSON",
+                "operators": {
+                    "equals": "Equals",
+                    "notEquals": "Not Equals",
+                    "greaterThan": "Greater Than",
+                    "greaterThanOrEqual": "Greater Than Or Equal",
+                    "lessThan": "Less Than",
+                    "lessThanOrEqual": "Less Than Or Equal",
+                    "in": "In",
+                    "empty": "Is Empty",
+                    "notEmpty": "Is Not Empty",
+                    "startsWith": "Starts With",
+                    "endsWith": "Ends With"
+                }
+            },
+            "singleCondition": {
+                "placeholders": {
+                    "field": "Select Field",
+                    "operator": "Operator",
+                    "value": "Enter Value",
+                    "date": "Select Date"
+                },
+                "boolean": {
+                    "true": "Yes",
+                    "false": "No"
+                }
+            }
+        }
+    },
+    "sequenceRule": {
+        "title": "Sequence Rule Management",
+        "create": "Create Rule",
+        "editTitle": "Edit Sequence Rule",
+        "createTitle": "Create Sequence Rule",
+        "previewTitle": "Sequence Preview",
+        "columns": {
+            "code": "Rule Code",
+            "name": "Rule Name",
+            "pattern": "Pattern Preview",
+            "prefix": "Prefix",
+            "seqLength": "Seq Length",
+            "currentValue": "Current Value",
+            "resetPeriod": "Reset Period",
+            "status": "Status",
+            "description": "Description"
+        },
+        "fields": {
+            "code": "Rule Code",
+            "name": "Rule Name",
+            "prefix": "Prefix",
+            "seqLength": "Sequence Length",
+            "currentValue": "Current Value",
+            "resetPeriod": "Reset Period",
+            "pattern": "Pattern Preview",
+            "description": "Description",
+            "active": "Active"
+        },
+        "placeholders": {
+            "code": "e.g., ASSET_CODE, ORDER_NO",
+            "name": "e.g., Asset Code, Order Number",
+            "prefix": "e.g., AST, ORD-",
+            "description": "Describe what this sequence is used for",
+            "statusAll": "All"
+        },
+        "tips": {
+            "code": "Unique identifier for the sequence rule (uppercase)",
+            "prefix": "Fixed prefix for generated numbers",
+            "seqLength": "Number of digits for the sequence part",
+            "currentValue": "Starting value for the sequence",
+            "resetPeriod": "When to reset the counter to 0",
+            "example": "Example:"
+        },
+        "periods": {
+            "never": "Never",
+            "yearly": "Yearly",
+            "monthly": "Monthly",
+            "daily": "Daily"
+        },
+        "actions": {
+            "preview": "Preview",
+            "generate": "Generate",
+            "reset": "Reset"
+        },
+        "messages": {
+            "confirmReset": "Reset sequence rule \"{name}\" to initial value?",
+            "confirmDelete": "Are you sure to delete this rule?",
+            "resetSuccess": "Sequence rule reset successfully",
+            "resetFailed": "Failed to reset sequence rule",
+            "generateSuccess": "Generated: {number}",
+            "generateFailed": "Failed to generate number",
+            "previewFailed": "Failed to get preview"
+        }
+    },
+    "permission": {
+        "title": "Permission Management",
+        "tabs": {
+            "field": "Field Permissions",
+            "data": "Data Permissions",
+            "audit": "Permission Log"
+        },
+        "data": {
+            "toolbar": {
+                "role": "Role",
+                "rolePlaceholder": "Select Role",
+                "createRule": "Add Rule"
+            },
+            "columns": {
+                "role": "Role",
+                "object": "Business Object",
+                "type": "Permission Type",
+                "scope": "Permission Scope",
+                "status": "Status",
+                "description": "Description",
+                "operation": "Operation"
+            },
+            "types": {
+                "all": "All Data",
+                "department": "My Department",
+                "department_and_sub": "Dept & Sub-Dept",
+                "self": "Only Self",
+                "custom": "Custom"
+            },
+            "status": {
+                "active": "Active",
+                "inactive": "Inactive",
+                "enable": "Enable",
+                "disable": "Disable"
+            },
+            "dialog": {
+                "createTitle": "Create Data Permission Rule",
+                "editTitle": "Edit Data Permission Rule",
+                "role": "Role",
+                "rolePlaceholder": "Please select role",
+                "object": "Business Object",
+                "objectPlaceholder": "Please select object",
+                "type": "Permission Type",
+                "typePlaceholder": "Please select type",
+                "expression": "Permission Expression",
+                "expressionPlaceholder": "Custom expression, e.g.: department_id in (1, 2, 3)",
+                "scope": "Permission Scope",
+                "status": "Status",
+                "description": "Description",
+                "descriptionPlaceholder": "Enter rule description"
+            },
+            "messages": {
+                "enabled": "Enabled",
+                "disabled": "Disabled",
+                "createSuccess": "Created successfully",
+                "updateSuccess": "Updated successfully"
+            }
+        },
+        "field": {
+            "toolbar": {
+                "role": "Role",
+                "rolePlaceholder": "Select Role",
+                "object": "Business Object",
+                "objectPlaceholder": "Select Object"
+            },
+            "columns": {
+                "role": "Role",
+                "object": "Business Object",
+                "field": "Field Name",
+                "read": "Read",
+                "write": "Write",
+                "visibility": "Visibility",
+                "description": "Description",
+                "operation": "Operation"
+            },
+            "status": {
+                "allow": "Allow",
+                "deny": "Deny",
+                "show": "Show",
+                "hide": "Hide"
+            },
+            "dialog": {
+                "title": "Edit Field Permission",
+                "role": "Role",
+                "object": "Business Object",
+                "field": "Field Name",
+                "read": "Read",
+                "write": "Write",
+                "visibility": "Visibility",
+                "description": "Description"
+            },
+            "messages": {
+                "saveSuccess": "Saved successfully",
+                "saveFailed": "Failed to save"
+            }
+        },
+        "audit": {
+            "toolbar": {
+                "action": "Action Type",
+                "actionPlaceholder": "All",
+                "timeRange": "Time Range",
+                "startDate": "Start Date",
+                "endDate": "End Date"
+            },
+            "stats": {
+                "todayGrants": "Today Grants",
+                "todayRevokes": "Today Revokes",
+                "weekTotal": "Week Total",
+                "activeUsers": "Active Users"
+            },
+            "columns": {
+                "time": "Time",
+                "operator": "Operator",
+                "action": "Action",
+                "type": "Type",
+                "target": "Target",
+                "details": "Details",
+                "ip": "IP Address",
+                "operation": "Operation"
+            },
+            "actions": {
+                "grant": "Grant",
+                "revoke": "Revoke",
+                "update": "Update"
+            },
+            "types": {
+                "field": "Field",
+                "data": "Data"
+            },
+            "dialog": {
+                "title": "Log Details",
+                "time": "Time",
+                "operator": "Operator",
+                "action": "Action",
+                "type": "Type",
+                "target": "Target",
+                "details": "Details",
+                "ip": "IP Address",
+                "userAgent": "User Agent"
+            }
+        }
+    },
+    "configPackage": {
+        "title": "Config Packages",
+        "description": "Import/Export business object configurations, supports environment migration and backup",
+        "actions": {
+            "import": "Import Config",
+            "export": "Export Config",
+            "download": "Download",
+            "diff": "Diff",
+            "delete": "Delete",
+            "rollback": "Rollback"
+        },
+        "tabs": {
+            "packages": "Packages",
+            "history": "Import History"
+        },
+        "columns": {
+            "name": "Package Name",
+            "type": "Type",
+            "objects": "Included Objects",
+            "source": "Source Env",
+            "exportTime": "Export Time",
+            "status": "Status",
+            "package": "Package",
+            "strategy": "Strategy",
+            "result": "Result",
+            "importTime": "Import Time",
+            "operation": "Operation"
+        },
+        "types": {
+            "full": "Full",
+            "partial": "Partial",
+            "diff": "Diff"
+        },
+        "strategies": {
+            "merge": "Merge",
+            "replace": "Replace",
+            "skip": "Skip"
+        },
+        "status": {
+            "pending": "Pending",
+            "processing": "Processing",
+            "success": "Success",
+            "failed": "Failed",
+            "partial": "Partial",
+            "rolled_back": "Rolled Back"
+        },
+        "dialog": {
+            "exportTitle": "Export Config",
+            "importTitle": "Import Config",
+            "name": "Package Name",
+            "namePlaceholder": "e.g., Asset Management Config",
+            "version": "Version",
+            "versionPlaceholder": "e.g., 1.0.0",
+            "description": "Description",
+            "objects": "Business Objects",
+            "objectsPlaceholder": "Select objects to export",
+            "package": "Select Package",
+            "packagePlaceholder": "Import from existing package",
+            "strategy": "Import Strategy",
+            "strategies": {
+                "merge": "Merge (Update existing)",
+                "replace": "Replace (Overwrite existing)",
+                "skip": "Skip (Create new only)"
+            }
+        },
+        "messages": {
+            "loadPackagesFailed": "Failed to load packages",
+            "loadLogsFailed": "Failed to load import logs",
+            "exportSuccess": "Export success: {objects} objects, {fields} fields, {layouts} layouts, {rules} rules",
+            "exportFailed": "Export failed",
+            "importSuccess": "Import success: {created} created, {updated} updated, {skipped} skipped",
+            "importPartial": "Import partially completed, {failed} failed",
+            "importFailed": "Import failed",
+            "downloadStart": "Download started",
+            "downloadFailed": "Download failed",
+            "diffDeveloping": "Diff feature under development...",
+            "deleteSuccess": "Deleted successfully",
+            "deleteFailed": "Delete failed",
+            "rollbackConfirm": "Rollback will undo all changes from this import. Continue?",
+            "rollbackTitle": "Confirm Rollback",
+            "rollbackSuccess": "Rollback successful",
+            "rollbackFailed": "Rollback failed",
+            "required": "Please fill in required fields",
+            "selectPackage": "Please select a package",
+            "confirmDelete": "Are you sure to delete this package?"
+        }
+    },
+    "workflow": {
+        "title": "Workflow Management",
+        "create": "Create Workflow",
+        "createTitle": "Create Workflow",
+        "editTitle": "Edit Workflow",
+        "columns": {
+            "name": "Name",
+            "code": "Code",
+            "businessObject": "Business Object",
+            "operation": "Operation"
+        },
+        "form": {
+            "name": "Name",
+            "code": "Code",
+            "businessObject": "Business Object"
+        },
+        "businessObjects": {
+            "asset_pickup": "Asset Pickup",
+            "asset_transfer": "Asset Transfer",
+            "asset_return": "Asset Return"
+        },
+        "messages": {
+            "saveSuccess": "Saved successfully",
+            "createSuccess": "Created successfully",
+            "updateSuccess": "Updated successfully",
+            "saveFailed": "Failed to save",
+            "required": "Please enter name and code"
+        }
+    },
+    "file": {
+        "title": "System File Management",
+        "actions": {
+            "upload": "Upload File",
+            "batchDelete": "Batch Delete",
+            "clearSelection": "Clear Selection",
+            "selection": "{count} files selected"
+        },
+        "filter": {
+            "search": "Search",
+            "searchPlaceholder": "File name",
+            "fileType": "File Type",
+            "allTypes": "All Types",
+            "bizType": "Business Type",
+            "allBizTypes": "All"
+        },
+        "types": {
+            "image": "Images",
+            "document": "Documents",
+            "video": "Videos",
+            "archive": "Archives",
+            "asset_image": "Asset Image",
+            "contract": "Contract",
+            "invoice": "Invoice",
+            "attachment": "Attachment",
+            "other": "Other",
+            "pdf": "PDF",
+            "file": "File"
+        },
+        "stats": {
+            "totalFiles": "Total Files",
+            "totalSize": "Total Size",
+            "todayUploads": "Today Uploads",
+            "images": "Images"
+        },
+        "columns": {
+            "preview": "Preview",
+            "fileName": "File Name",
+            "type": "Type",
+            "size": "Size",
+            "bizType": "Business Type",
+            "description": "Description",
+            "uploadDate": "Upload Date"
+        },
+        "dialog": {
+            "editTitle": "Edit File",
+            "fileName": "File Name",
+            "bizType": "Business Type",
+            "description": "Description"
+        },
+        "messages": {
+            "sizeLimit": "File size cannot exceed {size}",
+            "uploadSuccess": "File uploaded successfully",
+            "uploadFailed": "Upload failed",
+            "updateSuccess": "Updated successfully",
+            "updateFailed": "Update failed",
+            "deleteSuccess": "Deleted successfully",
+            "deleteFailed": "Delete failed",
+            "batchDeleteFailed": "Batch delete failed",
+            "confirmDelete": "Are you sure to delete this file?",
+            "batchDeleteSuccess": "Deleted {count} files",
+            "loadFailed": "Failed to load files"
+        }
+    },
+    "languages": {
+        "title": "Language Management",
+        "create": "Create Language",
+        "edit": "Edit Language",
+        "delete": "Delete Language",
+        "deleteConfirm": "Are you sure to delete this language?",
+        "setDefault": "Set as Default",
+        "flag": "Flag",
+        "code": "Language Code",
+        "name": "Language Name",
+        "nativeName": "Native Name",
+        "locale": "Locale",
+        "sortOrder": "Sort Order",
+        "isActive": "Active",
+        "isDefault": "Default",
+        "flagPlaceholder": "Select flag emoji",
+        "codePlaceholder": "e.g., zh-CN, en-US",
+        "namePlaceholder": "e.g., Chinese (Simplified)",
+        "nativeNamePlaceholder": "e.g., 中文",
+        "localePlaceholder": "e.g., zhCN, enUS",
+        "validation": {
+            "codeFormat": "Format: xx-XX (e.g., zh-CN)",
+            "localeFormat": "Format: xxXX (e.g., zhCN)"
+        },
+        "messages": {
+            "createSuccess": "Language created successfully",
+            "updateSuccess": "Language updated successfully",
+            "saveFailed": "Failed to save language",
+            "setDefaultSuccess": "{name} is set as the default language",
+            "setDefaultFailed": "Failed to set default language",
+            "activateSuccess": "Language activated",
+            "deactivateSuccess": "Language deactivated",
+            "updateFailed": "Failed to update language",
+            "deleteSuccess": "Language deleted successfully",
+            "deleteFailed": "Failed to delete language"
+        }
+    },
+    "translations": {
+        "title": "Translation Management",
+        "create": "Create Translation",
+        "edit": "Edit Translation",
+        "delete": "Delete Translation",
+        "deleteConfirm": "Are you sure to delete this translation?",
+        "language": "Language",
+        "namespace": "Namespace",
+        "key": "Translation Key",
+        "text": "Translation Text",
+        "type": "Type",
+        "isSystem": "System Translation",
+        "systemOnly": "System Only",
+        "contentType": "Content Type",
+        "objectId": "Object ID",
+        "fieldName": "Field Name",
+        "context": "Context",
+        "mode": "Translation Mode",
+        "modes": {
+            "namespace": "Static Translation",
+            "object": "Object Translation"
+        },
+        "contentTypes": {
+            "businessObject": "Business Object",
+            "dictionaryType": "Dictionary Type",
+            "dictionaryItem": "Dictionary Item",
+            "modelFieldDefinition": "Model Field Definition",
+            "menuGroup": "Menu Category"
+        },
+        "types": {
+            "label": "Label",
+            "message": "Message",
+            "enum": "Enum",
+            "objectField": "Object Field"
+        },
+        "stats": {
+            "total": "Total Translations",
+            "system": "System",
+            "user": "User",
+            "coverage": "Coverage"
+        },
+        "namespacePlaceholder": "e.g., asset, common",
+        "keyPlaceholder": "e.g., status.idle, button.save",
+        "textPlaceholder": "Enter translation text",
+        "objectIdPlaceholder": "Enter object ID",
+        "fieldNamePlaceholder": "Enter field name",
+        "contextPlaceholder": "Context for disambiguation (optional)",
+        "isSystemLabel": "System translation (read-only)",
+        "focusObject": "Viewing object translations: {target}",
+        "focusCoverage": "Configured languages: {configured}/{total}",
+        "clearFocus": "Clear filter",
+        "addFocusedObject": "Add Current Object Translation",
+        "messages": {
+            "createSuccess": "Translation created successfully",
+            "updateSuccess": "Translation updated successfully",
+            "saveFailed": "Failed to save translation",
+            "deleteSuccess": "Translation deleted successfully",
+            "deleteFailed": "Failed to delete translation",
+            "exportSuccess": "Translations exported successfully",
+            "exportFailed": "Failed to export translations",
+            "importFailed": "Failed to import translations",
+            "importSummary": "Import completed: {created} created, {updated} updated, {failed} failed"
+        }
+    },
+    "moduleWorkbench": {
+        "title": "Module Workbench",
+        "subtitle": "Check backend object coverage and quickly open missing frontend entries.",
+        "metrics": {
+            "backendObjects": "Backend Objects",
+            "menuCovered": "Menu Covered",
+            "missingEntries": "Missing Entries",
+            "invalidMenuCodes": "Invalid Menu Codes"
+        },
+        "sections": {
+            "missingFrontendEntries": "Missing Frontend Entries",
+            "allObjects": "All Objects",
+            "invalidMenuObjectCodes": "Invalid Menu Object Codes",
+            "brokenMenuUrls": "Broken Menu URLs"
+        },
+        "columns": {
+            "objectCode": "Object Code",
+            "name": "Name",
+            "modelPath": "Model Path",
+            "type": "Type",
+            "readiness": "Readiness",
+            "actions": "Quick Actions",
+            "coverage": "Coverage",
+            "menuName": "Menu Name",
+            "code": "Code",
+            "url": "URL"
+        },
+        "type": {
+            "system": "System",
+            "custom": "Custom"
+        },
+        "readiness": {
+            "ready": "Ready",
+            "emptyFields": "No Business Fields",
+            "checking": "Checking",
+            "unavailable": "Unavailable"
+        },
+        "coverage": {
+            "covered": "Covered",
+            "missing": "Missing"
+        },
+        "actions": {
+            "list": "List"
+        },
+        "empty": {
+            "noMissingEntries": "All backend objects are covered by menu entries.",
+            "noInvalidMenuCodes": "No invalid object code found in menu.",
+            "noBrokenMenuUrls": "All menu URLs can be resolved by current frontend router."
+        },
+        "searchPlaceholder": "Search by code or name",
+        "messages": {
+            "loadFailed": "Failed to load module coverage data.",
+            "metadataUnavailable": "Metadata unavailable"
+        }
+    }
+}

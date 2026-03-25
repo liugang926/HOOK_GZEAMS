@@ -1,0 +1,75 @@
+{
+  "scanner": {
+    "title": "Scanner",
+    "startScan": "Start Scan",
+    "stopScan": "Stop Scan",
+    "scanResult": "Scan Result",
+    "noResult": "No content scanned",
+    "permissionDenied": "Camera permission denied",
+    "cameraUnavailable": "Camera unavailable",
+    "switchCamera": "Switch Camera",
+    "flashOn": "Flash On",
+    "flashOff": "Flash Off",
+    "scanQR": "Scan QR Code",
+    "scanBar": "Scan Barcode"
+  },
+  "assetDetail": {
+    "title": "Asset Detail",
+    "basicInfo": "Basic Info",
+    "usageInfo": "Usage Info",
+    "maintenanceInfo": "Maintenance Info",
+    "operations": "Operations",
+    "scanRecord": "Scan Record",
+    "history": "History"
+  },
+  "actions": {
+    "pickup": "Pick Up",
+    "return": "Return",
+    "transfer": "Transfer",
+    "inventory": "Inventory",
+    "maintenance": "Report Issue",
+    "scanQR": "Scan QR"
+  },
+  "messages": {
+    "scanSuccess": "Scan successful",
+    "scanFailed": "Scan failed",
+    "assetNotFound": "Asset not found",
+    "operationSuccess": "Operation successful",
+    "operationFailed": "Operation failed"
+  },
+  "unifiedScan": {
+    "title": "Scan",
+    "recentScans": "Recent Scans",
+    "result": {
+      "success": "Success",
+      "error": "Error"
+    },
+    "manualInputButton": "Enter Asset Code Manually",
+    "manualInputTitle": "Manual Input",
+    "manualInputPlaceholder": "Enter asset code or QR content",
+    "preview": {
+      "assetCode": "Asset Code",
+      "assetCategory": "Category",
+      "assetStatus": "Status",
+      "assetLocation": "Location",
+      "assetCustodian": "Custodian"
+    },
+    "moreActions": {
+      "history": "View Scan History",
+      "camera": "Switch Camera",
+      "torch": "Toggle Torch"
+    },
+    "messages": {
+      "clearHistoryTitle": "Clear History",
+      "clearHistoryConfirm": "Are you sure you want to clear scan history?",
+      "historyCleared": "History cleared",
+      "historyOpened": "Viewing scan history"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{count} min ago",
+      "hoursAgo": "{count} hr ago",
+      "daysAgo": "{count} day(s) ago"
+    }
+  }
+}

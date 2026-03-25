@@ -1,0 +1,84 @@
+{
+  "header": {
+    "title": "Notifications"
+  },
+  "center": {
+    "title": "Notification Center",
+    "subtitle": "Track message delivery and jump to related business records."
+  },
+  "preferences": {
+    "title": "Notification Preferences",
+    "subtitle": "Manage personal channels and admin-level template/channel settings.",
+    "tabs": {
+      "my": "My Preferences",
+      "channels": "Channels",
+      "templates": "Templates"
+    },
+    "fields": {
+      "enableInbox": "Enable Inbox",
+      "enableEmail": "Enable Email",
+      "enableSms": "Enable SMS",
+      "enableWework": "Enable WeWork",
+      "enableDingtalk": "Enable DingTalk",
+      "quietHoursEnabled": "Quiet Hours",
+      "quietHoursStart": "Quiet Start",
+      "quietHoursEnd": "Quiet End",
+      "emailAddress": "Email Override",
+      "phoneNumber": "Phone Override"
+    },
+    "placeholders": {
+      "time": "Select time",
+      "email": "name@company.com",
+      "phone": "+1 555 0100"
+    }
+  },
+  "summary": {
+    "total": "Total",
+    "unread": "Unread",
+    "urgent": "Urgent"
+  },
+  "filters": {
+    "all": "All",
+    "unread": "Unread"
+  },
+  "columns": {
+    "title": "Title",
+    "type": "Type",
+    "priority": "Priority",
+    "createdAt": "Created At",
+    "status": "Status",
+    "channel": "Channel",
+    "channelName": "Channel Name",
+    "enabled": "Enabled",
+    "templateCode": "Template Code",
+    "templateName": "Template Name",
+    "language": "Language",
+    "version": "Version"
+  },
+  "status": {
+    "read": "Read",
+    "unread": "Unread"
+  },
+  "actions": {
+    "viewAll": "View All",
+    "markRead": "Mark Read",
+    "markAllRead": "Mark All Read",
+    "open": "Open",
+    "preferences": "Preferences",
+    "backToCenter": "Back to Center"
+  },
+  "messages": {
+    "empty": "No notifications",
+    "markAllReadSuccess": "All notifications were marked as read.",
+    "preferenceSaved": "Preferences saved.",
+    "channelUpdated": "Channel status updated."
+  },
+  "fallback": {
+    "untitled": "Untitled Notification"
+  },
+  "bell": {
+    "tooltip": "Notifications",
+    "noMore": "No more notifications",
+    "viewAll": "View All Notifications"
+  }
+}

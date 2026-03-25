@@ -1,0 +1,392 @@
+"""
+User and authentication models with multi-organization support.
+"""
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+from apps.common.models import BaseModel
+
+
+class UserOrganization(models.Model):
+    """
+    Through model for User-Organization many-to-many relationship.
+
+    Tracks user membership in organizations with role information.
+    """
+
+    # Role choices
+    ROLE_CHOICES = [
+        ('admin', 'Administrator'),  # Full access to organization
+        ('member', 'Member'),        # Standard access
+        ('auditor', 'Auditor'),      # Read-only access
+    ]
+
+    # === Fields ===
+    user = models.ForeignKey(
+        'User',
+        on_delete=models.CASCADE,
+        related_name='user_orgs',
+        db_comment='User reference'
+    )
+    organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.CASCADE,
+        related_name='org_users',
+        db_comment='Organization reference'
+    )
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='member',
+        db_comment='User role in this organization'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        db_comment='Is this membership active'
+    )
+    is_primary = models.BooleanField(
+        default=False,
+        db_comment='Is this the user primary organization'
+    )
+    joined_at = models.DateTimeField(
+        auto_now_add=True,
+        db_comment='When user joined the organization'
+    )
+    invited_by = models.ForeignKey(
+        'User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='invited_users',
+        db_comment='User who sent the invitation'
+    )
+
+    class Meta:
+        db_table = 'user_organizations'
+        unique_together = [['user', 'organization']]
+        verbose_name = 'User Organization'
+        verbose_name_plural = 'User Organizations'
+        indexes = [
+            models.Index(fields=['user', 'is_active']),
+            models.Index(fields=['organization', 'is_active']),
+            models.Index(fields=['is_primary']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} @ {self.organization.name} ({self.role})"
+
+    def save(self, *args, **kwargs):
+        """
+        Override save to enforce business rules.
+
+        - Ensure only one primary organization per user
+        """
+        if self.is_primary:
+            # Set all other user_orgs for this user to is_primary=False
+            UserOrganization.objects.filter(
+                user=self.user
+            ).exclude(
+                pk=self.pk
+            ).update(is_primary=False)
+
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        """Validate constraints."""
+        from django.core.exceptions import ValidationError
+
+        # Check if user already has this organization
+        if UserOrganization.objects.filter(
+            user=self.user,
+            organization=self.organization
+        ).exclude(pk=self.pk).exists():
+            raise ValidationError({
+                'organization': 'User already has this organization.'
+            })
+
+
+class User(AbstractUser, BaseModel):
+    """
+    Custom User model extending Django's AbstractUser.
+
+    Adds multi-organization support with ability to belong to multiple
+    organizations and switch between them.
+    """
+
+    # === Current Organization ===
+    # The organization the user is currently logged in as
+    current_organization = models.ForeignKey(
+        'organizations.Organization',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='current_users',
+        db_comment='User current selected organization'
+    )
+
+    # === i18n Preferences ===
+    preferred_language = models.CharField(
+        max_length=10,
+        default='zh-CN',
+        db_comment='User preferred language code (e.g., zh-CN, en-US)'
+    )
+
+    # === SSO Integration Fields ===
+    # WeChat Work (企业微信)
+    wework_userid = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        unique=True,
+        db_comment='WeChat Work User ID',
+        db_index=True
+    )
+    wework_unionid = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        unique=True,
+        db_comment='WeChat Work Union ID'
+    )
+
+    # DingTalk (钉钉)
+    dingtalk_userid = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        unique=True,
+        db_comment='DingTalk User ID',
+        db_index=True
+    )
+    dingtalk_unionid = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        unique=True,
+        db_comment='DingTalk Union ID'
+    )
+
+    # Feishu (飞书)
+    feishu_userid = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        unique=True,
+        db_comment='Feishu User ID',
+        db_index=True
+    )
+    feishu_unionid = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        unique=True,
+        db_comment='Feishu Union ID'
+    )
+
+    class Meta:
+        db_table = 'users'
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+        indexes = [
+            models.Index(fields=['wework_userid']),
+            models.Index(fields=['dingtalk_userid']),
+            models.Index(fields=['feishu_userid']),
+        ]
+
+    def __str__(self):
+        return f"{self.username} ({self.get_full_name() or 'No Name'})"
+
+    def get_accessible_organizations(self):
+        """
+        Get all organizations this user has access to.
+
+        Returns:
+            QuerySet: Organizations where user has active membership
+        """
+        if not self.pk:
+            from apps.organizations.models import Organization
+            return Organization.objects.none()
+
+        org_ids = self.user_orgs.filter(
+            is_active=True
+        ).values_list('organization_id', flat=True)
+        from apps.organizations.models import Organization
+        return Organization.objects.filter(
+            id__in=org_ids,
+            is_deleted=False
+        )
+
+    def get_org_role(self, org_id):
+        """
+        Get the user's role in a specific organization.
+
+        Args:
+            org_id: UUID of the organization
+
+        Returns:
+            str: Role name (admin, member, auditor) or None
+        """
+        if not self.pk:
+            return None
+        user_org = self.user_orgs.filter(
+            organization_id=org_id,
+            is_active=True
+        ).first()
+        return user_org.role if user_org else None
+
+    def switch_organization(self, org_id):
+        """
+        Switch the user's current organization.
+
+        Args:
+            org_id: UUID of the organization to switch to
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        accessible_ids = self.get_accessible_organizations().values_list(
+            'id', flat=True
+        )
+        if str(org_id) not in [str(oid) for oid in accessible_ids]:
+            return False
+
+        self.current_organization_id = org_id
+        self.save(update_fields=['current_organization'])
+
+        # Update is_primary on UserOrganization
+        self.user_orgs.filter(organization_id=org_id).update(is_primary=True)
+        self.user_orgs.exclude(organization_id=org_id).update(is_primary=False)
+
+        return True
+
+    def ensure_default_organization(self):
+        """
+        Ensure the user has a valid default organization.
+
+        Rules:
+        - Reuse the current organization membership when it is still active.
+        - Otherwise reuse the active primary organization.
+        - Otherwise promote the earliest active organization membership.
+        - Otherwise, if organization mode is enabled but the user only has a
+          legacy default organization on `current_organization` or
+          `organization`, materialize that membership as the default.
+        - For superusers without any memberships, auto-bind the first active
+          organization as the default admin organization.
+        """
+        if not self.pk:
+            return None
+
+        selected_user_org = None
+        active_memberships = self.user_orgs.filter(is_active=True)
+
+        if self.current_organization_id:
+            selected_user_org = active_memberships.filter(
+                organization_id=self.current_organization_id,
+            ).select_related('organization').first()
+
+        if not selected_user_org:
+            selected_user_org = active_memberships.filter(
+                is_primary=True,
+            ).select_related('organization').first()
+
+        if not selected_user_org:
+            selected_user_org = active_memberships.select_related(
+                'organization'
+            ).order_by('joined_at', 'id').first()
+
+        if not selected_user_org:
+            fallback_org = None
+            if (
+                self.current_organization_id
+                and self.current_organization
+                and self.current_organization.is_active
+                and not self.current_organization.is_deleted
+            ):
+                fallback_org = self.current_organization
+            elif (
+                self.organization_id
+                and self.organization
+                and self.organization.is_active
+                and not self.organization.is_deleted
+            ):
+                fallback_org = self.organization
+
+            if fallback_org:
+                selected_user_org, _ = UserOrganization.objects.get_or_create(
+                    user=self,
+                    organization=fallback_org,
+                    defaults={
+                        'role': 'admin' if self.is_superuser else 'member',
+                        'is_active': True,
+                        'is_primary': True,
+                    }
+                )
+
+                updates = []
+                if not selected_user_org.is_active:
+                    selected_user_org.is_active = True
+                    updates.append('is_active')
+                if self.is_superuser and selected_user_org.role != 'admin':
+                    selected_user_org.role = 'admin'
+                    updates.append('role')
+                if not selected_user_org.is_primary:
+                    selected_user_org.is_primary = True
+                    updates.append('is_primary')
+
+                if updates:
+                    selected_user_org.save(update_fields=updates)
+
+        if not selected_user_org and self.is_superuser:
+            from apps.organizations.models import Organization
+
+            fallback_org = Organization.objects.filter(
+                is_deleted=False,
+                is_active=True
+            ).order_by('created_at', 'id').first()
+
+            if fallback_org:
+                selected_user_org, _ = UserOrganization.objects.get_or_create(
+                    user=self,
+                    organization=fallback_org,
+                    defaults={
+                        'role': 'admin',
+                        'is_active': True,
+                        'is_primary': True,
+                    }
+                )
+
+                updates = []
+                if not selected_user_org.is_active:
+                    selected_user_org.is_active = True
+                    updates.append('is_active')
+                if selected_user_org.role != 'admin':
+                    selected_user_org.role = 'admin'
+                    updates.append('role')
+                if not selected_user_org.is_primary:
+                    selected_user_org.is_primary = True
+                    updates.append('is_primary')
+
+                if updates:
+                    selected_user_org.save(update_fields=updates)
+
+        if not selected_user_org:
+            return None
+
+        if not selected_user_org.is_primary:
+            selected_user_org.is_primary = True
+            selected_user_org.save(update_fields=['is_primary'])
+
+        selected_org = selected_user_org.organization
+        if self.current_organization_id != selected_org.id:
+            self.current_organization = selected_org
+            self.save(update_fields=['current_organization'])
+
+        return selected_org
+
+    def get_primary_organization(self):
+        """
+        Get the user's primary (default) organization.
+
+        Returns:
+            Organization: The primary organization or None
+        """
+        return self.ensure_default_organization()

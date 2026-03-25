@@ -1,0 +1,686 @@
+<template>
+  <div
+    class="main-layout"
+    :class="{ 'sidebar-collapsed': isCollapsed }"
+  >
+    <el-container>
+      <!-- Sidebar -->
+      <el-aside
+        v-if="!isMobile"
+        :width="isCollapsed ? '64px' : '220px'"
+        class="sidebar"
+      >
+        <div class="sidebar-header">
+          <h1 class="logo">
+            <img
+              v-if="brandingLogoUrl"
+              :src="brandingLogoUrl"
+              :alt="brandName"
+              class="logo-image"
+            >
+            <span
+              v-else
+              class="logo-icon"
+            >{{ brandIconText }}</span>
+            <transition name="fade">
+              <span
+                v-if="!isCollapsed"
+                class="logo-text"
+              >{{ brandName }}</span>
+            </transition>
+          </h1>
+        </div>
+
+        <div
+          v-if="!isCollapsed"
+          class="sidebar-search"
+        >
+          <el-input
+            v-model="menuSearchQuery"
+            :placeholder="$t('common.actions.search')"
+            prefix-icon="Search"
+            clearable
+            size="small"
+          />
+        </div>
+
+        <el-scrollbar class="sidebar-menu-scroll">
+          <el-menu
+            :default-active="activeMenu"
+            router
+            :collapse="isCollapsed"
+            :collapse-transition="true"
+            class="sidebar-menu"
+            background-color="transparent"
+            text-color="rgba(255,255,255,0.7)"
+            active-text-color="#ffffff"
+          >
+            <el-menu-item
+              index="/dashboard"
+              class="sidebar-menu-item"
+            >
+              <el-icon><Odometer /></el-icon>
+              <template #title>
+                {{ $t('menu.menu.dashboard') }}
+              </template>
+            </el-menu-item>
+
+            <template
+              v-for="(group, groupIdx) in filteredMenuGroups"
+              :key="getMenuGroupIdentity(group, groupIdx)"
+            >
+              <!-- Multi-item group to sub-menu -->
+              <el-sub-menu
+                v-if="group.items.length > 1"
+                :index="getMenuGroupIdentity(group, groupIdx)"
+                class="sidebar-sub-menu"
+              >
+                <template #title>
+                  <el-icon v-if="group.icon">
+                    <component :is="resolveIcon(group.icon)" />
+                  </el-icon>
+                  <span>{{ getGroupLabel(group) }}</span>
+                </template>
+                <el-menu-item
+                  v-for="item in group.items"
+                  :key="item.code"
+                  :index="item.url"
+                  @mouseenter="handleMenuItemPrefetch(item.url)"
+                  @focus="handleMenuItemPrefetch(item.url)"
+                >
+                  <el-icon v-if="item.icon">
+                    <component :is="resolveIcon(item.icon)" />
+                  </el-icon>
+                  <template #title>
+                    {{ getItemLabel(item) }}
+                  </template>
+                </el-menu-item>
+              </el-sub-menu>
+
+              <!-- Single-item group to direct menu item -->
+              <el-menu-item
+                v-else-if="group.items.length === 1"
+                :key="group.items[0].code"
+                :index="group.items[0].url"
+                class="sidebar-menu-item"
+                @mouseenter="handleMenuItemPrefetch(group.items[0].url)"
+                @focus="handleMenuItemPrefetch(group.items[0].url)"
+              >
+                <el-icon v-if="group.items[0].icon">
+                  <component :is="resolveIcon(group.items[0].icon)" />
+                </el-icon>
+                <template #title>
+                  {{ getItemLabel(group.items[0]) }}
+                </template>
+              </el-menu-item>
+            </template>
+          </el-menu>
+        </el-scrollbar>
+
+        <!-- Collapse toggle -->
+        <div
+          class="sidebar-footer"
+          @click="toggleCollapse"
+        >
+          <el-icon :size="18">
+            <Fold v-if="!isCollapsed" />
+            <Expand v-else />
+          </el-icon>
+          <transition name="fade">
+            <span
+              v-if="!isCollapsed"
+              class="collapse-label"
+            >{{ $t('common.actions.collapse') }}</span>
+          </transition>
+        </div>
+      </el-aside>
+
+      <!-- Mobile Drawer -->
+      <el-drawer
+        v-model="drawerVisible"
+        v-focus-trap.autofocus="drawerVisible"
+        direction="ltr"
+        size="240px"
+        :with-header="false"
+        class="mobile-drawer"
+      >
+        <div class="drawer-menu-container">
+          <div class="drawer-logo">
+            <img
+              v-if="brandingLogoUrl"
+              :src="brandingLogoUrl"
+              :alt="brandName"
+              class="drawer-logo-image"
+            >
+            <span
+              v-else
+              class="logo-icon"
+            >{{ brandIconText }}</span>
+            {{ brandName }}
+          </div>
+          <el-menu
+            :default-active="activeMenu"
+            router
+            class="mobile-menu"
+            @select="drawerVisible = false"
+          >
+            <el-menu-item index="/dashboard">
+              <el-icon><Odometer /></el-icon>
+              <span>{{ $t('menu.menu.dashboard') }}</span>
+            </el-menu-item>
+            <template
+              v-for="(group, groupIdx) in filteredMenuGroups"
+              :key="getMenuGroupIdentity(group, groupIdx)"
+            >
+              <el-sub-menu
+                v-if="group.items.length > 1"
+                :index="getMenuGroupIdentity(group, groupIdx)"
+              >
+                <template #title>
+                  {{ getGroupLabel(group) }}
+                </template>
+                <el-menu-item
+                  v-for="item in group.items"
+                  :key="item.code"
+                  :index="item.url"
+                  @mouseenter="handleMenuItemPrefetch(item.url)"
+                  @focus="handleMenuItemPrefetch(item.url)"
+                >
+                  {{ getItemLabel(item) }}
+                </el-menu-item>
+              </el-sub-menu>
+              <el-menu-item
+                v-else-if="group.items.length === 1"
+                :index="group.items[0].url"
+                @mouseenter="handleMenuItemPrefetch(group.items[0].url)"
+                @focus="handleMenuItemPrefetch(group.items[0].url)"
+              >
+                {{ getItemLabel(group.items[0]) }}
+              </el-menu-item>
+            </template>
+          </el-menu>
+        </div>
+      </el-drawer>
+
+      <!-- Main content column -->
+      <el-container class="main-container">
+        <!-- Top header bar -->
+        <el-header
+          class="top-header"
+          height="56px"
+        >
+          <div class="header-left">
+            <el-button
+              v-if="isMobile"
+              :icon="Menu"
+              class="mobile-menu-btn"
+              text
+              @click="drawerVisible = true"
+            />
+            <!-- Breadcrumb -->
+            <el-breadcrumb separator="/">
+              <el-breadcrumb-item :to="{ path: '/dashboard' }">
+                {{ $t('menu.menu.dashboard') }}
+              </el-breadcrumb-item>
+              <el-breadcrumb-item
+                v-for="crumb in breadcrumbs"
+                :key="crumb.path"
+                :to="crumb.to"
+              >
+                {{ crumb.label }}
+              </el-breadcrumb-item>
+            </el-breadcrumb>
+          </div>
+
+          <div class="header-right">
+            <LocaleSwitcher />
+            <NotificationBell />
+          </div>
+        </el-header>
+
+        <!-- Page content -->
+        <el-main
+          class="page-main"
+          :class="{ 'page-main--designer': route.name === 'PageLayoutDesigner' }"
+        >
+          <router-view v-slot="{ Component }">
+            <transition
+              name="page-fade"
+              mode="out-in"
+            >
+              <component :is="Component" />
+            </transition>
+          </router-view>
+        </el-main>
+      </el-container>
+    </el-container>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { Menu, Fold, Expand, Odometer } from '@element-plus/icons-vue'
+import NotificationBell from '@/components/layout/NotificationBell.vue'
+import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
+import { resolveObjectDisplayName } from '@/utils/objectDisplay'
+import { useMenuStore } from '@/stores/menu'
+import { useFeatureFlagStore } from '@/stores/featureFlag'
+import { useBrandingStore } from '@/stores/branding'
+import { prefetchRouteResources, scheduleIdleRoutePrefetch } from '@/router/prefetch'
+import * as ElementPlusIcons from '@element-plus/icons-vue'
+
+const route = useRoute()
+const { t, te } = useI18n()
+const activeMenu = computed(() => route.path)
+const drawerVisible = ref(false)
+const isMobile = ref(false)
+const isCollapsed = ref(false)
+let cancelIdlePrefetch: (() => void) | null = null
+
+// ---------------------------------------------------------------------------
+// Menu Store (replaces 170+ lines of inline menu logic)
+// ---------------------------------------------------------------------------
+const menuStore = useMenuStore()
+const featureFlagStore = useFeatureFlagStore()
+const brandingStore = useBrandingStore()
+const brandName = computed(() => brandingStore.brandName)
+const brandIconText = computed(() => brandingStore.brandIconText)
+const brandingLogoUrl = computed(() => brandingStore.sidebarLogoUrl)
+
+// Bind template refs directly to store
+const menuSearchQuery = computed({
+  get: () => menuStore.searchQuery,
+  set: (val: string) => { menuStore.searchQuery = val },
+})
+const filteredMenuGroups = computed(() => menuStore.filteredMenuGroups)
+const getGroupLabel = menuStore.getGroupLabel
+const getItemLabel = menuStore.getItemLabel
+const getMenuGroupIdentity = menuStore.getMenuGroupIdentity
+
+// ============================================================================
+// Auto-collapse sidebar on designer routes
+// ============================================================================
+watch(() => route.meta?.hideMenu, (hideMenu) => {
+  if (hideMenu && !isMobile.value) {
+    isCollapsed.value = true
+  }
+}, { immediate: true })
+
+const toggleCollapse = () => {
+  isCollapsed.value = !isCollapsed.value
+}
+
+const handleMenuItemPrefetch = (path: string) => {
+  prefetchRouteResources(path)
+}
+
+watch(
+  () => route.fullPath,
+  (path) => {
+    cancelIdlePrefetch?.()
+    cancelIdlePrefetch = scheduleIdleRoutePrefetch(path)
+  },
+  { immediate: true }
+)
+
+// ============================================================================
+// Breadcrumb generation
+// ============================================================================
+const breadcrumbs = computed(() => {
+  const crumbs: { label: string; path: string; to?: { path: string } }[] = []
+  const path = route.path
+
+  // Dynamic object pages: /objects/:code/...
+  if (path.startsWith('/objects/')) {
+    const objectCode = route.params.code as string
+    if (objectCode) {
+      const objectLabel = resolveObjectDisplayName(
+        objectCode, objectCode,
+        t as (key: string) => string, te
+      ) || objectCode
+
+      // List page
+      crumbs.push({
+        label: objectLabel,
+        path: `/objects/${objectCode}`,
+        to: { path: `/objects/${objectCode}` }
+      })
+
+      // Detail or Edit
+      const id = route.params.id as string
+      if (id) {
+        if (path.endsWith('/edit')) {
+          crumbs.push({ label: t('common.actions.edit'), path })
+        } else {
+          crumbs.push({ label: t('common.actions.detail'), path })
+        }
+      } else if (path.endsWith('/create')) {
+        crumbs.push({ label: t('common.actions.create'), path })
+      }
+    }
+  } else if (route.meta?.title) {
+    // Static routes with meta.title
+    const titleKey = route.meta.title as string
+    const label = te(titleKey) ? t(titleKey) : titleKey
+    crumbs.push({ label, path })
+  }
+
+  return crumbs
+})
+
+// ============================================================================
+// Icon resolution
+// ============================================================================
+const iconComponents: Record<string, unknown> = ElementPlusIcons
+
+const resolveIcon = (iconName: string) => {
+  return iconComponents[iconName] || null
+}
+
+// ============================================================================
+// Responsive
+// ============================================================================
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+  brandingStore.initialize(true)
+  menuStore.fetchMenu()
+  featureFlagStore.loadFlags()
+})
+
+onUnmounted(() => {
+  cancelIdlePrefetch?.()
+  window.removeEventListener('resize', checkMobile)
+})
+</script>
+
+<style scoped lang="scss">
+@use '@/styles/variables.scss' as *;
+/* ====================================================================
+   Layout Shell
+   ==================================================================== */
+.main-layout {
+  min-height: 100vh;
+  --sidebar-bg: var(--brand-sidebar-bg, linear-gradient(180deg, #1e293b 0%, #0f172a 100%));
+  --sidebar-width: 220px;
+  --sidebar-collapsed-width: 64px;
+  --header-height: 56px;
+}
+
+/* ====================================================================
+   Sidebar
+   ==================================================================== */
+.sidebar {
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  position: relative;
+  z-index: 10;
+}
+
+.sidebar-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.logo {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.logo-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.logo-image {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  background: var(--brand-gradient-primary, linear-gradient(135deg, #60a5fa, #a78bfa));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 1px;
+}
+
+.sidebar-search {
+  padding: 8px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sidebar-search :deep(.el-input__wrapper) {
+  background-color: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+  border-radius: 6px;
+}
+.sidebar-search :deep(.el-input__inner) {
+  color: rgba(255, 255, 255, 0.9);
+}
+.sidebar-search :deep(.el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.sidebar-menu-scroll {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar menu overrides */
+.sidebar-menu {
+  border-right: none !important;
+  padding: 8px 0;
+}
+
+.sidebar-menu :deep(.el-menu-item),
+.sidebar-menu :deep(.el-sub-menu__title) {
+  height: 44px;
+  line-height: 44px;
+  margin: 2px 8px;
+  border-radius: 8px;
+  padding-left: 20px !important;
+}
+
+.sidebar-menu :deep(.el-menu-item:hover),
+.sidebar-menu :deep(.el-sub-menu__title:hover) {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.sidebar-menu :deep(.el-menu-item.is-active) {
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.25), rgba(167, 139, 250, 0.15)) !important;
+  color: #ffffff !important;
+  font-weight: 500;
+}
+
+.sidebar-menu :deep(.el-sub-menu .el-menu-item) {
+  padding-left: 52px !important;
+  height: 40px;
+  line-height: 40px;
+  font-size: 13px;
+}
+
+/* Collapsed sidebar */
+.sidebar-collapsed .sidebar-menu :deep(.el-menu-item),
+.sidebar-collapsed .sidebar-menu :deep(.el-sub-menu__title) {
+  margin: 2px 6px;
+  padding-left: 0 !important;
+  justify-content: center;
+}
+
+.sidebar-footer {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-footer:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.collapse-label {
+  font-size: 13px;
+}
+
+/* ====================================================================
+   Top Header Bar
+   ==================================================================== */
+.top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: $bg-card;
+  border-bottom: 1px solid $border-light;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-menu-btn {
+  font-size: 20px;
+}
+
+/* ====================================================================
+   Main Content
+   ==================================================================== */
+.main-container {
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100vh;
+  min-width: 0;
+}
+
+.page-main {
+  background: $bg-body;
+  padding: 20px;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+.page-main--designer {
+  padding: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.page-main--designer :deep(.page-layout-designer) {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ====================================================================
+   Mobile Drawer
+   ==================================================================== */
+.drawer-menu-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-logo {
+  padding: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.drawer-logo-image {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.drawer-logo .logo-icon {
+  font-size: 22px;
+}
+
+.mobile-menu {
+  flex: 1;
+  border-right: none !important;
+}
+
+/* ====================================================================
+   Transitions
+   ==================================================================== */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.page-fade-enter-active,
+.page-fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.page-fade-enter-from,
+.page-fade-leave-to {
+  opacity: 0;
+}
+
+/* ====================================================================
+   Responsive
+   ==================================================================== */
+@media (max-width: 768px) {
+  .top-header {
+    padding: 0 12px;
+  }
+  .page-main {
+    padding: 12px;
+  }
+}
+</style>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Asset Metadata</title>
+</head>
+<body>
+    <h1>Asset Metadata Test</h1>
+    <div id="result"></div>
+
+    <script>
+        // Try both possible token keys
+        const token = localStorage.getItem('access_token') || localStorage.getItem('gzeams_access_token');
+        const tokenKey = localStorage.getItem('access_token') ? 'access_token' : (localStorage.getItem('gzeams_access_token') ? 'gzeams_access_token' : 'none');
+
+        if (!token) {
+            document.getElementById('result').innerHTML = '<p style="color:red">No token found. Please login first.</p>';
+        } else {
+            fetch('http://localhost:8000/api/system/objects/Asset/metadata/', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                const result = document.getElementById('result');
+                const fields = data.data?.fields || [];
+
+                let html = '<p>Token key: ' + tokenKey + '</p>';
+                html += '<h2>Total Fields: ' + fields.length + '</h2>';
+
+                // Show first field structure to debug
+                if (fields.length > 0) {
+                    html += '<h3>First Field Structure (for debugging)</h3>';
+                    html += '<pre>' + JSON.stringify(fields[0], null, 2) + '</pre>';
+                }
+
+                // Special fields - check multiple possible type field names
+                const specialTypes = ['qr_code', 'image', 'file', 'barcode', 'location', 'percent', 'time', 'rich_text'];
+                const specialFields = fields.filter(f =>
+                    specialTypes.includes(f.field_type || f.fieldType || f.fieldtype || f.type)
+                );
+
+                html += '<h3>Special Type Fields (' + specialFields.length + ')</h3>';
+                html += '<ul>';
+                specialFields.forEach(f => {
+                    html += `<li><strong>${f.code || f.field_name || f.fieldName}</strong>: ${f.field_type || f.fieldType || f.fieldtype || f.type} (${f.name || f.display_name || f.displayName})</li>`;
+                });
+                html += '</ul>';
+
+                // All fields - show all keys for first 15
+                html += '<h3>All Fields (First 15) with all keys</h3>';
+                html += '<table border="1" style="border-collapse:collapse">';
+                html += '<tr><th>#</th><th>Code</th><th>All Keys</th></tr>';
+                fields.slice(0, 15).forEach((f, i) => {
+                    const code = f.code || f.field_name || f.fieldName || '?';
+                    const keys = Object.keys(f).join(', ');
+                    html += `<tr><td>${i+1}</td><td>${code}</td><td><small>${keys}</small></td></tr>`;
+                });
+                html += '</table>';
+
+                // Show field 30 (qr_code) structure
+                if (fields.length >= 30) {
+                    html += '<h3>Field 30 (qr_code) Full Structure</h3>';
+                    html += '<pre>' + JSON.stringify(fields[29], null, 2) + '</pre>';
+                }
+
+                result.innerHTML = html;
+                console.log('Full data:', data);
+            })
+            .catch(err => {
+                document.getElementById('result').innerHTML = '<p style="color:red">Error: ' + err.message + '</p>';
+                console.error(err);
+            });
+        }
+    </script>
+</body>
+</html>

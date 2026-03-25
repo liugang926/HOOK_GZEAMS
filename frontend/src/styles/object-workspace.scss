@@ -1,0 +1,278 @@
+@use '@/styles/variables.scss' as *;
+
+@mixin page-shell($accent: rgba(59, 130, 246, 0.08)) {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, $accent, transparent 24%),
+    linear-gradient(180deg, #f8fbff 0%, $bg-body 36%, #f7f9fc 100%);
+  padding: 24px;
+
+  &__shell {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 1520px;
+    margin: 0 auto;
+  }
+}
+
+@mixin hero {
+  padding: 28px 32px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.98)),
+    #ffffff;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.06);
+}
+
+@mixin hero-header {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@mixin hero-back {
+  align-self: flex-start;
+  padding: 0;
+  font-weight: 600;
+  color: $text-secondary;
+}
+
+@mixin hero-identity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+@mixin hero-copy {
+  min-width: 0;
+}
+
+@mixin eyebrow {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: $text-secondary;
+}
+
+@mixin hero-title {
+  margin: 0;
+  font-size: clamp(30px, 3vw, 44px);
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+  color: $text-main;
+}
+
+@mixin hero-description {
+  max-width: 880px;
+  margin: 12px 0 0;
+  font-size: 15px;
+  line-height: 1.8;
+  color: $text-regular;
+}
+
+@mixin chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+@mixin chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  font-weight: 700;
+  color: $text-secondary;
+}
+
+@mixin chip-primary {
+  border-color: rgba(59, 130, 246, 0.2);
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+}
+
+@mixin chip-muted {
+  background: rgba(148, 163, 184, 0.1);
+  color: $text-regular;
+}
+
+@mixin stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+@mixin stat-card {
+  padding: 18px 20px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+@mixin stat-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $text-secondary;
+}
+
+@mixin stat-value($font-size: 28px) {
+  display: block;
+  font-size: $font-size;
+  line-height: 1.1;
+  color: $text-main;
+  word-break: break-word;
+}
+
+@mixin workspace-panel {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.05);
+}
+
+@mixin workspace-panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: end;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+@mixin panel-kicker {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: $text-secondary;
+}
+
+@mixin panel-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: $text-main;
+}
+
+@mixin panel-text($max-width: 440px) {
+  max-width: $max-width;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: $text-secondary;
+  text-align: right;
+}
+
+@mixin aside-panel {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+}
+
+@mixin info-card {
+  padding: 18px 18px 20px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 20px;
+  background: #fff;
+}
+
+@mixin info-card-soft {
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(255, 255, 255, 0.98));
+}
+
+@mixin info-title {
+  margin: 0 0 16px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: $text-main;
+}
+
+@mixin info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+
+  &:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+}
+
+@mixin info-row-term {
+  margin: 0;
+  font-size: 13px;
+  color: $text-secondary;
+}
+
+@mixin info-row-value {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: $text-main;
+  text-align: right;
+  word-break: break-word;
+}
+
+@mixin info-tips {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 18px;
+  color: $text-regular;
+
+  li {
+    line-height: 1.7;
+  }
+}
+
+@mixin responsive-stack-shell {
+  padding: 16px;
+}
+
+@mixin responsive-hero {
+  padding: 22px 20px;
+
+  &__identity {
+    grid-template-columns: 1fr;
+  }
+
+  &__stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@mixin responsive-panel-header {
+  &__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  &__text {
+    max-width: none;
+    text-align: left;
+  }
+}

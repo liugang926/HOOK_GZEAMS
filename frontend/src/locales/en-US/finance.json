@@ -1,0 +1,79 @@
+{
+    "finance": {
+        "voucherList": "Vouchers",
+        "depreciationList": "Depreciation",
+        "columns": {
+            "voucherNo": "Voucher No",
+            "businessType": "Business Type",
+            "voucherDate": "Voucher Date",
+            "summary": "Summary",
+            "totalAmount": "Total Amount",
+            "status": "Status",
+            "assetCode": "Asset Code",
+            "assetName": "Asset Name",
+            "period": "Period",
+            "currentDepreciation": "Current Depreciation",
+            "accumulatedDepreciation": "Accumulated Depreciation",
+            "netValue": "Net Value",
+            "lineNo": "Line No",
+            "accountCode": "Account Code",
+            "accountName": "Account Name",
+            "debitAmount": "Debit Amount",
+            "creditAmount": "Credit Amount",
+            "description": "Description",
+            "requestMethod": "Method",
+            "httpStatus": "HTTP Status",
+            "taskId": "Task ID",
+            "integrationType": "Integration Type",
+            "errorMessage": "Error Message",
+            "durationMs": "Duration (ms)"
+        },
+        "status": {
+            "draft": "Draft",
+            "pending": "Pending",
+            "submitted": "Submitted",
+            "approved": "Approved",
+            "posted": "Posted",
+            "rejected": "Rejected"
+        },
+        "businessType": {
+            "assetPurchase": "Asset Purchase",
+            "depreciation": "Depreciation",
+            "assetDisposal": "Asset Disposal"
+        },
+        "actions": {
+            "createVoucher": "Create Voucher",
+            "batchPushToERP": "Push to ERP",
+            "batchPush": "Batch Push",
+            "detail": "Detail",
+            "post": "Post",
+            "retryPush": "Retry Push",
+            "calculateDepreciation": "Calculate Depreciation"
+        },
+        "messages": {
+            "confirmPost": "Confirm posting this voucher?",
+            "confirmRetryPush": "Confirm retrying voucher push?",
+            "noSyncTask": "No sync task available"
+        },
+        "panels": {
+            "entries": "Voucher Entries",
+            "syncStatus": "Sync Status",
+            "integrationLogs": "Integration Logs"
+        },
+        "depreciationDialog": {
+            "title": "Calculate Depreciation",
+            "period": "Period",
+            "periodPlaceholder": "Select month",
+            "calculating": "Calculating...",
+            "start": "Start Calculation",
+            "messages": {
+                "startFailed": "Failed to start calculation",
+                "completed": "Calculation completed",
+                "failed": "Calculation failed"
+            },
+            "validation": {
+                "periodRequired": "Please select period"
+            }
+        }
+    }
+}

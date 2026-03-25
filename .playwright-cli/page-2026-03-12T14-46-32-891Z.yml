@@ -1,0 +1,287 @@
+- generic [ref=e5]:
+  - complementary [ref=e6]:
+    - heading "G GZEAMS" [level=1] [ref=e8]:
+      - generic [ref=e9]: G
+      - generic [ref=e10]: GZEAMS
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic:
+          - search
+      - textbox "搜索" [ref=e15]
+    - menubar [ref=e19]:
+      - menuitem "工作台" [ref=e20] [cursor=pointer]:
+        - img [ref=e22]
+        - text: 工作台
+      - menuitem "资产主数据" [ref=e26]:
+        - generic [ref=e27] [cursor=pointer]:
+          - img [ref=e29]
+          - generic [ref=e31]: 资产主数据
+          - img [ref=e33]
+      - menuitem "资产业务" [ref=e35]:
+        - generic [ref=e36] [cursor=pointer]:
+          - img [ref=e38]
+          - generic [ref=e40]: 资产业务
+          - img [ref=e42]
+      - menuitem "资产生命周期" [ref=e44]:
+        - generic [ref=e45] [cursor=pointer]:
+          - img [ref=e47]
+          - generic [ref=e49]: 资产生命周期
+          - img [ref=e51]
+      - menuitem "耗材管理" [ref=e53]:
+        - generic [ref=e54] [cursor=pointer]:
+          - img [ref=e56]
+          - generic [ref=e60]: 耗材管理
+          - img [ref=e62]
+      - menuitem "盘点任务" [ref=e64] [cursor=pointer]: 盘点任务
+      - menuitem "财务管理" [ref=e66]:
+        - generic [ref=e67] [cursor=pointer]:
+          - img [ref=e69]
+          - generic [ref=e73]: 财务管理
+          - img [ref=e75]
+      - menuitem "部门" [ref=e77] [cursor=pointer]:
+        - img [ref=e79]
+        - text: 部门
+      - menuitem "工作流" [ref=e82]:
+        - generic [ref=e83] [cursor=pointer]:
+          - img [ref=e85]
+          - generic [ref=e88]: 工作流
+          - img [ref=e90]
+      - menuitem "系统管理" [ref=e92]:
+        - generic [ref=e93] [cursor=pointer]:
+          - img [ref=e95]
+          - generic [ref=e97]: 系统管理
+          - img [ref=e99]
+      - menuitem "报表中心" [ref=e101] [cursor=pointer]:
+        - img [ref=e103]
+        - text: 报表中心
+      - menuitem "其他" [ref=e105]:
+        - generic [ref=e106] [cursor=pointer]:
+          - img [ref=e108]
+          - generic [ref=e110]: 其他
+          - img [ref=e112]
+    - generic [ref=e114] [cursor=pointer]:
+      - img [ref=e116]
+      - generic [ref=e118]: 收起
+  - generic [ref=e119]:
+    - generic [ref=e120]:
+      - navigation "面包屑" [ref=e122]:
+        - generic [ref=e123]:
+          - link "工作台" [ref=e124]
+          - text: /
+        - generic [ref=e125]:
+          - link "资产领用" [ref=e126]
+          - text: /
+        - link "详情" [ref=e128]
+      - generic [ref=e129]:
+        - button "🌐 简体中文" [ref=e131] [cursor=pointer]:
+          - generic [ref=e132]: 🌐
+          - generic [ref=e133]: 简体中文
+          - img [ref=e135]
+        - button "通知" [ref=e139] [cursor=pointer]:
+          - img [ref=e141]
+    - main [ref=e145]:
+      - generic [ref=e147]:
+        - generic [ref=e148]:
+          - generic [ref=e149]:
+            - button "返回" [ref=e150] [cursor=pointer]:
+              - img [ref=e152]
+              - generic [ref=e154]: 返回
+            - generic [ref=e155]:
+              - generic [ref=e157]: AS
+              - generic [ref=e158]:
+                - paragraph [ref=e159]: AssetPickup
+                - heading "资产领用" [level=1] [ref=e160]
+                - paragraph [ref=e161]: 资产领用 的详情页已按当前对象布局生成，可用于查看审计信息、关联对象和状态流转。
+                - generic [ref=e162]:
+                  - generic [ref=e163]: 对象详情
+                  - generic [ref=e164]: AssetPickup
+                  - generic [ref=e165]: "#d0bcee17-45f9-456e-bf50-35b0d1e3655e"
+          - generic [ref=e166]:
+            - article [ref=e167]:
+              - generic [ref=e168]: 当前状态
+              - strong [ref=e169]: completed
+            - article [ref=e170]:
+              - generic [ref=e171]: 对象编码
+              - strong [ref=e172]: AssetPickup
+            - article [ref=e173]:
+              - generic [ref=e174]: 当前权限
+              - strong [ref=e175]: 可查看与编辑
+        - generic [ref=e176]:
+          - generic [ref=e177]:
+            - generic [ref=e178]:
+              - generic [ref=e179]:
+                - paragraph [ref=e180]: 对象详情
+                - heading "记录详情" [level=2] [ref=e181]
+              - paragraph [ref=e182]: 在这里查看字段详情、关联记录和业务状态。需要调整内容时，可直接使用详情页中的编辑能力。
+            - generic [ref=e185]:
+              - generic [ref=e186]:
+                - generic [ref=e188]:
+                  - generic [ref=e190]: AS
+                  - generic [ref=e191]:
+                    - generic [ref=e192]: 资产领用
+                    - heading "Title" [level=1] [ref=e193]
+                - generic [ref=e194]:
+                  - generic [ref=e196]: "创建人: admin"
+                  - generic [ref=e197]:
+                    - button "编辑" [ref=e198] [cursor=pointer]:
+                      - generic [ref=e199]: 编辑
+                    - button "删除" [ref=e200] [cursor=pointer]:
+                      - generic [ref=e201]: 删除
+              - generic [ref=e205]:
+                - tablist [ref=e209]:
+                  - tab "详情" [selected] [ref=e210]
+                  - tab "相关对象" [ref=e211]
+                  - tab "变更记录" [ref=e212]
+                - tabpanel "详情" [ref=e214]:
+                  - generic [ref=e215]:
+                    - generic [ref=e216]:
+                      - generic [ref=e220]: 使用信息
+                      - generic [ref=e225]:
+                        - generic [ref=e226]: department
+                        - generic [ref=e229]:
+                          - generic [ref=e230]: 技术部
+                          - generic [ref=e231]: TECH
+                    - generic [ref=e232]:
+                      - generic [ref=e236]: 状态信息
+                      - generic [ref=e241]:
+                        - generic [ref=e242]: status
+                        - generic [ref=e243]: completed
+                    - generic [ref=e244]:
+                      - generic [ref=e248]: 详细信息
+                      - generic [ref=e251]:
+                        - generic [ref=e253]:
+                          - generic [ref=e254]: pickup no
+                          - generic [ref=e255]: LY2025010015
+                        - generic [ref=e257]:
+                          - generic [ref=e258]: applicant
+                          - generic [ref=e262]: li_si
+                        - generic [ref=e264]:
+                          - generic [ref=e265]: pickup date
+                          - generic [ref=e266]: 2025-01-16
+                        - generic [ref=e268]:
+                          - generic [ref=e269]: pickup reason
+                          - generic [ref=e270]: "部门办公需要领用设备 #15"
+                        - generic [ref=e272]:
+                          - generic [ref=e273]: approved by
+                          - generic [ref=e277]: admin
+                        - generic [ref=e279]:
+                          - generic [ref=e280]: approved at
+                          - generic [ref=e281]: 2025-01-16 00:00:00
+                        - generic [ref=e283]:
+                          - generic [ref=e284]: approval comment
+                          - generic [ref=e285]: "-"
+                        - generic [ref=e287]:
+                          - generic [ref=e288]: completed at
+                          - generic [ref=e289]: 2025-01-17 00:00:00
+                    - generic [ref=e291]:
+                      - tablist [ref=e295]:
+                        - tab "领用明细" [selected] [ref=e296]
+                      - tabpanel "领用明细" [ref=e298]:
+                        - generic [ref=e299]:
+                          - generic [ref=e300]:
+                            - generic [ref=e301]:
+                              - img [ref=e304]
+                              - heading "领用明细" [level=3] [ref=e306]
+                              - generic [ref=e307]: (3)
+                            - button "刷新" [ref=e309] [cursor=pointer]:
+                              - img [ref=e311]
+                              - generic [ref=e313]: 刷新
+                          - generic [ref=e317]:
+                            - table [ref=e319]:
+                              - rowgroup [ref=e326]:
+                                - row "asset 按 asset 排序 quantity 按 quantity 排序 remark 按 remark 排序 snapshot original location 按 snapshot original location 排序 snapshot original custodian 按 snapshot original custodian 排序" [ref=e327]:
+                                  - columnheader "asset 按 asset 排序" [ref=e328] [cursor=pointer]:
+                                    - generic [ref=e329]:
+                                      - text: asset
+                                      - button "按 asset 排序" [ref=e330]
+                                  - columnheader "quantity 按 quantity 排序" [ref=e331] [cursor=pointer]:
+                                    - generic [ref=e332]:
+                                      - text: quantity
+                                      - button "按 quantity 排序" [ref=e333]
+                                  - columnheader "remark 按 remark 排序" [ref=e334] [cursor=pointer]:
+                                    - generic [ref=e335]:
+                                      - text: remark
+                                      - button "按 remark 排序" [ref=e336]
+                                  - columnheader "snapshot original location 按 snapshot original location 排序" [ref=e337] [cursor=pointer]:
+                                    - generic [ref=e338]:
+                                      - text: snapshot original location
+                                      - button "按 snapshot original location 排序" [ref=e339]
+                                  - columnheader "snapshot original custodian 按 snapshot original custodian 排序" [ref=e340] [cursor=pointer]:
+                                    - generic [ref=e341]:
+                                      - text: snapshot original custodian
+                                      - button "按 snapshot original custodian 排序" [ref=e342]
+                            - table [ref=e347]:
+                              - rowgroup [ref=e354]:
+                                - row "惠普 MateBook ZC2024040020 1 - - -" [ref=e355]:
+                                  - cell "惠普 MateBook ZC2024040020" [ref=e356]:
+                                    - generic [ref=e360]:
+                                      - generic [ref=e361]: 惠普 MateBook
+                                      - generic [ref=e362]: ZC2024040020
+                                  - cell "1" [ref=e363]:
+                                    - generic [ref=e365]: "1"
+                                  - cell "-" [ref=e366]:
+                                    - generic [ref=e368]: "-"
+                                  - cell "-" [ref=e369]:
+                                    - generic [ref=e371]: "-"
+                                  - cell "-" [ref=e372]:
+                                    - generic [ref=e374]: "-"
+                                - row "苹果 MacBook ZC2024090019 1 - - -" [ref=e375]:
+                                  - cell "苹果 MacBook ZC2024090019" [ref=e376]:
+                                    - generic [ref=e380]:
+                                      - generic [ref=e381]: 苹果 MacBook
+                                      - generic [ref=e382]: ZC2024090019
+                                  - cell "1" [ref=e383]:
+                                    - generic [ref=e385]: "1"
+                                  - cell "-" [ref=e386]:
+                                    - generic [ref=e388]: "-"
+                                  - cell "-" [ref=e389]:
+                                    - generic [ref=e391]: "-"
+                                  - cell "-" [ref=e392]:
+                                    - generic [ref=e394]: "-"
+                                - row "联想 MateBook ZC2024010018 1 - - -" [ref=e395]:
+                                  - cell "联想 MateBook ZC2024010018" [ref=e396]:
+                                    - generic [ref=e400]:
+                                      - generic [ref=e401]: 联想 MateBook
+                                      - generic [ref=e402]: ZC2024010018
+                                  - cell "1" [ref=e403]:
+                                    - generic [ref=e405]: "1"
+                                  - cell "-" [ref=e406]:
+                                    - generic [ref=e408]: "-"
+                                  - cell "-" [ref=e409]:
+                                    - generic [ref=e411]: "-"
+                                  - cell "-" [ref=e412]:
+                                    - generic [ref=e414]: "-"
+                    - generic [ref=e415]:
+                      - generic [ref=e416]: 系统信息
+                      - table [ref=e419]:
+                        - rowgroup [ref=e420]:
+                          - row "创建人 admin 创建时间 2026-03-06" [ref=e421]:
+                            - cell "创建人" [ref=e422]
+                            - cell "admin" [ref=e423]
+                            - cell "创建时间" [ref=e424]
+                            - cell "2026-03-06" [ref=e425]
+                          - row "最后更新人 - 最后更新时间 2026-03-06" [ref=e426]:
+                            - cell "最后更新人" [ref=e427]
+                            - cell "-" [ref=e428]
+                            - cell "最后更新时间" [ref=e429]
+                            - cell "2026-03-06" [ref=e430]
+          - complementary [ref=e431]:
+            - generic [ref=e432]:
+              - paragraph [ref=e433]: 对象摘要
+              - heading "资产领用" [level=3] [ref=e434]
+              - generic [ref=e435]:
+                - generic [ref=e436]:
+                  - term [ref=e437]: 对象编码
+                  - definition [ref=e438]: AssetPickup
+                - generic [ref=e439]:
+                  - term [ref=e440]: 记录编号
+                  - definition [ref=e441]: d0bcee17-45f9-456e-bf50-35b0d1e3655e
+                - generic [ref=e442]:
+                  - term [ref=e443]: 所属模块
+                  - definition [ref=e444]: AssetPickup
+            - generic [ref=e445]:
+              - paragraph [ref=e446]: 查看提示
+              - list [ref=e447]:
+                - listitem [ref=e448]: 如果详情页展示内容缺失，优先检查对象布局和字段详情可见性配置。
+                - listitem [ref=e449]: 关联记录支持直接跳转详情或编辑页，适合连续核对上下游业务数据。
+                - listitem [ref=e450]: 生命周期对象会在详情页额外展示流程步骤和扩展业务信息。

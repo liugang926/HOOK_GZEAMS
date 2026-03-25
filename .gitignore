@@ -1,0 +1,156 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+/.coverage
+/htmlcov/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary test/debug scripts (should be in proper test directories)
+/test_*.py
+/test_*.js
+/test_*.ts
+/test_*.spec.ts
+/test_*.bat
+/test_*.ps1
+/tmp_*
+/TEST_*
+
+# Docker
+docker-compose.override.yml
+node_modules
+nul
+
+# Celery runtime state
+celerybeat-schedule
+
+# ============================================================
+# Root-level temporary scripts & data (Sprint 0 cleanup)
+# ============================================================
+
+# Temp verification/check/fix scripts
+/verify_*.py
+/verify_*.js
+/verify_*.spec.ts
+/check_*.py
+/check_*.js
+/check_*.spec.ts
+/fix_*.py
+/inspect_*.py
+/run_browser_test.py
+/run_edge_test.py
+/run_playwright_test.py
+/run_puppeteer_test.js
+/run_selenium_test.py
+/create_test_data.py
+/create_summary_report.ps1
+/check_correct_endpoints.ps1
+/check_active_layout.ps1
+
+# Temp data/config dumps
+/cookies*.txt
+/token_response.json
+/login_response.json
+/test-*.json
+/metadata_*.json
+/metadata_endpoints_analysis.json
+/_tmp_*
+/git_log*.txt
+
+# Temp screenshots/images
+/*.png
+/business-object-list.png
+/login-*.png
+/login_page.png
+/tmp-*.png
+
+# Temp HTML pages
+/admin_page.html
+/dashboard.html
+
+# Temp spec files at root
+/images_field_simple.spec.ts
+/debug_layout_designer.spec.ts
+
+# Playwright/test artifacts at root
+/playwright-report/
+/test-results/
+/test-screenshots/
+/screenshots/
+/browser_test_env/
+
+# ============================================================
+# Backend temporary files
+# ============================================================
+/backend/create_demo_data*.py
+/backend/create_final_demo*.py
+/backend/create_more_demo.py
+/backend/create_remaining_*.py
+/backend/create_test_data.py
+/backend/seed_minimum_demo_data.py
+/backend/debug_*.py
+/backend/verify_*.py
+/backend/test_admin_inline.py
+/backend/check_err.txt
+/backend/consumables_error.txt
+/backend/err.txt
+/backend/migrate_err.txt
+/backend/test_output*.txt
+
+# ============================================================
+# Frontend temporary files
+# ============================================================
+/frontend/fix*.cjs
+/frontend/tmp_*
+/frontend/extract_*.py
+/frontend/refactor_*.py
+/frontend/remove_unused.py
+/frontend/replace_template.py
+/frontend/new_template.txt
+/frontend/build_error.txt
+/frontend/lint_output.txt
+/frontend/ts_errors*.txt
+/frontend/tsc_errors*.txt
+/frontend/tsc_output*.txt
+/frontend/typecheck_output.txt
+/frontend/test-results.txt
+/frontend/playwright-report/
+/frontend/test-results/
+.git.bak/

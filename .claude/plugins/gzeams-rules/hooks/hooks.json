@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "PreEdit": {
+      "python": {
+        "pattern": "\\.(py)$",
+        "command": "python",
+        "args": ["${CLAUDE_PLUGIN_ROOT}/services/check_chinese_comments.py", "${FILE}"],
+        "interact": true,
+        "description": "Check for Chinese comments in Python files"
+      },
+      "vue": {
+        "pattern": "\\.(vue|ts|js)$",
+        "command": "python",
+        "args": ["${CLAUDE_PLUGIN_ROOT}/services/check_chinese_comments.py", "${FILE}"],
+        "interact": true,
+        "description": "Check for Chinese comments in Vue/TS/JS files"
+      }
+    },
+    "PreCommit": {
+      "validate_base_models": {
+        "pattern": "backend/apps/.*\\.py$",
+        "command": "python",
+        "args": ["${CLAUDE_PLUGIN_ROOT}/services/validate_base_classes.py"],
+        "description": "Validate BaseModel inheritance in Python files"
+      }
+    },
+    "PreToolUse": {
+      "bash_validator": {
+        "tool": "Bash",
+        "command": "python",
+        "args": ["${CLAUDE_PLUGIN_ROOT}/services/validate_bash.py", "${COMMAND}"],
+        "description": "Validate bash commands before execution",
+        "interact": true
+      }
+    }
+  }
+}

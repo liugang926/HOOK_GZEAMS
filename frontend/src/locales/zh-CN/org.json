@@ -1,0 +1,30 @@
+{
+    "tree": {
+        "title": "组织架构",
+        "addRoot": "新增根节点",
+        "addChild": "新增子部门",
+        "searchPlaceholder": "搜索部门...",
+        "selectPrompt": "请从左侧选择一个部门",
+        "rootNode": "根节点"
+    },
+    "cols": {
+        "name": "部门名称",
+        "code": "部门编码",
+        "parent": "上级部门",
+        "description": "描述"
+    },
+    "dialog": {
+        "createTitle": "新增部门",
+        "editTitle": "编辑部门"
+    },
+    "members": {
+        "title": "部门成员",
+        "cols": {
+            "name": "姓名",
+            "username": "用户名",
+            "email": "邮箱",
+            "title": "职位",
+            "status": "状态"
+        }
+    }
+}

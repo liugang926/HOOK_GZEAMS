@@ -1,0 +1,9 @@
+{
+  "name": "gzeams-rules",
+  "description": "GZEAMS project coding standards and workflow automation",
+  "version": "1.0.0",
+  "author": "GZEAMS Team",
+  "commands": "./commands",
+  "agents": "./agents",
+  "hooks": "./hooks"
+}

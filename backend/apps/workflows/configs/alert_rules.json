@@ -1,0 +1,144 @@
+{
+  "alert_rules": {
+    "workflow_performance": {
+      "name": "Workflow Performance Thresholds",
+      "description": "Monitor API response times and error rates",
+      "metrics": {
+        "api_response_time": {
+          "type": "response_time",
+          "unit": "ms",
+          "warning_threshold": 300,
+          "critical_threshold": 500,
+          "time_window": "5m"
+        },
+        "error_rate": {
+          "type": "percentage",
+          "unit": "%",
+          "warning_threshold": 2,
+          "critical_threshold": 5,
+          "time_window": "10m"
+        }
+      },
+      "actions": {
+        "warning": ["log_alert", "notify_team"],
+        "critical": ["log_alert", "notify_team", "create_ticket"]
+      }
+    },
+    "cache_performance": {
+      "name": "Cache Performance Monitoring",
+      "description": "Monitor cache hit rates and memory usage",
+      "metrics": {
+        "cache_hit_rate": {
+          "type": "percentage",
+          "unit": "%",
+          "warning_threshold": 80,
+          "critical_threshold": 60,
+          "time_window": "5m"
+        },
+        "cache_memory_usage": {
+          "type": "memory",
+          "unit": "mb",
+          "warning_threshold": 512,
+          "critical_threshold": 1024,
+          "time_window": "10m"
+        }
+      },
+      "actions": {
+        "warning": ["log_alert", "monitor"],
+        "critical": ["log_alert", "notify_team", "scale_cache"]
+      }
+    },
+    "database_performance": {
+      "name": "Database Performance",
+      "description": "Monitor query performance and connection pool",
+      "metrics": {
+        "avg_query_time": {
+          "type": "response_time",
+          "unit": "ms",
+          "warning_threshold": 100,
+          "critical_threshold": 200,
+          "time_window": "5m"
+        },
+        "connection_pool_usage": {
+          "type": "percentage",
+          "unit": "%",
+          "warning_threshold": 80,
+          "critical_threshold": 95,
+          "time_window": "5m"
+        }
+      },
+      "actions": {
+        "warning": ["log_alert", "monitor"],
+        "critical": ["log_alert", "notify_team", "optimize_queries"]
+      }
+    },
+    "sla_compliance": {
+      "name": "SLA Compliance Monitoring",
+      "description": "Monitor workflow SLA compliance rates",
+      "metrics": {
+        "sla_compliance_rate": {
+          "type": "percentage",
+          "unit": "%",
+          "warning_threshold": 90,
+          "critical_threshold": 80,
+          "time_window": "15m"
+        },
+        "task_overdue_rate": {
+          "type": "percentage",
+          "unit": "%",
+          "warning_threshold": 10,
+          "critical_threshold": 20,
+          "time_window": "15m"
+        }
+      },
+      "actions": {
+        "warning": ["log_alert", "notify_team"],
+        "critical": ["log_alert", "notify_team", "create_incident"]
+      }
+    }
+  },
+  "notification_channels": {
+    "email": {
+      "enabled": true,
+      "recipients": ["devops@example.com", "support@example.com"],
+      "templates": {
+        "warning": "templates/email/alert_warning.html",
+        "critical": "templates/email/alert_critical.html"
+      }
+    },
+    "slack": {
+      "enabled": true,
+      "webhook_url": "${SLACK_WEBHOOK_URL}",
+      "channels": "#alerts",
+      "format": "rich"
+    },
+    "webhook": {
+      "enabled": true,
+      "url": "${WEBHOOK_ALERT_URL}",
+      "timeout": 5000,
+      "retry_attempts": 3
+    }
+  },
+  "escalation_policy": {
+    "levels": [
+      {
+        "name": "Level 1 - First Response",
+        "duration": "1h",
+        "recipients": ["devops@example.com"],
+        "escalate_after": "30m"
+      },
+      {
+        "name": "Level 2 - Engineer",
+        "duration": "4h", 
+        "recipients": ["engineering@example.com"],
+        "escalate_after": "2h"
+      },
+      {
+        "name": "Level 3 - Manager",
+        "duration": "8h",
+        "recipients": ["management@example.com"],
+        "escalate_after": "4h"
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "metric": "i18nDynamicCoverage",
+  "unit": "percent",
+  "source": "frontend/scripts/i18n-coverage-metrics.mjs",
+  "points": [
+    {
+      "date": "2026-03-03",
+      "timestamp": "2026-03-03T08:46:38.561Z",
+      "commit": "c85a2df",
+      "threshold": 95,
+      "filesScanned": 77,
+      "i18nRefs": 166,
+      "hardcodedTotal": 0,
+      "localizableTotal": 166,
+      "coverage": 100,
+      "meetsThreshold": true
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+    "subtitle": "GZEAMS Asset Management System",
+    "username": "Username",
+    "password": "Password",
+    "loginButton": "Login",
+    "forgotPassword": "Forgot password?",
+    "contactAdmin": "Contact administrator",
+    "success": "Login successful",
+    "failed": "Login failed",
+    "validation": {
+        "required": "Please enter username and password"
+    }
+}

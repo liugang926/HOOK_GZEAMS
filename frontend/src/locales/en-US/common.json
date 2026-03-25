@@ -1,0 +1,630 @@
+{
+  "locale": "en-US",
+  "TabConfig": "Tab Config",
+  "brand": {
+    "icon": "G",
+    "name": "GZEAMS"
+  },
+  "actions": {
+    "add": "Add",
+    "approve": "Approve",
+    "back": "Back",
+    "batchDelete": "Batch Delete",
+    "cancel": "Cancel",
+    "close": "Close",
+    "clear": "Clear",
+    "collapse": "Collapse",
+    "confirm": "Confirm",
+    "create": "Create",
+    "delete": "Delete",
+    "detail": "Detail",
+    "download": "Download",
+    "edit": "Edit",
+    "expand": "Expand",
+    "export": "Export",
+    "import": "Import",
+    "print": "Print",
+    "refresh": "Refresh",
+    "reject": "Reject",
+    "reset": "Reset",
+    "loadMore": "Load More",
+    "save": "Save",
+    "search": "Search",
+    "selectAll": "Select all",
+    "submit": "Submit",
+    "submitApprove": "Submit for Approval",
+    "columns": "Columns",
+    "test": "Test",
+    "view": "View"
+  },
+  "addChange": "Add Change",
+  "addRecord": "Add Record",
+  "all": "All",
+  "asset": "Asset",
+  "basicInfo": "Basic Info",
+  "change": "Change",
+  "changedBy": "Changed By",
+  "columns": {
+    "actions": "Actions",
+    "code": "Code",
+    "createdAt": "Created At",
+    "name": "Name",
+    "status": "Status"
+  },
+  "cost": "Cost",
+  "date": "Date",
+  "description": "Description",
+  "detailInfo": "Detail Info",
+  "detailPage": {
+    "attachments": "Attachments",
+    "deleteFailed": "Delete Failed",
+    "deleteSuccess": "Delete Success",
+    "images": "Images",
+    "loadFailed": "Load Failed",
+    "recordIdNotExists": "Record Id Not Exists",
+    "statusInfo": "Status Info",
+    "title": "Title",
+    "saveSuccess": "Saved successfully",
+    "saveFailed": "Save failed"
+  },
+  "dialog": {
+    "confirmDelete": "Confirm delete",
+    "confirmDeleteMessage": "Are you sure to delete selected records?",
+    "confirmTitle": "Confirm"
+  },
+  "filters": {
+    "all": "All"
+  },
+  "item": "Item",
+  "json": "JSON",
+  "labels": {
+    "advancedLookup": "Advanced Lookup",
+    "assetForSearch": "Asset For Search",
+    "auditInfo": "Audit Info",
+    "basic": "Basic",
+    "compact": "Compact",
+    "contact": "Contact",
+    "createdAt": "Created At",
+    "createdBy": "Created By",
+    "changeHistory": "Change History",
+    "custom": "Custom",
+    "description": "Description",
+    "details": "Details",
+    "display": "Display",
+    "full": "Full",
+    "operation": "Operation",
+    "record": "Record",
+    "lookupMatchIn": "Match In",
+    "recentRecords": "Recent Records",
+    "relatedObjects": "Related Objects",
+    "remark": "Remark",
+    "searchResults": "Search Results",
+    "simple": "Simple",
+    "standard": "Standard",
+    "status": "Status",
+    "system": "System",
+    "totalItems": "Total Items",
+    "updatedAt": "Updated At",
+    "updatedBy": "Updated By",
+    "validation": "Validation",
+    "advanced": "Advanced"
+  },
+  "hotkeys": {
+    "title": "Keyboard Shortcuts",
+    "lookup": {
+      "title": "Keyboard",
+      "navigateRows": "Move selection",
+      "confirm": "Confirm selected"
+    },
+    "subtable": {
+      "toggleHelp": "Toggle shortcut help panel",
+      "togglePin": "Pin/unpin shortcut help panel",
+      "pinned": "Pinned",
+      "nextCell": "Move to next cell",
+      "previousCell": "Move to previous cell",
+      "rowBoundary": "Jump to first/last cell in current row",
+      "verticalMove": "Move up/down in same column",
+      "pageJump": "Jump by one page in same column",
+      "addRowBelow": "Append a new row and focus first column",
+      "insertRowAbove": "Insert a new row above current row",
+      "deleteRow": "Delete current row and keep logical focus",
+      "duplicateBelow": "Duplicate current row below",
+      "duplicateAbove": "Duplicate current row above",
+      "requestSave": "Request parent form save"
+    }
+  },
+  "history": {
+    "title": "Change History",
+    "description": "A Salesforce-style field history view showing field, previous value, new value, actor, and change time.",
+    "labels": {
+      "recordLevel": "Record"
+    },
+    "actions": {
+      "create": "Created",
+      "update": "Updated",
+      "delete": "Deleted",
+      "status_change": "Status Changed",
+      "assign": "Assigned",
+      "unassign": "Unassigned",
+      "custom": "Custom Action"
+    },
+    "columns": {
+      "changedAt": "Changed At",
+      "changedBy": "Changed By",
+      "action": "Action",
+      "field": "Field",
+      "oldValue": "Previous Value",
+      "newValue": "New Value",
+      "description": "Description"
+    }
+  },
+  "locationInfo": "Location Info",
+  "localeSwitcher": {
+    "title": "Language Preference",
+    "actions": {
+      "syncProfile": "Sync to Profile",
+      "localOnly": "Local Only"
+    },
+    "prompts": {
+      "syncProfile": "Also sync this language to your profile preference?"
+    },
+    "messages": {
+      "profileSynced": "Language switched and synced to profile",
+      "profileSyncFailed": "Language switched locally, but profile sync failed",
+      "localOnlySwitched": "Language switched locally"
+    }
+  },
+  "messages": {
+    "addSuccess": "Add Success",
+    "cancelSuccess": "Canceled successfully",
+    "confirmDelete": "Are you sure to delete?",
+    "confirmTitle": "Confirm",
+    "createFailed": "Create failed",
+    "createSuccess": "Created successfully",
+    "deleteFailed": "Delete failed",
+    "deleteSuccess": "Deleted successfully",
+    "functionUnderDevelopment": "Feature under development",
+    "loadFailed": "Load failed",
+    "noTimelineData": "No change history yet",
+    "dragFileHere": "Drag file here or",
+    "clickToUpload": "click to upload",
+    "uploading": "Uploading...",
+    "uploadComplete": "Upload complete",
+    "uploadPendingCount": "Upload {count} file(s)",
+    "fileValidationFailed": "File validation failed",
+    "unknownError": "Unknown error",
+    "badRequest": "Invalid request parameters",
+    "sessionExpired": "Session expired",
+    "reloginPrompt": "Session expired, log in again?",
+    "resourceNotFound": "Requested resource not found",
+    "resourceGone": "Resource has been deleted",
+    "tooManyRequests": "Too many requests, please try again later",
+    "serverError": "Server error, please try again later",
+    "noData": "No data",
+    "permissionDenied": "Permission denied",
+    "permissionDeniedHint": "You do not have access to this page.",
+    "noSearchResults": "No matching results",
+    "operationFailed": "Operation failed",
+    "operationSuccess": "Operation succeeded",
+    "pleaseSelectData": "Please select data",
+    "records": "records",
+    "saveSuccess": "Saved successfully",
+    "selected": "{count} items selected",
+    "emptyHint": "No data yet. Try creating a new record.",
+    "timelineHint": "Changes will appear here once this record is created, updated, or changes status.",
+    "requestTimeout": "Request timed out",
+    "systemError": "System error",
+    "tips": "Tips",
+    "lookupCompactKeysHint": "Used by the lookup compact profile. Locked columns are always kept.",
+    "lookupProfileStandardHint": "Show default columns and widths.",
+    "lookupProfileCompactHint": "Focus on key columns for faster scanning.",
+    "lookupProfileCustomHint": "Uses your manual column visibility, order, and width.",
+    "subtableShortcutHelpHint": "Enable keyboard shortcut help panel in editable subtable.",
+    "subtableShortcutPinnedHint": "When enabled, shortcut help panel opens in pinned mode by default.",
+    "subtableShortcutPinnedRequiresHelpHint": "Enable shortcut help first to use default pinned mode.",
+    "moduleNotEnabledRedirect": "This module backend API is not enabled. Redirected to workbench.",
+    "actionCancelled": "Action cancelled",
+    "unknownActionType": "Unknown action type: {type}",
+    "maxFileCountExceeded": "Maximum {count} file(s) allowed.",
+    "readonlyByDefaultInDetailMode": "Readonly by default in detail mode",
+    "updateFailed": "Update failed",
+    "updateSuccess": "Updated successfully",
+    "formValidationFailed": "Form validation failed. Please check required fields."
+  },
+  "no": "No",
+  "notes": "Notes",
+  "performedBy": "Performed By",
+  "placeholders": {
+    "endDate": "End Date",
+    "input": "Please enter",
+    "maxValue": "Max Value",
+    "minValue": "Min Value",
+    "search": "Please enter search keyword",
+    "select": "Please select",
+    "startDate": "Start Date"
+  },
+  "reason": "Reason",
+  "relatedGroup": {
+    "business": "Business",
+    "workflow": "Workflow",
+    "finance": "Finance",
+    "inventory": "Inventory",
+    "consumables": "Consumables",
+    "it_assets": "IT Assets",
+    "insurance": "Insurance",
+    "leasing": "Leasing",
+    "organization": "Organization",
+    "master_data": "Master Data",
+    "other": "Other"
+  },
+  "relatedObject": {
+    "code": "Code",
+    "createdAt": "Created At",
+    "id": "Id",
+    "loadFailed": "Load Failed",
+    "loan": {
+      "loanDate": "Loan Date",
+      "loanUser": "Loan User",
+      "returnDate": "Return Date"
+    },
+    "location": "Location",
+    "maintenance": {
+      "cost": "Cost",
+      "date": "Date"
+    },
+    "name": "Name",
+    "pickup": {
+      "pickupDate": "Pickup Date",
+      "pickupUser": "Pickup User"
+    },
+    "quantity": "Quantity",
+    "return": {
+      "condition": "Condition",
+      "returnDate": "Return Date",
+      "returnUser": "Return User"
+    },
+    "status": "Status",
+    "type": "Type"
+  },
+  "referenceCard": {
+    "fields": {
+      "status": "Status",
+      "category": "Category",
+      "type": "Type",
+      "department": "Department",
+      "location": "Location",
+      "parent": "Parent",
+      "owner": "Owner",
+      "user": "User",
+      "custodian": "Custodian",
+      "manager": "Manager",
+      "brand": "Brand",
+      "model": "Model",
+      "specification": "Specification",
+      "serialNumber": "Serial Number",
+      "phone": "Phone",
+      "mobile": "Mobile",
+      "email": "Email",
+      "depreciationMethod": "Depreciation Method",
+      "defaultUsefulLife": "Default Useful Life",
+      "residualRate": "Residual Rate",
+      "isActive": "Active",
+      "updatedAt": "Updated At",
+      "createdAt": "Created At"
+    }
+  },
+  "rules": {
+    "required": "Required"
+  },
+  "searchConfigPlaceholder": "Search configuration",
+  "searchMaintenancePlaceholder": "Search maintenance records",
+  "select": "Select",
+  "selectors": {
+    "assetAdmin": "Asset Admin",
+    "deptManager": "Dept Manager",
+    "filterByDept": "Filter By Dept",
+    "noMatchUser": "No Match User",
+    "normalUser": "Normal User",
+    "allFields": "All Fields",
+    "searchKeyword": "Search Keyword",
+    "searchUser": "Search User",
+    "selectDept": "Select Dept",
+    "selectRole": "Select Role",
+    "selectUser": "Select User",
+    "systemAdmin": "System Admin"
+  },
+  "status": {
+    "abnormal": "Abnormal",
+    "active": "Active",
+    "enabled": "Enabled",
+    "inactive": "Inactive",
+    "info": "Info",
+    "loading": "Loading...",
+    "processing": "Processing",
+    "warning": "Warning"
+  },
+  "supplierInfo": "Supplier Info",
+  "table": {
+    "index": "Index",
+    "noData": "No data",
+    "operations": "Operations",
+    "total": "Total {total} items",
+    "selected": "{count} selected",
+    "seq": "No."
+  },
+  "title": "Title",
+  "units": {
+    "hours": "Hours",
+    "item": "Item",
+    "level": "Level",
+    "no": "No",
+    "pending": "Pending",
+    "people": "People",
+    "piece": "Piece",
+    "year": "Year",
+    "yes": "Yes",
+    "yuan": "Yuan"
+  },
+  "usageInfo": "Usage Info",
+  "validation": {
+    "phone": "Please enter a valid phone number",
+    "required": "This field is required",
+    "requiredWithField": "{field} is required",
+    "lowercaseNumberUnderscore": "Only lowercase letters, numbers, and underscores are allowed"
+  },
+  "import": {
+    "invalidSheet": "The file does not contain a valid worksheet",
+    "requiredCell": "\"{label}\" cannot be empty (row {row})",
+    "templateSheetName": "Import Template",
+    "templateSuffix": "Import Template"
+  },
+  "layoutValidation": {
+    "configurationMustBeObject": "Configuration must be a JSON object",
+    "missingOrInvalidArray": "Missing or invalid required field: {field} (must be an array)",
+    "cannotBeEmpty": "{field} cannot be empty",
+    "mustBeArray": "{field} must be an array",
+    "mustBeObject": "{field} must be an object",
+    "missingRequiredField": "Missing required field: {field}",
+    "invalidType": "Invalid type: {type}. Valid types: {types}",
+    "sectionMustBeObject": "Section must be an object",
+    "tabMustBeObject": "Tab must be an object",
+    "collapseItemMustBeObject": "Collapse item must be an object",
+    "columnItemMustBeObject": "Column item must be an object",
+    "columnMustBeObject": "Column must be an object",
+    "fieldMustBeObject": "Field must be an object",
+    "spanMustBeOneOf": "span must be one of {options}",
+    "spanMustBeIntegerRange": "span must be an integer between 1-24, preferably one of {options}",
+    "widthMustBePositiveInteger": "width must be a positive integer",
+    "minHeightMustBeIntegerRange": "minHeight must be an integer between {min}-{max}",
+    "unknownLayoutTypeFallback": "Unknown layout type: {type}, falling back to form layout"
+  },
+  "layoutSchema": {
+    "sectionIdRequired": "Section id is required",
+    "sectionTitleRequired": "Section title is required",
+    "sectionFieldsArray": "Section fields must be an array",
+    "unknownFieldCode": "Unknown field code: {code}",
+    "sectionColumnsRange": "Section columns must be a number between 1 and 4",
+    "tabIdRequired": "Tab id is required",
+    "tabTitleRequired": "Tab title is required",
+    "tabFieldsArray": "Tab fields must be an array",
+    "tabRelationsArray": "Tab relations must be an array",
+    "fieldOrderArray": "fieldOrder must be an array",
+    "duplicateFieldCode": "Duplicate field code: {code}",
+    "fieldOverridesObject": "fieldOverrides must be an object",
+    "fieldOverrideMustBeObject": "Field override for {code} must be an object",
+    "spanRange": "Span for {code} must be a number between 1 and 24",
+    "sectionsArray": "sections must be an array",
+    "duplicateSectionId": "Duplicate section id: {id}",
+    "tabsArray": "tabs must be an array",
+    "duplicateTabId": "Duplicate tab id: {id}",
+    "containersArray": "containers must be an array",
+    "containerTypeRequired": "Container type is required",
+    "invalidContainerType": "Invalid container type: {type}. Must be one of: {types}",
+    "containerIdRequired": "Container id is required",
+    "duplicateContainerId": "Duplicate container id: {id}",
+    "validationPassed": "Validation passed"
+  },
+  "layoutDefaults": {
+    "formSectionTitle": "Basic Information",
+    "detailSectionTitle": "Detail Information",
+    "submitActionLabel": "Submit",
+    "cancelActionLabel": "Cancel",
+    "createActionLabel": "Create",
+    "deleteActionLabel": "Delete"
+  },
+  "valueInfo": "Value Info",
+  "vendor": "Vendor",
+  "warrantyInfo": "Warranty Info",
+  "yes": "Yes",
+  "formula": {
+    "errors": {
+      "emptyExpression": "Expression cannot be empty",
+      "unknownFieldReferences": "Unknown field references: {fields}",
+      "syntax": "Formula syntax error: {detail}"
+    }
+  },
+  "documentWorkbench": {
+    "sections": {
+      "actions": "Actions",
+      "record": "Record",
+      "workflow": "Workflow",
+      "workflowProgress": "Workflow Progress",
+      "stageInsights": "Stage Insights",
+      "relatedRecords": "Related Records",
+      "batchTools": "Batch Tools",
+      "audit": "Audit",
+      "workflowActivity": "Recent Workflow Activity",
+      "timeline": "Change History"
+    },
+    "labels": {
+      "capabilities": "Capabilities",
+      "mode": "Mode",
+      "status": "Status",
+      "workflowStatus": "Workflow Status",
+      "rows": "Rows",
+      "editable": "Editable",
+      "totalItems": "Total Items",
+      "totalQualified": "Qualified Quantity",
+      "generatedAssets": "Generated Assets",
+      "pendingGeneration": "Pending Generation",
+      "appraisedItems": "Appraised Items",
+      "pendingAppraisal": "Pending Appraisal",
+      "executedItems": "Executed Items",
+      "pendingExecution": "Pending Execution",
+      "definition": "Definition",
+      "instance": "Instance",
+      "published": "Published",
+      "activityLogs": "Activity Logs",
+      "workflowApprovals": "Workflow Approvals",
+      "workflowOperationLogs": "Workflow Operations",
+      "systemActor": "System"
+    },
+    "sources": {
+      "activity": "Activity",
+      "workflowApproval": "Workflow Approval",
+      "workflowOperation": "Workflow Operation"
+    },
+    "actions": {
+      "submit": "Submit",
+      "approve": "Approve",
+      "reject": "Reject",
+      "cancel": "Cancel",
+      "complete": "Complete",
+      "approveFrom": "Approve Source",
+      "approveTo": "Approve Target",
+      "confirmBorrow": "Confirm Borrow",
+      "confirmReturn": "Confirm Return",
+      "submitInspection": "Submit for Inspection",
+      "passInspection": "Pass Inspection",
+      "rejectInspection": "Reject Inspection",
+      "startAppraisal": "Start Appraisal",
+      "startExecution": "Start Execution"
+    },
+    "confirmations": {
+      "submit": "Submit this document for processing?",
+      "approve": "Approve this document?",
+      "reject": "Reject this document?",
+      "cancel": "Cancel this document?",
+      "complete": "Mark this document as completed?",
+      "approveFrom": "Approve this transfer from the source side?",
+      "approveTo": "Approve this transfer from the target side?",
+      "confirmBorrow": "Confirm these assets have been lent out?",
+      "confirmReturn": "Confirm this return?",
+      "submitInspection": "Submit this receipt for inspection?",
+      "startAppraisal": "Move this request into appraisal?",
+      "startExecution": "Start executing this disposal request?"
+    },
+    "prompts": {
+      "approve": {
+        "title": "Approval Comment",
+        "message": "You can leave an approval comment before continuing."
+      },
+      "approveFrom": {
+        "title": "Source Approval Comment",
+        "message": "Add an optional note for the source-side approval."
+      },
+      "approveTo": {
+        "title": "Target Approval Comment",
+        "message": "Add an optional note for the target-side approval."
+      },
+      "reject": {
+        "title": "Rejection Reason",
+        "message": "Provide a reason before rejecting this document."
+      },
+      "confirmReturn": {
+        "title": "Return Confirmation",
+        "message": "Confirm the returned asset condition and record any notes."
+      },
+      "passInspection": {
+        "title": "Inspection Result",
+        "message": "Record any inspection notes before marking this receipt as passed."
+      },
+      "rejectInspection": {
+        "title": "Inspection Rejection",
+        "message": "Explain the inspection issue before rejecting this receipt."
+      },
+      "fields": {
+        "comment": "Comment",
+        "reason": "Reason",
+        "condition": "Condition",
+        "result": "Inspection Result"
+      },
+      "placeholders": {
+        "comment": "Enter a comment",
+        "reason": "Enter a reason",
+        "result": "Describe the inspection outcome"
+      },
+      "conditionOptions": {
+        "good": "Good",
+        "minorDamage": "Minor Damage",
+        "majorDamage": "Major Damage",
+        "lost": "Lost"
+      }
+    },
+    "capabilities": {
+      "editMaster": "Edit Master",
+      "editDetails": "Edit Details",
+      "save": "Save",
+      "submit": "Submit",
+      "approve": "Approve",
+      "readOnly": "Read Only"
+    },
+    "navigation": {
+      "purchaseRequest": "View Purchase Request",
+      "generatedAssets": "View Generated Assets ({count})",
+      "receiptHint": "Continue tracing the upstream request or open the asset cards created from this receipt.",
+      "disposalHint": "Open the affected asset cards and continue the downstream lifecycle from asset details."
+    },
+    "batchTools": {
+      "hint": "Apply repeated field updates across the current detail rows before saving this stage.",
+      "noChanges": "No pending rows matched this batch update.",
+      "actions": {
+        "applyAppraisalResult": "Apply Appraisal Result",
+        "copyNetValueToResidual": "Copy Net Value to Residual",
+        "applyBuyerInfo": "Apply Buyer Info",
+        "copyResidualToActual": "Copy Residual to Actual"
+      },
+      "prompts": {
+        "appraisalResult": {
+          "title": "Batch Appraisal Result",
+          "message": "Fill the appraisal result for all rows that do not have one yet.",
+          "placeholder": "Enter the shared appraisal result"
+        },
+        "buyerInfo": {
+          "title": "Batch Buyer Info",
+          "message": "Fill the buyer information for all rows that are still missing it.",
+          "placeholder": "Enter the shared buyer information"
+        }
+      },
+      "success": {
+        "appraisalResult": "Applied appraisal result to {count} row(s).",
+        "copyNetValueToResidual": "Copied net value to residual value for {count} row(s).",
+        "buyerInfo": "Applied buyer info to {count} row(s).",
+        "copyResidualToActual": "Copied residual value to actual value for {count} row(s)."
+      }
+    }
+  },
+  "detailNavigation": {
+    "sections": {
+      "lifecycleLinks": "Lifecycle Links"
+    },
+    "asset": {
+      "hint": "Trace this asset back to procurement and continue into maintenance or disposal records from the same detail page.",
+      "purchaseRequest": "View Purchase Request",
+      "purchaseRequestWithNo": "Purchase Request: {no}",
+      "receipt": "View Asset Receipt",
+      "receiptWithNo": "Asset Receipt: {no}",
+      "maintenanceRecords": "Maintenance Records ({count})",
+      "disposalRequests": "Disposal Requests ({count})"
+    },
+    "maintenance": {
+      "hint": "Open the related asset card and continue tracing the upstream receipt or purchase request from there.",
+      "asset": "View Asset",
+      "assetWithLabel": "Asset: {label}",
+      "receipt": "View Source Receipt",
+      "receiptWithNo": "Source Receipt: {no}",
+      "purchaseRequest": "View Source Purchase Request",
+      "purchaseRequestWithNo": "Source Purchase Request: {no}"
+    }
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "metric": "frontendBuildChunkSizes",
+  "unit": "bytes",
+  "source": "frontend/dist/assets",
+  "points": [
+    {
+      "date": "2026-03-14",
+      "timestamp": "2026-03-14T14:34:53.444Z",
+      "commit": "d5dce98",
+      "distPath": "C:\\Users\\Aberl.liu\\Desktop\\All My Project\\NEWEAMS\\frontend\\dist\\assets",
+      "chunkCount": 258,
+      "jsCount": 164,
+      "cssCount": 94,
+      "otherCount": 0,
+      "totalBytes": 5449499,
+      "totalJsBytes": 4882684,
+      "totalCssBytes": 566815,
+      "totalOtherBytes": 0,
+      "jsBudget": 768000,
+      "cssBudget": 358400,
+      "oversizedJsCount": 0,
+      "oversizedCssCount": 0,
+      "largestChunk": {
+        "name": "element-plus-BWu3A_v6.js",
+        "label": "element-plus.js",
+        "bytes": 715460
+      },
+      "largestJsChunk": {
+        "name": "element-plus-BWu3A_v6.js",
+        "label": "element-plus.js",
+        "bytes": 715460
+      },
+      "largestCssChunk": {
+        "name": "element-plus-CaSTN4eO.css",
+        "label": "element-plus.css",
+        "bytes": 291930
+      },
+      "topChunks": [
+        {
+          "name": "element-plus-BWu3A_v6.js",
+          "label": "element-plus.js",
+          "type": "js",
+          "bytes": 715460
+        },
+        {
+          "name": "logicflow-core-B1Me6WGs.js",
+          "label": "logicflow-core.js",
+          "type": "js",
+          "bytes": 598052
+        },
+        {
+          "name": "spreadsheet-D_0l8YDs.js",
+          "label": "spreadsheet.js",
+          "type": "js",
+          "bytes": 429487
+        },
+        {
+          "name": "zxing-DyDMb4Do.js",
+          "label": "zxing.js",
+          "type": "js",
+          "bytes": 389928
+        },
+        {
+          "name": "echarts-D-02CzQY.js",
+          "label": "echarts.js",
+          "type": "js",
+          "bytes": 344457
+        },
+        {
+          "name": "element-plus-CaSTN4eO.css",
+          "label": "element-plus.css",
+          "type": "css",
+          "bytes": 291930
+        },
+        {
+          "name": "index-BUDib7aS.js",
+          "label": "index.js",
+          "type": "js",
+          "bytes": 245721
+        },
+        {
+          "name": "zrender-DS_NUZig.js",
+          "label": "zrender.js",
+          "type": "js",
+          "bytes": 173439
+        },
+        {
+          "name": "WysiwygLayoutDesigner-D_lfP2o5.js",
+          "label": "WysiwygLayoutDesigner.js",
+          "type": "js",
+          "bytes": 141830
+        },
+        {
+          "name": "framework-4eJBltv8.js",
+          "label": "framework.js",
+          "type": "js",
+          "bytes": 139392
+        }
+      ]
+    }
+  ]
+}

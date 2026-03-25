@@ -1,0 +1,212 @@
+{
+  "itAssets": {
+    "title": "IT资产管理",
+    "actions": {
+      "add": "新增IT资产",
+      "view": "查看",
+      "edit": "编辑",
+      "delete": "删除"
+    },
+    "filters": {
+      "search": "搜索",
+      "searchPlaceholder": "资产编码、名称、CPU、OS...",
+      "os": "操作系统",
+      "allOs": "全部操作系统",
+      "options": {
+        "windows": "Windows",
+        "macos": "macOS",
+        "linux": "Linux"
+      }
+    },
+    "columns": {
+      "assetCode": "资产编码",
+      "assetName": "资产名称",
+      "cpu": "CPU",
+      "ram": "内存",
+      "disk": "硬盘",
+      "os": "操作系统",
+      "ipAddress": "IP地址",
+      "macAddress": "MAC地址",
+      "security": "安全状态",
+      "actions": "操作"
+    },
+    "detail": {
+      "title": "IT资产详情",
+      "status": "状态",
+      "hardwareConfig": "硬件配置",
+      "coresThreads": "核心/线程",
+      "ramType": "内存类型",
+      "diskType": "硬盘类型",
+      "gpu": "显卡",
+      "networkInfo": "网络信息",
+      "hostname": "主机名",
+      "operatingSystem": "操作系统",
+      "osName": "系统名称",
+      "version": "版本",
+      "architecture": "架构",
+      "licenseKey": "序列号",
+      "diskEncrypted": "硬盘加密",
+      "antivirus": "杀毒软件",
+      "antivirusEnabled": "启用杀毒",
+      "activeDirectory": "AD域",
+      "domain": "域名",
+      "computerName": "计算机名",
+      "configSummary": "配置摘要"
+    },
+    "status": {
+      "secure": "安全",
+      "attentionNeeded": "需关注",
+      "encrypted": "已加密",
+      "notEncrypted": "未加密",
+      "yes": "是",
+      "no": "否"
+    },
+    "messages": {
+      "deleteConfirm": "确定要删除该IT资产吗？",
+      "deleteRecordConfirm": "确定要删除该记录吗？",
+      "deleteSuccess": "删除成功",
+      "deleteFailed": "删除失败",
+      "loadFailed": "加载IT资产失败",
+      "loadMaintenanceFailed": "加载维护记录失败",
+      "loadConfigFailed": "加载配置变更失败",
+      "saveSuccess": "保存成功",
+      "addSuccess": "新增成功",
+      "updateSuccess": "更新成功",
+      "operationFailed": "操作失败"
+    },
+    "form": {
+      "addTitle": "新增IT资产信息",
+      "editTitle": "编辑IT资产信息",
+      "sections": {
+        "hardware": "硬件配置",
+        "network": "网络信息",
+        "os": "操作系统",
+        "security": "安全信息",
+        "activeDirectory": "活动目录(AD)"
+      },
+      "fields": {
+        "cpuModel": "CPU型号",
+        "cpuCores": "CPU核心数",
+        "cpuThreads": "CPU线程数",
+        "ramCapacity": "内存容量(GB)",
+        "ramType": "内存类型",
+        "ramSlots": "内存插槽数",
+        "diskType": "硬盘类型",
+        "diskCapacity": "硬盘容量(GB)",
+        "diskCount": "硬盘数量",
+        "gpuModel": "显卡型号",
+        "gpuMemory": "显存大小(MB)",
+        "macAddress": "MAC地址",
+        "ipAddress": "IP地址",
+        "hostname": "主机名",
+        "osName": "操作系统",
+        "osVersion": "系统版本",
+        "osArch": "系统架构",
+        "osLicense": "系统序列号",
+        "diskEncrypted": "硬盘加密",
+        "antivirus": "启用杀毒软件",
+        "antivirusSoftware": "杀毒软件名称",
+        "adDomain": "AD域",
+        "adComputer": "AD计算机名"
+      },
+      "placeholders": {
+        "selectAsset": "选择资产",
+        "cpuModel": "如: Intel Core i7-12700K",
+        "selectType": "选择类型",
+        "gpuModel": "如: NVIDIA GeForce RTX 3080",
+        "macAddress": "XX:XX:XX:XX:XX:XX",
+        "ipAddress": "192.168.1.1",
+        "hostname": "如: PC-DESKTOP-001",
+        "selectOs": "选择操作系统",
+        "osVersion": "如: 11, 22.04, 10.0.19043",
+        "selectArch": "选择架构",
+        "licenseKey": "XXXXX-XXXXX-XXXXX-XXXXX",
+        "antivirusSoftware": "如: Windows Defender",
+        "domain": "如: corp.local",
+        "computerName": "如: DESKTOP-001"
+      },
+      "validation": {
+        "selectAsset": "请选择资产",
+        "invalidMac": "MAC地址格式无效",
+        "invalidIp": "IP地址格式无效"
+      },
+      "maintenance": {
+        "addTitle": "新增维护记录",
+        "editTitle": "编辑维护记录",
+        "placeholders": {
+          "title": "维护活动简要标题",
+          "description": "维护工作详细描述",
+          "vendor": "外部服务商（如适用）",
+          "notes": "补充说明"
+        },
+        "validation": {
+          "selectType": "请选择维护类型",
+          "enterTitle": "请输入标题",
+          "selectDate": "请选择维护日期"
+        }
+      },
+      "configChange": {
+        "addTitle": "新增配置变更",
+        "editTitle": "编辑配置变更",
+        "placeholders": {
+          "changeReason": "请说明本次变更原因"
+        },
+        "validation": {
+          "enterFieldName": "请输入字段名称",
+          "selectDate": "请选择变更日期"
+        }
+      }
+    },
+    "maintenance": {
+      "title": "IT维护记录",
+      "type": "维护类型",
+      "allTypes": "全部类型",
+      "types": {
+        "preventive": "预防性维护",
+        "corrective": "纠正性维护",
+        "upgrade": "升级",
+        "replacement": "更换",
+        "inspection": "巡检",
+        "cleaning": "清洁",
+        "other": "其他"
+      }
+    },
+    "configChange": {
+      "title": "配置变更记录",
+      "field": "字段",
+      "allFields": "全部字段",
+      "changeDetails": "变更详情",
+      "oldValue": "变更前",
+      "newValue": "变更后",
+      "empty": "(空)",
+      "fields": {
+        "cpuModel": "CPU型号",
+        "ramCapacity": "内存",
+        "diskCapacity": "硬盘",
+        "osName": "操作系统",
+        "ipAddress": "IP地址"
+      },
+      "fieldName": "字段名称",
+      "previousValue": "变更前值",
+      "changeDate": "变更日期",
+      "reason": "变更原因"
+    },
+    "common": {
+      "asset": "资产",
+      "title": "标题",
+      "date": "日期",
+      "cost": "费用",
+      "vendor": "服务商",
+      "performedBy": "执行人",
+      "changedBy": "修改人",
+      "reason": "原因",
+      "description": "描述",
+      "notes": "备注",
+      "change": "变更内容",
+      "addRecord": "新增记录",
+      "addChange": "新增变更",
+      "searchMaintenancePlaceholder": "资产编码、标题、服务商...",
+      "searchConfigPlaceholder": "资产编码、字段名称..."
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "generatedAt": "2026-03-03",
+  "timezone": "Asia/Shanghai",
+  "releaseWindow": {
+    "start": "2026-03-01",
+    "end": "2026-03-31"
+  },
+  "policy": {
+    "scope": "i18n-runtime-and-ui",
+    "target": "P1 active defects = 0",
+    "allowedActive": 0
+  },
+  "sources": {
+    "issueTracker": "manual-release-triage",
+    "ciGates": [
+      "npm run i18n:check:dynamic:all:strict",
+      "npm run i18n:coverage:all:strict",
+      "npm run i18n:parity:all:strict",
+      "npm run layout:order:consistency:strict"
+    ]
+  },
+  "defects": []
+}

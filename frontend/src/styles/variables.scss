@@ -1,0 +1,56 @@
+// Theme Colors (Premium High-Contrast & Muted Tone Palette)
+$primary-color: #0f172a; // Slate-900 (Use deep black/slate for primary actions instead of blue)
+$primary-light: #f1f5f9; // Slate-100
+$primary-dark: #020617; // Slate-950
+
+// Accent Blue for specific highlights if needed
+$accent-blue: #3b82f6; // Blue-500
+
+// Status Colors (Softer, SaaS-like tones)
+$success-color: #10b981; // Emerald-500
+$warning-color: #f59e0b; // Amber-500
+$danger-color: #ef4444; // Red-500
+$info-color: #64748b; // Slate-500
+
+// Typography Colors
+$text-main: #0f172a; // Slate-900 (Crisp, dark headers)
+$text-regular: #334155; // Slate-700 (Body text)
+$text-secondary: #64748b; // Slate-500 (Labels, subtle text)
+$text-placeholder: #cbd5e1; // Slate-300
+
+// Backgrounds
+$bg-body: #fcfcfc; // Off-white/Geek white, high-end feel
+$bg-card: #ffffff; // Pure white cards
+$bg-hover: #f1f5f9; // Slate-100 for hovers
+
+// Borders (Extremely subtle)
+$border-color: #e2e8f0; // Slate-200
+$border-light: rgba(0, 0, 0, 0.06); // Barely visible separator
+
+// Radius (Modern soft curves)
+$radius-base: 6px; // Standard buttons/inputs
+$radius-large: 10px; // Cards/Dialogs
+$radius-round: 999px;
+
+// Shadows (Flat & Diffused - NO harsh drop shadows)
+// Cards should rely MORE on borders and LESS on shadows now
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.04); // Ethereal shadow for popovers
+$shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.08); // Deep dropdowns only
+$shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.04);
+
+// Spacing & Density
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+
+// --- Enterprise Density System (Compact vs Comfy) ---
+// These SCSS variables compile to CSS Variables for runtime switching
+// Default is 'Comfy'
+$density-scale: var(--gzeams-density-scale, 1);
+$density-table-row-height: var(--gzeams-density-table-row, 44px);
+$density-input-height: var(--gzeams-density-input, 32px);
+$density-font-size: var(--gzeams-density-font, 13px);
+$density-filter-height: var(--gzeams-density-filter, 32px);

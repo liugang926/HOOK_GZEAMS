@@ -1,0 +1,183 @@
+@use '@/styles/object-workspace.scss' as workspace;
+
+@mixin dynamic-detail-page-styles() {
+  .dynamic-detail-page {
+    @include workspace.page-shell(rgba(15, 23, 42, 0.05));
+  }
+
+  .detail-hero {
+    @include workspace.hero();
+
+    &__header {
+      @include workspace.hero-header();
+    }
+
+    &__back {
+      @include workspace.hero-back();
+    }
+
+    &__identity {
+      @include workspace.hero-identity();
+    }
+
+    &__copy {
+      @include workspace.hero-copy();
+    }
+
+    &__eyebrow {
+      @include workspace.eyebrow();
+    }
+
+    &__title {
+      @include workspace.hero-title();
+    }
+
+    &__description {
+      @include workspace.hero-description();
+    }
+
+    &__chips {
+      @include workspace.chip-row();
+    }
+
+    &__stats {
+      @include workspace.stats-grid();
+    }
+  }
+
+  .detail-chip {
+    @include workspace.chip();
+
+    &--primary {
+      @include workspace.chip-primary();
+    }
+
+    &--muted {
+      @include workspace.chip-muted();
+    }
+  }
+
+  .detail-stat-card {
+    @include workspace.stat-card();
+
+    &__label {
+      @include workspace.stat-label();
+    }
+
+    &__value {
+      @include workspace.stat-value(26px);
+    }
+  }
+
+  .detail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .detail-panel {
+    @include workspace.workspace-panel();
+
+    &--main {
+      padding: 26px 26px 18px;
+    }
+
+    &--aside {
+      @include workspace.aside-panel();
+    }
+
+    &__header {
+      @include workspace.workspace-panel-header();
+    }
+
+    &__kicker {
+      @include workspace.panel-kicker();
+    }
+
+    &__title {
+      @include workspace.panel-title();
+    }
+
+    &__text {
+      @include workspace.panel-text();
+    }
+  }
+
+  .detail-info-card {
+    @include workspace.info-card();
+
+    &--soft {
+      @include workspace.info-card-soft();
+    }
+
+    &__eyebrow {
+      @include workspace.panel-kicker();
+    }
+
+    &__title {
+      @include workspace.info-title();
+    }
+
+    &__list {
+      margin: 0;
+    }
+
+    &__row {
+      @include workspace.info-row();
+
+      dt {
+        @include workspace.info-row-term();
+      }
+
+      dd {
+        @include workspace.info-row-value();
+      }
+    }
+
+    &__tips {
+      @include workspace.info-tips();
+    }
+  }
+
+  .lifecycle-steps-card {
+    margin: 0 0 16px 0;
+
+    :deep(.el-card__body) {
+      padding: 20px 24px;
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .detail-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .detail-panel {
+      &--aside {
+        position: static;
+        padding-top: 0;
+      }
+
+      &__header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      &__text {
+        max-width: none;
+        text-align: left;
+      }
+    }
+  }
+
+  @media (max-width: 900px) {
+    .dynamic-detail-page {
+      @include workspace.responsive-stack-shell();
+    }
+
+    .detail-hero {
+      @include workspace.responsive-hero();
+    }
+  }
+}

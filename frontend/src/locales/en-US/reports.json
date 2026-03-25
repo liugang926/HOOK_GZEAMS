@@ -1,0 +1,119 @@
+{
+    "center": {
+        "title": "Report Center",
+        "tabs": {
+            "assets": "Asset Reports",
+            "lifecycle": "Lifecycle",
+            "insurance": "Insurance Reports",
+            "leasing": "Leasing Reports"
+        },
+        "downloadXlsx": "Download Excel"
+    },
+    "export": {
+        "currentPageXlsx": "Export Current Page (Excel)",
+        "currentPageCsv": "Export Current Page (CSV)",
+        "allPagesXlsx": "Export All Data (Excel)",
+        "allPagesCsv": "Export All Data (CSV)",
+        "successMessage": "Export successful",
+        "errorMessage": "Export failed, please try again"
+    },
+    "import": {
+        "downloadTemplate": "Download Import Template",
+        "selectFile": "Select File to Import",
+        "errorTitle": "Import Validation Results",
+        "unknownHeaders": "Unrecognized columns in file",
+        "missingHeaders": "Required columns missing from file",
+        "errorRow": "Row",
+        "errorCol": "Column",
+        "errorMsg": "Error",
+        "noErrors": "Validation passed, ready to import",
+        "confirmImport": "Confirm Import {count} Records",
+        "emptyFile": "No data found in the file",
+        "parseError": "Failed to parse file, please check the format",
+        "readyMessage": "Ready to import {count} records"
+    },
+    "presets": {
+        "assetList": {
+            "name": "Asset List",
+            "desc": "Export all asset basic information",
+            "cols": {
+                "assetNo": "Asset No",
+                "name": "Asset Name",
+                "category": "Category",
+                "status": "Status",
+                "location": "Location",
+                "department": "Department",
+                "purchaseDate": "Purchase Date",
+                "originalValue": "Original Value",
+                "netValue": "Net Value"
+            }
+        },
+        "depreciation": {
+            "name": "Depreciation Detail",
+            "desc": "Export asset depreciation calculation details",
+            "cols": {
+                "accumulated": "Accumulated Depreciation",
+                "rate": "Depreciation Rate",
+                "usefulLife": "Useful Life"
+            }
+        },
+        "purchaseRequests": {
+            "name": "Purchase Requests",
+            "desc": "Export all purchase request records",
+            "cols": {
+                "requestNo": "Request No",
+                "title": "Title",
+                "status": "Status",
+                "requestedBy": "Requested By",
+                "totalAmount": "Total Amount",
+                "createdAt": "Created At"
+            }
+        },
+        "maintenance": {
+            "name": "Maintenance Orders",
+            "desc": "Export all maintenance work order records",
+            "cols": {
+                "maintenanceNo": "Order No",
+                "asset": "Asset",
+                "type": "Type",
+                "status": "Status",
+                "reportedDate": "Reported Date",
+                "completedDate": "Completed Date",
+                "cost": "Actual Cost"
+            }
+        },
+        "disposal": {
+            "name": "Disposal Requests",
+            "desc": "Export all disposal request records",
+            "cols": {
+                "requestNo": "Request No",
+                "asset": "Asset",
+                "type": "Disposal Type",
+                "status": "Status",
+                "expectedValue": "Expected Value",
+                "actualValue": "Actual Recovery",
+                "createdAt": "Created At"
+            }
+        },
+        "insurancePolicies": {
+            "name": "Insurance Policies",
+            "desc": "Export all insurance policy records",
+            "cols": {
+                "status": "Status",
+                "insuredAmount": "Insured Amount"
+            }
+        },
+        "claimRecords": {
+            "name": "Claim Records",
+            "desc": "Export all insurance claim records"
+        },
+        "leaseContracts": {
+            "name": "Lease Contracts",
+            "desc": "Export all lease contract records"
+        },
+        "rentPayments": {
+            "name": "Rent Payments",
+            "desc": "Export all rent payment records"
+        }
+    }
+}

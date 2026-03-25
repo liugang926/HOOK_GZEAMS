@@ -1,0 +1,51 @@
+# Generated manually to restore ActivityLog after it was removed from the
+# migration graph while the runtime code still depends on it.
+
+import django.db.models.deletion
+import uuid
+from django.conf import settings
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('contenttypes', '0002_remove_content_type_name'),
+        ('organizations', '0005_add_base_model_fields'),
+        ('system', '0033_pagelayout_view_mode'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='ActivityLog',
+            fields=[
+                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False, verbose_name='ID')),
+                ('is_deleted', models.BooleanField(db_comment='Soft delete flag, records are filtered out by default', db_index=True, default=False, verbose_name='Is Deleted')),
+                ('deleted_at', models.DateTimeField(blank=True, db_comment='Timestamp when record was soft deleted', null=True, verbose_name='Deleted At')),
+                ('created_at', models.DateTimeField(auto_now_add=True, db_comment='Timestamp when record was created', verbose_name='Created At')),
+                ('updated_at', models.DateTimeField(auto_now=True, db_comment='Timestamp when record was last updated', verbose_name='Updated At')),
+                ('custom_fields', models.JSONField(blank=True, db_comment='Dynamic fields for metadata-driven extensions', default=dict, verbose_name='Custom Fields')),
+                ('action', models.CharField(choices=[('create', 'Created'), ('update', 'Updated'), ('delete', 'Deleted'), ('status_change', 'Status Changed'), ('assign', 'Assigned'), ('unassign', 'Unassigned'), ('custom', 'Custom Action')], db_comment='Action performed', default='update', max_length=50, verbose_name='Action')),
+                ('object_id', models.CharField(db_comment='ID of the target object', max_length=255, verbose_name='Object ID')),
+                ('changes', models.JSONField(blank=True, db_comment='JSON array of changes. Format: [{"fieldLabel": "Status", "oldValue": "Draft", "newValue": "Published"}]', null=True, verbose_name='Changes')),
+                ('description', models.TextField(blank=True, db_comment='Human readable description of the action', null=True, verbose_name='Description')),
+                ('actor', models.ForeignKey(blank=True, db_comment='User who performed the action', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='activity_logs', to=settings.AUTH_USER_MODEL, verbose_name='Actor')),
+                ('content_type', models.ForeignKey(db_comment='Type of the target object', on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype', verbose_name='Content Type')),
+                ('created_by', models.ForeignKey(blank=True, db_comment='User who created this record', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(app_label)s_%(class)s_created', to=settings.AUTH_USER_MODEL, verbose_name='Created By')),
+                ('deleted_by', models.ForeignKey(blank=True, db_comment='User who soft deleted this record', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(app_label)s_%(class)s_deleted', to=settings.AUTH_USER_MODEL, verbose_name='Deleted By')),
+                ('organization', models.ForeignKey(blank=True, db_comment='Organization for multi-tenant data isolation', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='%(app_label)s_%(class)s_set', to='organizations.organization', verbose_name='Organization')),
+                ('updated_by', models.ForeignKey(blank=True, db_comment='User who last updated this record', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='%(app_label)s_%(class)s_updated', to=settings.AUTH_USER_MODEL, verbose_name='Updated By')),
+            ],
+            options={
+                'verbose_name': 'Activity Log',
+                'verbose_name_plural': 'Activity Logs',
+                'db_table': 'system_activity_logs',
+                'ordering': ['-created_at'],
+                'indexes': [
+                    models.Index(fields=['content_type', 'object_id', '-created_at'], name='system_acti_content_424213_idx'),
+                    models.Index(fields=['actor', '-created_at'], name='system_acti_actor_i_f06b90_idx'),
+                ],
+            },
+        ),
+    ]

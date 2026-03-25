@@ -1,0 +1,103 @@
+{
+    "inventory": {
+        "title": "资产盘点",
+        "taskList": "盘点任务列表",
+        "taskDetail": "盘点任务详情",
+        "createTask": "新建盘点任务",
+        "taskExecute": "执行盘点",
+        "columns": {
+            "taskNo": "任务编号",
+            "name": "任务名称",
+            "status": "状态",
+            "type": "类型",
+            "planDate": "计划日期",
+            "actualDate": "实际日期",
+            "creator": "创建人",
+            "createdAt": "创建时间",
+            "warehouse": "仓库",
+            "progress": "进度"
+        },
+        "status": {
+            "pending": "待开始",
+            "in_progress": "进行中",
+            "completed": "已完成",
+            "canceled": "已取消",
+            "cancelled": "已取消"
+        },
+        "type": {
+            "all": "全盘",
+            "random": "抽盘",
+            "dynamic": "动盘",
+            "full": "全盘",
+            "partial": "部分盘点",
+            "department": "部门盘点"
+        },
+        "actions": {
+            "start": "开始盘点",
+            "finish": "结束盘点",
+            "cancel": "取消任务",
+            "viewDiff": "查看差异",
+            "scan": "扫码盘点"
+        },
+        "execute": {
+            "scanPlaceholder": "扫描资产标签或输入编码",
+            "scannedList": "已扫列表",
+            "unscannedList": "未扫列表",
+            "diffList": "差异列表",
+            "manualInput": "手动输入",
+            "confirmCount": "确认数量",
+            "submitResult": "提交结果"
+        },
+        "fields": {
+            "taskCode": "任务编号",
+            "taskName": "任务名称",
+            "taskType": "盘点类型",
+            "planDate": "计划日期",
+            "executor": "执行人",
+            "assetCount": "资产数量",
+            "scannedCount": "已扫描数量",
+            "differenceCount": "差异数量",
+            "remark": "备注"
+        },
+        "operations": {
+            "scan": "扫码盘点",
+            "manualInput": "手动输入",
+            "confirmInventory": "确认盘点",
+            "viewDifference": "查看差异",
+            "submitReview": "提交审核",
+            "start": "开始盘点",
+            "pause": "暂停",
+            "resume": "继续",
+            "complete": "完成盘点"
+        },
+        "scanner": {
+            "title": "扫码盘点",
+            "scanResult": "扫描结果",
+            "assetFound": "找到资产",
+            "assetNotFound": "未找到资产",
+            "scanSuccess": "扫描成功",
+            "scanFailed": "扫描失败",
+            "cameraError": "摄像头初始化失败",
+            "selectCamera": "选择摄像头",
+            "manualInput": "手动输入",
+            "inputPlaceholder": "请输入资产编码或扫描二维码",
+            "alreadyScanned": "已扫描",
+            "notInTask": "不在任务范围内"
+        },
+        "difference": {
+            "title": "盘点差异",
+            "missing": "盘亏",
+            "extra": "盘盈",
+            "locationMismatch": "位置不符",
+            "statusMismatch": "状态不符",
+            "confirm": "确认差异",
+            "adjust": "调整"
+        },
+        "messages": {
+            "exportDeveloping": "导出 {count} 项盘点任务 - 功能开发中"
+        },
+        "placeholders": {
+            "taskSearch": "按任务编号或名称搜索"
+        }
+    }
+}

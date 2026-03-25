@@ -1,0 +1,914 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [master, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================================
+  # Job 1: Detect path changes to skip unnecessary jobs
+  # ============================================================================
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.changes.outputs.backend }}
+      frontend: ${{ steps.changes.outputs.frontend }}
+      workflow: ${{ steps.changes.outputs.workflow }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/**'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/**'
+            workflow:
+              - '.github/workflows/ci.yml'
+
+  # ============================================================================
+  # Job 2: Backend - Code Quality Check
+  # ============================================================================
+  backend-lint:
+    name: Backend - Lint
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements/development.txt
+
+      - name: Run black check
+        run: |
+          cd backend
+          black --check .
+
+      - name: Run isort check
+        run: |
+          cd backend
+          isort --check-only .
+
+      - name: Run flake8
+        run: |
+          cd backend
+          flake8 .
+
+      - name: Run mypy (non-blocking)
+        run: |
+          cd backend
+          mypy . || true
+
+  # ============================================================================
+  # Job 3: Backend - Demo Data Gate
+  # ============================================================================
+  backend-demo-data:
+    name: Backend - Demo Data Gate
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gzeams_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/gzeams_test
+      REDIS_URL: redis://localhost:6379/0
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements/development.txt
+
+      - name: Run migrations and bootstrap runtime defaults
+        run: |
+          cd backend
+          python manage.py migrate
+          python manage.py bootstrap_defaults
+
+      - name: Run demo data command smoke gate
+        run: |
+          cd backend
+          pytest apps/common/tests/test_create_demo_data_command.py -m demo_data -q --junitxml=demo-data-junit.xml
+
+      - name: Write demo data gate step summary
+        if: always()
+        run: |
+          python .github/scripts/render_junit_summary.py \
+            --summary-path "$GITHUB_STEP_SUMMARY" \
+            --title "Backend Demo Data Gate" \
+            --command-label "Gate command" \
+            --command "pytest apps/common/tests/test_create_demo_data_command.py -m demo_data -q --junitxml=demo-data-junit.xml" \
+            --artifacts-label "Artifact bundle" \
+            --artifact "backend-demo-data-results" \
+            --junit-path "backend/demo-data-junit.xml" \
+            --missing-junit-message "JUnit XML was not generated. Check the job log and artifact bundle for details." \
+            --covered-scenario "Helper datetime seed normalization" \
+            --covered-scenario "Prefix sequence and tracker regression" \
+            --covered-scenario "Initial seed smoke (\`count=1\`)" \
+            --covered-scenario "\`--skip-existing\` reuse-only rerun smoke" \
+            --covered-scenario "\`--skip-existing --top-up-existing\` top-up rerun smoke"
+
+      - name: Archive demo data gate artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-demo-data-results
+          path: |
+            backend/demo-data-junit.xml
+            backend/.pytest_cache/
+          retention-days: 7
+
+  # ============================================================================
+  # Job 4: Backend - Unit Tests
+  # ============================================================================
+  backend-test:
+    name: Backend - Tests
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true'
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gzeams_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/gzeams_test
+      REDIS_URL: redis://localhost:6379/0
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements/development.txt
+
+      - name: Run migrations and bootstrap runtime defaults
+        run: |
+          cd backend
+          python manage.py migrate
+          python manage.py bootstrap_defaults
+
+      - name: Run tests with coverage
+        run: |
+          cd backend
+          pytest --cov=apps --cov-report=xml --cov-report=html --cov-report=term-missing:skip-covered --junitxml=backend-test-junit.xml
+
+      - name: Write backend test step summary
+        if: always()
+        run: |
+          python .github/scripts/render_junit_summary.py \
+            --summary-path "$GITHUB_STEP_SUMMARY" \
+            --title "Backend Test Suite" \
+            --command-label "Test command" \
+            --command "pytest --cov=apps --cov-report=xml --cov-report=html --cov-report=term-missing:skip-covered --junitxml=backend-test-junit.xml" \
+            --artifact "backend-coverage-report" \
+            --artifact "backend-test-results" \
+            --junit-path "backend/backend-test-junit.xml" \
+            --coverage-path "backend/coverage.xml" \
+            --missing-junit-message "JUnit XML was not generated. Check workflow logs for setup or early pytest failures." \
+            --parse-error-prefix "Unable to parse backend test summary" \
+            --include-classname \
+            --max-failing-cases 20
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+
+      - name: Archive coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage-report
+          path: backend/htmlcov/
+          retention-days: 7
+
+      - name: Archive test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: |
+            backend/.pytest_cache/
+            backend/backend-test-junit.xml
+          retention-days: 7
+
+  # ============================================================================
+  # Job 5: Frontend - Code Quality Check
+  # ============================================================================
+  frontend-lint:
+    name: Frontend - Lint
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run ESLint
+        id: frontend_lint_eslint
+        run: |
+          cd frontend
+          npm run lint -- --max-warnings 0
+
+      - name: Run TypeScript app typecheck (report-only baseline)
+        id: frontend_lint_typecheck_app
+        run: |
+          cd frontend
+          npm run typecheck:app
+        continue-on-error: true
+
+      - name: Run i18n hardcode guard (changed files)
+        id: frontend_lint_i18n_changed
+        run: |
+          cd frontend
+          npm run i18n:check
+
+      - name: Run i18n hardcode guard (dynamic runtime full scope)
+        id: frontend_lint_i18n_dynamic
+        run: |
+          cd frontend
+          npm run i18n:check:dynamic:all:strict
+
+      - name: Run i18n dynamic coverage gate (all dynamic runtime files)
+        id: frontend_lint_i18n_coverage
+        run: |
+          cd frontend
+          npm run i18n:coverage:all:strict
+
+      - name: Generate i18n dynamic coverage trend snapshot
+        id: frontend_lint_i18n_trend
+        run: |
+          cd frontend
+          npm run i18n:coverage:trend
+
+      - name: Run i18n locale parity guard (all locale files)
+        id: frontend_lint_i18n_parity
+        run: |
+          cd frontend
+          npm run i18n:parity:all:strict
+
+      - name: Run i18n P1 defect gate
+        id: frontend_lint_i18n_p1
+        run: |
+          cd frontend
+          npm run i18n:defects:p1:strict
+
+      - name: Run i18n mojibake scan (report only)
+        id: frontend_lint_i18n_mojibake
+        run: |
+          cd frontend
+          npm run i18n:parity:all:mojibake
+
+      - name: Run related-table metadata audit guard (all tracked renderers)
+        id: frontend_lint_related_metadata
+        run: |
+          cd frontend
+          npm run related:metadata:audit:all:strict
+
+      - name: Run Prettier check
+        id: frontend_lint_prettier
+        run: |
+          cd frontend
+          npx prettier --check "src/**/*.{vue,ts,js,tsx,jsx}"
+
+      - name: Write frontend quality gate step summary
+        if: always()
+        env:
+          ESLINT_OUTCOME: ${{ steps.frontend_lint_eslint.outcome }}
+          TYPECHECK_APP_OUTCOME: ${{ steps.frontend_lint_typecheck_app.outcome }}
+          I18N_CHANGED_OUTCOME: ${{ steps.frontend_lint_i18n_changed.outcome }}
+          I18N_DYNAMIC_OUTCOME: ${{ steps.frontend_lint_i18n_dynamic.outcome }}
+          I18N_COVERAGE_OUTCOME: ${{ steps.frontend_lint_i18n_coverage.outcome }}
+          I18N_TREND_OUTCOME: ${{ steps.frontend_lint_i18n_trend.outcome }}
+          I18N_PARITY_OUTCOME: ${{ steps.frontend_lint_i18n_parity.outcome }}
+          I18N_P1_OUTCOME: ${{ steps.frontend_lint_i18n_p1.outcome }}
+          I18N_MOJIBAKE_OUTCOME: ${{ steps.frontend_lint_i18n_mojibake.outcome }}
+          RELATED_METADATA_OUTCOME: ${{ steps.frontend_lint_related_metadata.outcome }}
+          PRETTIER_OUTCOME: ${{ steps.frontend_lint_prettier.outcome }}
+        run: |
+          python .github/scripts/render_gate_summary.py \
+            --summary-path "$GITHUB_STEP_SUMMARY" \
+            --title "Frontend Quality Gates" \
+            --group-label "Gate group" \
+            --group "lint + typecheck + i18n + metadata audit + prettier" \
+            --artifact "i18n-trend-snapshots" \
+            --check "ESLint|$ESLINT_OUTCOME|required|eslint --max-warnings 0" \
+            --check "TypeScript app typecheck|$TYPECHECK_APP_OUTCOME|report-only|baseline gate with continue-on-error" \
+            --check "i18n hardcode guard (changed)|$I18N_CHANGED_OUTCOME|required|changed files scope" \
+            --check "i18n hardcode guard (dynamic full)|$I18N_DYNAMIC_OUTCOME|required|dynamic runtime full scope" \
+            --check "i18n dynamic coverage gate|$I18N_COVERAGE_OUTCOME|required|threshold-enforced coverage gate" \
+            --check "i18n coverage trend snapshot|$I18N_TREND_OUTCOME|required|snapshot generation for trend history" \
+            --check "i18n locale parity guard|$I18N_PARITY_OUTCOME|required|all locale files" \
+            --check "i18n P1 defect gate|$I18N_P1_OUTCOME|required|active P1 defects must be zero" \
+            --check "i18n mojibake scan|$I18N_MOJIBAKE_OUTCOME|required|full-scope mojibake scan" \
+            --check "related-table metadata audit|$RELATED_METADATA_OUTCOME|required|all tracked renderers" \
+            --check "Prettier check|$PRETTIER_OUTCOME|required|src/**/*.{vue,ts,js,tsx,jsx}" \
+
+      - name: Archive i18n trend snapshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i18n-trend-snapshots
+          path: |
+            docs/reports/history/i18n-dynamic-coverage-history.json
+            docs/reports/i18n-dynamic-coverage-trend-latest.md
+          retention-days: 7
+
+  # ============================================================================
+  # Job 6: Frontend - Unit Tests
+  # ============================================================================
+  frontend-unit:
+    name: Frontend - Unit Tests
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run runtime contract regression suite
+        run: |
+          cd frontend
+          npm run test:contract:runtime
+
+      - name: Run layout order consistency gate
+        run: |
+          cd frontend
+          npm run layout:order:consistency:strict
+
+      - name: Run unit tests with coverage
+        run: |
+          cd frontend
+          npm run test:coverage -- --run --reporter=default --reporter=junit --outputFile.junit=coverage/vitest-junit.xml
+
+      - name: Write frontend unit test step summary
+        if: always()
+        run: |
+          python .github/scripts/render_junit_summary.py \
+            --summary-path "$GITHUB_STEP_SUMMARY" \
+            --title "Frontend Unit Test Suite" \
+            --command-label "Test command" \
+            --command "npm run test:coverage -- --run --reporter=default --reporter=junit --outputFile.junit=coverage/vitest-junit.xml" \
+            --artifact "frontend-coverage-report" \
+            --junit-path "frontend/coverage/vitest-junit.xml" \
+            --missing-junit-message "Vitest JUnit XML was not generated. Check workflow logs and the coverage artifact for details." \
+            --parse-error-prefix "Unable to parse frontend unit test summary" \
+            --include-classname \
+            --max-failing-cases 20
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./frontend/coverage/coverage-final.json
+          flags: frontend
+          name: frontend-coverage
+
+      - name: Archive coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-coverage-report
+          path: frontend/coverage/
+          retention-days: 7
+
+  # ============================================================================
+  # Job 7: Frontend - E2E Tests
+  # ============================================================================
+  frontend-e2e:
+    name: Frontend - E2E Tests
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd frontend
+          npx playwright install --with-deps chromium
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Run required detail regression smoke test
+        run: |
+          cd frontend
+          npm run test:e2e:smoke
+        env:
+          CI: true
+          PLAYWRIGHT_WEB_SERVER: '1'
+
+      - name: Run sub-table render performance telemetry gate
+        run: |
+          cd frontend
+          npm run subtable:telemetry:trend:strict
+        env:
+          CI: true
+          PLAYWRIGHT_WEB_SERVER: '1'
+
+      - name: Run E2E tests
+        run: |
+          cd frontend
+          PLAYWRIGHT_HTML_OUTPUT_DIR="$PWD/playwright-report" \
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE="$PWD/test-results/playwright-junit.xml" \
+          npx playwright test --project=chromium --reporter=line,html,junit
+        env:
+          CI: true
+          PLAYWRIGHT_WEB_SERVER: '1'
+
+      - name: Write frontend E2E step summary
+        if: always()
+        run: |
+          python .github/scripts/render_junit_summary.py \
+            --summary-path "$GITHUB_STEP_SUMMARY" \
+            --title "Frontend E2E Suite" \
+            --command-label "Test command" \
+            --command "npx playwright test --project=chromium --reporter=line,html,junit" \
+            --artifact "playwright-test-results" \
+            --junit-path "frontend/test-results/playwright-junit.xml" \
+            --missing-junit-message "Playwright JUnit XML was not generated. Check workflow logs or the Playwright artifact bundle for details." \
+            --parse-error-prefix "Unable to parse frontend E2E summary" \
+            --include-classname \
+            --max-failing-cases 20
+
+      - name: Upload Playwright artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-test-results
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+            docs/reports/history/subtable-first-render-history.json
+            docs/reports/subtable-first-render-trend-latest.md
+          retention-days: 7
+
+  # ============================================================================
+  # Job 8: Frontend - Backend Search E2E (Non-blocking)
+  # ============================================================================
+  frontend-e2e-backend-search:
+    name: Frontend - E2E Backend Search (Non-blocking)
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.backend == 'true' ||
+      needs.detect-changes.outputs.frontend == 'true'
+    continue-on-error: true
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gzeams_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/gzeams_test
+      REDIS_URL: redis://localhost:6379/0
+      API_BASE_URL: http://127.0.0.1:8000/api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements/development.txt
+
+      - name: Run migrations and bootstrap runtime defaults
+        run: |
+          cd backend
+          python manage.py migrate
+          python manage.py bootstrap_defaults
+
+      - name: Seed admin and baseline object data
+        run: |
+          cd backend
+          python manage.py shell <<'PY'
+          from apps.accounts.models import User, UserOrganization
+          from apps.organizations.models import Organization
+
+          org = Organization.objects.first() or Organization.initialize_default_organization()
+          user, created = User.objects.get_or_create(
+              username='admin',
+              defaults={
+                  'email': 'admin@gzeams.com',
+                  'is_staff': True,
+                  'is_superuser': True,
+                  'is_active': True,
+              },
+          )
+          user.email = user.email or 'admin@gzeams.com'
+          user.is_staff = True
+          user.is_superuser = True
+          user.is_active = True
+          user.current_organization = org
+          user.set_password('admin123')
+          user.save()
+
+          uo, _ = UserOrganization.objects.get_or_create(
+              user=user,
+              organization=org,
+              defaults={'role': 'admin', 'is_active': True, 'is_primary': True},
+          )
+          uo.role = 'admin'
+          uo.is_active = True
+          uo.is_primary = True
+          uo.save()
+          print(f'Seeded admin user: {user.username}, org: {org.code}')
+          PY
+          python manage.py create_test_data || true
+
+      - name: Start backend server
+        run: |
+          cd backend
+          nohup python manage.py runserver 0.0.0.0:8000 > /tmp/backend-search-e2e.log 2>&1 &
+          echo $! > /tmp/backend-search-e2e.pid
+          for i in {1..40}; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/api/auth/login/ || true)
+            if [ "$status" = "405" ] || [ "$status" = "400" ] || [ "$status" = "200" ]; then
+              echo "Backend is ready (status=$status)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend failed to start in time"
+          cat /tmp/backend-search-e2e.log || true
+          exit 1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd frontend
+          npx playwright install --with-deps chromium
+
+      - name: Run backend search E2E regression suite
+        run: |
+          cd frontend
+          PLAYWRIGHT_HTML_OUTPUT_DIR="$PWD/playwright-report" \
+          PLAYWRIGHT_JUNIT_OUTPUT_FILE="$PWD/test-results/playwright-backend-search-junit.xml" \
+          npm run test:e2e:backend-search -- --reporter=line,html,junit
+        env:
+          CI: true
+          PLAYWRIGHT_WEB_SERVER: '1'
+          API_BASE_URL: http://127.0.0.1:8000/api
+
+      - name: Write backend-search E2E step summary
+        if: always()
+        run: |
+          python .github/scripts/render_junit_summary.py \
+            --summary-path "$GITHUB_STEP_SUMMARY" \
+            --title "Frontend Backend Search E2E" \
+            --command-label "Test command" \
+            --command "npm run test:e2e:backend-search -- --reporter=line,html,junit" \
+            --artifact "playwright-backend-search-results" \
+            --junit-path "frontend/test-results/playwright-backend-search-junit.xml" \
+            --missing-junit-message "Playwright backend-search JUnit XML was not generated. Check workflow logs or the artifact bundle for details." \
+            --parse-error-prefix "Unable to parse frontend backend-search E2E summary" \
+            --include-classname \
+            --max-failing-cases 20
+
+      - name: Upload backend-search E2E artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-backend-search-results
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+            /tmp/backend-search-e2e.log
+          retention-days: 7
+
+  # ============================================================================
+  # Job 9: Security Scanning
+  # ============================================================================
+  security-scan:
+    name: Security - Dependency Scan
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.backend == 'true' ||
+      needs.detect-changes.outputs.frontend == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install safety for Python dependency scanning
+        run: pip install safety
+
+      - name: Run Python dependency security check
+        id: security_scan_python
+        run: |
+          mkdir -p security-reports
+          cd backend
+          safety check --json > ../security-reports/safety-check.json 2> ../security-reports/safety-check.stderr.log
+        continue-on-error: true
+
+      - name: Run npm audit
+        id: security_scan_npm_moderate
+        run: |
+          mkdir -p security-reports
+          cd frontend
+          npm audit --json --audit-level=moderate > ../security-reports/npm-audit-moderate.json 2> ../security-reports/npm-audit-moderate.stderr.log
+        continue-on-error: true
+
+      - name: Run npm audit (production only)
+        id: security_scan_npm_production
+        run: |
+          mkdir -p security-reports
+          cd frontend
+          npm audit --json --audit-level=high --production > ../security-reports/npm-audit-production.json 2> ../security-reports/npm-audit-production.stderr.log
+        continue-on-error: true
+
+      - name: Write security advisory step summary
+        if: always()
+        env:
+          SECURITY_PYTHON_OUTCOME: ${{ steps.security_scan_python.outcome }}
+          SECURITY_NPM_MODERATE_OUTCOME: ${{ steps.security_scan_npm_moderate.outcome }}
+          SECURITY_NPM_PRODUCTION_OUTCOME: ${{ steps.security_scan_npm_production.outcome }}
+        run: |
+          python .github/scripts/render_gate_summary.py \
+            --summary-path "$GITHUB_STEP_SUMMARY" \
+            --title "Security Advisory Gates" \
+            --group-label "Gate group" \
+            --group "non-blocking dependency scanning" \
+            --artifact "security-scan-reports" \
+            --fail-mode advisory \
+            --check "Python safety|$SECURITY_PYTHON_OUTCOME|advisory|safety check --json" \
+            --check "npm audit (moderate)|$SECURITY_NPM_MODERATE_OUTCOME|advisory|full dependency graph" \
+            --check "npm audit (production)|$SECURITY_NPM_PRODUCTION_OUTCOME|advisory|production-only dependency graph"
+
+      - name: Archive security scan reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-reports
+          path: security-reports/
+          retention-days: 7
+
+  # ============================================================================
+  # Job 10: Status Check (Optional - for GitHub branch protection)
+  # ============================================================================
+  status-check:
+    name: CI Status Check
+    runs-on: ubuntu-latest
+    needs:
+      - backend-lint
+      - backend-demo-data
+      - backend-test
+      - frontend-lint
+      - frontend-unit
+      - frontend-e2e
+      - security-scan
+    if: always()
+
+    steps:
+      - name: Check all jobs status
+        run: |
+          # Helper function to check if result is valid (success or skipped)
+          is_valid() {
+            local result="$1"
+            [[ "$result" == "success" ]] || [[ "$result" == "skipped" ]]
+          }
+
+          # Check all required jobs
+          if ! is_valid "${{ needs.backend-lint.result }}" ||
+             ! is_valid "${{ needs.backend-demo-data.result }}" ||
+             ! is_valid "${{ needs.backend-test.result }}" ||
+             ! is_valid "${{ needs.frontend-lint.result }}" ||
+             ! is_valid "${{ needs.frontend-unit.result }}" ||
+             ! is_valid "${{ needs.frontend-e2e.result }}" ||
+             ! is_valid "${{ needs.security-scan.result }}"; then
+            echo "::error::One or more jobs failed or were cancelled"
+            echo "backend-lint: ${{ needs.backend-lint.result }}"
+            echo "backend-demo-data: ${{ needs.backend-demo-data.result }}"
+            echo "backend-test: ${{ needs.backend-test.result }}"
+            echo "frontend-lint: ${{ needs.frontend-lint.result }}"
+            echo "frontend-unit: ${{ needs.frontend-unit.result }}"
+            echo "frontend-e2e: ${{ needs.frontend-e2e.result }}"
+            echo "security-scan: ${{ needs.security-scan.result }}"
+            exit 1
+          fi
+          echo "All jobs passed successfully!"

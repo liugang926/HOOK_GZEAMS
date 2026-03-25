@@ -1,0 +1,289 @@
+@use 'sass:color';
+@use './variables.scss' as *;
+@use './tokens.scss' as *;
+
+// Global Reset & Typography
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--sys-color-bg-base);
+    color: var(--sys-color-text-main);
+    font-size: 13px; // Modern crisp baseline
+}
+
+/* ====================================================================
+   V2: Component Overrides (Premium SaaS Look)
+   ==================================================================== */
+
+// Cards: Flattened, border-driven
+.el-card,
+.list-card,
+.detail-section,
+.audit-info,
+.related-objects-section {
+    border: 1px solid $border-light !important;
+    box-shadow: $shadow-sm !important;
+    background-color: $bg-card !important;
+    border-radius: $radius-large !important;
+}
+
+// Tables: Borderless interior, floating headers
+.el-table {
+    --el-table-border-color: transparent !important;
+    --el-table-header-bg-color: #f8fafc !important;
+    --el-table-header-text-color: #475569 !important;
+    --el-table-row-hover-bg-color: #f8fafc !important;
+    background-color: transparent !important;
+
+    // Remove outer borders
+    &::before,
+    &::after {
+        display: none !important;
+    }
+
+    th.el-table__cell {
+        background-color: var(--el-table-header-bg-color) !important;
+        border-bottom: none !important; // Absolute flat header
+        font-weight: 500 !important;
+        height: $density-table-row-height;
+    }
+
+    td.el-table__cell {
+        border-bottom: 1px solid #f1f5f9 !important; // Whisper thin row dividers
+        transition: background-color 0.2s;
+        height: $density-table-row-height;
+    }
+}
+
+// Global Compact Mode Applicator
+html.is-compact {
+    --gzeams-density-scale: 0.8;
+    --gzeams-density-table-row: 32px;
+    --gzeams-density-input: 28px;
+    --gzeams-density-font: 12px;
+    --gzeams-density-filter: 28px;
+
+    body {
+        font-size: var(--gzeams-density-font);
+    }
+}
+
+// Inputs: Invisible until focused
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+    box-shadow: 0 0 0 1px $border-color inset !important;
+    transition: all 0.2s ease !important;
+    min-height: $density-input-height;
+
+    &:hover {
+        box-shadow: 0 0 0 1px #cbd5e1 inset !important;
+    }
+
+    &.is-focus,
+    &:focus {
+        // Thick semi-transparent ring
+        box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1), 0 0 0 1px $primary-color inset !important;
+    }
+}
+
+// Adjust Element Plus form sizes dynamically
+.el-form-item {
+    margin-bottom: calc(18px * $density-scale);
+}
+
+.el-input__inner {
+    font-size: $density-font-size;
+}
+
+// Buttons: Crisp geometry
+.el-button {
+    font-weight: 500;
+
+    // Default (secondary) buttons get an off-white bg
+    &--default {
+        background-color: #ffffff;
+        border-color: $border-color;
+        color: $text-regular;
+
+        &:hover {
+            background-color: $bg-hover;
+            border-color: #cbd5e1;
+            color: $text-main;
+        }
+    }
+}
+
+/* ====================================================================
+   Utility Classes & Tags
+   ==================================================================== */
+
+.page-container {
+    padding: $spacing-lg;
+    box-sizing: border-box;
+}
+
+// Status Tag Styles (Unified Public Model)
+.status-tag {
+    border-radius: $radius-round;
+    padding: 2px 10px;
+    font-weight: 500;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    &.status-draft {
+        background: $bg-hover;
+        color: $text-secondary;
+        border: 1px solid $border-color;
+    }
+
+    &.status-pending {
+        background: #fffbeb;
+        color: $warning-color;
+        border: 1px solid color.adjust($warning-color, $lightness: 30%);
+    }
+
+    &.status-approved {
+        background: #ecfdf5;
+        color: $success-color;
+        border: 1px solid color.adjust($success-color, $lightness: 30%);
+    }
+
+    &.status-rejected {
+        background: #fef2f2;
+        color: $danger-color;
+        border: 1px solid color.adjust($danger-color, $lightness: 30%);
+    }
+}
+
+/* ====================================================================
+   Dark Theme Overrides (Sidebar Popups)
+   ==================================================================== */
+// Fix for collapsed sidebar menu popups inheriting the global white background
+.el-menu--popup {
+    background-color: $primary-color !important; // Slate-900 (#0f172a)
+    padding: 0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: $shadow-lg !important;
+    border-radius: $radius-base !important;
+    overflow: hidden;
+
+    .el-menu-item {
+        background-color: transparent !important;
+        color: #cbd5e1 !important; // Slate-300
+        height: 44px;
+        line-height: 44px;
+        margin: 4px;
+        border-radius: $radius-base;
+
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            color: #ffffff !important;
+        }
+
+        &.is-active {
+            background-color: rgba(255, 255, 255, 0.12) !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+    }
+}
+
+// Fix the popper arrow/wrapper if Element Plus generates one for menu popups
+.el-popper.is-light:has(.el-menu--popup) {
+    background-color: $primary-color !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+
+    .el-popper__arrow::before {
+        background-color: $primary-color !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+}
+
+/* ====================================================================
+   Table Header Sorting Overrides (Professional Salesforce/SaaS Style)
+   ==================================================================== */
+.el-table {
+
+    /* Hide the default double-triangles for un-sorted columns */
+    .caret-wrapper {
+        display: none;
+    }
+
+    /* When a column is actually sortable, show caret wrapper on hover or active */
+    th.el-table__cell.is-sortable {
+
+        /* Ensure header cell content is flex to align text and icon properly */
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding-right: 24px;
+            /* Make room for the arrow */
+            position: relative;
+        }
+
+        /* Bring back the caret wrapper on hover or if currently sorted */
+        &:hover .caret-wrapper,
+        &.ascending .caret-wrapper,
+        &.descending .caret-wrapper {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            position: absolute;
+            right: 8px;
+            /* Push to the right edge with standard breathing room */
+            height: 14px;
+            width: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Refine the arrows inside the wrapper */
+        .caret-wrapper {
+
+            /* Hide both arrows initially inside the wrapper */
+            .sort-caret {
+                display: none;
+                border-width: 5px;
+                position: absolute;
+            }
+
+            /* 1. Default Hover State (Not Sorted): Show a faint down arrow to hint sortability */
+            &:hover {
+                .sort-caret.bottom {
+                    display: block;
+                    border-top-color: #cbd5e1;
+                    /* Slate-300 faint hint */
+                    top: 4px;
+                }
+            }
+        }
+
+        /* 2. Active Ascending State: Show solid UP arrow in primary color */
+        &.ascending {
+            .caret-wrapper .sort-caret.top {
+                display: block;
+                border-bottom-color: var(--el-color-primary);
+                top: 2px;
+            }
+
+            .caret-wrapper:hover .sort-caret.bottom {
+                display: none;
+                /* Suppress the hover down arrow when ascending */
+            }
+        }
+
+        /* 3. Active Descending State: Show solid DOWN arrow in primary color */
+        &.descending {
+            .caret-wrapper .sort-caret.bottom {
+                display: block;
+                border-top-color: var(--el-color-primary);
+                top: 4px;
+            }
+        }
+    }
+}

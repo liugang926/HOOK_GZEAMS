@@ -1,0 +1,249 @@
+# GZEAMS 项目报告索引
+
+本目录包含 GZEAMS 项目的所有实施报告、验证报告和快速入门指南。
+
+## 根目录报告
+
+- `performance-baseline.md` - Sprint 3 性能基准与预算说明（2026-03-24）
+- `sprint-4-code-review-report.md` - Sprint 4 工作流实现代码审查报告（2026-03-24）
+
+## 📁 目录结构
+
+```
+docs/reports/
+├── implementation/   # 各阶段实施报告
+├── compliance/        # 代码规范验证和修复报告
+├── quickstart/        # 快速入门指南
+└── summaries/         # 汇总报告
+```
+
+---
+
+## 📊 implementation/ - 实施报告
+
+各模块的详细实施报告，包含代码清单、API 端点、与 PRD 的对应关系。
+
+### Phase 1: 核心资产基础模块
+- `PHASE1_1_IMPLEMENTATION_REPORT.md` - 资产分类体系
+- `PHASE1_2_MULTI_ORGANIZATION_IMPLEMENTATION_REPORT.md` - 多组织隔离框架
+- `PHASE1_3_IMPLEMENTATION_REPORT.md` - 业务元数据引擎
+- `PHASE1_5_IMPLEMENTATION_REPORT.md` - 资产操作（领用/转移）
+- `PHASE1_6_CONSUMABLES_BACKEND_REPORT.md` - 易耗品后端
+- `PHASE1_6_CONSUMABLES_IMPLEMENTATION_REPORT.md` - 易耗品完整实现
+- `PHASE1_8_MOBILE_ENHANCEMENT_IMPLEMENTATION_REPORT.md` - 移动端增强
+- `PHASE1_8_MOBILE_FRONTEND_IMPLEMENTATION_REPORT.md` - 移动端前端
+- `PHASE1_9_NOTIFICATION_FRONTEND_IMPLEMENTATION_REPORT.md` - 通知增强前端
+- `PHASE1_10_BUSINESS_WORKSPACE_FOUNDATION_IMPLEMENTATION_REPORT.md` - 业务工作区收敛 M1 基座补齐
+- `PHASE1_11_FINANCE_WORKSPACE_PILOT_IMPLEMENTATION_REPORT.md` - 业务工作区收敛 M2 财务试点迁移
+- `PHASE1_12_WORKSPACE_REGRESSION_GOVERNANCE_IMPLEMENTATION_REPORT.md` - 业务工作区收敛 M3 回归治理与验证闭环
+
+### Phase 2: 企业集成与权限
+- `PHASE2_4_FINAL_IMPLEMENTATION_REPORT.md` - 组织增强（完整版）
+- `PHASE2_4_ORG_ENHANCEMENT_IMPLEMENTATION_REPORT.md` - 组织增强
+- `PHASE2_5_PERMISSION_ENHANCEMENT_IMPLEMENTATION_REPORT.md` - 权限增强
+- `PHASE2_API_STANDARDIZATION_FIX_REPORT.md` - API 标准化修复
+
+### Phase 3: 工作流引擎
+- `PHASE3_1_LOGICFLOW_BACKEND_IMPLEMENTATION_REPORT.md` - LogicFlow 后端
+- `PHASE3_1_LOGICFLOW_FRONTEND_IMPLEMENTATION_REPORT.md` - LogicFlow 前端
+- `PHASE3_2_IMPLEMENTATION_REPORT.md` - 工作流引擎执行
+
+### Phase 4: 盘点与清查
+- `INVENTORY_ASSIGNMENT_SERVICE_IMPLEMENTATION_REPORT.md` - 盘点分配服务
+- `PHASE4_2_RFID_IMPLEMENTATION_REPORT.md` - RFID 盘点
+- `PHASE4_3_IMPLEMENTATION_REPORT.md` - 盘点快照
+- `PHASE4_4_INVENTORY_ASSIGNMENT_IMPLEMENTATION_REPORT.md` - 盘点分配模块
+- `PHASE4_5_IMPLEMENTATION_REPORT.md` - 盘点对账
+
+### Phase 5: 财务集成
+- `PHASE5_1_M18_ADAPTER_IMPLEMENTATION_REPORT.md` - M18 适配器
+- `PHASE5_2_FINANCE_INTEGRATION_IMPLEMENTATION_REPORT.md` - 财务集成
+- `PHASE5_3_DEPRECIATION_IMPLEMENTATION_REPORT.md` - 折旧模块
+- `PHASE5_4_IMPLEMENTATION_REPORT.md` - 财务报表
+
+### Phase 6: 用户门户
+- `PHASE6_USER_PORTAL_IMPLEMENTATION_REPORT.md` - 用户门户
+
+### Phase 7: 功能增强
+- `PHASE7_2_1_ASSET_PROJECT_FOUNDATION_IMPLEMENTATION_REPORT.md` - 资产项目管理 M1 后端基础与对象接入
+- `PHASE7_2_2_ASSET_PROJECT_WORKSPACE_IMPLEMENTATION_REPORT.md` - 资产项目管理 M2 工作区闭环与 detail panel 收敛
+- `PHASE7_2_3_ASSET_PROJECT_CLOSURE_ACTIONS_IMPLEMENTATION_REPORT.md` - 资产项目管理 M3 结项 / 资产回收 / 跨项目转移动作
+- `PHASE7_2_4_ASSET_PROJECT_RETURN_CLOSURE_IMPLEMENTATION_REPORT.md` - 资产项目管理 M4 项目资产回收闭环与 `AssetReturn` 联动
+- `PHASE7_2_5_ASSET_PROJECT_RETURN_WORKSPACE_IMPLEMENTATION_REPORT.md` - 资产项目管理 M5 待确认归还单接入统一工作区
+- `PHASE7_2_6_ASSET_PROJECT_RETURN_DECISION_WORKSPACE_IMPLEMENTATION_REPORT.md` - 资产项目管理 M6 项目工作区归还单确认 / 驳回决策闭环
+- `PHASE7_2_7_ASSET_PROJECT_RETURN_TRACKING_IMPLEMENTATION_REPORT.md` - 资产项目管理 M7 项目资产视图回收追踪与驳回原因回填
+- `PHASE7_2_8_ASSET_PROJECT_RETURN_HISTORY_IMPLEMENTATION_REPORT.md` - 资产项目管理 M8 项目回收历史 panel 与状态汇总
+- `PHASE7_2_9_ASSET_PROJECT_RETURN_DASHBOARD_IMPLEMENTATION_REPORT.md` - 资产项目管理 M9 项目回收仪表板聚合接口与时间范围趋势视图
+- `PHASE7_2_10_ASSET_PROJECT_WORKSPACE_DASHBOARD_IMPLEMENTATION_REPORT.md` - 资产项目管理 M10 项目工作区总览协议与 overview panel
+- `PHASE7_2_11_ASSET_PROJECT_SHARED_WORKSPACE_DASHBOARD_IMPLEMENTATION_REPORT.md` - 资产项目管理 M11 工作区共享摘要协议与 panel 头部收敛
+- `PHASE7_2_12_ASSET_PROJECT_WORKSPACE_LAZY_PANEL_IMPLEMENTATION_REPORT.md` - 资产项目管理 M12 工作区列表面板懒加载与首屏减载
+- `PHASE7_2_13_ASSET_PROJECT_WORKSPACE_PARTIAL_REFRESH_IMPLEMENTATION_REPORT.md` - 资产项目管理 M13 工作区局部刷新协议与 detail patch
+- `PHASE7_2_14_ASSET_PROJECT_DEMO_DATA_IMPLEMENTATION_REPORT.md` - 资产项目管理 M14 关系闭环 demo data 与项目回收 seed
+- `PHASE7_2_15_FINANCE_DEMO_DATA_IMPLEMENTATION_REPORT.md` - 财务工作区 M15 关系闭环 demo data 与集成日志 seed
+- `PHASE7_2_16_DEMO_DATA_TOP_UP_IMPLEMENTATION_REPORT.md` - Demo data M16 补量模式与 20+ 单据对象修复
+- `PHASE7_2_17_DEMO_DATA_DATETIME_WARNING_FIX_IMPLEMENTATION_REPORT.md` - Demo data M17 时区告警治理与时间字段修正
+- `PHASE7_2_18_DEMO_DATA_UNIQUE_SEQUENCE_HARDENING_IMPLEMENTATION_REPORT.md` - Demo data M18 跨组织序列加固与首跑 / 复跑稳定性验证
+- `PHASE7_2_19_DEMO_DATA_REGRESSION_TEST_IMPLEMENTATION_REPORT.md` - Demo data M19 helper 回归测试与 top-up 自动化验证
+- `PHASE7_2_20_DEMO_DATA_SMOKE_TEST_IMPLEMENTATION_REPORT.md` - Demo data M20 命令入口 smoke test 与 small-count seed 修复
+- `PHASE7_2_21_DEMO_DATA_TOP_UP_SMOKE_TEST_IMPLEMENTATION_REPORT.md` - Demo data M21 top-up 复跑 smoke test 与命令入口补量验证
+- `PHASE7_2_22_DEMO_DATA_SKIP_EXISTING_SMOKE_TEST_IMPLEMENTATION_REPORT.md` - Demo data M22 skip-existing 复跑 smoke test 与仅复用行为验证
+- `PHASE7_2_23_DEMO_DATA_CI_GATE_IMPLEMENTATION_REPORT.md` - Demo data M23 CI gate 接入与 demo_data marker 分组
+- `PHASE7_2_24_DEMO_DATA_REQUIRED_CHECK_IMPLEMENTATION_REPORT.md` - Demo data M24 独立 required check 与并行 CI 拆分
+- `PHASE7_2_25_DEMO_DATA_CI_ARTIFACT_IMPLEMENTATION_REPORT.md` - Demo data M25 CI 产物归档与 JUnit XML 输出
+- `PHASE7_2_26_DEMO_DATA_STEP_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M26 step summary 输出与 CI 页面可读性增强
+- `PHASE7_2_27_BACKEND_TEST_STEP_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M27 backend-test step summary 与全量后端测试可读性增强
+- `PHASE7_2_28_CI_SUMMARY_SCRIPT_REUSE_IMPLEMENTATION_REPORT.md` - Demo data M28 CI summary 共享脚本与 workflow 去重
+- `PHASE7_2_29_FRONTEND_CI_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M29 前端 Vitest / Playwright CI 摘要接入
+- `PHASE7_2_30_FRONTEND_LINT_GATE_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M30 前端质量门禁总览摘要
+- `PHASE7_2_31_SECURITY_SCAN_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M31 安全扫描 advisory 摘要与 artifact 归档
+
+### 快速入门指南
+- `DEMO_DATA_COMMAND_QUICK_START.md` - Demo Data 管理命令快速入门
+- `INVENTORY_ASSIGNMENT_SERVICE_QUICK_START.md` - 盘点分配服务快速入门
+- `INVENTORY_QR_FRONTEND_QUICKSTART.md` - QR 盘点前端快速入门
+- `LOGICFLOW_QUICK_START.md` - LogicFlow 快速入门
+- `METADATA_ENGINE_QUICK_START.md` - 元数据引擎快速入门
+- `MODULE_QUICK_REFERENCE.md` - 模块快速参考
+- `PHASE1_9_NOTIFICATION_QUICK_START.md` - 通知增强快速入门
+- `INVENTORY_QR_FRONTEND_IMPLEMENTATION_REPORT.md` - QR 盘点前端实施
+
+---
+
+## 🔍 compliance/ - 验证与修复报告
+
+代码规范验证、字段验证、编码问题修复等相关报告。
+
+### 验证报告
+- `GZEAMS_CODE_COMPLIANCE_VERIFICATION_REPORT.md` - 代码规范综合验证报告（主报告）
+- `SPRINT2_CODE_COMPLIANCE_REPORT.md` - Sprint 2 实现代码质量审查报告（2026-03-24）
+- `GZEAMS_FIX_COMPLETION_REPORT.md` - 修复完成报告
+- `GZEAMS_FINAL_FIX_COMPLETION_REPORT.md` - 最终修复完成报告
+- `PHASE4_INVENTORY_CODE_COMPLIANCE_REPORT.md` - 盘点模块规范检查
+- `BACKEND_ROUTING_CONFIG_ANALYSIS_REPORT.md` - 后端路由配置分析报告
+- `DYNAMIC_API_CLIENT_VERIFICATION_REPORT.md` - 动态API客户端验证报告（详细版）
+- `DYNAMIC_API_VERIFICATION_QUICK_REFERENCE.md` - 动态API客户端验证快速参考
+- `BACKEND_API_ENDPOINTS_AVAILABILITY_REPORT.md` - 后端API端点可用性检查报告（2026-01-28）
+
+### 快速参考
+- `API_ENDPOINTS_QUICK_REFERENCE.md` - API端点快速参考（正确URL路径）
+
+### 编码问题修复
+- `CHINESE_ENCODING_FIX_REPORT.md` - 中文编码修复报告
+
+### 字段验证
+- `FIELD_VALIDATION_COMPLETION_REPORT.md` - 字段验证完成报告
+- `FIELD_VALIDATION_ENHANCEMENT_REPORT.md` - 验证规则增强报告
+- `FIELD_VALIDATION_IMPLEMENTATION_SUMMARY.md` - 实施总结
+- `FIELD_VALIDATION_QUICK_REFERENCE.md` - 快速参考卡
+- `FIELD_VALIDATOR_IMPLEMENTATION_REPORT.md` - 验证器实现报告
+- `VALIDATOR_TASK_SUMMARY.md` - 验证器任务摘要
+
+---
+
+## 🚀 quickstart/ - 快速入门指南
+
+各模块的快速入门指南和参考文档。
+
+- `DEMO_DATA_COMMAND_QUICK_START.md` - Demo Data 管理命令快速入门
+- `INVENTORY_ASSIGNMENT_SERVICE_QUICK_START.md` - 盘点分配服务快速入门
+- `INVENTORY_QR_FRONTEND_QUICKSTART.md` - QR 盘点前端快速入门
+- `LOGICFLOW_QUICK_START.md` - LogicFlow 快速入门
+- `METADATA_ENGINE_QUICK_START.md` - 元数据引擎快速入门
+- `MODULE_QUICK_REFERENCE.md` - 模块快速参考
+- `PHASE1_9_NOTIFICATION_QUICK_START.md` - 通知增强快速入门
+
+---
+
+## 📋 summaries/ - 汇总报告
+
+项目整体汇总报告、架构文档等。
+
+### 综合报告
+- `GZEAMS_FINAL_IMPLEMENTATION_REPORT.md` - 最终实施报告（主报告）
+- `GZEAMS_IMPLEMENTATION_REPORT.md` - 实施报告
+- `GZEAMS_CURRENT_STATE_ANALYSIS_REPORT.md` - 当前现状分析与下一阶段建议（2026-03-20）
+- `BACKEND_ARCHITECTURE.md` - 后端架构文档
+- `BACKEND_CORE_SETUP_REPORT.md` - 后端核心设置报告
+
+### 专项报告
+- `FRONTEND_API_COMPLETION_REPORT.md` - 前端 API 封装完成报告
+- `PHASE1_9_NOTIFICATION_QUICK_START.md` - 通知增强快速入门
+
+### 文件清单和快速参考
+- `PHASE2_4_FILES_MANIFEST.md` - 组织增强模块文件清单
+- `PHASE2_4_QUICK_REFERENCE.md` - 组织增强快速参考
+- `PHASE2_5_FILES_MANIFEST.md` - 权限增强模块文件清单
+- `PHASE2_5_QUICK_REFERENCE.md` - 权限增强快速参考
+- `PHASE3_1_API_QUICK_REFERENCE.md` - LogicFlow API 快速参考
+- `PHASE3_1_MIGRATION_GUIDE.md` - 迁移指南
+- `PHASE4_2_FILE_LIST.md` - RFID 盘点文件列表
+- `PHASE5_3_FILE_MANIFEST.md` - 折旧模块文件清单
+
+---
+
+## 📖 阅读顺序建议
+
+### 新手入门
+1. 先阅读 `summaries/GZEAMS_FINAL_IMPLEMENTATION_REPORT.md` 了解项目全貌
+2. 再阅读 `compliance/GZEAMS_CODE_COMPLIANCE_VERIFICATION_REPORT.md` 了解规范遵循情况
+
+### 模块开发者
+1. 在 `implementation/` 中找到对应阶段的实施报告
+2. 在 `quickstart/` 中找到快速入门指南
+3. 参考 `summaries/` 中的文件清单和快速参考
+
+### 代码审查员
+1. 阅读对应的 `compliance/` 目录下的验证报告
+2. 查看 `implementation/` 中的与 PRD 对应关系验证
+
+---
+
+## 📝 报告更新时间
+
+最后更新：2026-03-24
+
+**最新添加**：
+- ✅ `sprint-4-code-review-report.md` - Sprint 4 工作流实现代码审查报告（2026-03-24）
+- ✅ `performance-baseline.md` - Sprint 3 性能基准与预算说明（2026-03-24）
+- ✅ `SPRINT2_CODE_COMPLIANCE_REPORT.md` - Sprint 2 实现代码质量审查报告（2026-03-24）
+- ✅ `PHASE7_2_31_SECURITY_SCAN_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M31 安全扫描 advisory 摘要与 artifact 归档（2026-03-23）
+- ✅ `PHASE7_2_30_FRONTEND_LINT_GATE_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M30 前端质量门禁总览摘要（2026-03-23）
+- ✅ `PHASE7_2_29_FRONTEND_CI_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M29 前端 Vitest / Playwright CI 摘要接入（2026-03-23）
+- ✅ `PHASE7_2_28_CI_SUMMARY_SCRIPT_REUSE_IMPLEMENTATION_REPORT.md` - Demo data M28 CI summary 共享脚本与 workflow 去重（2026-03-23）
+- ✅ `PHASE7_2_27_BACKEND_TEST_STEP_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M27 backend-test step summary 与全量后端测试可读性增强（2026-03-23）
+- ✅ `PHASE7_2_26_DEMO_DATA_STEP_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M26 step summary 输出与 CI 页面可读性增强（2026-03-23）
+- ✅ `PHASE7_2_25_DEMO_DATA_CI_ARTIFACT_IMPLEMENTATION_REPORT.md` - Demo data M25 CI 产物归档与 JUnit XML 输出（2026-03-23）
+- ✅ `PHASE7_2_24_DEMO_DATA_REQUIRED_CHECK_IMPLEMENTATION_REPORT.md` - Demo data M24 独立 required check 与并行 CI 拆分（2026-03-23）
+- ✅ `PHASE7_2_23_DEMO_DATA_CI_GATE_IMPLEMENTATION_REPORT.md` - Demo data M23 CI gate 接入与 demo_data marker 分组（2026-03-22）
+- ✅ `PHASE7_2_22_DEMO_DATA_SKIP_EXISTING_SMOKE_TEST_IMPLEMENTATION_REPORT.md` - Demo data M22 skip-existing 复跑 smoke test 与仅复用行为验证（2026-03-22）
+- ✅ `PHASE7_2_21_DEMO_DATA_TOP_UP_SMOKE_TEST_IMPLEMENTATION_REPORT.md` - Demo data M21 top-up 复跑 smoke test 与命令入口补量验证（2026-03-22）
+- ✅ `PHASE7_2_20_DEMO_DATA_SMOKE_TEST_IMPLEMENTATION_REPORT.md` - Demo data M20 命令入口 smoke test 与 small-count seed 修复（2026-03-21）
+- ✅ `PHASE7_2_19_DEMO_DATA_REGRESSION_TEST_IMPLEMENTATION_REPORT.md` - Demo data M19 helper 回归测试与 top-up 自动化验证（2026-03-21）
+- ✅ `PHASE7_2_18_DEMO_DATA_UNIQUE_SEQUENCE_HARDENING_IMPLEMENTATION_REPORT.md` - Demo data M18 跨组织序列加固与首跑 / 复跑稳定性验证（2026-03-21）
+- ✅ `PHASE7_2_17_DEMO_DATA_DATETIME_WARNING_FIX_IMPLEMENTATION_REPORT.md` - Demo data M17 时区告警治理与时间字段修正（2026-03-21）
+- ✅ `PHASE7_2_16_DEMO_DATA_TOP_UP_IMPLEMENTATION_REPORT.md` - Demo data M16 补量模式与 20+ 单据对象修复（2026-03-20）
+- ✅ `PHASE7_2_15_FINANCE_DEMO_DATA_IMPLEMENTATION_REPORT.md` - 财务工作区 M15 关系闭环 demo data 与集成日志 seed（2026-03-20）
+- ✅ `PHASE7_2_14_ASSET_PROJECT_DEMO_DATA_IMPLEMENTATION_REPORT.md` - 资产项目管理 M14 关系闭环 demo data 与项目回收 seed（2026-03-20）
+- ✅ `PHASE7_2_13_ASSET_PROJECT_WORKSPACE_PARTIAL_REFRESH_IMPLEMENTATION_REPORT.md` - 资产项目管理 M13 工作区局部刷新协议与 detail patch（2026-03-20）
+- ✅ `PHASE7_2_12_ASSET_PROJECT_WORKSPACE_LAZY_PANEL_IMPLEMENTATION_REPORT.md` - 资产项目管理 M12 工作区列表面板懒加载与首屏减载（2026-03-20）
+- ✅ `PHASE7_2_11_ASSET_PROJECT_SHARED_WORKSPACE_DASHBOARD_IMPLEMENTATION_REPORT.md` - 资产项目管理 M11 工作区共享摘要协议与 panel 头部收敛（2026-03-20）
+- ✅ `PHASE7_2_10_ASSET_PROJECT_WORKSPACE_DASHBOARD_IMPLEMENTATION_REPORT.md` - 资产项目管理 M10 项目工作区总览协议与 overview panel（2026-03-20）
+- ✅ `PHASE7_2_9_ASSET_PROJECT_RETURN_DASHBOARD_IMPLEMENTATION_REPORT.md` - 资产项目管理 M9 项目回收仪表板聚合接口与时间范围趋势视图（2026-03-20）
+- ✅ `PHASE7_2_8_ASSET_PROJECT_RETURN_HISTORY_IMPLEMENTATION_REPORT.md` - 资产项目管理 M8 项目回收历史 panel 与状态汇总（2026-03-20）
+- ✅ `PHASE7_2_7_ASSET_PROJECT_RETURN_TRACKING_IMPLEMENTATION_REPORT.md` - 资产项目管理 M7 项目资产视图回收追踪与驳回原因回填（2026-03-20）
+- ✅ `PHASE7_2_6_ASSET_PROJECT_RETURN_DECISION_WORKSPACE_IMPLEMENTATION_REPORT.md` - 资产项目管理 M6 项目工作区归还单确认 / 驳回决策闭环（2026-03-20）
+- ✅ `PHASE7_2_5_ASSET_PROJECT_RETURN_WORKSPACE_IMPLEMENTATION_REPORT.md` - 资产项目管理 M5 待确认归还单接入统一工作区（2026-03-20）
+- ✅ `PHASE7_2_4_ASSET_PROJECT_RETURN_CLOSURE_IMPLEMENTATION_REPORT.md` - 资产项目管理 M4 项目资产回收闭环与 `AssetReturn` 联动（2026-03-20）
+- ✅ `PHASE7_2_3_ASSET_PROJECT_CLOSURE_ACTIONS_IMPLEMENTATION_REPORT.md` - 资产项目管理 M3 结项 / 资产回收 / 跨项目转移动作（2026-03-20）
+- ✅ `PHASE7_2_2_ASSET_PROJECT_WORKSPACE_IMPLEMENTATION_REPORT.md` - 资产项目管理 M2 工作区闭环与 detail panel 收敛（2026-03-20）
+- ✅ `PHASE7_2_1_ASSET_PROJECT_FOUNDATION_IMPLEMENTATION_REPORT.md` - 资产项目管理 M1 后端基础与对象接入（2026-03-20）
+- ✅ `PHASE1_12_WORKSPACE_REGRESSION_GOVERNANCE_IMPLEMENTATION_REPORT.md` - 业务工作区收敛 M3 回归治理与验证闭环（2026-03-20）
+- ✅ `PHASE1_11_FINANCE_WORKSPACE_PILOT_IMPLEMENTATION_REPORT.md` - 业务工作区收敛 M2 财务试点迁移实施报告（2026-03-20）
+- ✅ `PHASE1_10_BUSINESS_WORKSPACE_FOUNDATION_IMPLEMENTATION_REPORT.md` - 业务工作区收敛 M1 基座补齐实施报告（2026-03-20）
+- ✅ `GZEAMS_CURRENT_STATE_ANALYSIS_REPORT.md` - 当前现状分析与下一阶段建议（2026-03-20）
+- ✅ `BACKEND_API_ENDPOINTS_AVAILABILITY_REPORT.md` - 后端API端点可用性检查报告（2026-01-28）
+- ✅ `API_ENDPOINTS_QUICK_REFERENCE.md` - API端点快速参考（正确URL路径）
+- ✅ `DYNAMIC_API_CLIENT_VERIFICATION_REPORT.md` - 动态API客户端详细验证报告
+- ✅ `DYNAMIC_API_VERIFICATION_QUICK_REFERENCE.md` - 动态API客户端快速参考
+
+如有疑问，请参考主项目文档：`CLAUDE.md`

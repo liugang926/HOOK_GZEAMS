@@ -1,0 +1,1494 @@
+{
+    "title": "系统管理",
+    "department": {
+        "title": "部门管理",
+        "createButton": "新建部门",
+        "addSubDept": "添加子部门",
+        "parent": "上级部门",
+        "namePlaceholder": "请输入部门名称",
+        "codePlaceholder": "请输入部门编码",
+        "parentPlaceholder": "请选择上级部门（不选则为顶级部门）",
+        "managerPlaceholder": "请选择负责人",
+        "phonePlaceholder": "请输入联系电话",
+        "descriptionPlaceholder": "请输入描述",
+        "columns": {
+            "name": "部门名称",
+            "code": "编码",
+            "manager": "负责人",
+            "phone": "联系电话",
+            "sortOrder": "排序",
+            "status": "状态"
+        },
+        "status": {
+            "enabled": "启用",
+            "disabled": "停用"
+        },
+        "validation": {
+            "nameRequired": "请输入部门名称",
+            "codeRequired": "请输入部门编码"
+        },
+        "messages": {
+            "confirmDelete": "确定删除该部门吗？"
+        }
+    },
+    "dictionary": {
+        "title": "数据字典管理",
+        "type": "字典类型",
+        "createTypButton": "新建字典类型",
+        "code": "字典编码",
+        "name": "字典名称",
+        "englishName": "英文名称",
+        "sortOrder": "排序号",
+        "itemManagement": "字典项管理",
+        "addItem": "添加字典项",
+        "batchSort": "批量排序",
+        "item": "字典项",
+        "itemCode": "字典项编码",
+        "displayName": "显示名称",
+        "color": "显示颜色",
+        "icon": "图标",
+        "isDefault": "设为默认",
+        "isDefaultTip": "默认选项将自动选中",
+        "enabled": "启用状态",
+        "default": "默认",
+        "codePlaceholder": "请输入字典编码（英文，如：ASSET_STATUS）",
+        "codeTip": "编码必须唯一，建议使用大写字母和下划线",
+        "namePlaceholder": "请输入字典名称（中文）",
+        "englishNamePlaceholder": "请输入英文名称",
+        "descriptionPlaceholder": "请输入描述",
+        "itemCodePlaceholder": "请输入字典项编码（英文）",
+        "displayNamePlaceholder": "请输入显示名称（中文）",
+        "colorPlaceholder": "请输入颜色值（如：#409EFF）",
+        "iconPlaceholder": "选择图标",
+        "columns": {
+            "code": "字典编码",
+            "name": "字典名称",
+            "description": "描述",
+            "isSystem": "系统字典",
+            "status": "状态",
+            "itemCount": "字典项数量",
+            "sortOrder": "排序"
+        },
+        "status": {
+            "enabled": "启用",
+            "disabled": "禁用"
+        },
+        "isSystem": {
+            "yes": "是",
+            "no": "否"
+        },
+        "actions": {
+            "viewItems": "字典项"
+        },
+        "validation": {
+            "codeRequired": "请输入字典编码",
+            "codePattern": "编码只能包含大写字母、数字和下划线，且必须以字母或下划线开头",
+            "nameRequired": "请输入字典名称",
+            "itemCodeRequired": "请输入字典项编码",
+            "itemCodePattern": "编码只能包含字母、数字和下划线，且必须以字母或下划线开头",
+            "displayNameRequired": "请输入显示名称"
+        },
+        "messages": {
+            "confirmDelete": "确定删除字典类型\"{name}\"吗？删除后关联的字典项也将被删除。",
+            "confirmDeleteTitle": "确认删除",
+            "loadFailed": "加载数据失败",
+            "loadItemsFailed": "加载字典项失败",
+            "enabled": "已启用",
+            "disabled": "已禁用",
+            "updateSortFailed": "更新排序失败",
+            "confirmBatchSort": "确定要按当前排序号重新排列所有字典项吗？",
+            "batchSortSuccess": "批量排序成功",
+            "batchSortFailed": "批量排序失败",
+            "confirmDeleteItem": "确定删除字典项\"{name}\"吗？"
+        }
+    },
+    "common": {
+        "all": "全部",
+        "item": "项",
+        "actions": {
+            "search": "查询",
+            "reset": "重置",
+            "edit": "编辑",
+            "delete": "删除",
+            "cancel": "取消",
+            "save": "保存",
+            "create": "新建",
+            "confirm": "确定",
+            "detail": "详情"
+        },
+        "messages": {
+            "loadFailed": "加载失败",
+            "operationFailed": "操作失败",
+            "saveSuccess": "保存成功",
+            "deleteSuccess": "删除成功",
+            "confirmDelete": "确定要删除吗？"
+        }
+    },
+    "messages": {
+        "unsavedChanges": "您有未保存的更改",
+        "validationFailed": "校验失败，请检查带有红字的必填项或输入格式。"
+    },
+    "config": {
+        "title": "系统配置",
+        "addConfig": "添加配置",
+        "tabs": {
+            "all": "全部",
+            "general": "通用",
+            "qrcode": "二维码",
+            "notification": "通知",
+            "asset": "资产",
+            "inventory": "盘点",
+            "featureFlags": "功能开关",
+            "finance": "财务",
+            "workflow": "工作流",
+            "integration": "集成"
+        },
+        "columns": {
+            "key": "配置键",
+            "name": "名称",
+            "value": "值",
+            "type": "类型",
+            "category": "分类",
+            "isSystem": "系统",
+            "description": "描述"
+        },
+        "status": {
+            "enabled": "启用",
+            "disabled": "禁用"
+        },
+        "tags": {
+            "system": "系统"
+        },
+        "valueTypes": {
+            "string": "字符串",
+            "integer": "整数",
+            "float": "浮点数",
+            "boolean": "布尔",
+            "json": "JSON"
+        },
+        "categories": {
+            "general": "通用",
+            "qrcode": "二维码",
+            "notification": "通知",
+            "asset": "资产",
+            "inventory": "盘点",
+            "feature_flag": "功能开关",
+            "finance": "财务",
+            "workflow": "工作流",
+            "integration": "集成"
+        },
+        "featureFlags": {
+            "runtime_i18n_enabled": {
+                "name": "运行时国际化开关",
+                "description": "启用对象/布局元数据的运行时本地化输出。"
+            },
+            "layout_merge_unified_enabled": {
+                "name": "布局统一合并开关",
+                "description": "启用统一的运行时布局合并与标准化路径。"
+            },
+            "field_code_strict_mode": {
+                "name": "field_code 严格模式",
+                "description": "仅返回 field_code，不再输出兼容字段 code。"
+            }
+        },
+        "messages": {
+            "loadFailed": "加载系统配置失败",
+            "confirmDelete": "确定删除此配置吗？"
+        },
+        "searchPlaceholder": "按键或名称搜索",
+        "form": {
+            "titles": {
+                "create": "新增配置",
+                "edit": "编辑配置"
+            },
+            "labels": {
+                "configKey": "配置键",
+                "displayName": "显示名称",
+                "valueType": "值类型",
+                "value": "值",
+                "category": "分类",
+                "description": "描述",
+                "isSystem": "系统配置",
+                "isEncrypted": "加密存储"
+            },
+            "placeholders": {
+                "configKey": "例如：QR_CODE_TEMPLATE、ENABLE_EMAIL",
+                "displayName": "例如：二维码模板、启用邮件通知",
+                "valueType": "请选择值类型",
+                "jsonValue": "例如：{\"key\": \"value\"}",
+                "category": "请选择分类",
+                "description": "请描述该配置的用途"
+            },
+            "valuePlaceholders": {
+                "string": "请输入文本值",
+                "integer": "请输入整数值",
+                "float": "请输入小数值",
+                "default": "请输入值"
+            },
+            "switches": {
+                "systemConfig": "系统配置",
+                "userConfig": "用户配置",
+                "encrypted": "加密",
+                "plainText": "明文"
+            },
+            "tips": {
+                "configKey": "配置唯一标识（建议使用大写字母和下划线）",
+                "isSystem": "系统配置不可被普通用户删除",
+                "isEncrypted": "敏感数据建议开启加密（如密码、API 密钥）"
+            },
+            "validation": {
+                "configKeyRequired": "请输入配置键",
+                "configKeyPattern": "配置键仅支持大写字母、数字和下划线",
+                "displayNameRequired": "请输入显示名称",
+                "valueTypeRequired": "请选择值类型",
+                "valueRequired": "请输入配置值"
+            },
+            "messages": {
+                "invalidJson": "JSON 格式不正确",
+                "updateSuccess": "更新成功",
+                "createSuccess": "新增成功",
+                "operationFailed": "操作失败"
+            },
+            "actions": {
+                "add": "新增"
+            }
+        }
+    },
+    "branding": {
+        "title": "品牌主题管理",
+        "subtitle": "统一管理系统主题、应用名称、Logo、Favicon 和登录页视觉配置。",
+        "entry": "品牌主题",
+        "sections": {
+            "identity": "品牌标识",
+            "theme": "主题变量",
+            "login": "登录体验",
+            "loginI18n": "登录页多语言文案",
+            "assets": "Logo 与图标资源",
+            "preview": "实时预览"
+        },
+        "fields": {
+            "appName": "应用名称",
+            "appShortName": "简称",
+            "appTagline": "品牌副标题",
+            "appIconText": "兜底图标文字",
+            "primaryColor": "主色",
+            "accentColor": "强调色",
+            "sidebarGradientStart": "侧边栏渐变起点",
+            "sidebarGradientEnd": "侧边栏渐变终点",
+            "borderRadius": "圆角",
+            "darkMode": "深色模式",
+            "loginTitle": "登录主标题",
+            "loginSubtitle": "登录副标题",
+            "copyright": "页脚版权文案"
+        },
+        "actions": {
+            "upload": "上传",
+            "remove": "移除"
+        },
+        "preview": {
+            "primaryAction": "主操作按钮",
+            "radius": "组件圆角"
+        }
+    },
+    "businessObject": {
+        "title": "业务对象管理",
+        "create": "新建业务对象",
+        "createTitle": "新建业务对象",
+        "editTitle": "编辑业务对象",
+        "tabs": {
+            "basic": "基本信息",
+            "actions": "自定义动作"
+        },
+        "columns": {
+            "name": "对象名称",
+            "code": "对象编码",
+            "description": "描述",
+            "type": "类型",
+            "fieldCount": "字段数",
+            "layoutCount": "布局数",
+            "workflow": "工作流"
+        },
+        "fields": {
+            "code": "对象编码",
+            "name": "对象名称",
+            "description": "描述",
+            "tableName": "数据表名",
+            "pkField": "主键字段",
+            "enableWorkflow": "启用工作流",
+            "enableVersion": "启用版本控制",
+            "enableSoftDelete": "启用软删除",
+            "isSystem": "是否系统对象"
+        },
+        "placeholders": {
+            "code": "请输入对象编码（英文，如：Asset）",
+            "name": "请输入对象名称（中文，如：固定资产）",
+            "description": "请输入对象描述",
+            "tableName": "数据库表名（如：assets_asset）",
+            "pkField": "默认为 id"
+        },
+        "tips": {
+            "workflow": "启用后可配置审批流程",
+            "version": "启用后记录数据变更历史",
+            "softDelete": "删除数据时不物理删除",
+            "system": "系统对象不可删除"
+        },
+        "type": {
+            "custom": "自定义",
+            "system": "内置"
+        },
+        "actions": {
+            "fields": "字段管理",
+            "layouts": "布局管理"
+        },
+        "validation": {
+            "codeRequired": "请输入对象编码",
+            "codePattern": "编码必须以大写字母开头，只能包含字母和数字",
+            "nameRequired": "请输入对象名称",
+            "tableNameRequired": "请输入数据表名"
+        },
+        "info": {
+            "customActions": "定义此对象的自定义动作（按钮/触发器）。",
+            "customActionsExample": "示例: [{\"code\": \"approve\", \"label\": \"审批\", \"type\": \"api\"}]"
+        },
+        "messages": {
+            "loadFailed": "加载业务对象失败",
+            "noBusinessFields": "该对象布局未配置业务字段",
+            "loadMetadataFailed": "加载对象元数据失败"
+        }
+    },
+    "pageLayout": {
+        "title": "{name} - 布局管理",
+        "create": "新建布局",
+        "createTitle": "新建布局",
+        "modes": {
+            "edit": "编辑模式",
+            "readonly": "只读模式",
+            "search": "搜索模式"
+        },
+        "columns": {
+            "name": "布局名称",
+            "code": "布局编码",
+            "mode": "布局模式",
+            "description": "描述",
+            "version": "版本",
+            "isDefault": "默认",
+            "status": "状态"
+        },
+        "tags": {
+            "systemDefault": "系统默认",
+            "default": "默认"
+        },
+        "status": {
+            "draft": "草稿",
+            "published": "已发布",
+            "archived": "已归档"
+        },
+        "types": {
+            "form": "表单",
+            "edit": "编辑",
+            "readonly": "只读",
+            "detail": "详情",
+            "list": "列表",
+            "search": "搜索"
+        },
+        "actions": {
+            "customize": "自定义",
+            "preview": "预览",
+            "design": "设计",
+            "duplicate": "复制",
+            "publish": "发布",
+            "rollback": "回滚",
+            "createAndDesign": "创建并设计"
+        },
+        "fields": {
+            "code": "布局编码",
+            "name": "布局名称",
+            "type": "布局类型",
+            "isDefault": "设为默认",
+            "description": "描述"
+        },
+        "placeholders": {
+            "code": "例如: asset_form_custom",
+            "name": "例如: 资产表单自定义布局",
+            "description": "描述此布局的用途"
+        },
+        "tips": {
+            "default": "默认布局将作为该业务对象此类型布局的首选"
+        },
+        "alert": {
+            "autoGenerated": "列表布局已根据字段定义自动生成，请在字段管理中配置 show_in_list 属性。"
+        },
+        "messages": {
+            "emptyState": "暂无{mode}布局，点击下方按钮创建",
+            "createSuccess": "布局创建成功",
+            "confirmPublish": "确定要发布布局 \"{name}\" 吗？发布后将创建新版本。",
+            "publishSuccess": "发布成功",
+            "confirmRollback": "确定要将布局 \"{name}\" 回滚到上一版本吗？",
+            "rollbackSuccess": "回滚成功",
+            "rollbackFailed": "回滚失败",
+            "noRollbackTarget": "没有可回滚的历史版本",
+            "required": "请填写布局编码和名称"
+        },
+        "designer": {
+            "title": "布局设计器",
+            "badges": {
+                "customLayout": "自定义布局"
+            },
+            "actions": {
+                "undo": "撤销",
+                "redo": "重做",
+                "reset": "恢复默认",
+                "custom": "自定义",
+                "preview": "预览",
+                "saveDraft": "保存草稿",
+                "publish": "发布",
+                "addSection": "新增分组",
+                "moveSectionUp": "上移分组",
+                "moveSectionDown": "下移分组",
+                "editSection": "编辑分组",
+                "deleteSection": "删除分组",
+                "addTabPage": "新增标签页",
+                "removeField": "移除字段",
+                "translationMode": "翻译模式",
+                "resetSize": "重置尺寸"
+            },
+            "status": {
+                "previewMode": "预览模式",
+                "customMode": "自定义模式",
+                "designState": "设计态",
+                "previewState": "预览态"
+            },
+            "placeholders": {
+                "searchField": "搜索字段、模板或编码..."
+            },
+            "hints": {
+                "designCanvas": "布局设计画布（点击字段可编辑属性）",
+                "previewCanvas": "预览渲染（与详情页渲染保持一致）",
+                "dropToTab": "拖拽字段到当前标签页",
+                "dropToCollapse": "拖拽字段到当前折叠项",
+                "dropToSection": "拖拽字段到当前分组",
+                "sectionTemplateSection": "带可编辑字段区域的标准分组",
+                "sectionTemplateTab": "适合按标签切换内容的分组",
+                "sectionTemplateCollapse": "适合折叠展示内容块的分组",
+                "detailRegionRelation": "关联编码",
+                "detailRegionField": "字段编码",
+                "detailRegionTarget": "目标对象",
+                "detailRegionMode": "表格模式",
+                "detailRegionColumns": "列数",
+                "detailRegionSummary": "这个区块会在主从聚合页面中渲染子表区域。",
+                "singleLayoutModel": "单一布局模型：在此配置编辑布局，详情页复用该布局；列表页由字段配置（show_in_list + sort_order）驱动。",
+                "dragToReorderSection": "拖拽排序分组",
+                "dragToResize": "拖拽调整字段尺寸",
+                "sidebarHeightOnly": "侧边栏字段仅支持高度调整"
+            },
+            "templates": {
+                "sectionMain": {
+                    "title": "主表编辑区",
+                    "description": "适合放置主对象核心字段的双栏主区域模板。"
+                },
+                "sectionSidebar": {
+                    "title": "侧栏摘要区",
+                    "description": "适合展示补充信息和辅助字段的单栏侧边模板。"
+                },
+                "tabMain": {
+                    "title": "标签工作区",
+                    "description": "适合将复杂表单内容拆分为多标签切换展示。"
+                },
+                "collapseMain": {
+                    "title": "折叠分组区",
+                    "description": "适合承载次要信息或可选信息的折叠区块模板。"
+                }
+            },
+            "panel": {
+                "properties": "属性",
+                "fieldProperties": "字段属性",
+                "sectionProperties": "分组属性",
+                "sectionTemplates": "区块模板"
+            },
+            "empty": {
+                "layoutEmpty": "布局为空，请先新增分组开始设计。",
+                "selectTarget": "请选择字段或分组后再编辑属性。"
+            },
+            "defaults": {
+                "untitledSection": "未命名分组",
+                "tabTitle": "标签 {index}",
+                "newTab": "新标签",
+                "newSection": "新分组",
+                "detailRegion": "从表区域",
+                "basicInformation": "基本信息"
+            },
+            "sectionProperties": {
+                "fields": {
+                    "title": "标题",
+                    "titleEn": "英文标题",
+                    "translationKey": "翻译 Key",
+                    "type": "分组类型",
+                    "relationCode": "关联编码",
+                    "fieldCode": "字段编码",
+                    "targetObjectCode": "目标对象编码",
+                    "detailEditMode": "子表编辑方式",
+                    "position": "位置",
+                    "columns": "列数",
+                    "labelPosition": "标签位置",
+                    "labelWidth": "自定义标签宽度（例如 150px）",
+                    "border": "边框",
+                    "collapsible": "可折叠",
+                    "collapsed": "默认折叠",
+                    "tabs": "标签页",
+                    "relatedFields": "明细字段",
+                    "lookupColumns": "查找列",
+                    "toolbarConfig": "工具栏配置",
+                    "summaryRules": "汇总规则",
+                    "validationRules": "校验规则"
+                },
+                "options": {
+                    "types": {
+                        "section": "标准分组",
+                        "tab": "标签页",
+                        "collapse": "可折叠分组",
+                        "detailRegion": "从表区域"
+                    },
+                    "position": {
+                        "main": "主区域",
+                        "sidebar": "右侧栏"
+                    },
+                    "labelPosition": {
+                        "left": "左对齐",
+                        "top": "顶部对齐"
+                    },
+                    "detailEditMode": {
+                        "inlineTable": "行内表格",
+                        "nestedForm": "嵌套表单",
+                        "readonlyTable": "只读表格"
+                    }
+                }
+            },
+            "detailRegionConfigurator": {
+                "preset": "\u9884\u8bbe",
+                "sectionPreset": "\u533a\u5757\u6a21\u677f",
+                "columnWidth": "\u5217\u5bbd",
+                "minColumnWidth": "\u6700\u5c0f\u5217\u5bbd",
+                "columnAlign": "\u5bf9\u9f50\u65b9\u5f0f",
+                "fixedColumn": "\u56fa\u5b9a\u5217",
+                "ellipsis": "\u7701\u7565\u663e\u793a",
+                "formatter": "\u683c\u5f0f\u5316",
+                "emptyText": "\u7a7a\u503c\u6587\u6848",
+                "tooltipTemplate": "\u63d0\u793a\u6a21\u677f",
+                "preview": "\u9884\u89c8",
+                "tryPresets": "\u5feb\u901f\u9884\u89c8",
+                "previewHint": "\u6b63\u5728\u9884\u89c8 {preset}\uff0c\u70b9\u51fb\u5373\u53ef\u5e94\u7528\u3002",
+                "sectionPreviewHint": "\u6b63\u5728\u9884\u89c8 {preset}\uff0c\u70b9\u51fb\u5373\u53ef\u5e94\u7528\u8be5\u6a21\u677f\u3002",
+                "recommendedPresets": "\u63a8\u8350\uff1a{presets}",
+                "moveUp": "\u4e0a\u79fb",
+                "moveDown": "\u4e0b\u79fb",
+                "remove": "\u79fb\u9664",
+                "alignOptions": {
+                    "default": "\u9ed8\u8ba4",
+                    "center": "\u5c45\u4e2d",
+                    "right": "\u53f3\u5bf9\u9f50"
+                },
+                "fixedOptions": {
+                    "default": "\u9ed8\u8ba4",
+                    "right": "\u53f3\u4fa7"
+                },
+                "formatterOptions": {
+                    "default": "\u9ed8\u8ba4",
+                    "uppercase": "\u5927\u5199",
+                    "lowercase": "\u5c0f\u5199",
+                    "number": "\u6570\u503c",
+                    "date": "\u65e5\u671f",
+                    "datetime": "\u65e5\u671f\u65f6\u95f4",
+                    "boolean": "\u5e03\u5c14"
+                },
+                "presetOptions": {
+                    "default": "\u9ed8\u8ba4",
+                    "amount": "\u91d1\u989d\u5217",
+                    "amountSummary": "\u6c47\u603b\u91d1\u989d\u5217",
+                    "date": "\u65e5\u671f\u5217",
+                    "datetime": "\u65e5\u671f\u65f6\u95f4\u5217",
+                    "auditDatetime": "\u5ba1\u8ba1\u65f6\u95f4\u5217",
+                    "status": "\u72b6\u6001\u5217",
+                    "statusCompact": "\u7d27\u51d1\u72b6\u6001\u5217"
+                },
+                "sectionPresetOptions": {
+                    "editableDetail": "\u53ef\u7f16\u8f91\u660e\u7ec6\u8868",
+                    "reviewTable": "\u53ea\u8bfb\u5ba1\u6838\u8868",
+                    "sidebarSummary": "\u4fa7\u680f\u6458\u8981\u8868"
+                },
+                "presetDescriptions": {
+                    "amount": "\u9002\u5408\u660e\u7ec6\u91d1\u989d\u7684\u53f3\u5bf9\u9f50\u6570\u503c\u5217\u3002",
+                    "amountSummary": "\u9002\u5408\u5408\u8ba1\u6216\u6c47\u603b\u91d1\u989d\u7684\u53f3\u4fa7\u56fa\u5b9a\u5217\u3002",
+                    "date": "\u9002\u5408\u8ba1\u5212\u65e5\u671f\u6216\u751f\u6548\u65e5\u671f\u7684\u6807\u51c6\u65e5\u671f\u5217\u3002",
+                    "datetime": "\u9002\u5408\u4e8b\u4ef6\u8bb0\u5f55\u7684\u65e5\u671f\u65f6\u95f4\u5217\u3002",
+                    "auditDatetime": "\u9002\u5408\u66f4\u65b0\u8ffd\u8e2a\u548c\u5ba1\u8ba1\u573a\u666f\u7684\u53f3\u4fa7\u56fa\u5b9a\u65f6\u95f4\u5217\u3002",
+                    "status": "\u5c45\u4e2d\u663e\u793a\u72b6\u6001\uff0c\u5e76\u4fdd\u7559\u63d0\u793a\u4fe1\u606f\u3002",
+                    "statusCompact": "\u9002\u5408\u9ad8\u5bc6\u5ea6\u5217\u8868\u7684\u7d27\u51d1\u72b6\u6001\u5217\u3002"
+                },
+                "sectionPresetDescriptions": {
+                    "editableDetail": "\u5728\u4e3b\u533a\u57df\u5c55\u793a\u53ef\u7f16\u8f91\u7684\u660e\u7ec6\u5b50\u8868\uff0c\u4f7f\u7528\u5143\u6570\u636e\u9ed8\u8ba4\u660e\u7ec6\u5217\u548c\u5de5\u5177\u680f\u3002",
+                    "reviewTable": "\u4f18\u5148\u4f7f\u7528\u67e5\u627e\u5217\u7684\u53ea\u8bfb\u5ba1\u6838\u8868\uff0c\u9002\u5408\u5feb\u901f\u5bf9\u7167\u3002",
+                    "sidebarSummary": "\u628a\u5b50\u8868\u538b\u7f29\u6210\u4fa7\u680f\u6458\u8981\u8868\uff0c\u4ec5\u4fdd\u7559\u805a\u7126\u7684\u5c11\u91cf\u5217\u3002"
+                },
+                "sectionPreviewItems": {
+                    "columns": "{count} \u5217",
+                    "position": {
+                        "main": "\u4e3b\u533a\u57df",
+                        "sidebar": "\u4fa7\u680f"
+                    },
+                    "toolbar": {
+                        "enabled": "\u5de5\u5177\u680f\u5df2\u542f\u7528",
+                        "hidden": "\u5de5\u5177\u680f\u5df2\u9690\u85cf"
+                    }
+                },
+                "previewItems": {
+                    "minWidth": "\u6700\u5c0f {value}px",
+                    "ellipsis": "\u7701\u7565\u663e\u793a",
+                    "emptyText": "\u7a7a\u503c\uff1a{value}",
+                    "tooltipTemplate": "\u63d0\u793a\uff1a{value}",
+                    "align": {
+                        "left": "\u5de6\u5bf9\u9f50",
+                        "center": "\u5c45\u4e2d\u5bf9\u9f50",
+                        "right": "\u53f3\u5bf9\u9f50"
+                    },
+                    "fixed": {
+                        "left": "\u56fa\u5b9a\u5728\u5de6\u4fa7",
+                        "right": "\u56fa\u5b9a\u5728\u53f3\u4fa7"
+                    },
+                    "formatter": {
+                        "uppercase": "\u5927\u5199",
+                        "lowercase": "\u5c0f\u5199",
+                        "number": "\u6570\u503c",
+                        "date": "\u65e5\u671f",
+                        "datetime": "\u65e5\u671f\u65f6\u95f4",
+                        "boolean": "\u5e03\u5c14"
+                    }
+                }
+            },
+            "messages": {
+                "previewSampleUpdated": "预览模式：样例数据已更新（不会保存到后端）",
+                "previewEditCancelled": "预览模式：已取消编辑",
+                "previewDeleteDemoOnly": "预览模式：删除仅用于界面演示，不会删除真实数据",
+                "cannotAddField": "无法添加“{name}”：{reason}",
+                "fieldAlreadyAdded": "字段已添加",
+                "cannotSwitchFieldType": "无法切换字段类型：{reason}",
+                "deleteSectionConfirm": "确认删除该分组吗？分组内字段将一并移除。",
+                "deleteSectionTitle": "删除分组",
+                "sectionDeleted": "分组已删除",
+                "invalidLayoutConfig": "布局配置无效",
+                "layoutSaved": "布局已保存",
+                "saveFailed": "保存失败",
+                "layoutPublished": "布局已发布",
+                "publishFailed": "发布失败",
+                "resetConfirm": "确认将布局重置为系统默认吗？未保存的改动会丢失。",
+                "resetConfirmTitle": "重置确认",
+                "resetToDefaultSuccess": "已重置为系统默认布局",
+                "resetFailedRefresh": "重置失败，请刷新后重试",
+                "switchedToCustomMode": "已切换到自定义模式",
+                "noPreviewLayoutFallback": "未找到可预览布局，已回退到自定义模式。",
+                "switchedToPreviewMode": "已切换到预览模式"
+            }
+        }
+    },
+    "fieldDefinition": {
+        "title": "{name} - 字段管理",
+        "create": "添加字段",
+        "createTitle": "添加字段",
+        "editTitle": "编辑字段",
+        "groups": {
+            "basic": "基础类型",
+            "datetime": "日期时间",
+            "selection": "选择类型",
+            "reference": "引用类型",
+            "media": "媒体文件",
+            "advanced": "高级类型"
+        },
+        "types": {
+            "text": "单行文本",
+            "textarea": "多行文本",
+            "number": "数字",
+            "currency": "货币",
+            "percent": "百分比",
+            "date": "日期",
+            "datetime": "日期时间",
+            "time": "时间",
+            "select": "下拉选择",
+            "multi_select": "多选",
+            "radio": "单选",
+            "checkbox": "复选框",
+            "boolean": "开关",
+            "user": "用户选择",
+            "department": "部门选择",
+            "reference": "关联引用",
+            "asset": "资产选择",
+            "location": "位置选择",
+            "file": "文件上传",
+            "image": "图片上传",
+            "qr_code": "二维码",
+            "barcode": "条形码",
+            "formula": "计算公式",
+            "sub_table": "子表",
+            "rich_text": "富文本",
+            "auto_number": "自动编号",
+            "json": "JSON数据"
+        },
+        "columns": {
+            "sortOrder": "排序",
+            "name": "字段名称",
+            "code": "字段编码",
+            "type": "字段类型",
+            "description": "描述",
+            "required": "必填",
+            "readonly": "只读",
+            "system": "系统字段"
+        },
+        "fields": {
+            "code": "字段编码",
+            "name": "字段名称",
+            "type": "字段类型",
+            "referenceObject": "关联对象",
+            "options": "选项配置",
+            "formula": "公式表达式",
+            "sortOrder": "排序号",
+            "defaultValue": "默认值",
+            "placeholder": "占位提示",
+            "description": "描述",
+            "required": "是否必填",
+            "readonly": "是否只读",
+            "unique": "是否唯一",
+            "showInList": "是否列表显示",
+            "listWidth": "列表宽度",
+            "maxLength": "最大长度",
+            "numericRange": "数值范围",
+            "decimalPlaces": "小数位数"
+        },
+        "placeholders": {
+            "code": "请输入字段编码（英文，如：userName）",
+            "name": "请输入字段名称（中文，如：用户名）",
+            "type": "请选择字段类型",
+            "referenceObject": "请选择关联的业务对象",
+            "optionLabel": "选项名称",
+            "optionValue": "选项值",
+            "formula": "如: {quantity} * {price}",
+            "description": "字段描述说明",
+            "placeholder": "输入框的占位提示文字",
+            "minValue": "最小值",
+            "maxValue": "最大值",
+            "defaultValue": {
+                "text": "默认文本值",
+                "number": "默认数字值",
+                "date": "如: 2024-01-01",
+                "switch": "true/false",
+                "select": "选项值"
+            }
+        },
+        "tips": {
+            "formula": "使用 {fieldCode} 引用其他字段",
+            "showInList": "在列表页默认显示",
+            "listWidth": "列表页列宽度（像素）"
+        },
+        "tags": {
+            "system": "系统"
+        },
+        "actions": {
+            "addOption": "添加选项",
+            "retry": "重试"
+        },
+        "validation": {
+            "codeRequired": "请输入字段编码",
+            "codePattern": "编码必须以小写字母开头，只能包含字母和数字",
+            "nameRequired": "请输入字段名称",
+            "typeRequired": "请选择字段类型",
+            "referenceObjectRequired": "请选择关联对象"
+        },
+        "messages": {
+            "confirmDelete": "确定删除该字段吗？",
+            "noObjectCode": "未指定业务对象",
+            "noData": "未获取到字段数据",
+            "loadFailed": "加载字段定义失败",
+            "systemFieldReadOnly": "系统字段不可编辑或删除。",
+            "hardcodedReadonly": "内置对象字段为只读，不可编辑或删除。",
+            "missingObjectMeta": "缺少对象元数据，请刷新后重试。",
+            "readOnlySubmitBlocked": "当前字段为只读，不允许提交修改。"
+        }
+    },
+    "businessRule": {
+        "title": "业务规则",
+        "create": "新建规则",
+        "editTitle": "编辑规则",
+        "createTitle": "新建规则",
+        "types": {
+            "validation": "校验",
+            "visibility": "显示",
+            "computed": "计算",
+            "linkage": "联动",
+            "trigger": "触发",
+            "all": "全部"
+        },
+        "columns": {
+            "code": "规则编码",
+            "name": "规则名称",
+            "type": "类型",
+            "priority": "优先级",
+            "status": "状态"
+        },
+        "messages": {
+            "confirmDelete": "确定要删除这条规则吗？",
+            "enabled": "规则已启用",
+            "disabled": "规则已禁用",
+            "testTitle": "规则测试",
+            "testData": "测试数据",
+            "testDataPlaceholder": "输入 JSON 格式的测试数据",
+            "testResult": "测试结果",
+            "testPassed": "验证通过",
+            "testFailed": "验证失败",
+            "invalidJson": "测试数据 JSON 格式无效"
+        },
+        "placeholders": {
+            "empty": "暂无业务规则",
+            "emptyType": "暂无{type}规则"
+        },
+        "designer": {
+            "triggerConfig": "触发配置",
+            "triggerEvents": "触发事件",
+            "watchFields": "监听字段",
+            "watchFieldsPlaceholder": "选择要监听变更的字段",
+            "triggerCondition": "触发条件",
+            "conditionExpression": "条件表达式",
+            "ruleActions": "规则动作",
+            "events": {
+                "update": "更新",
+                "submit": "提交",
+                "approve": "审批",
+                "fieldChange": "字段变更"
+            },
+            "placeholders": {
+                "ruleCode": "如：validate_amount_limit",
+                "ruleName": "请输入规则名称",
+                "description": "可选：描述规则用途和范围"
+            },
+            "actionConfigurator": {
+                "title": "规则动作",
+                "labels": {
+                    "errorMessageLocal": "验证失败",
+                    "errorMessageEnglish": "验证失败 EN",
+                    "severity": "状态",
+                    "targetFields": "监听字段",
+                    "visibility": "显示",
+                    "targetField": "字段",
+                    "formula": "条件表达式",
+                    "linkageType": "联动",
+                    "targetValue": "值",
+                    "actionType": "类型",
+                    "apiEndpoint": "地址",
+                    "apiMethod": "节点类型",
+                    "ruleConfigJson": "触发配置"
+                },
+                "placeholders": {
+                    "errorMessageLocal": "输入 JSON 格式的测试数据",
+                    "errorMessageEnglish": "输入 JSON 格式的测试数据 EN",
+                    "targetFields": "选择要监听变更的字段",
+                    "computedTargetField": "选择要监听变更的字段",
+                    "formula": "e.g., {amount} * 1.13",
+                    "linkageTargetField": "选择字段",
+                    "targetValue": "条件值",
+                    "apiEndpoint": "https://example.com/hooks/rule"
+                },
+                "severity": {
+                    "error": "验证失败",
+                    "warning": "操作失败",
+                    "info": "保存成功"
+                },
+                "visibility": {
+                    "show": "显示",
+                    "hide": "隐藏"
+                },
+                "linkageTypes": {
+                    "setValue": "值",
+                    "loadOptions": "包含",
+                    "clear": "取消选择"
+                },
+                "actionTypes": {
+                    "webhook": "Webhook",
+                    "notify": "详情"
+                },
+                "formulaHint": "条件表达式: {field_code}",
+                "unknownRule": "业务规则"
+            },
+            "conditionBuilder": {
+                "defaultTitle": "条件配置",
+                "conditionCount": "{count} 条件",
+                "emptyState": "暂无业务规则",
+                "addCondition": "添加条件",
+                "addGroup": "添加分支",
+                "previewJson": "JSON",
+                "operators": {
+                    "equals": "等于",
+                    "notEquals": "不等于",
+                    "greaterThan": "大于",
+                    "greaterThanOrEqual": "大于等于",
+                    "lessThan": "小于",
+                    "lessThanOrEqual": "小于等于",
+                    "in": "包含",
+                    "empty": "默认分支",
+                    "notEmpty": "不包含",
+                    "startsWith": "开始",
+                    "endsWith": "结束"
+                }
+            },
+            "singleCondition": {
+                "placeholders": {
+                    "field": "选择字段",
+                    "operator": "运算符",
+                    "value": "请输入值",
+                    "date": "请选择日期"
+                },
+                "boolean": {
+                    "true": "是",
+                    "false": "否"
+                }
+            }
+        }
+    },
+    "sequenceRule": {
+        "title": "序列号规则管理",
+        "create": "新建规则",
+        "editTitle": "编辑序列号规则",
+        "createTitle": "新建序列号规则",
+        "previewTitle": "序列号预览",
+        "columns": {
+            "code": "规则编码",
+            "name": "规则名称",
+            "pattern": "规则预览",
+            "prefix": "前缀",
+            "seqLength": "序列长度",
+            "currentValue": "当前值",
+            "resetPeriod": "重置周期",
+            "status": "状态",
+            "description": "描述"
+        },
+        "fields": {
+            "code": "规则编码",
+            "name": "规则名称",
+            "prefix": "前缀",
+            "seqLength": "序列长度",
+            "currentValue": "当前值",
+            "resetPeriod": "重置周期",
+            "pattern": "样式预览",
+            "description": "描述",
+            "active": "是否启用"
+        },
+        "placeholders": {
+            "code": "如：ASSET_CODE, ORDER_NO",
+            "name": "如：资产编码, 订单号",
+            "prefix": "如：AST, ORD-",
+            "description": "描述该序列号规则的用途",
+            "statusAll": "全部"
+        },
+        "tips": {
+            "code": "序列号规则的唯一标识（大写）",
+            "prefix": "生成号码的固定前缀",
+            "seqLength": "序列号部分的数字位数",
+            "currentValue": "序列号的起始值",
+            "resetPeriod": "序列号重置为0的周期",
+            "example": "示例："
+        },
+        "periods": {
+            "never": "从不重置",
+            "yearly": "每年重置",
+            "monthly": "每月重置",
+            "daily": "每日重置"
+        },
+        "actions": {
+            "preview": "预览",
+            "generate": "生成测试",
+            "reset": "重置"
+        },
+        "messages": {
+            "confirmReset": "确定要将规则 \"{name}\" 重置为初始值吗？",
+            "confirmDelete": "确定要删除这条规则吗？",
+            "resetSuccess": "序列号规则重置成功",
+            "resetFailed": "重置失败",
+            "generateSuccess": "生成成功: {number}",
+            "generateFailed": "生成失败",
+            "previewFailed": "获取预览失败"
+        }
+    },
+    "languages": {
+        "title": "语言管理",
+        "create": "新建语言",
+        "edit": "编辑语言",
+        "delete": "删除语言",
+        "deleteConfirm": "确定删除该语言吗？",
+        "setDefault": "设为默认",
+        "flag": "标志",
+        "code": "语言代码",
+        "name": "语言名称",
+        "nativeName": "本地名称",
+        "locale": "区域设置",
+        "sortOrder": "排序",
+        "isActive": "是否启用",
+        "isDefault": "是否默认",
+        "flagPlaceholder": "选择国旗emoji",
+        "codePlaceholder": "如: zh-CN, en-US",
+        "namePlaceholder": "如: 简体中文",
+        "nativeNamePlaceholder": "如: 中文",
+        "localePlaceholder": "如: zhCN, enUS",
+        "validation": {
+            "codeFormat": "格式：xx-XX（如 zh-CN）",
+            "localeFormat": "格式：xxXX（如 zhCN）"
+        },
+        "messages": {
+            "createSuccess": "语言创建成功",
+            "updateSuccess": "语言更新成功",
+            "saveFailed": "保存语言失败",
+            "setDefaultSuccess": "已将 {name} 设为默认语言",
+            "setDefaultFailed": "设置默认语言失败",
+            "activateSuccess": "语言已启用",
+            "deactivateSuccess": "语言已停用",
+            "updateFailed": "更新语言失败",
+            "deleteSuccess": "语言删除成功",
+            "deleteFailed": "删除语言失败"
+        }
+    },
+    "translations": {
+        "title": "翻译管理",
+        "create": "新建翻译",
+        "edit": "编辑翻译",
+        "delete": "删除翻译",
+        "deleteConfirm": "确定删除该翻译吗？",
+        "language": "语言",
+        "namespace": "命名空间",
+        "key": "翻译键",
+        "text": "翻译文本",
+        "type": "类型",
+        "isSystem": "系统翻译",
+        "systemOnly": "仅显示系统翻译",
+        "contentType": "内容类型",
+        "objectId": "对象ID",
+        "fieldName": "字段名",
+        "context": "上下文",
+        "mode": "翻译模式",
+        "modes": {
+            "namespace": "静态翻译",
+            "object": "对象翻译"
+        },
+        "contentTypes": {
+            "businessObject": "业务对象",
+            "dictionaryType": "字典类型",
+            "dictionaryItem": "字典项",
+            "modelFieldDefinition": "模型字段定义",
+            "menuGroup": "菜单分类"
+        },
+        "types": {
+            "label": "标签",
+            "message": "消息",
+            "enum": "枚举",
+            "objectField": "对象字段"
+        },
+        "stats": {
+            "total": "总翻译数",
+            "system": "系统翻译",
+            "user": "用户翻译",
+            "coverage": "覆盖率"
+        },
+        "namespacePlaceholder": "如: asset, common",
+        "keyPlaceholder": "如: status.idle, button.save",
+        "textPlaceholder": "输入翻译文本",
+        "objectIdPlaceholder": "输入对象ID",
+        "fieldNamePlaceholder": "输入字段名",
+        "contextPlaceholder": "用于消歧义的上下文说明（可选）",
+        "isSystemLabel": "系统翻译（不可被用户编辑）",
+        "focusObject": "正在查看对象翻译: {target}",
+        "focusCoverage": "已配置语言: {configured}/{total}",
+        "clearFocus": "清除筛选",
+        "addFocusedObject": "新增当前对象翻译",
+        "messages": {
+            "createSuccess": "翻译创建成功",
+            "updateSuccess": "翻译更新成功",
+            "saveFailed": "保存翻译失败",
+            "deleteSuccess": "翻译删除成功",
+            "deleteFailed": "删除翻译失败",
+            "exportSuccess": "翻译导出成功",
+            "exportFailed": "翻译导出失败",
+            "importFailed": "翻译导入失败",
+            "importSummary": "导入完成：创建 {created}，更新 {updated}，失败 {failed}"
+        }
+    },
+    "moduleWorkbench": {
+        "title": "模块工作台",
+        "subtitle": "检查后端对象覆盖情况，并快速打开缺失的前端入口。",
+        "metrics": {
+            "backendObjects": "后端对象数",
+            "menuCovered": "菜单已覆盖",
+            "missingEntries": "缺失入口",
+            "invalidMenuCodes": "无效菜单编码"
+        },
+        "sections": {
+            "missingFrontendEntries": "缺失前端入口",
+            "allObjects": "全部对象",
+            "invalidMenuObjectCodes": "无效菜单对象编码",
+            "brokenMenuUrls": "损坏的菜单 URL"
+        },
+        "columns": {
+            "objectCode": "对象编码",
+            "name": "名称",
+            "modelPath": "模型路径",
+            "type": "类型",
+            "readiness": "就绪状态",
+            "actions": "快捷操作",
+            "coverage": "覆盖状态",
+            "menuName": "菜单名称",
+            "code": "编码",
+            "url": "URL"
+        },
+        "type": {
+            "system": "系统",
+            "custom": "自定义"
+        },
+        "readiness": {
+            "ready": "就绪",
+            "emptyFields": "无业务字段",
+            "checking": "检查中",
+            "unavailable": "不可用"
+        },
+        "coverage": {
+            "covered": "已覆盖",
+            "missing": "缺失"
+        },
+        "actions": {
+            "list": "列表"
+        },
+        "empty": {
+            "noMissingEntries": "所有后端对象都已在菜单中覆盖。",
+            "noInvalidMenuCodes": "菜单中未发现无效对象编码。",
+            "noBrokenMenuUrls": "当前前端路由可解析所有菜单 URL。"
+        },
+        "searchPlaceholder": "按编码或名称搜索",
+        "messages": {
+            "loadFailed": "加载模块覆盖数据失败",
+            "metadataUnavailable": "元数据不可用"
+        }
+    },
+    "permission": {
+        "title": "权限管理",
+        "tabs": {
+            "field": "字段权限",
+            "data": "数据权限",
+            "audit": "权限日志"
+        },
+        "data": {
+            "toolbar": {
+                "role": "角色",
+                "rolePlaceholder": "选择角色",
+                "createRule": "新增规则"
+            },
+            "columns": {
+                "role": "角色",
+                "object": "业务对象",
+                "type": "权限类型",
+                "scope": "权限范围",
+                "status": "状态",
+                "description": "说明",
+                "operation": "操作"
+            },
+            "types": {
+                "all": "全部数据",
+                "department": "本部门",
+                "department_and_sub": "本部门及子部门",
+                "self": "仅本人",
+                "custom": "自定义"
+            },
+            "status": {
+                "active": "启用",
+                "inactive": "禁用",
+                "enable": "启用",
+                "disable": "禁用"
+            },
+            "dialog": {
+                "createTitle": "新增数据权限规则",
+                "editTitle": "编辑数据权限规则",
+                "role": "角色",
+                "rolePlaceholder": "请选择角色",
+                "object": "业务对象",
+                "objectPlaceholder": "请选择业务对象",
+                "type": "权限类型",
+                "typePlaceholder": "请选择权限类型",
+                "expression": "权限表达式",
+                "expressionPlaceholder": "自定义权限表达式，如: department_id in (1, 2, 3)",
+                "scope": "权限范围",
+                "status": "状态",
+                "description": "说明",
+                "descriptionPlaceholder": "请输入权限规则说明"
+            },
+            "messages": {
+                "enabled": "已启用",
+                "disabled": "已禁用",
+                "createSuccess": "创建成功",
+                "updateSuccess": "更新成功"
+            }
+        },
+        "field": {
+            "toolbar": {
+                "role": "角色",
+                "rolePlaceholder": "选择角色",
+                "object": "业务对象",
+                "objectPlaceholder": "选择业务对象"
+            },
+            "columns": {
+                "role": "角色",
+                "object": "业务对象",
+                "field": "字段名称",
+                "read": "读取权限",
+                "write": "写入权限",
+                "visibility": "可见性",
+                "description": "说明",
+                "operation": "操作"
+            },
+            "status": {
+                "allow": "允许",
+                "deny": "禁止",
+                "show": "显示",
+                "hide": "隐藏"
+            },
+            "dialog": {
+                "title": "编辑字段权限",
+                "role": "角色",
+                "object": "业务对象",
+                "field": "字段名称",
+                "read": "读取权限",
+                "write": "写入权限",
+                "visibility": "可见性",
+                "description": "说明"
+            },
+            "messages": {
+                "saveSuccess": "保存成功",
+                "saveFailed": "保存失败"
+            }
+        },
+        "audit": {
+            "toolbar": {
+                "action": "操作类型",
+                "actionPlaceholder": "全部",
+                "timeRange": "时间范围",
+                "startDate": "开始日期",
+                "endDate": "结束日期"
+            },
+            "stats": {
+                "todayGrants": "今日授权",
+                "todayRevokes": "今日撤销",
+                "weekTotal": "本周操作",
+                "activeUsers": "活跃用户"
+            },
+            "columns": {
+                "time": "操作时间",
+                "operator": "操作人",
+                "action": "操作类型",
+                "type": "权限类型",
+                "target": "目标对象",
+                "details": "操作详情",
+                "ip": "IP地址",
+                "operation": "操作"
+            },
+            "actions": {
+                "grant": "授权",
+                "revoke": "撤销",
+                "update": "修改"
+            },
+            "types": {
+                "field": "字段权限",
+                "data": "数据权限"
+            },
+            "dialog": {
+                "title": "日志详情",
+                "time": "操作时间",
+                "operator": "操作人",
+                "action": "操作类型",
+                "type": "权限类型",
+                "target": "目标对象",
+                "details": "操作详情",
+                "ip": "IP地址",
+                "userAgent": "用户代理"
+            }
+        }
+    },
+    "configPackage": {
+        "title": "配置包管理",
+        "description": "导入导出业务对象配置，支持环境迁移和版本备份",
+        "actions": {
+            "import": "导入配置",
+            "export": "导出配置",
+            "download": "下载",
+            "diff": "对比",
+            "delete": "删除",
+            "rollback": "回滚"
+        },
+        "tabs": {
+            "packages": "配置包",
+            "history": "导入历史"
+        },
+        "columns": {
+            "name": "包名称",
+            "type": "类型",
+            "objects": "包含对象",
+            "source": "来源环境",
+            "exportTime": "导出时间",
+            "status": "状态",
+            "package": "配置包",
+            "strategy": "策略",
+            "result": "结果",
+            "importTime": "导入时间",
+            "operation": "操作"
+        },
+        "types": {
+            "full": "全量",
+            "partial": "增量",
+            "diff": "差异"
+        },
+        "strategies": {
+            "merge": "合并",
+            "replace": "替换",
+            "skip": "跳过"
+        },
+        "status": {
+            "pending": "等待中",
+            "processing": "处理中",
+            "success": "成功",
+            "failed": "失败",
+            "partial": "部分成功",
+            "rolled_back": "已回滚"
+        },
+        "dialog": {
+            "exportTitle": "导出配置",
+            "importTitle": "导入配置",
+            "name": "包名称",
+            "namePlaceholder": "例如: 资产管理配置",
+            "version": "版本号",
+            "versionPlaceholder": "例如: 1.0.0",
+            "description": "描述",
+            "objects": "业务对象",
+            "objectsPlaceholder": "选择要导出的业务对象",
+            "package": "选择包",
+            "packagePlaceholder": "从已有配置包导入",
+            "strategy": "导入策略",
+            "strategies": {
+                "merge": "合并 (更新已存在)",
+                "replace": "替换 (覆盖已存在)",
+                "skip": "跳过 (只创建新的)"
+            }
+        },
+        "messages": {
+            "loadPackagesFailed": "加载配置包失败",
+            "loadLogsFailed": "加载导入记录失败",
+            "exportSuccess": "导出成功：{objects} 对象, {fields} 字段, {layouts} 布局, {rules} 规则",
+            "exportFailed": "导出失败",
+            "importSuccess": "导入成功：创建 {created}, 更新 {updated}, 跳过 {skipped}",
+            "importPartial": "导入部分完成，{failed} 项失败",
+            "importFailed": "导入失败",
+            "downloadStart": "下载已开始",
+            "downloadFailed": "下载失败",
+            "diffDeveloping": "对比功能开发中...",
+            "deleteSuccess": "删除成功",
+            "deleteFailed": "删除失败",
+            "rollbackConfirm": "回滚将撤销此次导入的所有更改，确定继续吗？",
+            "rollbackTitle": "确认回滚",
+            "rollbackSuccess": "回滚成功",
+            "rollbackFailed": "回滚失败",
+            "required": "请填写必填项",
+            "selectPackage": "请选择配置包",
+            "confirmDelete": "确定删除此配置包？"
+        }
+    },
+    "workflow": {
+        "title": "工作流管理",
+        "create": "创建工作流",
+        "createTitle": "创建工作流",
+        "editTitle": "编辑工作流",
+        "columns": {
+            "name": "名称",
+            "code": "编码",
+            "businessObject": "业务对象",
+            "operation": "操作"
+        },
+        "form": {
+            "name": "名称",
+            "code": "编码",
+            "businessObject": "业务对象"
+        },
+        "businessObjects": {
+            "asset_pickup": "资产领用",
+            "asset_transfer": "资产调拨",
+            "asset_return": "资产退库"
+        },
+        "messages": {
+            "saveSuccess": "保存成功",
+            "createSuccess": "创建成功",
+            "updateSuccess": "更新成功",
+            "saveFailed": "保存失败",
+            "required": "请填写名称和编码"
+        }
+    },
+    "file": {
+        "title": "系统文件管理",
+        "actions": {
+            "upload": "上传文件",
+            "batchDelete": "批量删除",
+            "clearSelection": "取消选择",
+            "selection": "已选择 {count} 个文件"
+        },
+        "filter": {
+            "search": "搜索",
+            "searchPlaceholder": "文件名",
+            "fileType": "文件类型",
+            "allTypes": "所有类型",
+            "bizType": "业务类型",
+            "allBizTypes": "全部"
+        },
+        "types": {
+            "image": "图片",
+            "document": "文档",
+            "video": "视频",
+            "archive": "压缩包",
+            "asset_image": "资产图片",
+            "contract": "合同",
+            "invoice": "发票",
+            "attachment": "附件",
+            "other": "其他",
+            "pdf": "PDF",
+            "file": "文件"
+        },
+        "stats": {
+            "totalFiles": "文件总数",
+            "totalSize": "总大小",
+            "todayUploads": "今日上传",
+            "images": "图片数量"
+        },
+        "columns": {
+            "preview": "预览",
+            "fileName": "文件名",
+            "type": "类型",
+            "size": "大小",
+            "bizType": "业务类型",
+            "description": "描述",
+            "uploadDate": "上传时间"
+        },
+        "dialog": {
+            "editTitle": "编辑文件",
+            "fileName": "文件名",
+            "bizType": "业务类型",
+            "description": "描述"
+        },
+        "messages": {
+            "sizeLimit": "文件大小不能超过 {size}",
+            "uploadSuccess": "文件上传成功",
+            "uploadFailed": "上传失败",
+            "updateSuccess": "更新成功",
+            "updateFailed": "更新失败",
+            "deleteSuccess": "删除成功",
+            "deleteFailed": "删除失败",
+            "batchDeleteFailed": "批量删除失败",
+            "confirmDelete": "确定要删除此文件吗？",
+            "batchDeleteSuccess": "已删除 {count} 个文件",
+            "loadFailed": "加载文件失败"
+        }
+    }
+}

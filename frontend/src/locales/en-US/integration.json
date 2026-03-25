@@ -1,0 +1,148 @@
+{
+  "configList": {
+    "title": "Integration Configuration",
+    "filters": {
+      "systemType": "System Type",
+      "status": "Status",
+      "health": "Health",
+      "allSystems": "All Systems",
+      "all": "All"
+    },
+    "table": {
+      "name": "Name",
+      "systemType": "System Type",
+      "healthStatus": "Health Status",
+      "status": "Status",
+      "modules": "Modules",
+      "lastSync": "Last Sync",
+      "lastSyncStatus": "Last Sync Status",
+      "actions": "Actions"
+    },
+    "deleteConfirm": "Are you sure to delete this integration?"
+  },
+  "actions": {
+    "newIntegration": "New Integration",
+    "search": "Search",
+    "reset": "Reset",
+    "testConnection": "Test Connection",
+    "syncNow": "Sync Now",
+    "logs": "Logs",
+    "edit": "Edit",
+    "delete": "Delete",
+    "view": "View",
+    "refresh": "Refresh",
+    "cancel": "Cancel",
+    "save": "Save",
+    "create": "Create"
+  },
+  "stats": {
+    "total": "Total Integrations",
+    "healthy": "Healthy",
+    "degraded": "Degraded",
+    "unhealthy": "Unhealthy"
+  },
+  "formDialog": {
+    "titles": {
+      "edit": "Edit Integration",
+      "create": "New Integration"
+    },
+    "sections": {
+      "basic": "Basic Configuration",
+      "connection": "Connection Configuration",
+      "modules": "Module Configuration",
+      "sync": "Sync Configuration"
+    },
+    "fields": {
+      "systemType": "System Type",
+      "systemName": "System Name",
+      "enabled": "Enabled",
+      "apiEndpoint": "API Endpoint",
+      "apiKey": "API Key",
+      "apiSecret": "API Secret",
+      "timeoutSeconds": "Timeout (seconds)",
+      "enabledModules": "Enabled Modules",
+      "autoSync": "Auto Sync",
+      "syncIntervalMinutes": "Sync Interval (minutes)"
+    },
+    "placeholders": {
+      "selectSystemType": "Select system type",
+      "systemName": "e.g., Production M18",
+      "apiEndpoint": "https://api.example.com",
+      "apiKey": "Enter API key",
+      "apiSecret": "Enter API secret"
+    }
+  },
+  "logs": {
+    "drawerTitle": "Integration Logs",
+    "shortTitle": "Logs",
+    "detailTitle": "Log Detail",
+    "columns": {
+      "time": "Time",
+      "type": "Type",
+      "action": "Action",
+      "method": "Method",
+      "status": "Status",
+      "statusCode": "Status Code",
+      "success": "Success",
+      "duration": "Duration",
+      "actions": "Actions",
+      "businessType": "Business Type"
+    },
+    "request": "Request",
+    "response": "Response",
+    "error": "Error"
+  },
+  "status": {
+    "enabled": "Enabled",
+    "disabled": "Disabled"
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No"
+  },
+  "systemTypes": {
+    "m18": "M18",
+    "sap": "SAP",
+    "kingdee": "Kingdee",
+    "yonyou": "Yonyou",
+    "oracle": "Oracle EBS",
+    "odoo": "Odoo"
+  },
+  "healthStatus": {
+    "healthy": "Healthy",
+    "degraded": "Degraded",
+    "unhealthy": "Unhealthy"
+  },
+  "syncStatus": {
+    "pending": "Pending",
+    "running": "Running",
+    "success": "Success",
+    "partialSuccess": "Partial",
+    "failed": "Failed",
+    "cancelled": "Cancelled"
+  },
+  "modules": {
+    "procurement": "Procurement",
+    "finance": "Finance",
+    "inventory": "Inventory",
+    "hr": "HR",
+    "crm": "CRM"
+  },
+  "validation": {
+    "selectSystemType": "Please select system type",
+    "enterSystemName": "Please enter system name"
+  },
+  "messages": {
+    "loadConfigsFailed": "Failed to load integration configs",
+    "updatedSuccessfully": "Updated successfully",
+    "createdSuccessfully": "Created successfully",
+    "operationFailed": "Operation failed",
+    "deletedSuccessfully": "Deleted successfully",
+    "deleteFailed": "Delete failed",
+    "connectionTestSuccess": "Connection test successful",
+    "connectionTestFailed": "Connection test failed",
+    "syncTaskCreated": "Sync task created successfully",
+    "syncFailed": "Sync failed",
+    "loadLogsFailed": "Failed to load logs"
+  }
+}
