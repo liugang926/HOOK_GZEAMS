@@ -11,8 +11,9 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Union
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import PermissionDenied
 from django.db import DatabaseError, IntegrityError
-from django.http import Http404, PermissionDenied
+from django.http import Http404
 import json
 import uuid
 
