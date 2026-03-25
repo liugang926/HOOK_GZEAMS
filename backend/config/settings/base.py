@@ -25,6 +25,9 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 USE_X_FORWARDED_HOST = True
 USE_X_FORWARDED_PORT = True
 
+# Frontend URL for QR code generation and reverse-proxy deployments
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+
 # Application definition
 DJANGO_APPS = [
     'django.contrib.admin',
@@ -189,7 +192,7 @@ _default_cors_origins = (
     ''
 )
 CORS_ALLOWED_ORIGINS = [
-    origin.strip()
+    origin.strip().rstrip('/')
     for origin in os.getenv('CORS_ALLOWED_ORIGINS', _default_cors_origins).split(',')
     if origin.strip()
 ]
@@ -204,9 +207,15 @@ CORS_ALLOW_HEADERS = [
     'x-organization-id',
     'x-csrftoken',
 ]
-
-# Frontend URL for QR code generation and other features
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+_default_csrf_trusted_origins = os.getenv(
+    'CORS_ALLOWED_ORIGINS',
+    _default_cors_origins if DEBUG else FRONTEND_URL,
+)
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip().rstrip('/')
+    for origin in os.getenv('CSRF_TRUSTED_ORIGINS', _default_csrf_trusted_origins).split(',')
+    if origin.strip()
+]
 
 # Health metrics endpoint access control
 HEALTH_METRICS_ALLOWLIST = [

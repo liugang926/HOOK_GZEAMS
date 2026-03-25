@@ -10,7 +10,11 @@ if [ "$1" = "gunicorn" ]; then
 fi
 
 echo "Waiting for database..."
-while ! pg_isready -h db -U postgres; do
+db_host="${POSTGRES_HOST:-db}"
+db_user="${POSTGRES_USER:-postgres}"
+db_name="${POSTGRES_DB:-gzeams}"
+
+while ! pg_isready -h "$db_host" -U "$db_user" -d "$db_name"; do
     sleep 1
 done
 

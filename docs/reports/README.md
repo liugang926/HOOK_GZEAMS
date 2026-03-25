@@ -161,6 +161,7 @@ docs/reports/
 ### 综合报告
 - `GZEAMS_FINAL_IMPLEMENTATION_REPORT.md` - 最终实施报告（主报告）
 - `GZEAMS_IMPLEMENTATION_REPORT.md` - 实施报告
+- `GZEAMS_PRODUCTION_DEPLOYMENT_REPORT.md` - 生产部署配置修复报告（2026-03-25）
 - `GZEAMS_CURRENT_STATE_ANALYSIS_REPORT.md` - 当前现状分析与下一阶段建议（2026-03-20）
 - `BACKEND_ARCHITECTURE.md` - 后端架构文档
 - `BACKEND_CORE_SETUP_REPORT.md` - 后端核心设置报告
@@ -203,6 +204,7 @@ docs/reports/
 最后更新：2026-03-24
 
 **最新添加**：
+- ✅ `GZEAMS_PRODUCTION_DEPLOYMENT_REPORT.md` - 生产部署配置修复报告（2026-03-25）
 - ✅ `sprint-4-code-review-report.md` - Sprint 4 工作流实现代码审查报告（2026-03-24）
 - ✅ `performance-baseline.md` - Sprint 3 性能基准与预算说明（2026-03-24）
 - ✅ `SPRINT2_CODE_COMPLIANCE_REPORT.md` - Sprint 2 实现代码质量审查报告（2026-03-24）
