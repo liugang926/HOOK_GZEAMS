@@ -12,8 +12,11 @@ from typing import Dict, List, Optional, Any
 from django.conf import settings
 from django.core.cache import cache
 from django.db import connection
-import psutil
 import threading
+
+# TODO: Restore the psutil import after fixing the deployment dependency issue.
+# import psutil
+psutil = None
 
 from apps.common.models import BaseModel
 
@@ -178,6 +181,13 @@ class APMMonitor:
     
     def get_system_metrics(self) -> Dict[str, Any]:
         """Get current system performance metrics."""
+        if psutil is None:
+            logger.warning("System metrics are unavailable because psutil is disabled.")
+            return {
+                'error': 'System metrics are temporarily unavailable because psutil is disabled.',
+                'timestamp': datetime.now().isoformat()
+            }
+
         return {
             'cpu_usage': psutil.cpu_percent(interval=1),
             'memory_usage': {
