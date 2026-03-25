@@ -34,10 +34,6 @@ class SLAService:
     def __init__(self):
         """Initialize SLA service."""
         pass
-
-
-# Alias for backward compatibility
-SLATracker = SLAService
     
     def check_sla_compliance(self, task) -> str:
         """
@@ -410,3 +406,6 @@ SLATracker = SLAService
 
 # Singleton instance
 sla_service = SLAService()
+
+# Alias for backward compatibility
+SLATracker = SLAService
