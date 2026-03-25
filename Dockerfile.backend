@@ -17,7 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Python dependencies
 COPY backend/requirements /app/requirements
 RUN pip install --upgrade pip && \
-    pip install -r "requirements/${REQUIREMENTS_FILE}"
+    pip install -r "requirements/${REQUIREMENTS_FILE}" && \
+    pip install psutil==5.9.8
 
 # Copy application
 COPY backend /app
