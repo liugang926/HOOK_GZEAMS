@@ -18,9 +18,14 @@ export { default as BaseListPage } from './BaseListPage.vue'
 export { default as BaseFormPage } from './BaseFormPage.vue'
 export { default as BaseDetailPage } from './BaseDetailPage.vue'
 export { default as DynamicDetailPage } from './DynamicDetailPage.vue'
+export { default as ClosureStatusPanel } from './ClosureStatusPanel.vue'
 export { default as ObjectWorkbenchActionBar } from './ObjectWorkbenchActionBar.vue'
 export { default as ObjectWorkbenchPanelHost } from './ObjectWorkbenchPanelHost.vue'
+export { default as RecommendedActionPanel } from './RecommendedActionPanel.vue'
 export { default as RelatedObjectTable } from './RelatedObjectTable.vue'
+export { default as SlaIndicatorBar } from './SlaIndicatorBar.vue'
+export { default as WorkbenchQueuePanel } from './WorkbenchQueuePanel.vue'
+export { default as WorkbenchSummaryCards } from './WorkbenchSummaryCards.vue'
 
 // UI Components
 export { default as BaseForm } from './BaseForm.vue'
@@ -31,6 +36,7 @@ export { default as UserPicker } from './UserPicker.vue'
 export { default as UserSelector } from './UserSelector.vue'
 export { default as DeptPicker } from './DeptPicker.vue'
 export { default as RoleSelector } from './RoleSelector.vue'
+export { default as TagSelector } from './TagSelector.vue'
 
 // Dynamic Components
 export { default as FieldRenderer } from './FieldRenderer.vue'

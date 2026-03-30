@@ -3,6 +3,7 @@ import type { Router } from 'vue-router'
 
 import { taskApi, workflowNodeApi } from '@/api/workflow'
 import { runFlagAction } from '@/composables'
+import type { PortalTaskRecord } from '@/types/portal'
 
 import { getPortalTaskPath } from './portalTaskModel'
 
@@ -20,7 +21,7 @@ export const usePortalTasks = (
   notifier: ActionNotifier,
 ) => {
   const loadingTasks = ref(false)
-  const myTasks = ref<any[]>([])
+  const myTasks = ref<PortalTaskRecord[]>([])
   const taskPage = ref(1)
   const taskPageSize = ref(10)
   const taskTotal = ref(0)
@@ -29,7 +30,7 @@ export const usePortalTasks = (
   const processingTask = ref(false)
   const rejectDialog = ref(false)
   const rejectComment = ref('')
-  const rejectTargetTask = ref<Record<string, any> | null>(null)
+  const rejectTargetTask = ref<PortalTaskRecord | null>(null)
 
   const loadMyTasks = async () => {
     loadingTasks.value = true
@@ -46,9 +47,9 @@ export const usePortalTasks = (
     }
   }
 
-  const openTask = (task: Record<string, any>) => router.push(getPortalTaskPath(task.id))
+  const openTask = (task: PortalTaskRecord) => router.push(getPortalTaskPath(task.id))
 
-  const quickApprove = async (task: Record<string, any>) => {
+  const quickApprove = async (task: PortalTaskRecord) => {
     await runFlagAction({
       loadingFlag: processingTask,
       notifier,
@@ -67,7 +68,7 @@ export const usePortalTasks = (
     })
   }
 
-  const openRejectDialog = (task: Record<string, any>) => {
+  const openRejectDialog = (task: PortalTaskRecord) => {
     rejectTargetTask.value = task
     rejectComment.value = ''
     rejectDialog.value = true

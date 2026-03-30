@@ -241,6 +241,20 @@ export const transferApi = {
   },
 
   /**
+   * Submit transfer for approval (custom action endpoint)
+   */
+  submit(id: string): Promise<void> {
+    return request.post(`/system/objects/AssetTransfer/${id}/submit/`)
+  },
+
+  /**
+   * Cancel transfer (custom action endpoint)
+   */
+  cancel(id: string): Promise<void> {
+    return request.post(`/system/objects/AssetTransfer/${id}/cancel/`)
+  },
+
+  /**
    * Reject transfer (custom action endpoint)
    */
   reject(id: string, reason: string): Promise<void> {

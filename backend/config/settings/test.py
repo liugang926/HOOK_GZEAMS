@@ -3,6 +3,14 @@ import os
 import dj_database_url
 
 DEBUG = True
+SECRET_KEY = os.getenv(
+    'TEST_SECRET_KEY',
+    'test-secret-key-with-at-least-32-bytes-for-jwt-signing-123456',
+)
+SIMPLE_JWT = {
+    **dict(SIMPLE_JWT),
+    'SIGNING_KEY': SECRET_KEY,
+}
 
 # Use PostgreSQL for tests.
 # Supports local overrides while keeping container defaults:

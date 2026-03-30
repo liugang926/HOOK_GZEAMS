@@ -1,8 +1,6 @@
 import { normalizeFieldType } from '@/utils/fieldType'
 
 type AnyRecord = Record<string, any>
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const INTEGER_ID_PATTERN = /^\d+$/
 
 const REFERENCE_TYPE_OBJECT_CODE_MAP: Record<string, string> = {
   user: 'User',
@@ -49,24 +47,38 @@ export const normalizeReferenceObjectCode = (raw: unknown): string => {
   return CANONICAL_REFERENCE_OBJECT_CODE_MAP[normalized.toLowerCase()] || normalized
 }
 
+const resolveComponentProps = (field: AnyRecord | null | undefined): AnyRecord => ({
+  ...((field?.component_props as AnyRecord) || {}),
+  ...((field?.componentProps as AnyRecord) || {})
+})
+
 export const resolveReferenceObjectCode = (field: AnyRecord | null | undefined): string => {
   if (!field) return ''
-  const componentProps = field.componentProps || {}
+  const componentProps = resolveComponentProps(field)
   const explicitCode =
     field.referenceObject ||
+    field.reference_object ||
     field.targetObjectCode ||
+    field.target_object_code ||
     field.referenceModelPath ||
+    field.reference_model_path ||
     field.relatedObject ||
+    field.related_object ||
     componentProps.referenceObject ||
+    componentProps.reference_object ||
     componentProps.targetObjectCode ||
+    componentProps.target_object_code ||
+    componentProps.referenceModelPath ||
+    componentProps.reference_model_path ||
     componentProps.relatedObject ||
+    componentProps.related_object ||
     ''
 
   const normalizedExplicit = normalizeReferenceObjectCode(explicitCode)
   if (normalizedExplicit) return normalizedExplicit
 
   const fieldType = normalizeFieldType(
-    String(field.editorType || field.fieldType || field.type || '')
+    String(field.editorType || field.editor_type || field.fieldType || field.field_type || field.type || '')
   )
   return REFERENCE_TYPE_OBJECT_CODE_MAP[fieldType] || ''
 }
@@ -76,16 +88,20 @@ export const resolveReferenceDisplayField = (
   fallback = 'name'
 ): string => {
   if (!field) return fallback
-  const componentProps = field.componentProps || {}
+  const componentProps = resolveComponentProps(field)
   const fieldType = normalizeFieldType(
-    String(field.editorType || field.fieldType || field.type || '')
+    String(field.editorType || field.editor_type || field.fieldType || field.field_type || field.type || '')
   )
   const resolvedFallback = fieldType === 'asset' ? 'assetName' : fallback
   const value =
     field.referenceDisplayField ||
+    field.reference_display_field ||
     field.displayField ||
+    field.display_field ||
     componentProps.referenceDisplayField ||
+    componentProps.reference_display_field ||
     componentProps.displayField ||
+    componentProps.display_field ||
     resolvedFallback
   return String(value || resolvedFallback).trim() || resolvedFallback
 }
@@ -95,15 +111,18 @@ export const resolveReferenceSecondaryField = (
   fallback = 'code'
 ): string => {
   if (!field) return fallback
-  const componentProps = field.componentProps || {}
+  const componentProps = resolveComponentProps(field)
   const fieldType = normalizeFieldType(
-    String(field.editorType || field.fieldType || field.type || '')
+    String(field.editorType || field.editor_type || field.fieldType || field.field_type || field.type || '')
   )
   const resolvedFallback = fieldType === 'asset' ? 'assetCode' : fallback
   const value =
     field.referenceSecondaryField ||
+    field.reference_secondary_field ||
     componentProps.referenceSecondaryField ||
+    componentProps.reference_secondary_field ||
     componentProps.secondaryField ||
+    componentProps.secondary_field ||
     resolvedFallback
   return String(value || resolvedFallback).trim() || resolvedFallback
 }
@@ -116,7 +135,9 @@ export const isReferenceLikeFieldType = (rawType: unknown): boolean => {
 export const isReferenceLikeField = (field: AnyRecord | null | undefined): boolean => {
   if (!field) return false
   if (resolveReferenceObjectCode(field)) return true
-  return isReferenceLikeFieldType(field.editorType || field.fieldType || field.type)
+  return isReferenceLikeFieldType(
+    field.editorType || field.editor_type || field.fieldType || field.field_type || field.type
+  )
 }
 
 const toIdString = (value: unknown): string => {
@@ -124,8 +145,7 @@ const toIdString = (value: unknown): string => {
   if (typeof value === 'number' && Number.isFinite(value)) return String(value)
   const id = String(value).trim()
   if (!id) return ''
-  if (UUID_PATTERN.test(id) || INTEGER_ID_PATTERN.test(id)) return id
-  return ''
+  return id
 }
 
 export const extractReferenceIds = (value: unknown): string[] => {

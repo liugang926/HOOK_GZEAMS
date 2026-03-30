@@ -14,6 +14,7 @@ from .operation import (
     AssetReturnFilter,
     AssetLoanFilter,
 )
+from .tag import AssetTagFilter, AssetTagRelationFilter, TagGroupFilter
 
 __all__ = [
     'AssetCategoryFilter',
@@ -25,4 +26,7 @@ __all__ = [
     'AssetTransferFilter',
     'AssetReturnFilter',
     'AssetLoanFilter',
+    'TagGroupFilter',
+    'AssetTagFilter',
+    'AssetTagRelationFilter',
 ]

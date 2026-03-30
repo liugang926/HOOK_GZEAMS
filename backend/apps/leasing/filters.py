@@ -27,6 +27,7 @@ class LeaseContractFilter(BaseModelFilter):
     expires_soon = filters.BooleanFilter(method='filter_expires_soon')
     total_rent_min = filters.NumberFilter(field_name='total_rent', lookup_expr='gte')
     total_rent_max = filters.NumberFilter(field_name='total_rent', lookup_expr='lte')
+    department = filters.UUIDFilter(method='filter_department')
 
     def filter_expires_soon(self, queryset, name, value):
         """Filter contracts expiring within 30 days."""
@@ -40,13 +41,23 @@ class LeaseContractFilter(BaseModelFilter):
             )
         return queryset
 
+    def filter_department(self, queryset, name, value):
+        """Filter contracts by the creator's primary department."""
+        if not value:
+            return queryset
+        return queryset.filter(
+            created_by__user_departments__department_id=value,
+            created_by__user_departments__is_primary=True,
+            created_by__user_departments__is_deleted=False,
+        ).distinct()
+
     class Meta(BaseModelFilter.Meta):
         model = LeaseContract
         fields = BaseModelFilter.Meta.fields + [
             'status', 'lessee_name', 'payment_type', 'lessee_type', 'contract_no',
             'start_date', 'end_date', 'date_from', 'date_to',
             'start_date_from', 'start_date_to', 'end_date_from', 'end_date_to',
-            'expires_soon', 'total_rent_min', 'total_rent_max',
+            'expires_soon', 'total_rent_min', 'total_rent_max', 'department',
         ]
 
 

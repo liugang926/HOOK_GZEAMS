@@ -77,6 +77,7 @@ const { panelStubFactories } = vi.hoisted(() => {
       financeVoucherEntries: buildPanelStub('FinanceVoucherEntriesPanelStub'),
       financeVoucherIntegrationLogs: buildPanelStub('FinanceVoucherIntegrationLogsPanelStub'),
       financeVoucherSyncStatus: buildPanelStub('FinanceVoucherSyncStatusPanelStub'),
+      inventoryDifferenceClosure: buildPanelStub('InventoryDifferenceClosurePanelStub'),
     },
   }
 })
@@ -113,6 +114,10 @@ vi.mock('@/components/finance/FinanceVoucherSyncStatusPanel.vue', () => ({
   default: panelStubFactories.financeVoucherSyncStatus,
 }))
 
+vi.mock('@/components/inventory/InventoryDifferenceClosurePanel.vue', () => ({
+  default: panelStubFactories.inventoryDifferenceClosure,
+}))
+
 describe('ObjectWorkbenchPanelHost', () => {
   beforeEach(() => {
     vi.mocked(request.get).mockReset()
@@ -144,6 +149,12 @@ describe('ObjectWorkbenchPanelHost', () => {
           ],
           toolbar: { primaryActions: [], secondaryActions: [] },
           asyncIndicators: [],
+          summaryCards: [],
+          queuePanels: [],
+          exceptionPanels: [],
+          closurePanel: null,
+          slaIndicators: [],
+          recommendedActions: [],
         },
       },
     })
@@ -194,6 +205,12 @@ describe('ObjectWorkbenchPanelHost', () => {
           ],
           toolbar: { primaryActions: [], secondaryActions: [] },
           asyncIndicators: [],
+          summaryCards: [],
+          queuePanels: [],
+          exceptionPanels: [],
+          closurePanel: null,
+          slaIndicators: [],
+          recommendedActions: [],
         },
       },
     })
@@ -231,6 +248,12 @@ describe('ObjectWorkbenchPanelHost', () => {
           ],
           toolbar: { primaryActions: [], secondaryActions: [] },
           asyncIndicators: [],
+          summaryCards: [],
+          queuePanels: [],
+          exceptionPanels: [],
+          closurePanel: null,
+          slaIndicators: [],
+          recommendedActions: [],
         },
       },
     })
@@ -239,5 +262,35 @@ describe('ObjectWorkbenchPanelHost', () => {
 
     expect(request.get).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('integration_logs|local|--|--|loaded')
+  })
+
+  it('renders the inventory difference closure panel for InventoryItem workbenches', async () => {
+    const wrapper = mount(ObjectWorkbenchPanelHost, {
+      props: {
+        objectCode: 'InventoryItem',
+        recordId: 'difference-1',
+        recordData: { status: 'confirmed' },
+        workbench: {
+          workspaceMode: 'extended',
+          primaryEntryRoute: '/objects/InventoryItem',
+          detailPanels: [
+            { code: 'difference_closure', component: 'inventory-difference-closure' },
+          ],
+          toolbar: { primaryActions: [], secondaryActions: [] },
+          asyncIndicators: [],
+          summaryCards: [],
+          queuePanels: [],
+          exceptionPanels: [],
+          closurePanel: null,
+          slaIndicators: [],
+          recommendedActions: [],
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(request.get).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('difference_closure|local|--|--|loaded')
   })
 })

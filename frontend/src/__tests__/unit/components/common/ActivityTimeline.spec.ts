@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent } from 'vue'
+import { defineComponent, nextTick } from 'vue'
 
 vi.mock('@/utils/request', () => ({
   default: {
     get: vi.fn()
   }
+}))
+
+vi.mock('vue-router', () => ({
+  useRouter: () => ({
+    push: vi.fn()
+  })
 }))
 
 const mountTimeline = async (response: unknown) => {
@@ -40,6 +46,18 @@ const mountTimeline = async (response: unknown) => {
           name: 'ElTag',
           template: '<span class="el-tag-stub"><slot /></span>'
         }),
+        'el-select': defineComponent({
+          name: 'ElSelect',
+          template: '<div class="el-select-stub"><slot /></div>'
+        }),
+        'el-option': defineComponent({
+          name: 'ElOption',
+          template: '<div class="el-option-stub"></div>'
+        }),
+        'el-segmented': defineComponent({
+          name: 'ElSegmented',
+          template: '<div class="el-segmented-stub"></div>'
+        }),
         'el-table': defineComponent({
           name: 'ElTable',
           props: {
@@ -51,6 +69,14 @@ const mountTimeline = async (response: unknown) => {
           name: 'ElTableColumn',
           props: ['label', 'prop'],
           template: '<div class="el-table-column-stub"></div>'
+        }),
+        'el-icon': defineComponent({
+          name: 'ElIcon',
+          template: '<i class="el-icon-stub"><slot /></i>'
+        }),
+        'el-collapse-transition': defineComponent({
+          name: 'ElCollapseTransition',
+          template: '<div class="el-collapse-transition-stub"><slot /></div>'
         })
       }
     }
@@ -94,14 +120,14 @@ describe('ActivityTimeline', () => {
     const { wrapper, request } = await mountTimeline(response)
 
     await flushPromises()
+    ;(wrapper.vm as any).viewMode = 'table'
+    await nextTick()
 
     const table = wrapper.findComponent({ name: 'ElTable' })
     const data = (table.props('data') || []) as Array<Record<string, any>>
 
-    expect(vi.mocked(request.get)).toHaveBeenCalledWith('/system/activity-logs/', {
+    expect(vi.mocked(request.get)).toHaveBeenCalledWith('/system/objects/Asset/asset-1/history/', {
       params: {
-        object_code: 'Asset',
-        object_id: 'asset-1',
         page: 1,
         page_size: 20
       }

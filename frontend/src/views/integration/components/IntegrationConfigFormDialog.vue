@@ -87,6 +87,11 @@
         />
       </el-form-item>
 
+      <M18ConfigSection
+        v-if="localFormData.systemType === 'm18'"
+        v-model="localFormData"
+      />
+
       <el-divider content-position="left">
         {{ t('integration.formDialog.sections.modules') }}
       </el-divider>
@@ -144,6 +149,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { IntegrationFormData } from '@/types/integration'
+import M18ConfigSection from './M18ConfigSection.vue'
 import {
   MODULE_OPTIONS,
   SYSTEM_TYPE_OPTIONS,

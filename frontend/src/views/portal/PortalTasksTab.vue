@@ -89,6 +89,7 @@
 import { useI18n } from 'vue-i18n'
 import { Refresh } from '@element-plus/icons-vue'
 
+import type { PortalTaskRecord } from '@/types/portal'
 import { formatDate } from '@/utils/dateFormat'
 
 import {
@@ -103,14 +104,14 @@ defineProps<{
   loading: boolean
   pageSize: number
   pendingCount: number
-  tasks: any[]
+  tasks: PortalTaskRecord[]
   total: number
 }>()
 
 const emit = defineEmits<{
-  approve: [task: Record<string, any>]
-  open: [task: Record<string, any>]
-  reject: [task: Record<string, any>]
+  approve: [task: PortalTaskRecord]
+  open: [task: PortalTaskRecord]
+  reject: [task: PortalTaskRecord]
   refresh: []
   'update:currentPage': [value: number]
   'update:pageSize': [value: number]

@@ -59,6 +59,7 @@ export * from './auth'
 export * from './error'
 export * from './finance'
 export * from './inventory'
+export * from './tags'
 export * from './softwareLicenses'
 export * from './workflow'
 export {

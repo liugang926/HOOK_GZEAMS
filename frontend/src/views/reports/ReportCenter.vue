@@ -25,6 +25,14 @@
     >
       <!-- Asset Reports -->
       <el-tab-pane
+        :label="$t('reports.center.tabs.operations')"
+        name="operations"
+      >
+        <ClosedLoopDashboardPanel />
+      </el-tab-pane>
+
+      <!-- Asset Reports -->
+      <el-tab-pane
         :label="$t('reports.center.tabs.assets')"
         name="assets"
       >
@@ -262,6 +270,7 @@ import {
   Document, Wallet, Download, DataLine, Delete
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import ClosedLoopDashboardPanel from '@/components/reports/ClosedLoopDashboardPanel.vue'
 import { assetApi } from '@/api/assets'
 import { purchaseRequestApi, maintenanceApi, disposalRequestApi } from '@/api/dynamic'
 import { insurancePolicyApi, claimRecordApi } from '@/api/insurance'
@@ -270,7 +279,7 @@ import { exportAllPages, exportToCSV, type ExportColumn } from '@/utils/exportSe
 import { prefetchXlsx } from '@/utils/xlsxLoader'
 
 const { t } = useI18n()
-const activeTab = ref('assets')
+const activeTab = ref('operations')
 const loadingKey = ref<string | null>(null)
 const warmUpSpreadsheet = () => {
   prefetchXlsx()

@@ -15,8 +15,9 @@ from apps.leasing.models import (
     LeaseContract, LeaseItem, RentPayment,
     LeaseReturn, LeaseExtension
 )
-from apps.organizations.models import Organization
+from apps.organizations.models import Department, Organization, UserDepartment
 from apps.accounts.models import User
+from apps.system.models import BusinessObject
 
 
 class LeaseContractAPITest(APITestCase):
@@ -37,7 +38,28 @@ class LeaseContractAPITest(APITestCase):
             email=f"test{self.unique_suffix}@example.com",
             organization=self.organization
         )
+        self.department = Department.objects.create(
+            organization=self.organization,
+            code=f"LEASE_DEPT_{uuid.uuid4().hex[:8]}",
+            name="Leasing Operations",
+            created_by=self.user
+        )
+        UserDepartment.objects.create(
+            organization=self.organization,
+            user=self.user,
+            department=self.department,
+            is_primary=True,
+            created_by=self.user
+        )
         self.client.force_authenticate(user=self.user)
+        BusinessObject.objects.get_or_create(
+            code='LeasingContract',
+            defaults={
+                'name': 'Leasing Contract',
+                'is_hardcoded': True,
+                'django_model_path': 'apps.leasing.models.LeaseContract',
+            },
+        )
 
     def test_list_contracts(self):
         """Test listing lease contracts."""
@@ -213,6 +235,50 @@ class LeaseContractAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['success'])
         self.assertEqual(len(response.data['data']['results']), 1)
+
+    def test_object_router_supports_department_filter(self):
+        own_contract = LeaseContract.objects.create(
+            organization=self.organization,
+            contract_no=f"ZL{self.unique_suffix}0100",
+            lessee_name=f"Department Customer {self.unique_suffix}",
+            start_date="2026-01-01",
+            end_date="2026-12-31",
+            total_rent=10000,
+            created_by=self.user
+        )
+        other_user = User.objects.create_user(
+            username=f"lease_other_{uuid.uuid4().hex[:8]}",
+            email=f"lease_other_{uuid.uuid4().hex[:8]}@example.com",
+            organization=self.organization
+        )
+        other_department = Department.objects.create(
+            organization=self.organization,
+            code=f"LEASE_OTHER_{uuid.uuid4().hex[:8]}",
+            name="Other Leasing Department",
+            created_by=self.user
+        )
+        UserDepartment.objects.create(
+            organization=self.organization,
+            user=other_user,
+            department=other_department,
+            is_primary=True,
+            created_by=self.user
+        )
+        LeaseContract.objects.create(
+            organization=self.organization,
+            contract_no=f"ZL{self.unique_suffix}0101",
+            lessee_name=f"Other Customer {self.unique_suffix}",
+            start_date="2026-01-01",
+            end_date="2026-12-31",
+            total_rent=12000,
+            created_by=other_user
+        )
+
+        response = self.client.get(f'/api/system/objects/LeasingContract/?department={self.department.id}')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data['data']['results']
+        self.assertEqual([item['id'] for item in results], [str(own_contract.id)])
 
 
 class LeaseItemAPITest(APITestCase):

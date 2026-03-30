@@ -161,7 +161,7 @@ const showTooltip = computed(() => Boolean(props.tooltip))
  * Get aria-label for collapse button based on state
  */
 const collapseButtonLabel = computed(() =>
-  isCollapsed.value ? t('actions.expand') : t('actions.collapse')
+  isCollapsed.value ? t('common.actions.expand') : t('common.actions.collapse')
 )
 
 /**

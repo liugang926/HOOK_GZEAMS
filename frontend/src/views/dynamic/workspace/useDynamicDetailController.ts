@@ -3,7 +3,12 @@ import type { Router } from 'vue-router'
 import { createObjectClient, type ObjectMetadata } from '@/api/dynamic'
 import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
 import type { RuntimePermissions } from '@/platform/layout/runtimeLayoutResolver'
-import type { AggregateDocumentResponse, RuntimeAggregate, RuntimeWorkbench } from '@/types/runtime'
+import type {
+  AggregateDocumentResponse,
+  ObjectSlaSummary,
+  RuntimeAggregate,
+  RuntimeWorkbench,
+} from '@/types/runtime'
 import { supportsAggregateDocument } from './aggregateDocument'
 import {
   buildDynamicObjectListPath,
@@ -32,6 +37,7 @@ export const useDynamicDetailController = ({
   const runtimePermissions = ref<RuntimePermissions | null>(null)
   const runtimeAggregate = ref<RuntimeAggregate | null>(null)
   const runtimeWorkbench = ref<RuntimeWorkbench | null>(null)
+  const objectSla = ref<ObjectSlaSummary | null>(null)
   const documentPayload = ref<AggregateDocumentResponse | null>(null)
   const loading = ref(false)
   const loadError = ref<string | null>(null)
@@ -61,20 +67,24 @@ export const useDynamicDetailController = ({
     loading.value = true
     loadError.value = null
     try {
-      const result = await loadDynamicDetailResources({
-        objectCode: objectCode.value,
-        recordId: recordId.value,
-        t,
-        loadRuntimeLayout: () => resolveRuntimeLayout(objectCode.value, 'edit', { includeRelations: true }),
-        loadMetadata: () => apiClient.value.getMetadata(),
-        loadDocument: (targetRecordId) => apiClient.value.getDocument(targetRecordId, 'readonly'),
-      })
+      const [result, slaResult] = await Promise.all([
+        loadDynamicDetailResources({
+          objectCode: objectCode.value,
+          recordId: recordId.value,
+          t,
+          loadRuntimeLayout: () => resolveRuntimeLayout(objectCode.value, 'edit', { includeRelations: true }),
+          loadMetadata: () => apiClient.value.getMetadata(),
+          loadDocument: (targetRecordId) => apiClient.value.getDocument(targetRecordId, 'readonly'),
+        }),
+        apiClient.value.getSla(recordId.value).catch(() => null),
+      ])
 
       metadataPermissions.value = result.metadataPermissions
       objectMetadata.value = result.objectMetadata as ObjectMetadata | null
       runtimePermissions.value = result.runtimePermissions
       runtimeAggregate.value = result.runtimeAggregate
       runtimeWorkbench.value = result.runtimeWorkbench
+      objectSla.value = slaResult
       documentPayload.value = result.documentPayload
       loadError.value = result.loadError
 
@@ -140,6 +150,7 @@ export const useDynamicDetailController = ({
     documentPayload,
     runtimeAggregate,
     runtimeWorkbench,
+    objectSla,
     runtimePermissions,
     usesAggregateDocument,
   }

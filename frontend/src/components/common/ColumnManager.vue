@@ -9,7 +9,7 @@
     <template #reference>
       <span class="column-manager-trigger">
         <el-tooltip
-          :content="$t('column.settings')"
+          :content="$t('common.column.settings')"
           placement="top"
         >
           <el-button
@@ -24,14 +24,14 @@
     <div class="column-manager">
       <!-- Header with actions -->
       <div class="column-manager-header">
-        <span>{{ $t('column.settings') }}</span>
+        <span>{{ $t('common.column.settings') }}</span>
         <div class="header-actions">
           <el-button
             link
             size="small"
             @click="handleReset"
           >
-            {{ $t('actions.reset') }}
+            {{ $t('common.actions.reset') }}
           </el-button>
           <el-button
             link
@@ -39,7 +39,7 @@
             size="small"
             @click="handleSave"
           >
-            {{ $t('actions.save') }}
+            {{ $t('common.actions.save') }}
           </el-button>
         </div>
       </div>
@@ -74,7 +74,7 @@
             <span
               v-if="(col as any).field_type"
               class="field-type-badge"
-              :title="`${$t('column.type')}: ${(col as any).field_type}`"
+              :title="`${$t('common.column.type')}: ${(col as any).field_type}`"
             >
               {{ getFieldTypeLabel((col as any).field_type) }}
             </span>
@@ -92,7 +92,7 @@
               </span>
               <el-tooltip
                 v-if="(col as any).label_override"
-                :content="`${$t('column.originalLabel')}: ${col.label}`"
+                :content="`${$t('common.column.originalLabel')}: ${col.label}`"
                 placement="top"
               >
                 <el-icon
@@ -113,15 +113,15 @@
                 @update:model-value="(val: string) => handleFixedChange(col, val)"
               >
                 <el-option
-                  :label="$t('column.fixed.none')"
+                  :label="$t('common.column.fixed.none')"
                   value=""
                 />
                 <el-option
-                  :label="$t('column.fixed.left')"
+                  :label="$t('common.column.fixed.left')"
                   value="left"
                 />
                 <el-option
-                  :label="$t('column.fixed.right')"
+                  :label="$t('common.column.fixed.right')"
                   value="right"
                 />
               </el-select>
@@ -148,7 +148,7 @@
           :indeterminate="someVisible"
           @update:model-value="handleToggleAll"
         >
-          {{ $t('actions.selectAll') }}
+          {{ $t('common.actions.selectAll') }}
         </el-checkbox>
       </div>
     </div>
@@ -276,7 +276,7 @@ const handleDragEnd = () => {
 // Column visibility toggle
 const handleToggleVisibility = (col: ColumnItem, visible: boolean) => {
   if (isRequired(col) && !visible) {
-    ElMessage.warning(t('column.requiredColumnCannotHide'))
+    ElMessage.warning(t('common.column.requiredColumnCannotHide'))
     return
   }
   col.visible = visible
@@ -317,7 +317,7 @@ const handleReset = () => {
   }))
   emit('reset')
   emitChanges()
-  ElMessage.info(t('column.resetSuccess'))
+  ElMessage.info(t('common.column.resetSuccess'))
 }
 
 // Save configuration

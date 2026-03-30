@@ -308,6 +308,7 @@ class ConsumablePurchaseDetailSerializer(BaseModelWithAuditSerializer):
 
 class ConsumablePurchaseCreateSerializer(BaseModelSerializer):
     """Serializer for creating purchase orders with items"""
+    supplier_id = serializers.UUIDField(write_only=True)
     items = PurchaseItemCreateSerializer(many=True, write_only=True, required=True)
 
     class Meta(BaseModelSerializer.Meta):
@@ -319,6 +320,7 @@ class ConsumablePurchaseCreateSerializer(BaseModelSerializer):
 
 class ConsumablePurchaseUpdateSerializer(BaseModelSerializer):
     """Serializer for updating purchase orders"""
+    supplier_id = serializers.UUIDField(write_only=True, required=False)
 
     class Meta(BaseModelSerializer.Meta):
         model = ConsumablePurchase
@@ -448,6 +450,8 @@ class ConsumableIssueDetailSerializer(BaseModelWithAuditSerializer):
 
 class ConsumableIssueCreateSerializer(BaseModelSerializer):
     """Serializer for creating issue orders with items"""
+    applicant_id = serializers.UUIDField(write_only=True)
+    department_id = serializers.UUIDField(write_only=True)
     items = IssueItemCreateSerializer(many=True, write_only=True, required=True)
 
     class Meta(BaseModelSerializer.Meta):
@@ -460,6 +464,8 @@ class ConsumableIssueCreateSerializer(BaseModelSerializer):
 
 class ConsumableIssueUpdateSerializer(BaseModelSerializer):
     """Serializer for updating issue orders"""
+    applicant_id = serializers.UUIDField(write_only=True, required=False)
+    department_id = serializers.UUIDField(write_only=True, required=False)
 
     class Meta(BaseModelSerializer.Meta):
         model = ConsumableIssue

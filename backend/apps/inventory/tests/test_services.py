@@ -11,15 +11,19 @@ from apps.inventory.services import (
     ScanService,
     SnapshotService,
     DifferenceService,
+    InventoryExceptionClosureService,
 )
 from apps.inventory.models import (
     InventoryTask,
     InventorySnapshot,
     InventoryScan,
     InventoryDifference,
+    InventoryFollowUp,
 )
 from apps.inventory.utils.qr_code import QRCodeGenerator
 from apps.assets.models import Asset, Location, AssetCategory
+from apps.lifecycle.models import Maintenance
+from apps.notifications.models import Notification
 from apps.organizations.models import Organization
 from apps.accounts.models import User
 from django.core.exceptions import ValidationError
@@ -114,6 +118,11 @@ class InventoryServiceTests(TestCase):
         self.user = User.objects.create_user(
             username=f"testuser_{self.unique_suffix}",
             email=f"test{self.unique_suffix}@example.com",
+            organization=self.organization
+        )
+        self.owner = User.objects.create_user(
+            username=f"owner_{self.unique_suffix}",
+            email=f"owner{self.unique_suffix}@example.com",
             organization=self.organization
         )
         self.location = Location.objects.create(
@@ -447,6 +456,11 @@ class DifferenceServiceTests(TestCase):
             email=f"test{self.unique_suffix}@example.com",
             organization=self.organization
         )
+        self.owner = User.objects.create_user(
+            username=f"owner_{self.unique_suffix}",
+            email=f"owner{self.unique_suffix}@example.com",
+            organization=self.organization
+        )
         self.location1 = Location.objects.create(
             name="Location 1",
             path="Location 1",
@@ -471,6 +485,7 @@ class DifferenceServiceTests(TestCase):
             created_by=self.user
         )
         self.service = DifferenceService()
+        self.exception_closure_service = InventoryExceptionClosureService()
         self.qr_generator = QRCodeGenerator()
 
     def test_generate_missing_differences(self):
@@ -624,3 +639,444 @@ class DifferenceServiceTests(TestCase):
         self.assertEqual(summary['total_differences'], 2)
         self.assertEqual(summary['pending'], 1)
         self.assertEqual(summary['resolved'], 1)
+        self.assertEqual(summary['pending_confirmation_count'], 1)
+        self.assertEqual(summary['pending_closure_count'], 1)
+        self.assertEqual(summary['by_type'][InventoryDifference.TYPE_MISSING], 1)
+        self.assertEqual(summary['by_type'][InventoryDifference.TYPE_SURPLUS], 1)
+
+    def test_inventory_difference_closure_flow(self):
+        """Test the confirm-review-approve-execute-close lifecycle."""
+        asset = Asset.objects.create(
+            asset_code=f"ASSET_{self.unique_suffix}_FLOW",
+            purchase_price=0,
+            purchase_date="2024-01-01",
+            asset_name="Flow Asset",
+            asset_category=self.category,
+            location=self.location1,
+            organization=self.organization,
+            created_by=self.user
+        )
+        diff = InventoryDifference.objects.create(
+            task=self.task,
+            asset=asset,
+            difference_type=InventoryDifference.TYPE_LOCATION_MISMATCH,
+            status=InventoryDifference.STATUS_PENDING,
+            actual_location=self.location2.name,
+            organization=self.organization,
+            created_by=self.user
+        )
+
+        confirmed = self.service.confirm_difference(
+            difference_id=str(diff.id),
+            user_id=str(self.user.id),
+            owner_id=str(self.owner.id),
+        )
+        self.assertEqual(confirmed.status, InventoryDifference.STATUS_CONFIRMED)
+        self.assertEqual(str(confirmed.owner_id), str(self.owner.id))
+
+        in_review = self.service.submit_review(
+            difference_id=str(diff.id),
+            user_id=str(self.owner.id),
+            resolution="Move asset to the scanned location",
+            closure_type=InventoryDifference.CLOSURE_TYPE_LOCATION_CORRECTION,
+            evidence_refs=['photo://inventory/1'],
+        )
+        self.assertEqual(in_review.status, InventoryDifference.STATUS_IN_REVIEW)
+        self.assertEqual(in_review.closure_type, InventoryDifference.CLOSURE_TYPE_LOCATION_CORRECTION)
+
+        approved = self.service.approve_resolution(
+            difference_id=str(diff.id),
+            user_id=str(self.user.id),
+        )
+        self.assertEqual(approved.status, InventoryDifference.STATUS_APPROVED)
+
+        resolved = self.service.execute_resolution(
+            difference_id=str(diff.id),
+            user_id=str(self.owner.id),
+        )
+        self.assertEqual(resolved.status, InventoryDifference.STATUS_RESOLVED)
+        asset.refresh_from_db()
+        self.assertEqual(asset.location_id, self.location2.id)
+
+        closed = self.service.close_difference(
+            difference_id=str(diff.id),
+            user_id=str(self.user.id),
+            closure_notes="Closure completed",
+        )
+        self.assertEqual(closed.status, InventoryDifference.STATUS_CLOSED)
+        self.assertIsNotNone(closed.closure_completed_at)
+
+    def test_save_difference_draft_without_status_transition(self):
+        """Test saving draft handling data does not change the workflow status."""
+        asset = Asset.objects.create(
+            asset_code=f"ASSET_{self.unique_suffix}_DRAFT",
+            purchase_price=0,
+            purchase_date="2024-01-01",
+            asset_name="Draft Asset",
+            asset_category=self.category,
+            location=self.location1,
+            organization=self.organization,
+            created_by=self.user
+        )
+        diff = InventoryDifference.objects.create(
+            task=self.task,
+            asset=asset,
+            difference_type=InventoryDifference.TYPE_MISSING,
+            status=InventoryDifference.STATUS_CONFIRMED,
+            organization=self.organization,
+            created_by=self.user
+        )
+
+        updated = self.service.save_draft(
+            difference_id=str(diff.id),
+            resolution="Asset still missing after second count",
+            closure_type=InventoryDifference.CLOSURE_TYPE_FINANCIAL_ADJUSTMENT,
+            linked_action_code="finance_adjustment",
+            evidence_refs=["photo://draft/1", "ticket://draft/2"],
+            closure_notes="Waiting for reviewer confirmation",
+        )
+
+        self.assertEqual(updated.status, InventoryDifference.STATUS_CONFIRMED)
+        self.assertEqual(updated.resolution, "Asset still missing after second count")
+        self.assertEqual(updated.closure_type, InventoryDifference.CLOSURE_TYPE_FINANCIAL_ADJUSTMENT)
+        self.assertEqual(updated.linked_action_code, "finance_adjustment")
+        self.assertEqual(updated.evidence_refs, ["photo://draft/1", "ticket://draft/2"])
+        self.assertEqual(updated.closure_notes, "Waiting for reviewer confirmation")
+
+    def test_execute_resolution_runs_linked_maintenance_action(self):
+        """Test executing a linked maintenance action during difference resolution."""
+        asset = Asset.objects.create(
+            asset_code=f"ASSET_{self.unique_suffix}_MAINT",
+            purchase_price=0,
+            purchase_date="2024-01-01",
+            asset_name="Maintenance Asset",
+            asset_category=self.category,
+            location=self.location1,
+            organization=self.organization,
+            created_by=self.user
+        )
+        diff = InventoryDifference.objects.create(
+            task=self.task,
+            asset=asset,
+            difference_type=InventoryDifference.TYPE_DAMAGED,
+            status=InventoryDifference.STATUS_APPROVED,
+            resolution="Create a maintenance record for inspection",
+            closure_type=InventoryDifference.CLOSURE_TYPE_REPAIR,
+            linked_action_code="asset.create_maintenance",
+            organization=self.organization,
+            created_by=self.user
+        )
+
+        resolved = self.service.execute_resolution(
+            difference_id=str(diff.id),
+            user_id=str(self.user.id),
+            sync_asset=False,
+        )
+
+        self.assertEqual(resolved.status, InventoryDifference.STATUS_RESOLVED)
+        execution_state = resolved.custom_fields.get('linked_action_execution', {})
+        self.assertEqual(execution_state.get('status'), 'executed')
+        self.assertEqual(execution_state.get('action_code'), 'asset.create_maintenance')
+        self.assertEqual(execution_state.get('target_object_code'), 'Maintenance')
+
+        maintenance = Maintenance.objects.get(id=execution_state.get('target_id'))
+        self.assertEqual(maintenance.asset_id, asset.id)
+        self.assertEqual(maintenance.reporter_id, self.user.id)
+
+    def test_execute_resolution_creates_manual_follow_up_notification(self):
+        """Test manual follow-up execution creates an inbox notification for the owner."""
+        asset = Asset.objects.create(
+            asset_code=f"ASSET_{self.unique_suffix}_FOLLOW",
+            purchase_price=0,
+            purchase_date="2024-01-01",
+            asset_name="Follow-up Asset",
+            asset_category=self.category,
+            location=self.location1,
+            organization=self.organization,
+            created_by=self.user
+        )
+        diff = InventoryDifference.objects.create(
+            task=self.task,
+            asset=asset,
+            difference_type=InventoryDifference.TYPE_MISSING,
+            status=InventoryDifference.STATUS_APPROVED,
+            resolution="Finance adjustment required",
+            closure_type=InventoryDifference.CLOSURE_TYPE_FINANCIAL_ADJUSTMENT,
+            linked_action_code="finance_adjustment",
+            owner=self.owner,
+            organization=self.organization,
+            created_by=self.user
+        )
+
+        resolved = self.service.execute_resolution(
+            difference_id=str(diff.id),
+            user_id=str(self.user.id),
+            sync_asset=False,
+        )
+
+        execution_state = resolved.custom_fields.get('linked_action_execution', {})
+        self.assertEqual(execution_state.get('status'), 'manual_follow_up')
+        self.assertEqual(execution_state.get('follow_up_assignee_id'), str(self.owner.id))
+        self.assertEqual(execution_state.get('follow_up_sent_count'), 1)
+        self.assertTrue(execution_state.get('follow_up_notification_id'))
+        self.assertEqual(execution_state.get('follow_up_task_status'), InventoryFollowUp.STATUS_PENDING)
+        self.assertTrue(execution_state.get('follow_up_task_code'))
+        self.assertTrue(execution_state.get('follow_up_task_url'))
+
+        notification = Notification.all_objects.get(id=execution_state.get('follow_up_notification_id'))
+        self.assertEqual(notification.recipient_id, self.owner.id)
+        self.assertEqual(notification.organization_id, self.organization.id)
+        self.assertEqual(notification.data.get('actionUrl'), f'/objects/InventoryItem/{diff.id}')
+
+        follow_up = InventoryFollowUp.all_objects.get(difference_id=diff.id)
+        self.assertEqual(follow_up.assignee_id, self.owner.id)
+        self.assertEqual(follow_up.status, InventoryFollowUp.STATUS_PENDING)
+        self.assertEqual(follow_up.linked_action_code, 'finance_adjustment')
+
+    def test_get_difference_summary_includes_manual_follow_up_open_count(self):
+        """Test difference summary exposes open manual follow-up counts and stage."""
+        asset = Asset.objects.create(
+            asset_code=f"ASSET_{self.unique_suffix}_FOLLOW_SUM",
+            purchase_price=0,
+            purchase_date="2024-01-01",
+            asset_name="Follow-up Summary Asset",
+            asset_category=self.category,
+            location=self.location1,
+            organization=self.organization,
+            created_by=self.user
+        )
+        InventoryDifference.objects.create(
+            task=self.task,
+            asset=asset,
+            difference_type=InventoryDifference.TYPE_MISSING,
+            status=InventoryDifference.STATUS_RESOLVED,
+            organization=self.organization,
+            created_by=self.user,
+            custom_fields={
+                'linked_action_execution': {
+                    'status': 'manual_follow_up',
+                    'can_send_follow_up': True,
+                }
+            },
+        )
+
+        summary = self.service.get_difference_summary(str(self.task.id))
+
+        self.assertEqual(summary['manual_follow_up_total_count'], 1)
+        self.assertEqual(summary['manual_follow_up_open_count'], 1)
+        self.assertEqual(summary['closure_stage_label'], 'Awaiting follow-up')
+        self.assertEqual(summary['closure_blocker'], 'Manual downstream follow-up is still pending completion.')
+
+    def test_get_difference_summary_counts_follow_up_ledger_rows(self):
+        """Test difference summary prefers follow-up ledger rows when they exist."""
+        asset = Asset.objects.create(
+            asset_code=f"ASSET_{self.unique_suffix}_FOLLOW_LEDGER",
+            purchase_price=0,
+            purchase_date="2024-01-01",
+            asset_name="Follow-up Ledger Asset",
+            asset_category=self.category,
+            location=self.location1,
+            organization=self.organization,
+            created_by=self.user
+        )
+        diff = InventoryDifference.objects.create(
+            task=self.task,
+            asset=asset,
+            difference_type=InventoryDifference.TYPE_MISSING,
+            status=InventoryDifference.STATUS_RESOLVED,
+            resolution="Finance adjustment required",
+            closure_type=InventoryDifference.CLOSURE_TYPE_FINANCIAL_ADJUSTMENT,
+            linked_action_code="finance_adjustment",
+            owner=self.owner,
+            organization=self.organization,
+            created_by=self.user,
+        )
+        InventoryFollowUp.all_objects.create(
+            task=self.task,
+            difference=diff,
+            asset=asset,
+            title="Manual finance follow-up",
+            closure_type=InventoryDifference.CLOSURE_TYPE_FINANCIAL_ADJUSTMENT,
+            linked_action_code="finance_adjustment",
+            status=InventoryFollowUp.STATUS_PENDING,
+            assignee=self.owner,
+            assigned_at=timezone.now(),
+            organization=self.organization,
+            created_by=self.user,
+        )
+
+        summary = self.service.get_difference_summary(str(self.task.id))
+
+        self.assertEqual(summary['manual_follow_up_total_count'], 1)
+        self.assertEqual(summary['manual_follow_up_open_count'], 1)
+        self.assertEqual(summary['closure_stage_label'], 'Awaiting follow-up')
+
+    def test_send_follow_up_resends_manual_follow_up_notification(self):
+        """Test sending a follow-up reminder refreshes notification metadata."""
+        asset = Asset.objects.create(
+            asset_code=f"ASSET_{self.unique_suffix}_REMIND",
+            purchase_price=0,
+            purchase_date="2024-01-01",
+            asset_name="Reminder Asset",
+            asset_category=self.category,
+            location=self.location1,
+            organization=self.organization,
+            created_by=self.user
+        )
+        diff = InventoryDifference.objects.create(
+            task=self.task,
+            asset=asset,
+            difference_type=InventoryDifference.TYPE_MISSING,
+            status=InventoryDifference.STATUS_RESOLVED,
+            resolution="Finance adjustment required",
+            closure_type=InventoryDifference.CLOSURE_TYPE_FINANCIAL_ADJUSTMENT,
+            linked_action_code="finance_adjustment",
+            owner=self.owner,
+            organization=self.organization,
+            created_by=self.user,
+            custom_fields={
+                'linked_action_execution': {
+                    'action_code': 'finance_adjustment',
+                    'status': 'manual_follow_up',
+                    'message': 'Linked action recorded for manual financial adjustment follow-up.',
+                    'executed_at': timezone.now().isoformat(),
+                    'follow_up_sent_count': 1,
+                }
+            },
+        )
+
+        updated = self.service.send_follow_up(
+            difference_id=str(diff.id),
+            user_id=str(self.user.id),
+        )
+
+        execution_state = updated.custom_fields.get('linked_action_execution', {})
+        self.assertEqual(execution_state.get('follow_up_assignee_id'), str(self.owner.id))
+        self.assertEqual(execution_state.get('follow_up_sent_count'), 2)
+        self.assertTrue(execution_state.get('follow_up_notification_id'))
+        self.assertIn('Follow-up reminder sent', execution_state.get('message', ''))
+
+    def test_complete_follow_up_unblocks_difference_closure(self):
+        """Test a difference cannot close until the manual follow-up is completed."""
+        asset = Asset.objects.create(
+            asset_code=f"ASSET_{self.unique_suffix}_FOLLOW_CLOSE",
+            purchase_price=0,
+            purchase_date="2024-01-01",
+            asset_name="Follow-up Close Asset",
+            asset_category=self.category,
+            location=self.location1,
+            organization=self.organization,
+            created_by=self.user
+        )
+        diff = InventoryDifference.objects.create(
+            task=self.task,
+            asset=asset,
+            difference_type=InventoryDifference.TYPE_MISSING,
+            status=InventoryDifference.STATUS_APPROVED,
+            resolution="Finance adjustment required",
+            closure_type=InventoryDifference.CLOSURE_TYPE_FINANCIAL_ADJUSTMENT,
+            linked_action_code="finance_adjustment",
+            owner=self.owner,
+            organization=self.organization,
+            created_by=self.user
+        )
+
+        resolved = self.service.execute_resolution(
+            difference_id=str(diff.id),
+            user_id=str(self.user.id),
+            sync_asset=False,
+        )
+
+        with self.assertRaises(ValidationError):
+            self.service.close_difference(
+                difference_id=str(diff.id),
+                user_id=str(self.user.id),
+                closure_notes="Attempted before follow-up completion",
+            )
+
+        updated = self.service.complete_follow_up(
+            difference_id=str(diff.id),
+            user_id=str(self.owner.id),
+            completion_notes="Finance adjustment posted",
+            evidence_refs=['ticket://finance-adjustment-1'],
+        )
+
+        execution_state = updated.custom_fields.get('linked_action_execution', {})
+        self.assertEqual(execution_state.get('follow_up_task_status'), InventoryFollowUp.STATUS_COMPLETED)
+        self.assertFalse(execution_state.get('can_send_follow_up'))
+
+        closed = self.service.close_difference(
+            difference_id=str(diff.id),
+            user_id=str(self.user.id),
+            closure_notes="Closed after finance completion",
+        )
+        self.assertEqual(closed.status, InventoryDifference.STATUS_CLOSED)
+
+    def test_inventory_exception_closure_summary_normalizes_difference_state(self):
+        """Test unified closure summary for differences includes next action and blocker."""
+        asset = Asset.objects.create(
+            asset_code=f"ASSET_{self.unique_suffix}_SUMMARY",
+            purchase_price=0,
+            purchase_date="2024-01-01",
+            asset_name="Summary Asset",
+            asset_category=self.category,
+            location=self.location1,
+            organization=self.organization,
+            created_by=self.user,
+        )
+        diff = InventoryDifference.objects.create(
+            task=self.task,
+            asset=asset,
+            difference_type=InventoryDifference.TYPE_MISSING,
+            status=InventoryDifference.STATUS_CONFIRMED,
+            owner=self.owner,
+            organization=self.organization,
+            created_by=self.user,
+        )
+
+        summary = self.exception_closure_service.build_difference_summary(diff)
+
+        self.assertEqual(summary['stage'], 'Awaiting review submission')
+        self.assertEqual(summary['owner'], self.owner.username)
+        self.assertEqual(summary['next_action_code'], 'submit_review')
+        self.assertIn('review', summary['blocker'].lower())
+
+    def test_inventory_exception_closure_summary_normalizes_follow_up_state(self):
+        """Test unified closure summary for follow-up tasks exposes completion action."""
+        asset = Asset.objects.create(
+            asset_code=f"ASSET_{self.unique_suffix}_FOLLOW_SUMMARY",
+            purchase_price=0,
+            purchase_date="2024-01-01",
+            asset_name="Follow-up Summary Asset",
+            asset_category=self.category,
+            location=self.location1,
+            organization=self.organization,
+            created_by=self.user,
+        )
+        diff = InventoryDifference.objects.create(
+            task=self.task,
+            asset=asset,
+            difference_type=InventoryDifference.TYPE_MISSING,
+            status=InventoryDifference.STATUS_RESOLVED,
+            owner=self.owner,
+            organization=self.organization,
+            created_by=self.user,
+        )
+        follow_up = InventoryFollowUp.objects.create(
+            task=self.task,
+            difference=diff,
+            asset=asset,
+            title='Finance follow-up',
+            status=InventoryFollowUp.STATUS_PENDING,
+            assignee=self.owner,
+            assigned_at=timezone.now(),
+            organization=self.organization,
+            created_by=self.user,
+        )
+
+        summary = self.exception_closure_service.build_follow_up_summary(follow_up)
+
+        self.assertEqual(summary['stage'], 'Awaiting follow-up')
+        self.assertEqual(summary['owner'], self.owner.username)
+        self.assertEqual(summary['next_action_code'], 'complete')
+        self.assertIn('pending', summary['blocker'].lower())

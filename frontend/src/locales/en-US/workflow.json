@@ -6,6 +6,16 @@
         "tabs": {
             "pending": "Pending",
             "processed": "Processed"
+        },
+        "drilldown": {
+            "title": "Viewing dashboard drilldown queue",
+            "source": "Source: {value}",
+            "assignee": "Assignee: {value}",
+            "department": "Department: {value}",
+            "overdueOnly": "Overdue Only",
+            "showOpen": "Show Open Queue",
+            "showOverdue": "Show Overdue Only",
+            "clear": "Clear Drilldown"
         }
     },
     "myApprovals": {

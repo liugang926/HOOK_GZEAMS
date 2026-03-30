@@ -2,12 +2,145 @@
     "center": {
         "title": "Report Center",
         "tabs": {
+            "operations": "Closed-Loop Ops",
             "assets": "Asset Reports",
             "lifecycle": "Lifecycle",
             "insurance": "Insurance Reports",
             "leasing": "Leasing Reports"
         },
         "downloadXlsx": "Download Excel"
+    },
+    "closedLoop": {
+        "title": "Closed-Loop Operations Dashboard",
+        "description": "Monitor opened work, backlog, overdue load, and bottleneck rankings from one place, then drill into the handling queues.",
+        "loading": "Loading closed-loop operational metrics...",
+        "retry": "Retry",
+        "windows": {
+            "7d": "Last 7 Days",
+            "30d": "Last 30 Days",
+            "90d": "Last 90 Days"
+        },
+        "scope": {
+            "organization": "Organization Scope",
+            "currentOrganization": "Current Organization"
+        },
+        "filters": {
+            "allObjects": "All Objects"
+        },
+        "summary": {
+            "openedCount": "Opened",
+            "closedCount": "Closed",
+            "backlogCount": "Backlog",
+            "overdueCount": "Overdue",
+            "autoClosedCount": "Auto Closed",
+            "avgCycleHours": "Avg Cycle Hours"
+        },
+        "workflow": {
+            "activeTaskCount": "Workflow Tasks In Flight",
+            "overdueTaskCount": "Workflow Tasks Overdue",
+            "escalatedTaskCount": "Workflow Tasks Escalated",
+            "bottleneckCount": "Workflow Bottlenecks"
+        },
+        "sections": {
+            "coverage": "Covered Objects",
+            "trend": "Latest 7-Day Trend",
+            "byObject": "By Object",
+            "owners": "Owner Ranking",
+            "departments": "Department Ranking",
+            "queues": "Queue Ranking",
+            "bottlenecks": "Bottleneck Ranking"
+        },
+        "owners": {
+            "person": "Owner",
+            "openCount": "Open Count",
+            "overdueCount": "Overdue Count",
+            "topSource": "Top Source",
+            "sourceBreakdown": "Source Breakdown",
+            "unknownSource": "Unknown Source"
+        },
+        "departments": {
+            "name": "Department",
+            "openCount": "Open Count",
+            "overdueCount": "Overdue Count",
+            "topSource": "Top Source",
+            "sourceBreakdown": "Source Breakdown"
+        },
+        "drilldown": {
+            "ownerTitle": "Owner Drilldown: {name}",
+            "departmentTitle": "Department Drilldown: {name}",
+            "source": "Source",
+            "count": "Count"
+        },
+        "sources": {
+            "workflow_tasks": "Workflow Tasks",
+            "inventory_differences": "Inventory Differences",
+            "projects": "Projects",
+            "finance_vouchers": "Finance Vouchers",
+            "insurance_policies": "Insurance Policies",
+            "claim_records": "Claim Records",
+            "leasing_contracts": "Leasing Contracts"
+        },
+        "trend": {
+            "date": "Date",
+            "opened": "Opened",
+            "closed": "Closed"
+        },
+        "table": {
+            "label": "Metric",
+            "object": "Object",
+            "count": "Count",
+            "severity": "Severity",
+            "action": "Action"
+        },
+        "actions": {
+            "open": "Open",
+            "drillDown": "Drill Down",
+            "openQueue": "Open Queue",
+            "openOverdue": "Open Overdue",
+            "notAvailable": "Unavailable",
+            "exportExcel": "Export Excel"
+        },
+        "snapshot": {
+            "title": "Saved Snapshots",
+            "save": "Save Snapshot",
+            "open": "Open Snapshot",
+            "delete": "Delete Snapshot",
+            "compare": "Compare to Live Data",
+            "comparing": "Loading live comparison data...",
+            "compareTitle": "Snapshot vs Live Comparison",
+            "compareByObjectTitle": "Changed Objects",
+            "snapshotValue": "Snapshot",
+            "liveValue": "Live",
+            "snapshotBacklog": "Snapshot Backlog",
+            "liveBacklog": "Live Backlog",
+            "backlogDelta": "Backlog Delta",
+            "snapshotOverdue": "Snapshot Overdue",
+            "liveOverdue": "Live Overdue",
+            "overdueDelta": "Overdue Delta",
+            "snapshotClosed": "Snapshot Closed",
+            "liveClosed": "Live Closed",
+            "closedDelta": "Closed Delta",
+            "noChangedObjects": "No object-level changes right now.",
+            "viewTitle": "Viewing a saved snapshot",
+            "backToLive": "Back to Live Data",
+            "savedAt": "Saved at {time}",
+            "empty": "No saved snapshots yet."
+        },
+        "empty": {
+            "owners": "No owner ranking data right now.",
+            "departments": "No department ranking data right now.",
+            "queues": "No operational queues right now.",
+            "bottlenecks": "No bottlenecks right now."
+        },
+        "messages": {
+            "loadFailed": "Failed to load closed-loop operational metrics."
+        },
+        "severity": {
+            "high": "High",
+            "medium": "Medium",
+            "low": "Low",
+            "none": "None"
+        }
     },
     "export": {
         "currentPageXlsx": "Export Current Page (Excel)",

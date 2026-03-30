@@ -31,6 +31,7 @@ from apps.workflows.serializers import (
     MyTasksSerializer,
     WorkflowStatisticsSerializer,
 )
+from apps.workflows.filters.workflow_execution_filters import WorkflowTaskFilter
 from apps.workflows.services import WorkflowEngine
 
 
@@ -280,6 +281,7 @@ class WorkflowTaskViewSet(BaseModelViewSetWithBatch):
 
     queryset = WorkflowTask.objects.filter(is_deleted=False)
     permission_classes = [IsAuthenticated]
+    filterset_class = WorkflowTaskFilter
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -292,7 +294,7 @@ class WorkflowTaskViewSet(BaseModelViewSetWithBatch):
             return WorkflowTaskListSerializer
         if self.action == 'retrieve':
             return WorkflowTaskDetailSerializer
-        if self.action in ['approve', 'reject', 'return']:
+        if self.action in ['approve', 'reject', 'return', 'bulk_approve', 'bulk_reject']:
             return WorkflowTaskActionSerializer
         if self.action == 'delegate':
             return WorkflowTaskDelegateSerializer
@@ -346,7 +348,7 @@ class WorkflowTaskViewSet(BaseModelViewSetWithBatch):
 
         GET /api/workflows/tasks/?status=pending
         """
-        qs = self.get_queryset()
+        qs = self.filter_queryset(self.get_queryset())
 
         # Filter by status
         status_filter = request.query_params.get('status')
@@ -542,6 +544,74 @@ class WorkflowTaskViewSet(BaseModelViewSetWithBatch):
                 code='REJECT_FAILED',
                 message=error or _('Failed to reject task.')
             , http_status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='bulk_approve')
+    def bulk_approve(self, request):
+        """Approve multiple tasks for the current actor."""
+        return self._bulk_transition(request, action='approve')
+
+    @action(detail=False, methods=['post'], url_path='bulk_reject')
+    def bulk_reject(self, request):
+        """Reject multiple tasks for the current actor."""
+        return self._bulk_transition(request, action='reject')
+
+    def _bulk_transition(self, request, action: str):
+        """Apply a task transition to multiple tasks and return per-item results."""
+        task_ids = request.data.get('task_ids') or request.data.get('ids') or []
+        comment = request.data.get('comment') or request.data.get('reason')
+
+        if not isinstance(task_ids, list) or not task_ids:
+            return BaseResponse.error(
+                code='VALIDATION_ERROR',
+                message=_('task_ids must be a non-empty list.'),
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        queryset = self.get_queryset().filter(id__in=task_ids)
+        if not request.user.is_superuser and not request.user.is_staff:
+            queryset = queryset.filter(assignee=request.user)
+
+        tasks_by_id = {str(task.id): task for task in queryset}
+        results = []
+        succeeded = 0
+        engine = WorkflowEngine()
+
+        for task_id in task_ids:
+            task = tasks_by_id.get(str(task_id))
+            if task is None:
+                results.append({
+                    'id': str(task_id),
+                    'success': False,
+                    'error': 'Task not found or inaccessible.',
+                })
+                continue
+
+            success, instance, error = engine.execute_task(
+                task=task,
+                action=action,
+                actor=request.user,
+                comment=comment,
+            )
+            if success:
+                succeeded += 1
+                results.append({'id': str(task_id), 'success': True})
+            else:
+                results.append({
+                    'id': str(task_id),
+                    'success': False,
+                    'error': error or f'{action} failed.',
+                })
+
+        return BaseResponse.success(
+            data={
+                'summary': {
+                    'total': len(task_ids),
+                    'succeeded': succeeded,
+                    'failed': len(task_ids) - succeeded,
+                },
+                'results': results,
+            }
+        )
 
     @action(detail=True, methods=['post'])
     def return_task(self, request, pk=None):
@@ -933,7 +1003,7 @@ class WorkflowStatisticsViewSet(viewsets.ViewSet):
             avg_duration_seconds=Avg(
                 ExpressionWrapper(
                     F('completed_at') - F('created_at'),
-                    output_field=FloatField(),
+                    output_field=models.DurationField(),
                 )
             ),
         ).order_by('-avg_duration_seconds')[:10]
@@ -941,8 +1011,9 @@ class WorkflowStatisticsViewSet(viewsets.ViewSet):
         bottleneck_list = []
         for item in completed_tasks:
             avg_secs = item['avg_duration_seconds'] or 0
-            # DurationField returns microseconds; convert to hours
-            if isinstance(avg_secs, (int, float)):
+            if hasattr(avg_secs, 'total_seconds'):
+                avg_hours = avg_secs.total_seconds() / 3600
+            elif isinstance(avg_secs, (int, float)):
                 avg_hours = avg_secs / 3_600_000_000 if avg_secs > 86400 else avg_secs / 3600
             else:
                 avg_hours = 0
@@ -1024,4 +1095,3 @@ class WorkflowStatisticsViewSet(viewsets.ViewSet):
             })
 
         return BaseResponse.success(data={'definitions': perf_data})
-

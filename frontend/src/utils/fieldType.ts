@@ -69,8 +69,12 @@ export const resolveFieldType = (field: any, fallback = 'text'): string => {
   if (!field) return fallback
   const raw =
     field.fieldType ??
+    field.field_type ??
+    field.editorType ??
+    field.editor_type ??
     field.type ??
     field.dataType ??
+    field.data_type ??
     fallback
   return normalizeFieldType(raw) || fallback
 }

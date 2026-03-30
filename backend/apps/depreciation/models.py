@@ -1,3 +1,5 @@
+import re
+
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.db.models import Sum
@@ -238,8 +240,24 @@ class DepreciationRun(BaseModel):
 
     def get_success_count(self):
         """Get number of successfully processed records."""
-        return self.records.filter(status='calculated').count()
+        rejected_count = DepreciationRecord.objects.filter(
+            organization=self.organization,
+            period=self.period,
+            status='rejected',
+            is_deleted=False,
+        ).count()
+        return max(int(self.total_assets or 0) - rejected_count, 0)
 
     def get_failed_count(self):
         """Get number of failed records."""
-        return self.records.filter(status='rejected').count()
+        rejected_count = DepreciationRecord.objects.filter(
+            organization=self.organization,
+            period=self.period,
+            status='rejected',
+            is_deleted=False,
+        ).count()
+        if rejected_count:
+            return rejected_count
+
+        match = re.search(r'Failed assets \((\d+)\):', self.notes or '')
+        return int(match.group(1)) if match else 0

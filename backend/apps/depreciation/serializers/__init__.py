@@ -8,7 +8,7 @@ class DepreciationConfigSerializer(BaseModelSerializer):
 
     category_name = serializers.CharField(source='category.name', read_only=True)
     category_code = serializers.CharField(source='category.code', read_only=True)
-    monthly_rate = serializers.FloatField(read_only=True)
+    monthly_rate = serializers.FloatField(source='get_monthly_rate', read_only=True)
 
     class Meta(BaseModelSerializer.Meta):
         model = DepreciationConfig
@@ -41,7 +41,7 @@ class DepreciationConfigDetailSerializer(BaseModelSerializer):
     category_code = serializers.CharField(source='category.code', read_only=True)
     category_parent_name = serializers.CharField(source='category.parent.name', read_only=True, allow_null=True)
     depreciation_method_display = serializers.CharField(source='get_depreciation_method_display', read_only=True)
-    monthly_rate = serializers.FloatField(read_only=True)
+    monthly_rate = serializers.FloatField(source='get_monthly_rate', read_only=True)
 
     class Meta(BaseModelSerializer.Meta):
         model = DepreciationConfig
@@ -73,13 +73,17 @@ class DepreciationRecordListSerializer(BaseModelSerializer):
 
     asset_code = serializers.CharField(source='asset.asset_code', read_only=True)
     asset_name = serializers.CharField(source='asset.asset_name', read_only=True)
+    category_name = serializers.CharField(source='asset.asset_category.name', read_only=True)
+    depreciation_method = serializers.CharField(source='asset.asset_category.depreciation_method', read_only=True)
+    purchase_price = serializers.DecimalField(source='asset.purchase_price', max_digits=14, decimal_places=2, read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta(BaseModelSerializer.Meta):
         model = DepreciationRecord
         fields = [
-            'id', 'asset', 'asset_code', 'asset_name',
-            'period', 'depreciation_amount', 'net_value',
+            'id', 'asset', 'asset_code', 'asset_name', 'category_name',
+            'period', 'depreciation_method', 'purchase_price',
+            'depreciation_amount', 'accumulated_amount', 'net_value',
             'status', 'status_display', 'post_date',
             'created_at', 'updated_at',
         ]
@@ -91,7 +95,7 @@ class DepreciationRecordDetailSerializer(BaseModelSerializer):
     asset_code = serializers.CharField(source='asset.asset_code', read_only=True)
     asset_name = serializers.CharField(source='asset.asset_name', read_only=True)
     category_name = serializers.CharField(source='asset.asset_category.name', read_only=True)
-    original_cost = serializers.DecimalField(source='asset.original_cost', max_digits=14, decimal_places=2, read_only=True)
+    original_cost = serializers.DecimalField(source='asset.purchase_price', max_digits=14, decimal_places=2, read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta(BaseModelSerializer.Meta):
@@ -105,8 +109,8 @@ class DepreciationRunSerializer(BaseModelSerializer):
     """Depreciation Run Serializer"""
 
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    success_count = serializers.IntegerField(read_only=True)
-    failed_count = serializers.IntegerField(read_only=True)
+    success_count = serializers.IntegerField(source='get_success_count', read_only=True)
+    failed_count = serializers.IntegerField(source='get_failed_count', read_only=True)
 
     class Meta(BaseModelSerializer.Meta):
         model = DepreciationRun
@@ -134,8 +138,8 @@ class DepreciationRunDetailSerializer(BaseModelSerializer):
     """Detailed run serializer with statistics"""
 
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    success_count = serializers.IntegerField(read_only=True)
-    failed_count = serializers.IntegerField(read_only=True)
+    success_count = serializers.IntegerField(source='get_success_count', read_only=True)
+    failed_count = serializers.IntegerField(source='get_failed_count', read_only=True)
 
     class Meta(BaseModelSerializer.Meta):
         model = DepreciationRun

@@ -1,5 +1,8 @@
 import re
+import json
+import ast
 from copy import deepcopy
+from collections.abc import Mapping
 
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -59,6 +62,27 @@ ASSET_FIELD_TO_ALIAS = {
     'faviconFileId': 'favicon',
     'loginBackgroundFileId': 'loginBackground',
 }
+
+
+def snake_to_camel(value):
+    parts = str(value).split('_')
+    if not parts:
+        return value
+    return parts[0] + ''.join(part[:1].upper() + part[1:] for part in parts[1:])
+
+
+def normalize_branding_payload_keys(value):
+    if isinstance(value, Mapping):
+        normalized = {}
+        for key, item in value.items():
+            normalized_key = snake_to_camel(key)
+            normalized[normalized_key] = normalize_branding_payload_keys(item)
+        return normalized
+
+    if isinstance(value, list):
+        return [normalize_branding_payload_keys(item) for item in value]
+
+    return value
 
 
 def deep_merge(base, override):
@@ -160,14 +184,16 @@ class BrandingSettingsAPIView(APIView):
         return self._save(request, partial=True)
 
     def _save(self, request, partial=False):
-        if not isinstance(request.data, dict):
+        payload_data = self._get_request_payload(request)
+
+        if not isinstance(payload_data, dict):
             return BaseResponse.validation_error(
                 {'body': ['Branding payload must be a JSON object.']},
                 message='Invalid branding payload.',
             )
 
         current = self._load_persisted_settings()
-        payload = deep_merge(current, request.data) if partial else request.data
+        payload = deep_merge(current, payload_data) if partial else payload_data
 
         serializer = BrandingSettingsSerializer(data=payload)
         serializer.is_valid(raise_exception=True)
@@ -197,6 +223,73 @@ class BrandingSettingsAPIView(APIView):
 
         data = self._build_response_payload(normalized_data)
         return BaseResponse.success(data=data, message='Branding settings saved.')
+
+    def _get_request_payload(self, request):
+        data = request.data
+        camel_case_keys = {
+            'appName',
+            'appShortName',
+            'appTagline',
+            'appIconText',
+            'loginI18n',
+        }
+
+        if isinstance(data, Mapping):
+            keys = set(getattr(data, 'keys', lambda: [])())
+            normalized_mapping = normalize_branding_payload_keys(dict(data))
+            if camel_case_keys & keys:
+                return normalized_mapping
+
+            candidates = []
+            if keys:
+                first_key = next(iter(keys))
+                candidates.append(first_key)
+                try:
+                    first_value = data[first_key]
+                    if isinstance(first_value, (list, tuple)) and first_value:
+                        candidates.append(first_value[0])
+                    else:
+                        candidates.append(first_value)
+                except Exception:
+                    pass
+            parsed = self._try_parse_json_candidates(candidates)
+            if parsed is not None:
+                return normalize_branding_payload_keys(parsed)
+
+            return normalized_mapping
+
+        raw_body = getattr(request, 'body', b'') or getattr(getattr(request, '_request', None), 'body', b'')
+        parsed = self._try_parse_json_candidates([raw_body])
+        if parsed is not None:
+            return normalize_branding_payload_keys(parsed)
+
+        return normalize_branding_payload_keys(data)
+
+    def _try_parse_json_candidates(self, candidates):
+        for candidate in candidates:
+            if not candidate:
+                continue
+            raw = candidate
+            if isinstance(raw, bytes):
+                try:
+                    raw = raw.decode('utf-8')
+                except UnicodeDecodeError:
+                    continue
+            if not isinstance(raw, str):
+                continue
+            raw = raw.strip()
+            if not raw or raw[0] not in '{[':
+                continue
+            try:
+                parsed = json.loads(raw)
+            except json.JSONDecodeError:
+                try:
+                    parsed = ast.literal_eval(raw)
+                except (ValueError, SyntaxError):
+                    continue
+            if isinstance(parsed, dict):
+                return parsed
+        return None
 
     def _load_persisted_settings(self):
         config = SystemConfig.objects.filter(

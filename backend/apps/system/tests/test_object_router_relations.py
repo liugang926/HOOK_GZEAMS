@@ -245,6 +245,70 @@ def test_asset_pickup_relations_endpoint_keeps_assets_out_of_l1_line_items():
 
 
 @pytest.mark.django_db
+def test_relations_endpoint_exposes_history_presentation_for_audit_objects():
+    org = Organization.objects.create(name='History Relation Org', code='history-relation-org')
+    user = User.objects.create_user(username='history_relation_user', password='pass123456', organization=org)
+
+    _upsert_business_object('Asset', 'Asset', 'apps.assets.models.Asset')
+    BusinessObject.objects.update_or_create(
+        code='ConfigurationChange',
+        defaults={
+            'name': 'Configuration Change',
+            'name_en': 'Configuration Change',
+            'is_hardcoded': True,
+            'django_model_path': 'apps.it_assets.models.ConfigurationChange',
+            'object_role': 'log',
+            'is_menu_hidden': True,
+            'is_top_level_navigable': False,
+            'allow_standalone_query': True,
+            'allow_standalone_route': False,
+        },
+    )
+
+    ObjectRelationDefinition.objects.update_or_create(
+        parent_object_code='Asset',
+        relation_code='configuration_changes_history_test',
+        defaults={
+            'target_object_code': 'ConfigurationChange',
+            'relation_kind': 'direct_fk',
+            'target_fk_field': 'asset',
+            'display_mode': 'inline_readonly',
+            'sort_order': 160,
+            'is_active': True,
+            'relation_name': 'Configuration Changes',
+            'relation_name_en': 'Configuration Changes',
+            'extra_config': {
+                'presentation_zone': 'history',
+                'history_source_type': 'configuration_change',
+            },
+        },
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    client.credentials(HTTP_X_ORGANIZATION_ID=str(org.id), HTTP_ACCEPT_LANGUAGE='en-US,en;q=0.9')
+
+    resp = client.get('/api/system/objects/Asset/relations/')
+    assert resp.status_code == 200
+    assert resp.data['success'] is True
+
+    relations = _pick(resp.data['data'], 'relations') or []
+    relation = next(
+        (
+            item for item in relations
+            if _pick(item, 'relationCode', 'relation_code') == 'configuration_changes_history_test'
+        ),
+        None,
+    )
+
+    assert relation is not None
+    assert _pick(relation, 'targetObjectRole', 'target_object_role') == 'log'
+    extra_config = _pick(relation, 'extraConfig', 'extra_config') or {}
+    assert extra_config.get('presentationZone', extra_config.get('presentation_zone')) == 'history'
+    assert _pick(relation, 'targetAllowStandaloneRoute', 'target_allow_standalone_route') is False
+
+
+@pytest.mark.django_db
 def test_line_item_business_objects_bind_to_dedicated_viewsets():
     _upsert_business_object('PickupItem', 'Pickup Item', 'apps.assets.models.PickupItem')
     _upsert_business_object('TransferItem', 'Transfer Item', 'apps.assets.models.TransferItem')

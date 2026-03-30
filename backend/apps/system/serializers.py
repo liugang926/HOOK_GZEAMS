@@ -1543,6 +1543,59 @@ class TranslationBulkSerializer(serializers.Serializer):
         return value
 
 
+# ============================================================================
+# Closed-Loop Dashboard Snapshot Serializers
+# ============================================================================
+
+class ClosedLoopDashboardSnapshotListSerializer(BaseModelSerializer):
+    """Serializer for closed-loop dashboard snapshot list rows."""
+
+    class Meta(BaseModelSerializer.Meta):
+        from apps.system.models import ClosedLoopDashboardSnapshot
+        model = ClosedLoopDashboardSnapshot
+        fields = BaseModelSerializer.Meta.fields + [
+            'dashboard_code',
+            'label',
+            'window_key',
+            'object_codes',
+        ]
+
+
+class ClosedLoopDashboardSnapshotDetailSerializer(ClosedLoopDashboardSnapshotListSerializer):
+    """Serializer returning the full stored dashboard payload."""
+
+    payload = serializers.SerializerMethodField()
+
+    class Meta(ClosedLoopDashboardSnapshotListSerializer.Meta):
+        fields = ClosedLoopDashboardSnapshotListSerializer.Meta.fields + ['payload']
+
+    def get_payload(self, obj):
+        return {
+            'overview': obj.overview_payload or {},
+            'by_object_items': obj.by_object_payload or [],
+            'queues': obj.queues_payload or [],
+            'bottlenecks': obj.bottlenecks_payload or [],
+        }
+
+
+class ClosedLoopDashboardSnapshotCreateSerializer(serializers.Serializer):
+    """Validate snapshot create requests."""
+
+    label = serializers.CharField(max_length=120)
+    window_key = serializers.ChoiceField(choices=('7d', '30d', '90d'))
+    object_codes = serializers.ListField(
+        child=serializers.CharField(max_length=100),
+        required=False,
+        allow_empty=True,
+    )
+
+    def validate_label(self, value):
+        normalized_value = str(value).strip()
+        if not normalized_value:
+            raise serializers.ValidationError("Snapshot label is required.")
+        return normalized_value
+
+
 class ObjectTranslationSerializer(serializers.Serializer):
     """
     Serializer for object-scoped translation operations.
@@ -1567,3 +1620,6 @@ class ObjectTranslationSerializer(serializers.Serializer):
                 raise serializers.ValidationError(f"Translations for {locale} must be a dictionary.")
 
         return value
+
+
+from apps.system.tag_serializer import TagObjectActionSerializer, TagSerializer  # noqa: E402

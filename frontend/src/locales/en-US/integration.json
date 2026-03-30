@@ -24,8 +24,10 @@
     "newIntegration": "New Integration",
     "search": "Search",
     "reset": "Reset",
+    "configure": "Configure",
     "testConnection": "Test Connection",
     "syncNow": "Sync Now",
+    "retry": "Retry",
     "logs": "Logs",
     "edit": "Edit",
     "delete": "Delete",
@@ -34,6 +36,63 @@
     "cancel": "Cancel",
     "save": "Save",
     "create": "Create"
+  },
+  "m18": {
+    "actions": {
+      "syncConsole": "M18 Sync"
+    },
+    "notice": {
+      "title": "M18 adapter settings",
+      "description": "Configure the company account and enable the M18 data scopes that should participate in scheduled synchronization."
+    },
+    "sections": {
+      "account": "M18 Account",
+      "syncScope": "M18 Sync Scope"
+    },
+    "fields": {
+      "companyCode": "Company Code",
+      "username": "Username",
+      "password": "Password",
+      "syncPurchaseOrders": "Sync Purchase Orders",
+      "syncVendors": "Sync Vendors",
+      "syncAssets": "Sync Assets",
+      "syncDepreciation": "Push Depreciation",
+      "startDate": "Default Start Date"
+    },
+    "placeholders": {
+      "companyCode": "Enter M18 company code",
+      "username": "Enter M18 username",
+      "password": "Enter M18 password",
+      "startDate": "Select start date"
+    },
+    "syncDialog": {
+      "title": "M18 Sync Console",
+      "description": "Launch a focused M18 sync job for procurement, assets, or finance data.",
+      "fields": {
+        "mode": "Sync Mode",
+        "dateRange": "Date Range",
+        "orderNos": "Order Numbers",
+        "period": "Depreciation Period"
+      },
+      "modes": {
+        "purchaseOrders": "Purchase Orders",
+        "vendors": "Vendors",
+        "assets": "Assets",
+        "depreciation": "Depreciation"
+      },
+      "placeholders": {
+        "startDate": "Start date",
+        "endDate": "End date",
+        "orderNos": "Enter order numbers separated by commas or line breaks",
+        "period": "Select month"
+      },
+      "helpers": {
+        "purchaseOrders": "Pull purchase orders from M18 with an optional date range or explicit order number list.",
+        "vendors": "Pull the latest vendor master data from M18.",
+        "assets": "Pull asset receipt related records from M18 for downstream asset creation.",
+        "depreciation": "Push approved depreciation data to the M18 finance side for voucher processing."
+      }
+    }
   },
   "stats": {
     "total": "Total Integrations",
@@ -108,6 +167,12 @@
     "oracle": "Oracle EBS",
     "odoo": "Odoo"
   },
+  "integrationTypes": {
+    "m18": "M18 ERP",
+    "finance": "Financial System",
+    "oa": "OA System",
+    "custom": "Custom Integration"
+  },
   "healthStatus": {
     "healthy": "Healthy",
     "degraded": "Degraded",
@@ -118,6 +183,7 @@
     "running": "Running",
     "success": "Success",
     "partialSuccess": "Partial",
+    "completed": "Completed",
     "failed": "Failed",
     "cancelled": "Cancelled"
   },
@@ -128,6 +194,95 @@
     "hr": "HR",
     "crm": "CRM"
   },
+  "jobTypes": {
+    "purchase_orders": "Purchase Order Batch Sync",
+    "purchase_order": "Purchase Order Sync",
+    "assets": "Asset Batch Sync",
+    "asset": "Asset Sync",
+    "vendors": "Vendor Batch Sync",
+    "vendor": "Vendor Sync",
+    "voucher": "Voucher Sync",
+    "employee": "Employee Sync",
+    "customer": "Customer Sync",
+    "generic": "Generic Sync"
+  },
+  "directions": {
+    "pull": "Pull",
+    "push": "Push",
+    "bidirectional": "Bidirectional"
+  },
+  "list": {
+    "title": "ERP Integration Overview",
+    "subtitle": "Review connection health and the latest synchronization activity for each external system.",
+    "tableTitle": "Integration Configuration List",
+    "empty": "No integration configurations available",
+    "drawerTitle": "Integration Configuration Detail",
+    "columns": {
+      "name": "Name",
+      "code": "Code",
+      "type": "Type",
+      "connectionStatus": "Connection Status",
+      "enabled": "Enabled",
+      "lastSyncStatus": "Last Sync Status",
+      "lastSyncAt": "Last Sync Time",
+      "actions": "Actions"
+    },
+    "sections": {
+      "connectionConfig": "Connection Configuration",
+      "syncConfig": "Sync Configuration",
+      "mappingConfig": "Mapping Configuration"
+    }
+  },
+  "statusCard": {
+    "connectionStatus": "Connection Status",
+    "integrationType": "Integration Type",
+    "recentSyncStatus": "Recent Sync Status",
+    "lastSyncAt": "Last Sync Time",
+    "neverSynced": "Never Synced"
+  },
+  "syncJobs": {
+    "title": "Sync Jobs",
+    "subtitle": "Track execution progress, result metrics, and retry failed jobs.",
+    "empty": "No sync jobs found",
+    "drawerTitle": "Sync Job Detail",
+    "detailSummaryTitle": "Execution Summary",
+    "detailErrorsTitle": "Failed Records",
+    "filters": {
+      "integration": "Integration",
+      "moduleType": "Module",
+      "status": "Status",
+      "dateRange": "Start Time"
+    },
+    "placeholders": {
+      "integration": "Select integration",
+      "moduleType": "Select module",
+      "status": "Select status",
+      "startDate": "Start date",
+      "endDate": "End date"
+    },
+    "columns": {
+      "taskId": "Task ID",
+      "integration": "Integration",
+      "jobType": "Job Type",
+      "status": "Status",
+      "progress": "Progress",
+      "summary": "Summary",
+      "startedAt": "Started At",
+      "completedAt": "Completed At",
+      "actions": "Actions",
+      "direction": "Direction",
+      "duration": "Duration"
+    },
+    "summary": {
+      "total": "Total",
+      "succeeded": "Succeeded",
+      "failed": "Failed"
+    },
+    "errorColumns": {
+      "record": "Record",
+      "error": "Error"
+    }
+  },
   "validation": {
     "selectSystemType": "Please select system type",
     "enterSystemName": "Please enter system name"
@@ -137,12 +292,17 @@
     "updatedSuccessfully": "Updated successfully",
     "createdSuccessfully": "Created successfully",
     "operationFailed": "Operation failed",
+    "statusUpdated": "Status updated successfully",
     "deletedSuccessfully": "Deleted successfully",
     "deleteFailed": "Delete failed",
     "connectionTestSuccess": "Connection test successful",
     "connectionTestFailed": "Connection test failed",
     "syncTaskCreated": "Sync task created successfully",
     "syncFailed": "Sync failed",
-    "loadLogsFailed": "Failed to load logs"
+    "loadLogsFailed": "Failed to load logs",
+    "loadJobsFailed": "Failed to load sync jobs",
+    "loadJobDetailFailed": "Failed to load sync job detail",
+    "jobRetried": "Retry job created successfully",
+    "retryFailed": "Failed to retry sync job"
   }
 }

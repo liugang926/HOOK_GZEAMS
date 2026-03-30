@@ -1,9 +1,10 @@
 """
 Utility functions for inventory task code generation.
 """
-from datetime import datetime
 import random
 import string
+
+from django.utils import timezone
 
 
 def generate_task_code() -> str:
@@ -16,7 +17,7 @@ def generate_task_code() -> str:
     Returns:
         Unique task code string
     """
-    date_str = datetime.now().strftime('%Y%m%d')
+    date_str = timezone.now().strftime('%Y%m%d')
     random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
     return f'INV{date_str}{random_str}'
 

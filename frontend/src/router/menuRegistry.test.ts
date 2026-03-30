@@ -71,6 +71,29 @@ describe('MenuRegistryManager', () => {
         expect(allItems.find(i => i.code === 'PickupItem')).toBeUndefined()
     })
 
+    it('excludes audit log objects and standalone-route-disabled objects from fallback navigation', () => {
+        const registry = new MenuRegistryManager()
+        const tree = registry.generateMenuTree([
+            makeObj('Asset', { menuCategory: 'asset_master', objectRole: 'root' }),
+            makeObj('AssetStatusLog', {
+                menuCategory: 'asset_master',
+                objectRole: 'log',
+                isTopLevelNavigable: false,
+                allowStandaloneRoute: false,
+            }),
+            makeObj('ConfigurationChange', {
+                menuCategory: 'system',
+                objectRole: 'log',
+                allowStandaloneRoute: false,
+            }),
+        ])
+
+        const allItems = tree.flatMap(g => g.items)
+        expect(allItems.find(i => i.code === 'Asset')).toBeDefined()
+        expect(allItems.find(i => i.code === 'AssetStatusLog')).toBeUndefined()
+        expect(allItems.find(i => i.code === 'ConfigurationChange')).toBeUndefined()
+    })
+
     it('deduplicates objects by code', () => {
         const spy = vi.spyOn(console, 'warn').mockImplementation(() => { })
         const registry = new MenuRegistryManager()

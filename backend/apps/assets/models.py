@@ -2,6 +2,7 @@
 Asset models for GZEAMS.
 """
 from django.db import models
+from django.db.models import Q
 from django.core.validators import MinValueValidator
 from apps.common.models import BaseModel
 
@@ -286,6 +287,185 @@ class Location(BaseModel):
 
     def __str__(self):
         return self.path
+
+
+class TagGroup(BaseModel):
+    """Asset tag group for organizing related tags."""
+
+    name = models.CharField(
+        max_length=100,
+        help_text='Tag group name'
+    )
+    code = models.CharField(
+        max_length=50,
+        db_index=True,
+        help_text='Unique tag group code within the organization'
+    )
+    description = models.TextField(
+        blank=True,
+        help_text='Tag group description'
+    )
+    color = models.CharField(
+        max_length=20,
+        default='#409EFF',
+        help_text='Default color for the tag group'
+    )
+    icon = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='Optional icon name for the tag group'
+    )
+    sort_order = models.IntegerField(
+        default=0,
+        help_text='Display order for the tag group'
+    )
+    is_system = models.BooleanField(
+        default=False,
+        help_text='Whether the tag group is system managed'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Whether the tag group is active'
+    )
+
+    class Meta:
+        db_table = 'asset_tag_groups'
+        verbose_name = 'Asset Tag Group'
+        verbose_name_plural = 'Asset Tag Groups'
+        ordering = ['sort_order', 'name', 'id']
+        indexes = [
+            models.Index(fields=['organization', 'code']),
+            models.Index(fields=['organization', 'is_active']),
+            models.Index(fields=['organization', 'sort_order']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organization', 'code'],
+                condition=Q(is_deleted=False),
+                name='uniq_asset_tg_group_code_org',
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class AssetTag(BaseModel):
+    """Asset tag that can be assigned to assets."""
+
+    tag_group = models.ForeignKey(
+        'assets.TagGroup',
+        on_delete=models.PROTECT,
+        related_name='tags',
+        help_text='Owning tag group'
+    )
+    name = models.CharField(
+        max_length=50,
+        help_text='Tag display name'
+    )
+    code = models.CharField(
+        max_length=50,
+        db_index=True,
+        help_text='Unique tag code within the tag group'
+    )
+    color = models.CharField(
+        max_length=20,
+        blank=True,
+        help_text='Optional tag color override'
+    )
+    icon = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='Optional tag icon name'
+    )
+    description = models.TextField(
+        blank=True,
+        help_text='Tag description'
+    )
+    sort_order = models.IntegerField(
+        default=0,
+        help_text='Display order inside the tag group'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Whether the tag is active'
+    )
+
+    class Meta:
+        db_table = 'asset_tags'
+        verbose_name = 'Asset Tag'
+        verbose_name_plural = 'Asset Tags'
+        ordering = ['tag_group__sort_order', 'sort_order', 'name', 'id']
+        indexes = [
+            models.Index(fields=['organization', 'code']),
+            models.Index(fields=['organization', 'tag_group']),
+            models.Index(fields=['organization', 'is_active']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organization', 'tag_group', 'code'],
+                condition=Q(is_deleted=False),
+                name='uniq_asset_tag_code_group_org',
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class AssetTagRelation(BaseModel):
+    """Explicit asset-to-tag relation with audit metadata."""
+
+    asset = models.ForeignKey(
+        'assets.Asset',
+        on_delete=models.CASCADE,
+        related_name='asset_tag_relations',
+        help_text='Tagged asset'
+    )
+    tag = models.ForeignKey(
+        'assets.AssetTag',
+        on_delete=models.CASCADE,
+        related_name='asset_relations',
+        help_text='Assigned tag'
+    )
+    tagged_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='asset_tag_assignments',
+        help_text='User who added the tag'
+    )
+    tagged_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='Timestamp when the tag was added'
+    )
+    notes = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text='Optional tagging notes'
+    )
+
+    class Meta:
+        db_table = 'asset_tag_relations'
+        verbose_name = 'Asset Tag Relation'
+        verbose_name_plural = 'Asset Tag Relations'
+        ordering = ['-tagged_at', '-created_at', 'id']
+        indexes = [
+            models.Index(fields=['organization', 'asset']),
+            models.Index(fields=['organization', 'tag']),
+            models.Index(fields=['organization', 'tagged_at']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organization', 'asset', 'tag'],
+                condition=Q(is_deleted=False),
+                name='uniq_asset_tag_rel_org_pair',
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.asset_id}:{self.tag_id}'
 
 
 class AssetStatusLog(BaseModel):

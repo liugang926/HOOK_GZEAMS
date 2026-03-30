@@ -532,6 +532,52 @@ class AssetTransferViewSet(BaseModelViewSetWithBatch):
             message='Target department approved - transfer ready for completion'
         )
 
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, pk=None):
+        """Compatibility alias that advances transfer approval by current stage."""
+        comment = request.data.get('comment', '')
+        transfer = self.get_object()
+
+        if transfer.status == 'pending':
+            transfer = self.service.approve_from(pk, request.user, comment)
+            message = 'Source department approved'
+        elif transfer.status == 'out_approved':
+            transfer = self.service.approve_to(pk, request.user, comment)
+            message = 'Target department approved - transfer ready for completion'
+        else:
+            return BaseResponse.error(
+                code='VALIDATION_ERROR',
+                message=f'Cannot approve transfer with status {transfer.get_status_label()}',
+                http_status=status.HTTP_400_BAD_REQUEST
+            )
+
+        response_serializer = AssetTransferDetailSerializer(transfer)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message=message
+        )
+
+    @action(detail=True, methods=['post'], url_path='reject')
+    def reject(self, request, pk=None):
+        """Compatibility alias for transfer rejection."""
+        comment = request.data.get('comment') or request.data.get('reason', '')
+        transfer = self.service.reject_transfer(pk, request.user, comment)
+        response_serializer = AssetTransferDetailSerializer(transfer)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Transfer order rejected'
+        )
+
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel(self, request, pk=None):
+        """Cancel a transfer order."""
+        transfer = self.service.cancel_transfer(pk, request.user)
+        response_serializer = AssetTransferDetailSerializer(transfer)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Transfer order cancelled'
+        )
+
     @action(detail=True, methods=['post'], url_path='complete')
     def complete(self, request, pk=None):
         """Complete the transfer and update assets."""
@@ -622,6 +668,26 @@ class AssetReturnViewSet(BaseModelViewSetWithBatch):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
+    @action(detail=True, methods=['post'], url_path='submit')
+    def submit(self, request, pk=None):
+        """Submit return order for approval."""
+        return_order = self.service.submit_for_approval(pk, request.user)
+        response_serializer = AssetReturnDetailSerializer(return_order)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Return order submitted for approval'
+        )
+
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel(self, request, pk=None):
+        """Cancel return order."""
+        return_order = self.service.cancel_return(pk, request.user)
+        response_serializer = AssetReturnDetailSerializer(return_order)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Return order cancelled'
+        )
+
     @action(detail=True, methods=['post'], url_path='confirm')
     def confirm(self, request, pk=None):
         """Confirm and complete return order."""
@@ -631,6 +697,16 @@ class AssetReturnViewSet(BaseModelViewSetWithBatch):
             data=response_serializer.data,
             message='Return confirmed and completed'
         )
+
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, pk=None):
+        """Compatibility alias for return confirmation."""
+        return self.confirm(request, pk=pk)
+
+    @action(detail=True, methods=['post'], url_path='complete')
+    def complete(self, request, pk=None):
+        """Compatibility alias for return completion."""
+        return self.confirm(request, pk=pk)
 
     @action(detail=True, methods=['post'], url_path='reject')
     def reject(self, request, pk=None):
@@ -725,6 +801,26 @@ class AssetLoanViewSet(BaseModelViewSetWithBatch):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
 
+    @action(detail=True, methods=['post'], url_path='submit')
+    def submit(self, request, pk=None):
+        """Submit loan order for approval."""
+        loan = self.service.submit_for_approval(pk, request.user)
+        response_serializer = AssetLoanDetailSerializer(loan)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Loan order submitted for approval'
+        )
+
+    @action(detail=True, methods=['post'], url_path='cancel')
+    def cancel(self, request, pk=None):
+        """Cancel loan order."""
+        loan = self.service.cancel_loan(pk, request.user)
+        response_serializer = AssetLoanDetailSerializer(loan)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Loan order cancelled'
+        )
+
     @action(detail=True, methods=['post'], url_path='approve')
     def approve(self, request, pk=None):
         """Approve or reject loan order."""
@@ -767,6 +863,28 @@ class AssetLoanViewSet(BaseModelViewSetWithBatch):
             serializer.validated_data.get('condition', 'good'),
             serializer.validated_data.get('comment', '')
         )
+
+        response_serializer = AssetLoanDetailSerializer(loan)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Asset return confirmed'
+        )
+
+    @action(detail=True, methods=['post'], url_path='return')
+    def return_assets(self, request, pk=None):
+        """Compatibility alias for loan return confirmation."""
+        condition = request.data.get('condition', 'good')
+        comment = request.data.get('comment') or request.data.get('remark', '')
+        loan = self.service.confirm_return(pk, request.user, condition, comment)
+
+        return_date = request.data.get('return_date') or request.data.get('returnDate')
+        if return_date:
+            from django.utils.dateparse import parse_date
+
+            parsed_return_date = parse_date(str(return_date))
+            if parsed_return_date:
+                loan.actual_return_date = parsed_return_date
+                loan.save(update_fields=['actual_return_date', 'updated_at'])
 
         response_serializer = AssetLoanDetailSerializer(loan)
         return BaseResponse.success(

@@ -93,6 +93,471 @@
             "confirm": "Confirm",
             "adjust": "Adjust"
         },
+        "differenceList": {
+            "title": "Inventory Differences",
+            "taskFilter": "Task: {taskId}",
+            "filters": {
+                "status": "Filter by status",
+                "type": "Filter by difference type"
+            },
+            "statuses": {
+                "all": "All Statuses",
+                "pending": "Pending",
+                "confirmed": "Confirmed",
+                "inReview": "In Review",
+                "approved": "Approved",
+                "executing": "Executing",
+                "resolved": "Resolved",
+                "ignored": "Ignored",
+                "closed": "Closed"
+            },
+            "types": {
+                "all": "All Types",
+                "normal": "Normal",
+                "missing": "Missing",
+                "extra": "Extra",
+                "damaged": "Damaged",
+                "locationMismatch": "Location Mismatch",
+                "custodianMismatch": "Custodian Mismatch"
+            },
+            "columns": {
+                "taskCode": "Task No",
+                "assetCode": "Asset Code",
+                "assetName": "Asset Name",
+                "differenceType": "Difference Type",
+                "expectedLocation": "Expected Location",
+                "actualLocation": "Actual Location",
+                "status": "Status",
+                "remark": "Remark",
+                "createdAt": "Detected At"
+            },
+            "actions": {
+                "batchHandle": "Batch Handle",
+                "confirm": "Confirm",
+                "adjust": "Adjust"
+            },
+            "dialogs": {
+                "adjustTitle": "Adjust Difference",
+                "adjustMessage": "Enter the adjustment notes for this difference.",
+                "adjustPlaceholder": "Describe the adjustment, business rationale, and any required sync details."
+            },
+            "messages": {
+                "loadFailed": "Failed to load inventory differences.",
+                "selectRequired": "Select at least one difference first.",
+                "confirmSuccess": "Difference confirmed successfully.",
+                "confirmFailed": "Failed to confirm the difference.",
+                "adjustSuccess": "Difference adjusted successfully.",
+                "adjustFailed": "Failed to adjust the difference."
+            },
+            "validation": {
+                "adjustRemarkRequired": "Enter the adjustment notes."
+            }
+        },
+        "batchResolveDialog": {
+            "title": "Batch Handle Differences",
+            "summary": "{count} difference records selected",
+            "previewTitle": "Processing Preview",
+            "overflow": "The remaining {count} records will be processed together on submit.",
+            "fields": {
+                "action": "Action",
+                "remark": "Handling Notes"
+            },
+            "columns": {
+                "assetCode": "Asset Code",
+                "assetName": "Asset Name",
+                "differenceType": "Difference Type",
+                "status": "Current Status"
+            },
+            "actions": {
+                "confirm": "Batch Confirm",
+                "adjust": "Batch Adjust"
+            },
+            "placeholders": {
+                "action": "Select a handling action",
+                "remark": "Enter handling notes. This field is required for batch adjustment."
+            },
+            "validation": {
+                "actionRequired": "Select a handling action.",
+                "remarkRequired": "Handling notes are required for batch adjustment."
+            },
+            "messages": {
+                "noSelection": "There are no selected differences to process.",
+                "success": "{count} differences processed successfully.",
+                "partialSuccess": "Batch handling finished with {succeeded} succeeded, {failed} failed, out of {total} total."
+            }
+        },
+        "reconciliationSummary": {
+            "title": "Reconciliation Summary",
+            "hint": "Track review progress, differences, and adjustment coverage for the current list result.",
+            "tags": {
+                "currentList": "Current List"
+            },
+            "stats": {
+                "total": "Total",
+                "approved": "Approved",
+                "submitted": "Pending Approval",
+                "adjustments": "Adjustments"
+            },
+            "progress": {
+                "title": "Progress",
+                "summary": "Completion rate {percent}",
+                "completion": "Completion Rate",
+                "approval": "Approval Rate",
+                "adjustmentCoverage": "Adjustment Coverage"
+            },
+            "metrics": {
+                "differences": "Differences",
+                "rejected": "Rejected",
+                "pending": "Pending Drafts"
+            },
+            "trend": {
+                "title": "Recent Trend",
+                "window": "Latest {count} records",
+                "differences": "Differences",
+                "adjustments": "Adjustments",
+                "empty": "No trend data is available for the current filter.",
+                "noDate": "No Date"
+            }
+        },
+        "reconciliation": {
+            "pageTitle": "Inventory Reconciliation",
+            "fields": {
+                "task": "Inventory Task",
+                "status": "Status",
+                "dateRange": "Reconciled Date"
+            },
+            "columns": {
+                "reconciliationNo": "Reconciliation No",
+                "taskName": "Inventory Task",
+                "status": "Reconciliation Status",
+                "normalCount": "Normal Count",
+                "abnormalCount": "Abnormal Count",
+                "adjustmentCount": "Adjustments",
+                "reconciledBy": "Reconciled By",
+                "reconciledAt": "Reconciled At"
+            },
+            "status": {
+                "draft": "Draft",
+                "submitted": "Pending Approval",
+                "approved": "Approved",
+                "rejected": "Rejected"
+            },
+            "summary": {
+                "total": "Total Reconciliations",
+                "totalHint": "Reconciliation records in the current result set",
+                "draft": "Draft",
+                "draftHint": "Waiting to be submitted for approval",
+                "submitted": "Pending Approval",
+                "submittedHint": "Submitted and waiting for approval",
+                "approved": "Approved",
+                "approvedHint": "Approval flow completed",
+                "rejected": "Rejected",
+                "rejectedHint": "Needs more review notes before resubmission",
+                "adjustments": "Adjustments",
+                "adjustmentsHint": "Linked adjustment records in the list",
+                "completionRate": "Approval Completion Rate"
+            },
+            "actions": {
+                "create": "Create Reconciliation",
+                "submit": "Submit",
+                "batchSubmit": "Batch Submit",
+                "batchApprove": "Batch Approve"
+            },
+            "dialogs": {
+                "createTitle": "Create Reconciliation",
+                "rejectTitle": "Reject Reconciliation",
+                "rejectMessage": "Enter the rejection reason"
+            },
+            "placeholders": {
+                "search": "Search by reconciliation number or task name",
+                "taskSelect": "Select a completed inventory task",
+                "note": "Describe the reconciliation conclusion or supporting notes",
+                "status": "Select a reconciliation status",
+                "rejectReason": "Enter the rejection reason"
+            },
+            "validation": {
+                "taskRequired": "Select an inventory task.",
+                "rejectReasonRequired": "Enter the rejection reason."
+            },
+            "messages": {
+                "createSuccess": "Reconciliation created successfully.",
+                "createFailed": "Failed to create the reconciliation.",
+                "loadTasksFailed": "Failed to load inventory tasks.",
+                "submitConfirm": "Submit this reconciliation for approval?",
+                "submitSuccess": "Reconciliation submitted successfully.",
+                "submitFailed": "Failed to submit the reconciliation.",
+                "approveConfirm": "Approve this reconciliation?",
+                "approveSuccess": "Reconciliation approved successfully.",
+                "approveFailed": "Failed to approve the reconciliation.",
+                "rejectSuccess": "Reconciliation rejected successfully.",
+                "rejectFailed": "Failed to reject the reconciliation.",
+                "batchSubmitConfirm": "Submit all selected draft reconciliations?",
+                "batchApproveConfirm": "Approve all selected pending reconciliations?",
+                "batchSubmitSuccess": "{count} reconciliations submitted successfully.",
+                "batchApproveSuccess": "{count} reconciliations approved successfully.",
+                "batchPartialSuccess": "Batch processing completed with {succeeded} succeeded, {failed} failed, out of {total} total.",
+                "noEligibleRecords": "None of the selected records can run this batch action."
+            }
+        },
+        "adjustment": {
+            "title": "Asset Adjustment",
+            "type": {
+                "location": "Location Adjustment",
+                "status": "Status Adjustment",
+                "value": "Value Adjustment",
+                "info": "Information Adjustment",
+                "new": "New Asset",
+                "remove": "Asset Removal"
+            },
+            "status": {
+                "pending": "Pending",
+                "executing": "Executing",
+                "completed": "Completed",
+                "failed": "Failed",
+                "rolledBack": "Rolled Back"
+            }
+        },
+        "report": {
+            "pageTitle": "Inventory Reports",
+            "fields": {
+                "task": "Inventory Task",
+                "templateId": "Template ID",
+                "status": "Status",
+                "dateRange": "Generated Date"
+            },
+            "columns": {
+                "reportNo": "Report No",
+                "taskName": "Inventory Task",
+                "status": "Report Status",
+                "totalAssets": "Total Assets",
+                "scannedAssets": "Scanned Assets",
+                "differenceCount": "Difference Count",
+                "generatedBy": "Generated By",
+                "generatedAt": "Generated At",
+                "currentApprover": "Current Approver"
+            },
+            "status": {
+                "draft": "Draft",
+                "pendingApproval": "Pending Approval",
+                "approved": "Approved",
+                "rejected": "Rejected"
+            },
+            "actions": {
+                "generate": "Generate Report",
+                "exportPdf": "Export PDF",
+                "exportExcel": "Export Excel",
+                "batchExportPdf": "Batch Export PDF",
+                "batchExportExcel": "Batch Export Excel"
+            },
+            "dialogs": {
+                "generateTitle": "Generate Inventory Report"
+            },
+            "placeholders": {
+                "search": "Search by report number or task name",
+                "taskSelect": "Select a completed inventory task",
+                "templateId": "Optional template code",
+                "status": "Select a report status"
+            },
+            "validation": {
+                "taskRequired": "Select an inventory task."
+            },
+            "messages": {
+                "loadTasksFailed": "Failed to load inventory tasks.",
+                "generateSuccess": "Inventory report generated successfully.",
+                "generateFailed": "Failed to generate the inventory report.",
+                "submitConfirm": "Submit this report for approval?",
+                "submitSuccess": "Report submitted successfully.",
+                "submitFailed": "Failed to submit the report.",
+                "exportSuccess": "Report exported successfully.",
+                "exportFailed": "Failed to export the report.",
+                "batchExportEmpty": "Select at least one report to export.",
+                "batchExportSuccess": "{count} report exports started in {format} format."
+            }
+        },
+        "workbench": {
+            "actions": {
+            "approveResolution": "Approve Resolution",
+                "cancelTask": "Cancel Task",
+                "closeDifference": "Close Difference",
+                "completeTask": "Complete Task",
+                "completeFollowUp": "Complete Follow-up",
+                "confirmDifference": "Confirm Difference",
+                "executeResolution": "Execute Resolution",
+                "ignoreDifference": "Ignore Difference",
+                "refreshStats": "Refresh Statistics",
+                "reopenFollowUp": "Reopen Follow-up",
+                "rejectResolution": "Reject Review",
+                "saveDraft": "Save Draft",
+                "sendFollowUp": "Send Follow-up",
+                "startTask": "Start Task",
+                "submitReview": "Submit Review"
+            },
+            "closureTypes": {
+                "createAssetCard": "Create Asset Card",
+                "custodianCorrection": "Custodian Correction",
+                "disposal": "Disposal",
+                "financialAdjustment": "Financial Adjustment",
+                "invalidDifference": "Invalid Difference",
+                "locationCorrection": "Location Correction",
+                "repair": "Repair"
+            },
+            "form": {
+                "closureNotes": "Closure Notes",
+                "closureType": "Closure Type",
+                "evidenceRefs": "Evidence References",
+                "linkedActionCode": "Linked Action Code",
+                "resolution": "Resolution Notes",
+                "syncAsset": "Sync Asset During Execution"
+            },
+            "linkedActions": {
+                "createAssetCard": "Create Asset Card",
+                "createDisposal": "Create Disposal Request",
+                "createMaintenance": "Create Maintenance Record",
+                "currentValue": "Current Value: {code}",
+                "custodianCorrection": "Apply Custodian Correction",
+                "financialAdjustment": "Create Financial Adjustment",
+                "invalidDifference": "Mark Invalid Difference",
+                "locationCorrection": "Apply Location Correction"
+            },
+            "execution": {
+                "action": "Linked Action",
+                "executedAt": "Executed At",
+                "followUpCount": "Follow-up Count",
+                "followUpOwner": "Follow-up Owner",
+                "followUpTask": "Follow-up Task",
+                "followUpTaskStatus": "Follow-up Status",
+                "followUpCompletedAt": "Follow-up Completed At",
+                "notification": "Notification",
+                "openFollowUpTask": "Open Follow-up Task",
+                "openNotificationCenter": "Open Notification Center",
+                "states": {
+                    "cancelled": "Cancelled",
+                    "completed": "Completed",
+                    "executed": "Executed",
+                    "manualFollowUp": "Manual Follow-up",
+                    "pending": "Pending"
+                },
+                "targetRecord": "Generated Record",
+                "title": "Linked Action Result"
+            },
+            "panels": {
+                "differenceClosure": "Difference Closure Workbench"
+            },
+            "placeholders": {
+                "closureNotes": "Add closure details, approval notes, or asset sync comments",
+                "closureType": "Select the handling type for this difference",
+                "evidenceRefs": "One evidence reference per line, such as an attachment URL, ticket number, or photo key",
+                "linkedActionCode": "For example transfer, repair, or dispose",
+                "resolution": "Describe the confirmed difference, handling action, and business rationale"
+            },
+            "summary": {
+                "currentStatus": "Current Status",
+                "differenceType": "Difference Type",
+                "differenceTotal": "Total Differences",
+                "pendingFollowUp": "Pending Follow-up",
+                "pendingClosure": "Awaiting Closure",
+                "progress": "Progress",
+                "quantityDifference": "Quantity Delta",
+                "reminderCount": "Reminder Count",
+                "scannedCount": "Scanned Count",
+                "taskCode": "Inventory Task",
+                "totalCount": "Planned Count"
+            },
+            "states": {
+                "draftSaved": "Draft Saved",
+                "unsavedChanges": "Unsaved Changes"
+            },
+            "validation": {
+                "closureTypeRequired": "Choose a closure type before submitting the review",
+                "resolutionRequired": "Enter the resolution notes first"
+            },
+            "queues": {
+                "activeExecution": "Active Execution Queue",
+                "awaitingApproval": "Awaiting Approval",
+                "awaitingClosure": "Awaiting Closure Queue",
+                "awaitingConfirmation": "Awaiting Confirmation",
+                "awaitingExecution": "Awaiting Execution",
+                "awaitingFollowUp": "Awaiting Follow-up",
+                "awaitingReview": "Awaiting Review Submission",
+                "custodianDifferences": "Custodian Differences",
+                "damagedDifferences": "Damaged Differences",
+                "locationDifferences": "Location Change Differences",
+                "missingDifferences": "Missing Asset Differences",
+                "surplusDifferences": "Surplus Differences"
+            },
+            "messages": {
+                "closeDifferenceHint": "Once handling is complete, add closure notes and evidence before formally closing the difference.",
+                "completeTaskHint": "Complete the current inventory round and lock the final difference set for follow-up handling.",
+                "confirmDifferenceConfirm": "Confirm this difference and move it into the closure workflow?",
+                "differenceClosureHint": "Complete the handling notes, closure type, and evidence in the detail page before moving through review, approval, execution, and closure.",
+                "executeResolutionHint": "Before execution, make sure the review outcome, closure type, and any required asset sync conditions are ready.",
+                "pendingConfirmHint": "This difference is not confirmed yet. Use the top-level action first to move it into the formal closure flow.",
+                "refreshStatsHint": "Recalculate the latest scan, difference, and completion statistics before making the next decision.",
+                "savedDraftHint": "The current handling draft is saved. You can continue refining it or move to the next action.",
+                "submitReviewHint": "Complete the handling notes, closure type, and evidence before submitting the difference for review."
+                ,
+                "unsavedDraftHint": "The form has unsaved changes. Save the draft before moving the workflow forward."
+            }
+        },
+        "assignment": {
+            "title": "Inventory Assignment",
+            "subtitle": "Manage task executors and monitor their current execution progress.",
+            "listTitle": "Assignment List",
+            "progressTitle": "Assignment Progress",
+            "fields": {
+                "assignee": "Assignee",
+                "assigneeIds": "Assignees",
+                "region": "Region",
+                "locationIds": "Locations",
+                "locations": "Inventory Locations",
+                "status": "Status",
+                "assignedAt": "Assigned At",
+                "totalAssets": "Assigned Assets",
+                "scannedCount": "Scanned",
+                "normalCount": "Normal",
+                "abnormalCount": "Abnormal",
+                "progress": "Progress"
+            },
+            "summary": {
+                "assigneeCount": "Assigned Users",
+                "totalAssets": "Assigned Assets",
+                "scannedCount": "Scanned Total",
+                "abnormalCount": "Abnormal Total"
+            },
+            "actions": {
+                "assign": "Assign Task",
+                "remove": "Remove"
+            },
+            "placeholders": {
+                "region": "Leave blank to include all regions",
+                "locationIds": "Leave blank to include all locations"
+            },
+            "labels": {
+                "progressSummary": "{scanned} / {total} scanned"
+            },
+            "status": {
+                "pending": "Pending",
+                "inProgress": "In Progress",
+                "completed": "Completed"
+            },
+            "scope": {
+                "allRegions": "All Regions",
+                "allLocations": "All Locations"
+            },
+            "validation": {
+                "assigneeRequired": "Select at least one assignee.",
+                "noNewAssignees": "All selected users are already assigned."
+            },
+            "messages": {
+                "assignSuccess": "Task assignment created successfully.",
+                "removeSuccess": "Assignment removed successfully.",
+                "noAssignments": "No assignments yet.",
+                "executorScopeOnly": "The current backend supports executor assignment only. Region and location scope controls will be enabled after the dedicated assignment resource is implemented."
+            },
+            "confirm": {
+                "removeAssignment": "Remove {name} from this inventory task?"
+            }
+        },
         "messages": {
             "exportDeveloping": "Export {count} inventory tasks - Feature in development"
         },

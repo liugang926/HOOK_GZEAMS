@@ -186,8 +186,11 @@ class WorkflowEngine:
 
         try:
             with transaction.atomic():
-                # Get node info
-                graph_data = instance.graph_snapshot
+                # Fall back to the workflow definition graph for legacy instances
+                # that were created without a graph snapshot.
+                graph_data = instance.graph_snapshot or getattr(
+                    instance.definition, 'graph_data', {}
+                )
                 node = self._get_node_by_id(graph_data, task.node_id)
 
                 if not node:
@@ -363,11 +366,15 @@ class WorkflowEngine:
 
     def _get_node_by_id(self, graph_data, node_id):
         """Get a node from graph data by ID."""
+        if not isinstance(graph_data, dict):
+            return None
         nodes = graph_data.get('nodes', [])
         return next((n for n in nodes if n.get('id') == node_id), None)
 
     def _get_next_nodes(self, graph_data, node_id):
         """Get the next nodes after a given node."""
+        if not isinstance(graph_data, dict):
+            return []
         edges = graph_data.get('edges', [])
         next_node_ids = [
             e.get('targetNodeId') for e in edges
@@ -665,7 +672,9 @@ class WorkflowEngine:
     def _handle_return_task(self, instance, task, actor, comment):
         """Handle a returned task by going back to previous state."""
         # Find the previous approval node
-        graph_data = instance.graph_snapshot
+        graph_data = instance.graph_snapshot or getattr(
+            instance.definition, 'graph_data', {}
+        )
         current_edges = [
             e for e in graph_data.get('edges', [])
             if e.get('targetNodeId') == task.node_id

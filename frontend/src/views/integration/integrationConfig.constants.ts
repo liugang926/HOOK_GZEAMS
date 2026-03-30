@@ -148,11 +148,19 @@ export const createDefaultIntegrationFormData = (): IntegrationFormData => ({
     apiUrl: '',
     apiKey: '',
     apiSecret: '',
+    companyCode: '',
+    username: '',
+    password: '',
     timeout: 30
   },
   syncConfig: {
     autoSync: false,
-    interval: 60
+    interval: 60,
+    syncOrders: false,
+    syncAssets: false,
+    syncVendors: false,
+    syncDepreciation: false,
+    startDate: ''
   }
 })
 

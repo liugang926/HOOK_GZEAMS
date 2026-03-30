@@ -870,6 +870,48 @@ class AssetTransferService(BaseCRUDService):
 
         return transfer
 
+    def reject_transfer(
+        self,
+        transfer_id: str,
+        user,
+        comment: str = ''
+    ) -> AssetTransfer:
+        """Reject a transfer order from either approval stage."""
+        transfer = self.get(transfer_id, user=user)
+        previous_status = transfer.status
+
+        if previous_status not in ['pending', 'out_approved']:
+            raise ValidationError({
+                'status': f'Cannot reject transfer with status {transfer.get_status_label()}'
+            })
+
+        transfer.status = 'rejected'
+
+        if previous_status == 'pending':
+            transfer.from_approved_by = user
+            transfer.from_approved_at = timezone.now()
+            transfer.from_approve_comment = comment
+        else:
+            transfer.to_approved_by = user
+            transfer.to_approved_at = timezone.now()
+            transfer.to_approve_comment = comment
+
+        transfer.save()
+        return transfer
+
+    def cancel_transfer(self, transfer_id: str, user) -> AssetTransfer:
+        """Cancel a transfer order before completion."""
+        transfer = self.get(transfer_id, user=user)
+
+        if transfer.status not in ['draft', 'pending', 'out_approved']:
+            raise ValidationError({
+                'status': f'Cannot cancel transfer with status {transfer.get_status_label()}'
+            })
+
+        transfer.status = 'cancelled'
+        transfer.save()
+        return transfer
+
     def complete_transfer(self, transfer_id: str, user) -> AssetTransfer:
         """Complete the transfer and update assets."""
         transfer = self.get(transfer_id, user=user)
@@ -1080,6 +1122,37 @@ class AssetReturnService(BaseCRUDService):
                     ReturnItem.objects.create(**create_kwargs)
 
         return_order.refresh_from_db()
+        return return_order
+
+    def submit_for_approval(self, return_id: str, user) -> AssetReturn:
+        """Submit a return order for approval."""
+        return_order = self.get(return_id, user=user)
+
+        if return_order.status != 'draft':
+            raise ValidationError({
+                'status': f'Cannot submit return with status {return_order.get_status_label()}'
+            })
+
+        if return_order.items.count() == 0:
+            raise ValidationError({
+                'items': 'Cannot submit return order without items'
+            })
+
+        return_order.status = 'pending'
+        return_order.save()
+        return return_order
+
+    def cancel_return(self, return_id: str, user) -> AssetReturn:
+        """Cancel a return order before confirmation."""
+        return_order = self.get(return_id, user=user)
+
+        if return_order.status not in ['draft', 'pending']:
+            raise ValidationError({
+                'status': f'Cannot cancel return with status {return_order.get_status_label()}'
+            })
+
+        return_order.status = 'cancelled'
+        return_order.save()
         return return_order
 
     def confirm_return(
@@ -1337,6 +1410,37 @@ class AssetLoanService(BaseCRUDService):
                     LoanItem.objects.create(**create_kwargs)
 
         loan.refresh_from_db()
+        return loan
+
+    def submit_for_approval(self, loan_id: str, user) -> AssetLoan:
+        """Submit a loan order for approval."""
+        loan = self.get(loan_id, user=user)
+
+        if loan.status != 'draft':
+            raise ValidationError({
+                'status': f'Cannot submit loan with status {loan.get_status_label()}'
+            })
+
+        if loan.items.count() == 0:
+            raise ValidationError({
+                'items': 'Cannot submit loan order without items'
+            })
+
+        loan.status = 'pending'
+        loan.save()
+        return loan
+
+    def cancel_loan(self, loan_id: str, user) -> AssetLoan:
+        """Cancel a loan order before lending starts."""
+        loan = self.get(loan_id, user=user)
+
+        if loan.status not in ['draft', 'pending']:
+            raise ValidationError({
+                'status': f'Cannot cancel loan with status {loan.get_status_label()}'
+            })
+
+        loan.status = 'cancelled'
+        loan.save()
         return loan
 
     def approve_loan(

@@ -87,6 +87,12 @@ const EMPTY_RUNTIME_WORKBENCH = Object.freeze<RuntimeWorkbench>({
   },
   detailPanels: [],
   asyncIndicators: [],
+  summaryCards: [],
+  queuePanels: [],
+  exceptionPanels: [],
+  closurePanel: null,
+  slaIndicators: [],
+  recommendedActions: [],
 })
 
 function normalizeFieldsPayload(payload: unknown): {
@@ -141,6 +147,12 @@ function normalizeWorkbench(payload: unknown, objectCode: string): RuntimeWorkbe
       },
       detailPanels: [],
       asyncIndicators: [],
+      summaryCards: [],
+      queuePanels: [],
+      exceptionPanels: [],
+      closurePanel: null,
+      slaIndicators: [],
+      recommendedActions: [],
       legacyAliases: [],
     }
   }
@@ -159,6 +171,23 @@ function normalizeWorkbench(payload: unknown, objectCode: string): RuntimeWorkbe
   const asyncIndicators = Array.isArray(candidate.asyncIndicators || candidate.async_indicators)
     ? [...((candidate.asyncIndicators || candidate.async_indicators) as Array<Record<string, unknown>>)]
     : []
+  const summaryCards = Array.isArray(candidate.summaryCards || candidate.summary_cards)
+    ? [...((candidate.summaryCards || candidate.summary_cards) as Array<Record<string, unknown>>)]
+    : []
+  const queuePanels = Array.isArray(candidate.queuePanels || candidate.queue_panels)
+    ? [...((candidate.queuePanels || candidate.queue_panels) as Array<Record<string, unknown>>)]
+    : []
+  const exceptionPanels = Array.isArray(candidate.exceptionPanels || candidate.exception_panels)
+    ? [...((candidate.exceptionPanels || candidate.exception_panels) as Array<Record<string, unknown>>)]
+    : []
+  const rawClosurePanel = toRecord(candidate.closurePanel || candidate.closure_panel)
+  const closurePanel = rawClosurePanel && Object.keys(rawClosurePanel).length > 0 ? rawClosurePanel : null
+  const slaIndicators = Array.isArray(candidate.slaIndicators || candidate.sla_indicators)
+    ? [...((candidate.slaIndicators || candidate.sla_indicators) as Array<Record<string, unknown>>)]
+    : []
+  const recommendedActions = Array.isArray(candidate.recommendedActions || candidate.recommended_actions)
+    ? [...((candidate.recommendedActions || candidate.recommended_actions) as Array<Record<string, unknown>>)]
+    : []
 
   return {
     workspaceMode: String(candidate.workspaceMode || candidate.workspace_mode || 'standard'),
@@ -174,6 +203,12 @@ function normalizeWorkbench(payload: unknown, objectCode: string): RuntimeWorkbe
     },
     detailPanels: detailPanels as RuntimeWorkbench['detailPanels'],
     asyncIndicators: asyncIndicators as RuntimeWorkbench['asyncIndicators'],
+    summaryCards: summaryCards as RuntimeWorkbench['summaryCards'],
+    queuePanels: queuePanels as RuntimeWorkbench['queuePanels'],
+    exceptionPanels: exceptionPanels as RuntimeWorkbench['exceptionPanels'],
+    closurePanel: closurePanel as RuntimeWorkbench['closurePanel'],
+    slaIndicators: slaIndicators as RuntimeWorkbench['slaIndicators'],
+    recommendedActions: recommendedActions as RuntimeWorkbench['recommendedActions'],
   }
 }
 

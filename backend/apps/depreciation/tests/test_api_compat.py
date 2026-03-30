@@ -105,6 +105,84 @@ class DepreciationApiCompatTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('text/csv', response['Content-Type'])
 
+    def test_record_list_supports_asset_keyword_filter(self):
+        response = self.client.get('/api/system/objects/DepreciationRecord/', {
+            'asset': 'Test Asset',
+            'period': '2026-02',
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['success'])
+        self.assertEqual(response.data['data']['count'], 1)
+        self.assertEqual(response.data['data']['results'][0]['asset_name'], self.asset.asset_name)
+
+    def test_report_returns_asset_breakdown_with_category_ids_filter(self):
+        other_category = AssetCategory.objects.create(
+            organization=self.org,
+            code=f'{self.category.code}_OTHER',
+            name='Other Category',
+            created_by=self.user
+        )
+        other_asset = Asset.objects.create(
+            organization=self.org,
+            asset_name='Other Depreciation Asset',
+            asset_category=other_category,
+            purchase_price=Decimal('500.00'),
+            purchase_date=date.today(),
+            useful_life=12,
+            current_value=Decimal('500.00'),
+            accumulated_depreciation=Decimal('0.00'),
+            created_by=self.user
+        )
+        DepreciationRecord.objects.create(
+            organization=self.org,
+            asset=other_asset,
+            period='2026-02',
+            depreciation_amount=Decimal('50.00'),
+            accumulated_amount=Decimal('50.00'),
+            net_value=Decimal('450.00'),
+            status='calculated',
+            created_by=self.user
+        )
+
+        response = self.client.get('/api/system/objects/DepreciationRecord/report/', {
+            'period': '2026-02',
+            'categoryIds': [str(self.category.id)],
+        })
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['success'])
+        data = response.data['data']
+        self.assertEqual(data['summary']['total_records'], 1)
+        self.assertEqual(len(data['category_breakdown']), 1)
+        self.assertEqual(data['category_breakdown'][0]['category_code'], self.category.code)
+        self.assertEqual(len(data['by_asset']), 1)
+        self.assertEqual(data['by_asset'][0]['asset_code'], self.asset.asset_code)
+        self.assertEqual(data['by_asset'][0]['category_name'], self.category.name)
+
+    def test_batch_post_returns_partial_failure_summary(self):
+        posted_record = DepreciationRecord.objects.create(
+            organization=self.org,
+            asset=self.asset,
+            period='2026-03',
+            depreciation_amount=Decimal('100.00'),
+            accumulated_amount=Decimal('200.00'),
+            net_value=Decimal('1800.00'),
+            status='posted',
+            post_date=date.today(),
+            created_by=self.user
+        )
+
+        response = self.client.post(
+            '/api/system/objects/DepreciationRecord/batch_post/',
+            {'ids': [str(self.record.id), str(posted_record.id)]},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_207_MULTI_STATUS)
+        self.assertFalse(response.data['success'])
+        self.assertEqual(response.data['summary']['succeeded'], 1)
+        self.assertEqual(response.data['summary']['failed'], 1)
+        self.record.refresh_from_db()
+        self.assertEqual(self.record.status, 'posted')
+
     def test_global_and_category_config_alias(self):
         get_global = self.client.get('/api/system/objects/DepreciationConfig/global/')
         self.assertEqual(get_global.status_code, status.HTTP_200_OK)
@@ -212,3 +290,52 @@ class DepreciationApiCompatTest(APITestCase):
         self.assertEqual(second_submit.status_code, status.HTTP_200_OK)
         self.assertTrue(second_submit.data['success'])
 
+    def test_calculate_accepts_category_ids_payload(self):
+        other_category = AssetCategory.objects.create(
+            organization=self.org,
+            code=f'{self.category.code}_CALC',
+            name='Calculation Category',
+            created_by=self.user
+        )
+        other_asset = Asset.objects.create(
+            organization=self.org,
+            asset_name='Filtered Out Asset',
+            asset_category=other_category,
+            purchase_price=Decimal('1000.00'),
+            purchase_date=date.today(),
+            useful_life=24,
+            current_value=Decimal('1000.00'),
+            accumulated_depreciation=Decimal('0.00'),
+            created_by=self.user
+        )
+        DepreciationConfig.objects.create(
+            organization=self.org,
+            category=other_category,
+            depreciation_method='straight_line',
+            useful_life=60,
+            salvage_value_rate=Decimal('5.00'),
+            is_active=True,
+            created_by=self.user
+        )
+
+        response = self.client.post(
+            '/api/system/objects/DepreciationRun/calculate/',
+            {'period': '2026-04', 'categoryIds': [str(self.category.id)]},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['success'])
+        self.assertTrue(
+            DepreciationRecord.objects.filter(
+                organization=self.org,
+                asset=self.asset,
+                period='2026-04',
+            ).exists()
+        )
+        self.assertFalse(
+            DepreciationRecord.objects.filter(
+                organization=self.org,
+                asset=other_asset,
+                period='2026-04',
+            ).exists()
+        )

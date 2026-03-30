@@ -33,6 +33,7 @@
       :total="query.pagination.total"
       @test="actions.handleTest"
       @sync="actions.handleSync"
+      @m18-sync="openM18SyncDialog"
       @logs="logViewer.handleViewLogs"
       @edit="actions.handleEdit"
       @delete="actions.handleDelete"
@@ -66,16 +67,27 @@
       v-model="logViewer.logDetailVisible"
       :current-log="logViewer.currentLog"
     />
+
+    <M18SyncDialog
+      v-model="m18SyncDialogVisible"
+      :integration="selectedM18Config"
+      :submitting="m18Syncing"
+      @trigger="handleM18Sync"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
+import { triggerSync } from '@/api/integration'
+import type { IntegrationConfig, TriggerSyncPayload } from '@/types/integration'
 import IntegrationConfigFilterBar from './components/IntegrationConfigFilterBar.vue'
 import IntegrationConfigFormDialog from './components/IntegrationConfigFormDialog.vue'
 import IntegrationLogDetailDialog from './components/IntegrationLogDetailDialog.vue'
 import IntegrationLogsDrawer from './components/IntegrationLogsDrawer.vue'
+import M18SyncDialog from './components/M18SyncDialog.vue'
 import IntegrationStatsCards from './components/IntegrationStatsCards.vue'
 import IntegrationConfigTable from './components/IntegrationConfigTable.vue'
 import { useIntegrationConfigList } from './composables'
@@ -86,6 +98,32 @@ const integration = useIntegrationConfigList()
 const query = integration.query
 const actions = integration.actions
 const logViewer = integration.logViewer
+const m18SyncDialogVisible = ref(false)
+const m18Syncing = ref(false)
+const selectedM18Config = ref<IntegrationConfig | null>(null)
+
+const openM18SyncDialog = (row: IntegrationConfig) => {
+  selectedM18Config.value = row
+  m18SyncDialogVisible.value = true
+}
+
+const handleM18Sync = async (payload: TriggerSyncPayload) => {
+  if (!selectedM18Config.value) {
+    return
+  }
+
+  m18Syncing.value = true
+  try {
+    await triggerSync(selectedM18Config.value.id, payload)
+    ElMessage.success(t('integration.messages.syncTaskCreated'))
+    m18SyncDialogVisible.value = false
+    await query.fetchData()
+  } catch (error: any) {
+    ElMessage.error(error?.message || t('integration.messages.syncFailed'))
+  } finally {
+    m18Syncing.value = false
+  }
+}
 
 onMounted(() => {
   void query.fetchData()

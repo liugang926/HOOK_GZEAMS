@@ -36,14 +36,20 @@
     >
       <el-table-column
         :label="$t('portal.assets.cols.code')"
-        prop="assetCode"
         width="130"
-      />
+      >
+        <template #default="{ row }">
+          {{ row.assetCode || row.code || '-' }}
+        </template>
+      </el-table-column>
       <el-table-column
         :label="$t('portal.assets.cols.name')"
-        prop="name"
         min-width="160"
-      />
+      >
+        <template #default="{ row }">
+          {{ row.name || row.assetName || '-' }}
+        </template>
+      </el-table-column>
       <el-table-column
         :label="$t('portal.assets.cols.category')"
         prop="categoryDisplay"
@@ -109,24 +115,20 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
+import type { PortalAssetRecord, PortalStatusOption } from '@/types/portal'
 import {
   formatPortalAssetValue,
   getPortalAssetStatusTagType,
 } from './portalAssetModel'
 
-interface StatusOption {
-  value: string
-  label: string
-}
-
 const props = defineProps<{
-  assets: any[]
+  assets: PortalAssetRecord[]
   currentPage: number
   loading: boolean
   pageSize: number
   search: string
   statusFilter: string
-  statuses: StatusOption[]
+  statuses: PortalStatusOption[]
   total: number
 }>()
 
@@ -136,7 +138,7 @@ const emit = defineEmits<{
   'update:search': [value: string]
   'update:statusFilter': [value: string]
   refresh: []
-  view: [row: Record<string, any>]
+  view: [row: PortalAssetRecord]
 }>()
 
 const { t } = useI18n()

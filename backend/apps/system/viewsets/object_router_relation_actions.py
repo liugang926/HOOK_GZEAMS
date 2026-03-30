@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import urlencode
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status
@@ -7,12 +8,58 @@ from rest_framework.response import Response
 
 from apps.common.responses.base import BaseResponse
 from apps.system.services.object_registry import ObjectRegistry
+from apps.system.services.object_history_aggregation_service import ObjectHistoryAggregationService
 from apps.system.services.relation_query_service import RelationQueryService
 
 logger = logging.getLogger(__name__)
 
 
 class ObjectRouterRelationActionsMixin:
+    def history(self, request, *args, **kwargs):
+        """
+        Get unified history entries for a single record.
+
+        GET /api/system/objects/{code}/{id}/history/
+        """
+        error_response = self._ensure_object_meta_loaded(kwargs)
+        if error_response is not None:
+            return error_response
+
+        record_id = kwargs.get("id")
+        if not record_id:
+            return BaseResponse.error(
+                "VALIDATION_ERROR",
+                "common.messages.badRequest",
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        self._set_delegate_lookup_pk(kwargs)
+        instance = self._load_delegate_instance(record_id)
+        if instance is None:
+            return BaseResponse.error(
+                "NOT_FOUND",
+                "common.messages.resourceNotFound",
+                http_status=status.HTTP_404_NOT_FOUND,
+            )
+
+        service = ObjectHistoryAggregationService()
+        items = service.build_history(
+            object_code=self._object_meta.code,
+            instance=instance,
+        )
+
+        page = self._parse_positive_int(request.query_params.get("page"), default=1)
+        page_size = self._parse_positive_int(request.query_params.get("page_size"), default=20, maximum=100)
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        return BaseResponse.paginated(
+            count=len(items),
+            next_url=self._build_page_url(request, page + 1, page_size) if end < len(items) else None,
+            previous_url=self._build_page_url(request, page - 1, page_size) if page > 1 else None,
+            results=items[start:end],
+        )
+
     def relations(self, request, *args, **kwargs):
         """
         Get relation definitions for current object.
@@ -286,6 +333,25 @@ class ObjectRouterRelationActionsMixin:
                 message=str(exc),
                 http_status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+    @staticmethod
+    def _parse_positive_int(value, *, default: int, maximum: int | None = None) -> int:
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            parsed = default
+        if parsed < 1:
+            parsed = default
+        if maximum is not None:
+            parsed = min(parsed, maximum)
+        return parsed
+
+    @staticmethod
+    def _build_page_url(request, page: int, page_size: int) -> str:
+        query = request.query_params.copy()
+        query["page"] = page
+        query["page_size"] = page_size
+        return request.build_absolute_uri(f"{request.path}?{urlencode(query, doseq=True)}")
 
     def related(self, request, *args, **kwargs):
         """

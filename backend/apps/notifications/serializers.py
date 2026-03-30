@@ -52,6 +52,10 @@ class NotificationTemplateSerializer(BaseModelSerializer):
 class NotificationTemplateDetailSerializer(BaseModelWithAuditSerializer):
     """Notification template detail serializer with full audit info."""
 
+    channel_display = serializers.CharField(
+        source='get_channel_display',
+        read_only=True
+    )
     previous_version_detail = NotificationTemplateSerializer(
         source='previous_version',
         read_only=True,
@@ -151,6 +155,10 @@ class NotificationListSerializer(BaseModelSerializer):
 
     recipient_name = serializers.CharField(
         source='recipient.username',
+        read_only=True
+    )
+    channel_display = serializers.CharField(
+        source='get_channel_display',
         read_only=True
     )
     priority_display = serializers.CharField(

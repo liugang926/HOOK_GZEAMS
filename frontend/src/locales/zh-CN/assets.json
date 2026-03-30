@@ -86,12 +86,21 @@
         "transferDate": "调拨日期",
         "receiver": "接收人"
     },
-    "search": {
-        "keyword": "关键词",
-        "keywordPlaceholder": "资产编码/名称",
-        "status": "状态",
-        "dateRange": "采购日期"
-    },
+  "search": {
+    "keyword": "关键词",
+    "keywordPlaceholder": "资产编码/名称",
+    "status": "状态",
+    "dateRange": "采购日期",
+    "quickFilters": "快捷筛选",
+    "saveValidation": "请先输入关键词或设置筛选条件",
+    "saveNamePrompt": "请输入保存搜索的名称",
+    "saveNameTitle": "保存搜索",
+    "saveNameRequired": "请输入搜索名称",
+    "noSavedSearches": "暂无已保存搜索",
+    "savedFilterOnly": "仅筛选条件",
+    "historySuggestion": "历史搜索 · {count} 次",
+    "resultCount": "{count} 条命中"
+  },
     "loan": {
         "title": "资产借出单",
         "createButton": "新建借出单",

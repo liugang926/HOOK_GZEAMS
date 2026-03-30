@@ -11,11 +11,11 @@ import type { BaseModel } from './common'
  * Business Type Enum
  */
 export enum BusinessType {
-  ASSET_PURCHASE = 'asset_purchase',
-  ASSET_DEPRECIATION = 'asset_depreciation',
-  ASSET_DISPOSAL = 'asset_disposal',
-  ASSET_TRANSFER = 'asset_transfer',
-  CONSUMABLE_PURCHASE = 'consumable_purchase'
+  PURCHASE = 'purchase',
+  DEPRECIATION = 'depreciation',
+  DISPOSAL = 'disposal',
+  INVENTORY = 'inventory',
+  OTHER = 'other'
 }
 
 /**
@@ -85,30 +85,35 @@ export interface FinanceVoucher extends BaseModel {
 }
 
 /**
- * Voucher Template Interface
+ * Voucher Template Entry Interface
  */
-export interface VoucherTemplate {
-  id: string
-  templateName: string
-  code: string
-  businessType: BusinessType
-  voucherType: string
-  defaultDescription: string
-  entriesConfig: TemplateEntryConfig[]
-  isActive: boolean
-  organizationId: string
+export interface VoucherTemplateEntry {
+  accountCode: string
+  accountName: string
+  debitAmount: number
+  creditAmount: number
+  description: string
 }
 
 /**
- * Template Entry Configuration
+ * Voucher Template Configuration
  */
-export interface TemplateEntryConfig {
-  lineNo: number
-  accountCode: string
-  accountName: string
-  debitOrCredit: 'debit' | 'credit'
-  amountFormula?: string
-  description?: string
+export interface VoucherTemplateConfig {
+  businessType?: BusinessType | string
+  entries: VoucherTemplateEntry[]
+  [key: string]: unknown
+}
+
+/**
+ * Voucher Template Interface
+ */
+export interface VoucherTemplate extends BaseModel {
+  name: string
+  code: string
+  businessType: BusinessType | string
+  templateConfig: VoucherTemplateConfig
+  isActive: boolean
+  description: string
 }
 
 /**
@@ -133,6 +138,16 @@ export interface VoucherCreate {
 export interface VoucherApprovalAction {
   action: 'approve' | 'reject'
   comment?: string
+}
+
+/**
+ * Voucher Template Apply Payload
+ */
+export interface VoucherTemplateApplyPayload {
+  voucherDate: string
+  summary?: string
+  totalAmount?: number
+  notes?: string
 }
 
 /**

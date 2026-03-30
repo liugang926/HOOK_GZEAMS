@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { SearchField } from '@/types/common'
 import {
   buildDynamicListUnifiedSearchFields,
+  extractDynamicListReservedRouteQuery,
   extractDynamicListRouteFilters,
   resolveDynamicListEffectivePermissions,
   shouldRefreshDynamicListOnPathChange,
@@ -13,6 +14,8 @@ describe('dynamicListPageShellModel', () => {
       status: 'draft',
       keyword: '',
       mode: 'list',
+      source_label: 'Inventory Workbench',
+      department_label: 'Operations',
       department: ['ops', 'finance'],
       assignee: null,
     })).toEqual({
@@ -21,6 +24,24 @@ describe('dynamicListPageShellModel', () => {
     })
 
     expect(extractDynamicListRouteFilters(undefined)).toEqual({})
+  })
+
+  it('extracts only reserved route query keys for drilldown reset actions', () => {
+    expect(extractDynamicListReservedRouteQuery({
+      layoutId: 'default',
+      layoutType: 'list',
+      mode: 'list',
+      source_label: 'Inventory Workbench',
+      department_label: 'Operations',
+      status: 'draft',
+      unresolved_only: 'true',
+    })).toEqual({
+      layoutId: 'default',
+      layoutType: 'list',
+      mode: 'list',
+    })
+
+    expect(extractDynamicListReservedRouteQuery(undefined)).toEqual({})
   })
 
   it('refreshes list data only when returning to the canonical object list path', () => {

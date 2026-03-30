@@ -253,7 +253,6 @@ class FinanceVoucherViewSet(BaseModelViewSetWithBatch):
         if eager_mode:
             voucher.refresh_from_db()
             if voucher.erp_voucher_no:
-                data['queued'] = False
                 data['external_voucher_no'] = voucher.erp_voucher_no
 
         return Response({

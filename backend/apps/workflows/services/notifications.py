@@ -6,12 +6,16 @@ stores notifications with content structured for UI rendering.
 """
 from __future__ import annotations
 
+from datetime import date, datetime, time
+from decimal import Decimal
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Union
+from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+from django.db.models import Model
 from django.utils import timezone
 from django.utils.html import escape
 
@@ -140,7 +144,7 @@ class EnhancedNotificationService:
             'data': {
                 'notification_type': event_type,
                 'rich_content': rich_content,
-                'context': formatted,
+                'context': self._to_json_safe(formatted),
             },
         }
 
@@ -516,6 +520,29 @@ class EnhancedNotificationService:
         if hasattr(value, 'strftime'):
             return value.strftime('%Y-%m-%d %H:%M')
         return fallback
+
+    def _to_json_safe(self, value: Any) -> Any:
+        """Normalize rich notification context for JSON storage."""
+        if value is None or isinstance(value, (str, int, float, bool)):
+            return value
+        if isinstance(value, Decimal):
+            return float(value)
+        if isinstance(value, UUID):
+            return str(value)
+        if isinstance(value, (datetime, date, time)):
+            return value.isoformat()
+        if isinstance(value, Model):
+            return str(value.pk)
+        if isinstance(value, dict):
+            return {
+                str(key): self._to_json_safe(item)
+                for key, item in value.items()
+            }
+        if isinstance(value, (list, tuple, set)):
+            return [self._to_json_safe(item) for item in value]
+        if hasattr(value, 'isoformat') and callable(value.isoformat):
+            return value.isoformat()
+        return str(value)
 
     @staticmethod
     def _resolve_user_name(value: Any) -> str:

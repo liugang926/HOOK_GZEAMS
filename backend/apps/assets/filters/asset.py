@@ -9,11 +9,13 @@ Provides:
 """
 import django_filters
 import uuid
-from django.db.models import Q
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Count, Q
 from django.db.models import CharField
 from django.db.models.functions import Cast
 from apps.common.filters.base import BaseModelFilter
-from apps.assets.models import Asset, Supplier, Location, AssetStatusLog
+from apps.assets.models import Asset, AssetStatusLog, AssetTag, Location, Supplier
+from apps.system.models import Tag, TagAssignment
 
 
 class AssetFilter(BaseModelFilter):
@@ -82,6 +84,8 @@ class AssetFilter(BaseModelFilter):
 
     # Combined search filter
     search = django_filters.CharFilter(method='filter_search')
+    tag_ids = django_filters.CharFilter(method='filter_tag_ids')
+    tagIds = django_filters.CharFilter(method='filter_tag_ids')
 
     @staticmethod
     def _is_uuid(value):
@@ -195,6 +199,109 @@ class AssetFilter(BaseModelFilter):
 
     def filter_current_value(self, queryset, name, value):
         return self._text_cast_filter(queryset, 'current_value', value)
+
+    def filter_tag_ids(self, queryset, name, value):
+        """Filter assets by asset tags and legacy generic tags."""
+        if value in (None, ''):
+            return queryset
+
+        if isinstance(value, (list, tuple)):
+            raw_values = value
+        else:
+            raw_values = str(value).split(',')
+
+        tag_ids = [str(item).strip() for item in raw_values if str(item).strip()]
+        if not tag_ids:
+            return queryset
+
+        tag_logic = (
+            str(
+                self.data.get('tag_logic')
+                or self.data.get('tagLogic')
+                or self.data.get('match_type')
+                or self.data.get('matchType')
+                or 'or'
+            )
+            .strip()
+            .lower()
+        )
+        if tag_logic not in {'and', 'or'}:
+            tag_logic = 'or'
+
+        asset_tag_ids = list(
+            AssetTag.all_objects.filter(
+                id__in=tag_ids,
+                is_deleted=False,
+                is_active=True,
+            ).values_list('id', flat=True)
+        )
+        generic_tag_ids = list(
+            Tag.all_objects.filter(
+                id__in=tag_ids,
+                is_deleted=False,
+            ).values_list('id', flat=True)
+        )
+        resolved_tag_count = len(asset_tag_ids) + len(generic_tag_ids)
+        if resolved_tag_count != len(set(tag_ids)):
+            return queryset.none()
+
+        content_type = ContentType.objects.get_for_model(Asset, for_concrete_model=False)
+
+        filtered_queryset = queryset
+        if asset_tag_ids and tag_logic == 'and':
+            filtered_queryset = filtered_queryset.annotate(
+                asset_tag_match_count=Count(
+                    'asset_tag_relations__tag',
+                    filter=Q(
+                        asset_tag_relations__tag_id__in=asset_tag_ids,
+                        asset_tag_relations__is_deleted=False,
+                        asset_tag_relations__tag__is_deleted=False,
+                        asset_tag_relations__tag__is_active=True,
+                    ),
+                    distinct=True,
+                )
+            ).filter(asset_tag_match_count=len(asset_tag_ids))
+
+        if generic_tag_ids and tag_logic == 'and':
+            generic_tagged_asset_ids = (
+                TagAssignment.all_objects
+                .filter(
+                    content_type=content_type,
+                    tag_id__in=generic_tag_ids,
+                    is_deleted=False,
+                )
+                .values('object_id')
+                .annotate(match_count=Count('tag_id', distinct=True))
+                .filter(match_count=len(generic_tag_ids))
+                .values_list('object_id', flat=True)
+            )
+            filtered_queryset = filtered_queryset.filter(id__in=generic_tagged_asset_ids)
+
+        if tag_logic == 'and':
+            return filtered_queryset.distinct()
+
+        or_query = Q()
+        if asset_tag_ids:
+            or_query |= Q(
+                asset_tag_relations__tag_id__in=asset_tag_ids,
+                asset_tag_relations__is_deleted=False,
+                asset_tag_relations__tag__is_deleted=False,
+                asset_tag_relations__tag__is_active=True,
+            )
+
+        if generic_tag_ids:
+            generic_tagged_asset_ids = (
+                TagAssignment.all_objects
+                .filter(
+                    content_type=content_type,
+                    tag_id__in=generic_tag_ids,
+                    is_deleted=False,
+                )
+                .values_list('object_id', flat=True)
+            )
+            or_query |= Q(id__in=generic_tagged_asset_ids)
+
+        return filtered_queryset.filter(or_query).distinct()
 
 
 class SupplierFilter(BaseModelFilter):

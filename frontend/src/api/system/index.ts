@@ -86,3 +86,30 @@ export type { ColumnItem, ColumnConfig } from './columnConfig'
 // Tab Configuration
 export { tabConfigApi } from './tabConfig'
 export type { TabItem, TabConfig } from './tabConfig'
+
+// Tags
+export { assetTagApi, assetTagAssignmentApi, assetTagGroupApi, tagApi } from '@/api/tags'
+export type {
+    AssetByTagsPayload,
+    AssetByTagsResult,
+    AssetTag,
+    AssetTagAssignmentPayload,
+    AssetTagBatchActionPayload,
+    AssetTagBatchActionResponse,
+    AssetTagGroup,
+    AssetTagGroupQueryParams,
+    AssetTagMatchType,
+    AssetTagMutationResult,
+    AssetTagQueryParams,
+    AssetTagRelation,
+    AssetTagStatistics,
+    AssetTagStatisticsItem,
+    AssetTagSummary,
+    Tag,
+    TagApplyResult,
+    TagBusinessObjectOption,
+    TagObjectActionPayload,
+    TagRemoveResult,
+    TagStatistics,
+    TagStatisticsBucket,
+} from '@/types/tags'

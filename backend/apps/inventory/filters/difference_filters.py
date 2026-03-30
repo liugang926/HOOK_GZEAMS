@@ -2,10 +2,11 @@
 Filters for Inventory Difference model.
 """
 import django_filters
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from apps.common.filters.base import BaseModelFilter
-from apps.inventory.models import InventoryDifference
+from apps.inventory.models import InventoryDifference, InventoryFollowUp
 
 
 class InventoryDifferenceFilter(BaseModelFilter):
@@ -55,6 +56,26 @@ class InventoryDifferenceFilter(BaseModelFilter):
     resolved_by = django_filters.UUIDFilter(
         field_name='resolved_by',
         label=_('Resolved By')
+    )
+    owner = django_filters.UUIDFilter(
+        field_name='owner',
+        label=_('Owner')
+    )
+    department = django_filters.UUIDFilter(
+        field_name='task__department_id',
+        label=_('Department')
+    )
+    reviewed_by = django_filters.UUIDFilter(
+        field_name='reviewed_by',
+        label=_('Reviewed By')
+    )
+    approved_by = django_filters.UUIDFilter(
+        field_name='approved_by',
+        label=_('Approved By')
+    )
+    closed_by = django_filters.UUIDFilter(
+        field_name='closed_by',
+        label=_('Closed By')
     )
 
     # Resolved date range
@@ -130,6 +151,14 @@ class InventoryDifferenceFilter(BaseModelFilter):
         method='filter_unresolved_only',
         label=_('Unresolved Only')
     )
+    manual_follow_up_only = django_filters.BooleanFilter(
+        method='filter_manual_follow_up_only',
+        label=_('Manual Follow-up Only')
+    )
+    follow_up_assignee = django_filters.UUIDFilter(
+        method='filter_follow_up_assignee',
+        label=_('Follow-up Assignee')
+    )
 
     # Ordering
     ordering = django_filters.OrderingFilter(
@@ -159,10 +188,17 @@ class InventoryDifferenceFilter(BaseModelFilter):
             'difference_type',
             'status',
             'resolved_by',
+            'owner',
+            'department',
+            'reviewed_by',
+            'approved_by',
+            'closed_by',
             'resolved_at_from',
             'resolved_at_to',
             'pending_only',
             'unresolved_only',
+            'manual_follow_up_only',
+            'follow_up_assignee',
         ]
 
     def filter_pending_only(self, queryset, name, value):
@@ -172,9 +208,31 @@ class InventoryDifferenceFilter(BaseModelFilter):
         return queryset.filter(status=InventoryDifference.STATUS_PENDING)
 
     def filter_unresolved_only(self, queryset, name, value):
-        """Filter only unresolved differences (pending or ignored without resolution)."""
+        """Filter only differences that have not reached the closed terminal state."""
+        if value is None or not value:
+            return queryset
+        return queryset.exclude(status=InventoryDifference.STATUS_CLOSED)
+
+    def filter_manual_follow_up_only(self, queryset, name, value):
+        """Filter differences that require manual downstream follow-up."""
         if value is None or not value:
             return queryset
         return queryset.filter(
-            status__in=[InventoryDifference.STATUS_PENDING, InventoryDifference.STATUS_IGNORED]
-        )
+            Q(
+                follow_up_tasks__status=InventoryFollowUp.STATUS_PENDING,
+                follow_up_tasks__is_deleted=False,
+            ) |
+            Q(custom_fields__linked_action_execution__can_send_follow_up=True)
+        ).distinct()
+
+    def filter_follow_up_assignee(self, queryset, name, value):
+        """Filter differences by manual follow-up assignee."""
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(
+                follow_up_tasks__assignee_id=value,
+                follow_up_tasks__is_deleted=False,
+            ) |
+            Q(custom_fields__linked_action_execution__follow_up_assignee_id=str(value))
+        ).distinct()

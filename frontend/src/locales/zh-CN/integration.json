@@ -24,8 +24,10 @@
     "newIntegration": "新建集成",
     "search": "查询",
     "reset": "重置",
+    "configure": "配置",
     "testConnection": "测试连接",
     "syncNow": "立即同步",
+    "retry": "重试",
     "logs": "日志",
     "edit": "编辑",
     "delete": "删除",
@@ -34,6 +36,63 @@
     "cancel": "取消",
     "save": "保存",
     "create": "创建"
+  },
+  "m18": {
+    "actions": {
+      "syncConsole": "M18 同步"
+    },
+    "notice": {
+      "title": "M18 适配器配置",
+      "description": "配置 M18 企业账号信息，并启用需要参与定时同步的数据范围。"
+    },
+    "sections": {
+      "account": "M18 账号配置",
+      "syncScope": "M18 同步范围"
+    },
+    "fields": {
+      "companyCode": "公司代码",
+      "username": "用户名",
+      "password": "密码",
+      "syncPurchaseOrders": "同步采购订单",
+      "syncVendors": "同步供应商",
+      "syncAssets": "同步资产数据",
+      "syncDepreciation": "推送折旧数据",
+      "startDate": "默认起始日期"
+    },
+    "placeholders": {
+      "companyCode": "请输入 M18 公司代码",
+      "username": "请输入 M18 用户名",
+      "password": "请输入 M18 密码",
+      "startDate": "请选择起始日期"
+    },
+    "syncDialog": {
+      "title": "M18 同步控制台",
+      "description": "按业务范围快速发起 M18 同步任务。",
+      "fields": {
+        "mode": "同步模式",
+        "dateRange": "日期范围",
+        "orderNos": "订单编号",
+        "period": "折旧期间"
+      },
+      "modes": {
+        "purchaseOrders": "采购订单",
+        "vendors": "供应商",
+        "assets": "资产数据",
+        "depreciation": "折旧推送"
+      },
+      "placeholders": {
+        "startDate": "开始日期",
+        "endDate": "结束日期",
+        "orderNos": "输入订单编号，可用逗号或换行分隔",
+        "period": "请选择月份"
+      },
+      "helpers": {
+        "purchaseOrders": "按日期范围或指定订单编号从 M18 拉取采购订单。",
+        "vendors": "从 M18 拉取最新供应商主数据。",
+        "assets": "从 M18 拉取与资产入库相关的数据。",
+        "depreciation": "将已审核折旧数据推送到 M18 财务侧，供后续凭证处理。"
+      }
+    }
   },
   "stats": {
     "total": "集成总数",
@@ -108,6 +167,12 @@
     "oracle": "Oracle EBS",
     "odoo": "Odoo"
   },
+  "integrationTypes": {
+    "m18": "M18 ERP",
+    "finance": "财务系统",
+    "oa": "OA 系统",
+    "custom": "自定义集成"
+  },
   "healthStatus": {
     "healthy": "健康",
     "degraded": "降级",
@@ -118,6 +183,7 @@
     "running": "执行中",
     "success": "成功",
     "partialSuccess": "部分成功",
+    "completed": "已完成",
     "failed": "失败",
     "cancelled": "已取消"
   },
@@ -128,6 +194,95 @@
     "hr": "人资",
     "crm": "客户"
   },
+  "jobTypes": {
+    "purchase_orders": "采购单批量同步",
+    "purchase_order": "采购单同步",
+    "assets": "资产批量同步",
+    "asset": "资产同步",
+    "vendors": "供应商批量同步",
+    "vendor": "供应商同步",
+    "voucher": "凭证同步",
+    "employee": "员工同步",
+    "customer": "客户同步",
+    "generic": "通用同步"
+  },
+  "directions": {
+    "pull": "拉取",
+    "push": "推送",
+    "bidirectional": "双向同步"
+  },
+  "list": {
+    "title": "ERP 集成总览",
+    "subtitle": "查看当前组织的外部系统连接状态与最近同步情况。",
+    "tableTitle": "集成配置列表",
+    "empty": "暂无集成配置",
+    "drawerTitle": "集成配置详情",
+    "columns": {
+      "name": "名称",
+      "code": "编码",
+      "type": "类型",
+      "connectionStatus": "连接状态",
+      "enabled": "启用状态",
+      "lastSyncStatus": "最近同步状态",
+      "lastSyncAt": "最近同步时间",
+      "actions": "操作"
+    },
+    "sections": {
+      "connectionConfig": "连接配置",
+      "syncConfig": "同步配置",
+      "mappingConfig": "映射配置"
+    }
+  },
+  "statusCard": {
+    "connectionStatus": "连接状态",
+    "integrationType": "集成类型",
+    "recentSyncStatus": "最近同步状态",
+    "lastSyncAt": "最近同步时间",
+    "neverSynced": "尚未同步"
+  },
+  "syncJobs": {
+    "title": "同步任务列表",
+    "subtitle": "追踪任务执行进度、结果统计与失败重试。",
+    "empty": "暂无同步任务",
+    "drawerTitle": "同步任务详情",
+    "detailSummaryTitle": "执行统计",
+    "detailErrorsTitle": "异常记录",
+    "filters": {
+      "integration": "集成配置",
+      "moduleType": "模块类型",
+      "status": "任务状态",
+      "dateRange": "开始时间"
+    },
+    "placeholders": {
+      "integration": "请选择集成配置",
+      "moduleType": "请选择模块类型",
+      "status": "请选择任务状态",
+      "startDate": "开始日期",
+      "endDate": "结束日期"
+    },
+    "columns": {
+      "taskId": "任务编号",
+      "integration": "集成配置",
+      "jobType": "同步类型",
+      "status": "状态",
+      "progress": "进度",
+      "summary": "结果统计",
+      "startedAt": "开始时间",
+      "completedAt": "完成时间",
+      "actions": "操作",
+      "direction": "同步方向",
+      "duration": "执行耗时"
+    },
+    "summary": {
+      "total": "总数",
+      "succeeded": "成功",
+      "failed": "失败"
+    },
+    "errorColumns": {
+      "record": "记录",
+      "error": "错误信息"
+    }
+  },
   "validation": {
     "selectSystemType": "请选择系统类型",
     "enterSystemName": "请输入系统名称"
@@ -137,13 +292,17 @@
     "updatedSuccessfully": "更新成功",
     "createdSuccessfully": "创建成功",
     "operationFailed": "操作失败",
+    "statusUpdated": "状态更新成功",
     "deletedSuccessfully": "删除成功",
     "deleteFailed": "删除失败",
     "connectionTestSuccess": "连接测试成功",
     "connectionTestFailed": "连接测试失败",
     "syncTaskCreated": "同步任务创建成功",
     "syncFailed": "同步失败",
-    "loadLogsFailed": "加载日志失败"
+    "loadLogsFailed": "加载日志失败",
+    "loadJobsFailed": "加载同步任务失败",
+    "loadJobDetailFailed": "加载任务详情失败",
+    "jobRetried": "已创建重试任务",
+    "retryFailed": "任务重试失败"
   }
 }
-

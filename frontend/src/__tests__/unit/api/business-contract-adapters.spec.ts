@@ -14,7 +14,15 @@ vi.mock('@/utils/request', () => ({
   },
 }))
 
-const mockedRequest = vi.mocked(request)
+type MockedRequest = {
+  get: ReturnType<typeof vi.fn>
+  post: ReturnType<typeof vi.fn>
+  put: ReturnType<typeof vi.fn>
+  patch: ReturnType<typeof vi.fn>
+  delete: ReturnType<typeof vi.fn>
+}
+
+const mockedRequest = request as unknown as MockedRequest
 
 describe('business api contract adapters', () => {
   beforeEach(() => {
@@ -67,6 +75,173 @@ describe('business api contract adapters', () => {
       category_ids: ['cat-1'],
     })
     expect(result.taskId).toBe('run-123')
+  })
+
+  it('depreciationApi.listRecords should normalize depreciation list fields for the finance page', async () => {
+    mockedRequest.get.mockResolvedValue({
+      success: true,
+      data: {
+        count: 1,
+        next: null,
+        previous: null,
+        results: [
+          {
+            id: 'r1',
+            asset: 'asset-1',
+            assetCode: 'ASSET-001',
+            assetName: 'Laptop',
+            period: '2026-02',
+            depreciationMethod: 'straight_line',
+            purchasePrice: '2000.00',
+            depreciationAmount: '100.00',
+            accumulatedAmount: '400.00',
+            netValue: '1600.00',
+            status: 'calculated',
+            statusDisplay: 'Calculated',
+          },
+        ],
+      },
+    })
+
+    const result = await depreciationApi.listRecords({
+      page: 1,
+      pageSize: 20,
+      assetKeyword: 'ASSET-001',
+      status: 'calculated',
+    })
+
+    expect(mockedRequest.get).toHaveBeenCalledWith('/system/objects/DepreciationRecord/', {
+      params: {
+        page: 1,
+        page_size: 20,
+        asset: 'ASSET-001',
+        status: 'calculated',
+      },
+    })
+    expect(result.results[0]).toMatchObject({
+      assetId: 'asset-1',
+      assetCode: 'ASSET-001',
+      assetName: 'Laptop',
+      purchasePrice: 2000,
+      depreciationAmount: 100,
+      accumulatedAmount: 400,
+      accumulatedDepreciation: 400,
+      netValue: 1600,
+      status: 'calculated',
+    })
+  })
+
+  it('depreciationApi.getReport should normalize report summary, category rows, and asset rows', async () => {
+    mockedRequest.get.mockResolvedValue({
+      success: true,
+      data: {
+        summary: {
+          totalRecords: 2,
+          totalDepreciationAmount: '300.00',
+          totalAccumulatedAmount: '700.00',
+          totalNetValue: '1300.00',
+          postedCount: 1,
+          calculatedCount: 1,
+          rejectedCount: 0,
+        },
+        categoryBreakdown: [
+          {
+            categoryName: 'IT Equipment',
+            categoryCode: 'IT',
+            recordCount: 2,
+            totalDepreciation: '300.00',
+            totalAccumulated: '700.00',
+            totalNet: '1300.00',
+          },
+        ],
+        byAsset: [
+          {
+            assetId: 'asset-1',
+            assetCode: 'ASSET-001',
+            assetName: 'Laptop',
+            categoryName: 'IT Equipment',
+            purchasePrice: '2000.00',
+            currentDepreciation: '300.00',
+            accumulatedDepreciation: '700.00',
+            netValue: '1300.00',
+          },
+        ],
+      },
+    })
+
+    const result = await depreciationApi.getReport({ period: '2026-02' })
+
+    expect(mockedRequest.get).toHaveBeenCalledWith('/system/objects/DepreciationRecord/report/', {
+      params: {
+        period: '2026-02',
+      },
+    })
+    expect(result).toMatchObject({
+      period: '2026-02',
+      summary: {
+        assetCount: 2,
+        originalValue: 2000,
+        currentAmount: 300,
+        accumulatedAmount: 700,
+        netValue: 1300,
+        postedCount: 1,
+        calculatedCount: 1,
+        rejectedCount: 0,
+      },
+      byCategory: [
+        {
+          categoryId: 'IT',
+          categoryName: 'IT Equipment',
+          assetCount: 2,
+          originalValue: 2000,
+          currentDepreciation: 300,
+          accumulatedDepreciation: 700,
+          netValue: 1300,
+        },
+      ],
+      byAsset: [
+        {
+          assetId: 'asset-1',
+          assetCode: 'ASSET-001',
+          assetName: 'Laptop',
+          categoryName: 'IT Equipment',
+          purchasePrice: 2000,
+          currentDepreciation: 300,
+          accumulatedDepreciation: 700,
+          netValue: 1300,
+          depreciationRate: 0,
+        },
+      ],
+    })
+  })
+
+  it('depreciationApi.batchPost should normalize batch summary counts', async () => {
+    mockedRequest.post.mockResolvedValue({
+      success: false,
+      summary: {
+        total: 2,
+        succeeded: 1,
+        failed: 1,
+      },
+      results: [
+        { id: 'r1', success: true },
+        { id: 'r2', success: false, error: 'Record is already posted' },
+      ],
+    })
+
+    const result = await depreciationApi.batchPost(['r1', 'r2'])
+
+    expect(mockedRequest.post).toHaveBeenCalledWith('/system/objects/DepreciationRecord/batch_post/', {
+      ids: ['r1', 'r2'],
+    })
+    expect(result).toEqual({
+      success: 1,
+      failed: 1,
+      results: [
+        { id: 'r1', success: true },
+        { id: 'r2', success: false, error: 'Record is already posted' },
+      ],
+    })
   })
 
   it('integrationConfigApi.list should return camelized result items', async () => {

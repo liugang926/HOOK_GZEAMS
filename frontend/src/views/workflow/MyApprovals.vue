@@ -118,6 +118,9 @@ interface TaskSummary {
   pendingCount: number
   overdueCount: number
   completedTodayCount: number
+  pending_count?: number
+  overdue_count?: number
+  completed_today_count?: number
 }
 
 const activeTab = ref('pending')
@@ -131,21 +134,40 @@ const { t } = useI18n()
 const pendingListRef = ref()
 const overdueListRef = ref()
 
+const normalizeTaskSummary = (summary: Record<string, any> | undefined, fallback: TaskSummary): TaskSummary => {
+  const pendingCount = Number(summary?.pendingCount ?? summary?.pending_count ?? fallback.pendingCount)
+  const overdueCount = Number(summary?.overdueCount ?? summary?.overdue_count ?? fallback.overdueCount)
+  const completedTodayCount = Number(
+    summary?.completedTodayCount ??
+      summary?.completed_today_count ??
+      fallback.completedTodayCount
+  )
+
+  return {
+    pendingCount,
+    overdueCount,
+    completedTodayCount,
+    pending_count: pendingCount,
+    overdue_count: overdueCount,
+    completed_today_count: completedTodayCount
+  }
+}
+
 // Load tasks from API
 const loadTasks = async () => {
   loading.value = true
   try {
-    const data = await workflowNodeApi.getMyTasks() as MyTasksResponse
+    const data = await workflowNodeApi.getMyTasks() as MyTasksResponse & Record<string, any>
 
     // Update tasks
-    pendingTasks.value = data.pending || []
+    pendingTasks.value = data.pending || data.results || []
     overdueTasks.value = data.overdue || []
-    completedTasks.value = data.completedToday || []
-    taskSummary.value = data.summary || {
-      pendingCount: (data.pending || []).length,
-      overdueCount: (data.overdue || []).length,
-      completedTodayCount: (data.completedToday || []).length
-    }
+    completedTasks.value = data.completedToday || data.completed_today || []
+    taskSummary.value = normalizeTaskSummary(data.summary, {
+      pendingCount: pendingTasks.value.length,
+      overdueCount: overdueTasks.value.length,
+      completedTodayCount: completedTasks.value.length
+    })
   } catch (e: any) {
     console.error('Failed to load tasks:', e)
     ElMessage.error(e.message || t('workflow.messages.loadFailed'))

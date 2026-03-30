@@ -340,7 +340,7 @@ class SyncService(BaseCRUDService):
         with transaction.atomic():
             if resolution == 'server_wins':
                 # Discard local changes
-                self.delete(conflict.offline_data.id, user=self.user)
+                conflict.offline_data.soft_delete(user=self.user)
             elif resolution == 'client_wins':
                 # Apply local changes
                 self._apply_local_data(conflict.offline_data)

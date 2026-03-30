@@ -13,6 +13,7 @@ from apps.workflows.services.notifications import (
     EnhancedNotificationService,
     enhanced_notification_service,
 )
+from apps.workflows.services.object_sla_binding_service import ObjectSLABindingService
 
 __all__ = [
     'WorkflowValidationService',
@@ -26,6 +27,7 @@ __all__ = [
     'onboarding_service',
     'EnhancedNotificationService',
     'enhanced_notification_service',
+    'ObjectSLABindingService',
 ]
 
 # Service aliases for convenience

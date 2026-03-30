@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { nextTick, markRaw } from 'vue'
 import DynamicTabs from '@/components/common/DynamicTabs.vue'
 import type { TabItem } from '@/types/common'
 
@@ -304,7 +304,7 @@ describe('DynamicTabs', () => {
   })
 
   it('should handle tab content as component', () => {
-    const MockComponent = { template: '<div>Mock Component</div>' }
+    const MockComponent = markRaw({ template: '<div>Mock Component</div>' })
 
     const tabsWithComponent: TabItem[] = [
       { id: 'tab1', name: 'Tab 1', title: 'Tab with Component', component: MockComponent, props: { test: 'value' } }

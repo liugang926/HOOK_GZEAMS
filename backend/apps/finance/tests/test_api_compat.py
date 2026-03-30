@@ -13,7 +13,7 @@ from apps.finance.models import FinanceVoucher, VoucherEntry
 from apps.finance.tasks import _create_failure_alert
 from apps.integration.models import IntegrationLog
 from apps.notifications.models import Notification
-from apps.organizations.models import Organization
+from apps.organizations.models import Department, Organization, UserDepartment
 
 
 class FinanceApiCompatTest(APITestCase):
@@ -28,6 +28,19 @@ class FinanceApiCompatTest(APITestCase):
             username=f'fin_user_{suffix}',
             password='pass123456',
             organization=self.org
+        )
+        self.department = Department.objects.create(
+            organization=self.org,
+            code=f'FIN_DEPT_{suffix}',
+            name='Finance Operations',
+            created_by=self.user,
+        )
+        UserDepartment.objects.create(
+            organization=self.org,
+            user=self.user,
+            department=self.department,
+            is_primary=True,
+            created_by=self.user,
         )
         UserOrganization.objects.create(
             user=self.user,
@@ -337,6 +350,45 @@ class FinanceApiCompatTest(APITestCase):
         self.assertTrue(generate_response.data['success'])
         self.assertEqual(generate_response.data['data']['business_type'], 'disposal')
 
+    def test_object_router_supports_department_filter(self):
+        other_user = User.objects.create_user(
+            username=f'fin_other_{uuid.uuid4().hex[:8]}',
+            password='pass123456',
+            organization=self.org,
+        )
+        other_department = Department.objects.create(
+            organization=self.org,
+            code=f'FIN_OTHER_{uuid.uuid4().hex[:8]}',
+            name='Other Department',
+            created_by=self.user,
+        )
+        UserDepartment.objects.create(
+            organization=self.org,
+            user=other_user,
+            department=other_department,
+            is_primary=True,
+            created_by=self.user,
+        )
+        FinanceVoucher.objects.create(
+            organization=self.org,
+            voucher_no=f'VCH-OTHER-{uuid.uuid4().hex[:8]}',
+            voucher_date=date.today(),
+            business_type='purchase',
+            summary='Other department voucher',
+            total_amount=Decimal('66.00'),
+            status='approved',
+            created_by=other_user,
+        )
+
+        response = self.client.get(f'/api/system/objects/FinanceVoucher/?department={self.department.id}')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data['data']['results']
+        returned_ids = {item['id'] for item in results}
+        self.assertIn(str(self.voucher.id), returned_ids)
+        self.assertIn(str(self.draft_voucher.id), returned_ids)
+        self.assertEqual(len(returned_ids), 2)
+
     def test_detail_action_uses_current_request_org_scope(self):
         first_response = self.client.post(
             f'/api/system/objects/FinanceVoucher/{self.voucher.id}/push/',
@@ -456,4 +508,3 @@ class FinanceApiCompatTest(APITestCase):
         self.assertIsNotNone(notification)
         self.assertEqual(notification.organization_id, self.org.id)
         self.assertEqual(notification.status, 'pending')
-

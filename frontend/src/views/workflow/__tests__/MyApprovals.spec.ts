@@ -173,7 +173,14 @@ describe('MyApprovals Page', () => {
 
       await new Promise(resolve => setTimeout(resolve, 100))
 
-      expect(vm(wrapper).taskSummary).toEqual(mockMyTasksData.summary)
+      expect(vm(wrapper).taskSummary).toEqual(expect.objectContaining({
+        pendingCount: 1,
+        overdueCount: 0,
+        completedTodayCount: 1,
+        pending_count: 1,
+        overdue_count: 0,
+        completed_today_count: 1
+      }))
     })
   })
 

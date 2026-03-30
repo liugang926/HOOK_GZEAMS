@@ -174,4 +174,42 @@ describe('useBaseDetailPageRelations', () => {
     expect(relations.lineItemRelations.value.map((item) => item.code)).toEqual(['items'])
     expect(relations.visibleReverseRelations.value.map((item) => item.code)).toEqual(['comments'])
   })
+
+  it('filters audit relations out of Related when metadata marks them as history/log sources', () => {
+    const runtimeRelations = ref([
+      {
+        code: 'configuration_changes',
+        label: 'Configuration Changes',
+        displayMode: 'tab_readonly' as const,
+        displayTier: 'L2' as const,
+        targetObjectRole: 'log',
+        extraConfig: {
+          presentationZone: 'history'
+        },
+        sortOrder: 1
+      },
+      {
+        code: 'attachments',
+        label: 'Attachments',
+        displayMode: 'tab_readonly' as const,
+        displayTier: 'L2' as const,
+        sortOrder: 2
+      }
+    ])
+
+    const relations = useBaseDetailPageRelations({
+      props: {
+        data: { id: 'asset-1' },
+        objectCode: 'Asset',
+        reverseRelations: [],
+        showRelatedObjects: true,
+        resolveRuntimeRelations: false,
+        relationGroupScopeId: 'asset-1'
+      },
+      runtimeRelations
+    })
+
+    expect(relations.lineItemRelations.value).toEqual([])
+    expect(relations.visibleReverseRelations.value.map((item) => item.code)).toEqual(['attachments'])
+  })
 })

@@ -14,6 +14,7 @@ from .operation_service import (
     AssetReturnService,
     AssetLoanService,
 )
+from .tag_service import AssetTagRelationService, AssetTagService, TagGroupService
 
 __all__ = [
     'AssetCategoryService',
@@ -25,4 +26,7 @@ __all__ = [
     'AssetTransferService',
     'AssetReturnService',
     'AssetLoanService',
+    'TagGroupService',
+    'AssetTagService',
+    'AssetTagRelationService',
 ]

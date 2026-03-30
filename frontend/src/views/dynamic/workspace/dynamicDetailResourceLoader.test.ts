@@ -34,6 +34,12 @@ const defaultWorkbench: RuntimeWorkbench = {
   },
   detailPanels: [],
   asyncIndicators: [],
+  summaryCards: [],
+  queuePanels: [],
+  exceptionPanels: [],
+  closurePanel: null,
+  slaIndicators: [],
+  recommendedActions: [],
 }
 
 const documentPayload: AggregateDocumentResponse = {

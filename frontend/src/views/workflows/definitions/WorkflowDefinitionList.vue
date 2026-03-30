@@ -17,7 +17,10 @@
                 <el-icon><Search /></el-icon>
               </template>
             </el-input>
-            <el-button type="primary" @click="openCreatePage">
+            <el-button
+              type="primary"
+              @click="openCreatePage"
+            >
               <el-icon><Plus /></el-icon>
               新建工作流
             </el-button>
@@ -33,12 +36,26 @@
       </template>
 
       <!-- Statistics -->
-      <el-row :gutter="16" class="statistics-row">
-        <el-col :span="6" v-for="stat in statistics" :key="stat.key">
-          <el-card class="stat-card" shadow="never">
+      <el-row
+        :gutter="16"
+        class="statistics-row"
+      >
+        <el-col
+          v-for="stat in statistics"
+          :key="stat.key"
+          :span="6"
+        >
+          <el-card
+            class="stat-card"
+            shadow="never"
+          >
             <div class="stat-content">
-              <div class="stat-value">{{ stat.value }}</div>
-              <div class="stat-label">{{ stat.label }}</div>
+              <div class="stat-value">
+                {{ stat.value }}
+              </div>
+              <div class="stat-label">
+                {{ stat.label }}
+              </div>
             </div>
           </el-card>
         </el-col>
@@ -46,22 +63,53 @@
 
       <!-- Filters -->
       <div class="filter-section">
-        <el-form :inline="true" class="filter-form">
+        <el-form
+          :inline="true"
+          class="filter-form"
+        >
           <el-form-item label="状态">
-            <el-select v-model="filters.status" placeholder="选择状态" clearable @change="handleFilterChange">
-              <el-option label="草稿" value="draft" />
-              <el-option label="已发布" value="published" />
+            <el-select
+              v-model="filters.status"
+              placeholder="选择状态"
+              clearable
+              @change="handleFilterChange"
+            >
+              <el-option
+                label="草稿"
+                value="draft"
+              />
+              <el-option
+                label="已发布"
+                value="published"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="类型">
-            <el-select v-model="filters.type" placeholder="选择类型" clearable @change="handleFilterChange">
-              <el-option label="审批流程" value="approval" />
-              <el-option label="数据流转" value="data_flow" />
-              <el-option label="通知流程" value="notification" />
+            <el-select
+              v-model="filters.type"
+              placeholder="选择类型"
+              clearable
+              @change="handleFilterChange"
+            >
+              <el-option
+                label="审批流程"
+                value="approval"
+              />
+              <el-option
+                label="数据流转"
+                value="data_flow"
+              />
+              <el-option
+                label="通知流程"
+                value="notification"
+              />
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="fetchDefinitions">
+            <el-button
+              type="primary"
+              @click="fetchDefinitions"
+            >
               <el-icon><Refresh /></el-icon>
               刷新
             </el-button>
@@ -77,36 +125,86 @@
         border
         @selection-change="handleSelectionChange"
       >
-        <el-table-column type="selection" width="55" />
-        <el-table-column prop="code" label="编号" width="120" />
-        <el-table-column prop="name" label="名称" min-width="150" />
-        <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="category" label="分类" width="100" />
-        <el-table-column prop="type" label="类型" width="100">
+        <el-table-column
+          type="selection"
+          width="55"
+        />
+        <el-table-column
+          prop="code"
+          label="编号"
+          width="120"
+        />
+        <el-table-column
+          prop="name"
+          label="名称"
+          min-width="150"
+        />
+        <el-table-column
+          prop="description"
+          label="描述"
+          min-width="200"
+          show-overflow-tooltip
+        />
+        <el-table-column
+          prop="category"
+          label="分类"
+          width="100"
+        />
+        <el-table-column
+          prop="type"
+          label="类型"
+          width="100"
+        >
           <template #default="{ row }">
             <el-tag :type="getTypeTagType(row.type)">
               {{ getTypeLabel(row.type) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="100"
+        >
           <template #default="{ row }">
             <el-tag :type="row.status === 'published' ? 'success' : 'warning'">
               {{ row.status === 'published' ? '已发布' : '草稿' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="version" label="版本" width="80" />
-        <el-table-column prop="createdAt" label="创建时间" width="160">
+        <el-table-column
+          prop="version"
+          label="版本"
+          width="80"
+        />
+        <el-table-column
+          prop="createdAt"
+          label="创建时间"
+          width="160"
+        >
           <template #default="{ row }">
             {{ formatDate(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column
+          label="操作"
+          width="200"
+          fixed="right"
+        >
           <template #default="{ row }">
             <el-button-group>
-              <el-button size="small" @click="viewDefinition(row)">查看</el-button>
-              <el-button size="small" @click="editDefinition(row)">编辑</el-button>
+              <el-button
+                size="small"
+                @click="viewDefinition(row)"
+              >
+                查看
+              </el-button>
+              <el-button
+                size="small"
+                @click="editDefinition(row)"
+              >
+                编辑
+              </el-button>
               <el-button
                 size="small"
                 :type="row.status === 'published' ? 'info' : 'primary'"

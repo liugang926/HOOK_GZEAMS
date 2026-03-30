@@ -9,6 +9,8 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 
 from apps.common.mixins.workflow_status import WorkflowStatusMixin
+from apps.organizations.models import Organization
+from apps.accounts.models import UserOrganization
 from apps.workflows.models import (
     WorkflowDefinition, WorkflowInstance, WorkflowTask, WorkflowApproval,
     WorkflowOperationLog
@@ -22,8 +24,21 @@ User = get_user_model()
 class IntegrationScenariosTest(APITestCase):
     """Real-world workflow integration scenarios"""
 
+    @staticmethod
+    def _read_key(payload, snake_key, camel_key=None, default=None):
+        candidate = camel_key or ''.join(
+            [snake_key.split('_')[0]] + [part.title() for part in snake_key.split('_')[1:]]
+        )
+        if snake_key in payload:
+            return payload.get(snake_key, default)
+        return payload.get(candidate, default)
+
     def setUp(self):
         """Set up test data"""
+        self.organization = Organization.objects.create(
+            name='Workflow Integration Org',
+            code='workflow-int-org'
+        )
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
@@ -47,9 +62,24 @@ class IntegrationScenariosTest(APITestCase):
             email='finance@example.com',
             password='financepass'
         )
+
+        for user in (self.user, self.manager, self.director, self.finance_user):
+            user.organization = self.organization
+            user.current_organization = self.organization
+            user.save(update_fields=['organization', 'current_organization'])
+            UserOrganization.objects.create(
+                user=user,
+                organization=self.organization,
+                role='member',
+                is_primary=True,
+            )
+
+        self.client.force_authenticate(user=self.user)
+        self.client.credentials(HTTP_X_ORGANIZATION_ID=str(self.organization.id))
         
         # Create workflow definition for testing
         self.workflow_definition = WorkflowDefinition.objects.create(
+            organization=self.organization,
             name='Multi-level Asset Approval',
             code='multi-level-asset-approval',
             version=1,
@@ -58,12 +88,19 @@ class IntegrationScenariosTest(APITestCase):
             graph_data={
                 'nodes': [
                     {
+                        'id': 'start_1',
+                        'type': 'start',
+                        'text': 'Start'
+                    },
+                    {
                         'id': '1',
                         'type': 'approval',
                         'text': 'Manager Approval',
                         'properties': {
-                            'approver_type': 'user',
-                            'approver_config': {'role': 'manager'}
+                            'approveType': 'or',
+                            'approvers': [
+                                {'type': 'user', 'user_id': str(self.manager.id)}
+                            ]
                         }
                     },
                     {
@@ -71,13 +108,29 @@ class IntegrationScenariosTest(APITestCase):
                         'type': 'condition',
                         'text': 'Amount Check',
                         'properties': {
-                            'conditions': [
+                            'branches': [
                                 {
-                                    'field': 'amount',
-                                    'operator': 'gt',
-                                    'value': '10000'
+                                    'id': 'high_amount',
+                                    'conditions': [
+                                        {
+                                            'field': 'amount',
+                                            'operator': 'gt',
+                                            'value': '10000'
+                                        }
+                                    ]
+                                },
+                                {
+                                    'id': 'standard_amount',
+                                    'conditions': [
+                                        {
+                                            'field': 'amount',
+                                            'operator': 'lte',
+                                            'value': '10000'
+                                        }
+                                    ]
                                 }
-                            ]
+                            ],
+                            'defaultFlow': 'edge_3'
                         }
                     },
                     {
@@ -85,8 +138,10 @@ class IntegrationScenariosTest(APITestCase):
                         'type': 'approval',
                         'text': 'Finance Approval',
                         'properties': {
-                            'approver_type': 'user',
-                            'approver_config': {'role': 'finance'}
+                            'approveType': 'or',
+                            'approvers': [
+                                {'type': 'user', 'user_id': str(self.finance_user.id)}
+                            ]
                         }
                     },
                     {
@@ -94,12 +149,26 @@ class IntegrationScenariosTest(APITestCase):
                         'type': 'approval',
                         'text': 'Director Approval',
                         'properties': {
-                            'approver_type': 'user',
-                            'approver_config': {'role': 'director'}
+                            'approveType': 'or',
+                            'approvers': [
+                                {'type': 'user', 'user_id': str(self.director.id)}
+                            ]
                         }
+                    },
+                    {
+                        'id': 'end_1',
+                        'type': 'end',
+                        'text': 'End'
                     }
                 ],
                 'edges': [
+                    {
+                        'id': 'edge_start',
+                        'sourceNodeId': 'start_1',
+                        'targetNodeId': '1',
+                        'type': 'polyline',
+                        'properties': {}
+                    },
                     {
                         'id': 'edge_1',
                         'sourceNodeId': '1',
@@ -112,19 +181,26 @@ class IntegrationScenariosTest(APITestCase):
                         'sourceNodeId': '2',
                         'targetNodeId': '3',
                         'type': 'polyline',
-                        'properties': {'condition': True}
+                        'properties': {'branchId': 'high_amount'}
                     },
                     {
                         'id': 'edge_3',
                         'sourceNodeId': '2',
                         'targetNodeId': '4',
                         'type': 'polyline',
-                        'properties': {'condition': False}
+                        'properties': {'branchId': 'standard_amount', 'isDefault': True}
                     },
                     {
                         'id': 'edge_4',
                         'sourceNodeId': '3',
                         'targetNodeId': '4',
+                        'type': 'polyline',
+                        'properties': {}
+                    },
+                    {
+                        'id': 'edge_5',
+                        'sourceNodeId': '4',
+                        'targetNodeId': 'end_1',
                         'type': 'polyline',
                         'properties': {}
                     }
@@ -161,7 +237,7 @@ class IntegrationScenariosTest(APITestCase):
         
         # Step 1: Manager approval
         manager_task = WorkflowTask.objects.filter(
-            workflow_instance=workflow_instance,
+            instance=workflow_instance,
             node_id='1'
         ).first()
         
@@ -175,11 +251,11 @@ class IntegrationScenariosTest(APITestCase):
         self.assertTrue(success, f"Manager approval failed: {error}")
         
         manager_task.refresh_from_db()
-        self.assertEqual(manager_task.status, 'completed')
+        self.assertEqual(manager_task.status, WorkflowTask.STATUS_APPROVED)
         
         # Step 2: Director approval (bypasses finance for amounts < 10K)
         director_task = WorkflowTask.objects.filter(
-            workflow_instance=workflow_instance,
+            instance=workflow_instance,
             node_id='4'
         ).first()
         
@@ -193,7 +269,7 @@ class IntegrationScenariosTest(APITestCase):
         self.assertTrue(success, f"Director approval failed: {error}")
         
         director_task.refresh_from_db()
-        self.assertEqual(director_task.status, 'completed')
+        self.assertEqual(director_task.status, WorkflowTask.STATUS_APPROVED)
         
         # Final state: workflow approved
         workflow_instance.refresh_from_db()
@@ -222,7 +298,7 @@ class IntegrationScenariosTest(APITestCase):
         
         # Step 1: Manager approval
         manager_task = WorkflowTask.objects.filter(
-            workflow_instance=workflow_instance,
+            instance=workflow_instance,
             node_id='1'
         ).first()
         
@@ -237,7 +313,7 @@ class IntegrationScenariosTest(APITestCase):
         
         # Step 2: Amount condition should route to finance approval (node 3)
         finance_task = WorkflowTask.objects.filter(
-            workflow_instance=workflow_instance,
+            instance=workflow_instance,
             node_id='3'
         ).first()
         
@@ -252,11 +328,11 @@ class IntegrationScenariosTest(APITestCase):
         self.assertTrue(success, f"Finance approval failed: {error}")
         
         finance_task.refresh_from_db()
-        self.assertEqual(finance_task.status, 'completed')
+        self.assertEqual(finance_task.status, WorkflowTask.STATUS_APPROVED)
         
         # Step 4: Director approval
         director_task = WorkflowTask.objects.filter(
-            workflow_instance=workflow_instance,
+            instance=workflow_instance,
             node_id='4'
         ).first()
         
@@ -284,7 +360,7 @@ class IntegrationScenariosTest(APITestCase):
             initiator=self.user,
             variables={
                 'asset_name': 'iPad Pro',
-                'amount': '1200',
+                'amount': '12000',
                 'department': 'Marketing',
                 'purpose': 'Client presentations',
                 'notes': 'iPad for client meetings'
@@ -295,7 +371,7 @@ class IntegrationScenariosTest(APITestCase):
         
         # Step 1: Manager approval (should see all fields)
         manager_task = WorkflowTask.objects.filter(
-            workflow_instance=workflow_instance,
+            instance=workflow_instance,
             node_id='1'
         ).first()
         
@@ -306,7 +382,9 @@ class IntegrationScenariosTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         manager_data = response.json().get('data', {})
-        manager_permissions = manager_data.get('form_permissions', {})
+        manager_permissions = self._read_key(
+            manager_data, 'form_permissions', 'formPermissions', {}
+        )
         
         # Manager should see all fields
         self.assertEqual(manager_permissions.get('amount'), 'read_only')
@@ -323,7 +401,7 @@ class IntegrationScenariosTest(APITestCase):
         
         # Step 2: Finance approval (should see department as hidden)
         finance_task = WorkflowTask.objects.filter(
-            workflow_instance=workflow_instance,
+            instance=workflow_instance,
             node_id='3'
         ).first()
         
@@ -333,8 +411,12 @@ class IntegrationScenariosTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         finance_data = response.json().get('data', {})
-        finance_permissions = finance_data.get('form_permissions', {})
-        business_data = finance_data.get('business_data', {})
+        finance_permissions = self._read_key(
+            finance_data, 'form_permissions', 'formPermissions', {}
+        )
+        business_data = self._read_key(
+            finance_data, 'business_data', 'businessData', {}
+        )
         
         # Finance should not see department field (hidden)
         self.assertEqual(finance_permissions.get('department'), 'hidden')
@@ -348,13 +430,13 @@ class IntegrationScenariosTest(APITestCase):
         success, error = finance_task.complete(
             approved=True,
             comment='Budget approved',
-            data={'amount': '1200', 'notes': 'Budget approved'}
+            data={'amount': '12000', 'notes': 'Budget approved'}
         )
         self.assertTrue(success, f"Finance approval failed: {error}")
         
         # Step 3: Director approval (should see all fields except amount)
         director_task = WorkflowTask.objects.filter(
-            workflow_instance=workflow_instance,
+            instance=workflow_instance,
             node_id='4'
         ).first()
         
@@ -363,7 +445,12 @@ class IntegrationScenariosTest(APITestCase):
         response = self.client.get(f'/api/workflows/tasks/{director_task.id}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
-        director_permissions = response.json().get('data', {}).get('form_permissions', {})
+        director_permissions = self._read_key(
+            response.json().get('data', {}),
+            'form_permissions',
+            'formPermissions',
+            {},
+        )
         
         # Director should see amount as read_only, department as editable
         self.assertEqual(director_permissions.get('amount'), 'read_only')
@@ -375,6 +462,7 @@ class IntegrationScenariosTest(APITestCase):
         
         # Create workflow with parallel approval nodes
         parallel_workflow_definition = WorkflowDefinition.objects.create(
+            organization=self.organization,
             name='Parallel Approval Workflow',
             code='parallel-approval-workflow',
             version=1,
@@ -383,44 +471,47 @@ class IntegrationScenariosTest(APITestCase):
             graph_data={
                 'nodes': [
                     {
+                        'id': 'start_1',
+                        'type': 'start',
+                        'text': 'Start'
+                    },
+                    {
                         'id': '1',
                         'type': 'approval',
-                        'text': 'Team Approval',
+                        'text': 'Joint Approval',
                         'properties': {
-                            'approver_type': 'user',
-                            'approver_config': {'role': 'team'}
+                            'approveType': 'and',
+                            'approvers': [
+                                {'type': 'user', 'user_id': str(self.user.id)},
+                                {'type': 'user', 'user_id': str(self.manager.id)}
+                            ]
                         }
                     },
                     {
-                        'id': '2',
-                        'type': 'approval',
-                        'text': 'HR Approval',
-                        'properties': {
-                            'approver_type': 'user',
-                            'approver_config': {'role': 'hr'}
-                        }
+                        'id': 'end_1',
+                        'type': 'end',
+                        'text': 'End'
                     }
                 ],
                 'edges': [
                     {
-                        'id': 'edge_1',
-                        'sourceNodeId': '1',
-                        'targetNodeId': 'end',
+                        'id': 'edge_start',
+                        'sourceNodeId': 'start_1',
+                        'targetNodeId': '1',
                         'type': 'polyline',
                         'properties': {}
                     },
                     {
-                        'id': 'edge_2',
-                        'sourceNodeId': '2',
-                        'targetNodeId': 'end',
+                        'id': 'edge_end',
+                        'sourceNodeId': '1',
+                        'targetNodeId': 'end_1',
                         'type': 'polyline',
                         'properties': {}
                     }
                 ]
             },
             form_permissions={
-                '1': {'amount': 'read_only', 'department': 'editable'},
-                '2': {'amount': 'editable', 'department': 'read_only'}
+                '1': {'amount': 'read_only', 'department': 'editable'}
             }
         )
         
@@ -444,13 +535,15 @@ class IntegrationScenariosTest(APITestCase):
         
         # Step 1: Create two parallel approval tasks
         team_task = WorkflowTask.objects.filter(
-            workflow_instance=workflow_instance,
-            node_id='1'
+            instance=workflow_instance,
+            node_id='1',
+            assignee=self.user
         ).first()
         
         hr_task = WorkflowTask.objects.filter(
-            workflow_instance=workflow_instance,
-            node_id='2'
+            instance=workflow_instance,
+            node_id='1',
+            assignee=self.manager
         ).first()
         
         # Both approvers can work on their tasks independently
@@ -471,8 +564,8 @@ class IntegrationScenariosTest(APITestCase):
         # Both tasks completed
         team_task.refresh_from_db()
         hr_task.refresh_from_db()
-        self.assertEqual(team_task.status, 'completed')
-        self.assertEqual(hr_task.status, 'completed')
+        self.assertEqual(team_task.status, WorkflowTask.STATUS_APPROVED)
+        self.assertEqual(hr_task.status, WorkflowTask.STATUS_APPROVED)
         
         # Workflow should continue to completion
         workflow_instance.refresh_from_db()
@@ -483,6 +576,7 @@ class IntegrationScenariosTest(APITestCase):
         
         # Create workflow with timeout
         timeout_workflow_definition = WorkflowDefinition.objects.create(
+            organization=self.organization,
             name='Timeout Workflow',
             code='timeout-workflow',
             version=1,
@@ -491,20 +585,40 @@ class IntegrationScenariosTest(APITestCase):
             graph_data={
                 'nodes': [
                     {
+                        'id': 'start_1',
+                        'type': 'start',
+                        'text': 'Start'
+                    },
+                    {
                         'id': '1',
                         'type': 'approval',
                         'text': 'Quick Approval',
                         'properties': {
-                            'approver_type': 'user',
-                            'timeout_minutes': 5
+                            'approveType': 'or',
+                            'approvers': [
+                                {'type': 'user', 'user_id': str(self.user.id)}
+                            ],
+                            'timeout': 1
                         }
+                    },
+                    {
+                        'id': 'end_1',
+                        'type': 'end',
+                        'text': 'End'
                     }
                 ],
                 'edges': [
                     {
+                        'id': 'edge_start',
+                        'sourceNodeId': 'start_1',
+                        'targetNodeId': '1',
+                        'type': 'polyline',
+                        'properties': {}
+                    },
+                    {
                         'id': 'edge_1',
                         'sourceNodeId': '1',
-                        'targetNodeId': 'end',
+                        'targetNodeId': 'end_1',
                         'type': 'polyline',
                         'properties': {}
                     }
@@ -532,7 +646,7 @@ class IntegrationScenariosTest(APITestCase):
         
         # Get the task and set it to timeout by modifying created_at
         quick_task = WorkflowTask.objects.filter(
-            workflow_instance=workflow_instance,
+            instance=workflow_instance,
             node_id='1'
         ).first()
         
@@ -554,7 +668,15 @@ class IntegrationScenariosTest(APITestCase):
         quick_task.refresh_from_db()
         # Depending on implementation, task might be rejected or completed
         # This test verifies the timeout mechanism exists
-        self.assertIn(quick_task.status, ['completed', 'rejected', 'cancelled', 'terminated'])
+        self.assertIn(
+            quick_task.status,
+            [
+                WorkflowTask.STATUS_APPROVED,
+                WorkflowTask.STATUS_REJECTED,
+                WorkflowTask.STATUS_CANCELLED,
+                WorkflowTask.STATUS_TERMINATED,
+            ]
+        )
 
     def test_statistics_endpoints_accuracy(self):
         """Test that statistics endpoints return accurate data"""
@@ -580,7 +702,7 @@ class IntegrationScenariosTest(APITestCase):
             
             # Complete approval chain
             manager_task = WorkflowTask.objects.filter(
-                workflow_instance=workflow_instance,
+                instance=workflow_instance,
                 node_id='1'
             ).first()
             
@@ -595,7 +717,7 @@ class IntegrationScenariosTest(APITestCase):
             
             if i < 3:  # First 3 approved
                 director_task = WorkflowTask.objects.filter(
-                    workflow_instance=workflow_instance,
+                    instance=workflow_instance,
                     node_id='4'
                 ).first()
                 
@@ -609,7 +731,7 @@ class IntegrationScenariosTest(APITestCase):
                 self.assertTrue(success, f"Director approval {i} failed: {error}")
             else:  # Last 2 rejected
                 director_task = WorkflowTask.objects.filter(
-                    workflow_instance=workflow_instance,
+                    instance=workflow_instance,
                     node_id='4'
                 ).first()
                 
@@ -631,7 +753,8 @@ class IntegrationScenariosTest(APITestCase):
         
         # Verify counts are reasonable
         stats = data.get('data', {})
-        self.assertGreaterEqual(stats.get('total_instances', 0), 5)
+        total_instances = self._read_key(stats, 'total_instances', 'totalInstances', 0)
+        self.assertGreaterEqual(total_instances, 5)
         
         # Test trends endpoint
         response = self.client.get('/api/workflows/statistics/trends/')
@@ -647,7 +770,7 @@ class IntegrationScenariosTest(APITestCase):
         
         data = response.json()
         self.assertTrue(data.get('success', False))
-        self.assertIn('bottlenecks', data)
+        self.assertIn('bottlenecks', data.get('data', {}))
         
         # Test by-business lookup endpoint
         response = self.client.get(
@@ -661,8 +784,10 @@ class IntegrationScenariosTest(APITestCase):
         
         data = response.json()
         self.assertTrue(data.get('success', False))
-        results = data.get('data', [])
-        self.assertGreaterEqual(len(results), 1)
+        result = data.get('data')
+        self.assertIsInstance(result, dict)
+        business_id = self._read_key(result, 'business_id', 'businessId')
+        self.assertEqual(business_id, 'test-stat-0')
         
         response = self.client.get(
             '/api/workflows/instances/by-business/',
@@ -675,5 +800,4 @@ class IntegrationScenariosTest(APITestCase):
         
         data = response.json()
         self.assertTrue(data.get('success', False))
-        results = data.get('data', [])
-        self.assertEqual(len(results), 0)
+        self.assertIn(data.get('data'), (None, []))

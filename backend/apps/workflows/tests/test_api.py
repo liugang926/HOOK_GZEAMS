@@ -156,6 +156,8 @@ class WorkflowAPITestCase(TestCase):
             created_by=self.admin_user
         )
 
+        self._authenticate_with_org(self.initiator)
+
     def tearDown(self):
         """Clean up thread-local organization context after each test."""
         from apps.common.middleware import clear_current_organization
@@ -482,6 +484,72 @@ class WorkflowTaskAPITest(WorkflowAPITestCase):
         results = response.data['data']['results']
         for task in results:
             self.assertEqual(task['status'], 'pending')
+
+    def test_list_tasks_supports_assignee_filter_for_admin(self):
+        """Test list endpoint supports assignee filter for admin drilldown."""
+        other_task = WorkflowTask.objects.create(
+            organization=self.organization,
+            instance=self.instance,
+            node_id='approval_2',
+            node_name='Finance Approval',
+            node_type='approval',
+            assignee=self.initiator,
+            status=WorkflowTask.STATUS_PENDING,
+            created_by=self.initiator
+        )
+
+        self._authenticate_with_org(self.admin_user)
+        response = self.client.get(f'/api/workflows/tasks/?assignee={self.approver.id}&status=pending')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data['data']['results']
+        result_ids = [item['id'] for item in results]
+        self.assertEqual(result_ids, [str(self.task.id)])
+        self.assertNotIn(str(other_task.id), result_ids)
+
+    def test_list_tasks_supports_department_filter_for_admin(self):
+        """Test list endpoint supports department filter for admin drilldown."""
+        other_department = Department.objects.create(
+            code=f'OTHER_DEPT_{self.unique_suffix}',
+            organization=self.organization,
+            name='Other Department'
+        )
+        other_user = User.objects.create_user(
+            username=f'workflow_other_{self.unique_suffix}',
+            email=f'workflow_other_{self.unique_suffix}@test.com',
+            is_active=True
+        )
+        other_user.current_organization = self.organization
+        other_user.save()
+        UserOrganization.objects.create(
+            user=other_user,
+            organization=self.organization,
+            role='member',
+            is_primary=True
+        )
+        UserDepartment.objects.create(
+            user=other_user,
+            organization=self.organization,
+            department=other_department,
+            is_primary=True
+        )
+        WorkflowTask.objects.create(
+            organization=self.organization,
+            instance=self.instance,
+            node_id='approval_3',
+            node_name='Other Department Approval',
+            node_type='approval',
+            assignee=other_user,
+            status=WorkflowTask.STATUS_PENDING,
+            created_by=self.initiator
+        )
+
+        self._authenticate_with_org(self.admin_user)
+        response = self.client.get(f'/api/workflows/tasks/?department={self.department.id}&status=pending')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data['data']['results']
+        self.assertEqual([item['id'] for item in results], [str(self.task.id)])
 
     def test_list_my_tasks_grouped(self):
         """Test getting tasks grouped by status."""

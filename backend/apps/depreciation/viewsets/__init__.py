@@ -424,8 +424,8 @@ class DepreciationRecordViewSet(BaseModelViewSetWithBatch):
                 failed += 1
 
         response_data = {
-            'success': True,
-            'message': 'Batch post completed',
+            'success': failed == 0,
+            'message': 'Batch post completed' if failed == 0 else 'Batch post completed with partial failures',
             'summary': {
                 'total': len(ids),
                 'succeeded': succeeded,
@@ -452,14 +452,21 @@ class DepreciationRecordViewSet(BaseModelViewSetWithBatch):
         """
         period = request.query_params.get('period')
         category_code = request.query_params.get('category')
+        category_ids = request.query_params.getlist('category_ids') or request.query_params.getlist('categoryIds')
+        if not category_ids:
+            raw_category_ids = request.query_params.get('category_ids') or request.query_params.get('categoryIds')
+            if raw_category_ids:
+                category_ids = [item for item in str(raw_category_ids).split(',') if item]
 
         # Build base queryset
-        queryset = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
 
         if period:
             queryset = queryset.filter(period=period)
 
-        if category_code:
+        if category_ids:
+            queryset = queryset.filter(asset__asset_category_id__in=category_ids)
+        elif category_code:
             queryset = queryset.filter(asset__asset_category__code=category_code)
 
         # Calculate summary statistics
@@ -474,19 +481,34 @@ class DepreciationRecordViewSet(BaseModelViewSetWithBatch):
         )
 
         # Group by category
-        category_breakdown = queryset.values('asset__asset_category__name').annotate(
+        category_breakdown = queryset.values(
+            category_name=F('asset__asset_category__name'),
             category_code=F('asset__asset_category__code'),
+        ).annotate(
             record_count=Count('id'),
             total_depreciation=Sum('depreciation_amount'),
             total_accumulated=Sum('accumulated_amount'),
             total_net=Sum('net_value')
         ).order_by('-total_depreciation')
 
+        by_asset = queryset.values(
+            asset_id=F('asset_id'),
+            asset_code=F('asset__asset_code'),
+            asset_name=F('asset__asset_name'),
+            category_name=F('asset__asset_category__name'),
+            purchase_price=F('asset__purchase_price'),
+        ).annotate(
+            current_depreciation=Sum('depreciation_amount'),
+            accumulated_depreciation=Sum('accumulated_amount'),
+            net_value=Sum('net_value'),
+        ).order_by('asset_code')
+
         return Response({
             'success': True,
             'data': {
                 'summary': summary,
-                'category_breakdown': list(category_breakdown)
+                'category_breakdown': list(category_breakdown),
+                'by_asset': list(by_asset),
             }
         })
 
@@ -707,7 +729,15 @@ class DepreciationRunViewSet(BaseModelViewSetWithBatch):
 
         period = request.data.get('period')
         category_code = request.data.get('category')
+        category_ids = request.data.get('category_ids') or request.data.get('categoryIds') or []
+        asset_ids = request.data.get('asset_ids') or request.data.get('assetIds') or []
         notes = request.data.get('notes', '')
+
+        if isinstance(category_ids, str):
+            category_ids = [item for item in category_ids.split(',') if item]
+
+        if isinstance(asset_ids, str):
+            asset_ids = [item for item in asset_ids.split(',') if item]
 
         # Validate period format (YYYY-MM)
         if not period or len(period) != 7 or period[4] != '-':
@@ -750,11 +780,16 @@ class DepreciationRunViewSet(BaseModelViewSetWithBatch):
             is_deleted=False
         )
 
-        if category_code:
+        if category_ids:
+            assets = assets.filter(asset_category_id__in=category_ids)
+        elif category_code:
             assets = assets.filter(asset_category__code=category_code)
 
-        # Only process assets with original_cost and active status
-        assets = assets.exclude(original_cost__isnull=True).exclude(original_cost=0)
+        if asset_ids:
+            assets = assets.filter(id__in=asset_ids)
+
+        # Only process assets with purchase price and active status
+        assets = assets.exclude(purchase_price__isnull=True).exclude(purchase_price=0)
 
         records_created = 0
         total_depreciation = Decimal('0.00')
@@ -798,17 +833,17 @@ class DepreciationRunViewSet(BaseModelViewSetWithBatch):
 
                 # Calculate monthly depreciation using straight line method
                 monthly_rate = config.get_monthly_rate()
-                depreciation_amount = asset.original_cost * Decimal(str(monthly_rate))
+                depreciation_amount = asset.purchase_price * Decimal(str(monthly_rate))
 
                 # Calculate accumulated and net value
                 accumulated_amount = previous_accumulated + depreciation_amount
-                net_value = asset.original_cost - accumulated_amount
+                net_value = asset.purchase_price - accumulated_amount
 
                 # Ensure net value doesn't go below salvage value
-                salvage_value = asset.original_cost * (config.salvage_value_rate / Decimal('100'))
+                salvage_value = asset.purchase_price * (config.salvage_value_rate / Decimal('100'))
                 if net_value < salvage_value:
                     net_value = salvage_value
-                    depreciation_amount = salvage_value - (asset.original_cost - previous_accumulated)
+                    depreciation_amount = salvage_value - (asset.purchase_price - previous_accumulated)
                     accumulated_amount = previous_accumulated + depreciation_amount
 
                 # Create depreciation record

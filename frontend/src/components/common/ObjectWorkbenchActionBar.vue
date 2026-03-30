@@ -37,13 +37,16 @@
 import { ref, toRef } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
-import request from '@/utils/request'
 import { useObjectWorkbench } from '@/composables/useObjectWorkbench'
 import type { RuntimeWorkbench } from '@/types/runtime'
-
-type WorkbenchAction = Record<string, unknown> & {
-  code: string
-}
+import type { WorkbenchAction } from './workbenchHelpers'
+import {
+  executeWorkbenchAction,
+  resolveWorkbenchActionLabel,
+  resolveWorkbenchButtonType,
+  resolveWorkbenchConfirmMessage,
+  resolveWorkbenchSyncTaskId,
+} from './workbenchHelpers'
 
 interface SyncTaskState {
   syncTaskId: string
@@ -73,71 +76,9 @@ const { hasActions, primaryActions, secondaryActions } = useObjectWorkbench({
   recordData: toRef(props, 'recordData'),
 })
 
-const resolveButtonType = (action: WorkbenchAction) => {
-  const candidate = String(action.buttonType || action.button_type || 'default')
-  if (['primary', 'success', 'warning', 'danger', 'info', 'default'].includes(candidate)) {
-    return candidate as 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'default'
-  }
-  return 'default'
-}
-
-const resolveActionLabel = (action: WorkbenchAction) => {
-  const labelKey = String(action.labelKey || action.label_key || '').trim()
-  if (labelKey && te(labelKey)) {
-    return t(labelKey)
-  }
-  return String(action.label || action.code || '')
-}
-
-const resolveConfirmMessage = (action: WorkbenchAction) => {
-  const messageKey = String(action.confirmMessageKey || action.confirm_message_key || '').trim()
-  if (messageKey && te(messageKey)) {
-    return t(messageKey)
-  }
-  return String(action.confirmMessage || action.confirm_message || '').trim()
-}
-
-const resolveActionPath = (action: WorkbenchAction) => {
-  const raw = String(action.actionPath || action.action_path || action.code || '').trim()
-  return raw.replace(/^\/+/, '').replace(/\/+$/, '')
-}
-
-const resolveSyncTaskId = (payload: unknown) => {
-  if (!payload || typeof payload !== 'object') return ''
-  const candidate = payload as Record<string, unknown>
-  return String(candidate.syncTaskId || candidate.sync_task_id || '').trim()
-}
-
-const executeWorkbenchAction = async (action: WorkbenchAction) => {
-  const actionPath = resolveActionPath(action)
-  if (!actionPath) {
-    throw new Error('Workbench action path is required')
-  }
-
-  const method = String(action.method || 'post').toLowerCase()
-  const response = await request<{
-    success?: boolean
-    message?: string
-    data?: unknown
-    error?: unknown
-  }>({
-    url: `/system/objects/${props.objectCode}/${props.recordId}/${actionPath}/`,
-    method,
-    data: {},
-    unwrap: 'none',
-  })
-
-  const success = response.success !== false
-  if (!success) {
-    const error = response.error as Record<string, unknown> | undefined
-    throw new Error(String(error?.message || response.message || t('common.messages.operationFailed')))
-  }
-
-  return {
-    data: (response.data as Record<string, unknown> | undefined) || {},
-    message: String(response.message || ''),
-  }
-}
+const resolveButtonType = (action: WorkbenchAction) => resolveWorkbenchButtonType(action)
+const resolveActionLabel = (action: WorkbenchAction) => resolveWorkbenchActionLabel(action, t, te)
+const resolveConfirmMessage = (action: WorkbenchAction) => resolveWorkbenchConfirmMessage(action, t, te)
 
 const handleAction = async (action: WorkbenchAction) => {
   const confirmMessage = resolveConfirmMessage(action)
@@ -159,8 +100,12 @@ const handleAction = async (action: WorkbenchAction) => {
 
   loadingActionCode.value = action.code
   try {
-    const result = await executeWorkbenchAction(action)
-    const syncTaskId = resolveSyncTaskId(result.data)
+    const result = await executeWorkbenchAction({
+      action,
+      objectCode: props.objectCode,
+      recordId: props.recordId,
+    })
+    const syncTaskId = resolveWorkbenchSyncTaskId(result.data)
     const taskStateKey = String(props.taskStateKey || `${props.objectCode}:${props.recordId}`).trim()
 
     if (syncTaskId && props.startTaskPolling && taskStateKey) {

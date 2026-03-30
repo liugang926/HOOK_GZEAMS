@@ -9,6 +9,7 @@ from apps.inventory.viewsets import (
     InventoryScanViewSet,
     InventorySnapshotViewSet,
     InventoryDifferenceViewSet,
+    InventoryFollowUpViewSet,
 )
 
 app_name = 'inventory'
@@ -18,7 +19,8 @@ router.register(r'tasks', InventoryTaskViewSet, basename='inventory-task')
 router.register(r'scans', InventoryScanViewSet, basename='inventory-scan')
 router.register(r'snapshots', InventorySnapshotViewSet, basename='inventory-snapshot')
 router.register(r'differences', InventoryDifferenceViewSet, basename='inventory-difference')
+router.register(r'follow-ups', InventoryFollowUpViewSet, basename='inventory-follow-up')
 
 urlpatterns = [
-    path('inventory/', include(router.urls)),
+    path('', include(router.urls)),
 ]

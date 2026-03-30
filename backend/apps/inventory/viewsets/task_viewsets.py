@@ -17,6 +17,7 @@ from apps.inventory.serializers import (
     InventoryTaskUpdateSerializer,
     InventoryTaskStartSerializer,
     InventoryTaskCompleteSerializer,
+    InventoryTaskExecutorSerializer,
 )
 from apps.inventory.filters import InventoryTaskFilter
 from apps.inventory.services import InventoryService
@@ -229,14 +230,22 @@ class InventoryTaskViewSet(BaseModelViewSetWithBatch):
             'differences': diff_summary,
         })
 
-    @action(detail=True, methods=['post'], url_path='executors')
+    @action(detail=True, methods=['get', 'post'], url_path='executors')
     def add_executors(self, request, pk=None):
         """
-        Add executors to an inventory task.
+        List or add executors for an inventory task.
 
+        GET /api/inventory/tasks/{id}/executors/
         POST /api/inventory/tasks/{id}/executors/
         """
         task = self.get_object()
+        service = InventoryService()
+
+        if request.method.lower() == 'get':
+            executors = service.get_task_executors(str(task.id))
+            serializer = InventoryTaskExecutorSerializer(executors, many=True)
+            return success_response(data=serializer.data)
+
         executor_ids = request.data.get('executor_ids', [])
         primary_executor_id = request.data.get('primary_executor_id')
 
@@ -246,7 +255,6 @@ class InventoryTaskViewSet(BaseModelViewSetWithBatch):
                 message=_('Executor IDs are required.')
             )
 
-        service = InventoryService()
         try:
             executors = service.add_executors_to_task(
                 str(task.id),
@@ -280,6 +288,25 @@ class InventoryTaskViewSet(BaseModelViewSetWithBatch):
             return error_response(
                 code='VALIDATION_ERROR',
                 message=_('Failed to remove executor.'),
+                details={'error': str(e)}
+            )
+
+    @action(detail=True, methods=['get'], url_path='executors/progress')
+    def executor_progress(self, request, pk=None):
+        """
+        Return per-executor progress rows for an inventory task.
+
+        GET /api/inventory/tasks/{id}/executors/progress/
+        """
+        task = self.get_object()
+        service = InventoryService()
+        try:
+            progress_rows = service.get_executor_progress(str(task.id))
+            return success_response(data=progress_rows)
+        except Exception as e:
+            return error_response(
+                code='SERVER_ERROR',
+                message=_('Failed to load executor progress.'),
                 details={'error': str(e)}
             )
 

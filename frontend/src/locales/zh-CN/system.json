@@ -254,6 +254,81 @@
             }
         }
     },
+    "tag": {
+        "title": "标签管理",
+        "create": "新建标签",
+        "edit": "编辑标签",
+        "columns": {
+            "name": "标签",
+            "bizType": "业务对象",
+            "color": "颜色",
+            "usageCount": "关联数量",
+            "createdAt": "创建时间"
+        },
+        "search": {
+            "keyword": "关键词",
+            "keywordPlaceholder": "搜索标签名称、描述或业务对象编码",
+            "usageStatus": "使用状态",
+            "used": "已使用",
+            "unused": "未使用"
+        },
+        "actions": {
+            "manageAssets": "管理资产",
+            "viewRecords": "查看记录",
+            "batchManageAssets": "批量关联资产"
+        },
+        "form": {
+            "name": "标签名称",
+            "namePlaceholder": "请输入标签名称",
+            "color": "标签颜色",
+            "bizType": "业务对象",
+            "bizTypePlaceholder": "请选择业务对象类型",
+            "description": "标签描述",
+            "descriptionPlaceholder": "请输入标签描述"
+        },
+        "bizTypes": {
+            "all": "全部业务对象"
+        },
+        "statistics": {
+            "total": "标签总数",
+            "used": "已使用标签",
+            "unused": "未使用标签",
+            "assetScope": "资产范围标签"
+        },
+        "assignment": {
+            "title": "标签关联",
+            "summary": "将所选标签批量应用到资产，也可以按相同范围批量移除。",
+            "selectedTags": "已选标签",
+            "assets": "资产",
+            "assetPlaceholder": "按资产编码或名称搜索并选择资产"
+        },
+        "messages": {
+            "loadFailed": "加载标签数据失败",
+            "saveSuccess": "标签保存成功",
+            "saveFailed": "标签保存失败",
+            "deleteSuccess": "标签删除成功",
+            "deleteFailed": "标签删除失败",
+            "confirmDelete": "确定删除标签“{name}”吗？",
+            "confirmBatchDelete": "确定批量删除所选标签吗？",
+            "statsLoadFailed": "加载标签统计失败",
+            "optionsLoadFailed": "加载业务对象选项失败",
+            "selectAssets": "请先选择资产",
+            "applySuccess": "标签关联成功",
+            "applyFailed": "标签关联失败",
+            "removeSuccess": "标签移除成功",
+            "removeFailed": "标签移除失败",
+            "assetOnly": "当前页面仅支持为“资产”或“全部业务对象”标签管理资产关联。"
+        },
+        "validation": {
+            "nameRequired": "请输入标签名称",
+            "colorRequired": "请选择标签颜色"
+        }
+    },
+    "assetTagSelector": {
+        "placeholder": "请选择资产标签",
+        "loadFailed": "加载资产标签失败",
+        "ungrouped": "未分组"
+    },
     "branding": {
         "title": "品牌主题管理",
         "subtitle": "统一管理系统主题、应用名称、Logo、Favicon 和登录页视觉配置。",
@@ -354,6 +429,30 @@
             "loadFailed": "加载业务对象失败",
             "noBusinessFields": "该对象布局未配置业务字段",
             "loadMetadataFailed": "加载对象元数据失败"
+        },
+        "drilldown": {
+            "title": "当前正在查看下钻队列",
+            "description": "该列表由经营驾驶舱或工作台下钻进入，以下标签展示了当前生效的队列条件。",
+            "clear": "清空下钻条件",
+            "labels": {
+                "source": "来源",
+                "owner": "负责人",
+                "assignee": "处理人",
+                "department": "部门"
+            },
+            "flags": {
+                "unresolvedOnly": "仅看未结项",
+                "manualFollowUpOnly": "仅看人工跟进",
+                "overdueOnly": "仅看逾期"
+            },
+            "actions": {
+                "showUnresolvedOnly": "仅看未结项",
+                "showAllStatuses": "查看全部状态",
+                "showManualFollowUpOnly": "仅看人工跟进",
+                "showAllFollowUps": "查看全部跟进项",
+                "showOverdueOnly": "仅看逾期",
+                "showAllDeadlines": "查看全部时效"
+            }
         }
     },
     "pageLayout": {

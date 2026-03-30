@@ -9,6 +9,7 @@ Tests all notification ViewSet endpoints including:
 """
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from apps.notifications.models import Notification, NotificationTemplate
 from apps.accounts.models import User
@@ -20,7 +21,7 @@ class TestNotificationAPI:
 
     def test_list_notifications(self, auth_client, notification):
         """Test listing notifications."""
-        url = reverse('notification-list')
+        url = reverse('notifications:notification-list')
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -29,16 +30,15 @@ class TestNotificationAPI:
 
     def test_retrieve_notification(self, auth_client, notification):
         """Test retrieving a single notification."""
-        url = reverse('notification-detail', kwargs={'pk': notification.id})
+        url = reverse('notifications:notification-detail', kwargs={'pk': notification.id})
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['success'] is True
-        assert response.data['data']['id'] == str(notification.id)
+        assert response.data['id'] == str(notification.id)
 
     def test_mark_notification_as_read(self, auth_client, notification):
         """Test marking a notification as read."""
-        url = reverse('notification-mark-read', kwargs={'pk': notification.id})
+        url = reverse('notifications:notification-mark-read', kwargs={'pk': notification.id})
         response = auth_client.post(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -53,7 +53,7 @@ class TestNotificationAPI:
         # First mark as read
         notification.mark_as_read()
 
-        url = reverse('notification-mark-unread', kwargs={'pk': notification.id})
+        url = reverse('notifications:notification-mark-unread', kwargs={'pk': notification.id})
         response = auth_client.post(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -83,7 +83,7 @@ class TestNotificationAPI:
             channel='inbox'
         )
 
-        url = reverse('notification-mark-all-read')
+        url = reverse('notifications:notification-mark-all-read')
         response = auth_client.post(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -111,7 +111,7 @@ class TestNotificationAPI:
             read_at=timezone.now()
         )
 
-        url = reverse('notification-unread-count')
+        url = reverse('notifications:notification-unread-count')
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -130,7 +130,7 @@ class TestNotificationAPI:
             channel='inbox'
         )
 
-        url = reverse('notification-list')
+        url = reverse('notifications:notification-list')
         response = auth_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -147,7 +147,7 @@ class TestNotificationTemplateAPI:
 
     def test_list_templates(self, admin_client, notification_template):
         """Test listing notification templates."""
-        url = reverse('notificationtemplate-list')
+        url = reverse('notifications:notification-template-list')
         response = admin_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -155,7 +155,7 @@ class TestNotificationTemplateAPI:
 
     def test_create_template(self, admin_client, organization):
         """Test creating a notification template."""
-        url = reverse('notificationtemplate-list')
+        url = reverse('notifications:notification-template-list')
         data = {
             'template_code': 'test_template',
             'template_name': 'Test Template',
@@ -164,15 +164,14 @@ class TestNotificationTemplateAPI:
             'content_template': 'Test content: {{ var }}',
             'organization': str(organization.id)
         }
-        response = admin_client.post(url, data)
+        response = admin_client.post(url, data, format='json')
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data['success'] is True
-        assert response.data['data']['template_code'] == 'test_template'
+        assert response.data['template_code'] == 'test_template'
 
     def test_preview_template(self, admin_client, notification_template):
         """Test previewing a template."""
-        url = reverse('notificationtemplate-preview', kwargs={'pk': notification_template.id})
+        url = reverse('notifications:notification-template-preview', kwargs={'pk': notification_template.id})
         response = admin_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -183,7 +182,7 @@ class TestNotificationTemplateAPI:
         notification_template.is_system = True
         notification_template.save()
 
-        url = reverse('notificationtemplate-detail', kwargs={'pk': notification_template.id})
+        url = reverse('notifications:notification-template-detail', kwargs={'pk': notification_template.id})
         response = auth_client.delete(url)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN

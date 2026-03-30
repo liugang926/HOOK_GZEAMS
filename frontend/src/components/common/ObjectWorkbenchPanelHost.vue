@@ -14,6 +14,7 @@
         :is="resolvePanelComponent(panel)"
         v-if="isPanelActivated(panel)"
         :panel="panel"
+        :object-code="objectCode"
         :record-id="recordId"
         :record-data="recordData || null"
         :current-task="currentTask || null"
@@ -64,6 +65,7 @@ import request from '@/utils/request'
 import FinanceVoucherEntriesPanel from '@/components/finance/FinanceVoucherEntriesPanel.vue'
 import FinanceVoucherIntegrationLogsPanel from '@/components/finance/FinanceVoucherIntegrationLogsPanel.vue'
 import FinanceVoucherSyncStatusPanel from '@/components/finance/FinanceVoucherSyncStatusPanel.vue'
+import InventoryDifferenceClosurePanel from '@/components/inventory/InventoryDifferenceClosurePanel.vue'
 import AssetProjectAssetsPanel from '@/components/projects/AssetProjectAssetsPanel.vue'
 import AssetProjectMembersPanel from '@/components/projects/AssetProjectMembersPanel.vue'
 import AssetProjectOverviewPanel from '@/components/projects/AssetProjectOverviewPanel.vue'
@@ -124,6 +126,7 @@ const panelRegistry: Record<string, unknown> = {
   'finance-voucher-entries': FinanceVoucherEntriesPanel,
   'finance-voucher-integration-logs': FinanceVoucherIntegrationLogsPanel,
   'finance-voucher-sync-status': FinanceVoucherSyncStatusPanel,
+  'inventory-difference-closure': InventoryDifferenceClosurePanel,
   'asset-project-overview': AssetProjectOverviewPanel,
   'asset-project-assets': AssetProjectAssetsPanel,
   'asset-project-members': AssetProjectMembersPanel,

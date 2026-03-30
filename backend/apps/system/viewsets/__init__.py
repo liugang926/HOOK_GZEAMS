@@ -63,6 +63,7 @@ from apps.system.viewsets.translation import (
     LanguageViewSet,
     TranslationViewSet,
 )
+from apps.system.viewsets.tag_viewset import TagViewSet
 from apps.system.filters import (
     BusinessObjectFilter,
     FieldDefinitionFilter,
@@ -122,10 +123,17 @@ class BusinessObjectViewSet(BaseModelViewSetWithBatch):
             include_hardcoded=True,
             include_custom=True
         )
+        results = [*data.get('hardcoded', []), *data.get('custom', [])]
 
         return Response({
             'success': True,
-            'data': data
+            'data': {
+                **data,
+                'count': len(results),
+                'results': results,
+            },
+            'count': len(results),
+            'results': results,
         })
 
     def create(self, request, *args, **kwargs):
@@ -291,6 +299,24 @@ class BusinessObjectViewSet(BaseModelViewSetWithBatch):
         return Response({
             'success': True,
             'data': data
+        })
+
+    @action(detail=True, methods=['get'], url_path='fields')
+    def detail_fields(self, request, pk=None):
+        """Get field definitions for a specific business object by primary key."""
+        business_object = self.get_object()
+        fields = business_object.field_definitions.filter(is_deleted=False).order_by('sort_order', 'code')
+        serializer = FieldDefinitionDetailSerializer(fields, many=True)
+        results = serializer.data
+
+        return Response({
+            'success': True,
+            'data': {
+                'count': len(results),
+                'results': results,
+            },
+            'count': len(results),
+            'results': results,
         })
 
     @action(detail=False, methods=['get'], url_path='hardcoded')
@@ -493,10 +519,49 @@ class BusinessObjectViewSet(BaseModelViewSetWithBatch):
             'success': True,
             'data': {
                 'groups': FIELD_TYPE_GROUPS,
-                'all_types': [value for value, _ in field_type_choices],
+                'all_types': sorted({value for value, _ in field_type_choices} | set(TYPE_CONFIG.keys())),
                 'type_config': TYPE_CONFIG
             }
         })
+
+    @action(detail=True, methods=['get'], url_path='layouts')
+    def layouts(self, request, pk=None):
+        """Get active layouts for a specific business object by primary key."""
+        business_object = self.get_object()
+        org_id = getattr(request, 'organization_id', None)
+        queryset = PageLayout.objects.filter(
+            business_object=business_object,
+            is_active=True,
+            is_deleted=False,
+        ).order_by('layout_type', 'layout_code', '-updated_at')
+        if org_id:
+            queryset = queryset.filter(Q(organization_id=org_id) | Q(organization__isnull=True))
+
+        serializer = PageLayoutSerializer(queryset, many=True)
+        results = serializer.data
+        return Response({
+            'success': True,
+            'data': {
+                'count': len(results),
+                'results': results,
+            },
+            'count': len(results),
+            'results': results,
+        })
+
+    @action(detail=False, methods=['get'])
+    def deleted(self, request, *args, **kwargs):
+        """Expose deleted business objects with legacy top-level results compatibility."""
+        response = super().deleted(request, *args, **kwargs)
+        payload = getattr(response, 'data', None)
+        if not isinstance(payload, dict):
+            return response
+
+        data = payload.get('data')
+        if isinstance(data, dict) and 'results' in data:
+            payload.setdefault('count', data.get('count', len(data.get('results', []))))
+            payload.setdefault('results', data.get('results', []))
+        return response
 
     @action(detail=True, methods=['get'], url_path='sync-fields')
     def sync_fields(self, request, pk=None):

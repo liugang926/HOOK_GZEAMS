@@ -5,6 +5,8 @@ import uuid
 from datetime import datetime
 from typing import List, Dict, Optional, Any
 from django.db import transaction
+from django.db.models import Count, Max, Q
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 
@@ -182,7 +184,7 @@ class InventoryService(BaseCRUDService):
             raise ValidationError(_("Only draft tasks can be started."))
 
         task.status = InventoryTask.STATUS_IN_PROGRESS
-        task.started_at = datetime.utcnow()
+        task.started_at = timezone.now()
         task.save(update_fields=['status', 'started_at'])
 
         return task
@@ -218,7 +220,7 @@ class InventoryService(BaseCRUDService):
 
             # Update task status
             task.status = InventoryTask.STATUS_COMPLETED
-            task.completed_at = datetime.utcnow()
+            task.completed_at = timezone.now()
             if notes:
                 task.notes = (task.notes or '') + f"\n\nCompletion: {notes}"
             task.save(update_fields=['status', 'completed_at', 'notes'])
@@ -379,6 +381,83 @@ class InventoryService(BaseCRUDService):
             'scan_count': scans.count(),
             'last_scan_at': scans.order_by('-scanned_at').first().scanned_at if scans.exists() else None,
         }
+
+    def get_task_executors(self, task_id: str) -> List[InventoryTaskExecutor]:
+        """Return active executor relations for a task."""
+        self.get(task_id)
+        return list(
+            InventoryTaskExecutor.objects.filter(
+                task_id=task_id,
+                is_deleted=False,
+            ).select_related('executor').order_by('-is_primary', 'created_at')
+        )
+
+    def get_executor_progress(self, task_id: str) -> List[Dict[str, Any]]:
+        """Return per-executor progress derived from scan activity for a task."""
+        from apps.inventory.models import InventoryScan
+
+        task = self.get(task_id)
+        executors = self.get_task_executors(task_id)
+        total_assets = int(task.total_count or 0)
+
+        scan_rows = {
+            str(row['scanned_by_id']): row
+            for row in (
+                InventoryScan.objects.filter(
+                    task_id=task_id,
+                    is_deleted=False,
+                )
+                .values('scanned_by_id')
+                .annotate(
+                    scanned_count=Count('id'),
+                    abnormal_count=Count(
+                        'id',
+                        filter=~Q(scan_status=InventoryScan.STATUS_NORMAL),
+                    ),
+                    last_scanned_at=Max('scanned_at'),
+                )
+            )
+            if row.get('scanned_by_id')
+        }
+
+        progress_rows: List[Dict[str, Any]] = []
+        for relation in executors:
+            relation_key = str(relation.executor_id)
+            scan_summary = scan_rows.get(relation_key, {})
+            scanned_count = int(scan_summary.get('scanned_count') or relation.completed_count or 0)
+            abnormal_count = int(scan_summary.get('abnormal_count') or 0)
+            normal_count = max(scanned_count - abnormal_count, 0)
+            progress = round((scanned_count / total_assets) * 100, 2) if total_assets else 0
+
+            if task.status == InventoryTask.STATUS_COMPLETED and scanned_count > 0:
+                status = 'completed'
+            elif scanned_count > 0:
+                status = 'in_progress'
+            else:
+                status = 'pending'
+
+            executor_name = str(
+                relation.executor.get_full_name() or relation.executor.username or relation.executor.email or relation.executor_id
+            ).strip()
+
+            progress_rows.append({
+                'assignment_id': str(relation.id),
+                'assignee_id': str(relation.executor_id),
+                'assignee_name': executor_name,
+                'total_assets': total_assets,
+                'scanned_count': scanned_count,
+                'normal_count': normal_count,
+                'abnormal_count': abnormal_count,
+                'progress': progress,
+                'status': status,
+                'last_scanned_at': (
+                    scan_summary.get('last_scanned_at').isoformat()
+                    if scan_summary.get('last_scanned_at')
+                    else None
+                ),
+            })
+
+        return progress_rows
 
     def add_executors_to_task(
         self,

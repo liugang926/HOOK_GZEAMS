@@ -2209,6 +2209,52 @@ class Tag(BaseModel):
         return self.name
 
 
+class TagAssignment(BaseModel):
+    """
+    Tag assignment record for business object instances.
+
+    Stores many-to-many relations between tags and object records while keeping
+    the target business object code for efficient filtering.
+    """
+
+    tag = models.ForeignKey(
+        'Tag',
+        on_delete=models.CASCADE,
+        related_name='assignments',
+        db_comment='Assigned tag'
+    )
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        related_name='system_tag_assignments',
+        db_comment='Target model content type'
+    )
+    object_id = models.UUIDField(
+        db_index=True,
+        db_comment='Target record ID'
+    )
+    content_object = GenericForeignKey('content_type', 'object_id')
+    biz_type = models.CharField(
+        max_length=50,
+        db_index=True,
+        db_comment='Target business object code'
+    )
+
+    class Meta:
+        db_table = 'tag_assignments'
+        verbose_name = 'Tag Assignment'
+        verbose_name_plural = 'Tag Assignments'
+        unique_together = [['organization', 'tag', 'content_type', 'object_id']]
+        indexes = [
+            models.Index(fields=['organization', 'tag']),
+            models.Index(fields=['organization', 'biz_type']),
+            models.Index(fields=['organization', 'content_type', 'object_id']),
+        ]
+
+    def __str__(self):
+        return f'{self.tag_id}:{self.biz_type}:{self.object_id}'
+
+
 class Comment(BaseModel):
     """
     Comment - for adding comments/notes to business objects.
@@ -2744,6 +2790,74 @@ class ConfigImportLog(BaseModel):
 
     def __str__(self):
         return f"Import {self.package.name} v{self.package.version} @ {self.imported_at}"
+
+
+# =============================================================================
+# Closed-Loop Dashboard Snapshot Models
+# =============================================================================
+
+class ClosedLoopDashboardSnapshot(BaseModel):
+    """
+    Persisted closed-loop dashboard snapshots shared within an organization.
+
+    Snapshots are generated from server-side metrics at save time so the stored
+    payload remains a trustworthy audit artifact instead of a browser cache dump.
+    """
+
+    dashboard_code = models.CharField(
+        max_length=50,
+        default='closed_loop',
+        db_index=True,
+        db_comment='Dashboard identifier for future multi-dashboard snapshot support',
+    )
+    label = models.CharField(
+        max_length=120,
+        db_comment='Human-readable snapshot label',
+    )
+    window_key = models.CharField(
+        max_length=10,
+        default='30d',
+        db_comment='Closed-loop reporting window key',
+    )
+    object_codes = models.JSONField(
+        default=list,
+        blank=True,
+        db_comment='Filtered object codes included in this snapshot',
+    )
+    overview_payload = models.JSONField(
+        default=dict,
+        blank=True,
+        db_comment='Stored overview payload for the snapshot',
+    )
+    by_object_payload = models.JSONField(
+        default=list,
+        blank=True,
+        db_comment='Stored by-object payload for the snapshot',
+    )
+    queues_payload = models.JSONField(
+        default=list,
+        blank=True,
+        db_comment='Stored queue ranking payload for the snapshot',
+    )
+    bottlenecks_payload = models.JSONField(
+        default=list,
+        blank=True,
+        db_comment='Stored bottleneck payload for the snapshot',
+    )
+
+    class Meta:
+        db_table = 'closed_loop_dashboard_snapshots'
+        verbose_name = 'Closed-Loop Dashboard Snapshot'
+        verbose_name_plural = 'Closed-Loop Dashboard Snapshots'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['organization', 'dashboard_code', '-created_at']),
+            models.Index(fields=['organization', 'window_key', '-created_at']),
+            models.Index(fields=['created_by', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"{self.label} [{self.window_key}]"
 
 
 # =============================================================================

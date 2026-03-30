@@ -18,6 +18,7 @@ from .operation import (
     AssetLoanViewSet,
     LoanItemViewSet,
 )
+from .tag import AssetTagViewSet, TagGroupViewSet
 
 __all__ = [
     'AssetCategoryViewSet',
@@ -33,4 +34,6 @@ __all__ = [
     'ReturnItemViewSet',
     'AssetLoanViewSet',
     'LoanItemViewSet',
+    'TagGroupViewSet',
+    'AssetTagViewSet',
 ]

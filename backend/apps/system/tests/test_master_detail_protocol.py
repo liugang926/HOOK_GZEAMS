@@ -70,6 +70,31 @@ def test_hardcoded_sync_service_applies_master_detail_defaults_for_line_items():
 
 
 @pytest.mark.django_db
+def test_audit_log_catalog_defaults_follow_history_protocol():
+    hardcoded_objects = {
+        obj["code"]: obj
+        for obj in BusinessObjectService().get_all_objects(
+            include_hardcoded=True,
+            include_custom=False,
+        )["hardcoded"]
+    }
+
+    asset_status_log = hardcoded_objects["AssetStatusLog"]
+    assert asset_status_log["object_role"] == "log"
+    assert asset_status_log["is_menu_hidden"] is True
+    assert asset_status_log["is_top_level_navigable"] is False
+    assert asset_status_log["allow_standalone_query"] is True
+    assert asset_status_log["allow_standalone_route"] is False
+
+    configuration_change = hardcoded_objects["ConfigurationChange"]
+    assert configuration_change["object_role"] == "log"
+    assert configuration_change["is_menu_hidden"] is True
+    assert configuration_change["is_top_level_navigable"] is False
+    assert configuration_change["allow_standalone_query"] is True
+    assert configuration_change["allow_standalone_route"] is False
+
+
+@pytest.mark.django_db
 def test_business_object_can_persist_detail_role_protocol_flags(organization, django_user_model):
     user = django_user_model.objects.create_user(
         username="detail-owner",

@@ -14,8 +14,9 @@ from apps.insurance.models import (
     InsuranceCompany, InsurancePolicy, InsuredAsset,
     PremiumPayment, ClaimRecord, PolicyRenewal
 )
-from apps.organizations.models import Organization
+from apps.organizations.models import Department, Organization, UserDepartment
 from apps.accounts.models import User
+from apps.system.models import BusinessObject
 
 
 class InsuranceCompanyAPITest(APITestCase):
@@ -107,7 +108,28 @@ class InsurancePolicyAPITest(APITestCase):
             email=f"test{self.unique_suffix}@example.com",
             organization=self.organization
         )
+        self.department = Department.objects.create(
+            organization=self.organization,
+            code=f"INS_DEPT_{self.unique_suffix}",
+            name="Insurance Operations",
+            created_by=self.user
+        )
+        UserDepartment.objects.create(
+            organization=self.organization,
+            user=self.user,
+            department=self.department,
+            is_primary=True,
+            created_by=self.user
+        )
         self.client.force_authenticate(user=self.user)
+        BusinessObject.objects.get_or_create(
+            code='InsurancePolicy',
+            defaults={
+                'name': 'Insurance Policy',
+                'is_hardcoded': True,
+                'django_model_path': 'apps.insurance.models.InsurancePolicy',
+            },
+        )
         self.company = InsuranceCompany.objects.create(
             organization=self.organization,
             code=f"PICC_{self.unique_suffix}",
@@ -280,6 +302,54 @@ class InsurancePolicyAPITest(APITestCase):
         for payment in payments:
             self.assertEqual(float(payment.amount), 3000)
             self.assertEqual(payment.status, 'pending')
+
+    def test_object_router_supports_department_filter(self):
+        other_user = User.objects.create_user(
+            username=f"other_policy_{uuid.uuid4().hex[:8]}",
+            email=f"other_policy_{uuid.uuid4().hex[:8]}@example.com",
+            organization=self.organization
+        )
+        other_department = Department.objects.create(
+            organization=self.organization,
+            code=f"INS_OTHER_{uuid.uuid4().hex[:8]}",
+            name="Other Insurance Department",
+            created_by=self.user
+        )
+        UserDepartment.objects.create(
+            organization=self.organization,
+            user=other_user,
+            department=other_department,
+            is_primary=True,
+            created_by=self.user
+        )
+        own_policy = InsurancePolicy.objects.create(
+            organization=self.organization,
+            policy_no=f"POL-FILTER-{uuid.uuid4().hex[:8]}",
+            company=self.company,
+            insurance_type="property",
+            start_date="2026-01-01",
+            end_date="2026-12-31",
+            total_insured_amount=100000,
+            total_premium=5000,
+            created_by=self.user
+        )
+        InsurancePolicy.objects.create(
+            organization=self.organization,
+            policy_no=f"POL-OTHER-{uuid.uuid4().hex[:8]}",
+            company=self.company,
+            insurance_type="property",
+            start_date="2026-01-01",
+            end_date="2026-12-31",
+            total_insured_amount=100000,
+            total_premium=5000,
+            created_by=other_user
+        )
+
+        response = self.client.get(f'/api/system/objects/InsurancePolicy/?department={self.department.id}')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data['data']['results']
+        self.assertEqual([item['id'] for item in results], [str(own_policy.id)])
 
     def test_cancel_policy(self):
         """Test cancelling an active policy."""
@@ -576,7 +646,28 @@ class ClaimRecordAPITest(APITestCase):
             email=f"testclaim{self.unique_suffix}@example.com",
             organization=self.organization
         )
+        self.department = Department.objects.create(
+            organization=self.organization,
+            code=f"CLM_DEPT_{self.unique_suffix}",
+            name="Claim Operations",
+            created_by=self.user
+        )
+        UserDepartment.objects.create(
+            organization=self.organization,
+            user=self.user,
+            department=self.department,
+            is_primary=True,
+            created_by=self.user
+        )
         self.client.force_authenticate(user=self.user)
+        BusinessObject.objects.get_or_create(
+            code='ClaimRecord',
+            defaults={
+                'name': 'Claim Record',
+                'is_hardcoded': True,
+                'django_model_path': 'apps.insurance.models.ClaimRecord',
+            },
+        )
         self.company = InsuranceCompany.objects.create(
             organization=self.organization,
             code=f"PICC_CLAIM_{self.unique_suffix}",
@@ -745,3 +836,47 @@ class ClaimRecordAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['status'], 'paid')
         self.assertEqual(float(response.data['paid_amount']), 7500)
+
+    def test_object_router_supports_department_filter(self):
+        own_claim = ClaimRecord.objects.create(
+            organization=self.organization,
+            policy=self.policy,
+            incident_date=date.today(),
+            incident_type='damage',
+            incident_description='Own claim',
+            claimed_amount=1000,
+            created_by=self.user
+        )
+        other_user = User.objects.create_user(
+            username=f"other_claim_{uuid.uuid4().hex[:8]}",
+            email=f"other_claim_{uuid.uuid4().hex[:8]}@example.com",
+            organization=self.organization
+        )
+        other_department = Department.objects.create(
+            organization=self.organization,
+            code=f"CLM_OTHER_{uuid.uuid4().hex[:8]}",
+            name="Other Claims Department",
+            created_by=self.user
+        )
+        UserDepartment.objects.create(
+            organization=self.organization,
+            user=other_user,
+            department=other_department,
+            is_primary=True,
+            created_by=self.user
+        )
+        ClaimRecord.objects.create(
+            organization=self.organization,
+            policy=self.policy,
+            incident_date=date.today(),
+            incident_type='loss',
+            incident_description='Other claim',
+            claimed_amount=2000,
+            created_by=other_user
+        )
+
+        response = self.client.get(f'/api/system/objects/ClaimRecord/?department={self.department.id}')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data['data']['results']
+        self.assertEqual([item['id'] for item in results], [str(own_claim.id)])

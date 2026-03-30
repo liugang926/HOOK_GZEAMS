@@ -6,8 +6,14 @@
         <div class="card-header">
           <h2>待办任务</h2>
           <div class="header-actions">
-            <el-badge :value="unreadCount" class="badge">
-              <el-button type="primary" @click="openWorkflowCreate">
+            <el-badge
+              :value="unreadCount"
+              class="badge"
+            >
+              <el-button
+                type="primary"
+                @click="openWorkflowCreate"
+              >
                 <el-icon><Plus /></el-icon>
                 新建工作流
               </el-button>
@@ -17,12 +23,26 @@
       </template>
 
       <!-- Quick Stats -->
-      <el-row :gutter="16" class="stats-row">
-        <el-col :span="6" v-for="stat in taskStats" :key="stat.key">
-          <el-card class="stat-card" shadow="never">
+      <el-row
+        :gutter="16"
+        class="stats-row"
+      >
+        <el-col
+          v-for="stat in taskStats"
+          :key="stat.key"
+          :span="6"
+        >
+          <el-card
+            class="stat-card"
+            shadow="never"
+          >
             <div class="stat-content">
-              <div class="stat-value">{{ stat.value }}</div>
-              <div class="stat-label">{{ stat.label }}</div>
+              <div class="stat-value">
+                {{ stat.value }}
+              </div>
+              <div class="stat-label">
+                {{ stat.label }}
+              </div>
             </div>
           </el-card>
         </el-col>
@@ -30,33 +50,90 @@
 
       <!-- Filters -->
       <div class="filter-section">
-        <el-form :inline="true" class="filter-form">
+        <el-form
+          :inline="true"
+          class="filter-form"
+        >
           <el-form-item label="状态">
-            <el-select v-model="filters.status" placeholder="选择状态" clearable @change="handleFilterChange">
-              <el-option label="待处理" value="pending" />
-              <el-option label="进行中" value="in_progress" />
-              <el-option label="已批准" value="approved" />
-              <el-option label="已拒绝" value="rejected" />
-              <el-option label="已转交" value="transferred" />
+            <el-select
+              v-model="filters.status"
+              placeholder="选择状态"
+              clearable
+              @change="handleFilterChange"
+            >
+              <el-option
+                label="待处理"
+                value="pending"
+              />
+              <el-option
+                label="进行中"
+                value="in_progress"
+              />
+              <el-option
+                label="已批准"
+                value="approved"
+              />
+              <el-option
+                label="已拒绝"
+                value="rejected"
+              />
+              <el-option
+                label="已转交"
+                value="transferred"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="优先级">
-            <el-select v-model="filters.priority" placeholder="选择优先级" clearable @change="handleFilterChange">
-              <el-option label="紧急" value="urgent" />
-              <el-option label="高" value="high" />
-              <el-option label="中" value="normal" />
-              <el-option label="低" value="low" />
+            <el-select
+              v-model="filters.priority"
+              placeholder="选择优先级"
+              clearable
+              @change="handleFilterChange"
+            >
+              <el-option
+                label="紧急"
+                value="urgent"
+              />
+              <el-option
+                label="高"
+                value="high"
+              />
+              <el-option
+                label="中"
+                value="normal"
+              />
+              <el-option
+                label="低"
+                value="low"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="截止时间">
-            <el-select v-model="filters.dueStatus" placeholder="选择" clearable @change="handleFilterChange">
-              <el-option label="今天到期" value="today" />
-              <el-option label="即将到期" value="upcoming" />
-              <el-option label="已逾期" value="overdue" />
+            <el-select
+              v-model="filters.dueStatus"
+              placeholder="选择"
+              clearable
+              @change="handleFilterChange"
+            >
+              <el-option
+                label="今天到期"
+                value="today"
+              />
+              <el-option
+                label="即将到期"
+                value="upcoming"
+              />
+              <el-option
+                label="已逾期"
+                value="overdue"
+              />
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="fetchTasks">
+            <el-button
+              type="primary"
+              @click="fetchTasks"
+            >
               <el-icon><Refresh /></el-icon>
               刷新
             </el-button>
@@ -65,16 +142,31 @@
       </div>
 
       <!-- Task Actions -->
-      <div v-if="selectedTasks.length > 0" class="task-actions">
+      <div
+        v-if="selectedTasks.length > 0"
+        class="task-actions"
+      >
         <span class="selected-count">已选择 {{ selectedTasks.length }} 个任务</span>
         <el-button-group>
-          <el-button type="success" size="small" @click="handleBulkApprove">
+          <el-button
+            type="success"
+            size="small"
+            @click="handleBulkApprove"
+          >
             批量批准
           </el-button>
-          <el-button type="danger" size="small" @click="handleBulkReject">
+          <el-button
+            type="danger"
+            size="small"
+            @click="handleBulkReject"
+          >
             批量拒绝
           </el-button>
-          <el-button type="info" size="small" @click="handleBulkTransfer">
+          <el-button
+            type="info"
+            size="small"
+            @click="handleBulkTransfer"
+          >
             批量转交
           </el-button>
         </el-button-group>
@@ -89,8 +181,15 @@
         @selection-change="handleSelectionChange"
         @row-click="handleRowClick"
       >
-        <el-table-column type="selection" width="55" />
-        <el-table-column prop="dueDate" label="截止时间" width="160">
+        <el-table-column
+          type="selection"
+          width="55"
+        />
+        <el-table-column
+          prop="dueDate"
+          label="截止时间"
+          width="160"
+        >
           <template #default="{ row }">
             <div class="due-date-cell">
               <el-icon
@@ -104,41 +203,79 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="workflowName" label="工作流" min-width="150" />
-        <el-table-column prop="nodeName" label="任务" min-width="120" />
-        <el-table-column prop="business_info" label="业务信息" min-width="180">
+        <el-table-column
+          prop="workflowName"
+          label="工作流"
+          min-width="150"
+        />
+        <el-table-column
+          prop="nodeName"
+          label="任务"
+          min-width="120"
+        />
+        <el-table-column
+          prop="business_info"
+          label="业务信息"
+          min-width="180"
+        >
           <template #default="{ row }">
             <div class="business-info">
-              <div v-if="row.businessNo" class="business-item">
+              <div
+                v-if="row.businessNo"
+                class="business-item"
+              >
                 {{ row.businessNo }}
               </div>
-              <div v-if="row.assetName" class="business-item">
+              <div
+                v-if="row.assetName"
+                class="business-item"
+              >
                 {{ row.assetName }}
               </div>
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="assigneeName" label="指派给" width="100" />
-        <el-table-column prop="priority" label="优先级" width="80">
+        <el-table-column
+          prop="assigneeName"
+          label="指派给"
+          width="100"
+        />
+        <el-table-column
+          prop="priority"
+          label="优先级"
+          width="80"
+        >
           <template #default="{ row }">
             <el-tag :type="getPriorityTagType(row.priority)">
               {{ getPriorityLabel(row.priority) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="100"
+        >
           <template #default="{ row }">
             <el-tag :type="getStatusTagType(row.status)">
               {{ getStatusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="160">
+        <el-table-column
+          prop="createdAt"
+          label="创建时间"
+          width="160"
+        >
           <template #default="{ row }">
             {{ formatTaskDateTime(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column
+          label="操作"
+          width="220"
+          fixed="right"
+        >
           <template #default="{ row }">
             <div class="action-buttons">
               <el-button 
@@ -199,8 +336,15 @@
       :before-close="handleQuickActionClose"
     >
       <div v-if="quickActionDialog.type === 'approve'">
-        <el-form ref="quickForm" :model="quickActionDialog.form" :rules="quickActionDialog.rules">
-          <el-form-item label="审批意见" prop="comment">
+        <el-form
+          ref="quickForm"
+          :model="quickActionDialog.form"
+          :rules="quickActionDialog.rules"
+        >
+          <el-form-item
+            label="审批意见"
+            prop="comment"
+          >
             <el-input
               v-model="quickActionDialog.form.comment"
               type="textarea"
@@ -211,8 +355,16 @@
         </el-form>
       </div>
       <div v-if="quickActionDialog.type === 'reject'">
-        <el-form ref="quickForm" :model="quickActionDialog.form" :rules="quickActionDialog.rules">
-          <el-form-item label="拒绝原因" prop="reason" required>
+        <el-form
+          ref="quickForm"
+          :model="quickActionDialog.form"
+          :rules="quickActionDialog.rules"
+        >
+          <el-form-item
+            label="拒绝原因"
+            prop="reason"
+            required
+          >
             <el-input
               v-model="quickActionDialog.form.reason"
               type="textarea"
@@ -223,8 +375,16 @@
         </el-form>
       </div>
       <div v-if="quickActionDialog.type === 'transfer'">
-        <el-form ref="quickForm" :model="quickActionDialog.form" :rules="quickActionDialog.rules">
-          <el-form-item label="转交给" prop="assignee" required>
+        <el-form
+          ref="quickForm"
+          :model="quickActionDialog.form"
+          :rules="quickActionDialog.rules"
+        >
+          <el-form-item
+            label="转交给"
+            prop="assignee"
+            required
+          >
             <el-select
               v-model="quickActionDialog.form.assignee"
               placeholder="选择转交对象"
@@ -238,7 +398,10 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="转交意见" prop="comment">
+          <el-form-item
+            label="转交意见"
+            prop="comment"
+          >
             <el-input
               v-model="quickActionDialog.form.comment"
               type="textarea"
@@ -253,8 +416,8 @@
           <el-button @click="handleQuickActionClose">取消</el-button>
           <el-button 
             type="primary" 
-            @click="executeQuickAction"
             :loading="quickActionDialog.loading"
+            @click="executeQuickAction"
           >
             确定
           </el-button>

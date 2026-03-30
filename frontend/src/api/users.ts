@@ -53,6 +53,15 @@ export const userApi = {
   },
 
   /**
+   * Switch current user's organization context
+   */
+  switchOrganization(id: string, organizationId: string): Promise<User> {
+    return request.post(`/auth/users/${id}/switch-org/`, {
+      organization_id: organizationId,
+    })
+  },
+
+  /**
    * Create new user
    */
   create(data: Partial<User>): Promise<User> {

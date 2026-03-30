@@ -1,8 +1,9 @@
-import { ref } from 'vue'
+import { ref, type ComputedRef } from 'vue'
 import type { Router } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 
 import { runAction } from '@/composables'
+import type { PortalRequestRecord } from '@/types/portal'
 
 import {
   canCancelPortalRequest,
@@ -10,8 +11,8 @@ import {
   getPortalRequestCreatePath,
   getPortalRequestDetailPath,
   portalRequestApiMap,
-  type PortalRequestType,
 } from './portalRequestModel'
+import type { PortalRequestType } from '@/types/portal'
 
 type TranslationFn = (key: string) => string
 
@@ -21,14 +22,17 @@ interface ActionNotifier {
   error: (message: string) => void
 }
 
+type UserIdRef = ComputedRef<string | number | undefined>
+
 export const usePortalRequests = (
   t: TranslationFn,
   router: Router,
   notifier: ActionNotifier,
+  userId: UserIdRef,
 ) => {
   const loadingRequests = ref(false)
-  const myRequests = ref<any[]>([])
-  const requestType = ref<PortalRequestType>('purchase')
+  const myRequests = ref<PortalRequestRecord[]>([])
+  const requestType = ref<PortalRequestType>('pickup')
   const requestStatusFilter = ref('')
   const requestPage = ref(1)
   const requestPageSize = ref(15)
@@ -43,7 +47,7 @@ export const usePortalRequests = (
         page: requestPage.value,
         page_size: requestPageSize.value,
         status: requestStatusFilter.value || undefined,
-        created_by_me: true,
+        createdBy: userId.value,
       })
       myRequests.value = response?.results ?? []
       requestTotal.value = response?.count ?? 0
@@ -58,7 +62,7 @@ export const usePortalRequests = (
         page: 1,
         page_size: 1,
         status: 'pending',
-        created_by_me: true,
+        createdBy: userId.value,
       }))
     )
 

@@ -86,12 +86,21 @@
         "currentValue": "Current Net Value",
         "usefulLife": "Useful Life (Months)"
     },
-    "search": {
-        "keyword": "Keyword",
-        "keywordPlaceholder": "Asset Code/Name",
-        "status": "Status",
-        "dateRange": "Purchase Date"
-    },
+  "search": {
+    "keyword": "Keyword",
+    "keywordPlaceholder": "Asset Code/Name",
+    "status": "Status",
+    "dateRange": "Purchase Date",
+    "quickFilters": "Quick Filters",
+    "saveValidation": "Enter a keyword or set at least one filter before saving.",
+    "saveNamePrompt": "Enter a name for this saved search.",
+    "saveNameTitle": "Save Search",
+    "saveNameRequired": "Please enter a search name.",
+    "noSavedSearches": "No saved searches",
+    "savedFilterOnly": "Filters only",
+    "historySuggestion": "History · {count} times",
+    "resultCount": "{count} matches"
+  },
     "loan": {
         "title": "Asset Loan",
         "createButton": "New Loan",

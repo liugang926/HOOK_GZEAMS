@@ -14,8 +14,17 @@ from apps.system.viewsets import (
     ObjectRouterViewSet,  # Dynamic object routing
     LanguageViewSet,  # i18n
     TranslationViewSet,  # i18n
+    TagViewSet,
 )
 from apps.system.viewsets.branding import BrandingSettingsAPIView
+from apps.system.viewsets.closed_loop_metrics import (
+    ClosedLoopDashboardSnapshotDetailAPIView,
+    ClosedLoopDashboardSnapshotListCreateAPIView,
+    ClosedLoopMetricsBottlenecksAPIView,
+    ClosedLoopMetricsByObjectAPIView,
+    ClosedLoopMetricsOverviewAPIView,
+    ClosedLoopMetricsQueuesAPIView,
+)
 from apps.system.viewsets.global_search import GlobalSearchAPIView
 from apps.system.viewsets.system_file import SystemFileViewSet
 from apps.system.viewsets.menu import MenuViewSet  # Dynamic menu system
@@ -56,6 +65,7 @@ router.register(r'tab-configs', TabConfigViewSet, basename='tabconfig')
 router.register(r'system-files', SystemFileViewSet, basename='system-file')  # File upload/management
 router.register(r'menu', MenuViewSet, basename='menu')  # Dynamic menu
 router.register(r'activity-logs', ActivityLogViewSet, basename='activity-log')
+router.register(r'tags', TagViewSet, basename='tag')
 # i18n routes
 router.register(r'languages', LanguageViewSet, basename='language')
 router.register(r'translations', TranslationViewSet, basename='translation')
@@ -79,6 +89,37 @@ urlpatterns = [
     path('', include(router.urls)),
     path('branding/', BrandingSettingsAPIView.as_view(), name='branding-settings'),
     path('global-search/', GlobalSearchAPIView.as_view(), name='global-search'),
+    path('objects/', include('apps.assets.tag_urls')),
+    path(
+        'metrics/closed-loop/overview/',
+        ClosedLoopMetricsOverviewAPIView.as_view(),
+        name='closed-loop-metrics-overview',
+    ),
+    path(
+        'metrics/closed-loop/by-object/',
+        ClosedLoopMetricsByObjectAPIView.as_view(),
+        name='closed-loop-metrics-by-object',
+    ),
+    path(
+        'metrics/closed-loop/bottlenecks/',
+        ClosedLoopMetricsBottlenecksAPIView.as_view(),
+        name='closed-loop-metrics-bottlenecks',
+    ),
+    path(
+        'metrics/closed-loop/queues/',
+        ClosedLoopMetricsQueuesAPIView.as_view(),
+        name='closed-loop-metrics-queues',
+    ),
+    path(
+        'metrics/closed-loop/snapshots/',
+        ClosedLoopDashboardSnapshotListCreateAPIView.as_view(),
+        name='closed-loop-dashboard-snapshot-list',
+    ),
+    path(
+        'metrics/closed-loop/snapshots/<uuid:snapshot_id>/',
+        ClosedLoopDashboardSnapshotDetailAPIView.as_view(),
+        name='closed-loop-dashboard-snapshot-detail',
+    ),
     # Custom dynamic object routing patterns with {code} parameter
     # These must come after the router to avoid conflicts
     path('objects/<str:code>/', ObjectRouterViewSet.as_view({'get': 'list', 'post': 'create'}), name='object-router-list'),
@@ -98,6 +139,8 @@ urlpatterns = [
     path('objects/<str:code>/me/profile/', ObjectRouterViewSet.as_view({'put': 'me_profile', 'patch': 'me_profile'}), name='object-router-me-profile'),
     path('objects/<str:code>/me/change-password/', ObjectRouterViewSet.as_view({'post': 'me_change_password'}), name='object-router-me-change-password'),
     path('objects/<str:code>/<uuid:id>/relation-counts/', ObjectRouterViewSet.as_view({'get': 'relation_counts'}), name='object-router-relation-counts'),
+    path('objects/<str:code>/<uuid:id>/history/', ObjectRouterViewSet.as_view({'get': 'history'}), name='object-router-history'),
+    path('objects/<str:code>/<uuid:id>/sla/', ObjectRouterViewSet.as_view({'get': 'sla'}), name='object-router-sla'),
     path('objects/<str:code>/<uuid:id>/compact/', ObjectRouterViewSet.as_view({'get': 'compact_detail'}), name='object-router-compact-detail'),
     path(
         'objects/<str:code>/<uuid:id>/document/',

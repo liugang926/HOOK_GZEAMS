@@ -93,6 +93,471 @@
             "confirm": "确认差异",
             "adjust": "调整"
         },
+        "differenceList": {
+            "title": "盘点差异列表",
+            "taskFilter": "任务: {taskId}",
+            "filters": {
+                "status": "筛选状态",
+                "type": "筛选差异类型"
+            },
+            "statuses": {
+                "all": "全部状态",
+                "pending": "待处理",
+                "confirmed": "已确认",
+                "inReview": "待复核",
+                "approved": "已审批",
+                "executing": "执行中",
+                "resolved": "已解决",
+                "ignored": "已忽略",
+                "closed": "已结案"
+            },
+            "types": {
+                "all": "全部类型",
+                "normal": "正常",
+                "missing": "盘亏",
+                "extra": "盘盈",
+                "damaged": "损坏",
+                "locationMismatch": "位置不符",
+                "custodianMismatch": "保管人不符"
+            },
+            "columns": {
+                "taskCode": "任务编号",
+                "assetCode": "资产编码",
+                "assetName": "资产名称",
+                "differenceType": "差异类型",
+                "expectedLocation": "系统位置",
+                "actualLocation": "盘点位置",
+                "status": "状态",
+                "remark": "备注",
+                "createdAt": "发现时间"
+            },
+            "actions": {
+                "batchHandle": "批量处理",
+                "confirm": "确认",
+                "adjust": "调整"
+            },
+            "dialogs": {
+                "adjustTitle": "调整差异",
+                "adjustMessage": "请输入本次差异调整说明",
+                "adjustPlaceholder": "填写调整方式、业务说明和必要的回写依据"
+            },
+            "messages": {
+                "loadFailed": "加载差异列表失败",
+                "selectRequired": "请先选择要处理的差异",
+                "confirmSuccess": "差异已确认",
+                "confirmFailed": "确认差异失败",
+                "adjustSuccess": "差异调整完成",
+                "adjustFailed": "差异调整失败"
+            },
+            "validation": {
+                "adjustRemarkRequired": "请输入调整说明"
+            }
+        },
+        "batchResolveDialog": {
+            "title": "批量处理差异",
+            "summary": "已选择 {count} 条差异记录",
+            "previewTitle": "处理预览",
+            "overflow": "其余 {count} 条记录将在提交时一并处理",
+            "fields": {
+                "action": "处理动作",
+                "remark": "处理说明"
+            },
+            "columns": {
+                "assetCode": "资产编码",
+                "assetName": "资产名称",
+                "differenceType": "差异类型",
+                "status": "当前状态"
+            },
+            "actions": {
+                "confirm": "批量确认",
+                "adjust": "批量调整"
+            },
+            "placeholders": {
+                "action": "请选择处理动作",
+                "remark": "填写批量处理说明。批量调整时该字段必填。"
+            },
+            "validation": {
+                "actionRequired": "请选择处理动作",
+                "remarkRequired": "批量调整时必须填写处理说明"
+            },
+            "messages": {
+                "noSelection": "当前没有可处理的差异记录",
+                "success": "已成功处理 {count} 条差异",
+                "partialSuccess": "批量处理完成，成功 {succeeded} 条，失败 {failed} 条，共 {total} 条"
+            }
+        },
+        "reconciliationSummary": {
+            "title": "复核汇总",
+            "hint": "基于当前列表结果快速查看复核进度、差异和调账分布。",
+            "tags": {
+                "currentList": "当前列表"
+            },
+            "stats": {
+                "total": "复核总数",
+                "approved": "已通过",
+                "submitted": "待审批",
+                "adjustments": "调账数量"
+            },
+            "progress": {
+                "title": "进度概览",
+                "summary": "审批完成率 {percent}",
+                "completion": "审批完成率",
+                "approval": "通过率",
+                "adjustmentCoverage": "调账覆盖率"
+            },
+            "metrics": {
+                "differences": "差异总数",
+                "rejected": "已驳回",
+                "pending": "草稿待处理"
+            },
+            "trend": {
+                "title": "最近趋势",
+                "window": "最近 {count} 条记录",
+                "differences": "差异",
+                "adjustments": "调账",
+                "empty": "当前筛选结果暂无趋势数据",
+                "noDate": "未记录"
+            }
+        },
+        "reconciliation": {
+            "pageTitle": "盘点复核",
+            "fields": {
+                "task": "盘点任务",
+                "status": "复核状态",
+                "dateRange": "复核日期"
+            },
+            "columns": {
+                "reconciliationNo": "复核单号",
+                "taskName": "盘点任务",
+                "status": "复核状态",
+                "normalCount": "正常数量",
+                "abnormalCount": "异常数量",
+                "adjustmentCount": "调账记录",
+                "reconciledBy": "复核人",
+                "reconciledAt": "复核时间"
+            },
+            "status": {
+                "draft": "草稿",
+                "submitted": "待审批",
+                "approved": "已通过",
+                "rejected": "已驳回"
+            },
+            "summary": {
+                "total": "复核总数",
+                "totalHint": "当前筛选结果中的复核记录",
+                "draft": "草稿复核",
+                "draftHint": "待提交审批的复核单",
+                "submitted": "待审批",
+                "submittedHint": "已提交，等待审批完成",
+                "approved": "已通过",
+                "approvedHint": "已完成审批的复核单",
+                "rejected": "已驳回",
+                "rejectedHint": "需要重新补充处理意见",
+                "adjustments": "调账数量",
+                "adjustmentsHint": "关联差异调账记录汇总",
+                "completionRate": "审批完成率"
+            },
+            "actions": {
+                "create": "新建复核",
+                "submit": "提交审批",
+                "batchSubmit": "批量提交",
+                "batchApprove": "批量通过"
+            },
+            "dialogs": {
+                "createTitle": "新建盘点复核",
+                "rejectTitle": "驳回复核",
+                "rejectMessage": "请输入驳回原因"
+            },
+            "placeholders": {
+                "search": "请输入复核单号或任务名称",
+                "taskSelect": "请选择已完成的盘点任务",
+                "note": "填写本次复核说明、差异结论或补充信息",
+                "status": "请选择复核状态",
+                "rejectReason": "请输入驳回原因"
+            },
+            "validation": {
+                "taskRequired": "请选择盘点任务",
+                "rejectReasonRequired": "请输入驳回原因"
+            },
+            "messages": {
+                "createSuccess": "复核单创建成功",
+                "createFailed": "复核单创建失败",
+                "loadTasksFailed": "加载盘点任务失败",
+                "submitConfirm": "确认提交当前复核单进行审批吗？",
+                "submitSuccess": "复核单已提交审批",
+                "submitFailed": "提交审批失败",
+                "approveConfirm": "确认通过当前复核单吗？",
+                "approveSuccess": "复核单审批通过",
+                "approveFailed": "复核单审批失败",
+                "rejectSuccess": "复核单已驳回",
+                "rejectFailed": "驳回复核单失败",
+                "batchSubmitConfirm": "确认批量提交选中的草稿复核单吗？",
+                "batchApproveConfirm": "确认批量通过选中的待审批复核单吗？",
+                "batchSubmitSuccess": "已成功提交 {count} 条复核单",
+                "batchApproveSuccess": "已成功通过 {count} 条复核单",
+                "batchPartialSuccess": "批量处理完成，成功 {succeeded} 条，失败 {failed} 条，共 {total} 条",
+                "noEligibleRecords": "所选记录中没有可执行当前批量操作的数据"
+            }
+        },
+        "adjustment": {
+            "title": "资产调账",
+            "type": {
+                "location": "位置调整",
+                "status": "状态调整",
+                "value": "价值调整",
+                "info": "信息调整",
+                "new": "新增资产",
+                "remove": "资产删除"
+            },
+            "status": {
+                "pending": "待执行",
+                "executing": "执行中",
+                "completed": "已完成",
+                "failed": "执行失败",
+                "rolledBack": "已回滚"
+            }
+        },
+        "report": {
+            "pageTitle": "盘点报告",
+            "fields": {
+                "task": "盘点任务",
+                "templateId": "模板编号",
+                "status": "报告状态",
+                "dateRange": "生成日期"
+            },
+            "columns": {
+                "reportNo": "报告编号",
+                "taskName": "盘点任务",
+                "status": "报告状态",
+                "totalAssets": "资产总数",
+                "scannedAssets": "已盘数量",
+                "differenceCount": "差异数量",
+                "generatedBy": "生成人",
+                "generatedAt": "生成时间",
+                "currentApprover": "当前审批人"
+            },
+            "status": {
+                "draft": "草稿",
+                "pendingApproval": "审批中",
+                "approved": "已批准",
+                "rejected": "已驳回"
+            },
+            "actions": {
+                "generate": "生成报告",
+                "exportPdf": "导出 PDF",
+                "exportExcel": "导出 Excel",
+                "batchExportPdf": "批量导出 PDF",
+                "batchExportExcel": "批量导出 Excel"
+            },
+            "dialogs": {
+                "generateTitle": "生成盘点报告"
+            },
+            "placeholders": {
+                "search": "请输入报告编号或任务名称",
+                "taskSelect": "请选择已完成的盘点任务",
+                "templateId": "可选，填写报告模板编号",
+                "status": "请选择报告状态"
+            },
+            "validation": {
+                "taskRequired": "请选择盘点任务"
+            },
+            "messages": {
+                "loadTasksFailed": "加载盘点任务失败",
+                "generateSuccess": "盘点报告生成成功",
+                "generateFailed": "盘点报告生成失败",
+                "submitConfirm": "确认提交当前报告进行审批吗？",
+                "submitSuccess": "报告已提交审批",
+                "submitFailed": "提交报告审批失败",
+                "exportSuccess": "报告导出成功",
+                "exportFailed": "报告导出失败",
+                "batchExportEmpty": "请先选择需要导出的报告",
+                "batchExportSuccess": "已开始导出 {count} 份报告，格式：{format}"
+            }
+        },
+        "workbench": {
+            "actions": {
+            "approveResolution": "审批通过",
+                "cancelTask": "取消任务",
+                "closeDifference": "结案差异",
+                "completeTask": "完成盘点",
+                "completeFollowUp": "完成跟进",
+                "confirmDifference": "确认差异",
+                "executeResolution": "执行处置",
+                "ignoreDifference": "忽略差异",
+                "refreshStats": "刷新统计",
+                "reopenFollowUp": "重新打开跟进",
+                "rejectResolution": "驳回复核",
+                "saveDraft": "保存草稿",
+                "sendFollowUp": "发送跟进提醒",
+                "startTask": "开始任务",
+                "submitReview": "提交复核"
+            },
+            "closureTypes": {
+                "createAssetCard": "补录建卡",
+                "custodianCorrection": "保管人纠正",
+                "disposal": "报废处置",
+                "financialAdjustment": "财务调账",
+                "invalidDifference": "无效差异",
+                "locationCorrection": "位置纠正",
+                "repair": "维修处置"
+            },
+            "form": {
+                "closureNotes": "结案说明",
+                "closureType": "处置类型",
+                "evidenceRefs": "证据材料",
+                "linkedActionCode": "联动动作编码",
+                "resolution": "处置说明",
+                "syncAsset": "执行时同步资产"
+            },
+            "linkedActions": {
+                "createAssetCard": "补录资产卡片",
+                "createDisposal": "生成报废申请",
+                "createMaintenance": "生成维修单",
+                "currentValue": "当前值: {code}",
+                "custodianCorrection": "回写保管人纠正",
+                "financialAdjustment": "生成财务调账",
+                "invalidDifference": "标记无效差异",
+                "locationCorrection": "回写位置纠正"
+            },
+            "execution": {
+                "action": "联动动作",
+                "executedAt": "执行时间",
+                "followUpCount": "提醒次数",
+                "followUpOwner": "跟进责任人",
+                "followUpTask": "跟进任务",
+                "followUpTaskStatus": "跟进状态",
+                "followUpCompletedAt": "跟进完成时间",
+                "notification": "通知记录",
+                "openFollowUpTask": "打开跟进任务",
+                "openNotificationCenter": "打开通知中心",
+                "states": {
+                    "cancelled": "已取消",
+                    "completed": "已完成",
+                    "executed": "已执行",
+                    "manualFollowUp": "需人工跟进",
+                    "pending": "待处理"
+                },
+                "targetRecord": "生成记录",
+                "title": "联动执行结果"
+            },
+            "panels": {
+                "differenceClosure": "差异处置工作台"
+            },
+            "placeholders": {
+                "closureNotes": "填写结案补充说明、审批意见或回写说明",
+                "closureType": "选择本次差异的处置类型",
+                "evidenceRefs": "每行一个证据引用，例如附件地址、单号或照片标识",
+                "linkedActionCode": "例如 transfer、repair、dispose",
+                "resolution": "填写差异确认结论、处置动作和业务判断依据"
+            },
+            "summary": {
+                "currentStatus": "当前状态",
+                "differenceType": "差异类型",
+                "differenceTotal": "差异总数",
+                "pendingFollowUp": "待跟进差异",
+                "pendingClosure": "待结案差异",
+                "progress": "完成进度",
+                "quantityDifference": "数量差值",
+                "reminderCount": "提醒次数",
+                "scannedCount": "已扫数量",
+                "taskCode": "盘点任务",
+                "totalCount": "计划盘点数"
+            },
+            "states": {
+                "draftSaved": "草稿已保存",
+                "unsavedChanges": "有未保存变更"
+            },
+            "validation": {
+                "closureTypeRequired": "提交复核前必须选择处置类型",
+                "resolutionRequired": "请先填写处置说明"
+            },
+            "queues": {
+                "activeExecution": "进行中队列",
+                "awaitingApproval": "待审批差异",
+                "awaitingClosure": "待结案队列",
+                "awaitingConfirmation": "待确认差异",
+                "awaitingExecution": "待执行差异",
+                "awaitingFollowUp": "待跟进队列",
+                "awaitingReview": "待复核提交",
+                "custodianDifferences": "保管人差异",
+                "damagedDifferences": "损坏差异",
+                "locationDifferences": "位置变更差异",
+                "missingDifferences": "盘亏差异",
+                "surplusDifferences": "盘盈差异"
+            },
+            "messages": {
+                "closeDifferenceHint": "处置已经完成后，补齐结案说明与证据并正式关闭差异。",
+                "completeTaskHint": "完成当前盘点轮次并锁定最终差异集，进入后续处置阶段。",
+                "confirmDifferenceConfirm": "确认该差异并进入后续处置流程？",
+                "differenceClosureHint": "在差异详情内补齐说明、处置类型和证据，再推进复核、审批、执行与结案。",
+                "executeResolutionHint": "执行前请确认复核意见、处置类型和必要的资产回写条件已经齐备。",
+                "pendingConfirmHint": "当前差异还未确认，请先使用顶部动作将其纳入正式处置流程。",
+                "refreshStatsHint": "在继续决策前，先刷新最新的扫描、差异和完成率统计。",
+                "savedDraftHint": "当前处置草稿已经保存，可以继续补充信息或推进下一步动作。",
+                "submitReviewHint": "先完善处置说明、处置类型和证据，再提交复核。"
+                ,
+                "unsavedDraftHint": "表单内容已变更但尚未保存，建议先保存草稿再继续推进流程。"
+            }
+        },
+        "assignment": {
+            "title": "盘点任务分配",
+            "subtitle": "管理盘点执行人并跟踪当前执行进度。",
+            "listTitle": "分配列表",
+            "progressTitle": "分配进度",
+            "fields": {
+                "assignee": "盘点人员",
+                "assigneeIds": "分配人员",
+                "region": "盘点区域",
+                "locationIds": "指定位置",
+                "locations": "盘点位置",
+                "status": "分配状态",
+                "assignedAt": "分配时间",
+                "totalAssets": "分配数量",
+                "scannedCount": "已扫描",
+                "normalCount": "正常",
+                "abnormalCount": "异常",
+                "progress": "进度"
+            },
+            "summary": {
+                "assigneeCount": "分配人数",
+                "totalAssets": "分配总数",
+                "scannedCount": "累计扫描",
+                "abnormalCount": "累计异常"
+            },
+            "actions": {
+                "assign": "分配任务",
+                "remove": "移除分配"
+            },
+            "placeholders": {
+                "region": "留空表示全部区域",
+                "locationIds": "留空表示全部位置"
+            },
+            "labels": {
+                "progressSummary": "已扫描 {scanned} / {total}"
+            },
+            "status": {
+                "pending": "待开始",
+                "inProgress": "进行中",
+                "completed": "已完成"
+            },
+            "scope": {
+                "allRegions": "全部区域",
+                "allLocations": "全部位置"
+            },
+            "validation": {
+                "assigneeRequired": "请选择至少一位盘点人员",
+                "noNewAssignees": "所选人员已全部存在分配记录"
+            },
+            "messages": {
+                "assignSuccess": "任务分配成功",
+                "removeSuccess": "分配已移除",
+                "noAssignments": "暂无分配记录",
+                "executorScopeOnly": "当前后端仅支持执行人分配，区域和位置范围将在独立分配资源落地后开放。"
+            },
+            "confirm": {
+                "removeAssignment": "确认移除 {name} 的盘点分配吗？"
+            }
+        },
         "messages": {
             "exportDeveloping": "导出 {count} 项盘点任务 - 功能开发中"
         },

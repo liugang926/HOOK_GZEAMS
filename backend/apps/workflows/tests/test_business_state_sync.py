@@ -25,6 +25,18 @@ from apps.workflows.signals import (
 from apps.workflows.services.business_state_sync import BusinessStateSyncService
 
 
+def build_fake_workflow_model():
+    """Create a uniquely named mixin-backed model for isolated tests."""
+    return type(
+        f'FakeWorkflowModel{uuid.uuid4().hex}',
+        (WorkflowStatusMixin,),
+        {
+            'Meta': type('Meta', (), {'abstract': False, 'app_label': 'tests'}),
+            '__module__': __name__,
+        },
+    )
+
+
 # ---------------------------------------------------------------------------
 # 1. WorkflowStatusMixin unit tests
 # ---------------------------------------------------------------------------
@@ -49,10 +61,7 @@ class TestWorkflowStatusMixin(TestCase):
 
     def test_lifecycle_hooks_are_callable(self):
         """All four lifecycle hooks should exist and be callable."""
-        mixin = type('Concrete', (WorkflowStatusMixin,), {
-            'Meta': type('Meta', (), {'abstract': False, 'app_label': 'tests'}),
-            '__module__': __name__,
-        })()
+        mixin = build_fake_workflow_model()()
         for hook in ('on_workflow_submitted', 'on_workflow_approved',
                      'on_workflow_rejected', 'on_workflow_cancelled'):
             self.assertTrue(callable(getattr(mixin, hook, None)), msg=f'{hook} should be callable')
@@ -101,12 +110,7 @@ class TestBusinessStateSyncService(TestCase):
     @patch('apps.workflows.services.business_state_sync.BusinessStateSyncService._resolve_business_model')
     def test_approved_status_sync(self, mock_resolve, mock_get_obj, mock_log):
         """When workflow is approved, business doc should be set to 'approved'."""
-        # Create a concrete class that inherits from WorkflowStatusMixin
-        from django.db import models
-        FakeModel = type('FakeModel', (WorkflowStatusMixin,), {
-            'Meta': type('Meta', (), {'abstract': False, 'app_label': 'tests'}),
-            '__module__': __name__,
-        })
+        FakeModel = build_fake_workflow_model()
         mock_resolve.return_value = FakeModel
         business_obj = MagicMock(spec=['approval_status', 'workflow_instance_id',
                                        'submitted_at', 'approved_at', 'on_workflow_approved',
@@ -128,11 +132,7 @@ class TestBusinessStateSyncService(TestCase):
     @patch('apps.workflows.services.business_state_sync.BusinessStateSyncService._resolve_business_model')
     def test_rejected_status_sync(self, mock_resolve, mock_get_obj, mock_log):
         """When workflow is rejected, business doc should be set to 'rejected'."""
-        from django.db import models
-        FakeModel = type('FakeModel', (WorkflowStatusMixin,), {
-            'Meta': type('Meta', (), {'abstract': False, 'app_label': 'tests'}),
-            '__module__': __name__,
-        })
+        FakeModel = build_fake_workflow_model()
         mock_resolve.return_value = FakeModel
         business_obj = MagicMock(spec=['approval_status', 'workflow_instance_id',
                                        'submitted_at', 'approved_at', 'on_workflow_rejected',
@@ -154,11 +154,7 @@ class TestBusinessStateSyncService(TestCase):
     @patch('apps.workflows.services.business_state_sync.BusinessStateSyncService._resolve_business_model')
     def test_cancelled_status_sync(self, mock_resolve, mock_get_obj, mock_log):
         """When workflow is cancelled, business_doc should transition to 'cancelled'."""
-        from django.db import models
-        FakeModel = type('FakeModel', (WorkflowStatusMixin,), {
-            'Meta': type('Meta', (), {'abstract': False, 'app_label': 'tests'}),
-            '__module__': __name__,
-        })
+        FakeModel = build_fake_workflow_model()
         mock_resolve.return_value = FakeModel
         business_obj = MagicMock(spec=['approval_status', 'workflow_instance_id',
                                        'submitted_at', 'approved_at',
@@ -179,11 +175,7 @@ class TestBusinessStateSyncService(TestCase):
     @patch('apps.workflows.services.business_state_sync.BusinessStateSyncService._resolve_business_model')
     def test_no_op_when_status_unchanged(self, mock_resolve, mock_get_obj, mock_log):
         """Should not call save/hooks when status doesn't change."""
-        from django.db import models
-        FakeModel = type('FakeModel', (WorkflowStatusMixin,), {
-            'Meta': type('Meta', (), {'abstract': False, 'app_label': 'tests'}),
-            '__module__': __name__,
-        })
+        FakeModel = build_fake_workflow_model()
         mock_resolve.return_value = FakeModel
         business_obj = MagicMock(spec=['approval_status', 'workflow_instance_id',
                                        'submitted_at', 'approved_at', 'save', 'pk', '__class__'])

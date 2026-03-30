@@ -8,6 +8,8 @@ Models for managing low-value consumables and office supplies:
 - ConsumablePurchase: Purchase orders for procuring consumables
 - ConsumableIssue: Issue orders for distributing consumables
 """
+from decimal import Decimal
+
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -616,7 +618,10 @@ class PurchaseItem(BaseModel):
     def save(self, *args, **kwargs):
         """Calculate amount if not set"""
         if not self.amount:
-            self.amount = self.quantity * self.unit_price
+            normalized_price = self.unit_price
+            if not isinstance(normalized_price, Decimal):
+                normalized_price = Decimal(str(normalized_price))
+            self.amount = Decimal(str(self.quantity)) * normalized_price
         super().save(*args, **kwargs)
 
 

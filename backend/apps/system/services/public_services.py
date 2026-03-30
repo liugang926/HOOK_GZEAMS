@@ -39,22 +39,16 @@ class DictionaryService(BaseCRUDService):
             List of dictionary items as dicts
         """
         from apps.system.models import DictionaryType, DictionaryItem
+        from apps.common.middleware import get_current_organization
 
         try:
-            # Look for organization-specific or global dictionary
-            # DictionaryType uses GlobalMetadataManager (is_deleted filter handled automatically)
-            q_filter = Q(code=type_code)
-            if organization_id:
-                q_filter &= (Q(organization_id=organization_id) | Q(organization_id__isnull=True))
-            else:
-                q_filter &= Q(organization_id__isnull=True)
-
-            candidates = DictionaryType.objects.filter(q_filter)
+            resolved_org_id = organization_id or get_current_organization()
+            candidates = DictionaryType.objects.filter(code=type_code)
 
             # Prioritize organization specific match
             dict_type = None
             for dt in candidates:
-                if dt.organization_id == organization_id:
+                if resolved_org_id and str(dt.organization_id) == str(resolved_org_id):
                     dict_type = dt
                     break
 
@@ -64,6 +58,10 @@ class DictionaryService(BaseCRUDService):
                     if dt.organization_id is None:
                         dict_type = dt
                         break
+
+            if not dict_type:
+                # Final fallback to any matching shared metadata row.
+                dict_type = candidates.first()
 
             if not dict_type:
                 return []

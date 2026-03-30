@@ -2,6 +2,7 @@ import { ref, type ComputedRef } from 'vue'
 import type { Router } from 'vue-router'
 
 import { assetApi } from '@/api/assets'
+import type { PortalAssetRecord } from '@/types/portal'
 
 import { getPortalAssetDetailPath } from './portalAssetModel'
 
@@ -12,7 +13,7 @@ export const usePortalAssets = (
   router: Router,
 ) => {
   const loadingAssets = ref(false)
-  const myAssets = ref<any[]>([])
+  const myAssets = ref<PortalAssetRecord[]>([])
   const assetSearch = ref('')
   const assetStatusFilter = ref('')
   const assetPage = ref(1)
@@ -46,7 +47,7 @@ export const usePortalAssets = (
     myAssetCount.value = response?.count ?? response?.total ?? 0
   }
 
-  const goToAsset = (row: Record<string, any>) => router.push(getPortalAssetDetailPath(row.id))
+  const goToAsset = (row: PortalAssetRecord) => router.push(getPortalAssetDetailPath(row.id))
 
   return {
     assetPage,

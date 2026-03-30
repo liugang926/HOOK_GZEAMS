@@ -12,6 +12,7 @@
             "assetCode": "Asset Code",
             "assetName": "Asset Name",
             "period": "Period",
+            "depreciationAmount": "Depreciation Amount",
             "currentDepreciation": "Current Depreciation",
             "accumulatedDepreciation": "Accumulated Depreciation",
             "netValue": "Net Value",
@@ -29,6 +30,7 @@
             "durationMs": "Duration (ms)"
         },
         "status": {
+            "calculated": "Calculated",
             "draft": "Draft",
             "pending": "Pending",
             "submitted": "Submitted",
@@ -39,7 +41,11 @@
         "businessType": {
             "assetPurchase": "Asset Purchase",
             "depreciation": "Depreciation",
-            "assetDisposal": "Asset Disposal"
+            "assetDisposal": "Asset Disposal",
+            "purchase": "Asset Purchase",
+            "disposal": "Asset Disposal",
+            "inventory": "Inventory Adjustment",
+            "other": "Other"
         },
         "actions": {
             "createVoucher": "Create Voucher",
@@ -48,7 +54,14 @@
             "detail": "Detail",
             "post": "Post",
             "retryPush": "Retry Push",
-            "calculateDepreciation": "Calculate Depreciation"
+            "calculateDepreciation": "Calculate Depreciation",
+            "previewReport": "Preview Report",
+            "batchPost": "Batch Post",
+            "newTemplate": "New Template",
+            "activateTemplate": "Activate",
+            "deactivateTemplate": "Deactivate",
+            "applyTemplate": "Apply Template",
+            "addEntry": "Add Entry"
         },
         "messages": {
             "confirmPost": "Confirm posting this voucher?",
@@ -59,6 +72,28 @@
             "entries": "Voucher Entries",
             "syncStatus": "Sync Status",
             "integrationLogs": "Integration Logs"
+        },
+        "workbench": {
+            "actions": {
+                "approveVoucher": "Approve Voucher",
+                "pushVoucher": "Push to ERP",
+                "retryPush": "Retry ERP Push",
+                "submitVoucher": "Submit Voucher"
+            },
+            "summary": {
+                "balanceState": "Balance State",
+                "entryCount": "Entry Count",
+                "totalAmount": "Total Amount"
+            },
+            "queues": {
+                "integrationAttention": "Integration Attention",
+                "postingQueue": "Posting Queue",
+                "reviewQueue": "Review Queue"
+            },
+            "messages": {
+                "pushVoucherHint": "Push this approved voucher to ERP and continue the finance closure chain.",
+                "retryPushHint": "Retry the ERP integration after reviewing the latest response and log details."
+            }
         },
         "depreciationDialog": {
             "title": "Calculate Depreciation",
@@ -73,6 +108,119 @@
             },
             "validation": {
                 "periodRequired": "Please select period"
+            }
+        },
+        "depreciation": {
+            "title": "Depreciation Management",
+            "subtitle": "Track calculated records and posting progress for {period}.",
+            "filters": {
+                "assetKeyword": "Asset",
+                "period": "Period",
+                "status": "Status"
+            },
+            "placeholders": {
+                "assetKeyword": "Enter asset code or name",
+                "period": "Select month",
+                "status": "Select status"
+            },
+            "columns": {
+                "method": "Method",
+                "purchasePrice": "Original Value",
+                "depreciationAmount": "Current Depreciation"
+            },
+            "methods": {
+                "straightLine": "Straight Line",
+                "doubleDeclining": "Double Declining",
+                "sumOfYears": "Sum of Years",
+                "unitsOfProduction": "Units of Production"
+            },
+            "summary": {
+                "assetCount": "Asset Count",
+                "originalValue": "Original Value",
+                "currentAmount": "Current Depreciation",
+                "accumulatedAmount": "Accumulated Depreciation",
+                "netValue": "Net Value"
+            },
+            "report": {
+                "title": "Depreciation Report - {period}",
+                "byCategory": "By Category",
+                "byAsset": "By Asset",
+                "columns": {
+                    "category": "Category"
+                }
+            },
+            "messages": {
+                "confirmPost": "Post this depreciation record now?",
+                "confirmBatchPost": "Post {count} calculated depreciation records?",
+                "batchPostPartial": "Batch posting completed with {success} successes and {failed} failures.",
+                "noPostableSelected": "Select at least one calculated depreciation record.",
+                "noApprovedSelected": "Select at least one approved depreciation record.",
+                "reportLoadFailed": "Failed to load depreciation report."
+            }
+        },
+        "templates": {
+            "title": "Voucher Templates",
+            "columns": {
+                "code": "Template Code",
+                "name": "Template Name",
+                "businessType": "Business Type",
+                "isActive": "Status"
+            },
+            "dialog": {
+                "createTitle": "Create Voucher Template",
+                "editTitle": "Edit Voucher Template"
+            },
+            "form": {
+                "code": "Template Code",
+                "codePlaceholder": "Enter template code",
+                "name": "Template Name",
+                "namePlaceholder": "Enter template name",
+                "businessType": "Business Type",
+                "active": "Active",
+                "description": "Description",
+                "descriptionPlaceholder": "Enter template description",
+                "entries": "Voucher Entries",
+                "entriesHint": "Configure posting lines used to create voucher drafts from this template.",
+                "entryAccountCode": "Account Code",
+                "entryAccountCodePlaceholder": "Enter account code",
+                "entryAccountName": "Account Name",
+                "entryAccountNamePlaceholder": "Enter account name",
+                "entrySide": "Side",
+                "entryAmount": "Amount",
+                "entryDescription": "Line Description",
+                "entryDescriptionPlaceholder": "Enter line description",
+                "debit": "Debit",
+                "credit": "Credit"
+            },
+            "apply": {
+                "title": "Apply Template",
+                "template": "Template",
+                "voucherDate": "Voucher Date",
+                "summary": "Summary",
+                "summaryPlaceholder": "Enter voucher summary",
+                "summaryPrefix": "Generated from template:",
+                "totalAmount": "Total Amount",
+                "notes": "Notes",
+                "notesPlaceholder": "Optional notes"
+            },
+            "validation": {
+                "codeRequired": "Please enter a template code",
+                "nameRequired": "Please enter a template name",
+                "businessTypeRequired": "Please select a business type",
+                "entriesRequired": "Add at least one voucher entry",
+                "entryIncomplete": "Each voucher entry must include account code, account name, and amount",
+                "voucherDateRequired": "Please select a voucher date"
+            },
+            "messages": {
+                "createSuccess": "Template created successfully",
+                "updateSuccess": "Template updated successfully",
+                "deleteConfirm": "Delete template \"{name}\"?",
+                "deleteSuccess": "Template deleted successfully",
+                "activateConfirm": "Activate template \"{name}\"?",
+                "activateSuccess": "Template activated successfully",
+                "deactivateConfirm": "Deactivate template \"{name}\"?",
+                "deactivateSuccess": "Template deactivated successfully",
+                "applySuccess": "Voucher draft created from template"
             }
         }
     }

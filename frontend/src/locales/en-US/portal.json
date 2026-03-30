@@ -1,0 +1,91 @@
+{
+  "greeting": "Hello, {name}",
+  "subtitle": "Review your assets, requests, and approval tasks in one workspace.",
+  "stats": {
+    "assets": "My Assets",
+    "pendingRequests": "Pending Requests",
+    "pendingTasks": "Pending Tasks"
+  },
+  "tabs": {
+    "myAssets": "My Assets",
+    "myRequests": "My Requests",
+    "myTasks": "My Tasks"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "pickup": "New Pickup",
+    "transfer": "New Transfer",
+    "loan": "New Loan",
+    "return": "New Stock Return",
+    "tasks": "Open Tasks"
+  },
+  "assets": {
+    "searchPlaceholder": "Search by asset code or name",
+    "allStatus": "All statuses",
+    "cols": {
+      "code": "Asset Code",
+      "name": "Asset Name",
+      "category": "Category",
+      "status": "Status",
+      "location": "Location",
+      "value": "Net Value",
+      "actions": "Actions"
+    },
+    "status": {
+      "inUse": "In Use",
+      "idle": "Idle",
+      "maintenance": "Under Maintenance",
+      "disposed": "Disposed"
+    }
+  },
+  "requests": {
+    "allStatus": "All statuses",
+    "new": "New Request",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "submitConfirm": "Submit this request now?",
+    "submitSuccess": "Request submitted successfully.",
+    "submitFailed": "Failed to submit request.",
+    "cancelConfirm": "Cancel this request?",
+    "type": {
+      "pickup": "Pickup",
+      "transfer": "Transfer",
+      "loan": "Loan",
+      "return": "Stock Return"
+    },
+    "cols": {
+      "code": "Request No",
+      "title": "Title",
+      "status": "Status",
+      "createdAt": "Created At",
+      "actions": "Actions"
+    },
+    "status": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "outApproved": "Source Approved",
+      "approved": "Approved",
+      "confirmed": "Confirmed",
+      "borrowed": "Borrowed",
+      "overdue": "Overdue",
+      "returned": "Returned",
+      "rejected": "Rejected",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "tasks": {
+    "empty": "No pending tasks",
+    "initiator": "Initiator",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approvalTask": "Approval Task",
+    "rejectTitle": "Reject Task",
+    "rejectComment": "Comment",
+    "confirm": "Confirm",
+    "approveSuccess": "Task approved successfully.",
+    "approveFailed": "Failed to approve task.",
+    "rejectSuccess": "Task rejected successfully.",
+    "rejectFailed": "Failed to reject task."
+  }
+}

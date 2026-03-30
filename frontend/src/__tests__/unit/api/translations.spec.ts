@@ -15,9 +15,6 @@ vi.mock('@/utils/request', () => ({
   }
 }))
 
-// Helper to get typed mock
-const mockedRequest = vi.mocked(request)
-
 describe('translationApi', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -322,7 +319,10 @@ describe('languageApi', () => {
 
       const result = await languageApi.getActive()
 
-      expect(request.get).toHaveBeenCalledWith('/system/languages/active/')
+      expect(request.get).toHaveBeenCalledWith('/system/languages/active/', {
+        noAuth: true,
+        silent: true
+      })
       expect(result.data).toHaveLength(1)
     })
   })

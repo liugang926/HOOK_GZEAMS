@@ -10,6 +10,8 @@ from apps.common.models import BaseModel, TenantManager
 # Create a concrete model for testing BaseModel
 class TestableModel(BaseModel):
     """Concrete model for testing BaseModel functionality."""
+    __test__ = False
+
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
 

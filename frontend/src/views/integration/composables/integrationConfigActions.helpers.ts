@@ -31,12 +31,20 @@ export const buildIntegrationFormDataFromConfig = (row: IntegrationConfig): Inte
     apiUrl: '',
     apiKey: '',
     apiSecret: '',
+    companyCode: '',
+    username: '',
+    password: '',
     timeout: 30,
     ...(row.connectionConfig || {})
   },
   syncConfig: {
     autoSync: false,
     interval: 60,
+    syncOrders: false,
+    syncAssets: false,
+    syncVendors: false,
+    syncDepreciation: false,
+    startDate: '',
     ...(row.syncConfig || {})
   }
 })

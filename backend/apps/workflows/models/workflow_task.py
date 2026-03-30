@@ -439,6 +439,37 @@ class WorkflowTask(BaseModel):
 
         return approval
 
+    def complete(self, approved=True, comment=None, data=None, user=None):
+        """
+        Backward-compatible helper that approves or rejects the current task.
+
+        Args:
+            approved: When True approve the task, otherwise reject it.
+            comment: Optional action comment.
+            data: Optional payload kept for compatibility with older callers.
+            user: Optional acting user. Defaults to the current assignee.
+
+        Returns:
+            Tuple[bool, Optional[str]] describing success and error state.
+        """
+        actor = user or self.assignee
+        if actor is None:
+            return False, _('Task has no assignee.')
+
+        try:
+            from apps.workflows.services.workflow_engine import WorkflowEngine
+
+            action = 'approve' if approved else 'reject'
+            success, instance, error = WorkflowEngine().execute_task(
+                task=self,
+                action=action,
+                actor=actor,
+                comment=comment,
+            )
+            return success, error
+        except Exception as exc:
+            return False, str(exc)
+
     def delegate(self, to_user, from_user, reason=None):
         """
         Delegate the task to another user.

@@ -8,6 +8,7 @@
   "actions": {
     "add": "Add",
     "approve": "Approve",
+    "apply": "Apply",
     "back": "Back",
     "batchDelete": "Batch Delete",
     "cancel": "Cancel",
@@ -26,6 +27,7 @@
     "print": "Print",
     "refresh": "Refresh",
     "reject": "Reject",
+    "remove": "Remove",
     "reset": "Reset",
     "loadMore": "Load More",
     "save": "Save",
@@ -35,7 +37,8 @@
     "submitApprove": "Submit for Approval",
     "columns": "Columns",
     "test": "Test",
-    "view": "View"
+    "view": "View",
+    "viewChanges": "View {count} changes"
   },
   "addChange": "Add Change",
   "addRecord": "Add Record",
@@ -73,7 +76,8 @@
     "confirmTitle": "Confirm"
   },
   "filters": {
-    "all": "All"
+    "all": "All",
+    "allObjects": "All Objects"
   },
   "item": "Item",
   "json": "JSON",
@@ -92,6 +96,7 @@
     "details": "Details",
     "display": "Display",
     "full": "Full",
+    "object": "Object",
     "operation": "Operation",
     "record": "Record",
     "lookupMatchIn": "Match In",
@@ -103,11 +108,25 @@
     "standard": "Standard",
     "status": "Status",
     "system": "System",
+    "table": "Table",
+    "timeline": "Timeline",
     "totalItems": "Total Items",
     "updatedAt": "Updated At",
     "updatedBy": "Updated By",
     "validation": "Validation",
     "advanced": "Advanced"
+  },
+  "column": {
+    "settings": "Column Settings",
+    "type": "Type",
+    "originalLabel": "Original Label",
+    "requiredColumnCannotHide": "Required columns cannot be hidden",
+    "resetSuccess": "Column settings reset to defaults",
+    "fixed": {
+      "none": "None",
+      "left": "Left",
+      "right": "Right"
+    }
   },
   "hotkeys": {
     "title": "Keyboard Shortcuts",
@@ -625,6 +644,50 @@
       "receiptWithNo": "Source Receipt: {no}",
       "purchaseRequest": "View Source Purchase Request",
       "purchaseRequestWithNo": "Source Purchase Request: {no}"
+    }
+  },
+  "workbench": {
+    "actions": {
+      "run": "Run"
+    },
+    "eyebrows": {
+      "closure": "Closure",
+      "exceptionQueues": "Exception Queues",
+      "pendingQueues": "Queues",
+      "recommendedActions": "Recommended Actions",
+      "sla": "SLA"
+    },
+    "titles": {
+      "closure": "Closure Status",
+      "exceptionQueues": "Exception Handling Queues",
+      "pendingQueues": "Pending Queues",
+      "recommendedActions": "Recommended Next Actions",
+      "sla": "Workflow SLA"
+    },
+    "labels": {
+      "blocker": "Current Blocker",
+      "completion": "Completion",
+      "dueDate": "Due Date",
+      "owner": "Owner",
+      "stage": "Current Stage",
+      "summary": "Summary"
+    },
+    "messages": {
+      "blockerHint": "There is still an open blocker before this record can be fully closed.",
+      "exceptionQueueHint": "Focus first on queues that need exception handling or manual follow-up.",
+      "notAvailable": "Not available",
+      "queueHint": "Review the main pending queues for this record and continue processing from the most urgent item.",
+      "recommendedActionHint": "These actions are prioritized from the current record state and help continue the closure path.",
+      "slaHint": "Track whether the current workflow is still within SLA and who owns the next response.",
+      "slaHealthy": "Within SLA"
+    },
+    "status": {
+      "approaching_sla": "Approaching SLA",
+      "completed": "Completed",
+      "escalated": "Escalated",
+      "overdue": "Overdue",
+      "unknown": "Unknown",
+      "within_sla": "Within SLA"
     }
   }
 }

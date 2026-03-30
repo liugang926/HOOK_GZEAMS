@@ -113,6 +113,54 @@ class ObjectRouterRuntimeActionsMixin:
         if isinstance(async_indicators, list):
             target['async_indicators'] = list(async_indicators)
 
+        summary_cards = self._get_workbench_config_value(
+            source,
+            'summary_cards',
+            'summaryCards',
+        )
+        if isinstance(summary_cards, list):
+            target['summary_cards'] = list(summary_cards)
+
+        queue_panels = self._get_workbench_config_value(
+            source,
+            'queue_panels',
+            'queuePanels',
+        )
+        if isinstance(queue_panels, list):
+            target['queue_panels'] = list(queue_panels)
+
+        exception_panels = self._get_workbench_config_value(
+            source,
+            'exception_panels',
+            'exceptionPanels',
+        )
+        if isinstance(exception_panels, list):
+            target['exception_panels'] = list(exception_panels)
+
+        closure_panel = self._get_workbench_config_value(
+            source,
+            'closure_panel',
+            'closurePanel',
+        )
+        if isinstance(closure_panel, dict):
+            target['closure_panel'] = dict(closure_panel)
+
+        sla_indicators = self._get_workbench_config_value(
+            source,
+            'sla_indicators',
+            'slaIndicators',
+        )
+        if isinstance(sla_indicators, list):
+            target['sla_indicators'] = list(sla_indicators)
+
+        recommended_actions = self._get_workbench_config_value(
+            source,
+            'recommended_actions',
+            'recommendedActions',
+        )
+        if isinstance(recommended_actions, list):
+            target['recommended_actions'] = list(recommended_actions)
+
         toolbar = self._get_workbench_config_value(source, 'toolbar')
         if isinstance(toolbar, dict):
             primary_actions = self._get_workbench_config_value(
@@ -152,6 +200,12 @@ class ObjectRouterRuntimeActionsMixin:
             },
             'detail_panels': [],
             'async_indicators': [],
+            'summary_cards': [],
+            'queue_panels': [],
+            'exception_panels': [],
+            'closure_panel': {},
+            'sla_indicators': [],
+            'recommended_actions': [],
         }
 
         self._apply_workbench_overrides(payload, menu_config)

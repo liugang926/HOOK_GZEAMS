@@ -11,6 +11,16 @@ from apps.inventory.serializers import (
     InventoryDifferenceSerializer,
     InventoryDifferenceListSerializer,
     InventoryDifferenceResolveSerializer,
+    InventoryDifferenceAssignOwnerSerializer,
+    InventoryDifferenceSubmitReviewSerializer,
+    InventoryDifferenceDraftSerializer,
+    InventoryDifferenceDecisionSerializer,
+    InventoryDifferenceExecuteSerializer,
+    InventoryDifferenceIgnoreSerializer,
+    InventoryDifferenceCloseSerializer,
+    InventoryDifferenceFollowUpSerializer,
+    InventoryDifferenceCompleteFollowUpSerializer,
+    InventoryDifferenceReopenFollowUpSerializer,
 )
 from apps.inventory.filters import InventoryDifferenceFilter
 from apps.inventory.services import DifferenceService
@@ -40,6 +50,26 @@ class InventoryDifferenceViewSet(BaseModelViewSetWithBatch):
             return InventoryDifferenceSerializer
         elif self.action == 'resolve':
             return InventoryDifferenceResolveSerializer
+        elif self.action == 'assign_owner':
+            return InventoryDifferenceAssignOwnerSerializer
+        elif self.action == 'submit_review':
+            return InventoryDifferenceSubmitReviewSerializer
+        elif self.action == 'save_draft':
+            return InventoryDifferenceDraftSerializer
+        elif self.action in ['approve_resolution', 'reject_resolution']:
+            return InventoryDifferenceDecisionSerializer
+        elif self.action == 'execute_resolution':
+            return InventoryDifferenceExecuteSerializer
+        elif self.action == 'send_follow_up':
+            return InventoryDifferenceFollowUpSerializer
+        elif self.action == 'complete_follow_up':
+            return InventoryDifferenceCompleteFollowUpSerializer
+        elif self.action == 'reopen_follow_up':
+            return InventoryDifferenceReopenFollowUpSerializer
+        elif self.action == 'ignore':
+            return InventoryDifferenceIgnoreSerializer
+        elif self.action == 'close_difference':
+            return InventoryDifferenceCloseSerializer
         return InventoryDifferenceSerializer
 
     def retrieve(self, request, *args, **kwargs):
@@ -97,6 +127,321 @@ class InventoryDifferenceViewSet(BaseModelViewSetWithBatch):
                 code='VALIDATION_ERROR',
                 message=_('Failed to resolve difference.'),
                 details={'error': str(e)}
+            )
+
+    @action(detail=True, methods=['post'], url_path='confirm')
+    def confirm(self, request, pk=None):
+        """Confirm a difference and optionally assign an owner."""
+        difference = self.get_object()
+        owner_id = request.data.get('owner_id')
+
+        service = DifferenceService()
+        try:
+            updated = service.confirm_difference(
+                difference_id=str(difference.id),
+                user_id=str(request.user.id),
+                owner_id=owner_id,
+            )
+            return success_response(
+                data=InventoryDifferenceSerializer(updated).data,
+                message=_('Difference confirmed successfully.'),
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to confirm difference.'),
+                details={'error': str(e)},
+            )
+
+    @action(detail=True, methods=['post'], url_path='assign-owner')
+    def assign_owner(self, request, pk=None):
+        """Assign an owner for a difference."""
+        difference = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = DifferenceService()
+        try:
+            updated = service.assign_owner(
+                difference_id=str(difference.id),
+                owner_id=serializer.validated_data['owner_id'],
+            )
+            return success_response(
+                data=InventoryDifferenceSerializer(updated).data,
+                message=_('Difference owner assigned successfully.'),
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to assign difference owner.'),
+                details={'error': str(e)},
+            )
+
+    @action(detail=True, methods=['post'], url_path='submit-review')
+    def submit_review(self, request, pk=None):
+        """Submit a difference resolution for review."""
+        difference = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = DifferenceService()
+        try:
+            updated = service.submit_review(
+                difference_id=str(difference.id),
+                user_id=str(request.user.id),
+                resolution=serializer.validated_data.get('resolution'),
+                closure_type=serializer.validated_data.get('closure_type'),
+                linked_action_code=serializer.validated_data.get('linked_action_code'),
+                evidence_refs=serializer.validated_data.get('evidence_refs'),
+            )
+            return success_response(
+                data=InventoryDifferenceSerializer(updated).data,
+                message=_('Difference submitted for review successfully.'),
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to submit difference for review.'),
+                details={'error': str(e)},
+            )
+
+    @action(detail=True, methods=['post'], url_path='save-draft')
+    def save_draft(self, request, pk=None):
+        """Persist editable difference handling fields without changing status."""
+        difference = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = DifferenceService()
+        try:
+            updated = service.save_draft(
+                difference_id=str(difference.id),
+                resolution=serializer.validated_data.get('resolution'),
+                closure_type=serializer.validated_data.get('closure_type'),
+                linked_action_code=serializer.validated_data.get('linked_action_code'),
+                evidence_refs=serializer.validated_data.get('evidence_refs'),
+                closure_notes=serializer.validated_data.get('closure_notes'),
+            )
+            return success_response(
+                data=InventoryDifferenceSerializer(updated).data,
+                message=_('Difference draft saved successfully.'),
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to save difference draft.'),
+                details={'error': str(e)},
+            )
+
+    @action(detail=True, methods=['post'], url_path='approve-resolution')
+    def approve_resolution(self, request, pk=None):
+        """Approve a submitted difference resolution."""
+        difference = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = DifferenceService()
+        try:
+            updated = service.approve_resolution(
+                difference_id=str(difference.id),
+                user_id=str(request.user.id),
+                closure_notes=serializer.validated_data.get('closure_notes'),
+            )
+            return success_response(
+                data=InventoryDifferenceSerializer(updated).data,
+                message=_('Difference resolution approved successfully.'),
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to approve difference resolution.'),
+                details={'error': str(e)},
+            )
+
+    @action(detail=True, methods=['post'], url_path='reject-resolution')
+    def reject_resolution(self, request, pk=None):
+        """Reject a submitted difference resolution."""
+        difference = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = DifferenceService()
+        try:
+            updated = service.reject_resolution(
+                difference_id=str(difference.id),
+                closure_notes=serializer.validated_data.get('closure_notes'),
+            )
+            return success_response(
+                data=InventoryDifferenceSerializer(updated).data,
+                message=_('Difference resolution rejected successfully.'),
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to reject difference resolution.'),
+                details={'error': str(e)},
+            )
+
+    @action(detail=True, methods=['post'], url_path='execute-resolution')
+    def execute_resolution(self, request, pk=None):
+        """Execute an approved difference resolution."""
+        difference = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = DifferenceService()
+        try:
+            updated = service.execute_resolution(
+                difference_id=str(difference.id),
+                user_id=str(request.user.id),
+                resolution=serializer.validated_data.get('resolution'),
+                sync_asset=serializer.validated_data.get('sync_asset', True),
+                linked_action_code=serializer.validated_data.get('linked_action_code'),
+            )
+            message = _('Difference resolution executed successfully.')
+            linked_action_execution = {}
+            if isinstance(updated.custom_fields, dict):
+                linked_action_execution = updated.custom_fields.get('linked_action_execution') or {}
+            linked_action_message = ''
+            if isinstance(linked_action_execution, dict):
+                linked_action_message = str(linked_action_execution.get('message') or '').strip()
+            if linked_action_message:
+                message = f'{message} {linked_action_message}'
+            return success_response(
+                data=InventoryDifferenceSerializer(updated).data,
+                message=message,
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to execute difference resolution.'),
+                details={'error': str(e)},
+            )
+
+    @action(detail=True, methods=['post'], url_path='ignore')
+    def ignore(self, request, pk=None):
+        """Ignore a difference without syncing asset data."""
+        difference = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = DifferenceService()
+        try:
+            updated = service.ignore_difference(
+                difference_id=str(difference.id),
+                user_id=str(request.user.id),
+                resolution=serializer.validated_data.get('resolution'),
+                closure_notes=serializer.validated_data.get('closure_notes'),
+            )
+            return success_response(
+                data=InventoryDifferenceSerializer(updated).data,
+                message=_('Difference ignored successfully.'),
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to ignore difference.'),
+                details={'error': str(e)},
+            )
+
+    @action(detail=True, methods=['post'], url_path='send-follow-up')
+    def send_follow_up(self, request, pk=None):
+        """Create or resend a manual follow-up inbox notification."""
+        difference = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = DifferenceService()
+        try:
+            updated = service.send_follow_up(
+                difference_id=str(difference.id),
+                user_id=str(request.user.id),
+            )
+            return success_response(
+                data=InventoryDifferenceSerializer(updated).data,
+                message=_('Difference follow-up reminder sent successfully.'),
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to send difference follow-up reminder.'),
+                details={'error': str(e)},
+            )
+
+    @action(detail=True, methods=['post'], url_path='complete-follow-up')
+    def complete_follow_up(self, request, pk=None):
+        """Complete the current manual follow-up task linked to the difference."""
+        difference = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = DifferenceService()
+        try:
+            updated = service.complete_follow_up(
+                difference_id=str(difference.id),
+                user_id=str(request.user.id),
+                completion_notes=serializer.validated_data.get('completion_notes'),
+                evidence_refs=serializer.validated_data.get('evidence_refs'),
+            )
+            return success_response(
+                data=InventoryDifferenceSerializer(updated).data,
+                message=_('Difference follow-up completed successfully.'),
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to complete the difference follow-up.'),
+                details={'error': str(e)},
+            )
+
+    @action(detail=True, methods=['post'], url_path='reopen-follow-up')
+    def reopen_follow_up(self, request, pk=None):
+        """Reopen the current manual follow-up task linked to the difference."""
+        difference = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = DifferenceService()
+        try:
+            updated = service.reopen_follow_up(
+                difference_id=str(difference.id),
+                user_id=str(request.user.id),
+            )
+            return success_response(
+                data=InventoryDifferenceSerializer(updated).data,
+                message=_('Difference follow-up reopened successfully.'),
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to reopen the difference follow-up.'),
+                details={'error': str(e)},
+            )
+
+    @action(detail=True, methods=['post'], url_path='close-difference')
+    def close_difference(self, request, pk=None):
+        """Close a resolved or ignored difference."""
+        difference = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        service = DifferenceService()
+        try:
+            updated = service.close_difference(
+                difference_id=str(difference.id),
+                user_id=str(request.user.id),
+                closure_notes=serializer.validated_data.get('closure_notes'),
+                evidence_refs=serializer.validated_data.get('evidence_refs'),
+            )
+            return success_response(
+                data=InventoryDifferenceSerializer(updated).data,
+                message=_('Difference closed successfully.'),
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to close difference.'),
+                details={'error': str(e)},
             )
 
     @action(detail=False, methods=['post'], url_path='batch-resolve')
@@ -228,35 +573,7 @@ class InventoryDifferenceViewSet(BaseModelViewSetWithBatch):
             )
 
         try:
-            from apps.assets.models import Asset
-            from apps.assets.models import Location
-            from apps.accounts.models import User
-
-            asset = Asset.objects.get(id=difference.asset_id, is_deleted=False)
-
-            # Sync location for location changes
-            if difference.difference_type == InventoryDifference.TYPE_LOCATION_MISMATCH:
-                if difference.actual_location_id:
-                    try:
-                        location = Location.objects.get(id=difference.actual_location_id)
-                        asset.location = location
-                    except Location.DoesNotExist:
-                        pass
-
-            # Sync custodian for custodian changes
-            if difference.difference_type == InventoryDifference.TYPE_CUSTODIAN_MISMATCH:
-                if difference.actual_custodian_id:
-                    try:
-                        custodian = User.objects.get(id=difference.actual_custodian_id)
-                        asset.custodian = custodian
-                    except User.DoesNotExist:
-                        pass
-
-            # Update status for damaged assets
-            if difference.difference_type == InventoryDifference.TYPE_DAMAGED:
-                asset.status = 'damaged'
-
-            asset.save()
+            DifferenceService()._sync_asset_from_difference(difference)
 
             return success_response(message=_('Asset synced successfully.'))
         except Exception as e:

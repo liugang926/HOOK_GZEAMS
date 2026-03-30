@@ -17,19 +17,35 @@
                 <el-icon><Search /></el-icon>
               </template>
             </el-input>
-            <el-select v-model="viewMode" style="width: 120px;" @change="handleViewModeChange">
-              <el-option label="全部" value="all" />
-              <el-option label="我的" value="mine" />
+            <el-select
+              v-model="viewMode"
+              style="width: 120px;"
+              @change="handleViewModeChange"
+            >
+              <el-option
+                label="全部"
+                value="all"
+              />
+              <el-option
+                label="我的"
+                value="mine"
+              />
             </el-select>
           </div>
         </div>
       </template>
 
       <!-- Quick Actions -->
-      <el-row :gutter="16" class="quick-actions">
+      <el-row
+        :gutter="16"
+        class="quick-actions"
+      >
         <el-col :span="24">
           <el-button-group>
-            <el-button type="primary" @click="openWorkflowCreate">
+            <el-button
+              type="primary"
+              @click="openWorkflowCreate"
+            >
               <el-icon><Plus /></el-icon>
               新建工作流
             </el-button>
@@ -43,22 +59,62 @@
 
       <!-- Filters -->
       <div class="filter-section">
-        <el-form :inline="true" class="filter-form">
+        <el-form
+          :inline="true"
+          class="filter-form"
+        >
           <el-form-item label="状态">
-            <el-select v-model="filters.status" placeholder="选择状态" clearable @change="handleFilterChange">
-              <el-option label="运行中" value="running" />
-              <el-option label="已完成" value="completed" />
-              <el-option label="已拒绝" value="rejected" />
-              <el-option label="已取消" value="cancelled" />
-              <el-option label="已驳回" value="returned" />
+            <el-select
+              v-model="filters.status"
+              placeholder="选择状态"
+              clearable
+              @change="handleFilterChange"
+            >
+              <el-option
+                label="运行中"
+                value="running"
+              />
+              <el-option
+                label="已完成"
+                value="completed"
+              />
+              <el-option
+                label="已拒绝"
+                value="rejected"
+              />
+              <el-option
+                label="已取消"
+                value="cancelled"
+              />
+              <el-option
+                label="已驳回"
+                value="returned"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="优先级">
-            <el-select v-model="filters.priority" placeholder="选择优先级" clearable @change="handleFilterChange">
-              <el-option label="紧急" value="urgent" />
-              <el-option label="高" value="high" />
-              <el-option label="中" value="normal" />
-              <el-option label="低" value="low" />
+            <el-select
+              v-model="filters.priority"
+              placeholder="选择优先级"
+              clearable
+              @change="handleFilterChange"
+            >
+              <el-option
+                label="紧急"
+                value="urgent"
+              />
+              <el-option
+                label="高"
+                value="high"
+              />
+              <el-option
+                label="中"
+                value="normal"
+              />
+              <el-option
+                label="低"
+                value="low"
+              />
             </el-select>
           </el-form-item>
           <el-form-item label="时间范围">
@@ -75,12 +131,21 @@
       </div>
 
       <!-- List -->
-      <div v-loading="loading" class="instance-list">
-        <div v-if="instances.length === 0" class="empty-state">
+      <div
+        v-loading="loading"
+        class="instance-list"
+      >
+        <div
+          v-if="instances.length === 0"
+          class="empty-state"
+        >
           <el-empty description="暂无工作流实例" />
         </div>
 
-        <div v-else class="instance-grid">
+        <div
+          v-else
+          class="instance-grid"
+        >
           <div
             v-for="instance in instances"
             :key="instance.id"
@@ -92,7 +157,10 @@
             <div class="instance-header">
               <div class="instance-title">
                 <h3>{{ instance.name || `工作流 #${instance.instanceNo || instance.id}` }}</h3>
-                <el-tag :type="getStatusTagType(instance.status)" size="small">
+                <el-tag
+                  :type="getStatusTagType(instance.status)"
+                  size="small"
+                >
                   {{ getStatusLabel(instance.status) }}
                 </el-tag>
               </div>

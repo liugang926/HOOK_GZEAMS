@@ -254,6 +254,81 @@
             }
         }
     },
+    "tag": {
+        "title": "Tag Management",
+        "create": "Create Tag",
+        "edit": "Edit Tag",
+        "columns": {
+            "name": "Tag",
+            "bizType": "Business Object",
+            "color": "Color",
+            "usageCount": "Assignments",
+            "createdAt": "Created At"
+        },
+        "search": {
+            "keyword": "Keyword",
+            "keywordPlaceholder": "Search tag name, description, or business object code",
+            "usageStatus": "Usage Status",
+            "used": "Used",
+            "unused": "Unused"
+        },
+        "actions": {
+            "manageAssets": "Manage Assets",
+            "viewRecords": "View Records",
+            "batchManageAssets": "Batch Manage Assets"
+        },
+        "form": {
+            "name": "Tag Name",
+            "namePlaceholder": "Enter tag name",
+            "color": "Tag Color",
+            "bizType": "Business Object",
+            "bizTypePlaceholder": "Select a business object type",
+            "description": "Description",
+            "descriptionPlaceholder": "Enter tag description"
+        },
+        "bizTypes": {
+            "all": "All Business Objects"
+        },
+        "statistics": {
+            "total": "Total Tags",
+            "used": "Used Tags",
+            "unused": "Unused Tags",
+            "assetScope": "Asset Scope Tags"
+        },
+        "assignment": {
+            "title": "Tag Assignment",
+            "summary": "Apply the selected tags to assets in batch, or remove them from the same asset selection.",
+            "selectedTags": "Selected Tags",
+            "assets": "Assets",
+            "assetPlaceholder": "Search assets by code or name"
+        },
+        "messages": {
+            "loadFailed": "Failed to load tags",
+            "saveSuccess": "Tag saved successfully",
+            "saveFailed": "Failed to save tag",
+            "deleteSuccess": "Tag deleted successfully",
+            "deleteFailed": "Failed to delete tag",
+            "confirmDelete": "Delete tag \"{name}\"?",
+            "confirmBatchDelete": "Delete the selected tags?",
+            "statsLoadFailed": "Failed to load tag statistics",
+            "optionsLoadFailed": "Failed to load business object options",
+            "selectAssets": "Select at least one asset first",
+            "applySuccess": "Tags applied successfully",
+            "applyFailed": "Failed to apply tags",
+            "removeSuccess": "Tags removed successfully",
+            "removeFailed": "Failed to remove tags",
+            "assetOnly": "This page can only manage asset assignments for Asset-scoped or all-object tags."
+        },
+        "validation": {
+            "nameRequired": "Please enter a tag name",
+            "colorRequired": "Please choose a tag color"
+        }
+    },
+    "assetTagSelector": {
+        "placeholder": "Select asset tags",
+        "loadFailed": "Failed to load asset tags",
+        "ungrouped": "Ungrouped"
+    },
     "branding": {
         "title": "Branding Settings",
         "subtitle": "Manage the system theme, application identity, logo assets, and login experience from one place.",
@@ -354,6 +429,30 @@
             "loadFailed": "Failed to load business objects",
             "noBusinessFields": "No business fields are configured for this object layout.",
             "loadMetadataFailed": "Failed to load object metadata"
+        },
+        "drilldown": {
+            "title": "Viewing a drilldown queue",
+            "description": "This list was opened from an operations dashboard or workbench. The labels below show the active drilldown conditions.",
+            "clear": "Clear Drilldown",
+            "labels": {
+                "source": "Source",
+                "owner": "Owner",
+                "assignee": "Assignee",
+                "department": "Department"
+            },
+            "flags": {
+                "unresolvedOnly": "Unresolved Only",
+                "manualFollowUpOnly": "Manual Follow-up Only",
+                "overdueOnly": "Overdue Only"
+            },
+            "actions": {
+                "showUnresolvedOnly": "Show Unresolved Only",
+                "showAllStatuses": "Show All Statuses",
+                "showManualFollowUpOnly": "Show Manual Follow-up Only",
+                "showAllFollowUps": "Show All Follow-up Items",
+                "showOverdueOnly": "Show Overdue Only",
+                "showAllDeadlines": "Show All Deadlines"
+            }
         }
     },
     "pageLayout": {

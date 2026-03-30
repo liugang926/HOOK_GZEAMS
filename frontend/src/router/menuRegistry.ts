@@ -91,6 +91,8 @@ export class MenuRegistryManager {
             if (obj.isMenuHidden) continue
             if (obj.isTopLevelNavigable === false) continue
             if (obj.objectRole === 'detail') continue
+            if (obj.objectRole === 'log') continue
+            if (obj.allowStandaloneRoute === false) continue
 
             if (this.registeredObjects.has(obj.code)) {
                 console.warn(`Object ${obj.code} is already registered in the menu. Skipping duplicate.`)

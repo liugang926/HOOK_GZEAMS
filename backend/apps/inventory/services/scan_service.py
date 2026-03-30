@@ -2,14 +2,15 @@
 Scan service for managing inventory scan operations.
 """
 import uuid
-from datetime import datetime
 from typing import List, Dict, Optional, Any
 from django.db import transaction
+from django.db.models import F
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 
 from apps.common.services.base_crud import BaseCRUDService
-from apps.inventory.models import InventoryScan, InventorySnapshot, InventoryTask
+from apps.inventory.models import InventoryScan, InventorySnapshot, InventoryTask, InventoryTaskExecutor
 from apps.assets.models import Asset
 
 
@@ -134,7 +135,7 @@ class ScanService(BaseCRUDService):
                 existing_scan.remark = remark or ''
                 existing_scan.latitude = latitude
                 existing_scan.longitude = longitude
-                existing_scan.scanned_at = datetime.utcnow()
+                existing_scan.scanned_at = timezone.now()
                 existing_scan.save()
 
                 # Update snapshot
@@ -149,7 +150,7 @@ class ScanService(BaseCRUDService):
                     asset_id=asset_id,
                     qr_code=qr_code,
                     scanned_by_id=scanned_by_id,
-                    scanned_at=datetime.utcnow(),
+                    scanned_at=timezone.now(),
                     scan_method=scan_method,
                     scan_status=scan_status,
                     original_location_id=original_location_id,
@@ -169,6 +170,11 @@ class ScanService(BaseCRUDService):
 
                 # Update snapshot
                 self._update_snapshot_scan(snapshot, scan)
+                InventoryTaskExecutor.objects.filter(
+                    task_id=task_id,
+                    executor_id=scanned_by_id,
+                    is_deleted=False,
+                ).update(completed_count=F('completed_count') + 1)
 
                 return scan
 

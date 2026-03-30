@@ -3,6 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { defineComponent } from 'vue'
 import { ElTable } from 'element-plus'
 import { createPinia, setActivePinia } from 'pinia'
 
@@ -99,7 +100,14 @@ describe('LanguageList Component', () => {
   })
 
   it('should render language table', async () => {
-    const wrapper = mount({
+    const LanguageTableHarness = defineComponent({
+      components: { ElTable, ElTableColumn: { template: '<div />', props: ['prop', 'label'] } },
+      props: {
+        languages: {
+          type: Array,
+          required: true
+        }
+      },
       template: `
         <el-table :data="languages">
           <el-table-column prop="code" label="Code" />
@@ -108,9 +116,10 @@ describe('LanguageList Component', () => {
           <el-table-column prop="isDefault" label="Default" />
           <el-table-column prop="isActive" label="Active" />
         </el-table>
-      `,
-      components: { ElTable, ElTableColumn: { template: '<div />', props: ['prop', 'label'] } }
-    }, {
+      `
+    })
+
+    const wrapper = mount(LanguageTableHarness, {
       props: {
         languages: [
           {

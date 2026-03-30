@@ -16,6 +16,7 @@ export const createCrudApiMockContext = () => ({
 
 export const createMetadataApiMockContext = () => ({
   getMetadataMock: vi.fn(),
+  getSlaMock: vi.fn(),
 })
 
 export const createRuntimeLayoutMockContext = () => ({

@@ -6,19 +6,26 @@
  */
 
 import request from '@/utils/request'
+import { toData, toPaginated } from '@/api/contract'
 import { assetReturnApi } from '@/api/dynamic'
 import type { PaginatedResponse } from '@/types/api'
+
+type LegacyPaginatedResponse<T> = PaginatedResponse<T> & {
+    items: T[]
+    total: number
+}
 
 export const returnApi = {
     /**
      * List returns (delegates to dynamic API)
      */
-    async list(params?: any): Promise<PaginatedResponse<any>> {
+    async list(params?: any): Promise<LegacyPaginatedResponse<any>> {
         const res = await assetReturnApi.list(params)
+        const page = toPaginated<any>(res)
         return {
-            items: res.data?.results || [],
-            total: res.data?.count || 0,
-            ...params
+            ...page,
+            items: page.results,
+            total: page.count
         }
     },
 
@@ -27,7 +34,7 @@ export const returnApi = {
      */
     async detail(id: string): Promise<any> {
         const res = await assetReturnApi.get(id)
-        return res.data
+        return toData<any>(res)
     },
 
     /**
@@ -39,7 +46,7 @@ export const returnApi = {
         returnDate: string
     }): Promise<any> {
         const res = await assetReturnApi.create(data)
-        return res.data
+        return toData<any>(res)
     },
 
     /**
@@ -47,7 +54,7 @@ export const returnApi = {
      */
     async update(id: string, data: any): Promise<any> {
         const res = await assetReturnApi.update(id, data)
-        return res.data
+        return toData<any>(res)
     },
 
     /**

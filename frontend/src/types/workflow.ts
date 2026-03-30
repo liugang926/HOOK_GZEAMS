@@ -304,10 +304,14 @@ export interface MyTasksResponse {
   pending: WorkflowTaskListItem[]
   overdue: WorkflowTaskListItem[]
   completedToday: WorkflowTaskListItem[]
+  completed_today?: WorkflowTaskListItem[]
   summary: {
     pendingCount: number
     overdueCount: number
     completedTodayCount: number
+    pending_count?: number
+    overdue_count?: number
+    completed_today_count?: number
   }
   count?: number
   next?: string | null

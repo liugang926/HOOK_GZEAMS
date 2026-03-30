@@ -167,6 +167,57 @@ export interface RuntimeWorkbenchAsyncIndicator {
   [key: string]: unknown
 }
 
+export interface RuntimeWorkbenchSummaryCard {
+  code: string
+  title?: string
+  label?: string
+  valueField?: string
+  value?: unknown
+  tone?: string
+  suffix?: string
+  props?: Record<string, unknown>
+  [key: string]: unknown
+}
+
+export interface RuntimeWorkbenchQueuePanel {
+  code: string
+  title?: string
+  queueCode?: string
+  countField?: string
+  route?: string
+  props?: Record<string, unknown>
+  [key: string]: unknown
+}
+
+export interface RuntimeWorkbenchClosurePanel {
+  title?: string
+  stageField?: string
+  ownerField?: string
+  blockerField?: string
+  progressField?: string
+  props?: Record<string, unknown>
+  [key: string]: unknown
+}
+
+export interface RuntimeWorkbenchSlaIndicator {
+  code: string
+  label?: string
+  statusField?: string
+  dueDateField?: string
+  props?: Record<string, unknown>
+  [key: string]: unknown
+}
+
+export interface RuntimeWorkbenchRecommendedAction {
+  code: string
+  label?: string
+  actionPath?: string
+  buttonType?: string
+  description?: string
+  props?: Record<string, unknown>
+  [key: string]: unknown
+}
+
 export interface RuntimeWorkbench {
   workspaceMode: string
   primaryEntryRoute: string
@@ -174,6 +225,43 @@ export interface RuntimeWorkbench {
   toolbar: RuntimeWorkbenchToolbar
   detailPanels: RuntimeWorkbenchDetailPanel[]
   asyncIndicators: RuntimeWorkbenchAsyncIndicator[]
+  summaryCards: RuntimeWorkbenchSummaryCard[]
+  queuePanels: RuntimeWorkbenchQueuePanel[]
+  exceptionPanels: RuntimeWorkbenchQueuePanel[]
+  closurePanel: RuntimeWorkbenchClosurePanel | null
+  slaIndicators: RuntimeWorkbenchSlaIndicator[]
+  recommendedActions: RuntimeWorkbenchRecommendedAction[]
+}
+
+export interface ObjectSlaAssignee {
+  id: string
+  username: string
+  displayName: string
+}
+
+export interface ObjectSlaNode {
+  id: string | null
+  name: string | null
+}
+
+export interface ObjectSlaSummary {
+  objectCode: string
+  businessId: string
+  hasInstance: boolean
+  instanceId: string | null
+  instanceNo: string | null
+  instanceStatus: string | null
+  workflowName: string
+  status: string
+  dueDate: string | null
+  remainingHours: number | null
+  hoursOverdue: number
+  isEscalated: boolean
+  assignee: ObjectSlaAssignee | null
+  currentNode: ObjectSlaNode | null
+  activeTaskId: string | null
+  activeTaskCount: number
+  completedAt: string | null
 }
 
 export type AggregateDocumentPageMode = 'create' | 'edit' | 'readonly'

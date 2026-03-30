@@ -52,6 +52,7 @@ LOCAL_APPS = [
     'apps.organizations',
     'apps.accounts',
     'apps.assets',
+    'apps.search',
     'apps.consumables',
     'apps.lifecycle',
     'apps.workflows',
@@ -250,6 +251,28 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutes
+CELERY_BEAT_SCHEDULE = {
+    'sync-assets-to-search-index-hourly': {
+        'task': 'apps.search.tasks.sync_all_assets_to_search_index',
+        'schedule': 60 * 60,
+    },
+}
+
+# Search Configuration
+ELASTICSEARCH = {
+    'enabled': os.getenv('ELASTICSEARCH_ENABLED', 'False').lower() == 'true',
+    'hosts': [
+        host.strip()
+        for host in os.getenv('ELASTICSEARCH_HOSTS', 'http://localhost:9200').split(',')
+        if host.strip()
+    ],
+    'options': {
+        'request_timeout': int(os.getenv('ELASTICSEARCH_TIMEOUT', '10')),
+        'max_retries': int(os.getenv('ELASTICSEARCH_MAX_RETRIES', '2')),
+        'retry_on_timeout': os.getenv('ELASTICSEARCH_RETRY_ON_TIMEOUT', 'True').lower() == 'true',
+    },
+    'index_prefix': os.getenv('ELASTICSEARCH_INDEX_PREFIX', 'gzeams'),
+}
 
 # Logging
 LOGGING = {

@@ -20,8 +20,27 @@ from apps.assets.models import (
     AssetStatusLog,
     Asset
 )
+from .tag import AssetTagSummarySerializer
 
 User = get_user_model()
+
+
+def serialize_asset_tags(asset):
+    """Serialize active asset tags with tag-group metadata."""
+    relations = getattr(asset, 'prefetched_asset_tag_relations', None)
+    if relations is None:
+        relations = asset.asset_tag_relations.filter(
+            is_deleted=False,
+            tag__is_deleted=False,
+            tag__is_active=True,
+        ).select_related('tag', 'tag__tag_group').order_by(
+            'tag__tag_group__sort_order',
+            'tag__sort_order',
+            'tag__name',
+        )
+
+    tags = [relation.tag for relation in relations if getattr(relation, 'tag', None)]
+    return AssetTagSummarySerializer(tags, many=True).data
 
 
 # ========== Supplier Serializers ==========
@@ -179,6 +198,7 @@ class AssetListSerializer(BaseListSerializer):
     asset_status_display = serializers.SerializerMethodField()
     purchase_price = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
     current_value = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    tags = serializers.SerializerMethodField()
 
     class Meta(BaseListSerializer.Meta):
         model = Asset
@@ -189,12 +209,16 @@ class AssetListSerializer(BaseListSerializer):
             'specification', 'brand', 'model',
             'purchase_price', 'current_value',
             'asset_status', 'asset_status_display',
-            'purchase_date'
+            'purchase_date', 'tags'
         ]
 
     def get_asset_status_display(self, obj):
         """Get status label from DictionaryService."""
         return obj.get_status_label()
+
+    def get_tags(self, obj):
+        """Return active asset tags for list rendering."""
+        return serialize_asset_tags(obj)
 
 
 class AssetDetailSerializer(BaseModelWithAuditSerializer):
@@ -229,6 +253,7 @@ class AssetDetailSerializer(BaseModelWithAuditSerializer):
 
     # Status Log Count
     status_log_count = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
 
     class Meta(BaseModelWithAuditSerializer.Meta):
         model = Asset
@@ -251,6 +276,7 @@ class AssetDetailSerializer(BaseModelWithAuditSerializer):
             'source_purchase_request', 'source_purchase_request_no',
             # Status Information
             'asset_status', 'asset_status_display',
+            'tags',
             # Label Information
             'qr_code', 'rfid_code',
             # Attachment Information
@@ -286,6 +312,10 @@ class AssetDetailSerializer(BaseModelWithAuditSerializer):
     def get_asset_status_display(self, obj):
         """Get status label from DictionaryService."""
         return obj.get_status_label()
+
+    def get_tags(self, obj):
+        """Return active asset tags for detail rendering."""
+        return serialize_asset_tags(obj)
 
 
 class AssetCreateSerializer(BaseModelSerializer):
@@ -492,6 +522,7 @@ class AssetSerializer(BaseModelSerializer):
         read_only=True,
         allow_null=True
     )
+    tags = serializers.SerializerMethodField()
 
     class Meta(BaseModelSerializer.Meta):
         model = Asset
@@ -509,6 +540,7 @@ class AssetSerializer(BaseModelSerializer):
             'source_receipt_item',
             'source_purchase_request', 'source_purchase_request_no',
             'asset_status', 'asset_status_display',
+            'tags',
             'qr_code', 'rfid_code',
             'images', 'attachments', 'remarks'
         ]
@@ -519,6 +551,10 @@ class AssetSerializer(BaseModelSerializer):
     def get_asset_status_display(self, obj):
         """Get status label from DictionaryService."""
         return obj.get_status_label()
+
+    def get_tags(self, obj):
+        """Return active asset tags for generic CRUD payloads."""
+        return serialize_asset_tags(obj)
 
 
 # ========== Bulk Import/Export Serializers ==========

@@ -5,10 +5,11 @@ Provides business logic for querying and analyzing IntegrationLog instances.
 """
 import logging
 from typing import Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.db.models import Count, Avg, Q, F
 from django.db.models.functions import TruncDate
+from django.utils import timezone
 
 from apps.common.services.base_crud import BaseCRUDService
 from apps.integration.models import IntegrationLog
@@ -33,7 +34,7 @@ class IntegrationLogService(BaseCRUDService):
         Returns:
             Dict with statistics
         """
-        since_date = datetime.now() - timedelta(days=days)
+        since_date = timezone.now() - timedelta(days=days)
 
         queryset = self.query().filter(created_at__gte=since_date)
 
@@ -156,7 +157,7 @@ class IntegrationLogService(BaseCRUDService):
         Returns:
             List of daily statistics
         """
-        since_date = datetime.now() - timedelta(days=days)
+        since_date = timezone.now() - timedelta(days=days)
 
         queryset = self.query().filter(
             created_at__gte=since_date
@@ -181,7 +182,7 @@ class IntegrationLogService(BaseCRUDService):
         Returns:
             Number of logs deleted
         """
-        cutoff_date = datetime.now() - timedelta(days=days_to_keep)
+        cutoff_date = timezone.now() - timedelta(days=days_to_keep)
 
         old_logs = self.query().filter(
             created_at__lt=cutoff_date

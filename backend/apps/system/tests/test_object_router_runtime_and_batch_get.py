@@ -94,6 +94,12 @@ def test_object_router_runtime_returns_layout_and_fields():
     assert workbench['legacyAliases'] == []
     assert workbench['detailPanels'] == []
     assert workbench['asyncIndicators'] == []
+    assert workbench['summaryCards'] == []
+    assert workbench['queuePanels'] == []
+    assert workbench['exceptionPanels'] == []
+    assert workbench['closurePanel'] == {}
+    assert workbench['slaIndicators'] == []
+    assert workbench['recommendedActions'] == []
     assert workbench['toolbar']['primaryActions'] == []
     assert workbench['toolbar']['secondaryActions'] == []
 
@@ -161,6 +167,12 @@ def test_object_router_runtime_applies_workbench_overrides_from_layout():
                 },
                 'detailPanels': [{'code': 'integration_logs', 'component': 'integration-log-table'}],
                 'asyncIndicators': [{'code': 'sync_task', 'type': 'sync-task'}],
+                'summaryCards': [{'code': 'pending_count', 'valueField': 'pendingCount'}],
+                'queuePanels': [{'code': 'approaching_sla', 'queueCode': 'approaching_sla'}],
+                'exceptionPanels': [{'code': 'push_failed', 'queueCode': 'push_failed'}],
+                'closurePanel': {'stageField': 'status', 'ownerField': 'ownerName'},
+                'slaIndicators': [{'code': 'workflow_sla', 'statusField': 'slaStatus'}],
+                'recommendedActions': [{'code': 'follow_up', 'actionPath': 'follow_up'}],
             },
         },
     )
@@ -182,6 +194,12 @@ def test_object_router_runtime_applies_workbench_overrides_from_layout():
     assert workbench['toolbar']['secondaryActions'][0]['code'] == 'archive'
     assert workbench['detailPanels'][0]['code'] == 'integration_logs'
     assert workbench['asyncIndicators'][0]['code'] == 'sync_task'
+    assert workbench['summaryCards'][0]['code'] == 'pending_count'
+    assert workbench['queuePanels'][0]['queueCode'] == 'approaching_sla'
+    assert workbench['exceptionPanels'][0]['queueCode'] == 'push_failed'
+    assert workbench['closurePanel']['stageField'] == 'status'
+    assert workbench['slaIndicators'][0]['statusField'] == 'slaStatus'
+    assert workbench['recommendedActions'][0]['actionPath'] == 'follow_up'
 
 
 @pytest.mark.django_db

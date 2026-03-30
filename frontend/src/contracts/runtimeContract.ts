@@ -89,5 +89,32 @@ export function checkRuntimeContract(payload: any): RuntimeContractCheck {
     }
   }
 
+  const workbench = (payload as AnyRecord).workbench
+  if (workbench !== undefined && workbench !== null) {
+    if (!isObject(workbench)) {
+      errors.push('workbench is not an object')
+    } else {
+      const detailPanels = (workbench as AnyRecord).detailPanels ?? (workbench as AnyRecord).detail_panels
+      const asyncIndicators = (workbench as AnyRecord).asyncIndicators ?? (workbench as AnyRecord).async_indicators
+      const summaryCards = (workbench as AnyRecord).summaryCards ?? (workbench as AnyRecord).summary_cards
+      const queuePanels = (workbench as AnyRecord).queuePanels ?? (workbench as AnyRecord).queue_panels
+      const exceptionPanels = (workbench as AnyRecord).exceptionPanels ?? (workbench as AnyRecord).exception_panels
+      const slaIndicators = (workbench as AnyRecord).slaIndicators ?? (workbench as AnyRecord).sla_indicators
+      const recommendedActions = (workbench as AnyRecord).recommendedActions ?? (workbench as AnyRecord).recommended_actions
+      const closurePanel = (workbench as AnyRecord).closurePanel ?? (workbench as AnyRecord).closure_panel
+
+      if (detailPanels !== undefined && !isArray(detailPanels)) errors.push('workbench.detailPanels is not an array')
+      if (asyncIndicators !== undefined && !isArray(asyncIndicators)) errors.push('workbench.asyncIndicators is not an array')
+      if (summaryCards !== undefined && !isArray(summaryCards)) errors.push('workbench.summaryCards is not an array')
+      if (queuePanels !== undefined && !isArray(queuePanels)) errors.push('workbench.queuePanels is not an array')
+      if (exceptionPanels !== undefined && !isArray(exceptionPanels)) errors.push('workbench.exceptionPanels is not an array')
+      if (slaIndicators !== undefined && !isArray(slaIndicators)) errors.push('workbench.slaIndicators is not an array')
+      if (recommendedActions !== undefined && !isArray(recommendedActions)) errors.push('workbench.recommendedActions is not an array')
+      if (closurePanel !== undefined && closurePanel !== null && !isObject(closurePanel)) {
+        errors.push('workbench.closurePanel is not an object')
+      }
+    }
+  }
+
   return { ok: errors.length === 0, errors }
 }

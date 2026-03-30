@@ -7,6 +7,39 @@
       :user-initial="userInitial"
     />
 
+    <el-card
+      class="portal-actions-card"
+      shadow="never"
+    >
+      <template #header>
+        <span>{{ $t('portal.quickActions.title') }}</span>
+      </template>
+      <el-space wrap>
+        <el-button
+          type="primary"
+          @click="handleQuickAction('pickup')"
+        >
+          {{ $t('portal.quickActions.pickup') }}
+        </el-button>
+        <el-button @click="handleQuickAction('transfer')">
+          {{ $t('portal.quickActions.transfer') }}
+        </el-button>
+        <el-button @click="handleQuickAction('loan')">
+          {{ $t('portal.quickActions.loan') }}
+        </el-button>
+        <el-button @click="handleQuickAction('return')">
+          {{ $t('portal.quickActions.return') }}
+        </el-button>
+        <el-button
+          type="warning"
+          plain
+          @click="router.push('/workflow/tasks')"
+        >
+          {{ $t('portal.quickActions.tasks') }}
+        </el-button>
+      </el-space>
+    </el-card>
+
     <el-tabs
       v-model="activeTab"
       class="portal-tabs"
@@ -99,12 +132,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 
 import { useUserStore } from '@/stores/user'
+import type { PortalRequestType } from '@/types/portal'
 
 import PortalAssetsTab from './PortalAssetsTab.vue'
 import PortalHeader from './PortalHeader.vue'
@@ -118,6 +152,10 @@ import {
   getPortalDisplayName,
   getPortalUserInitial,
 } from './portalHeaderModel'
+import {
+  createPortalRequestStatusOptions,
+  getPortalRequestCreatePath,
+} from './portalRequestModel'
 import { usePortalAssets } from './usePortalAssets'
 import { usePortalRequests } from './usePortalRequests'
 import { usePortalTasks } from './usePortalTasks'
@@ -137,13 +175,6 @@ const actionNotifier = {
 const userId = computed(() => userStore.userInfo?.id)
 
 const assetStatuses = createPortalAssetStatusOptions(t)
-const requestStatuses = [
-  { value: 'draft', label: t('portal.requests.status.draft') },
-  { value: 'pending', label: t('portal.requests.status.pending') },
-  { value: 'approved', label: t('portal.requests.status.approved') },
-  { value: 'rejected', label: t('portal.requests.status.rejected') },
-  { value: 'completed', label: t('portal.requests.status.completed') },
-]
 
 const {
   assetPage,
@@ -175,7 +206,7 @@ const {
   requestType,
   submitRequest,
   viewRequest,
-} = usePortalRequests(t, router, actionNotifier)
+} = usePortalRequests(t, router, actionNotifier, userId)
 const {
   confirmReject,
   loadMyTasks,
@@ -198,6 +229,17 @@ const headerStats = computed(() => buildPortalHeaderStats({
   pendingRequests: pendingRequestCount.value,
   pendingTasks: pendingTaskCount.value,
 }, t))
+const requestStatuses = computed(() => createPortalRequestStatusOptions(requestType.value, t))
+
+const handleQuickAction = (type: PortalRequestType) => {
+  requestType.value = type
+  void router.push(getPortalRequestCreatePath(type))
+}
+
+watch(requestType, () => {
+  requestStatusFilter.value = ''
+  requestPage.value = 1
+})
 
 onMounted(async () => {
   await Promise.all([
@@ -212,6 +254,8 @@ onMounted(async () => {
 
 <style scoped>
 .user-portal { padding: 20px; }
+
+.portal-actions-card { margin-bottom: 20px; }
 
 .portal-tabs { background: #fff; border-radius: 8px; padding: 0; }
 </style>

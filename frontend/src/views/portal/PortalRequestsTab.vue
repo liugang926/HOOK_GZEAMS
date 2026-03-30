@@ -16,14 +16,17 @@
         @update:model-value="emit('update:requestType', $event)"
         @change="emit('refresh')"
       >
-        <el-radio-button value="purchase">
-          {{ $t('portal.requests.type.purchase') }}
+        <el-radio-button value="pickup">
+          {{ $t('portal.requests.type.pickup') }}
         </el-radio-button>
-        <el-radio-button value="maintenance">
-          {{ $t('portal.requests.type.maintenance') }}
+        <el-radio-button value="transfer">
+          {{ $t('portal.requests.type.transfer') }}
         </el-radio-button>
-        <el-radio-button value="disposal">
-          {{ $t('portal.requests.type.disposal') }}
+        <el-radio-button value="loan">
+          {{ $t('portal.requests.type.loan') }}
+        </el-radio-button>
+        <el-radio-button value="return">
+          {{ $t('portal.requests.type.return') }}
         </el-radio-button>
       </el-radio-group>
       <el-select
@@ -57,14 +60,20 @@
     >
       <el-table-column
         :label="$t('portal.requests.cols.code')"
-        prop="code"
         width="140"
-      />
+      >
+        <template #default="{ row }">
+          {{ getRequestCode(row) }}
+        </template>
+      </el-table-column>
       <el-table-column
         :label="$t('portal.requests.cols.title')"
-        prop="title"
         min-width="160"
-      />
+      >
+        <template #default="{ row }">
+          {{ getRequestTitle(row) }}
+        </template>
+      </el-table-column>
       <el-table-column
         :label="$t('portal.requests.cols.status')"
         prop="statusDisplay"
@@ -137,17 +146,16 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Plus } from '@element-plus/icons-vue'
 
+import type {
+  PortalRequestRecord,
+  PortalRequestType,
+  PortalStatusOption,
+} from '@/types/portal'
 import { formatDate } from '@/utils/dateFormat'
 
 import {
   getPortalRequestStatusTagType,
-  type PortalRequestType,
 } from './portalRequestModel'
-
-interface StatusOption {
-  value: string
-  label: string
-}
 
 const props = defineProps<{
   canCancel: (row: Record<string, any>) => boolean
@@ -157,9 +165,9 @@ const props = defineProps<{
   pageSize: number
   pendingCount: number
   requestType: PortalRequestType
-  requests: any[]
+  requests: PortalRequestRecord[]
   statusFilter: string
-  statuses: StatusOption[]
+  statuses: PortalStatusOption[]
   total: number
 }>()
 
@@ -181,6 +189,12 @@ const statusFilterModel = computed({
   get: () => props.statusFilter,
   set: (value: string) => emit('update:statusFilter', value),
 })
+
+const getRequestCode = (row: PortalRequestRecord) =>
+  row.code || row.requestNo || row.pickupNo || row.transferNo || row.loanNo || row.returnNo || '-'
+
+const getRequestTitle = (row: PortalRequestRecord) =>
+  row.title || row.assetName || row.reason || getRequestCode(row)
 </script>
 
 <style scoped>

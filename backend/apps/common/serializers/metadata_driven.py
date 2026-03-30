@@ -65,7 +65,7 @@ class FieldDefinitionMapper:
             'required': field_def.is_required,
             'read_only': field_def.is_readonly,
             'label': field_def.name,
-            'help_text': field_def.description or '',
+            'help_text': getattr(field_def, 'description', '') or '',
             'allow_null': not field_def.is_required,
         }
 

@@ -14,6 +14,9 @@ interface ReverseRelationFieldLike {
   displayTier?: 'L1' | 'L2' | 'L3'
   relationKind?: string
   relatedObjectCode?: string
+  targetObjectRole?: string
+  targetAllowStandaloneRoute?: boolean
+  extraConfig?: Record<string, any>
   reverseRelationField?: string
   sortOrder?: number
   groupKey?: string
@@ -51,6 +54,17 @@ export function useBaseDetailPageRelations(options: UseBaseDetailPageRelationsOp
     return String(rawRelation.relationKind || rawRelation.relation_kind || '').trim() !== 'through_line_item'
   }
 
+  const isHistoryOnlyRelation = (relation: ReverseRelationFieldLike) => {
+    const rawRelation = relation as ReverseRelationFieldLike & Record<string, any>
+    const objectRole = String(rawRelation.targetObjectRole || rawRelation.target_object_role || '').trim().toLowerCase()
+    const extraConfig = (rawRelation.extraConfig || rawRelation.extra_config || {}) as Record<string, any>
+    const presentationZone = String(
+      extraConfig.presentationZone || extraConfig.presentation_zone || ''
+    ).trim().toLowerCase()
+
+    return objectRole === 'log' || presentationZone === 'history' || presentationZone === 'hidden'
+  }
+
   const allVisibleRelations = computed(() => {
     if (!props.showRelatedObjects) {
       return []
@@ -58,6 +72,7 @@ export function useBaseDetailPageRelations(options: UseBaseDetailPageRelationsOp
     const source = runtimeRelations.value.length > 0 ? runtimeRelations.value : (props.reverseRelations || [])
     return source
       .filter((rel) => rel.displayMode !== 'hidden')
+      .filter((rel) => !isHistoryOnlyRelation(rel))
       .slice()
       .sort((a, b) => {
         const aOrder = Number.isFinite(Number(a.sortOrder)) ? Number(a.sortOrder) : 9999
@@ -93,6 +108,21 @@ export function useBaseDetailPageRelations(options: UseBaseDetailPageRelationsOp
       displayTier: (String(raw.displayTier || raw.display_tier || 'L2').trim() as ReverseRelationFieldLike['displayTier']),
       relationKind: String(raw.relationKind || raw.relation_kind || '').trim(),
       relatedObjectCode,
+      targetObjectRole: String(raw.targetObjectRole || raw.target_object_role || '').trim() || undefined,
+      targetAllowStandaloneRoute:
+        raw.targetAllowStandaloneRoute === undefined && raw.target_allow_standalone_route === undefined
+          ? undefined
+          : Boolean(
+              raw.targetAllowStandaloneRoute !== undefined
+                ? raw.targetAllowStandaloneRoute
+                : raw.target_allow_standalone_route
+            ),
+      extraConfig:
+        raw.extraConfig && typeof raw.extraConfig === 'object'
+          ? raw.extraConfig
+          : raw.extra_config && typeof raw.extra_config === 'object'
+            ? raw.extra_config
+            : undefined,
       reverseRelationField: String(raw.targetFkField || raw.target_fk_field || '').trim(),
       sortOrder: Number(raw.sortOrder || raw.sort_order || 0) || 0,
       groupKey: String(raw.groupKey || raw.group_key || '').trim(),

@@ -2,9 +2,10 @@
  * useCrud composable tests
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { useCrud } from '@/composables/useCrud'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import i18n from '@/locales'
 
 // Mock Element Plus components
 vi.mock('element-plus', () => ({
@@ -20,9 +21,12 @@ vi.mock('element-plus', () => ({
 
 describe('useCrud', () => {
   let mockApi: any
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+  const t = i18n.global.t
 
   beforeEach(() => {
     vi.clearAllMocks()
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
     // Mock API
     mockApi = {
@@ -34,6 +38,10 @@ describe('useCrud', () => {
 
     // Mock ElMessageBox.confirm to resolve by default
     ;(ElMessageBox.confirm as any).mockResolvedValue('confirm')
+  })
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore()
   })
 
   describe('fetchList', () => {
@@ -88,6 +96,7 @@ describe('useCrud', () => {
 
       expect(crud.listData.value).toEqual([])
       expect(crud.loading.value).toBe(false)
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to fetch test list:', expect.any(Error))
     })
 
     it('should set loading to true during fetch', async () => {
@@ -121,14 +130,16 @@ describe('useCrud', () => {
       const result = await crud.handleDelete({ id: '1', name: 'Item 1' })
 
       expect(ElMessageBox.confirm).toHaveBeenCalledWith(
-        'Confirm to delete test "Item 1"?',
-        'Confirm Delete',
-        expect.objectContaining({
+        t('common.messages.confirmDelete'),
+        t('common.dialog.confirmTitle'),
+        {
+          confirmButtonText: t('common.actions.confirm'),
+          cancelButtonText: t('common.actions.cancel'),
           type: 'warning'
-        })
+        }
       )
       expect(mockApi.delete).toHaveBeenCalledWith('1')
-      expect(ElMessage.success).toHaveBeenCalledWith('Delete successful')
+      expect(ElMessage.success).toHaveBeenCalledWith(t('common.messages.deleteSuccess'))
       expect(result).toBe(true)
     })
 
@@ -139,9 +150,12 @@ describe('useCrud', () => {
       await crud.handleDelete({ id: '1', code: 'TEST001' })
 
       expect(ElMessageBox.confirm).toHaveBeenCalledWith(
-        'Confirm to delete test "TEST001"?',
-        'Confirm Delete',
-        expect.anything()
+        t('common.messages.confirmDelete'),
+        t('common.dialog.confirmTitle'),
+        expect.objectContaining({
+          confirmButtonText: t('common.actions.confirm'),
+          cancelButtonText: t('common.actions.cancel')
+        })
       )
     })
 
@@ -152,9 +166,12 @@ describe('useCrud', () => {
       await crud.handleDelete({ id: '1' })
 
       expect(ElMessageBox.confirm).toHaveBeenCalledWith(
-        'Confirm to delete test ""?',
-        'Confirm Delete',
-        expect.anything()
+        t('common.messages.confirmDelete'),
+        t('common.dialog.confirmTitle'),
+        expect.objectContaining({
+          confirmButtonText: t('common.actions.confirm'),
+          cancelButtonText: t('common.actions.cancel')
+        })
       )
     })
 
@@ -176,8 +193,9 @@ describe('useCrud', () => {
       const crud = useCrud({ name: 'test', api: mockApi })
       const result = await crud.handleDelete({ id: '1', name: 'Item 1' })
 
-      expect(ElMessage.error).toHaveBeenCalledWith('Delete failed')
+      expect(ElMessage.error).toHaveBeenCalledWith(t('common.messages.deleteFailed'))
       expect(result).toBe(false)
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error))
     })
 
     it('should do nothing when delete API is not provided', async () => {
@@ -205,14 +223,16 @@ describe('useCrud', () => {
       const result = await crud.handleBatchDelete(rows)
 
       expect(ElMessageBox.confirm).toHaveBeenCalledWith(
-        'Confirm to delete selected 3 items?',
-        'Confirm Batch Delete',
-        expect.objectContaining({
+        t('common.dialog.confirmDeleteMessage'),
+        t('common.dialog.confirmTitle'),
+        {
+          confirmButtonText: t('common.actions.confirm'),
+          cancelButtonText: t('common.actions.cancel'),
           type: 'warning'
-        })
+        }
       )
       expect(mockApi.batchDelete).toHaveBeenCalledWith(['1', '2', '3'])
-      expect(ElMessage.success).toHaveBeenCalledWith('Successfully deleted 3 items')
+      expect(ElMessage.success).toHaveBeenCalledWith(t('common.messages.deleteSuccess'))
       expect(result).toBe(true)
     })
 
@@ -236,8 +256,9 @@ describe('useCrud', () => {
       const crud = useCrud({ name: 'test', api: mockApi })
       const result = await crud.handleBatchDelete(rows)
 
-      expect(ElMessage.error).toHaveBeenCalledWith('Batch delete failed')
+      expect(ElMessage.error).toHaveBeenCalledWith(t('common.messages.deleteFailed'))
       expect(result).toBe(false)
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error))
     })
 
     it('should do nothing when no rows selected', async () => {
@@ -285,7 +306,7 @@ describe('useCrud', () => {
 
       expect(mockApi.export).toHaveBeenCalledWith({ param1: 'value1' })
       expect(URL.createObjectURL).toHaveBeenCalledWith(mockBlob)
-      expect(ElMessage.success).toHaveBeenCalledWith('Export successful')
+      expect(ElMessage.success).toHaveBeenCalledWith(t('common.messages.operationSuccess'))
     })
 
     it('should handle export errors', async () => {
@@ -294,7 +315,8 @@ describe('useCrud', () => {
       const crud = useCrud({ name: 'test', api: mockApi })
       await crud.handleExport()
 
-      expect(ElMessage.error).toHaveBeenCalledWith('Export failed')
+      expect(ElMessage.error).toHaveBeenCalledWith(t('common.messages.operationFailed'))
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.any(Error))
     })
 
     it('should do nothing when export API is not provided', async () => {
@@ -344,7 +366,7 @@ describe('useCrud', () => {
       const crud = useCrud({ name: 'test', api: mockApi })
       await crud.handleBatchExport([])
 
-      expect(ElMessage.warning).toHaveBeenCalledWith('Please select items to export')
+      expect(ElMessage.warning).toHaveBeenCalledWith(t('common.messages.pleaseSelectData'))
       expect(mockApi.export).not.toHaveBeenCalled()
     })
 
@@ -357,7 +379,7 @@ describe('useCrud', () => {
 
       // Should show warning because export API is not provided
       expect(ElMessage.warning).toHaveBeenCalled()
-      expect(ElMessage.warning.mock.calls[0][0]).toBe('Please select items to export')
+      expect(ElMessage.warning.mock.calls[0][0]).toBe(t('common.messages.pleaseSelectData'))
     })
   })
 

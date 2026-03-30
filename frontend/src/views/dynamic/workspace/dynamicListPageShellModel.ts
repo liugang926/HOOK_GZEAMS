@@ -15,13 +15,25 @@ const fallbackPermissions: DynamicListResolvedPermissions = {
   delete: true,
 }
 
-const reservedRouteFilterKeys = new Set([
+const reservedRouteStateKeys = new Set([
   'action',
   'layoutId',
   'layoutType',
   'mode',
   'objectCode',
   'objectName',
+])
+
+const displayOnlyRouteKeys = new Set([
+  'source_label',
+  'owner_label',
+  'department_label',
+  'assignee_label',
+])
+
+const reservedRouteFilterKeys = new Set([
+  ...reservedRouteStateKeys,
+  ...displayOnlyRouteKeys,
 ])
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -34,6 +46,18 @@ export const extractDynamicListRouteFilters = (routeQuery: unknown): Record<stri
       return acc
     }
     acc[key] = Array.isArray(value) ? value[0] : value
+    return acc
+  }, {} as Record<string, any>)
+}
+
+export const extractDynamicListReservedRouteQuery = (routeQuery: unknown): Record<string, any> => {
+  if (!routeQuery || typeof routeQuery !== 'object') return {}
+
+  return Object.entries(routeQuery).reduce((acc, [key, value]) => {
+    if (!reservedRouteStateKeys.has(key) || value === undefined || value === null || value === '') {
+      return acc
+    }
+    acc[key] = value
     return acc
   }, {} as Record<string, any>)
 }

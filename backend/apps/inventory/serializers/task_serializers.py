@@ -17,6 +17,7 @@ class InventoryTaskExecutorSerializer(serializers.ModelSerializer):
     executor_id = serializers.CharField(source='executor.id', read_only=True)
     executor_name = serializers.CharField(source='executor.get_full_name', read_only=True)
     executor_username = serializers.CharField(source='executor.username', read_only=True)
+    assigned_at = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
         model = InventoryTaskExecutor
@@ -25,6 +26,7 @@ class InventoryTaskExecutorSerializer(serializers.ModelSerializer):
             'executor_id',
             'executor_name',
             'executor_username',
+            'assigned_at',
             'is_primary',
             'completed_count',
         ]
@@ -89,6 +91,7 @@ class InventoryTaskDetailSerializer(BaseModelSerializer):
     progress_percentage = serializers.ReadOnlyField()
     status_label = serializers.CharField(source='get_status_label', read_only=True)
     inventory_type_label = serializers.CharField(source='get_inventory_type_label', read_only=True)
+    difference_summary = serializers.SerializerMethodField()
 
     # Full nested relationships
     executors = InventoryTaskExecutorSerializer(
@@ -123,6 +126,7 @@ class InventoryTaskDetailSerializer(BaseModelSerializer):
             'damaged_count',
             'location_changed_count',
             'progress_percentage',
+            'difference_summary',
             'notes',
             'executors',
         ]
@@ -132,6 +136,12 @@ class InventoryTaskDetailSerializer(BaseModelSerializer):
             'status_label',
             'inventory_type_label',
         ]
+
+    def get_difference_summary(self, obj):
+        """Load aggregated difference summary for the task detail workbench."""
+        from apps.inventory.services import DifferenceService
+
+        return DifferenceService().get_difference_summary(str(obj.id))
 
 
 class InventoryTaskCreateSerializer(BaseModelSerializer):

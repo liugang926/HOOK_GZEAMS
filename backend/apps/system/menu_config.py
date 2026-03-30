@@ -15,6 +15,7 @@ from copy import deepcopy
 from typing import Any, Dict, Iterable, List, Optional
 
 from apps.system.models import BusinessObject, MenuEntry, MenuGroup
+from apps.system.services.hardcoded_object_sync_service import HardcodedObjectSyncService
 
 
 MenuConfig = Dict[str, Any]
@@ -74,6 +75,557 @@ ASSET_PROJECT_WORKBENCH: Dict[str, Any] = {
         },
     ],
     "async_indicators": [],
+}
+
+FINANCE_VOUCHER_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/FinanceVoucher",
+    "legacy_aliases": ["/finance/vouchers"],
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "submit_voucher",
+                "label_key": "finance.workbench.actions.submitVoucher",
+                "action_path": "submit",
+                "button_type": "primary",
+                "visible_when": {
+                    "status_in": ["draft"],
+                },
+            },
+            {
+                "code": "approve_voucher",
+                "label_key": "finance.workbench.actions.approveVoucher",
+                "action_path": "approve",
+                "button_type": "success",
+                "visible_when": {
+                    "status_in": ["submitted"],
+                },
+            },
+            {
+                "code": "push_voucher",
+                "label_key": "finance.workbench.actions.pushVoucher",
+                "action_path": "push",
+                "button_type": "warning",
+                "visible_when": {
+                    "status_in": ["approved"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "retry_push",
+                "label_key": "finance.workbench.actions.retryPush",
+                "action_path": "retry",
+                "button_type": "default",
+                "visible_when": {
+                    "status_in": ["approved", "posted"],
+                },
+            }
+        ],
+    },
+    "detail_panels": [
+        {
+            "code": "voucher_entries",
+            "title_key": "finance.panels.entries",
+            "component": "finance-voucher-entries",
+        },
+        {
+            "code": "voucher_sync_status",
+            "title_key": "finance.panels.syncStatus",
+            "component": "finance-voucher-sync-status",
+        },
+        {
+            "code": "voucher_integration_logs",
+            "title_key": "finance.panels.integrationLogs",
+            "component": "finance-voucher-integration-logs",
+        },
+    ],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "voucher_total_amount",
+            "label_key": "finance.workbench.summary.totalAmount",
+            "value_field": "total_amount",
+            "tone": "info",
+        },
+        {
+            "code": "voucher_entry_count",
+            "label_key": "finance.workbench.summary.entryCount",
+            "value_field": "entry_count",
+        },
+        {
+            "code": "voucher_balance_state",
+            "label_key": "finance.workbench.summary.balanceState",
+            "value_field": "is_balanced",
+            "tone": "success",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "voucher_review_queue",
+            "title_key": "finance.workbench.queues.reviewQueue",
+            "count": 1,
+            "route": "/objects/FinanceVoucher?status=submitted",
+            "visible_when": {
+                "status_in": ["submitted"],
+            },
+        },
+        {
+            "code": "voucher_posting_queue",
+            "title_key": "finance.workbench.queues.postingQueue",
+            "count": 1,
+            "route": "/objects/FinanceVoucher?status=approved",
+            "visible_when": {
+                "status_in": ["approved"],
+            },
+        },
+    ],
+    "exception_panels": [
+        {
+            "code": "voucher_integration_attention",
+            "title_key": "finance.workbench.queues.integrationAttention",
+            "count": 1,
+            "route": "/objects/FinanceVoucher?status=approved",
+            "visible_when": {
+                "status_in": ["approved", "rejected"],
+            },
+            "tone": "danger",
+        }
+    ],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "status",
+        "owner_field": "posted_by_name",
+        "blocker_field": "notes",
+        "progress_field": "erp_voucher_no",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [
+        {
+            "code": "voucher_push_recommended",
+            "label_key": "finance.workbench.actions.pushVoucher",
+            "description_key": "finance.workbench.messages.pushVoucherHint",
+            "action_path": "push",
+            "button_type": "warning",
+            "visible_when": {
+                "status_in": ["approved"],
+            },
+        },
+        {
+            "code": "voucher_retry_recommended",
+            "label_key": "finance.workbench.actions.retryPush",
+            "description_key": "finance.workbench.messages.retryPushHint",
+            "action_path": "retry",
+            "button_type": "default",
+            "visible_when": {
+                "status_in": ["approved", "posted"],
+            },
+        },
+    ],
+}
+
+INVENTORY_TASK_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/InventoryTask",
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "start_inventory_task",
+                "label_key": "inventory.workbench.actions.startTask",
+                "action_path": "start",
+                "button_type": "primary",
+                "visible_when": {
+                    "status_in": ["pending"],
+                },
+            },
+            {
+                "code": "complete_inventory_task",
+                "label_key": "inventory.workbench.actions.completeTask",
+                "action_path": "complete",
+                "button_type": "success",
+                "visible_when": {
+                    "status_in": ["in_progress"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "refresh_inventory_stats",
+                "label_key": "inventory.workbench.actions.refreshStats",
+                "action_path": "refresh-stats",
+                "button_type": "default",
+                "visible_when": {
+                    "status_in": ["in_progress", "completed"],
+                },
+            },
+            {
+                "code": "cancel_inventory_task",
+                "label_key": "inventory.workbench.actions.cancelTask",
+                "action_path": "cancel",
+                "button_type": "warning",
+                "visible_when": {
+                    "status_in": ["draft", "pending", "in_progress"],
+                },
+            },
+        ],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "inventory_total_count",
+            "label_key": "inventory.workbench.summary.totalCount",
+            "value_field": "total_count",
+            "tone": "info",
+        },
+        {
+            "code": "inventory_scanned_count",
+            "label_key": "inventory.workbench.summary.scannedCount",
+            "value_field": "scanned_count",
+        },
+        {
+            "code": "inventory_progress",
+            "label_key": "inventory.workbench.summary.progress",
+            "value_field": "progress_percentage",
+            "suffix": "%",
+            "tone": "success",
+        },
+        {
+            "code": "inventory_difference_total",
+            "label_key": "inventory.workbench.summary.differenceTotal",
+            "value_field": "difference_summary.total_differences",
+            "tone": "warning",
+        },
+        {
+            "code": "inventory_pending_closure",
+            "label_key": "inventory.workbench.summary.pendingClosure",
+            "value_field": "difference_summary.pending_closure_count",
+            "tone": "danger",
+        },
+        {
+            "code": "inventory_pending_follow_up",
+            "label_key": "inventory.workbench.summary.pendingFollowUp",
+            "value_field": "difference_summary.manual_follow_up_open_count",
+            "tone": "warning",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "inventory_active_execution",
+            "title_key": "inventory.workbench.queues.activeExecution",
+            "count": 1,
+            "route": "/objects/InventoryTask?status=in_progress",
+            "visible_when": {
+                "status_in": ["in_progress"],
+            },
+        },
+        {
+            "code": "inventory_awaiting_confirmation",
+            "title_key": "inventory.workbench.queues.awaitingConfirmation",
+            "count_field": "difference_summary.pending_confirmation_count",
+            "route": "/objects/InventoryItem?task={id}&status=pending",
+            "visible_when": {
+                "status_in": ["completed"],
+            },
+        },
+        {
+            "code": "inventory_awaiting_review",
+            "title_key": "inventory.workbench.queues.awaitingReview",
+            "count_field": "difference_summary.pending_review_count",
+            "route": "/objects/InventoryItem?task={id}&status=confirmed",
+            "visible_when": {
+                "status_in": ["completed"],
+            },
+        },
+        {
+            "code": "inventory_awaiting_approval",
+            "title_key": "inventory.workbench.queues.awaitingApproval",
+            "count_field": "difference_summary.pending_approval_count",
+            "route": "/objects/InventoryItem?task={id}&status=in_review",
+            "visible_when": {
+                "status_in": ["completed"],
+            },
+        },
+        {
+            "code": "inventory_awaiting_execution",
+            "title_key": "inventory.workbench.queues.awaitingExecution",
+            "count_field": "difference_summary.pending_execution_count",
+            "route": "/objects/InventoryItem?task={id}&status=approved",
+            "visible_when": {
+                "status_in": ["completed"],
+            },
+        },
+        {
+            "code": "inventory_awaiting_closure",
+            "title_key": "inventory.workbench.queues.awaitingClosure",
+            "count_field": "difference_summary.pending_closure_count",
+            "route": "/objects/InventoryItem?task={id}&status=resolved",
+            "visible_when": {
+                "status_in": ["completed"],
+            },
+        },
+        {
+            "code": "inventory_awaiting_follow_up",
+            "title_key": "inventory.workbench.queues.awaitingFollowUp",
+            "count_field": "difference_summary.manual_follow_up_open_count",
+            "route": "/objects/InventoryItem?task={id}&manual_follow_up_only=true&unresolved_only=true",
+            "visible_when": {
+                "status_in": ["completed"],
+            },
+            "tone": "warning",
+        },
+    ],
+    "exception_panels": [
+        {
+            "code": "inventory_missing_difference",
+            "title_key": "inventory.workbench.queues.missingDifferences",
+            "count_field": "difference_summary.by_type.missing",
+            "route": "/objects/InventoryItem?task={id}&difference_type=missing",
+            "tone": "danger",
+        },
+        {
+            "code": "inventory_damaged_difference",
+            "title_key": "inventory.workbench.queues.damagedDifferences",
+            "count_field": "difference_summary.by_type.damaged",
+            "route": "/objects/InventoryItem?task={id}&difference_type=damaged",
+            "tone": "warning",
+        },
+        {
+            "code": "inventory_location_difference",
+            "title_key": "inventory.workbench.queues.locationDifferences",
+            "count_field": "difference_summary.by_type.location_mismatch",
+            "route": "/objects/InventoryItem?task={id}&difference_type=location_mismatch",
+        },
+        {
+            "code": "inventory_custodian_difference",
+            "title_key": "inventory.workbench.queues.custodianDifferences",
+            "count_field": "difference_summary.by_type.custodian_mismatch",
+            "route": "/objects/InventoryItem?task={id}&difference_type=custodian_mismatch",
+        },
+        {
+            "code": "inventory_surplus_difference",
+            "title_key": "inventory.workbench.queues.surplusDifferences",
+            "count_field": "difference_summary.by_type.surplus",
+            "route": "/objects/InventoryItem?task={id}&difference_type=surplus",
+        },
+    ],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "difference_summary.closure_stage_label",
+        "owner_field": "created_by.username",
+        "blocker_field": "difference_summary.closure_blocker",
+        "progress_field": "difference_summary.closure_progress",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [
+        {
+            "code": "inventory_refresh_stats_recommended",
+            "label_key": "inventory.workbench.actions.refreshStats",
+            "description_key": "inventory.workbench.messages.refreshStatsHint",
+            "action_path": "refresh-stats",
+            "button_type": "default",
+            "visible_when": {
+                "status_in": ["in_progress", "completed"],
+            },
+        },
+        {
+            "code": "inventory_complete_task_recommended",
+            "label_key": "inventory.workbench.actions.completeTask",
+            "description_key": "inventory.workbench.messages.completeTaskHint",
+            "action_path": "complete",
+            "button_type": "success",
+            "visible_when": {
+                "status_in": ["in_progress"],
+            },
+        },
+    ],
+}
+
+INVENTORY_ITEM_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/InventoryItem",
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "inventory_difference_confirm",
+                "label_key": "inventory.workbench.actions.confirmDifference",
+                "action_path": "confirm",
+                "button_type": "primary",
+                "confirm_message_key": "inventory.workbench.messages.confirmDifferenceConfirm",
+                "visible_when": {
+                    "status_in": ["pending"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "inventory_difference_ignore",
+                "label_key": "inventory.workbench.actions.ignoreDifference",
+                "action_path": "ignore",
+                "button_type": "warning",
+                "visible_when": {
+                    "status_in": ["pending", "confirmed", "approved"],
+                },
+            },
+            {
+                "code": "inventory_difference_reject",
+                "label_key": "inventory.workbench.actions.rejectResolution",
+                "action_path": "reject-resolution",
+                "button_type": "danger",
+                "visible_when": {
+                    "status_in": ["in_review"],
+                },
+            },
+        ],
+    },
+    "detail_panels": [
+        {
+            "code": "inventory_difference_closure_panel",
+            "component": "inventory-difference-closure",
+            "title_key": "inventory.workbench.panels.differenceClosure",
+            "props": {
+                "linked_action_options": [
+                    {
+                        "code": "location_correction",
+                        "label_key": "inventory.workbench.linkedActions.locationCorrection",
+                        "closure_types": ["location_correction"],
+                    },
+                    {
+                        "code": "custodian_correction",
+                        "label_key": "inventory.workbench.linkedActions.custodianCorrection",
+                        "closure_types": ["custodian_correction"],
+                    },
+                    {
+                        "code": "asset.create_maintenance",
+                        "label_key": "inventory.workbench.linkedActions.createMaintenance",
+                        "closure_types": ["repair"],
+                    },
+                    {
+                        "code": "asset.create_disposal",
+                        "label_key": "inventory.workbench.linkedActions.createDisposal",
+                        "closure_types": ["disposal"],
+                    },
+                    {
+                        "code": "create_asset_card",
+                        "label_key": "inventory.workbench.linkedActions.createAssetCard",
+                        "closure_types": ["create_asset_card"],
+                    },
+                    {
+                        "code": "finance_adjustment",
+                        "label_key": "inventory.workbench.linkedActions.financialAdjustment",
+                        "closure_types": ["financial_adjustment"],
+                    },
+                    {
+                        "code": "invalid_difference",
+                        "label_key": "inventory.workbench.linkedActions.invalidDifference",
+                        "closure_types": ["invalid_difference"],
+                    },
+                ],
+            },
+        },
+    ],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "inventory_difference_type",
+            "label_key": "inventory.workbench.summary.differenceType",
+            "value_field": "difference_type_label",
+            "tone": "warning",
+        },
+        {
+            "code": "inventory_difference_status",
+            "label_key": "inventory.workbench.summary.currentStatus",
+            "value_field": "status_label",
+        },
+        {
+            "code": "inventory_difference_task_code",
+            "label_key": "inventory.workbench.summary.taskCode",
+            "value_field": "task_code",
+            "tone": "info",
+        },
+        {
+            "code": "inventory_difference_quantity",
+            "label_key": "inventory.workbench.summary.quantityDifference",
+            "value_field": "quantity_difference",
+        },
+    ],
+    "queue_panels": [],
+    "exception_panels": [],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [],
+}
+
+INVENTORY_FOLLOW_UP_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/InventoryFollowUp",
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "inventory_follow_up_complete",
+                "label_key": "inventory.workbench.actions.completeFollowUp",
+                "action_path": "complete",
+                "button_type": "success",
+                "visible_when": {
+                    "status_in": ["pending"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "inventory_follow_up_reopen",
+                "label_key": "inventory.workbench.actions.reopenFollowUp",
+                "action_path": "reopen",
+                "button_type": "primary",
+                "visible_when": {
+                    "status_in": ["completed", "cancelled"],
+                },
+            },
+        ],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "inventory_follow_up_status",
+            "label_key": "inventory.workbench.summary.currentStatus",
+            "value_field": "status_label",
+            "tone": "warning",
+        },
+        {
+            "code": "inventory_follow_up_task_code",
+            "label_key": "inventory.workbench.summary.taskCode",
+            "value_field": "task_code",
+            "tone": "info",
+        },
+        {
+            "code": "inventory_follow_up_difference_type",
+            "label_key": "inventory.workbench.summary.differenceType",
+            "value_field": "difference_type_label",
+        },
+        {
+            "code": "inventory_follow_up_reminder_count",
+            "label_key": "inventory.workbench.summary.reminderCount",
+            "value_field": "reminder_count",
+        },
+    ],
+    "queue_panels": [],
+    "exception_panels": [],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [],
 }
 
 
@@ -160,6 +712,9 @@ OBJECT_ROUTE_KEY_MAP: Dict[str, str] = {
     "InventoryTask": "inventoryTask",
     "InventorySnapshot": "inventorySnapshot",
     "InventoryItem": "inventoryItem",
+    "InventoryFollowUp": "inventoryFollowUp",
+    "InventoryReconciliation": "inventoryReconciliation",
+    "InventoryReport": "inventoryReport",
     "Organization": "organization",
     "Department": "department",
     "User": "users",
@@ -198,10 +753,12 @@ OBJECT_ROUTE_KEY_MAP: Dict[str, str] = {
 
 DEFAULT_OBJECT_MENU_RULES: Dict[str, Dict[str, Any]] = {
     "Asset": {"group_code": "asset_master", "item_order": 10, "icon": "Document"},
+    "TagGroup": {"group_code": "asset_master", "item_order": 15, "icon": "Collection"},
+    "AssetTag": {"group_code": "asset_master", "item_order": 18, "icon": "PriceTag"},
     "AssetCategory": {"group_code": "asset_master", "item_order": 20, "icon": "Folder"},
     "Location": {"group_code": "asset_master", "item_order": 30, "icon": "Location"},
     "Supplier": {"group_code": "asset_master", "item_order": 40, "icon": "OfficeBuilding"},
-    "AssetStatusLog": {"group_code": "asset_master", "item_order": 50, "icon": "Clock"},
+    "AssetStatusLog": {"group_code": "asset_master", "item_order": 50, "icon": "Clock", "show_in_menu": False},
     "ITAsset": {"group_code": "asset_master", "item_order": 60, "icon": "Monitor"},
     "InsuredAsset": {"group_code": "asset_master", "item_order": 70, "icon": "DocumentChecked"},
     "AssetPickup": {"group_code": "asset_operation", "item_order": 10, "icon": "Upload"},
@@ -238,7 +795,13 @@ DEFAULT_OBJECT_MENU_RULES: Dict[str, Dict[str, Any]] = {
     "ConsumableStock": {"group_code": "consumable", "item_order": 30, "icon": "Goods"},
     "ConsumablePurchase": {"group_code": "consumable", "item_order": 40, "icon": "ShoppingCart"},
     "ConsumableIssue": {"group_code": "consumable", "item_order": 50, "icon": "Sell"},
-    "InventoryTask": {"group_code": "inventory", "item_order": 10, "icon": "Clipboard"},
+    "InventoryTask": {
+        "group_code": "inventory",
+        "item_order": 10,
+        "icon": "Clipboard",
+        "url": "/objects/InventoryTask",
+        "workbench": INVENTORY_TASK_WORKBENCH,
+    },
     "InventorySnapshot": {
         "group_code": "inventory",
         "item_order": 20,
@@ -250,6 +813,30 @@ DEFAULT_OBJECT_MENU_RULES: Dict[str, Dict[str, Any]] = {
         "item_order": 30,
         "icon": "Document",
         "show_in_menu": False,
+        "url": "/objects/InventoryItem",
+        "workbench": INVENTORY_ITEM_WORKBENCH,
+    },
+    "InventoryFollowUp": {
+        "group_code": "inventory",
+        "item_order": 35,
+        "icon": "Bell",
+        "show_in_menu": False,
+        "url": "/objects/InventoryFollowUp",
+        "workbench": INVENTORY_FOLLOW_UP_WORKBENCH,
+    },
+    "InventoryReconciliation": {
+        "group_code": "inventory",
+        "item_order": 36,
+        "icon": "DocumentChecked",
+        "show_in_menu": False,
+        "url": "/objects/InventoryReconciliation",
+    },
+    "InventoryReport": {
+        "group_code": "inventory",
+        "item_order": 37,
+        "icon": "DataAnalysis",
+        "show_in_menu": False,
+        "url": "/objects/InventoryReport",
     },
     "FinanceVoucher": {
         "group_code": "finance",
@@ -257,6 +844,7 @@ DEFAULT_OBJECT_MENU_RULES: Dict[str, Dict[str, Any]] = {
         "icon": "Tickets",
         "show_in_menu": False,
         "url": "/objects/FinanceVoucher",
+        "workbench": FINANCE_VOUCHER_WORKBENCH,
     },
     "VoucherTemplate": {"group_code": "finance", "item_order": 20, "icon": "Files"},
     "DepreciationConfig": {"group_code": "finance", "item_order": 30, "icon": "Setting"},
@@ -363,6 +951,14 @@ STATIC_MENU_ITEMS: List[Dict[str, Any]] = [
         "icon": "Wallet",
     },
     {
+        "code": "UserPortal",
+        "translation_key": "menu.routes.userPortal",
+        "url": "/portal",
+        "group_code": "workflow",
+        "item_order": 5,
+        "icon": "User",
+    },
+    {
         "code": "TaskCenter",
         "translation_key": "menu.routes.taskCenter",
         "url": "/workflow/tasks",
@@ -457,6 +1053,14 @@ STATIC_MENU_ITEMS: List[Dict[str, Any]] = [
         "group_code": "system",
         "item_order": 80,
         "icon": "Collection",
+    },
+    {
+        "code": "TagList",
+        "translation_key": "menu.routes.tags",
+        "url": "/system/tags",
+        "group_code": "system",
+        "item_order": 85,
+        "icon": "Tickets",
     },
     {
         "code": "SequenceRuleList",
@@ -587,6 +1191,7 @@ def _normalize_route_path(value: Optional[str], fallback: str) -> str:
 
 
 def sync_menu_registry_models() -> Dict[str, Any]:
+    HardcodedObjectSyncService().sync_catalog()
     default_groups = _get_default_group_definitions()
     groups_by_code: Dict[str, MenuGroup] = {}
     created_groups: List[str] = []

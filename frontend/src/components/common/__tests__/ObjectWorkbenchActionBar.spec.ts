@@ -100,6 +100,12 @@ const mountActionBar = (status = 'active') => {
         },
         detailPanels: [],
         asyncIndicators: [],
+        summaryCards: [],
+        queuePanels: [],
+        exceptionPanels: [],
+        closurePanel: null,
+        slaIndicators: [],
+        recommendedActions: [],
       },
     },
     global: {

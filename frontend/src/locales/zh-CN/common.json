@@ -4,6 +4,7 @@
   "actions": {
     "add": "\u65b0\u589e",
     "approve": "\u901a\u8fc7",
+    "apply": "\u5e94\u7528",
     "back": "\u8fd4\u56de",
     "batchDelete": "\u6279\u91cf\u5220\u9664",
     "cancel": "\u53d6\u6d88",
@@ -22,6 +23,7 @@
     "print": "\u6253\u5370",
     "refresh": "\u5237\u65b0",
     "reject": "\u62d2\u7edd",
+    "remove": "\u79fb\u9664",
     "reset": "\u91cd\u7f6e",
     "loadMore": "\u52a0\u8f7d\u66f4\u591a",
     "save": "\u4fdd\u5b58",
@@ -31,7 +33,8 @@
     "test": "\u6d4b\u8bd5",
     "view": "\u67e5\u770b",
     "selectAll": "\u5168\u9009",
-    "columns": "\u5217"
+    "columns": "\u5217",
+    "viewChanges": "\u67e5\u770b {count} \u6761\u53d8\u66f4"
   },
   "addChange": "Add Change",
   "addRecord": "Add Record",
@@ -69,7 +72,8 @@
     "confirmTitle": "\u786e\u8ba4"
   },
   "filters": {
-    "all": "All"
+    "all": "All",
+    "allObjects": "\u5168\u90e8\u5bf9\u8c61"
   },
   "item": "\u9879\u76ee",
   "json": "JSON",
@@ -85,11 +89,14 @@
     "details": "\u8be6\u60c5",
     "display": "\u663e\u793a",
     "full": "\u5b8c\u6574",
+    "object": "\u5bf9\u8c61",
     "operation": "Operation",
     "relatedObjects": "\u76f8\u5173\u5bf9\u8c61",
     "remark": "Remark",
     "status": "Status",
     "system": "\u7cfb\u7edf",
+    "table": "\u8868\u683c",
+    "timeline": "\u65f6\u95f4\u7ebf",
     "totalItems": "Total Items",
     "updatedAt": "\u6700\u540e\u66f4\u65b0\u65f6\u95f4",
     "updatedBy": "\u6700\u540e\u66f4\u65b0\u4eba",
@@ -105,6 +112,18 @@
     "advanced": "\u9ad8\u7ea7",
     "items": "\u9879",
     "total": "\u5408\u8ba1"
+  },
+  "column": {
+    "settings": "\u5217\u8bbe\u7f6e",
+    "type": "\u7c7b\u578b",
+    "originalLabel": "\u539f\u59cb\u6807\u7b7e",
+    "requiredColumnCannotHide": "\u5fc5\u663e\u5217\u4e0d\u53ef\u9690\u85cf",
+    "resetSuccess": "\u5df2\u6062\u590d\u9ed8\u8ba4\u5217\u8bbe\u7f6e",
+    "fixed": {
+      "none": "\u4e0d\u56fa\u5b9a",
+      "left": "\u5de6\u4fa7",
+      "right": "\u53f3\u4fa7"
+    }
   },
   "hotkeys": {
     "title": "\u952e\u76d8\u5feb\u6377\u952e",
@@ -621,6 +640,50 @@
       "receiptWithNo": "\u6765\u6e90\u5165\u5e93\u5355\uff1a{no}",
       "purchaseRequest": "\u67e5\u770b\u6765\u6e90\u7533\u8d2d\u5355",
       "purchaseRequestWithNo": "\u6765\u6e90\u7533\u8d2d\u5355\uff1a{no}"
+    }
+  },
+  "workbench": {
+    "actions": {
+      "run": "\u6267\u884c"
+    },
+    "eyebrows": {
+      "closure": "\u95ed\u73af\u72b6\u6001",
+      "exceptionQueues": "\u5f02\u5e38\u961f\u5217",
+      "pendingQueues": "\u5f85\u5904\u7406\u961f\u5217",
+      "recommendedActions": "\u5efa\u8bae\u52a8\u4f5c",
+      "sla": "SLA"
+    },
+    "titles": {
+      "closure": "\u7ed3\u6848\u72b6\u6001",
+      "exceptionQueues": "\u5f02\u5e38\u5904\u7406\u961f\u5217",
+      "pendingQueues": "\u5f85\u5904\u7406\u961f\u5217",
+      "recommendedActions": "\u4e0b\u4e00\u6b65\u5efa\u8bae",
+      "sla": "\u6d41\u7a0b SLA"
+    },
+    "labels": {
+      "blocker": "\u5f53\u524d\u963b\u585e\u9879",
+      "completion": "\u5b8c\u6210\u5ea6",
+      "dueDate": "\u622a\u6b62\u65f6\u95f4",
+      "owner": "\u5f53\u524d\u8d23\u4efb\u4eba",
+      "stage": "\u5f53\u524d\u9636\u6bb5",
+      "summary": "\u6458\u8981"
+    },
+    "messages": {
+      "blockerHint": "\u5f53\u524d\u8bb0\u5f55\u8fd8\u5b58\u5728\u672a\u89e3\u51b3\u7684\u963b\u585e\u9879\uff0c\u6682\u4e0d\u80fd\u5b8c\u6574\u7ed3\u6848\u3002",
+      "exceptionQueueHint": "\u4f18\u5148\u5904\u7406\u9700\u8981\u4eba\u5de5\u8ddf\u8fdb\u6216\u5f02\u5e38\u5904\u7f6e\u7684\u961f\u5217\u3002",
+      "notAvailable": "\u6682\u65e0",
+      "queueHint": "\u4ece\u5f53\u524d\u8bb0\u5f55\u7684\u5f85\u5904\u7406\u961f\u5217\u4e2d\u627e\u5230\u6700\u7d27\u6025\u7684\u4efb\u52a1\u5e76\u7ee7\u7eed\u5904\u7406\u3002",
+      "recommendedActionHint": "\u8fd9\u4e9b\u52a8\u4f5c\u57fa\u4e8e\u5f53\u524d\u8bb0\u5f55\u72b6\u6001\u6392\u5e8f\uff0c\u7528\u4e8e\u63a8\u52a8\u95ed\u73af\u7ee7\u7eed\u524d\u8fdb\u3002",
+      "slaHint": "\u5728\u8be6\u60c5\u9875\u76f4\u63a5\u8ddf\u8e2a\u6d41\u7a0b SLA \u72b6\u6001\u3001\u5f53\u524d\u8d23\u4efb\u4eba\u548c\u54cd\u5e94\u65f6\u95f4\u8981\u6c42\u3002",
+      "slaHealthy": "\u672a\u8d85\u65f6"
+    },
+    "status": {
+      "approaching_sla": "\u5373\u5c06\u8d85\u65f6",
+      "completed": "\u5df2\u5b8c\u6210",
+      "escalated": "\u5df2\u5347\u7ea7",
+      "overdue": "\u5df2\u8d85\u65f6",
+      "unknown": "\u672a\u77e5",
+      "within_sla": "\u672a\u8d85\u65f6"
     }
   }
 }

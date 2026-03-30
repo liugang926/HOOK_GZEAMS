@@ -85,6 +85,12 @@ describe('router coverage', () => {
     await router.push('/inventory/items?tab=pending')
     expect(router.currentRoute.value.fullPath).toBe('/objects/InventoryItem?tab=pending')
 
+    await router.push('/inventory/reconciliation')
+    expect(router.currentRoute.value.fullPath).toBe('/inventory/reconciliation')
+
+    await router.push('/inventory/reconciliation/report?page=2')
+    expect(router.currentRoute.value.fullPath).toBe('/inventory/reconciliation/report?page=2')
+
     await router.push('/insurance/policies/42')
     expect(router.currentRoute.value.fullPath).toBe('/objects/InsurancePolicy/42')
 
@@ -109,6 +115,20 @@ describe('router coverage', () => {
     expect(router.resolve('/it-assets').name).toBe('ITAssetList')
     expect(router.resolve('/software-licenses/software').name).toBe('SoftwareCatalog')
     expect(router.resolve('/objects/Asset').name).toBe('DynamicObjectList')
+    expect(router.resolve('/portal').name).toBe('UserPortal')
+  })
+
+  it('should redirect portal request detail paths to dynamic object detail routes', async () => {
+    const router = buildTestRouter()
+
+    await router.push('/portal/my-requests/pickup/pu-1')
+    expect(router.currentRoute.value.fullPath).toBe('/objects/AssetPickup/pu-1')
+
+    await router.push('/portal/my-requests/return/rt-1?source=portal')
+    expect(router.currentRoute.value.fullPath).toBe('/objects/AssetReturn/rt-1?source=portal')
+
+    await router.push('/portal/my-requests/unknown/rt-1')
+    expect(router.currentRoute.value.fullPath).toBe('/portal')
   })
 
   it('should not expose retired lifecycle list route names', () => {

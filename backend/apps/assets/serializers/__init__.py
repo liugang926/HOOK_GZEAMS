@@ -60,6 +60,15 @@ from .operation import (
     LoanApprovalSerializer,
     LoanReturnConfirmSerializer,
 )
+from .tag import (
+    AssetByTagsSerializer,
+    AssetTagBatchMutationSerializer,
+    AssetTagMutationSerializer,
+    AssetTagRelationSerializer,
+    AssetTagSerializer,
+    AssetTagSummarySerializer,
+    TagGroupSerializer,
+)
 
 __all__ = [
     # Category serializers
@@ -83,6 +92,13 @@ __all__ = [
     'AssetSerializer',
     'AssetBulkImportSerializer',
     'AssetBulkExportSerializer',
+    'AssetTagSummarySerializer',
+    'TagGroupSerializer',
+    'AssetTagSerializer',
+    'AssetTagRelationSerializer',
+    'AssetTagMutationSerializer',
+    'AssetTagBatchMutationSerializer',
+    'AssetByTagsSerializer',
     # Operation serializers - Pickup
     'PickupItemSerializer',
     'PickupItemListSerializer',

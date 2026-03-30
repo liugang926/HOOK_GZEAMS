@@ -28,6 +28,12 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 100
 
+    def paginate_queryset(self, queryset, request, view=None):
+        """Apply a deterministic default ordering to unordered querysets."""
+        if getattr(queryset, 'ordered', True) is False and getattr(queryset, 'model', None):
+            queryset = queryset.order_by(queryset.model._meta.pk.name)
+        return super().paginate_queryset(queryset, request, view=view)
+
     def get_paginated_response(self, data):
         """
         Return a paginated response in the standard format.

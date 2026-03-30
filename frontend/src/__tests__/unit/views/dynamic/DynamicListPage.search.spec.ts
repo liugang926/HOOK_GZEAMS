@@ -132,6 +132,63 @@ describe('DynamicListPage unified search', () => {
     )
   })
 
+  it('renders drilldown context and excludes helper labels from list api filters', async () => {
+    routeState.query = {
+      status: 'open',
+      department: 'ops',
+      source_label: 'Inventory Workbench',
+      owner_label: 'Metrics User',
+      department_label: 'Operations',
+      unresolved_only: 'true',
+    }
+
+    const DynamicListPage = (await import('@/views/dynamic/DynamicListPage.vue')).default
+
+    const wrapper = mount(DynamicListPage, {
+      global: createDynamicListGlobalOptions(true),
+    })
+
+    await flushPromises()
+
+    const lastListCall = listMock.mock.calls.at(-1)?.[0] || {}
+
+    expect(lastListCall).toEqual(expect.objectContaining({
+      status: 'open',
+      department: 'ops',
+    }))
+    expect(lastListCall.source_label).toBeUndefined()
+    expect(lastListCall.owner_label).toBeUndefined()
+    expect(lastListCall.department_label).toBeUndefined()
+    expect(wrapper.text()).toContain('Inventory Workbench')
+    expect(wrapper.text()).toContain('Metrics User')
+    expect(wrapper.text()).toContain('Operations')
+    expect(wrapper.text()).toContain('system.businessObject.drilldown.flags.unresolvedOnly')
+
+    const toggleButton = wrapper.findAll('button').find((button) => button.text() === 'system.businessObject.drilldown.actions.showAllStatuses')
+    const clearButton = wrapper.findAll('button').find((button) => button.text() === 'system.businessObject.drilldown.clear')
+
+    expect(toggleButton).toBeDefined()
+    expect(clearButton).toBeDefined()
+
+    await toggleButton!.trigger('click')
+    await clearButton!.trigger('click')
+
+    expect(pushMock).toHaveBeenNthCalledWith(1, {
+      path: '/objects/Asset',
+      query: {
+        status: 'open',
+        department: 'ops',
+        source_label: 'Inventory Workbench',
+        owner_label: 'Metrics User',
+        department_label: 'Operations',
+      },
+    })
+    expect(pushMock).toHaveBeenNthCalledWith(2, {
+      path: '/objects/Asset',
+      query: {},
+    })
+  })
+
   it('navigates to the create route when clicking the create button', async () => {
     const DynamicListPage = (await import('@/views/dynamic/DynamicListPage.vue')).default
 

@@ -15,16 +15,27 @@ class FinanceVoucherFilter(BaseModelFilter):
     voucher_no = filters.CharFilter(lookup_expr='icontains')
     business_type = filters.CharFilter()
     status = filters.CharFilter()
+    department = filters.UUIDFilter(method='filter_department')
     voucher_date_from = filters.DateFilter(field_name='voucher_date', lookup_expr='gte')
     voucher_date_to = filters.DateFilter(field_name='voucher_date', lookup_expr='lte')
     total_amount_from = filters.NumberFilter(field_name='total_amount', lookup_expr='gte')
     total_amount_to = filters.NumberFilter(field_name='total_amount', lookup_expr='lte')
     posted_to_erp = filters.BooleanFilter(field_name='erp_voucher_no', lookup_expr='isnull')
 
+    def filter_department(self, queryset, name, value):
+        """Filter vouchers by the creator's primary department."""
+        if not value:
+            return queryset
+        return queryset.filter(
+            created_by__user_departments__department_id=value,
+            created_by__user_departments__is_primary=True,
+            created_by__user_departments__is_deleted=False,
+        ).distinct()
+
     class Meta(BaseModelFilter.Meta):
         model = FinanceVoucher
         fields = BaseModelFilter.Meta.fields + [
-            'voucher_no', 'business_type', 'status',
+            'voucher_no', 'business_type', 'status', 'department',
             'voucher_date', 'total_amount',
         ]
 

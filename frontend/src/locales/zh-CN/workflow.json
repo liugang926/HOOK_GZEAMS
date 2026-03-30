@@ -6,6 +6,16 @@
         "tabs": {
             "pending": "待处理",
             "processed": "已处理"
+        },
+        "drilldown": {
+            "title": "当前正在查看驾驶舱下钻队列",
+            "source": "来源: {value}",
+            "assignee": "责任人: {value}",
+            "department": "部门: {value}",
+            "overdueOnly": "仅看逾期",
+            "showOpen": "查看全部待处理",
+            "showOverdue": "仅看逾期",
+            "clear": "清空下钻条件"
         }
     },
     "myApprovals": {

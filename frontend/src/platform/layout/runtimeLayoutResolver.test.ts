@@ -68,6 +68,12 @@ describe('resolveRuntimeLayout', () => {
         },
         detailPanels: [{ code: 'integration_logs', component: 'integration-log-table' }],
         asyncIndicators: [{ code: 'voucher_push', type: 'sync-task' }],
+        summaryCards: [{ code: 'pending_count', valueField: 'pendingCount' }],
+        queuePanels: [{ code: 'approval_queue', queueCode: 'review' }],
+        exceptionPanels: [{ code: 'push_failed', queueCode: 'exception' }],
+        closurePanel: { stageField: 'status' },
+        slaIndicators: [{ code: 'approval_sla', statusField: 'slaStatus' }],
+        recommendedActions: [{ code: 'follow_up', actionPath: 'follow_up' }],
       },
       isDefault: false,
       layout: {
@@ -108,6 +114,12 @@ describe('resolveRuntimeLayout', () => {
     expect(result.workbench.toolbar.primaryActions).toHaveLength(1)
     expect(result.workbench.detailPanels[0]?.code).toBe('integration_logs')
     expect(result.workbench.asyncIndicators[0]?.code).toBe('voucher_push')
+    expect(result.workbench.summaryCards[0]?.code).toBe('pending_count')
+    expect(result.workbench.queuePanels[0]?.code).toBe('approval_queue')
+    expect(result.workbench.exceptionPanels[0]?.code).toBe('push_failed')
+    expect(result.workbench.closurePanel?.stageField).toBe('status')
+    expect(result.workbench.slaIndicators[0]?.code).toBe('approval_sla')
+    expect(result.workbench.recommendedActions[0]?.code).toBe('follow_up')
     expect(result.aggregate?.isAggregateRoot).toBe(true)
     expect(result.aggregate?.detailRegions?.[0]?.relationCode).toBe('pickup_items')
     expect(result.aggregate?.detailRegions?.[0]?.fieldCode).toBe('items')
@@ -200,6 +212,12 @@ describe('resolveRuntimeLayout', () => {
     expect(result.workbench.toolbar.primaryActions).toEqual([])
     expect(result.workbench.detailPanels).toEqual([])
     expect(result.workbench.asyncIndicators).toEqual([])
+    expect(result.workbench.summaryCards).toEqual([])
+    expect(result.workbench.queuePanels).toEqual([])
+    expect(result.workbench.exceptionPanels).toEqual([])
+    expect(result.workbench.closurePanel).toBeNull()
+    expect(result.workbench.slaIndicators).toEqual([])
+    expect(result.workbench.recommendedActions).toEqual([])
     expect(result.fields).toHaveLength(1)
     expect(layoutConfig?.sections?.[0]?.fields?.[0]?.fieldCode).toBe('assetName')
     expect(businessObjectApi.getFieldsWithContext).toHaveBeenCalledWith('Asset', 'form', { includeRelations: true })

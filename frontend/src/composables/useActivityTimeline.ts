@@ -95,10 +95,8 @@ export function useActivityTimeline(
       const fetchUrl = fetchUrlGetter()
       const res = fetchUrl
         ? await request.get<PaginatedResponse<any> | any[]>(fetchUrl)
-        : await request.get<PaginatedResponse<any> | any[]>('/system/activity-logs/', {
+        : await request.get<PaginatedResponse<any> | any[]>(`/system/objects/${objectCode}/${recordId}/history/`, {
             params: {
-              object_code: objectCode,
-              object_id: recordId,
               page: currentPage.value,
               page_size: pageSize.value,
             },

@@ -7,7 +7,13 @@
 
 import request from '@/utils/request'
 import type { PaginatedResponse } from '@/types/api'
-import type { FinanceVoucher, VoucherTemplate, VoucherCreate, VoucherApprovalAction } from '@/types/finance'
+import type {
+  FinanceVoucher,
+  VoucherTemplate,
+  VoucherCreate,
+  VoucherApprovalAction,
+  VoucherTemplateApplyPayload,
+} from '@/types/finance'
 import { normalizeQueryParams, toPaginated } from '@/api/contract'
 
 /**
@@ -156,10 +162,12 @@ export const voucherTemplateApi = {
   listTemplates(params?: {
     businessType?: string
     isActive?: boolean
-  }): Promise<VoucherTemplate[]> {
+    page?: number
+    pageSize?: number
+  }): Promise<PaginatedResponse<VoucherTemplate>> {
     return request
       .get('/system/objects/VoucherTemplate/', { params: normalizeQueryParams(params) })
-      .then((res) => toPaginated<VoucherTemplate>(res).results)
+      .then((res) => toPaginated<VoucherTemplate>(res))
   },
 
   /**
@@ -202,6 +210,13 @@ export const voucherTemplateApi = {
    */
   deactivateTemplate(id: string): Promise<void> {
     return request.patch(`/system/objects/VoucherTemplate/${id}/`, { isActive: false })
+  },
+
+  /**
+   * Apply template and create a voucher draft
+   */
+  applyTemplate(id: string, data: VoucherTemplateApplyPayload): Promise<FinanceVoucher> {
+    return request.post(`/system/objects/VoucherTemplate/${id}/apply/`, data)
   }
 }
 

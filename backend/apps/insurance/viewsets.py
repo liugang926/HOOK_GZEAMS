@@ -50,7 +50,7 @@ class InsurancePolicyViewSet(BaseModelViewSetWithBatch):
     search_fields = ['policy_no', 'policy_name', 'company__name']
     ordering_fields = ['policy_no', 'start_date', 'end_date', 'total_premium', 'created_at']
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='dashboard-stats')
     def dashboard_stats(self, request):
         """Get insurance dashboard statistics."""
         from django.db.models import Sum

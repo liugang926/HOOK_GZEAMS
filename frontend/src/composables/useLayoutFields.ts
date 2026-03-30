@@ -15,7 +15,7 @@
 import { ref, computed, type Ref } from 'vue'
 import { businessObjectApi } from '@/api/system'
 import type { AvailableField, FieldGroup } from '@/api/system'
-import { normalizeFieldType } from '@/utils/fieldType'
+import { normalizeFieldType, resolveFieldType } from '@/utils/fieldType'
 
 // Re-export types from system.ts for convenience
 export type { AvailableField, FieldGroup }
@@ -211,7 +211,7 @@ export function useLayoutFields(objectCode: string): UseLayoutFieldsReturn {
       if (rawFields.length > 0) {
         // Transform editable fields to available fields
         const fields: AvailableField[] = rawFields.map((field: any) => {
-          const normalizedType = normalizeFieldType(field.fieldType || field.type || 'text')
+          const normalizedType = resolveFieldType(field, 'text')
           return {
             ...field,
             fieldType: normalizedType,

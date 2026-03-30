@@ -8,6 +8,7 @@ Tests cover:
 - Comparison with TenantManager behavior
 """
 import pytest
+import uuid
 from django.utils import timezone
 from apps.common.managers import GlobalMetadataManager, TenantManager
 from apps.common.middleware import set_current_organization, clear_current_organization
@@ -508,15 +509,16 @@ class TestGlobalMetadataManagerQueries:
 
     def test_order_by_method(self, db):
         """Test order_by() method works correctly."""
-        BusinessObject.objects.create(code='C', name='C')
-        BusinessObject.objects.create(code='A', name='A')
-        BusinessObject.objects.create(code='B', name='B')
+        prefix = f'ORDER_{uuid.uuid4().hex[:8].upper()}_'
+        BusinessObject.objects.create(code=f'{prefix}C', name='C')
+        BusinessObject.objects.create(code=f'{prefix}A', name='A')
+        BusinessObject.objects.create(code=f'{prefix}B', name='B')
 
         # Order by code
-        results = list(BusinessObject.objects.all().order_by('code'))
-        assert results[0].code == 'A'
-        assert results[1].code == 'B'
-        assert results[2].code == 'C'
+        results = list(BusinessObject.objects.filter(code__startswith=prefix).order_by('code'))
+        assert results[0].code == f'{prefix}A'
+        assert results[1].code == f'{prefix}B'
+        assert results[2].code == f'{prefix}C'
 
     def test_count_method(self, db):
         """Test count() method works correctly."""
@@ -529,14 +531,16 @@ class TestGlobalMetadataManagerQueries:
 
     def test_first_and_last_methods(self, db):
         """Test first() and last() methods work correctly."""
-        bo1 = BusinessObject.objects.create(code='AAA', name='First')
-        bo2 = BusinessObject.objects.create(code='ZZZ', name='Last')
+        prefix = f'EDGE_{uuid.uuid4().hex[:8].upper()}_'
+        bo1 = BusinessObject.objects.create(code=f'{prefix}AAA', name='First')
+        bo2 = BusinessObject.objects.create(code=f'{prefix}ZZZ', name='Last')
 
-        first = BusinessObject.objects.order_by('code').first()
-        last = BusinessObject.objects.order_by('code').last()
+        queryset = BusinessObject.objects.filter(code__startswith=prefix).order_by('code')
+        first = queryset.first()
+        last = queryset.last()
 
-        assert first.code == 'AAA'
-        assert last.code == 'ZZZ'
+        assert first.code == f'{prefix}AAA'
+        assert last.code == f'{prefix}ZZZ'
 
     def test_exists_method(self, db):
         """Test exists() method works correctly."""

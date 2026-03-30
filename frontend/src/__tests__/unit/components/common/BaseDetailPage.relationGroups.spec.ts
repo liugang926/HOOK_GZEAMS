@@ -82,6 +82,10 @@ const mountPage = async (propOverrides: Record<string, any> = {}) => {
           name: 'RelatedObjectTable',
           template: '<div class="related-table-stub"></div>'
         }),
+        ActivityTimeline: defineComponent({
+          name: 'ActivityTimeline',
+          template: '<div class="activity-timeline-stub"></div>'
+        }),
         FieldDisplay: defineComponent({
           name: 'FieldDisplay',
           props: { value: { type: null, default: null } },

@@ -50,6 +50,8 @@ def test_list_endpoints_for_migrated_modules():
         'WorkflowApproval',
         'WorkflowOperationLog',
         'DepreciationRecord',
+        'InventoryReconciliation',
+        'InventoryReport',
         'ITAsset',
         'ITMaintenanceRecord',
         'ConfigurationChange',

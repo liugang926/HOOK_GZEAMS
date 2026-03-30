@@ -38,6 +38,8 @@ urlpatterns = [
     path('api/permissions/', include('apps.permissions.urls')),
     path('api/notifications/', include('apps.notifications.urls')),
     path('api/sso/', include('apps.sso.urls')),
+    path('api/search/', include('apps.search.urls')),
+    path('api/objects/', include('apps.assets.tag_urls')),
     path('api/system/', include('apps.system.urls')),  # Dynamic routing + metadata
     path('api/workflows/', include('apps.workflows.urls')),
     path('api/sla/', include('apps.workflows.sla_urls')),

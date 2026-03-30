@@ -138,7 +138,7 @@
             </template>
 
             <template
-              v-if="hasDetailEnhancements || hasWorkbenchPanels"
+              v-if="hasWorkbenchExtensionArea"
               #after-sections
             >
               <div class="detail-extension-stack">
@@ -149,6 +149,49 @@
                   :record-id="recordId"
                   :record-data="lifecycleRecordData"
                   @refresh="handleLifecycleRefresh"
+                />
+
+                <WorkbenchSummaryCards
+                  v-if="summaryCards.length > 0"
+                  :cards="summaryCards"
+                  :record-data="workbenchRecordData"
+                />
+
+                <WorkbenchQueuePanel
+                  v-if="queuePanels.length > 0"
+                  :panels="queuePanels"
+                  :record-data="workbenchRecordData"
+                  variant="queue"
+                />
+
+                <WorkbenchQueuePanel
+                  v-if="exceptionPanels.length > 0"
+                  :panels="exceptionPanels"
+                  :record-data="workbenchRecordData"
+                  variant="exception"
+                />
+
+                <ClosureStatusPanel
+                  v-if="closurePanel"
+                  :panel="closurePanel"
+                  :record-data="workbenchRecordData"
+                />
+
+                <SlaIndicatorBar
+                  v-if="slaIndicators.length > 0"
+                  :indicators="slaIndicators"
+                  :record-data="workbenchRecordData"
+                  :sla-data="objectSla"
+                />
+
+                <RecommendedActionPanel
+                  v-if="recommendedActions.length > 0"
+                  :actions="recommendedActions"
+                  :object-code="objectCode"
+                  :record-id="recordId"
+                  :task-state-key="detailTaskStateKey"
+                  :start-task-polling="startTaskPolling"
+                  @refresh-requested="handleWorkbenchRefresh"
                 />
 
                 <ClosedLoopNavigationCard
@@ -209,13 +252,18 @@ import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import ActivityTimeline from '@/components/common/ActivityTimeline.vue'
 import ClosedLoopNavigationCard from '@/components/common/ClosedLoopNavigationCard.vue'
+import ClosureStatusPanel from '@/components/common/ClosureStatusPanel.vue'
 import DocumentWorkbench from '@/components/common/DocumentWorkbench.vue'
 import CommonDynamicDetailPage from '@/components/common/DynamicDetailPage.vue'
 import ObjectActionBar from '@/components/common/ObjectActionBar.vue'
 import ObjectWorkbenchActionBar from '@/components/common/ObjectWorkbenchActionBar.vue'
 import ObjectWorkbenchPanelHost from '@/components/common/ObjectWorkbenchPanelHost.vue'
 import ObjectWorkspaceHero from '@/components/common/object-workspace/ObjectWorkspaceHero.vue'
+import RecommendedActionPanel from '@/components/common/RecommendedActionPanel.vue'
+import SlaIndicatorBar from '@/components/common/SlaIndicatorBar.vue'
 import StatusActionBar from '@/components/common/StatusActionBar.vue'
+import WorkbenchQueuePanel from '@/components/common/WorkbenchQueuePanel.vue'
+import WorkbenchSummaryCards from '@/components/common/WorkbenchSummaryCards.vue'
 import LifecycleDetailRenderer from '@/components/lifecycle/LifecycleDetailRenderer.vue'
 import { useClosedLoopNavigation } from '@/composables/useClosedLoopNavigation'
 import { useObjectWorkbench } from '@/composables/useObjectWorkbench'
@@ -250,6 +298,7 @@ const {
   loadMetadata,
   metadataPermissions,
   objectMetadata,
+  objectSla,
   retryLoad,
   runtimePermissions,
   runtimeWorkbench,
@@ -322,10 +371,26 @@ const workbenchRecordData = computed(() => {
 })
 const {
   hasActions: hasWorkbenchActions,
+  hasInsights: hasWorkbenchInsights,
+  hasQueues: hasWorkbenchQueues,
   hasPanels: hasWorkbenchPanels,
+  closurePanel,
+  exceptionPanels,
+  queuePanels,
+  recommendedActions,
+  slaIndicators,
+  summaryCards,
 } = useObjectWorkbench({
   workbench: runtimeWorkbench,
   recordData: workbenchRecordData,
+})
+const hasWorkbenchExtensionArea = computed(() => {
+  return (
+    hasDetailEnhancements.value ||
+    hasWorkbenchPanels.value ||
+    hasWorkbenchInsights.value ||
+    hasWorkbenchQueues.value
+  )
 })
 
 const handleWorkbenchRefresh = async () => {

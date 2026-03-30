@@ -183,7 +183,15 @@ class LicenseAllocationViewSet(BaseModelViewSetWithBatch):
             })
 
         from django.utils import timezone
+        organization_id = self._resolve_organization_id()
+        if not organization_id:
+            raise ValidationError({
+                'organization': 'Organization context is required.'
+            })
+
         serializer.save(
+            created_by=self.request.user,
+            organization_id=organization_id,
             allocated_by=self.request.user,
             allocated_date=timezone.now().date()
         )

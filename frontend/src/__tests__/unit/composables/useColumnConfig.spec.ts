@@ -2,7 +2,7 @@
  * useColumnConfig composable tests
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useColumnConfig, clearAllColumnConfigCache } from '@/composables/useColumnConfig'
 import { ElMessage } from 'element-plus'
@@ -25,10 +25,20 @@ vi.mock('@/api/system', () => ({
 }))
 
 describe('useColumnConfig', () => {
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
     clearAllColumnConfigCache()
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  })
+
+  afterEach(() => {
+    consoleWarnSpy.mockRestore()
+    consoleErrorSpy.mockRestore()
   })
 
   describe('initialization', () => {
@@ -116,6 +126,7 @@ describe('useColumnConfig', () => {
 
       expect(config.error.value).toBeInstanceOf(Error)
       expect(config.config.value).toBe(null)
+      expect(consoleWarnSpy).toHaveBeenCalledWith('Failed to fetch column config', expect.any(Error))
     })
 
     it('should return null on error', async () => {
@@ -127,6 +138,7 @@ describe('useColumnConfig', () => {
       const result = await config.fetchConfig()
 
       expect(result).toBe(null)
+      expect(consoleWarnSpy).toHaveBeenCalledWith('Failed to fetch column config', expect.any(Error))
     })
   })
 
@@ -192,6 +204,7 @@ describe('useColumnConfig', () => {
 
       expect(ElMessage.warning).toHaveBeenCalled()
       expect(config.error.value).toBeInstanceOf(Error)
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Save API error', expect.any(Error))
     })
 
     it('should update config after successful save', async () => {
@@ -245,6 +258,7 @@ describe('useColumnConfig', () => {
 
       expect(ElMessage.warning).toHaveBeenCalled()
       expect(config.error.value).toBeInstanceOf(Error)
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Reset API error', expect.any(Error))
     })
 
     it('should clear cache on reset', async () => {

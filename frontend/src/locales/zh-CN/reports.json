@@ -2,12 +2,145 @@
     "center": {
         "title": "报表中心",
         "tabs": {
+            "operations": "闭环经营",
             "assets": "资产报表",
             "lifecycle": "生命周期",
             "insurance": "保险报表",
             "leasing": "租赁报表"
         },
         "downloadXlsx": "下载 Excel"
+    },
+    "closedLoop": {
+        "title": "闭环经营驾驶舱",
+        "description": "统一查看开单、积压、超时和瓶颈排行，并直接下钻到对象处理队列。",
+        "loading": "正在加载闭环经营指标...",
+        "retry": "重试",
+        "windows": {
+            "7d": "近 7 天",
+            "30d": "近 30 天",
+            "90d": "近 90 天"
+        },
+        "scope": {
+            "organization": "组织范围",
+            "currentOrganization": "当前组织"
+        },
+        "filters": {
+            "allObjects": "全部对象"
+        },
+        "summary": {
+            "openedCount": "新增开单",
+            "closedCount": "已闭环",
+            "backlogCount": "当前积压",
+            "overdueCount": "当前超时",
+            "autoClosedCount": "自动闭环",
+            "avgCycleHours": "平均闭环时长(小时)"
+        },
+        "workflow": {
+            "activeTaskCount": "SLA 在途任务",
+            "overdueTaskCount": "SLA 超时任务",
+            "escalatedTaskCount": "SLA 已升级任务",
+            "bottleneckCount": "工作流瓶颈节点"
+        },
+        "sections": {
+            "coverage": "已覆盖对象",
+            "trend": "最近 7 天趋势",
+            "byObject": "对象维度概览",
+            "owners": "责任人排行",
+            "departments": "部门排行",
+            "queues": "待处理队列排行",
+            "bottlenecks": "瓶颈排行"
+        },
+        "owners": {
+            "person": "责任人",
+            "openCount": "在途数量",
+            "overdueCount": "超时数量",
+            "topSource": "主要来源",
+            "sourceBreakdown": "来源分布",
+            "unknownSource": "未识别来源"
+        },
+        "departments": {
+            "name": "部门",
+            "openCount": "在途数量",
+            "overdueCount": "超时数量",
+            "topSource": "主要来源",
+            "sourceBreakdown": "来源分布"
+        },
+        "drilldown": {
+            "ownerTitle": "责任人队列下钻: {name}",
+            "departmentTitle": "部门队列下钻: {name}",
+            "source": "来源",
+            "count": "数量"
+        },
+        "sources": {
+            "workflow_tasks": "工作流待办",
+            "inventory_differences": "盘点差异",
+            "projects": "项目闭环",
+            "finance_vouchers": "财务凭证",
+            "insurance_policies": "保险保单",
+            "claim_records": "理赔记录",
+            "leasing_contracts": "租赁合同"
+        },
+        "trend": {
+            "date": "日期",
+            "opened": "新增",
+            "closed": "闭环"
+        },
+        "table": {
+            "label": "指标",
+            "object": "对象",
+            "count": "数量",
+            "severity": "严重度",
+            "action": "操作"
+        },
+        "actions": {
+            "open": "查看",
+            "drillDown": "下钻",
+            "openQueue": "打开队列",
+            "openOverdue": "仅看逾期",
+            "notAvailable": "暂不支持",
+            "exportExcel": "导出 Excel"
+        },
+        "snapshot": {
+            "title": "已保存快照",
+            "save": "保存快照",
+            "open": "打开快照",
+            "delete": "删除快照",
+            "compare": "对比当前实时数据",
+            "comparing": "正在加载实时对比数据...",
+            "compareTitle": "快照与当前实时数据对比",
+            "compareByObjectTitle": "对象维度变化",
+            "snapshotValue": "快照值",
+            "liveValue": "实时值",
+            "snapshotBacklog": "快照积压",
+            "liveBacklog": "实时积压",
+            "backlogDelta": "积压变化",
+            "snapshotOverdue": "快照超时",
+            "liveOverdue": "实时超时",
+            "overdueDelta": "超时变化",
+            "snapshotClosed": "快照闭环",
+            "liveClosed": "实时闭环",
+            "closedDelta": "闭环变化",
+            "noChangedObjects": "当前没有对象维度变化。",
+            "viewTitle": "当前查看已保存快照",
+            "backToLive": "返回实时数据",
+            "savedAt": "保存于 {time}",
+            "empty": "当前还没有保存任何快照。"
+        },
+        "empty": {
+            "owners": "当前没有责任人排行。",
+            "departments": "当前没有部门排行。",
+            "queues": "当前没有待处理队列。",
+            "bottlenecks": "当前没有瓶颈排行。"
+        },
+        "messages": {
+            "loadFailed": "闭环经营指标加载失败。"
+        },
+        "severity": {
+            "high": "高",
+            "medium": "中",
+            "low": "低",
+            "none": "无"
+        }
     },
     "export": {
         "currentPageXlsx": "导出当前页（Excel）",

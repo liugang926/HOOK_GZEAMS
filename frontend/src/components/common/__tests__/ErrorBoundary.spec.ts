@@ -1,6 +1,6 @@
 import { defineComponent, h, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
 
 vi.mock('vue-i18n', () => ({
@@ -10,6 +10,16 @@ vi.mock('vue-i18n', () => ({
 }))
 
 describe('ErrorBoundary', () => {
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+  })
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore()
+  })
+
   const globalMountOptions = {
     global: {
       stubs: {
@@ -44,6 +54,12 @@ describe('ErrorBoundary', () => {
 
     expect(wrapper.text()).toContain('boom')
     expect(wrapper.text()).toContain('system.fieldDefinition.actions.retry')
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      '[ErrorBoundary] captured rendering error:',
+      expect.any(Error),
+      'Info:',
+      'render function'
+    )
   })
 
   it('allows fallback slot to reset and remount children', async () => {
@@ -84,5 +100,11 @@ describe('ErrorBoundary', () => {
 
     expect(wrapper.find('.recovered-content').exists()).toBe(true)
     expect(wrapper.text()).toContain('Recovered')
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      '[ErrorBoundary] captured rendering error:',
+      expect.any(Error),
+      'Info:',
+      'render function'
+    )
   })
 })

@@ -9,13 +9,14 @@ Provides:
 """
 import re
 from django.conf import settings
+from django.db.models import Prefetch
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import HttpResponse
 from apps.common.viewsets.base import BaseModelViewSetWithBatch
 from apps.common.responses.base import BaseResponse
-from apps.assets.models import Asset, Supplier, Location, AssetStatusLog
+from apps.assets.models import Asset, AssetStatusLog, AssetTagRelation, Location, Supplier
 from apps.assets.serializers import (
     AssetListSerializer,
     AssetDetailSerializer,
@@ -30,8 +31,14 @@ from apps.assets.serializers import (
     AssetStatusLogSerializer,
     AssetStatusLogListSerializer,
 )
+from apps.assets.serializers.tag import (
+    AssetByTagsSerializer,
+    AssetTagMutationSerializer,
+    AssetTagRelationSerializer,
+)
 from apps.assets.filters import AssetFilter, SupplierFilter, LocationFilter, AssetStatusLogFilter
-from apps.assets.services import AssetService, SupplierService, LocationService, AssetStatusLogService
+from apps.assets.services import AssetService, AssetStatusLogService, LocationService, SupplierService
+from apps.assets.services.tag_service import AssetTagRelationService
 from apps.lifecycle.services.closed_loop_service import LifecycleClosedLoopService
 
 # Maximum number of QR codes that can be generated in a single bulk request
@@ -83,10 +90,47 @@ class AssetViewSet(BaseModelViewSetWithBatch):
     serializer_class = AssetSerializer
     filterset_class = AssetFilter
     service = AssetService()
+    tag_relation_service = AssetTagRelationService()
 
     # Unified list search is handled by AssetFilter.search so it can cover
     # numeric and relation-display fields in addition to plain text columns.
     search_fields = []
+
+    def get_queryset(self):
+        """Return a scoped queryset with commonly used relations preloaded."""
+        organization_id = self._resolve_organization_id()
+        if not organization_id:
+            return Asset.all_objects.none()
+
+        return Asset.all_objects.filter(
+            is_deleted=False,
+            organization_id=organization_id,
+        ).select_related(
+            'asset_category',
+            'supplier',
+            'department',
+            'location',
+            'custodian',
+            'user',
+            'source_receipt',
+            'source_receipt_item',
+            'source_purchase_request',
+            'created_by',
+        ).prefetch_related(
+            Prefetch(
+                'asset_tag_relations',
+                queryset=AssetTagRelation.all_objects.filter(
+                    is_deleted=False,
+                    tag__is_deleted=False,
+                    tag__is_active=True,
+                ).select_related('tag', 'tag__tag_group', 'tagged_by').order_by(
+                    'tag__tag_group__sort_order',
+                    'tag__sort_order',
+                    'tag__name',
+                ),
+                to_attr='prefetched_asset_tag_relations',
+            )
+        )
 
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
@@ -160,6 +204,85 @@ class AssetViewSet(BaseModelViewSetWithBatch):
         instance = self.get_object()
         self.perform_destroy(instance)
         return BaseResponse.success(message='Asset deleted successfully')
+
+    @action(detail=True, methods=['get', 'post'], url_path='tags')
+    def tags(self, request, pk=None):
+        """Get or add asset tags for a single asset."""
+        asset = self.get_object()
+
+        if request.method.lower() == 'get':
+            relations = self.tag_relation_service.get_asset_relations(
+                asset=asset,
+                organization_id=getattr(request, 'organization_id', None),
+                user=request.user,
+            )
+            serializer = AssetTagRelationSerializer(relations, many=True)
+            return BaseResponse.success(
+                data={
+                    'asset_id': asset.id,
+                    'asset_code': asset.asset_code,
+                    'asset_name': asset.asset_name,
+                    'tags': serializer.data,
+                },
+                message='Asset tags retrieved successfully',
+            )
+
+        serializer = AssetTagMutationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payload = self.tag_relation_service.add_tags_to_asset(
+            asset=asset,
+            tag_ids=serializer.validated_data['tag_ids'],
+            notes=serializer.validated_data.get('notes', ''),
+            organization_id=getattr(request, 'organization_id', None),
+            user=request.user,
+        )
+        relation_serializer = AssetTagRelationSerializer(payload['relations'], many=True)
+        return BaseResponse.success(
+            data={
+                'added_count': payload['created_count'] + payload['restored_count'],
+                'restored_count': payload['restored_count'],
+                'skipped_count': payload['skipped_count'],
+                'relations': relation_serializer.data,
+            },
+            message='Asset tags added successfully',
+        )
+
+    @action(detail=True, methods=['delete'], url_path=r'tags/(?P<tag_id>[^/.]+)')
+    def remove_tag(self, request, pk=None, tag_id=None):
+        """Remove a single asset tag relation."""
+        asset = self.get_object()
+        payload = self.tag_relation_service.remove_tags_from_asset(
+            asset=asset,
+            tag_ids=[tag_id],
+            organization_id=getattr(request, 'organization_id', None),
+            user=request.user,
+        )
+        if payload['removed_count'] == 0:
+            return BaseResponse.not_found('Asset tag relation')
+        return BaseResponse.success(message='Asset tag removed successfully')
+
+    @action(detail=False, methods=['post'], url_path='by-tags')
+    def by_tags(self, request):
+        """Search assets by asset tags using AND or OR matching."""
+        serializer = AssetByTagsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        queryset = self.tag_relation_service.get_assets_by_tags(
+            tag_ids=serializer.validated_data['tag_ids'],
+            match_type=serializer.validated_data.get('match_type', 'or'),
+            organization_id=getattr(request, 'organization_id', None),
+            user=request.user,
+        )
+        page = self.paginate_queryset(queryset)
+        serializer_class = AssetListSerializer(page if page is not None else queryset, many=True)
+        return BaseResponse.success(
+            data={
+                'count': queryset.count(),
+                'match_type': serializer.validated_data.get('match_type', 'or'),
+                'results': serializer_class.data,
+            },
+            message='Assets filtered by tags successfully',
+        )
 
     @action(detail=False, methods=['get'], url_path='statistics')
     def statistics(self, request):

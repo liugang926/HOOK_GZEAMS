@@ -626,14 +626,40 @@ class InventoryDifference(BaseModel):
     # ========== Resolution Status Choices ==========
     STATUS_PENDING = 'pending'
     STATUS_CONFIRMED = 'confirmed'
+    STATUS_IN_REVIEW = 'in_review'
+    STATUS_APPROVED = 'approved'
+    STATUS_EXECUTING = 'executing'
     STATUS_RESOLVED = 'resolved'
     STATUS_IGNORED = 'ignored'
+    STATUS_CLOSED = 'closed'
 
     RESOLUTION_STATUS_CHOICES = [
         (STATUS_PENDING, _('Pending')),
         (STATUS_CONFIRMED, _('Confirmed')),
+        (STATUS_IN_REVIEW, _('In Review')),
+        (STATUS_APPROVED, _('Approved')),
+        (STATUS_EXECUTING, _('Executing')),
         (STATUS_RESOLVED, _('Resolved')),
         (STATUS_IGNORED, _('Ignored')),
+        (STATUS_CLOSED, _('Closed')),
+    ]
+
+    CLOSURE_TYPE_LOCATION_CORRECTION = 'location_correction'
+    CLOSURE_TYPE_CUSTODIAN_CORRECTION = 'custodian_correction'
+    CLOSURE_TYPE_REPAIR = 'repair'
+    CLOSURE_TYPE_DISPOSAL = 'disposal'
+    CLOSURE_TYPE_CREATE_CARD = 'create_asset_card'
+    CLOSURE_TYPE_FINANCIAL_ADJUSTMENT = 'financial_adjustment'
+    CLOSURE_TYPE_INVALID = 'invalid_difference'
+
+    CLOSURE_TYPE_CHOICES = [
+        (CLOSURE_TYPE_LOCATION_CORRECTION, _('Location Correction')),
+        (CLOSURE_TYPE_CUSTODIAN_CORRECTION, _('Custodian Correction')),
+        (CLOSURE_TYPE_REPAIR, _('Repair')),
+        (CLOSURE_TYPE_DISPOSAL, _('Disposal')),
+        (CLOSURE_TYPE_CREATE_CARD, _('Create Asset Card')),
+        (CLOSURE_TYPE_FINANCIAL_ADJUSTMENT, _('Financial Adjustment')),
+        (CLOSURE_TYPE_INVALID, _('Invalid Difference')),
     ]
 
     # ========== Basic Information ==========
@@ -724,6 +750,73 @@ class InventoryDifference(BaseModel):
         blank=True,
         help_text=_('Resolution timestamp')
     )
+    owner = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='owned_inventory_differences',
+        help_text=_('Assigned owner for difference handling')
+    )
+    reviewed_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_inventory_differences',
+        help_text=_('User who submitted or reviewed the difference resolution')
+    )
+    reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Review submission timestamp')
+    )
+    approved_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_inventory_differences',
+        help_text=_('User who approved the difference resolution')
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Approval timestamp')
+    )
+    closed_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='closed_inventory_differences',
+        help_text=_('User who closed the difference')
+    )
+    closure_type = models.CharField(
+        max_length=50,
+        choices=CLOSURE_TYPE_CHOICES,
+        blank=True,
+        help_text=_('Closure type for the difference')
+    )
+    closure_notes = models.TextField(
+        blank=True,
+        help_text=_('Closure notes')
+    )
+    closure_completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Difference closure timestamp')
+    )
+    evidence_refs = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_('Evidence references for the difference closure')
+    )
+    linked_action_code = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text=_('Linked downstream action code')
+    )
 
     def __str__(self):
         return f"{self.task.task_code} - {self.get_difference_type_display()}"
@@ -735,3 +828,430 @@ class InventoryDifference(BaseModel):
     def get_status_display(self):
         """Get status display label."""
         return dict(self.RESOLUTION_STATUS_CHOICES).get(self.status, self.status)
+
+    def get_closure_type_display(self):
+        """Get closure type display label."""
+        return dict(self.CLOSURE_TYPE_CHOICES).get(self.closure_type, self.closure_type)
+
+
+class InventoryFollowUp(BaseModel):
+    """
+    Inventory manual follow-up task model.
+
+    Tracks downstream manual work required after a difference resolution cannot
+    be completed automatically, such as finance adjustments or asset card
+    creation.
+    """
+
+    class Meta:
+        db_table = 'inventory_follow_ups'
+        verbose_name = _('Inventory Follow-up')
+        verbose_name_plural = _('Inventory Follow-ups')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['organization', 'follow_up_code']),
+            models.Index(fields=['organization', 'status']),
+            models.Index(fields=['organization', 'assignee']),
+            models.Index(fields=['task', 'status']),
+            models.Index(fields=['difference', 'status']),
+        ]
+
+    STATUS_PENDING = 'pending'
+    STATUS_COMPLETED = 'completed'
+    STATUS_CANCELLED = 'cancelled'
+
+    STATUS_CHOICES = [
+        (STATUS_PENDING, _('Pending')),
+        (STATUS_COMPLETED, _('Completed')),
+        (STATUS_CANCELLED, _('Cancelled')),
+    ]
+
+    follow_up_code = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        help_text=_('Unique manual follow-up code')
+    )
+    task = models.ForeignKey(
+        'InventoryTask',
+        on_delete=models.CASCADE,
+        related_name='follow_up_tasks',
+        help_text=_('Related inventory task')
+    )
+    difference = models.ForeignKey(
+        'InventoryDifference',
+        on_delete=models.CASCADE,
+        related_name='follow_up_tasks',
+        help_text=_('Related inventory difference')
+    )
+    asset = models.ForeignKey(
+        'assets.Asset',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inventory_follow_up_tasks',
+        help_text=_('Related asset')
+    )
+    title = models.CharField(
+        max_length=255,
+        help_text=_('Follow-up task title')
+    )
+    closure_type = models.CharField(
+        max_length=50,
+        choices=InventoryDifference.CLOSURE_TYPE_CHOICES,
+        blank=True,
+        help_text=_('Closure type that triggered the follow-up')
+    )
+    linked_action_code = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text=_('Linked downstream action code')
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        db_index=True,
+        help_text=_('Follow-up task status')
+    )
+    assignee = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_inventory_follow_ups',
+        help_text=_('Follow-up assignee')
+    )
+    assigned_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Time when the follow-up was assigned')
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Time when the follow-up was completed')
+    )
+    completed_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='completed_inventory_follow_ups',
+        help_text=_('User who completed the follow-up')
+    )
+    completion_notes = models.TextField(
+        blank=True,
+        help_text=_('Completion notes')
+    )
+    evidence_refs = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_('Evidence references for the follow-up completion')
+    )
+    follow_up_notification_id = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text=_('Latest follow-up notification ID')
+    )
+    follow_up_notification_url = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text=_('Notification center route for the follow-up')
+    )
+    last_notified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Time when the latest reminder was sent')
+    )
+    reminder_count = models.PositiveIntegerField(
+        default=0,
+        help_text=_('Reminder count')
+    )
+
+    def __str__(self):
+        return f"{self.follow_up_code} - {self.title}"
+
+    def save(self, *args, **kwargs):
+        if not self.follow_up_code:
+            self.follow_up_code = self._generate_follow_up_code()
+        super().save(*args, **kwargs)
+
+    def _generate_follow_up_code(self) -> str:
+        """Generate a unique follow-up code."""
+        from django.utils import timezone
+
+        prefix = timezone.now().strftime('%Y%m')
+        last_follow_up = InventoryFollowUp.all_objects.filter(
+            follow_up_code__startswith=f"IFU{prefix}"
+        ).order_by('-follow_up_code').first()
+        if last_follow_up:
+            seq = int(last_follow_up.follow_up_code[-4:]) + 1
+        else:
+            seq = 1
+        return f"IFU{prefix}{seq:04d}"
+
+
+class InventoryReconciliation(BaseModel):
+    """
+    Inventory Reconciliation Model.
+
+    Stores the reconciliation result generated from a completed inventory task.
+    """
+
+    class Meta:
+        db_table = 'inventory_reconciliations'
+        verbose_name = _('Inventory Reconciliation')
+        verbose_name_plural = _('Inventory Reconciliations')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['organization', 'reconciliation_no']),
+            models.Index(fields=['organization', 'status']),
+            models.Index(fields=['task', 'status']),
+            models.Index(fields=['reconciled_at']),
+        ]
+
+    STATUS_DRAFT = 'draft'
+    STATUS_SUBMITTED = 'submitted'
+    STATUS_APPROVED = 'approved'
+    STATUS_REJECTED = 'rejected'
+
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, _('Draft')),
+        (STATUS_SUBMITTED, _('Submitted')),
+        (STATUS_APPROVED, _('Approved')),
+        (STATUS_REJECTED, _('Rejected')),
+    ]
+
+    reconciliation_no = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        help_text=_('Unique reconciliation number')
+    )
+    task = models.ForeignKey(
+        'InventoryTask',
+        on_delete=models.CASCADE,
+        related_name='reconciliations',
+        help_text=_('Related inventory task')
+    )
+    normal_count = models.IntegerField(
+        default=0,
+        help_text=_('Normal item count in reconciliation')
+    )
+    abnormal_count = models.IntegerField(
+        default=0,
+        help_text=_('Abnormal item count in reconciliation')
+    )
+    difference_count = models.IntegerField(
+        default=0,
+        help_text=_('Difference count in reconciliation')
+    )
+    adjustment_count = models.IntegerField(
+        default=0,
+        help_text=_('Adjustment count in reconciliation')
+    )
+    adjustments = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_('Adjustment detail rows')
+    )
+    note = models.TextField(
+        blank=True,
+        help_text=_('Reconciliation note')
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_DRAFT,
+        db_index=True,
+        help_text=_('Reconciliation status')
+    )
+    reconciled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Reconciliation time')
+    )
+    reconciled_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='inventory_reconciliations',
+        help_text=_('User who created the reconciliation')
+    )
+    current_approver = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='pending_inventory_reconciliations',
+        help_text=_('Current reconciliation approver')
+    )
+    submitted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Reconciliation submission time')
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Reconciliation approval time')
+    )
+    rejected_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Reconciliation rejection time')
+    )
+
+    def __str__(self):
+        return f"{self.reconciliation_no} - {self.task.task_code}"
+
+    def save(self, *args, **kwargs):
+        if not self.reconciliation_no:
+            self.reconciliation_no = self._generate_reconciliation_no()
+        super().save(*args, **kwargs)
+
+    def _generate_reconciliation_no(self) -> str:
+        """Generate a unique reconciliation number."""
+        from django.utils import timezone
+
+        prefix = timezone.now().strftime('%Y%m')
+        last_record = InventoryReconciliation.all_objects.filter(
+            reconciliation_no__startswith=f"IRC{prefix}"
+        ).order_by('-reconciliation_no').first()
+        if last_record:
+            sequence = int(last_record.reconciliation_no[-4:]) + 1
+        else:
+            sequence = 1
+        return f"IRC{prefix}{sequence:04d}"
+
+
+class InventoryReport(BaseModel):
+    """
+    Inventory Report Model.
+
+    Stores generated inventory report snapshots and approval state.
+    """
+
+    class Meta:
+        db_table = 'inventory_reports'
+        verbose_name = _('Inventory Report')
+        verbose_name_plural = _('Inventory Reports')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['organization', 'report_no']),
+            models.Index(fields=['organization', 'status']),
+            models.Index(fields=['task', 'status']),
+            models.Index(fields=['generated_at']),
+        ]
+
+    STATUS_DRAFT = 'draft'
+    STATUS_PENDING_APPROVAL = 'pending_approval'
+    STATUS_APPROVED = 'approved'
+    STATUS_REJECTED = 'rejected'
+
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, _('Draft')),
+        (STATUS_PENDING_APPROVAL, _('Pending Approval')),
+        (STATUS_APPROVED, _('Approved')),
+        (STATUS_REJECTED, _('Rejected')),
+    ]
+
+    report_no = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        help_text=_('Unique inventory report number')
+    )
+    task = models.ForeignKey(
+        'InventoryTask',
+        on_delete=models.CASCADE,
+        related_name='reports',
+        help_text=_('Related inventory task')
+    )
+    template_id = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text=_('Selected report template ID')
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default=STATUS_DRAFT,
+        db_index=True,
+        help_text=_('Inventory report status')
+    )
+    summary = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_('Top-level report summary')
+    )
+    report_data = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_('Structured report payload')
+    )
+    approvals = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_('Approval history payload')
+    )
+    generated_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='generated_inventory_reports',
+        help_text=_('User who generated the report')
+    )
+    generated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Report generation time')
+    )
+    current_approver = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='pending_inventory_reports',
+        help_text=_('Current report approver')
+    )
+    submitted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Report submission time')
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Report approval time')
+    )
+    rejected_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text=_('Report rejection time')
+    )
+
+    def __str__(self):
+        return f"{self.report_no} - {self.task.task_code}"
+
+    def save(self, *args, **kwargs):
+        if not self.report_no:
+            self.report_no = self._generate_report_no()
+        super().save(*args, **kwargs)
+
+    def _generate_report_no(self) -> str:
+        """Generate a unique report number."""
+        from django.utils import timezone
+
+        prefix = timezone.now().strftime('%Y%m')
+        last_record = InventoryReport.all_objects.filter(
+            report_no__startswith=f"IRP{prefix}"
+        ).order_by('-report_no').first()
+        if last_record:
+            sequence = int(last_record.report_no[-4:]) + 1
+        else:
+            sequence = 1
+        return f"IRP{prefix}{sequence:04d}"

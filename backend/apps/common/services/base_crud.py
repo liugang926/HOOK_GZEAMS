@@ -93,6 +93,8 @@ class BaseCRUDService:
             user=user,
         )
         if not resolved_org_id:
+            if organization_id is None and user is None:
+                return queryset
             return queryset.none()
 
         return queryset.filter(organization_id=resolved_org_id)
@@ -175,6 +177,14 @@ class BaseCRUDService:
         Returns:
             Restored model instance
         """
+        if self._is_tenant_scoped_model():
+            resolved_org_id = self._resolve_organization_id(
+                organization_id=organization_id,
+                user=user,
+            )
+            if not resolved_org_id:
+                raise self.model_class.DoesNotExist()
+
         # Use all_objects to include deleted records
         instance = self.get(
             instance_id,
@@ -298,6 +308,9 @@ class BaseCRUDService:
                 'results': list of items
             }
         """
+        if getattr(queryset, 'ordered', True) is False and getattr(queryset, 'model', None):
+            queryset = queryset.order_by(queryset.model._meta.pk.name)
+
         paginator = Paginator(queryset, page_size)
         page_obj = paginator.get_page(page)
 

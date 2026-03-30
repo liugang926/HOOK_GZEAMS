@@ -34,6 +34,57 @@ class SLAService:
     def __init__(self):
         """Initialize SLA service."""
         pass
+
+    def is_instance_overdue(self, workflow_instance) -> bool:
+        """Return whether a workflow instance has exceeded its SLA window."""
+        started_at = getattr(workflow_instance, 'started_at', None) or getattr(workflow_instance, 'created_at', None)
+        if not started_at:
+            return False
+        return (timezone.now() - started_at).total_seconds() > self.DEFAULT_SLA_HOURS * 3600
+
+    def get_task_sla_status(self, task) -> Dict:
+        """Return SLA status details for a workflow task."""
+        status = self.check_sla_compliance(task)
+        due_date = getattr(task, 'due_date', None)
+        hours_overdue = 0.0
+
+        if due_date and timezone.now() > due_date:
+            hours_overdue = round((timezone.now() - due_date).total_seconds() / 3600, 2)
+            if status not in {'escalated', 'completed'}:
+                status = 'overdue'
+
+        return {
+            'status': status,
+            'due_date': due_date,
+            'hours_overdue': hours_overdue,
+        }
+
+    def process_overdue_task(self, task) -> Dict:
+        """Trigger overdue-task handling and return the computed SLA status."""
+        status_info = self.get_task_sla_status(task)
+        if status_info['status'] not in {'overdue', 'escalated'}:
+            return status_info
+
+        try:
+            from apps.workflows.services.notifications import EnhancedNotificationService
+
+            service = EnhancedNotificationService()
+            service.send(
+                event_type='workflow_task_overdue',
+                recipient=task.assignee,
+                context={
+                    'task_id': str(task.id),
+                    'task_name': task.node_name,
+                    'hours_overdue': status_info['hours_overdue'],
+                },
+            )
+        except Exception:
+            logger.exception(
+                "Failed to send overdue task notification for task %s",
+                getattr(task, 'pk', None),
+            )
+
+        return status_info
     
     def check_sla_compliance(self, task) -> str:
         """
@@ -407,5 +458,8 @@ class SLAService:
 # Singleton instance
 sla_service = SLAService()
 
-# Alias for backward compatibility
-SLATracker = SLAService
+
+class SLATracker(SLAService):
+    """Backward-compatible SLA tracker facade."""
+
+    pass

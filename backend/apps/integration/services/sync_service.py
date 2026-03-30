@@ -6,7 +6,7 @@ Provides business logic for managing IntegrationSyncTask instances.
 import logging
 import uuid
 from typing import Dict, Any, Optional, Callable
-from datetime import datetime
+from django.utils import timezone
 
 from apps.common.services.base_crud import BaseCRUDService
 from apps.integration.models import IntegrationConfig, IntegrationSyncTask
@@ -78,7 +78,7 @@ class IntegrationSyncService(BaseCRUDService):
 
         # Update task status to running
         task.status = SyncStatus.RUNNING
-        task.started_at = datetime.now()
+        task.started_at = timezone.now()
         task.save(update_fields=['status', 'started_at'])
 
         try:
@@ -87,7 +87,7 @@ class IntegrationSyncService(BaseCRUDService):
             if adapter is None:
                 raise ValueError(f'No adapter available for system type: {task.config.system_type}')
 
-            start_time = datetime.now()
+            start_time = timezone.now()
 
             # Execute sync based on direction
             if task.direction == SyncDirection.PULL:
@@ -109,7 +109,7 @@ class IntegrationSyncService(BaseCRUDService):
             else:
                 raise ValueError(f'Unsupported sync direction: {task.direction}')
 
-            end_time = datetime.now()
+            end_time = timezone.now()
             duration_ms = int((end_time - start_time).total_seconds() * 1000)
 
             # Update task with results
@@ -156,7 +156,7 @@ class IntegrationSyncService(BaseCRUDService):
 
             # Update task as failed
             task.status = SyncStatus.FAILED
-            task.completed_at = datetime.now()
+            task.completed_at = timezone.now()
             if task.started_at:
                 task.duration_ms = int((task.completed_at - task.started_at).total_seconds() * 1000)
             task.error_summary = [{'error': str(e)}]
@@ -187,7 +187,7 @@ class IntegrationSyncService(BaseCRUDService):
             }
 
         task.status = SyncStatus.CANCELLED
-        task.completed_at = datetime.now()
+        task.completed_at = timezone.now()
         task.save(update_fields=['status', 'completed_at'])
 
         return {

@@ -1291,6 +1291,37 @@ class ObjectRouterViewSet(
             }
         )
 
+    def sla(self, request, *args, **kwargs):
+        """
+        Get object-level workflow SLA summary for a record.
+
+        GET /api/system/objects/{code}/{id}/sla/
+        """
+        record_id = kwargs.get('id')
+        if not record_id:
+            return BaseResponse.error(
+                'VALIDATION_ERROR',
+                'object id is required',
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        instance = self._load_delegate_instance(record_id)
+        if instance is None:
+            return BaseResponse.not_found(f"{getattr(self._object_meta, 'code', 'Object')} record")
+
+        from apps.workflows.services.object_sla_binding_service import ObjectSLABindingService
+
+        organization_id = (
+            getattr(request, 'organization_id', None) or
+            getattr(getattr(request.user, 'organization', None), 'id', None)
+        )
+        payload = ObjectSLABindingService().get_object_sla_summary(
+            object_code=getattr(self._object_meta, 'code', ''),
+            business_id=str(record_id),
+            organization_id=str(organization_id) if organization_id else None,
+        )
+        return BaseResponse.success(data=payload)
+
     def execute_action(self, request, *args, **kwargs):
         """
         Execute a unified cross-object action for a record.

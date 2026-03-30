@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 
 from apps.common.filters.base import BaseModelFilter
-from apps.workflows.models import WorkflowInstance, WorkflowTask
+from apps.workflows.models import WorkflowApproval, WorkflowInstance, WorkflowTask
 
 
 class WorkflowInstanceFilter(BaseModelFilter):
@@ -168,6 +168,10 @@ class WorkflowTaskFilter(BaseModelFilter):
         field_name='assignee_id',
         label=_('Assignee User ID')
     )
+    department = django_filters.UUIDFilter(
+        method='filter_department',
+        label=_('Department')
+    )
 
     # Due date filters
     due_after = django_filters.DateTimeFilter(
@@ -209,6 +213,7 @@ class WorkflowTaskFilter(BaseModelFilter):
             'node_type',
             'instance',
             'assignee',
+            'department',
             'due_after',
             'due_before',
             'priority',
@@ -227,6 +232,16 @@ class WorkflowTaskFilter(BaseModelFilter):
             status='pending',
             due_date__lt=timezone.now()
         )
+
+    def filter_department(self, queryset, name, value):
+        """Filter tasks by the assignee's primary department."""
+        if not value:
+            return queryset
+        return queryset.filter(
+            assignee__user_departments__department_id=value,
+            assignee__user_departments__is_primary=True,
+            assignee__user_departments__is_deleted=False,
+        ).distinct()
 
 
 class WorkflowApprovalFilter(BaseModelFilter):

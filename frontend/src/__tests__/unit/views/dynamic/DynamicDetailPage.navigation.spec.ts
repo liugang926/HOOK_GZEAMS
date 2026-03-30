@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, onMounted } from 'vue'
 import {
   createDynamicDetailGlobalOptions,
 } from './testUtils'
@@ -19,7 +19,7 @@ const {
   disposalListMock: vi.fn(),
 }))
 
-const { getMetadataMock } = createMetadataApiMockContext()
+const { getMetadataMock, getSlaMock } = createMetadataApiMockContext()
 const { resolveRuntimeLayoutMock } = createRuntimeLayoutMockContext()
 const { pushMock, routeState } = createRouteMockContext({
   params: { code: 'Asset', id: 'asset-1' },
@@ -27,8 +27,33 @@ const { pushMock, routeState } = createRouteMockContext({
 
 const CommonDynamicDetailPageStub = defineComponent({
   name: 'CommonDynamicDetailPage',
-  emits: ['related-record-click', 'related-record-edit'],
-  setup(_props, { emit, slots }) {
+  props: {
+    objectCode: {
+      type: String,
+      default: '',
+    },
+  },
+  emits: ['related-record-click', 'related-record-edit', 'loaded'],
+  setup(props, { emit, slots }) {
+    onMounted(() => {
+      const statusByObjectCode: Record<string, string> = {
+        AssetProject: 'active',
+        FinanceVoucher: 'submitted',
+        InventoryItem: 'confirmed',
+      }
+      emit('loaded', {
+        id: 'record-1',
+        status: statusByObjectCode[props.objectCode] || 'draft',
+        status_label: statusByObjectCode[props.objectCode] || 'draft',
+        task_code: 'INV-001',
+        difference_type_label: 'Missing',
+        quantity_difference: -1,
+        owner: {
+          username: 'inventory-owner',
+        },
+      })
+    })
+
     return () => h('div', { class: 'dynamic-detail-page-stub' }, [
       h('button', {
         class: 'emit-related-click',
@@ -57,7 +82,8 @@ vi.mock('vue-router', async (importOriginal) => {
 
 vi.mock('@/api/dynamic', () => ({
   createObjectClient: () => ({
-    getMetadata: getMetadataMock
+    getMetadata: getMetadataMock,
+    getSla: getSlaMock,
   }),
   purchaseRequestApi: {},
   assetReceiptApi: {},
@@ -117,6 +143,46 @@ vi.mock('@/components/common/ObjectWorkbenchPanelHost.vue', () => ({
   }),
 }))
 
+vi.mock('@/components/common/WorkbenchSummaryCards.vue', () => ({
+  default: defineComponent({
+    name: 'WorkbenchSummaryCards',
+    template: '<div class="workbench-summary-cards-stub" />',
+  }),
+}))
+
+vi.mock('@/components/common/WorkbenchQueuePanel.vue', () => ({
+  default: defineComponent({
+    name: 'WorkbenchQueuePanel',
+    template: '<div class="workbench-queue-panel-stub" />',
+  }),
+}))
+
+vi.mock('@/components/common/ClosureStatusPanel.vue', () => ({
+  default: defineComponent({
+    name: 'ClosureStatusPanel',
+    template: '<div class="closure-status-panel-stub" />',
+  }),
+}))
+
+vi.mock('@/components/common/SlaIndicatorBar.vue', () => ({
+  default: defineComponent({
+    name: 'SlaIndicatorBar',
+    props: ['indicators', 'recordData', 'slaData'],
+    template: `
+      <div class="sla-indicator-bar-stub">
+        {{ Array.isArray(indicators) ? indicators.length : 0 }}|{{ slaData?.status || '--' }}|{{ slaData?.assignee?.displayName || '--' }}
+      </div>
+    `,
+  }),
+}))
+
+vi.mock('@/components/common/RecommendedActionPanel.vue', () => ({
+  default: defineComponent({
+    name: 'RecommendedActionPanel',
+    template: '<div class="recommended-action-panel-stub" />',
+  }),
+}))
+
 vi.mock('vue-i18n', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-i18n')>()
   return {
@@ -149,6 +215,25 @@ describe('DynamicDetailPage navigation', () => {
       name: 'Asset',
       module: 'Asset Center',
       permissions: { view: true, add: true, change: true, delete: true }
+    })
+    getSlaMock.mockResolvedValue({
+      objectCode: 'Asset',
+      businessId: 'asset-1',
+      hasInstance: false,
+      instanceId: null,
+      instanceNo: null,
+      instanceStatus: null,
+      workflowName: '',
+      status: 'unknown',
+      dueDate: null,
+      remainingHours: null,
+      hoursOverdue: 0,
+      isEscalated: false,
+      assignee: null,
+      currentNode: null,
+      activeTaskId: null,
+      activeTaskCount: 0,
+      completedAt: null,
     })
     resolveRuntimeLayoutMock.mockResolvedValue({
       permissions: { view: true, add: true, change: true, delete: true }
@@ -247,6 +332,12 @@ describe('DynamicDetailPage navigation', () => {
         },
         detailPanels: [{ code: 'integration_logs', component: 'finance-voucher-integration-logs' }],
         asyncIndicators: [],
+        summaryCards: [{ code: 'total_amount', valueField: 'total_amount' }],
+        queuePanels: [{ code: 'approval_queue', count: 1, route: '/objects/FinanceVoucher?status=submitted' }],
+        exceptionPanels: [{ code: 'push_failed', count: 0, route: '/objects/FinanceVoucher?status=approved' }],
+        closurePanel: { stageField: 'status', ownerField: 'created_by.username' },
+        slaIndicators: [{ code: 'approval_sla', status: 'approaching_sla' }],
+        recommendedActions: [{ code: 'submit', actionPath: 'submit' }],
       },
     })
 
@@ -255,7 +346,73 @@ describe('DynamicDetailPage navigation', () => {
     await flushPromises()
 
     expect(wrapper.find('.object-workbench-action-bar-stub').exists()).toBe(true)
+    expect(wrapper.find('.workbench-summary-cards-stub').exists()).toBe(true)
+    expect(wrapper.find('.workbench-queue-panel-stub').exists()).toBe(true)
+    expect(wrapper.find('.closure-status-panel-stub').exists()).toBe(true)
+    expect(wrapper.find('.sla-indicator-bar-stub').exists()).toBe(true)
+    expect(wrapper.find('.recommended-action-panel-stub').exists()).toBe(true)
     expect(wrapper.find('.object-workbench-panel-host-stub').exists()).toBe(true)
+  })
+
+  it('passes object-level SLA data into the workbench indicator area', async () => {
+    getSlaMock.mockResolvedValueOnce({
+      objectCode: 'Asset',
+      businessId: 'asset-1',
+      hasInstance: true,
+      instanceId: 'wf-1',
+      instanceNo: 'WF-001',
+      instanceStatus: 'pending_approval',
+      workflowName: 'Asset Approval',
+      status: 'overdue',
+      dueDate: '2026-03-30 12:00:00',
+      remainingHours: 0,
+      hoursOverdue: 4,
+      isEscalated: false,
+      assignee: {
+        id: 'user-1',
+        username: 'approver',
+        displayName: 'Approver',
+      },
+      currentNode: {
+        id: 'approval_1',
+        name: 'Department Approval',
+      },
+      activeTaskId: 'task-1',
+      activeTaskCount: 1,
+      completedAt: null,
+    })
+    resolveRuntimeLayoutMock.mockResolvedValueOnce({
+      permissions: { view: true, add: true, change: true, delete: true },
+      workbench: {
+        workspaceMode: 'extended',
+        primaryEntryRoute: '/objects/Asset',
+        legacyAliases: [],
+        toolbar: {
+          primaryActions: [],
+          secondaryActions: [],
+        },
+        detailPanels: [],
+        asyncIndicators: [],
+        summaryCards: [],
+        queuePanels: [],
+        exceptionPanels: [],
+        closurePanel: null,
+        slaIndicators: [
+          {
+            code: 'approval_sla',
+            label: 'Approval SLA',
+          },
+        ],
+        recommendedActions: [],
+      },
+    })
+
+    const wrapper = await buildWrapper()
+
+    await flushPromises()
+
+    expect(getSlaMock).toHaveBeenCalledWith('asset-1')
+    expect(wrapper.find('.sla-indicator-bar-stub').text()).toContain('1|overdue|Approver')
   })
 
   it('renders AssetProject workbench actions and panels on the unified detail page', async () => {
@@ -284,6 +441,12 @@ describe('DynamicDetailPage navigation', () => {
           { code: 'project_return_history', component: 'asset-project-return-history' },
         ],
         asyncIndicators: [],
+        summaryCards: [],
+        queuePanels: [],
+        exceptionPanels: [],
+        closurePanel: null,
+        slaIndicators: [],
+        recommendedActions: [],
       },
     })
 
@@ -294,5 +457,44 @@ describe('DynamicDetailPage navigation', () => {
     expect(wrapper.text()).toContain('Projects')
     expect(wrapper.find('.object-workbench-action-bar-stub').exists()).toBe(true)
     expect(wrapper.find('.object-workbench-panel-host-stub').exists()).toBe(true)
+  })
+
+  it('renders InventoryItem closure workbench actions on the unified detail page', async () => {
+    routeState.params = { code: 'InventoryItem', id: 'difference-1' }
+    getMetadataMock.mockResolvedValueOnce({
+      code: 'InventoryItem',
+      name: 'Inventory Difference',
+      module: 'Inventory',
+      permissions: { view: true, add: true, change: true, delete: true }
+    })
+    resolveRuntimeLayoutMock.mockResolvedValueOnce({
+      permissions: { view: true, add: true, change: true, delete: false },
+      workbench: {
+        workspaceMode: 'extended',
+        primaryEntryRoute: '/objects/InventoryItem',
+        legacyAliases: ['/inventory/items'],
+        toolbar: {
+          primaryActions: [{ code: 'submit_review', actionPath: 'submit-review' }],
+          secondaryActions: [{ code: 'ignore', actionPath: 'ignore' }],
+        },
+        detailPanels: [],
+        asyncIndicators: [],
+        summaryCards: [{ code: 'difference_type', valueField: 'difference_type_label' }],
+        queuePanels: [],
+        exceptionPanels: [],
+        closurePanel: { stageField: 'status_label', ownerField: 'owner.username', progressField: 'closure_completed_at' },
+        slaIndicators: [],
+        recommendedActions: [{ code: 'submit_review_hint', actionPath: 'submit-review' }],
+      },
+    })
+
+    const wrapper = await buildWrapper()
+
+    await flushPromises()
+
+    expect(wrapper.find('.object-workbench-action-bar-stub').exists()).toBe(true)
+    expect(wrapper.find('.workbench-summary-cards-stub').exists()).toBe(true)
+    expect(wrapper.find('.closure-status-panel-stub').exists()).toBe(true)
+    expect(wrapper.find('.recommended-action-panel-stub').exists()).toBe(true)
   })
 })

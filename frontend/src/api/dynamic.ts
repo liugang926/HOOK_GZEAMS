@@ -21,6 +21,7 @@ import { checkRuntimeContract, type RuntimeMode } from '@/contracts/runtimeContr
 import type {
     AggregateDocumentPageMode,
     AggregateDocumentResponse,
+    ObjectSlaSummary,
     RuntimeAggregate,
     RuntimeWorkbench,
 } from '@/types/runtime'
@@ -547,6 +548,20 @@ class DynamicAPI {
     }
 
     /**
+     * Get object-level workflow SLA summary for a record.
+     * GET /api/system/objects/{code}/{id}/sla/
+     */
+    getSla(
+        code: string,
+        id: string
+    ): Promise<ObjectSlaSummary> {
+        return request({
+            url: `${this.baseUrl}/${code}/${id}/sla/`,
+            method: 'get'
+        })
+    }
+
+    /**
      * Execute a unified cross-object action for a record.
      * POST /api/system/objects/{code}/{id}/actions/{actionCode}/execute/
      */
@@ -613,6 +628,7 @@ export interface ObjectClient {
     getRelated<T = any>(id: string, relationCode: string, params?: Record<string, any>): Promise<RelatedRecordsResponse<T>>
     getRelationCounts(id: string): Promise<ApiResponse<{ counts: Record<string, number> }>>
     getCompactDetail(id: string): Promise<ApiResponse<{ fields: CompactDetailField[] }>>
+    getSla(id: string): Promise<ObjectSlaSummary>
     getActions(id: string): Promise<ObjectActionsResponse>
     executeAction(id: string, actionCode: string, payload?: Record<string, any>): Promise<ObjectActionExecutionResult>
 }
@@ -661,6 +677,8 @@ export function createObjectClient(code: string): ObjectClient {
             dynamicApi.getRelationCounts(code, id),
         getCompactDetail: (id: string) =>
             dynamicApi.getCompactDetail(code, id),
+        getSla: (id: string) =>
+            dynamicApi.getSla(code, id),
         getActions: (id: string) =>
             dynamicApi.getActions(code, id),
         executeAction: (id: string, actionCode: string, payload?: Record<string, any>) =>
@@ -711,6 +729,9 @@ export const assetWarrantyApi = createObjectClient('AssetWarranty')
 export const inventoryTaskApi = createObjectClient('InventoryTask')
 export const inventorySnapshotApi = createObjectClient('InventorySnapshot')
 export const inventoryItemApi = createObjectClient('InventoryItem')
+export const inventoryFollowUpApi = createObjectClient('InventoryFollowUp')
+export const inventoryReconciliationApi = createObjectClient('InventoryReconciliation')
+export const inventoryReportApi = createObjectClient('InventoryReport')
 
 /**
  * IT Assets module API clients
@@ -785,6 +806,9 @@ export const api = {
     inventoryTask: inventoryTaskApi,
     inventorySnapshot: inventorySnapshotApi,
     inventoryItem: inventoryItemApi,
+    inventoryFollowUp: inventoryFollowUpApi,
+    inventoryReconciliation: inventoryReconciliationApi,
+    inventoryReport: inventoryReportApi,
 
     // Others
     itAsset: itAssetApi,

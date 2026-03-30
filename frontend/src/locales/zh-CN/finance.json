@@ -12,6 +12,7 @@
             "assetCode": "资产编码",
             "assetName": "资产名称",
             "period": "期间",
+            "depreciationAmount": "折旧金额",
             "currentDepreciation": "本期折旧",
             "accumulatedDepreciation": "累计折旧",
             "netValue": "净值",
@@ -29,6 +30,7 @@
             "durationMs": "耗时(ms)"
         },
         "status": {
+            "calculated": "已计提",
             "draft": "草稿",
             "pending": "待审批",
             "submitted": "已提交",
@@ -39,7 +41,11 @@
         "businessType": {
             "assetPurchase": "资产采购",
             "depreciation": "折旧计提",
-            "assetDisposal": "资产处置"
+            "assetDisposal": "资产处置",
+            "purchase": "资产采购",
+            "disposal": "资产处置",
+            "inventory": "盘盈盘亏调整",
+            "other": "其他"
         },
         "actions": {
             "createVoucher": "新增凭证",
@@ -48,7 +54,14 @@
             "detail": "详情",
             "post": "入账",
             "retryPush": "重试推送",
-            "calculateDepreciation": "计提折旧"
+            "calculateDepreciation": "计提折旧",
+            "previewReport": "预览报表",
+            "batchPost": "批量入账",
+            "newTemplate": "新建模板",
+            "activateTemplate": "启用",
+            "deactivateTemplate": "停用",
+            "applyTemplate": "套用模板",
+            "addEntry": "新增分录"
         },
         "messages": {
             "confirmPost": "确认将该凭证入账吗？",
@@ -59,6 +72,28 @@
             "entries": "凭证明细",
             "syncStatus": "同步状态",
             "integrationLogs": "集成日志"
+        },
+        "workbench": {
+            "actions": {
+                "approveVoucher": "审批凭证",
+                "pushVoucher": "推送到 ERP",
+                "retryPush": "重试 ERP 推送",
+                "submitVoucher": "提交凭证"
+            },
+            "summary": {
+                "balanceState": "平衡状态",
+                "entryCount": "分录数量",
+                "totalAmount": "总金额"
+            },
+            "queues": {
+                "integrationAttention": "集成关注队列",
+                "postingQueue": "待入账队列",
+                "reviewQueue": "待审批队列"
+            },
+            "messages": {
+                "pushVoucherHint": "将已审批凭证推送到 ERP，继续完成财务闭环。",
+                "retryPushHint": "在查看最新响应和日志后，重新发起 ERP 推送。"
+            }
         },
         "depreciationDialog": {
             "title": "计提折旧",
@@ -73,6 +108,119 @@
             },
             "validation": {
                 "periodRequired": "请选择期间"
+            }
+        },
+        "depreciation": {
+            "title": "折旧管理",
+            "subtitle": "查看 {period} 的折旧记录、统计汇总与入账进度。",
+            "filters": {
+                "assetKeyword": "资产",
+                "period": "期间",
+                "status": "状态"
+            },
+            "placeholders": {
+                "assetKeyword": "请输入资产编码或名称",
+                "period": "请选择月份",
+                "status": "请选择状态"
+            },
+            "columns": {
+                "method": "折旧方法",
+                "purchasePrice": "原值",
+                "depreciationAmount": "本期折旧"
+            },
+            "methods": {
+                "straightLine": "直线法",
+                "doubleDeclining": "双倍余额递减法",
+                "sumOfYears": "年数总和法",
+                "unitsOfProduction": "工作量法"
+            },
+            "summary": {
+                "assetCount": "资产数量",
+                "originalValue": "原值合计",
+                "currentAmount": "本期折旧",
+                "accumulatedAmount": "累计折旧",
+                "netValue": "净值合计"
+            },
+            "report": {
+                "title": "{period} 折旧报表",
+                "byCategory": "按分类汇总",
+                "byAsset": "按资产汇总",
+                "columns": {
+                    "category": "分类"
+                }
+            },
+            "messages": {
+                "confirmPost": "确认将该折旧记录入账吗？",
+                "confirmBatchPost": "确认批量入账 {count} 条已计提折旧记录吗？",
+                "batchPostPartial": "批量入账完成，成功 {success} 条，失败 {failed} 条。",
+                "noPostableSelected": "请至少选择一条已计提折旧记录。",
+                "noApprovedSelected": "请至少选择一条已审批折旧记录。",
+                "reportLoadFailed": "加载折旧报表失败。"
+            }
+        },
+        "templates": {
+            "title": "凭证模板",
+            "columns": {
+                "code": "模板编码",
+                "name": "模板名称",
+                "businessType": "业务类型",
+                "isActive": "状态"
+            },
+            "dialog": {
+                "createTitle": "新建凭证模板",
+                "editTitle": "编辑凭证模板"
+            },
+            "form": {
+                "code": "模板编码",
+                "codePlaceholder": "请输入模板编码",
+                "name": "模板名称",
+                "namePlaceholder": "请输入模板名称",
+                "businessType": "业务类型",
+                "active": "启用状态",
+                "description": "描述",
+                "descriptionPlaceholder": "请输入模板描述",
+                "entries": "凭证分录",
+                "entriesHint": "配置由模板生成凭证草稿时使用的分录行。",
+                "entryAccountCode": "科目编码",
+                "entryAccountCodePlaceholder": "请输入科目编码",
+                "entryAccountName": "科目名称",
+                "entryAccountNamePlaceholder": "请输入科目名称",
+                "entrySide": "借贷方向",
+                "entryAmount": "金额",
+                "entryDescription": "分录说明",
+                "entryDescriptionPlaceholder": "请输入分录说明",
+                "debit": "借方",
+                "credit": "贷方"
+            },
+            "apply": {
+                "title": "套用模板生成凭证",
+                "template": "模板",
+                "voucherDate": "凭证日期",
+                "summary": "摘要",
+                "summaryPlaceholder": "请输入凭证摘要",
+                "summaryPrefix": "由模板生成：",
+                "totalAmount": "总金额",
+                "notes": "备注",
+                "notesPlaceholder": "可选备注"
+            },
+            "validation": {
+                "codeRequired": "请输入模板编码",
+                "nameRequired": "请输入模板名称",
+                "businessTypeRequired": "请选择业务类型",
+                "entriesRequired": "请至少配置一条分录",
+                "entryIncomplete": "每条分录都必须填写科目编码、科目名称和金额",
+                "voucherDateRequired": "请选择凭证日期"
+            },
+            "messages": {
+                "createSuccess": "模板创建成功",
+                "updateSuccess": "模板更新成功",
+                "deleteConfirm": "确认删除模板“{name}”吗？",
+                "deleteSuccess": "模板删除成功",
+                "activateConfirm": "确认启用模板“{name}”吗？",
+                "activateSuccess": "模板已启用",
+                "deactivateConfirm": "确认停用模板“{name}”吗？",
+                "deactivateSuccess": "模板已停用",
+                "applySuccess": "已根据模板生成凭证草稿"
             }
         }
     }

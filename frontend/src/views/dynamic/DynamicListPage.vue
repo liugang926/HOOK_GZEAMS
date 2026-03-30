@@ -27,6 +27,43 @@
         :stats="heroStats"
       />
 
+      <section
+        v-if="hasDrilldownContext"
+        class="dynamic-list-drilldown"
+      >
+        <div class="dynamic-list-drilldown__content">
+          <div>
+            <p class="dynamic-list-drilldown__eyebrow">
+              {{ t('system.businessObject.drilldown.title') }}
+            </p>
+            <p class="dynamic-list-drilldown__description">
+              {{ t('system.businessObject.drilldown.description') }}
+            </p>
+          </div>
+          <div class="dynamic-list-drilldown__chips">
+            <span
+              v-for="chip in drilldownChips"
+              :key="chip"
+              class="dynamic-list-drilldown__chip"
+            >
+              {{ chip }}
+            </span>
+          </div>
+        </div>
+        <div class="dynamic-list-drilldown__actions">
+          <el-button
+            v-for="action in drilldownToggleActions"
+            :key="action.key"
+            @click="toggleDrilldownFlag(action.key)"
+          >
+            {{ action.label }}
+          </el-button>
+          <el-button @click="clearDrilldownFilters">
+            {{ t('system.businessObject.drilldown.clear') }}
+          </el-button>
+        </div>
+      </section>
+
       <section class="list-panel">
         <header class="list-panel__header">
           <div>
@@ -284,6 +321,7 @@ import { createObjectClient } from '@/api/dynamic'
 import { resolveObjectDisplayName } from '@/utils/objectDisplay'
 import {
   buildDynamicListUnifiedSearchFields,
+  extractDynamicListReservedRouteQuery,
   extractDynamicListRouteFilters,
   resolveDynamicListEffectivePermissions,
   shouldRefreshDynamicListOnPathChange,
@@ -337,9 +375,113 @@ const unifiedAllFieldsLabel = computed(() => {
   return t('common.selectors.allFields')
 })
 
+const readRouteQueryValue = (value: unknown): string => {
+  if (Array.isArray(value)) return String(value[0] ?? '').trim()
+  if (value === undefined || value === null) return ''
+  return String(value).trim()
+}
+
+const readRouteQueryBoolean = (value: unknown): boolean => {
+  const normalizedValue = readRouteQueryValue(value).toLowerCase()
+  return normalizedValue === 'true' || normalizedValue === '1'
+}
+
 const routeFilters = computed<Record<string, any>>(() => {
   return extractDynamicListRouteFilters(route.query)
 })
+
+const drilldownChips = computed<string[]>(() => {
+  const chips: string[] = []
+  const sourceLabel = readRouteQueryValue(route.query.source_label)
+  const ownerLabel = readRouteQueryValue(route.query.owner_label)
+  const assigneeLabel = readRouteQueryValue(route.query.assignee_label)
+  const departmentLabel = readRouteQueryValue(route.query.department_label)
+
+  if (sourceLabel) {
+    chips.push(`${t('system.businessObject.drilldown.labels.source')}: ${sourceLabel}`)
+  }
+
+  if (ownerLabel) {
+    chips.push(`${t('system.businessObject.drilldown.labels.owner')}: ${ownerLabel}`)
+  } else if (assigneeLabel) {
+    chips.push(`${t('system.businessObject.drilldown.labels.assignee')}: ${assigneeLabel}`)
+  }
+
+  if (departmentLabel) {
+    chips.push(`${t('system.businessObject.drilldown.labels.department')}: ${departmentLabel}`)
+  }
+
+  if (readRouteQueryBoolean(route.query.unresolved_only)) {
+    chips.push(t('system.businessObject.drilldown.flags.unresolvedOnly'))
+  }
+
+  if (readRouteQueryBoolean(route.query.manual_follow_up_only)) {
+    chips.push(t('system.businessObject.drilldown.flags.manualFollowUpOnly'))
+  }
+
+  if (readRouteQueryBoolean(route.query.overdue_only)) {
+    chips.push(t('system.businessObject.drilldown.flags.overdueOnly'))
+  }
+
+  return chips
+})
+
+const hasDrilldownContext = computed(() => drilldownChips.value.length > 0)
+
+const drilldownToggleActions = computed<Array<{ key: string; label: string }>>(() => {
+  const actions: Array<{ key: string; label: string }> = []
+
+  if (Object.prototype.hasOwnProperty.call(route.query, 'unresolved_only')) {
+    actions.push({
+      key: 'unresolved_only',
+      label: readRouteQueryBoolean(route.query.unresolved_only)
+        ? t('system.businessObject.drilldown.actions.showAllStatuses')
+        : t('system.businessObject.drilldown.actions.showUnresolvedOnly'),
+    })
+  }
+
+  if (Object.prototype.hasOwnProperty.call(route.query, 'manual_follow_up_only')) {
+    actions.push({
+      key: 'manual_follow_up_only',
+      label: readRouteQueryBoolean(route.query.manual_follow_up_only)
+        ? t('system.businessObject.drilldown.actions.showAllFollowUps')
+        : t('system.businessObject.drilldown.actions.showManualFollowUpOnly'),
+    })
+  }
+
+  if (Object.prototype.hasOwnProperty.call(route.query, 'overdue_only')) {
+    actions.push({
+      key: 'overdue_only',
+      label: readRouteQueryBoolean(route.query.overdue_only)
+        ? t('system.businessObject.drilldown.actions.showAllDeadlines')
+        : t('system.businessObject.drilldown.actions.showOverdueOnly'),
+    })
+  }
+
+  return actions
+})
+
+const clearDrilldownFilters = () => {
+  router.push({
+    path: `/objects/${objectCode.value}`,
+    query: extractDynamicListReservedRouteQuery(route.query),
+  })
+}
+
+const toggleDrilldownFlag = (flagKey: string) => {
+  const nextQuery = { ...route.query }
+
+  if (readRouteQueryBoolean(route.query[flagKey])) {
+    delete nextQuery[flagKey]
+  } else {
+    nextQuery[flagKey] = 'true'
+  }
+
+  router.push({
+    path: `/objects/${objectCode.value}`,
+    query: nextQuery,
+  })
+}
 
 // Watch route changes to refresh data when navigating back from form page
 watch(() => route.params.code, (newCode) => {
@@ -495,6 +637,70 @@ onMounted(() => {
   gap: 8px;
   margin-right: 8px;
 }
+
+.dynamic-list-drilldown {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 20px 0 0;
+  padding: 18px 20px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  background:
+    linear-gradient(135deg, rgba(248, 250, 252, 0.98), rgba(239, 246, 255, 0.92));
+}
+
+.dynamic-list-drilldown__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dynamic-list-drilldown__eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
+.dynamic-list-drilldown__description {
+  margin: 6px 0 0;
+  color: #475569;
+}
+
+.dynamic-list-drilldown__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dynamic-list-drilldown__chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dynamic-list-drilldown__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .dynamic-list-drilldown {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
 </style>
-
-

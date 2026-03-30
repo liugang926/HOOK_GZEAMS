@@ -1,5 +1,6 @@
 export {
   buildDynamicListUnifiedSearchFields,
+  extractDynamicListReservedRouteQuery,
   extractDynamicListRouteFilters,
   resolveDynamicListEffectivePermissions,
   shouldRefreshDynamicListOnPathChange,

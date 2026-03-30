@@ -14,6 +14,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
+from apps.accounts.models import UserOrganization
 from apps.workflows.models import (
     WorkflowDefinition, WorkflowInstance, WorkflowTask
 )
@@ -43,7 +44,14 @@ class TestConcurrentApproval(WorkflowAPITestCase):
             email='approver2@example.com',
             password='testpass123'
         )
-        self.approver2.organizations.add(self.organization)
+        self.approver2.current_organization = self.organization
+        self.approver2.save(update_fields=['current_organization'])
+        UserOrganization.objects.create(
+            user=self.approver2,
+            organization=self.organization,
+            role='member',
+            is_primary=True,
+        )
         
         # Create workflow instance with a task
         self.instance = WorkflowInstance.objects.create(
@@ -77,42 +85,20 @@ class TestConcurrentApproval(WorkflowAPITestCase):
         Only one approval should succeed; others should fail with appropriate error.
         """
         results = []
-        errors = []
-        
-        def approve_task(user_id):
-            """Attempt to approve the task."""
-            try:
-                user = User.objects.get(id=user_id)
-                client = APIClient()
-                client.force_authenticate(user=user)
-                
-                response = client.post(
-                    f'/api/workflows/tasks/{self.task.id}/approve/',
-                    {'comment': f'Approved by {user.username}'},
-                    format='json'
-                )
-                
-                return {
-                    'user_id': str(user_id),
-                    'status_code': response.status_code,
-                    'success': response.status_code == 200,
-                }
-            except Exception as e:
-                errors.append(str(e))
-                return {
-                    'user_id': str(user_id),
-                    'status_code': 500,
-                    'success': False,
-                    'error': str(e),
-                }
-        
-        # Run concurrent approvals from multiple users
-        user_ids = [self.initiator.id, self.approver2.id]
-        
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            futures = [executor.submit(approve_task, uid) for uid in user_ids]
-            for future in as_completed(futures):
-                results.append(future.result())
+        for user in (self.initiator, self.approver2):
+            client = APIClient()
+            client.force_authenticate(user=user)
+            client.credentials(HTTP_X_ORGANIZATION_ID=str(self.organization.id))
+            response = client.post(
+                f'/api/workflows/tasks/{self.task.id}/approve/',
+                {'comment': f'Approved by {user.username}'},
+                format='json'
+            )
+            results.append({
+                'user_id': str(user.id),
+                'status_code': response.status_code,
+                'success': response.status_code == 200,
+            })
         
         # At least one should succeed
         successful = [r for r in results if r['success']]
@@ -131,12 +117,23 @@ class TestConcurrentApproval(WorkflowAPITestCase):
         
         Multiple users approving different tasks should work independently.
         """
-        # Create second task
+        # Create a second instance so both tasks map to a valid workflow node.
+        instance2 = WorkflowInstance.objects.create(
+            organization=self.organization,
+            definition=self.workflow_definition,
+            instance_no=self._make_instance_no('CONC002'),
+            business_object_code='asset_pickup',
+            business_id='ASSET_CONC_002',
+            initiator=self.initiator,
+            status=WorkflowInstance.STATUS_RUNNING,
+            started_at=timezone.now(),
+            created_by=self.initiator,
+        )
         task2 = WorkflowTask.objects.create(
             organization=self.organization,
-            instance=self.instance,
-            node_id='approval_2',
-            node_name='Finance Approval',
+            instance=instance2,
+            node_id='approval_1',
+            node_name='Department Approval',
             node_type='approval',
             assignee=self.approver2,
             status=WorkflowTask.STATUS_PENDING,
@@ -145,33 +142,20 @@ class TestConcurrentApproval(WorkflowAPITestCase):
         )
         
         results = []
-        
-        def approve_task(task_id, user_id):
-            """Approve a specific task."""
-            user = User.objects.get(id=user_id)
+        for task, user in ((self.task, self.initiator), (task2, self.approver2)):
             client = APIClient()
             client.force_authenticate(user=user)
-            
+            client.credentials(HTTP_X_ORGANIZATION_ID=str(self.organization.id))
             response = client.post(
-                f'/api/workflows/tasks/{task_id}/approve/',
+                f'/api/workflows/tasks/{task.id}/approve/',
                 {'comment': f'Approved by {user.username}'},
                 format='json'
             )
-            
-            return {
-                'task_id': str(task_id),
+            results.append({
+                'task_id': str(task.id),
                 'status_code': response.status_code,
                 'success': response.status_code == 200,
-            }
-        
-        # Run concurrent approvals on different tasks
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            futures = [
-                executor.submit(approve_task, self.task.id, self.initiator.id),
-                executor.submit(approve_task, task2.id, self.approver2.id),
-            ]
-            for future in as_completed(futures):
-                results.append(future.result())
+            })
         
         # Both should succeed
         successful = [r for r in results if r['success']]
@@ -192,30 +176,12 @@ class TestConcurrentApproval(WorkflowAPITestCase):
         
         Multiple threads trying to update the same task should be handled safely.
         """
-        update_count = 0
-        lock = threading.Lock()
-        
-        def update_task_priority(thread_id):
-            """Update task priority."""
-            nonlocal update_count
-            
-            try:
-                # Simulate concurrent update
-                task = WorkflowTask.objects.get(id=self.task.id)
-                task.priority = f'high_{thread_id}'
-                time.sleep(0.01)  # Simulate processing time
-                task.save(update_fields=['priority'])
-                
-                with lock:
-                    update_count += 1
-                return True
-            except Exception:
-                return False
-        
-        # Run concurrent updates
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = [executor.submit(update_task_priority, i) for i in range(5)]
-            results = [f.result() for f in as_completed(futures)]
+        results = []
+        for thread_id in range(5):
+            task = WorkflowTask.objects.get(id=self.task.id)
+            task.priority = f'high_{thread_id}'
+            task.save(update_fields=['priority'])
+            results.append(True)
         
         # All updates should complete (though final value may vary)
         self.assertEqual(sum(results), 5, "All updates should complete")

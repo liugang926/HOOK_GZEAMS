@@ -198,9 +198,11 @@ const searchFields = computed<SearchField[]>(() => [
     label: t('finance.columns.businessType'),
     type: 'select' as const,
     options: [
-      { label: t('finance.businessType.assetPurchase'), value: 'asset_purchase' },
+      { label: t('finance.businessType.purchase'), value: 'purchase' },
       { label: t('finance.businessType.depreciation'), value: 'depreciation' },
-      { label: t('finance.businessType.assetDisposal'), value: 'asset_disposal' }
+      { label: t('finance.businessType.disposal'), value: 'disposal' },
+      { label: t('finance.businessType.inventory'), value: 'inventory' },
+      { label: t('finance.businessType.other'), value: 'other' }
     ]
   },
   {
@@ -209,7 +211,7 @@ const searchFields = computed<SearchField[]>(() => [
     type: 'select' as const,
     options: [
       { label: t('finance.status.draft'), value: 'draft' },
-      { label: t('finance.status.pending'), value: 'pending' },
+      { label: t('finance.status.submitted'), value: 'submitted' },
       { label: t('finance.status.approved'), value: 'approved' },
       { label: t('finance.status.posted'), value: 'posted' }
     ]
@@ -237,7 +239,7 @@ const fetchVouchers = async (params: any) => {
 const getStatusType = (status: string) => {
   const map: Record<string, string> = {
     draft: 'info',
-    pending: 'warning',
+    submitted: 'warning',
     approved: 'primary',
     posted: 'success',
     rejected: 'danger'
@@ -248,7 +250,7 @@ const getStatusType = (status: string) => {
 const getStatusLabel = (status: string) => {
   const map: Record<string, string> = {
     draft: t('finance.status.draft'),
-    pending: t('finance.status.pending'),
+    submitted: t('finance.status.submitted'),
     approved: t('finance.status.approved'),
     posted: t('finance.status.posted'),
     rejected: t('finance.status.rejected')

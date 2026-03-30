@@ -559,6 +559,8 @@ class ConsumableIssueService(BaseCRUDService):
         # Set organization from request/user context
         data['organization_id'] = resolved_org_id
         data['created_by'] = user
+        data.setdefault('applicant_id', user.id)
+        data.setdefault('department_id', resolved_org_id)
 
         issue = ConsumableIssue.objects.create(**data)
 

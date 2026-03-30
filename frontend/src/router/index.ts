@@ -59,6 +59,12 @@ const AGGREGATE_DOCUMENT_EDIT_OBJECT_CODES = new Set([
   'AssetReceipt',
   'DisposalRequest',
 ])
+const PORTAL_REQUEST_OBJECT_CODES: Record<string, string> = {
+  pickup: 'AssetPickup',
+  transfer: 'AssetTransfer',
+  loan: 'AssetLoan',
+  return: 'AssetReturn',
+}
 
 // Additional legacy module routes that now resolve through the metadata-driven object engine.
 // These modules exist on backend but may still expose legacy menu URLs or bookmarks.
@@ -315,13 +321,48 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/inventory/TaskExecute.vue'),
         meta: { title: 'menu.routes.taskExecute', hideMenu: true }
       },
+      {
+        path: 'inventory/reconciliation',
+        name: 'InventoryReconciliationList',
+        component: () => import('@/views/inventory/reconciliation/ReconciliationList.vue'),
+        meta: { title: 'inventory.reconciliation.pageTitle' }
+      },
+      {
+        path: 'inventory/reconciliation/report',
+        name: 'InventoryReportList',
+        component: () => import('@/views/inventory/reconciliation/ReportList.vue'),
+        meta: { title: 'inventory.report.pageTitle' }
+      },
 
       // Finance Routes
+      {
+        path: 'finance/templates',
+        name: 'VoucherTemplateList',
+        component: () => import('@/views/finance/VoucherTemplateList.vue'),
+        meta: { title: 'menu.routes.voucherTemplate' }
+      },
       {
         path: 'finance/depreciation',
         name: 'DepreciationList',
         component: () => import('@/views/finance/DepreciationList.vue'),
         meta: { title: 'menu.routes.depreciation' }
+      },
+
+      {
+        path: 'portal/my-requests/:type/:id',
+        name: 'PortalRequestDetail',
+        redirect: (to) => {
+          const requestType = String(to.params.type || '').trim()
+          const objectCode = PORTAL_REQUEST_OBJECT_CODES[requestType]
+          if (!objectCode) {
+            return {
+              path: '/portal',
+              query: { ...to.query }
+            }
+          }
+          return toObjectDetailLocation(objectCode, String(to.params.id), to.query as LocationQueryRaw)
+        },
+        meta: { title: 'menu.routes.userPortal', hideMenu: true }
       },
 
       // Insurance Routes  (specialized pages beyond dynamic object engine)
@@ -415,6 +456,12 @@ export const routes: RouteRecordRaw[] = [
         name: 'DictionaryTypeList',
         component: () => import('@/views/system/DictionaryTypeList.vue'),
         meta: { title: 'menu.routes.dictionaryTypes' }
+      },
+      {
+        path: 'system/tags',
+        name: 'TagList',
+        component: () => import('@/views/system/TagList.vue'),
+        meta: { title: 'menu.routes.tags' }
       },
       {
         path: 'system/sequence-rules',
@@ -540,13 +587,31 @@ export const routes: RouteRecordRaw[] = [
         component: NotificationPreferences,
         meta: { title: 'menu.routes.notificationPreferences' }
       },
+      {
+        path: 'portal',
+        name: 'UserPortal',
+        component: () => import('@/views/portal/UserPortal.vue'),
+        meta: { title: 'menu.routes.userPortal' }
+      },
 
       // Integration
+      {
+        path: 'integration/overview',
+        name: 'IntegrationList',
+        component: () => import('@/views/integration/IntegrationList.vue'),
+        meta: { title: 'menu.routes.integrationOverview' }
+      },
       {
         path: 'integration/configs',
         name: 'IntegrationConfigList',
         component: () => import('@/views/integration/IntegrationConfigList.vue'),
         meta: { title: 'menu.routes.integrationConfigs' }
+      },
+      {
+        path: 'integration/sync-jobs',
+        name: 'SyncJobList',
+        component: () => import('@/views/integration/SyncJobList.vue'),
+        meta: { title: 'menu.routes.integrationSyncJobs' }
       },
 
       // IT Assets

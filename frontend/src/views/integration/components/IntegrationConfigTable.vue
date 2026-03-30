@@ -82,7 +82,7 @@
     </el-table-column>
     <el-table-column
       :label="t('integration.configList.table.actions')"
-      width="320"
+      width="400"
       fixed="right"
     >
       <template #default="{ row }">
@@ -101,6 +101,14 @@
           @click="emit('sync', row)"
         >
           {{ t('integration.actions.syncNow') }}
+        </el-button>
+        <el-button
+          v-if="row.systemType === 'm18'"
+          link
+          type="warning"
+          @click="emit('m18-sync', row)"
+        >
+          {{ t('integration.m18.actions.syncConsole') }}
         </el-button>
         <el-button
           link
@@ -175,6 +183,7 @@ defineProps<{
 const emit = defineEmits<{
   test: [row: IntegrationConfig]
   sync: [row: IntegrationConfig]
+  'm18-sync': [row: IntegrationConfig]
   logs: [row: IntegrationConfig]
   edit: [row: IntegrationConfig]
   delete: [row: IntegrationConfig]

@@ -96,7 +96,22 @@ class ObjectRegistry:
         Returns:
             ObjectMeta instance or None if not found
         """
-        return cls._registry.get(code)
+        meta = cls._registry.get(code)
+        if meta:
+            return meta
+        return cls.get_or_create_from_db(code)
+
+    @classmethod
+    def all_objects(cls) -> List[ObjectMeta]:
+        """Return all known object metadata from registry and database."""
+        metas: Dict[str, ObjectMeta] = dict(cls._registry)
+
+        for business_object in BusinessObject.objects.filter(is_deleted=False):
+            if business_object.code in metas:
+                continue
+            metas[business_object.code] = cls._build_meta_from_business_object(business_object)
+
+        return sorted(metas.values(), key=lambda meta: meta.code)
 
     @classmethod
     def get_viewset_class(cls, code: str) -> Optional[Type]:

@@ -145,6 +145,8 @@ class Command(BaseCommand):
             'InventoryTask': {'zh-CN': '盘点任务', 'en-US': 'Inventory Task'},
             'InventorySnapshot': {'zh-CN': '资产快照', 'en-US': 'Asset Snapshot'},
             'InventoryItem': {'zh-CN': '盘点明细', 'en-US': 'Inventory Item'},
+            'InventoryReconciliation': {'zh-CN': '盘点复核', 'en-US': 'Inventory Reconciliation'},
+            'InventoryReport': {'zh-CN': '盘点报告', 'en-US': 'Inventory Report'},
             'Maintenance': {'zh-CN': '维修记录', 'en-US': 'Maintenance Record'},
             'MaintenanceTask': {'zh-CN': '维修任务', 'en-US': 'Maintenance Task'},
             'DisposalRequest': {'zh-CN': '报废申请', 'en-US': 'Disposal Request'},

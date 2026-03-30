@@ -43,6 +43,7 @@ class InsurancePolicyFilter(BaseModelFilter):
     is_active = filters.BooleanFilter(method='filter_is_active')
     total_premium_min = filters.NumberFilter(field_name='total_premium', lookup_expr='gte')
     total_premium_max = filters.NumberFilter(field_name='total_premium', lookup_expr='lte')
+    department = filters.UUIDFilter(method='filter_department')
 
     def filter_expires_soon(self, queryset, name, value):
         """Filter policies expiring within specified days (default 30).
@@ -92,13 +93,23 @@ class InsurancePolicyFilter(BaseModelFilter):
             )
         return queryset
 
+    def filter_department(self, queryset, name, value):
+        """Filter policies by the creator's primary department."""
+        if not value:
+            return queryset
+        return queryset.filter(
+            created_by__user_departments__department_id=value,
+            created_by__user_departments__is_primary=True,
+            created_by__user_departments__is_deleted=False,
+        ).distinct()
+
     class Meta(BaseModelFilter.Meta):
         model = InsurancePolicy
         fields = BaseModelFilter.Meta.fields + [
             'status', 'insurance_type', 'payment_frequency', 'company', 'policy_no',
             'start_date', 'end_date', 'start_date_from', 'start_date_to',
             'end_date_from', 'end_date_to', 'expires_soon', 'days', 'is_active',
-            'total_premium_min', 'total_premium_max',
+            'total_premium_min', 'total_premium_max', 'department',
         ]
 
 
@@ -169,6 +180,17 @@ class ClaimRecordFilter(BaseModelFilter):
     claim_date_to = filters.DateFilter(field_name='claim_date', lookup_expr='lte')
     claimed_amount_min = filters.NumberFilter(field_name='claimed_amount', lookup_expr='gte')
     claimed_amount_max = filters.NumberFilter(field_name='claimed_amount', lookup_expr='lte')
+    department = filters.UUIDFilter(method='filter_department')
+
+    def filter_department(self, queryset, name, value):
+        """Filter claims by the creator's primary department."""
+        if not value:
+            return queryset
+        return queryset.filter(
+            created_by__user_departments__department_id=value,
+            created_by__user_departments__is_primary=True,
+            created_by__user_departments__is_deleted=False,
+        ).distinct()
 
     class Meta(BaseModelFilter.Meta):
         model = ClaimRecord
@@ -176,7 +198,7 @@ class ClaimRecordFilter(BaseModelFilter):
             'status', 'incident_type', 'policy', 'asset', 'claim_no',
             'incident_date', 'incident_date_from', 'incident_date_to',
             'claim_date', 'claim_date_from', 'claim_date_to',
-            'claimed_amount_min', 'claimed_amount_max',
+            'claimed_amount_min', 'claimed_amount_max', 'department',
         ]
 
 

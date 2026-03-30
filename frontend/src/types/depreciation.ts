@@ -14,36 +14,44 @@ import type { Asset, AssetCategory } from './assets'
 export enum DepreciationMethod {
   STRAIGHT_LINE = 'straight_line',
   DOUBLE_DECLINING = 'double_declining',
-  SUM_OF_YEARS = 'sum_of_years'
+  SUM_OF_YEARS = 'sum_of_years',
+  UNITS_OF_PRODUCTION = 'units_of_production'
 }
 
 /**
  * Depreciation Status Enum
  */
 export enum DepreciationStatus {
+  CALCULATED = 'calculated',
   DRAFT = 'draft',
   SUBMITTED = 'submitted',
   APPROVED = 'approved',
-  POSTED = 'posted'
+  POSTED = 'posted',
+  REJECTED = 'rejected'
 }
 
 /**
  * Depreciation Record Interface
  */
 export interface DepreciationRecord extends BaseModel {
-  assetId: string
+  assetId?: string
   asset?: Asset
-  period: string
-  periodIndex: number
-  depreciationMethod: DepreciationMethod
-  purchasePrice: number
-  residualValue: number
-  usefulLife: number
-  usedMonths: number
-  depreciationAmount: number
-  accumulatedDepreciation: number
-  netValue: number
-  status: DepreciationStatus
+  assetCode?: string
+  assetName?: string
+  period?: string
+  periodIndex?: number
+  depreciationMethod?: DepreciationMethod | string
+  purchasePrice?: number
+  residualValue?: number
+  usefulLife?: number
+  usedMonths?: number
+  depreciationAmount?: number
+  accumulatedAmount?: number
+  accumulatedDepreciation?: number
+  netValue?: number
+  status?: DepreciationStatus | string
+  statusDisplay?: string
+  postDate?: string | null
   voucherId?: string
   voucherNo?: string
 }
@@ -74,6 +82,9 @@ export interface DepreciationSummary {
   currentAmount: number
   accumulatedAmount: number
   netValue: number
+  postedCount?: number
+  calculatedCount?: number
+  rejectedCount?: number
 }
 
 /**
@@ -119,11 +130,57 @@ export interface AssetDepreciation {
  * Depreciation Configuration Interface
  */
 export interface DepreciationConfig {
+  id?: string
   categoryId?: string
-  category?: AssetCategory
-  depreciationMethod: DepreciationMethod
+  category?: AssetCategory | string
+  categoryCode?: string
+  categoryName?: string
+  categoryParentName?: string | null
+  depreciationMethod: DepreciationMethod | string
+  depreciationMethodDisplay?: string
   usefulLife: number
   residualRate: number
+  salvageValueRate?: number
+  monthlyRate?: number
+  isActive?: boolean
+  notes?: string
+}
+
+export interface GlobalDepreciationConfig {
+  defaultMethod: DepreciationMethod | string
+  defaultUsefulLife: number
+  defaultResidualRate: number
+  totalConfigs?: number
+}
+
+export interface DepreciationAssetDetail {
+  assetInfo: {
+    id: string
+    assetCode: string
+    assetName: string
+    purchasePrice: number
+    currentValue: number
+    accumulatedDepreciation: number
+    usefulLife: number
+    residualRate: number
+  }
+  stat: {
+    usedMonths: number
+    accumulated: number
+    netValue: number
+    progress: number
+  }
+  records: DepreciationRecord[]
+}
+
+export interface DepreciationBatchPostResult {
+  success: number
+  failed: number
+  results: Array<{
+    id: string
+    success: boolean
+    error?: string
+  }>
 }
 
 /**

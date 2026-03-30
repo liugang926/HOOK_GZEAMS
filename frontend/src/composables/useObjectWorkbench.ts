@@ -2,7 +2,12 @@ import { computed, type ComputedRef, type Ref } from 'vue'
 import type {
   RuntimeWorkbench,
   RuntimeWorkbenchAsyncIndicator,
+  RuntimeWorkbenchClosurePanel,
   RuntimeWorkbenchDetailPanel,
+  RuntimeWorkbenchQueuePanel,
+  RuntimeWorkbenchRecommendedAction,
+  RuntimeWorkbenchSlaIndicator,
+  RuntimeWorkbenchSummaryCard,
 } from '@/types/runtime'
 
 type WorkbenchRecord = Record<string, unknown> | null | undefined
@@ -88,11 +93,50 @@ const normalizePanelList = (value: unknown): RuntimeWorkbenchDetailPanel[] => {
   })
 }
 
+const normalizeSummaryCardList = (value: unknown): RuntimeWorkbenchSummaryCard[] => {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is RuntimeWorkbenchSummaryCard => {
+    return Boolean(item && typeof item === 'object' && String((item as Record<string, unknown>).code || '').trim())
+  })
+}
+
+const normalizeQueuePanelList = (value: unknown): RuntimeWorkbenchQueuePanel[] => {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is RuntimeWorkbenchQueuePanel => {
+    return Boolean(item && typeof item === 'object' && String((item as Record<string, unknown>).code || '').trim())
+  })
+}
+
 const normalizeIndicatorList = (value: unknown): RuntimeWorkbenchAsyncIndicator[] => {
   if (!Array.isArray(value)) return []
   return value.filter((item): item is RuntimeWorkbenchAsyncIndicator => {
     return Boolean(item && typeof item === 'object' && String((item as Record<string, unknown>).code || '').trim())
   })
+}
+
+const normalizeSlaIndicatorList = (value: unknown): RuntimeWorkbenchSlaIndicator[] => {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is RuntimeWorkbenchSlaIndicator => {
+    return Boolean(item && typeof item === 'object' && String((item as Record<string, unknown>).code || '').trim())
+  })
+}
+
+const normalizeRecommendedActionList = (value: unknown): RuntimeWorkbenchRecommendedAction[] => {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is RuntimeWorkbenchRecommendedAction => {
+    return Boolean(item && typeof item === 'object' && String((item as Record<string, unknown>).code || '').trim())
+  })
+}
+
+const normalizeClosurePanel = (value: unknown): RuntimeWorkbenchClosurePanel | null => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null
+  }
+  const candidate = value as Record<string, unknown>
+  if (Object.keys(candidate).length === 0) {
+    return null
+  }
+  return candidate as RuntimeWorkbenchClosurePanel
 }
 
 export const useObjectWorkbench = ({
@@ -126,12 +170,61 @@ export const useObjectWorkbench = ({
     )
   })
 
+  const summaryCards = computed(() => {
+    return normalizeSummaryCardList(workbench.value?.summaryCards).filter((card) =>
+      isVisibleForRecord(card as WorkbenchDefinitionBase, recordData.value)
+    )
+  })
+
+  const queuePanels = computed(() => {
+    return normalizeQueuePanelList(workbench.value?.queuePanels).filter((panel) =>
+      isVisibleForRecord(panel as WorkbenchDefinitionBase, recordData.value)
+    )
+  })
+
+  const exceptionPanels = computed(() => {
+    return normalizeQueuePanelList(workbench.value?.exceptionPanels).filter((panel) =>
+      isVisibleForRecord(panel as WorkbenchDefinitionBase, recordData.value)
+    )
+  })
+
+  const closurePanel = computed(() => {
+    const panel = normalizeClosurePanel(workbench.value?.closurePanel)
+    if (!panel) return null
+    return isVisibleForRecord(panel as WorkbenchDefinitionBase, recordData.value) ? panel : null
+  })
+
+  const slaIndicators = computed(() => {
+    return normalizeSlaIndicatorList(workbench.value?.slaIndicators).filter((indicator) =>
+      isVisibleForRecord(indicator as WorkbenchDefinitionBase, recordData.value)
+    )
+  })
+
+  const recommendedActions = computed(() => {
+    return normalizeRecommendedActionList(workbench.value?.recommendedActions).filter((action) =>
+      isVisibleForRecord(action as WorkbenchDefinitionBase, recordData.value)
+    )
+  })
+
   return {
     asyncIndicators,
+    closurePanel,
     detailPanels,
+    exceptionPanels,
     hasActions: computed(() => primaryActions.value.length > 0 || secondaryActions.value.length > 0),
+    hasInsights: computed(() =>
+      summaryCards.value.length > 0 ||
+      Boolean(closurePanel.value) ||
+      recommendedActions.value.length > 0 ||
+      slaIndicators.value.length > 0
+    ),
+    hasQueues: computed(() => queuePanels.value.length > 0 || exceptionPanels.value.length > 0),
     hasPanels: computed(() => detailPanels.value.length > 0),
     primaryActions,
+    queuePanels,
+    recommendedActions,
+    slaIndicators,
     secondaryActions,
+    summaryCards,
   }
 }

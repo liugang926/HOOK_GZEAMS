@@ -5,7 +5,7 @@ Provides business logic for managing IntegrationConfig instances.
 """
 import logging
 from typing import Dict, Any, Optional, List
-from datetime import datetime
+from django.utils import timezone
 
 from apps.common.services.base_crud import BaseCRUDService
 from apps.integration.models import IntegrationConfig
@@ -44,9 +44,9 @@ class IntegrationConfigService(BaseCRUDService):
                 }
 
             # Perform connection test
-            start_time = datetime.now()
+            start_time = timezone.now()
             result = adapter.test_connection()
-            end_time = datetime.now()
+            end_time = timezone.now()
 
             response_time_ms = int((end_time - start_time).total_seconds() * 1000)
 
@@ -70,7 +70,7 @@ class IntegrationConfigService(BaseCRUDService):
 
             # Update health status to unhealthy
             config.health_status = HealthStatus.UNHEALTHY
-            config.last_health_check_at = datetime.now()
+            config.last_health_check_at = timezone.now()
             config.save(update_fields=['health_status', 'last_health_check_at'])
 
             return {

@@ -269,7 +269,10 @@ class TranslationFilter(BaseModelFilter):
         method='filter_content_type_model',
         label='Content Type Model'
     )
-    object_id = filters.NumberFilter(label='Object ID')
+    object_id = filters.CharFilter(
+        lookup_expr='exact',
+        label='Object ID'
+    )
     field_name = filters.CharFilter(
         lookup_expr='iexact',
         label='Field Name'
@@ -293,3 +296,6 @@ class TranslationFilter(BaseModelFilter):
             'object_id',
             'field_name',
         ]
+
+
+from apps.system.tag_filter import TagFilter  # noqa: E402

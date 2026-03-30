@@ -18,6 +18,7 @@ import sso from './sso.json'
 import org from './org.json'
 import consumables from './consumables.json'
 import projects from './projects.json'
+import portal from './portal.json'
 
 const financeMessages = ((finance as Record<string, unknown>).finance || finance) as Record<string, unknown>
 const systemPageLayout = (system.pageLayout || {}) as Record<string, unknown>
@@ -85,5 +86,6 @@ export default {
     sso,
     org,
     consumables,
-    projects
+    projects,
+    portal
 }
