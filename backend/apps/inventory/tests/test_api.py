@@ -1453,7 +1453,11 @@ class InventoryReconciliationReportObjectRouteTests(APITestCase):
             },
             format='json',
         )
-        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            create_response.status_code,
+            status.HTTP_201_CREATED,
+            getattr(create_response, 'data', getattr(create_response, 'content', b'')),
+        )
         create_payload = create_response.json()['data']
         self.assertTrue(create_response.json()['success'])
         reconciliation_id = create_payload['id']
@@ -1500,7 +1504,11 @@ class InventoryReconciliationReportObjectRouteTests(APITestCase):
             },
             format='json',
         )
-        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            create_response.status_code,
+            status.HTTP_201_CREATED,
+            getattr(create_response, 'data', getattr(create_response, 'content', b'')),
+        )
         create_payload = create_response.json()['data']
         self.assertTrue(create_response.json()['success'])
         report_id = create_payload['id']

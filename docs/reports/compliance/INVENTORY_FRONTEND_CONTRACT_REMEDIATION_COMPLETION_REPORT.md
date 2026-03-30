@@ -3,7 +3,7 @@
 ## 文档信息
 | 项目 | 说明 |
 |------|------|
-| 报告版本 | v2.2 |
+| 报告版本 | v2.3 |
 | 创建日期 | 2026-03-30 |
 | 涉及阶段 | Phase 4 Inventory Stabilization |
 | 作者/Agent | Codex |
@@ -12,6 +12,7 @@
 - 本次整改分两阶段完成。第一阶段先消除 assignment 404 与进度接口契约错误；第二阶段补齐 `InventoryReconciliation` 与 `InventoryReport` 两个真实动态对象，恢复原有页面能力。
 - 已完成的核心动作包括：assignment API 改为复用既有 `executors` 能力、为库存任务补充 executor 列表与进度接口、为 reconciliation/report 新增后端模型/迁移/对象注册/ViewSet 动作，并将前端重新接回 `/api/system/objects/{code}/` 动态对象路由。
 - 已将 inventory reconciliation/report 的前后端契约回归命令接入 `.github/workflows/ci.yml`，作为 full pytest / full vitest 之前的 fail-fast gate。
+- 在接入 pytest 型 CI gate 的过程中，修复了 reconciliation/report create serializer 在类定义期绑定 tenant-aware queryset 的问题，避免多组织上下文被首次导入时错误缓存。
 - 由于当前工作区存在大量其他未提交修改，本报告继续以“整改范围与验证结果”为主，不对总代码增删行做强归因统计。
 
 ## 二、与 PRD / 缺陷对应关系

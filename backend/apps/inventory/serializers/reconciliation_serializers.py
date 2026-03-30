@@ -4,12 +4,22 @@ Serializers for inventory reconciliation and report objects.
 from rest_framework import serializers
 
 from apps.accounts.serializers import UserBasicSerializer
+from apps.common.middleware import get_current_organization
 from apps.common.serializers.base import BaseModelSerializer
 from apps.inventory.models import (
     InventoryReconciliation,
     InventoryReport,
     InventoryTask,
 )
+
+
+def _build_task_queryset():
+    """Build a task queryset from the current organization context."""
+    queryset = InventoryTask.all_objects.filter(is_deleted=False)
+    organization_id = get_current_organization()
+    if organization_id:
+        queryset = queryset.filter(organization_id=organization_id)
+    return queryset
 
 
 class InventoryTaskReferenceSerializer(serializers.ModelSerializer):
@@ -129,8 +139,13 @@ class InventoryReconciliationListSerializer(BaseModelSerializer):
 class InventoryReconciliationCreateSerializer(serializers.Serializer):
     """Serializer for reconciliation creation requests."""
 
-    task = serializers.PrimaryKeyRelatedField(queryset=InventoryTask.objects.all())
+    task = serializers.PrimaryKeyRelatedField(queryset=InventoryTask.all_objects.none())
     note = serializers.CharField(required=False, allow_blank=True)
+
+    def __init__(self, *args, **kwargs):
+        """Bind the task queryset at request time to avoid stale tenant context."""
+        super().__init__(*args, **kwargs)
+        self.fields['task'].queryset = _build_task_queryset()
 
     class Meta:
         fields = ['task', 'note']
@@ -217,8 +232,13 @@ class InventoryReportListSerializer(BaseModelSerializer):
 class InventoryReportCreateSerializer(serializers.Serializer):
     """Serializer for report generation requests."""
 
-    task = serializers.PrimaryKeyRelatedField(queryset=InventoryTask.objects.all())
+    task = serializers.PrimaryKeyRelatedField(queryset=InventoryTask.all_objects.none())
     template_id = serializers.CharField(required=False, allow_blank=True)
+
+    def __init__(self, *args, **kwargs):
+        """Bind the task queryset at request time to avoid stale tenant context."""
+        super().__init__(*args, **kwargs)
+        self.fields['task'].queryset = _build_task_queryset()
 
     class Meta:
         fields = ['task', 'template_id']
