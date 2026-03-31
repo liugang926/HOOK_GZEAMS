@@ -1,8 +1,8 @@
-﻿/**
+/**
  * useLoading composable tests
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { useLoading } from '@/composables/useLoading'
 
 describe('useLoading', () => {

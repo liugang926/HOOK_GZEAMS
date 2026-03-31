@@ -18,6 +18,7 @@
             "progress": "进度"
         },
         "status": {
+            "pending_approval": "待审批",
             "pending": "待开始",
             "in_progress": "进行中",
             "completed": "已完成",
@@ -390,6 +391,7 @@
                 "saveDraft": "保存草稿",
                 "sendFollowUp": "发送跟进提醒",
                 "startTask": "开始任务",
+                "submitTask": "提交审批",
                 "submitReview": "提交复核"
             },
             "closureTypes": {
@@ -441,7 +443,8 @@
                 "title": "联动执行结果"
             },
             "panels": {
-                "differenceClosure": "差异处置工作台"
+                "differenceClosure": "差异处置工作台",
+                "executorProgress": "执行人进度"
             },
             "placeholders": {
                 "closureNotes": "填写结案补充说明、审批意见或回写说明",
@@ -490,13 +493,17 @@
                 "completeTaskHint": "完成当前盘点轮次并锁定最终差异集，进入后续处置阶段。",
                 "confirmDifferenceConfirm": "确认该差异并进入后续处置流程？",
                 "differenceClosureHint": "在差异详情内补齐说明、处置类型和证据，再推进复核、审批、执行与结案。",
+                "executorProgressHint": "在任务工作台内直接查看执行人负载和盘点推进进度。",
                 "executeResolutionHint": "执行前请确认复核意见、处置类型和必要的资产回写条件已经齐备。",
                 "pendingConfirmHint": "当前差异还未确认，请先使用顶部动作将其纳入正式处置流程。",
                 "refreshStatsHint": "在继续决策前，先刷新最新的扫描、差异和完成率统计。",
                 "savedDraftHint": "当前处置草稿已经保存，可以继续补充信息或推进下一步动作。",
-                "submitReviewHint": "先完善处置说明、处置类型和证据，再提交复核。"
-                ,
+                "submitTaskHint": "先将盘点任务提交进入审批流程，再开始 SLA 跟踪和后续执行准备。",
+                "submitReviewHint": "先完善处置说明、处置类型和证据，再提交复核。",
                 "unsavedDraftHint": "表单内容已变更但尚未保存，建议先保存草稿再继续推进流程。"
+            },
+            "sla": {
+                "workflow": "流程 SLA"
             }
         },
         "assignment": {

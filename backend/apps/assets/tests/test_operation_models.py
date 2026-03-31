@@ -292,6 +292,7 @@ class AssetPickupServiceTest(TestCase):
         self.asset.refresh_from_db()
         self.assertEqual(self.asset.asset_status, 'in_use')
         self.assertEqual(self.asset.custodian, self.user)
+        self.assertEqual(self.asset.user, self.user)
 
     def test_reject_pickup(self):
         """Test rejecting pickup"""
@@ -417,6 +418,8 @@ class AssetTransferServiceTest(TestCase):
 
         self.asset.refresh_from_db()
         self.assertEqual(self.asset.department, self.to_dept)
+        self.assertIsNone(self.asset.custodian)
+        self.assertIsNone(self.asset.user)
         self.assertEqual(result.status, 'completed')
 
 
@@ -510,6 +513,7 @@ class AssetReturnServiceTest(TestCase):
         self.asset.refresh_from_db()
         self.assertEqual(self.asset.asset_status, 'idle')
         self.assertIsNone(self.asset.custodian)
+        self.assertIsNone(self.asset.user)
         self.assertEqual(result.status, 'completed')
 
     def test_create_return_links_project_allocation_to_return_item(self):
@@ -640,7 +644,9 @@ class AssetLoanServiceTest(TestCase):
         result = self.service.confirm_borrow(str(loan.id), self.admin)
 
         self.asset.refresh_from_db()
-        self.assertEqual(self.asset.asset_status, 'in_use')
+        self.assertEqual(self.asset.asset_status, 'lent')
+        self.assertEqual(self.asset.custodian, self.user)
+        self.assertEqual(self.asset.user, self.user)
         self.assertEqual(result.status, 'borrowed')
 
     def test_confirm_return(self):
@@ -658,8 +664,9 @@ class AssetLoanServiceTest(TestCase):
             asset=self.asset
         )
         # First mark as borrowed
-        self.asset.asset_status = 'in_use'
+        self.asset.asset_status = 'lent'
         self.asset.custodian = self.user
+        self.asset.user = self.user
         self.asset.save()
 
         result = self.service.confirm_return(
@@ -668,6 +675,8 @@ class AssetLoanServiceTest(TestCase):
 
         self.asset.refresh_from_db()
         self.assertEqual(self.asset.asset_status, 'idle')
+        self.assertIsNone(self.asset.custodian)
+        self.assertIsNone(self.asset.user)
         self.assertEqual(result.status, 'returned')
 
     def test_check_overdue(self):

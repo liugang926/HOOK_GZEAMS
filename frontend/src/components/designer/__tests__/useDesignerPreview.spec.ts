@@ -1,4 +1,4 @@
-import { computed, defineComponent, ref } from 'vue'
+import { defineComponent, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import i18n from '@/locales'
@@ -15,7 +15,7 @@ const mountHarness = (sections: Array<Record<string, any>>) => {
           mode: 'readonly'
         },
         availableFields: ref([]),
-        layoutConfig: ref({ sections }),
+        layoutConfig: ref({ sections }) as any,
         sampleData: ref({}),
         readComponentProps: () => ({}),
         readLayoutPlacement: () => null,

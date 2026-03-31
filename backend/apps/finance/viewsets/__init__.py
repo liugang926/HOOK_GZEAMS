@@ -630,7 +630,209 @@ class FinanceVoucherViewSet(BaseModelViewSetWithBatch):
             }
         ]
 
-    def _create_generated_voucher(self, request, business_type, summary, total_amount, entries):
+    @staticmethod
+    def _normalize_uuid_value(value):
+        """Return a normalized UUID string or an empty string."""
+        raw_value = str(value or '').strip()
+        if not raw_value:
+            return ''
+        try:
+            return str(uuid.UUID(raw_value))
+        except (ValueError, TypeError, AttributeError):
+            return ''
+
+    @staticmethod
+    def _humanize_object_code(value: str) -> str:
+        """Convert an object code into a readable label."""
+        import re
+
+        normalized = str(value or '').strip()
+        if not normalized:
+            return ''
+        return re.sub(r'(?<!^)(?=[A-Z])', ' ', normalized).replace('_', ' ').strip()
+
+    def _build_source_trace_payload(
+        self,
+        *,
+        primary_object_code='',
+        primary_id='',
+        primary_record_no='',
+        requested_business_id='',
+        asset_ids=None,
+        asset_codes=None,
+        purchase_request=None,
+        receipt=None,
+        extra=None,
+    ):
+        """Build a normalized source trace payload stored in custom fields."""
+        normalized_asset_ids = [str(item).strip() for item in (asset_ids or []) if str(item).strip()]
+        normalized_asset_codes = [str(item).strip() for item in (asset_codes or []) if str(item).strip()]
+        asset_id_index = ''.join(f'|{asset_id}|' for asset_id in normalized_asset_ids)
+        payload = {
+            'source_object_code': str(primary_object_code or '').strip(),
+            'source_object_label': self._humanize_object_code(str(primary_object_code or '').strip()),
+            'source_id': str(primary_id or '').strip(),
+            'source_record_no': str(primary_record_no or '').strip(),
+            'requested_business_id': str(requested_business_id or '').strip(),
+            'asset_ids': normalized_asset_ids,
+            'asset_codes': normalized_asset_codes,
+            'asset_id_index': asset_id_index,
+            'source_purchase_request_id': '',
+            'source_purchase_request_no': '',
+            'source_receipt_id': '',
+            'source_receipt_no': '',
+        }
+
+        if purchase_request is not None:
+            payload['source_purchase_request_id'] = str(purchase_request.id)
+            payload['source_purchase_request_no'] = str(getattr(purchase_request, 'request_no', '') or '').strip()
+        if receipt is not None:
+            payload['source_receipt_id'] = str(receipt.id)
+            payload['source_receipt_no'] = str(getattr(receipt, 'receipt_no', '') or '').strip()
+        if extra:
+            payload.update(extra)
+
+        return {
+            'source_trace': payload,
+            'source_object_code': payload['source_object_code'],
+            'source_object_label': payload['source_object_label'],
+            'source_id': payload['source_id'],
+            'source_record_no': payload['source_record_no'],
+            'requested_business_id': payload['requested_business_id'],
+            'asset_ids': payload['asset_ids'],
+            'asset_codes': payload['asset_codes'],
+            'asset_id_index': payload['asset_id_index'],
+            'source_purchase_request_id': payload['source_purchase_request_id'],
+            'source_purchase_request_no': payload['source_purchase_request_no'],
+            'source_receipt_id': payload['source_receipt_id'],
+            'source_receipt_no': payload['source_receipt_no'],
+        }
+
+    def _build_asset_purchase_source_trace(self, *, assets, business_id, organization_id):
+        """Build source trace for asset purchase voucher generation."""
+        from apps.lifecycle.models import AssetReceipt, PurchaseRequest
+
+        asset_list = list(assets)
+        asset_ids = [str(asset.id) for asset in asset_list]
+        asset_codes = [str(getattr(asset, 'asset_code', '') or '').strip() for asset in asset_list]
+
+        normalized_business_id = self._normalize_uuid_value(business_id)
+        purchase_request = None
+        receipt = None
+        primary_object_code = ''
+        primary_id = ''
+        primary_record_no = ''
+
+        if normalized_business_id:
+            purchase_request = PurchaseRequest.all_objects.filter(
+                id=normalized_business_id,
+                organization_id=organization_id,
+                is_deleted=False,
+            ).first()
+            if purchase_request is not None:
+                primary_object_code = 'PurchaseRequest'
+                primary_id = str(purchase_request.id)
+                primary_record_no = str(getattr(purchase_request, 'request_no', '') or '').strip()
+            else:
+                receipt = AssetReceipt.all_objects.filter(
+                    id=normalized_business_id,
+                    organization_id=organization_id,
+                    is_deleted=False,
+                ).first()
+                if receipt is not None:
+                    primary_object_code = 'AssetReceipt'
+                    primary_id = str(receipt.id)
+                    primary_record_no = str(getattr(receipt, 'receipt_no', '') or '').strip()
+
+        if purchase_request is None:
+            request_ids = {
+                str(asset.source_purchase_request_id)
+                for asset in asset_list
+                if getattr(asset, 'source_purchase_request_id', None)
+            }
+            if len(request_ids) == 1:
+                purchase_request = getattr(asset_list[0], 'source_purchase_request', None)
+                if purchase_request is not None and not primary_object_code:
+                    primary_object_code = 'PurchaseRequest'
+                    primary_id = str(purchase_request.id)
+                    primary_record_no = str(getattr(purchase_request, 'request_no', '') or '').strip()
+
+        if receipt is None:
+            receipt_ids = {
+                str(asset.source_receipt_id)
+                for asset in asset_list
+                if getattr(asset, 'source_receipt_id', None)
+            }
+            if len(receipt_ids) == 1:
+                receipt = getattr(asset_list[0], 'source_receipt', None)
+                if receipt is not None and not primary_object_code:
+                    primary_object_code = 'AssetReceipt'
+                    primary_id = str(receipt.id)
+                    primary_record_no = str(getattr(receipt, 'receipt_no', '') or '').strip()
+
+        if not primary_object_code and len(asset_list) == 1:
+            primary_object_code = 'Asset'
+            primary_id = str(asset_list[0].id)
+            primary_record_no = str(getattr(asset_list[0], 'asset_code', '') or '').strip()
+        elif not primary_object_code:
+            primary_object_code = 'Asset'
+            primary_record_no = f'{len(asset_list)} assets'
+
+        return self._build_source_trace_payload(
+            primary_object_code=primary_object_code,
+            primary_id=primary_id,
+            primary_record_no=primary_record_no,
+            requested_business_id=business_id,
+            asset_ids=asset_ids,
+            asset_codes=asset_codes,
+            purchase_request=purchase_request,
+            receipt=receipt,
+        )
+
+    def _build_disposal_source_trace(self, *, asset, business_id, organization_id):
+        """Build source trace for disposal voucher generation."""
+        from apps.lifecycle.models import DisposalRequest
+
+        disposal_request = None
+        normalized_business_id = self._normalize_uuid_value(business_id)
+        if normalized_business_id:
+            disposal_request = DisposalRequest.all_objects.filter(
+                id=normalized_business_id,
+                organization_id=organization_id,
+                is_deleted=False,
+            ).first()
+
+        primary_object_code = 'Asset'
+        primary_id = str(asset.id)
+        primary_record_no = str(getattr(asset, 'asset_code', '') or '').strip()
+        if disposal_request is not None:
+            primary_object_code = 'DisposalRequest'
+            primary_id = str(disposal_request.id)
+            primary_record_no = str(getattr(disposal_request, 'request_no', '') or '').strip()
+
+        return self._build_source_trace_payload(
+            primary_object_code=primary_object_code,
+            primary_id=primary_id,
+            primary_record_no=primary_record_no,
+            requested_business_id=business_id,
+            asset_ids=[str(asset.id)],
+            asset_codes=[str(getattr(asset, 'asset_code', '') or '').strip()],
+            purchase_request=getattr(asset, 'source_purchase_request', None),
+            receipt=getattr(asset, 'source_receipt', None),
+        )
+
+    def _build_depreciation_source_trace(self, *, period, category_ids):
+        """Build source trace for depreciation voucher generation."""
+        return self._build_source_trace_payload(
+            primary_object_code='DepreciationRecord',
+            primary_record_no=str(period or '').strip(),
+            requested_business_id=str(period or '').strip(),
+            extra={
+                'category_ids': [str(item).strip() for item in (category_ids or []) if str(item).strip()],
+            },
+        )
+
+    def _create_generated_voucher(self, request, business_type, summary, total_amount, entries, source_trace=None):
         from django.utils import timezone
         voucher_date = request.data.get('voucher_date') or request.query_params.get('voucher_date')
         if not voucher_date:
@@ -644,6 +846,7 @@ class FinanceVoucherViewSet(BaseModelViewSetWithBatch):
             total_amount=total_amount,
             status='draft',
             notes=request.data.get('notes', ''),
+            custom_fields=source_trace or {},
             organization_id=request.organization_id,
             created_by=request.user
         )
@@ -692,6 +895,9 @@ class FinanceVoucherViewSet(BaseModelViewSetWithBatch):
             id__in=asset_ids,
             organization_id=request.organization_id,
             is_deleted=False
+        ).select_related(
+            'source_receipt',
+            'source_purchase_request',
         )
         total_amount = sum((asset.purchase_price or Decimal('0.00')) for asset in assets)
         total_amount = Decimal(str(total_amount or '0.00'))
@@ -707,7 +913,12 @@ class FinanceVoucherViewSet(BaseModelViewSetWithBatch):
 
         summary = f"Asset purchase voucher ({business_id or 'N/A'})"
         entries = self._build_default_entries(total_amount, 'Asset purchase debit', 'Asset purchase credit')
-        return self._create_generated_voucher(request, 'purchase', summary, total_amount, entries)
+        source_trace = self._build_asset_purchase_source_trace(
+            assets=assets,
+            business_id=business_id,
+            organization_id=request.organization_id,
+        )
+        return self._create_generated_voucher(request, 'purchase', summary, total_amount, entries, source_trace=source_trace)
 
     @action(detail=False, methods=['post'], url_path='generate/depreciation')
     def generate_depreciation(self, request):
@@ -751,7 +962,11 @@ class FinanceVoucherViewSet(BaseModelViewSetWithBatch):
 
         summary = f"Depreciation voucher ({period})"
         entries = self._build_default_entries(total_amount, 'Depreciation expense', 'Accumulated depreciation')
-        return self._create_generated_voucher(request, 'depreciation', summary, total_amount, entries)
+        source_trace = self._build_depreciation_source_trace(
+            period=period,
+            category_ids=category_ids,
+        )
+        return self._create_generated_voucher(request, 'depreciation', summary, total_amount, entries, source_trace=source_trace)
 
     @action(detail=False, methods=['post'], url_path='generate/disposal')
     def generate_disposal(self, request):
@@ -800,7 +1015,12 @@ class FinanceVoucherViewSet(BaseModelViewSetWithBatch):
 
         summary = f"Asset disposal voucher ({business_id or asset.asset_code})"
         entries = self._build_default_entries(total_amount, 'Disposal loss/expense', 'Asset disposal credit')
-        return self._create_generated_voucher(request, 'disposal', summary, total_amount, entries)
+        source_trace = self._build_disposal_source_trace(
+            asset=asset,
+            business_id=business_id,
+            organization_id=request.organization_id,
+        )
+        return self._create_generated_voucher(request, 'disposal', summary, total_amount, entries, source_trace=source_trace)
 
     @action(detail=False, methods=['post'])
     def batch_push(self, request):

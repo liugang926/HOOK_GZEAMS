@@ -20,6 +20,7 @@ from apps.assets.models import (
     AssetLoan,
     LoanItem,
 )
+from apps.assets.services.lifecycle_coordinator import AssetLifecycleCoordinatorService
 from apps.projects.services import ProjectAssetService
 
 
@@ -307,6 +308,7 @@ class AssetPickupService(BaseCRUDService):
 
     def __init__(self):
         super().__init__(AssetPickup)
+        self.lifecycle_coordinator = AssetLifecycleCoordinatorService()
 
     def create_with_items(
         self,
@@ -577,21 +579,15 @@ class AssetPickupService(BaseCRUDService):
         if approval == 'approved':
             pickup.status = 'approved'
 
-            # Update asset status and custodian for all items
             for item in pickup.items.all():
-                asset = item.asset
-                asset.asset_status = 'in_use'
-                asset.custodian = pickup.applicant
-                asset.department = pickup.department
-                asset.save()
-
-                # Log status change
-                self._log_asset_status_change(
-                    asset,
-                    'idle',
-                    'in_use',
-                    user,
-                    f'Approved via pickup order {pickup.pickup_no}'
+                self.lifecycle_coordinator.apply_state_change(
+                    item.asset,
+                    actor=user,
+                    reason=f'Approved via pickup order {pickup.pickup_no}',
+                    new_status='in_use',
+                    custodian=pickup.applicant,
+                    assigned_user=pickup.applicant,
+                    department=pickup.department,
                 )
 
         else:
@@ -654,26 +650,6 @@ class AssetPickupService(BaseCRUDService):
             order_by='-created_at'
         )
 
-    def _log_asset_status_change(
-        self,
-        asset: Asset,
-        old_status: str,
-        new_status: str,
-        user,
-        reason: str
-    ):
-        """Log asset status change."""
-        from apps.assets.models import AssetStatusLog
-        AssetStatusLog.objects.create(
-            organization=asset.organization,
-            asset=asset,
-            old_status=old_status,
-            new_status=new_status,
-            reason=reason,
-            created_by=user
-        )
-
-
 # ========== Transfer Order Service ==========
 
 class AssetTransferService(BaseCRUDService):
@@ -687,6 +663,7 @@ class AssetTransferService(BaseCRUDService):
 
     def __init__(self):
         super().__init__(AssetTransfer)
+        self.lifecycle_coordinator = AssetLifecycleCoordinatorService()
 
     def create_with_items(
         self,
@@ -923,11 +900,15 @@ class AssetTransferService(BaseCRUDService):
 
         with transaction.atomic():
             for item in transfer.items.all():
-                asset = item.asset
-                asset.department = transfer.to_department
-                asset.location = item.to_location
-                asset.custodian = None  # Clear custodian on transfer
-                asset.save()
+                self.lifecycle_coordinator.apply_state_change(
+                    item.asset,
+                    actor=user,
+                    reason=f'Completed via transfer order {transfer.transfer_no}',
+                    department=transfer.to_department,
+                    location=item.to_location,
+                    custodian=None,
+                    assigned_user=None,
+                )
 
             transfer.status = 'completed'
             transfer.completed_at = timezone.now()
@@ -956,6 +937,7 @@ class AssetReturnService(BaseCRUDService):
 
     def __init__(self):
         super().__init__(AssetReturn)
+        self.lifecycle_coordinator = AssetLifecycleCoordinatorService()
 
     def create_with_items(
         self,
@@ -1180,11 +1162,15 @@ class AssetReturnService(BaseCRUDService):
         with transaction.atomic():
             project_asset_service = ProjectAssetService()
             for item in return_order.items.all():
-                asset = item.asset
-                asset.asset_status = item.asset_status
-                asset.custodian = None
-                asset.location = return_order.return_location
-                asset.save()
+                self.lifecycle_coordinator.apply_state_change(
+                    item.asset,
+                    actor=user,
+                    reason=f'Confirmed via return order {return_order.return_no}',
+                    new_status=item.asset_status,
+                    custodian=None,
+                    assigned_user=None,
+                    location=return_order.return_location,
+                )
 
                 project_allocation = item.project_allocation
                 if project_allocation is None:
@@ -1277,6 +1263,7 @@ class AssetLoanService(BaseCRUDService):
 
     def __init__(self):
         super().__init__(AssetLoan)
+        self.lifecycle_coordinator = AssetLifecycleCoordinatorService()
 
     def create_with_items(
         self,
@@ -1480,12 +1467,15 @@ class AssetLoanService(BaseCRUDService):
             })
 
         with transaction.atomic():
-            # Update asset status
             for item in loan.items.all():
-                asset = item.asset
-                asset.asset_status = 'in_use'
-                asset.custodian = loan.borrower
-                asset.save()
+                self.lifecycle_coordinator.apply_state_change(
+                    item.asset,
+                    actor=user,
+                    reason=f'Confirmed via loan order {loan.loan_no}',
+                    new_status='lent',
+                    custodian=loan.borrower,
+                    assigned_user=loan.borrower,
+                )
 
             loan.status = 'borrowed'
             loan.lent_by = user
@@ -1510,18 +1500,23 @@ class AssetLoanService(BaseCRUDService):
             })
 
         with transaction.atomic():
-            # Update asset status based on condition
             for item in loan.items.all():
-                asset = item.asset
+                next_status = 'idle'
                 if condition == 'good':
-                    asset.asset_status = 'idle'
+                    next_status = 'idle'
                 elif condition in ['minor_damage', 'major_damage']:
-                    asset.asset_status = 'maintenance'
+                    next_status = 'maintenance'
                 elif condition == 'lost':
-                    asset.asset_status = 'lost'
+                    next_status = 'lost'
 
-                asset.custodian = None
-                asset.save()
+                self.lifecycle_coordinator.apply_state_change(
+                    item.asset,
+                    actor=user,
+                    reason=f'Loan return confirmed via {loan.loan_no} ({condition})',
+                    new_status=next_status,
+                    custodian=None,
+                    assigned_user=None,
+                )
 
             loan.status = 'returned'
             loan.actual_return_date = timezone.now().date()

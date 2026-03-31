@@ -16,6 +16,11 @@ class FinanceVoucherFilter(BaseModelFilter):
     business_type = filters.CharFilter()
     status = filters.CharFilter()
     department = filters.UUIDFilter(method='filter_department')
+    source_asset = filters.UUIDFilter(method='filter_source_asset')
+    source_purchase_request = filters.CharFilter(method='filter_source_purchase_request')
+    source_receipt = filters.CharFilter(method='filter_source_receipt')
+    source_object_code = filters.CharFilter(method='filter_source_object_code')
+    source_id = filters.CharFilter(method='filter_source_id')
     voucher_date_from = filters.DateFilter(field_name='voucher_date', lookup_expr='gte')
     voucher_date_to = filters.DateFilter(field_name='voucher_date', lookup_expr='lte')
     total_amount_from = filters.NumberFilter(field_name='total_amount', lookup_expr='gte')
@@ -32,10 +37,46 @@ class FinanceVoucherFilter(BaseModelFilter):
             created_by__user_departments__is_deleted=False,
         ).distinct()
 
+    def filter_source_asset(self, queryset, name, value):
+        """Filter vouchers linked to an asset through source trace fields."""
+        if not value:
+            return queryset
+        return queryset.filter(custom_fields__asset_id_index__icontains=f'|{value}|')
+
+    def filter_source_object_code(self, queryset, name, value):
+        """Filter vouchers by source object code from source trace."""
+        normalized = str(value or '').strip()
+        if not normalized:
+            return queryset
+        return queryset.filter(custom_fields__source_object_code=normalized)
+
+    def filter_source_purchase_request(self, queryset, name, value):
+        """Filter vouchers by linked purchase request id from source trace."""
+        normalized = str(value or '').strip()
+        if not normalized:
+            return queryset
+        return queryset.filter(custom_fields__source_purchase_request_id=normalized)
+
+    def filter_source_receipt(self, queryset, name, value):
+        """Filter vouchers by linked asset receipt id from source trace."""
+        normalized = str(value or '').strip()
+        if not normalized:
+            return queryset
+        return queryset.filter(custom_fields__source_receipt_id=normalized)
+
+    def filter_source_id(self, queryset, name, value):
+        """Filter vouchers by source business id from source trace."""
+        normalized = str(value or '').strip()
+        if not normalized:
+            return queryset
+        return queryset.filter(custom_fields__source_id=normalized)
+
     class Meta(BaseModelFilter.Meta):
         model = FinanceVoucher
         fields = BaseModelFilter.Meta.fields + [
             'voucher_no', 'business_type', 'status', 'department',
+            'source_asset', 'source_purchase_request', 'source_receipt',
+            'source_object_code', 'source_id',
             'voucher_date', 'total_amount',
         ]
 

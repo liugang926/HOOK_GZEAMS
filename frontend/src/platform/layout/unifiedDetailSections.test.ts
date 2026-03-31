@@ -22,8 +22,8 @@ describe('unifiedDetailSections', () => {
         { code: 'assetCode', name: 'Asset Code', fieldType: 'text', showInForm: false } as any,
         { code: 'createdAt', name: 'Created At', fieldType: 'datetime', showInForm: true } as any
       ],
-      metadataContext: 'form'
-    } as const
+      metadataContext: 'form' as const
+    }
 
     const looseSections = projectUnifiedDetailSectionsFromLayout({
       ...input,

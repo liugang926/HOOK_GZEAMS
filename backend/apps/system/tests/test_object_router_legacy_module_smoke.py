@@ -81,6 +81,17 @@ def test_list_endpoints_for_migrated_modules():
 
 
 @pytest.mark.django_db
+def test_inventory_contract_list_endpoints():
+    client = _build_authed_client()
+    for code in ['InventoryReconciliation', 'InventoryReport']:
+        response = client.get(f'/api/system/objects/{code}/')
+        assert response.status_code == status.HTTP_200_OK, (
+            f'Expected 200 for inventory contract object code {code}, got {response.status_code}'
+        )
+        assert response.data.get('success', False) is True
+
+
+@pytest.mark.django_db
 def test_collection_custom_actions_for_migrated_modules():
     client = _build_authed_client()
 

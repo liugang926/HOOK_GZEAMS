@@ -123,6 +123,8 @@ describe('useBaseDetailPageRelations', () => {
 
   it('maps runtime getRelations payloads and preserves L1 display tier metadata', async () => {
     vi.mocked(dynamicApi.getRelations).mockResolvedValue({
+      objectCode: 'AssetPickup',
+      locale: 'en-US',
       relations: [
         {
           relationCode: 'items',
@@ -147,7 +149,7 @@ describe('useBaseDetailPageRelations', () => {
       ]
     })
 
-    const runtimeRelations = ref<Array<Record<string, any>>>([])
+    const runtimeRelations = ref([]) as any
     const relations = useBaseDetailPageRelations({
       props: {
         data: { id: 'pickup-2' },
@@ -163,7 +165,7 @@ describe('useBaseDetailPageRelations', () => {
     await relations.fetchRuntimeRelations()
 
     expect(dynamicApi.getRelations).toHaveBeenCalledWith('AssetPickup')
-    expect(runtimeRelations.value.map((item) => item.code)).toEqual(['items', 'comments'])
+    expect(runtimeRelations.value.map((item: any) => item.code)).toEqual(['items', 'comments'])
     expect(runtimeRelations.value[0]).toMatchObject({
       code: 'items',
       displayTier: 'L1',

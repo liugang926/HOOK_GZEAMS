@@ -30,7 +30,7 @@ def parse_args() -> argparse.Namespace:
         "--check",
         action="append",
         default=[],
-        help="Check entry in the form label|status|mode|note. Note is optional.",
+        help="Check entry in the form label|status|mode|note|section. Note and section are optional.",
     )
     parser.add_argument(
         "--fail-mode",
@@ -58,19 +58,70 @@ def normalize_status(status: str) -> str:
     return mapping.get(status.lower(), status or "Unknown")
 
 
-def parse_check(entry: str) -> tuple[str, str, str, str]:
-    parts = entry.split("|", 3)
-    while len(parts) < 4:
+def parse_check(entry: str) -> tuple[str, str, str, str, str, str]:
+    parts = entry.split("|", 5)
+    while len(parts) < 6:
         parts.append("")
-    label, status, mode, note = parts
-    return label.strip(), normalize_status(status.strip()), mode.strip() or "required", note.strip()
+    label, status, mode, note, section, job_policy = parts
+    return (
+        label.strip(),
+        normalize_status(status.strip()),
+        mode.strip() or "required",
+        note.strip(),
+        section.strip(),
+        job_policy.strip(),
+    )
 
 
-def overall_status(checks: list[tuple[str, str, str, str]], fail_modes: set[str]) -> str:
-    for _, status, mode, _ in checks:
+def overall_status(checks: list[tuple[str, str, str, str, str, str]], fail_modes: set[str]) -> str:
+    for _, status, mode, _, _, _ in checks:
         if mode in fail_modes and status in {"Failed", "Cancelled"}:
             return "Failed"
     return "Passed"
+
+
+def blocking_scope(mode: str) -> str:
+    normalized = mode.strip().lower()
+    mapping = {
+        "required": "Blocking",
+        "advisory": "Advisory only",
+        "report-only": "Report only",
+    }
+    if normalized in mapping:
+        return mapping[normalized]
+    if not normalized:
+        return "Unknown"
+    return normalized.replace("-", " ").title()
+
+
+def default_job_policy(mode: str) -> str:
+    normalized = mode.strip().lower()
+    mapping = {
+        "required": "Required job",
+        "advisory": "Non-blocking advisory",
+        "report-only": "Report-only job",
+    }
+    if normalized in mapping:
+        return mapping[normalized]
+    if not normalized:
+        return "Unspecified"
+    return normalized.replace("-", " ").title()
+
+
+def render_checks_table(lines: list[str], checks: list[tuple[str, str, str, str, str, str]]) -> None:
+    lines.extend(
+        [
+            "| Gate | Mode | Blocking Scope | Job Policy | Outcome | Note |",
+            "|------|------|----------------|------------|---------|------|",
+        ]
+    )
+
+    for label, status, mode, note, _, job_policy in checks:
+        note_text = note or "-"
+        policy_text = job_policy or default_job_policy(mode)
+        lines.append(
+            f"| {label} | {mode} | {blocking_scope(mode)} | {policy_text} | {status} | {note_text} |"
+        )
 
 
 def render_summary(args: argparse.Namespace) -> str:
@@ -90,14 +141,27 @@ def render_summary(args: argparse.Namespace) -> str:
             "",
             f"Status: **{overall_status(checks, set(args.fail_mode))}**",
             "",
-            "| Gate | Mode | Outcome | Note |",
-            "|------|------|---------|------|",
         ]
     )
 
-    for label, status, mode, note in checks:
-        note_text = note or "-"
-        lines.append(f"| {label} | {mode} | {status} | {note_text} |")
+    sections = [section for _, _, _, _, section, _ in checks if section]
+    if not sections:
+        render_checks_table(lines, checks)
+        return "\n".join(lines) + "\n"
+
+    grouped_checks: dict[str, list[tuple[str, str, str, str, str, str]]] = {}
+    ordered_sections: list[str] = []
+
+    for check in checks:
+        section = check[4] or "Other Checks"
+        if section not in grouped_checks:
+            grouped_checks[section] = []
+            ordered_sections.append(section)
+        grouped_checks[section].append(check)
+
+    for section in ordered_sections:
+        lines.extend(["", f"### {section}", ""])
+        render_checks_table(lines, grouped_checks[section])
 
     return "\n".join(lines) + "\n"
 

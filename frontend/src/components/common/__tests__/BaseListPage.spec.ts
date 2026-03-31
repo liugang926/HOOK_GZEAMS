@@ -192,7 +192,7 @@ describe('BaseListPage Component', () => {
 
   describe('API Integration', () => {
     it('should call API on mount with default params', async () => {
-      const wrapper = mount(BaseListPage, {
+      const _wrapper = mount(BaseListPage, {
         props: {
           tableColumns: [{ prop: 'name', label: 'Name' }],
           api: mockApi
@@ -207,7 +207,7 @@ describe('BaseListPage Component', () => {
     })
 
     it('should pass page and pageSize to API', async () => {
-      const wrapper = mount(BaseListPage, {
+      const _wrapper = mount(BaseListPage, {
         props: {
           tableColumns: [{ prop: 'name', label: 'Name' }],
           api: mockApi,

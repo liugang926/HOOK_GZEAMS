@@ -83,7 +83,9 @@
             "summary": {
                 "balanceState": "Balance State",
                 "entryCount": "Entry Count",
-                "totalAmount": "Total Amount"
+                "totalAmount": "Total Amount",
+                "sourceObject": "Source Object",
+                "sourceDocument": "Source Document"
             },
             "queues": {
                 "integrationAttention": "Integration Attention",

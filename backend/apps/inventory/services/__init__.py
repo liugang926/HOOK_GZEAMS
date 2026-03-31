@@ -11,10 +11,12 @@ from apps.inventory.services.reconciliation_service import (
 from apps.inventory.services.scan_service import ScanService
 from apps.inventory.services.snapshot_service import SnapshotService
 from apps.inventory.services.difference_service import DifferenceService
+from apps.inventory.services.task_closure_service import InventoryTaskClosureService
 
 __all__ = [
     'InventoryExceptionClosureService',
     'InventoryService',
+    'InventoryTaskClosureService',
     'InventoryReconciliationService',
     'InventoryReportService',
     'ScanService',

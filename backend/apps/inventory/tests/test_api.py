@@ -24,6 +24,7 @@ from apps.accounts.models import User
 from apps.system.models import BusinessObject
 from apps.lifecycle.models import Maintenance
 from apps.notifications.models import Notification
+from apps.workflows.models import WorkflowDefinition, WorkflowInstance
 
 
 class InventoryTaskAPITests(APITestCase):
@@ -179,6 +180,175 @@ class InventoryTaskAPITests(APITestCase):
 
         task.refresh_from_db()
         self.assertEqual(task.status, InventoryTask.STATUS_IN_PROGRESS)
+
+    def test_submit_inventory_task_without_workflow_definition_moves_task_to_pending(self):
+        """Test submitting a task without a workflow definition falls back to ready state."""
+        task = InventoryTask.all_objects.create(
+            task_code=f"INV_{uuid.uuid4().hex[:8]}",
+            task_name="Submit Without Workflow",
+            inventory_type=InventoryTask.TYPE_FULL,
+            planned_date="2024-01-01",
+            status=InventoryTask.STATUS_DRAFT,
+            organization=self.organization,
+            created_by=self.user,
+        )
+
+        client = self._make_client()
+        response = client.post(f'/api/inventory/tasks/{task.id}/submit-workflow/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, getattr(response, 'data', None))
+
+        task.refresh_from_db()
+        self.assertEqual(task.status, InventoryTask.STATUS_PENDING)
+        self.assertEqual(task.approval_status, 'approved')
+        self.assertIsNone(task.workflow_instance_id)
+        self.assertFalse(response.data['data']['workflow_started'])
+
+    def test_submit_inventory_task_with_workflow_definition_starts_workflow(self):
+        """Test submitting a task starts the workflow and syncs approval state."""
+        task = InventoryTask.all_objects.create(
+            task_code=f"INV_{uuid.uuid4().hex[:8]}",
+            task_name="Submit With Workflow",
+            inventory_type=InventoryTask.TYPE_FULL,
+            planned_date="2024-01-01",
+            status=InventoryTask.STATUS_DRAFT,
+            organization=self.organization,
+            created_by=self.user,
+        )
+        WorkflowDefinition.objects.create(
+            organization=self.organization,
+            code=f"inventory_task_{uuid.uuid4().hex[:8]}",
+            name="Inventory Task Workflow",
+            business_object_code='InventoryTask',
+            status='published',
+            graph_data={
+                'nodes': [
+                    {'id': 'start_1', 'type': 'start', 'text': 'Start'},
+                    {
+                        'id': 'approval_1',
+                        'type': 'approval',
+                        'text': 'Approval',
+                        'properties': {
+                            'approveType': 'or',
+                            'approvers': [
+                                {'type': 'user', 'user_id': str(self.user.id)},
+                            ],
+                        },
+                    },
+                    {'id': 'end_1', 'type': 'end', 'text': 'End'},
+                ],
+                'edges': [
+                    {'id': 'edge_1', 'sourceNodeId': 'start_1', 'targetNodeId': 'approval_1'},
+                    {'id': 'edge_2', 'sourceNodeId': 'approval_1', 'targetNodeId': 'end_1'},
+                ],
+            },
+            created_by=self.user,
+        )
+
+        client = self._make_client()
+        response = client.post(f'/api/inventory/tasks/{task.id}/submit-workflow/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, getattr(response, 'data', None))
+
+        task.refresh_from_db()
+        self.assertEqual(task.status, InventoryTask.STATUS_PENDING_APPROVAL)
+        self.assertEqual(task.approval_status, 'pending_approval')
+        self.assertIsNotNone(task.workflow_instance_id)
+        self.assertTrue(response.data['data']['workflow_started'])
+        workflow_instance = WorkflowInstance.objects.get(id=task.workflow_instance_id)
+        self.assertEqual(workflow_instance.business_object_code, 'InventoryTask')
+        self.assertEqual(workflow_instance.business_id, str(task.id))
+
+    def test_inventory_task_object_route_submit_workflow_delegates_to_viewset_action(self):
+        """Test the unified object route exposes the submit-workflow task action."""
+        task = InventoryTask.all_objects.create(
+            task_code=f"INV_{uuid.uuid4().hex[:8]}",
+            task_name="Object Route Submit",
+            inventory_type=InventoryTask.TYPE_FULL,
+            planned_date="2024-01-01",
+            status=InventoryTask.STATUS_DRAFT,
+            organization=self.organization,
+            created_by=self.user,
+        )
+        WorkflowDefinition.objects.create(
+            organization=self.organization,
+            code=f"inventory_task_route_{uuid.uuid4().hex[:8]}",
+            name="Inventory Task Workflow",
+            business_object_code='InventoryTask',
+            status='published',
+            graph_data={
+                'nodes': [
+                    {'id': 'start_1', 'type': 'start', 'text': 'Start'},
+                    {
+                        'id': 'approval_1',
+                        'type': 'approval',
+                        'text': 'Approval',
+                        'properties': {
+                            'approveType': 'or',
+                            'approvers': [
+                                {'type': 'user', 'user_id': str(self.user.id)},
+                            ],
+                        },
+                    },
+                    {'id': 'end_1', 'type': 'end', 'text': 'End'},
+                ],
+                'edges': [
+                    {'id': 'edge_1', 'sourceNodeId': 'start_1', 'targetNodeId': 'approval_1'},
+                    {'id': 'edge_2', 'sourceNodeId': 'approval_1', 'targetNodeId': 'end_1'},
+                ],
+            },
+            created_by=self.user,
+        )
+
+        client = self._make_client()
+        response = client.post(f'/api/system/objects/InventoryTask/{task.id}/submit-workflow/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, getattr(response, 'data', None))
+        task.refresh_from_db()
+        self.assertEqual(task.status, InventoryTask.STATUS_PENDING_APPROVAL)
+        self.assertTrue(response.data['data']['workflow_started'])
+
+    def test_inventory_task_object_route_closure_returns_dedicated_summary(self):
+        """Test the unified object route exposes the normalized closure payload."""
+        self._create_test_data()
+        task = InventoryTask.all_objects.create(
+            task_code=f"INV_{uuid.uuid4().hex[:8]}",
+            task_name="Closure Summary Task",
+            inventory_type=InventoryTask.TYPE_FULL,
+            planned_date="2024-01-01",
+            status=InventoryTask.STATUS_COMPLETED,
+            total_count=3,
+            scanned_count=3,
+            organization=self.organization,
+            created_by=self.user,
+        )
+        asset = Asset.all_objects.filter(organization=self.organization).first()
+        InventoryTaskExecutor.all_objects.create(
+            task=task,
+            executor=self.owner,
+            is_primary=True,
+            organization=self.organization,
+            created_by=self.user,
+        )
+        InventoryDifference.all_objects.create(
+            task=task,
+            asset=asset,
+            difference_type=InventoryDifference.TYPE_MISSING,
+            status=InventoryDifference.STATUS_APPROVED,
+            organization=self.organization,
+            created_by=self.user,
+        )
+
+        client = self._make_client()
+        response = client.get(f'/api/system/objects/InventoryTask/{task.id}/closure/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, getattr(response, 'data', None))
+        data = response.data['data']
+        self.assertTrue(data['hasSummary'])
+        self.assertEqual(data['objectCode'], 'InventoryTask')
+        self.assertEqual(data['owner'], self.owner.get_full_name() or self.owner.username)
+        self.assertEqual(data['stage'], 'Awaiting execution')
+        self.assertEqual(data['completionDisplay'], '0%')
 
     def test_complete_inventory_task(self):
         """Test completing an inventory task."""

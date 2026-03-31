@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, computed } from 'vue'
 
 const mocks = vi.hoisted(() => ({
   sortableCreate: vi.fn(),
@@ -115,13 +115,13 @@ describe('designer interaction pipeline', () => {
       draggedField: ref(null),
       isDragOverCanvas: ref(false),
       dragOverSection: ref(null),
-      canvasContentElement: ref(root),
+      canvasContentElement: computed(() => root) as any,
       canAddField: () => true,
       notifyUnsupportedField: vi.fn(),
       handleFieldClick: vi.fn(),
       addFieldToContainer: vi.fn(),
       commitLayoutChange
-    })
+    } as any)
 
     await interactions.initSortables()
 
@@ -182,11 +182,11 @@ describe('designer interaction pipeline', () => {
 
     const interactions = useDesignerResizeInteractions({
       layoutConfig: layoutConfig as any,
-      isDesignMode: ref(true),
+      isDesignMode: computed(() => true) as any,
       selectedId,
       fieldProps: fieldProps as any,
-      canvasAreaElement: ref(canvasArea),
-      canvasContentElement: ref(canvasContent),
+      canvasAreaElement: computed(() => canvasArea) as any,
+      canvasContentElement: computed(() => canvasContent) as any,
       findSectionByFieldId: (config, fieldId) =>
         (config.sections || []).find((section: any) => (section.fields || []).some((field: any) => field.id === fieldId)) || null,
       findLayoutFieldById: (config, fieldId) => {
@@ -202,7 +202,7 @@ describe('designer interaction pipeline', () => {
       setLayoutFieldMinHeight: (field, value) => {
         field.minHeight = Number(value)
       },
-      selectField: (_field, section) => {
+      selectField: (_field, _section) => {
         selectedId.value = 'field-1'
         void nextTick()
       },

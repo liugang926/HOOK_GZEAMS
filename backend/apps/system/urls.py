@@ -141,6 +141,7 @@ urlpatterns = [
     path('objects/<str:code>/<uuid:id>/relation-counts/', ObjectRouterViewSet.as_view({'get': 'relation_counts'}), name='object-router-relation-counts'),
     path('objects/<str:code>/<uuid:id>/history/', ObjectRouterViewSet.as_view({'get': 'history'}), name='object-router-history'),
     path('objects/<str:code>/<uuid:id>/sla/', ObjectRouterViewSet.as_view({'get': 'sla'}), name='object-router-sla'),
+    path('objects/<str:code>/<uuid:id>/closure/', ObjectRouterViewSet.as_view({'get': 'closure'}), name='object-router-closure'),
     path('objects/<str:code>/<uuid:id>/compact/', ObjectRouterViewSet.as_view({'get': 'compact_detail'}), name='object-router-compact-detail'),
     path(
         'objects/<str:code>/<uuid:id>/document/',

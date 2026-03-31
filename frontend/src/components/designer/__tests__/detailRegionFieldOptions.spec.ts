@@ -137,6 +137,7 @@ describe('detailRegionFieldOptions', () => {
         {
           code: 'asset',
           label: 'Asset',
+          fieldType: 'reference',
           minWidth: 220,
           align: 'left',
           fixed: 'left',
@@ -148,6 +149,7 @@ describe('detailRegionFieldOptions', () => {
         {
           code: 'quantity',
           label: 'Quantity',
+          fieldType: 'number',
           width: 160,
           align: 'center',
           fixed: 'right',

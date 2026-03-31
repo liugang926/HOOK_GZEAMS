@@ -237,6 +237,24 @@ class AssetProjectDashboardAPITest(APITransactionTestCase):
         self.assertEqual(data["returns"]["rejected_count"], 1)
         self.assertEqual(data["returns"]["processed_count"], 2)
 
+    def test_close_rejects_pending_return_orders_even_without_active_allocations(self):
+        self.allocation.return_status = "transferred"
+        self.allocation.actual_return_date = date.today()
+        self.allocation.save(update_fields=["return_status", "actual_return_date", "updated_at"])
+
+        response = self.client.post(
+            f"/api/system/objects/AssetProject/{self.project.id}/close/",
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(response.data["success"])
+        self.assertEqual(
+            response.data["error"]["details"]["returns"],
+            ["1 pending project return orders must be completed or cancelled before closing the project."],
+        )
+
     def tearDown(self):
         clear_current_organization()
         super().tearDown()

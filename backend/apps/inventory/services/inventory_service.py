@@ -1,6 +1,7 @@
 """
 Inventory service for managing inventory tasks.
 """
+import logging
 import uuid
 from datetime import datetime
 from typing import List, Dict, Optional, Any
@@ -10,6 +11,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 
+from apps.common.mixins.workflow_status import WorkflowStatusMixin
 from apps.common.services.base_crud import BaseCRUDService
 from apps.inventory.models import (
     InventoryTask,
@@ -17,6 +19,8 @@ from apps.inventory.models import (
     InventoryTaskExecutor,
 )
 from apps.assets.models import Asset
+
+logger = logging.getLogger(__name__)
 
 
 class InventoryService(BaseCRUDService):
@@ -180,14 +184,91 @@ class InventoryService(BaseCRUDService):
         """
         task = self.get(task_id)
 
-        if task.status != InventoryTask.STATUS_DRAFT:
-            raise ValidationError(_("Only draft tasks can be started."))
+        if task.approval_status == WorkflowStatusMixin.APPROVAL_PENDING:
+            raise ValidationError(_("The task is still waiting for workflow approval."))
+
+        if task.status not in {InventoryTask.STATUS_DRAFT, InventoryTask.STATUS_PENDING}:
+            raise ValidationError(_("Only draft or pending tasks can be started."))
 
         task.status = InventoryTask.STATUS_IN_PROGRESS
         task.started_at = timezone.now()
         task.save(update_fields=['status', 'started_at'])
 
         return task
+
+    def get_workflow_definition(self, organization_id: str):
+        """Return the published workflow definition for inventory tasks."""
+        from apps.workflows.models import WorkflowDefinition
+
+        return WorkflowDefinition.objects.filter(
+            organization_id=organization_id,
+            business_object_code__iexact='InventoryTask',
+            status='published',
+            is_deleted=False,
+        ).order_by('-updated_at', '-created_at').first()
+
+    def submit_task_workflow(self, task_id: str, user) -> tuple[InventoryTask, Any | None, bool]:
+        """
+        Submit an inventory task into the workflow approval chain.
+
+        Returns:
+            Tuple of (task, workflow_instance, workflow_started)
+        """
+        from apps.workflows.services.workflow_engine import WorkflowEngine
+
+        task = self.get(task_id)
+
+        if task.status != InventoryTask.STATUS_DRAFT:
+            raise ValidationError(_("Only draft tasks can be submitted for approval."))
+
+        definition = self.get_workflow_definition(str(task.organization_id))
+        submitted_at = timezone.now()
+
+        if definition is None:
+            task.approval_status = WorkflowStatusMixin.APPROVAL_APPROVED
+            task.submitted_at = submitted_at
+            task.approved_at = submitted_at
+            task.status = InventoryTask.STATUS_PENDING
+            task.save(update_fields=[
+                'approval_status',
+                'submitted_at',
+                'approved_at',
+                'status',
+                'updated_at',
+            ])
+            return task, None, False
+
+        engine = WorkflowEngine()
+        success, workflow_instance, error = engine.start_workflow(
+            definition=definition,
+            business_object_code='InventoryTask',
+            business_id=str(task.id),
+            business_no=task.task_code,
+            initiator=user,
+            title=f'Inventory Task: {task.task_name}',
+            description=task.description or f'Inventory task {task.task_code}',
+            priority='normal',
+            variables={
+                'inventory_task': {
+                    'id': str(task.id),
+                    'task_code': task.task_code,
+                    'task_name': task.task_name,
+                    'inventory_type': task.inventory_type,
+                    'planned_date': (
+                        task.planned_date.isoformat()
+                        if task.planned_date
+                        else None
+                    ),
+                    'total_count': task.total_count,
+                    'executor_count': task.executors_relation.filter(is_deleted=False).count(),
+                }
+            },
+        )
+        if not success:
+            raise ValidationError(error or _("Failed to start the inventory task workflow."))
+
+        task.refresh_from_db()
+        return task, workflow_instance, True
 
     def complete_task(
         self,
@@ -242,10 +323,33 @@ class InventoryService(BaseCRUDService):
         Returns:
             Updated task
         """
+        from apps.accounts.models import User
+        from apps.workflows.models import WorkflowInstance
+        from apps.workflows.services.workflow_engine import WorkflowEngine
+
         task = self.get(task_id)
 
         if task.status == InventoryTask.STATUS_COMPLETED:
             raise ValidationError(_("Completed tasks cannot be cancelled."))
+
+        workflow_instance = None
+        if task.workflow_instance_id:
+            workflow_instance = WorkflowInstance.objects.filter(
+                id=task.workflow_instance_id,
+                organization_id=task.organization_id,
+                is_deleted=False,
+            ).first()
+
+        if workflow_instance and workflow_instance.status in WorkflowInstance.ACTIVE_STATUSES:
+            actor = User.objects.filter(id=user_id).first()
+            if actor is None:
+                raise ValidationError(_("The cancelling user is invalid."))
+
+            success, error = WorkflowEngine().withdraw_instance(workflow_instance, actor)
+            if not success:
+                raise ValidationError(error or _("Failed to withdraw the workflow."))
+
+            task.refresh_from_db()
 
         task.status = InventoryTask.STATUS_CANCELLED
         if reason:

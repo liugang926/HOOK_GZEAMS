@@ -21,6 +21,6 @@ describe('portalTaskModel', () => {
     expect(getPortalTaskInitiator(task)).toBe('Alex')
     expect(getPortalTaskTime(task)).toBe('2026-03-19 10:00:00')
     expect(getPortalTaskPath(task.id)).toBe('/workflow/approvals/task-1')
-    expect(getPortalTaskTypeLabel({}, (key) => key)).toBe('portal.tasks.approvalTask')
+    expect(getPortalTaskTypeLabel({} as any, (key) => key)).toBe('portal.tasks.approvalTask')
   })
 })

@@ -78,7 +78,7 @@ describe('ActivityTimeline', () => {
               }
               return overrides[key] || key
             },
-          },
+          } as any,
         },
         stubs: {
           BaseEmptyState: { template: '<div class="empty-state-stub" />' },

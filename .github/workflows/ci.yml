@@ -63,6 +63,11 @@ jobs:
           cd backend
           pip install -r requirements/development.txt
 
+      - name: Run Django migration drift check
+        run: |
+          cd backend
+          python manage.py makemigrations --check --dry-run
+
       - name: Run black check
         run: |
           cd backend
@@ -177,10 +182,10 @@ jobs:
           retention-days: 7
 
   # ============================================================================
-  # Job 4: Backend - Unit Tests
+  # Job 4: Backend - Inventory Contract Gate
   # ============================================================================
-  backend-test:
-    name: Backend - Tests
+  backend-inventory-contract:
+    name: Backend - Inventory Contract Gate
     runs-on: ubuntu-latest
     needs: detect-changes
     if: needs.detect-changes.outputs.backend == 'true'
@@ -239,8 +244,99 @@ jobs:
       - name: Run inventory object contract regression gate
         run: |
           cd backend
-          pytest apps/inventory/tests/test_api.py -k InventoryReconciliationReportObjectRouteTests -q
-          pytest apps/system/tests/test_object_router_legacy_module_smoke.py -q
+          pytest \
+            apps/inventory/tests/test_api.py::InventoryReconciliationReportObjectRouteTests \
+            apps/system/tests/test_object_router_legacy_module_smoke.py::test_inventory_contract_list_endpoints \
+            -q \
+            --junitxml=inventory-contract-gate-junit.xml
+
+      - name: Write backend inventory contract gate summary
+        if: always()
+        run: |
+          python .github/scripts/render_junit_summary.py \
+            --summary-path "$GITHUB_STEP_SUMMARY" \
+            --title "Backend Inventory Contract Gate" \
+            --command-label "Gate command" \
+            --command "pytest apps/inventory/tests/test_api.py::InventoryReconciliationReportObjectRouteTests apps/system/tests/test_object_router_legacy_module_smoke.py::test_inventory_contract_list_endpoints -q --junitxml=inventory-contract-gate-junit.xml" \
+            --artifact "backend-inventory-contract-results" \
+            --junit-path "backend/inventory-contract-gate-junit.xml" \
+            --missing-junit-message "Inventory contract gate JUnit XML was not generated. Check the backend gate logs for setup or early pytest failures." \
+            --parse-error-prefix "Unable to parse backend inventory contract gate summary" \
+            --include-classname \
+            --covered-scenario "InventoryReconciliation object create, submit, and approve" \
+            --covered-scenario "InventoryReport generate, submit, and export" \
+            --covered-scenario "Focused object router list smoke coverage for InventoryReconciliation and InventoryReport"
+
+      - name: Archive backend inventory contract gate results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-inventory-contract-results
+          path: |
+            backend/inventory-contract-gate-junit.xml
+          retention-days: 7
+
+  # ============================================================================
+  # Job 5: Backend - Unit Tests
+  # ============================================================================
+  backend-test:
+    name: Backend - Tests
+    runs-on: ubuntu-latest
+    needs:
+      - detect-changes
+      - backend-inventory-contract
+    if: needs.detect-changes.outputs.backend == 'true'
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gzeams_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/gzeams_test
+      REDIS_URL: redis://localhost:6379/0
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements/development.txt
+
+      - name: Run migrations and bootstrap runtime defaults
+        run: |
+          cd backend
+          python manage.py migrate
+          python manage.py bootstrap_defaults
 
       - name: Run tests with coverage
         run: |
@@ -290,7 +386,7 @@ jobs:
           retention-days: 7
 
   # ============================================================================
-  # Job 5: Frontend - Code Quality Check
+  # Job 6: Frontend - Code Quality Check
   # ============================================================================
   frontend-lint:
     name: Frontend - Lint
@@ -431,12 +527,76 @@ jobs:
           retention-days: 7
 
   # ============================================================================
-  # Job 6: Frontend - Unit Tests
+  # Job 7: Frontend - Inventory Contract Gate
+  # ============================================================================
+  frontend-inventory-contract:
+    name: Frontend - Inventory Contract Gate
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: frontend/.nvmrc
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run inventory contract regression gate
+        run: |
+          cd frontend
+          npm test -- --run src/router/index.spec.ts src/__tests__/unit/api/inventory-contract-adapters.spec.ts --reporter=default --reporter=junit --outputFile.junit=coverage/inventory-contract-vitest-junit.xml
+
+      - name: Write frontend inventory contract gate summary
+        if: always()
+        run: |
+          python .github/scripts/render_junit_summary.py \
+            --summary-path "$GITHUB_STEP_SUMMARY" \
+            --title "Frontend Inventory Contract Gate" \
+            --command-label "Gate command" \
+            --command "npm test -- --run src/router/index.spec.ts src/__tests__/unit/api/inventory-contract-adapters.spec.ts --reporter=default --reporter=junit --outputFile.junit=coverage/inventory-contract-vitest-junit.xml" \
+            --artifact "frontend-inventory-contract-results" \
+            --junit-path "frontend/coverage/inventory-contract-vitest-junit.xml" \
+            --missing-junit-message "Inventory contract gate Vitest JUnit XML was not generated. Check the frontend gate logs for setup or reporter failures." \
+            --parse-error-prefix "Unable to parse frontend inventory contract gate summary" \
+            --include-classname \
+            --covered-scenario "Inventory reconciliation and report adapter route bindings" \
+            --covered-scenario "Inventory reconciliation and report route restoration" \
+            --covered-scenario "Legacy inventory route redirect safety checks"
+
+      - name: Archive frontend inventory contract gate results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-inventory-contract-results
+          path: |
+            frontend/coverage/inventory-contract-vitest-junit.xml
+          retention-days: 7
+
+  # ============================================================================
+  # Job 8: Frontend - Unit Tests
   # ============================================================================
   frontend-unit:
     name: Frontend - Unit Tests
     runs-on: ubuntu-latest
-    needs: detect-changes
+    needs:
+      - detect-changes
+      - frontend-inventory-contract
     if: needs.detect-changes.outputs.frontend == 'true'
 
     steps:
@@ -470,11 +630,6 @@ jobs:
         run: |
           cd frontend
           npm run layout:order:consistency:strict
-
-      - name: Run inventory contract regression gate
-        run: |
-          cd frontend
-          npm test -- --run src/router/index.spec.ts src/__tests__/unit/api/inventory-contract-adapters.spec.ts
 
       - name: Run unit tests with coverage
         run: |
@@ -512,7 +667,7 @@ jobs:
           retention-days: 7
 
   # ============================================================================
-  # Job 7: Frontend - E2E Tests
+  # Job 9: Frontend - E2E Tests
   # ============================================================================
   frontend-e2e:
     name: Frontend - E2E Tests
@@ -614,7 +769,7 @@ jobs:
           retention-days: 7
 
   # ============================================================================
-  # Job 8: Frontend - Backend Search E2E (Non-blocking)
+  # Job 10: Frontend - Backend Search E2E (Non-blocking)
   # ============================================================================
   frontend-e2e-backend-search:
     name: Frontend - E2E Backend Search (Non-blocking)
@@ -801,7 +956,7 @@ jobs:
           retention-days: 7
 
   # ============================================================================
-  # Job 9: Security Scanning
+  # Job 11: Security Scanning
   # ============================================================================
   security-scan:
     name: Security - Dependency Scan
@@ -888,8 +1043,10 @@ jobs:
     needs:
       - backend-lint
       - backend-demo-data
+      - backend-inventory-contract
       - backend-test
       - frontend-lint
+      - frontend-inventory-contract
       - frontend-unit
       - frontend-e2e
       - security-scan
@@ -904,8 +1061,10 @@ jobs:
         env:
           BACKEND_LINT_RESULT: ${{ needs.backend-lint.result }}
           BACKEND_DEMO_DATA_RESULT: ${{ needs.backend-demo-data.result }}
+          BACKEND_INVENTORY_CONTRACT_RESULT: ${{ needs.backend-inventory-contract.result }}
           BACKEND_TEST_RESULT: ${{ needs.backend-test.result }}
           FRONTEND_LINT_RESULT: ${{ needs.frontend-lint.result }}
+          FRONTEND_INVENTORY_CONTRACT_RESULT: ${{ needs.frontend-inventory-contract.result }}
           FRONTEND_UNIT_RESULT: ${{ needs.frontend-unit.result }}
           FRONTEND_E2E_RESULT: ${{ needs.frontend-e2e.result }}
           SECURITY_SCAN_RESULT: ${{ needs.security-scan.result }}
@@ -915,13 +1074,15 @@ jobs:
             --title "CI Status Check" \
             --group-label "Gate group" \
             --group "required branch protection checks" \
-            --check "backend-lint|$BACKEND_LINT_RESULT|required|Python linting and Django system checks" \
-            --check "backend-demo-data|$BACKEND_DEMO_DATA_RESULT|required|Demo data smoke gate and artifact bundle" \
-            --check "backend-test|$BACKEND_TEST_RESULT|required|Pytest suite with coverage and JUnit output" \
-            --check "frontend-lint|$FRONTEND_LINT_RESULT|required|ESLint, typecheck, i18n, metadata audit, and prettier" \
-            --check "frontend-unit|$FRONTEND_UNIT_RESULT|required|Vitest unit coverage gate" \
-            --check "frontend-e2e|$FRONTEND_E2E_RESULT|required|Playwright Chromium E2E suite" \
-            --check "security-scan|$SECURITY_SCAN_RESULT|required|Job completion gate; dependency findings remain advisory inside the job"
+            --check "backend-demo-data|$BACKEND_DEMO_DATA_RESULT|required|Demo data smoke gate and artifact bundle|Bootstrap Gates|Required job" \
+            --check "backend-inventory-contract|$BACKEND_INVENTORY_CONTRACT_RESULT|required|Focused object contract gate for InventoryReconciliation and InventoryReport|Backend Contract Gates|Required job" \
+            --check "frontend-inventory-contract|$FRONTEND_INVENTORY_CONTRACT_RESULT|required|Focused route and adapter contract gate for inventory reconciliation and report flows|Frontend Contract Gates|Required job" \
+            --check "backend-lint|$BACKEND_LINT_RESULT|required|Python linting and Django system checks|Full Suites and Quality Gates|Required job" \
+            --check "backend-test|$BACKEND_TEST_RESULT|required|Pytest suite with coverage and JUnit output|Full Suites and Quality Gates|Required job" \
+            --check "frontend-lint|$FRONTEND_LINT_RESULT|required|ESLint, typecheck, i18n, metadata audit, and prettier|Full Suites and Quality Gates|Required job" \
+            --check "frontend-unit|$FRONTEND_UNIT_RESULT|required|Vitest unit coverage gate|Full Suites and Quality Gates|Required job" \
+            --check "frontend-e2e|$FRONTEND_E2E_RESULT|required|Playwright Chromium E2E suite|Full Suites and Quality Gates|Required job" \
+            --check "security-scan|$SECURITY_SCAN_RESULT|required|Job completion gate; dependency findings remain advisory inside the job|Security Advisory Gates|Required job (advisory findings inside)"
 
       - name: Check all jobs status
         run: |
@@ -934,16 +1095,20 @@ jobs:
           # Check all required jobs
           if ! is_valid "${{ needs.backend-lint.result }}" ||
              ! is_valid "${{ needs.backend-demo-data.result }}" ||
+             ! is_valid "${{ needs.backend-inventory-contract.result }}" ||
              ! is_valid "${{ needs.backend-test.result }}" ||
              ! is_valid "${{ needs.frontend-lint.result }}" ||
+             ! is_valid "${{ needs.frontend-inventory-contract.result }}" ||
              ! is_valid "${{ needs.frontend-unit.result }}" ||
              ! is_valid "${{ needs.frontend-e2e.result }}" ||
              ! is_valid "${{ needs.security-scan.result }}"; then
             echo "::error::One or more jobs failed or were cancelled"
             echo "backend-lint: ${{ needs.backend-lint.result }}"
             echo "backend-demo-data: ${{ needs.backend-demo-data.result }}"
+            echo "backend-inventory-contract: ${{ needs.backend-inventory-contract.result }}"
             echo "backend-test: ${{ needs.backend-test.result }}"
             echo "frontend-lint: ${{ needs.frontend-lint.result }}"
+            echo "frontend-inventory-contract: ${{ needs.frontend-inventory-contract.result }}"
             echo "frontend-unit: ${{ needs.frontend-unit.result }}"
             echo "frontend-e2e: ${{ needs.frontend-e2e.result }}"
             echo "security-scan: ${{ needs.security-scan.result }}"

@@ -26,6 +26,7 @@ export enum TaskType {
  */
 export enum TaskStatus {
   DRAFT = "draft",
+  PENDING_APPROVAL = "pending_approval",
   PENDING = "pending",
   IN_PROGRESS = "in_progress",
   COMPLETED = "completed",
@@ -104,6 +105,10 @@ export interface InventoryTask extends BaseModel {
   taskType: TaskType;
   inventoryType?: TaskType | string;
   status: TaskStatus | string;
+  approvalStatus?: string;
+  workflowInstanceId?: string | null;
+  submittedAt?: string | null;
+  approvedAt?: string | null;
   startDate?: string;
   endDate?: string;
   plannedDate: string;

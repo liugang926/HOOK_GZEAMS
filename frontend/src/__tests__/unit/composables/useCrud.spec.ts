@@ -1,4 +1,4 @@
-﻿/**
+/**
  * useCrud composable tests
  */
 
@@ -379,7 +379,7 @@ describe('useCrud', () => {
 
       // Should show warning because export API is not provided
       expect(ElMessage.warning).toHaveBeenCalled()
-      expect(ElMessage.warning.mock.calls[0][0]).toBe(t('common.messages.pleaseSelectData'))
+      expect((ElMessage.warning as unknown as ReturnType<typeof vi.fn>).mock.calls[0][0]).toBe(t('common.messages.pleaseSelectData'))
     })
   })
 

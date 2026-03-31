@@ -19,7 +19,7 @@ const {
   disposalListMock: vi.fn(),
 }))
 
-const { getMetadataMock, getSlaMock } = createMetadataApiMockContext()
+const { getMetadataMock, getSlaMock, getClosureMock } = createMetadataApiMockContext()
 const { resolveRuntimeLayoutMock } = createRuntimeLayoutMockContext()
 const { pushMock, routeState } = createRouteMockContext({
   params: { code: 'Asset', id: 'asset-1' },
@@ -84,6 +84,7 @@ vi.mock('@/api/dynamic', () => ({
   createObjectClient: () => ({
     getMetadata: getMetadataMock,
     getSla: getSlaMock,
+    getClosure: getClosureMock,
   }),
   purchaseRequestApi: {},
   assetReceiptApi: {},
@@ -160,7 +161,13 @@ vi.mock('@/components/common/WorkbenchQueuePanel.vue', () => ({
 vi.mock('@/components/common/ClosureStatusPanel.vue', () => ({
   default: defineComponent({
     name: 'ClosureStatusPanel',
-    template: '<div class="closure-status-panel-stub" />',
+    props: ['panel', 'recordData'],
+    template: `
+      <div class="closure-status-panel-stub">
+        {{ recordData?.closure_summary?.stage || recordData?.closureSummary?.stage || "--" }}|
+        {{ recordData?.closure_summary?.completion_display || recordData?.closureSummary?.completionDisplay || "--" }}
+      </div>
+    `,
   }),
 }))
 
@@ -234,6 +241,20 @@ describe('DynamicDetailPage navigation', () => {
       activeTaskId: null,
       activeTaskCount: 0,
       completedAt: null,
+    })
+    getClosureMock.mockResolvedValue({
+      objectCode: 'Asset',
+      businessId: 'asset-1',
+      hasSummary: false,
+      status: null,
+      approvalStatus: null,
+      workflowInstanceId: null,
+      owner: '',
+      stage: '',
+      blocker: '',
+      completion: null,
+      completionDisplay: null,
+      metrics: {},
     })
     resolveRuntimeLayoutMock.mockResolvedValue({
       permissions: { view: true, add: true, change: true, delete: true }
@@ -413,6 +434,55 @@ describe('DynamicDetailPage navigation', () => {
 
     expect(getSlaMock).toHaveBeenCalledWith('asset-1')
     expect(wrapper.find('.sla-indicator-bar-stub').text()).toContain('1|overdue|Approver')
+  })
+
+  it('merges object-level closure data into the workbench record payload', async () => {
+    getClosureMock.mockResolvedValueOnce({
+      objectCode: 'InventoryTask',
+      businessId: 'asset-1',
+      hasSummary: true,
+      status: 'completed',
+      approvalStatus: 'approved',
+      workflowInstanceId: 'wf-1',
+      owner: 'Primary Executor',
+      stage: 'Awaiting closure',
+      blocker: 'Resolved differences still need final closure.',
+      completion: 80,
+      completionDisplay: '80%',
+      metrics: {},
+    })
+    resolveRuntimeLayoutMock.mockResolvedValueOnce({
+      permissions: { view: true, add: true, change: true, delete: true },
+      workbench: {
+        workspaceMode: 'extended',
+        primaryEntryRoute: '/objects/InventoryTask',
+        legacyAliases: [],
+        toolbar: {
+          primaryActions: [],
+          secondaryActions: [],
+        },
+        detailPanels: [],
+        asyncIndicators: [],
+        summaryCards: [],
+        queuePanels: [],
+        exceptionPanels: [],
+        closurePanel: {
+          stageField: 'closure_summary.stage',
+          ownerField: 'closure_summary.owner',
+          progressField: 'closure_summary.completion_display',
+        },
+        slaIndicators: [],
+        recommendedActions: [],
+      },
+    })
+
+    const wrapper = await buildWrapper()
+
+    await flushPromises()
+
+    expect(getClosureMock).toHaveBeenCalledWith('asset-1')
+    expect(wrapper.find('.closure-status-panel-stub').text()).toContain('Awaiting closure')
+    expect(wrapper.find('.closure-status-panel-stub').text()).toContain('80%')
   })
 
   it('renders AssetProject workbench actions and panels on the unified detail page', async () => {

@@ -5,6 +5,7 @@ import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
 import type { RuntimePermissions } from '@/platform/layout/runtimeLayoutResolver'
 import type {
   AggregateDocumentResponse,
+  ObjectClosureSummary,
   ObjectSlaSummary,
   RuntimeAggregate,
   RuntimeWorkbench,
@@ -37,6 +38,7 @@ export const useDynamicDetailController = ({
   const runtimePermissions = ref<RuntimePermissions | null>(null)
   const runtimeAggregate = ref<RuntimeAggregate | null>(null)
   const runtimeWorkbench = ref<RuntimeWorkbench | null>(null)
+  const objectClosure = ref<ObjectClosureSummary | null>(null)
   const objectSla = ref<ObjectSlaSummary | null>(null)
   const documentPayload = ref<AggregateDocumentResponse | null>(null)
   const loading = ref(false)
@@ -67,7 +69,7 @@ export const useDynamicDetailController = ({
     loading.value = true
     loadError.value = null
     try {
-      const [result, slaResult] = await Promise.all([
+      const [result, slaResult, closureResult] = await Promise.all([
         loadDynamicDetailResources({
           objectCode: objectCode.value,
           recordId: recordId.value,
@@ -77,6 +79,7 @@ export const useDynamicDetailController = ({
           loadDocument: (targetRecordId) => apiClient.value.getDocument(targetRecordId, 'readonly'),
         }),
         apiClient.value.getSla(recordId.value).catch(() => null),
+        apiClient.value.getClosure(recordId.value).catch(() => null),
       ])
 
       metadataPermissions.value = result.metadataPermissions
@@ -84,6 +87,7 @@ export const useDynamicDetailController = ({
       runtimePermissions.value = result.runtimePermissions
       runtimeAggregate.value = result.runtimeAggregate
       runtimeWorkbench.value = result.runtimeWorkbench
+      objectClosure.value = closureResult
       objectSla.value = slaResult
       documentPayload.value = result.documentPayload
       loadError.value = result.loadError
@@ -146,6 +150,7 @@ export const useDynamicDetailController = ({
     loadMetadata,
     metadataPermissions,
     objectMetadata,
+    objectClosure,
     retryLoad,
     documentPayload,
     runtimeAggregate,

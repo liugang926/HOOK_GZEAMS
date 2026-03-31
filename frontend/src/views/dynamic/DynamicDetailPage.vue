@@ -297,6 +297,7 @@ const {
   loading,
   loadMetadata,
   metadataPermissions,
+  objectClosure,
   objectMetadata,
   objectSla,
   retryLoad,
@@ -359,13 +360,37 @@ const detailTaskStateKey = computed(() => `${objectCode.value}:${recordId.value}
 const currentTask = computed(() => getTaskState(detailTaskStateKey.value) || null)
 const workbenchRefreshVersion = ref(0)
 const workbenchRecordPatch = ref<Record<string, unknown>>({})
+const toSnakeCase = (value: string) => value.replace(/([A-Z])/g, '_$1').toLowerCase()
+const toSnakeCaseRecord = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map((item) => toSnakeCaseRecord(item))
+  }
+  if (!value || typeof value !== 'object') {
+    return value
+  }
+  return Object.entries(value as Record<string, unknown>).reduce<Record<string, unknown>>((result, [key, item]) => {
+    result[toSnakeCase(key)] = toSnakeCaseRecord(item)
+    return result
+  }, {})
+}
 const workbenchRecordData = computed(() => {
   const baseRecord = loadedRecord.value || lifecycleRecordData.value || null
+  const closurePatch = objectClosure.value
+    ? {
+        closureSummary: objectClosure.value,
+        closure_summary: toSnakeCaseRecord(objectClosure.value) as Record<string, unknown>,
+      }
+    : {}
   if (!baseRecord) {
-    return Object.keys(workbenchRecordPatch.value).length > 0 ? { ...workbenchRecordPatch.value } : null
+    const mergedPatch = {
+      ...closurePatch,
+      ...workbenchRecordPatch.value,
+    }
+    return Object.keys(mergedPatch).length > 0 ? mergedPatch : null
   }
   return {
     ...baseRecord,
+    ...closurePatch,
     ...workbenchRecordPatch.value,
   }
 })

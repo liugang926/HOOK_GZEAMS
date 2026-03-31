@@ -69,6 +69,25 @@ export interface FinanceVoucher extends BaseModel {
   voucherDate: string
   businessType: BusinessType
   businessId?: string
+  sourceObjectCode?: string
+  sourceObjectLabel?: string
+  sourceId?: string
+  sourceRecordNo?: string
+  sourceAssetCount?: number
+  sourceSummary?: {
+    objectCode?: string
+    objectLabel?: string
+    sourceId?: string
+    recordNo?: string
+    assetCount?: number
+    assetIds?: string[]
+    assetCodes?: string[]
+    purchaseRequestId?: string
+    purchaseRequestNo?: string
+    receiptId?: string
+    receiptNo?: string
+    requestedBusinessId?: string
+  }
   voucherType: string
   description: string
   totalDebit: number

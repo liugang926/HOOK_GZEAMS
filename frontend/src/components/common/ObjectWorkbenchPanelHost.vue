@@ -66,6 +66,7 @@ import FinanceVoucherEntriesPanel from '@/components/finance/FinanceVoucherEntri
 import FinanceVoucherIntegrationLogsPanel from '@/components/finance/FinanceVoucherIntegrationLogsPanel.vue'
 import FinanceVoucherSyncStatusPanel from '@/components/finance/FinanceVoucherSyncStatusPanel.vue'
 import InventoryDifferenceClosurePanel from '@/components/inventory/InventoryDifferenceClosurePanel.vue'
+import InventoryTaskExecutorProgressPanel from '@/components/inventory/InventoryTaskExecutorProgressPanel.vue'
 import AssetProjectAssetsPanel from '@/components/projects/AssetProjectAssetsPanel.vue'
 import AssetProjectMembersPanel from '@/components/projects/AssetProjectMembersPanel.vue'
 import AssetProjectOverviewPanel from '@/components/projects/AssetProjectOverviewPanel.vue'
@@ -127,6 +128,7 @@ const panelRegistry: Record<string, unknown> = {
   'finance-voucher-integration-logs': FinanceVoucherIntegrationLogsPanel,
   'finance-voucher-sync-status': FinanceVoucherSyncStatusPanel,
   'inventory-difference-closure': InventoryDifferenceClosurePanel,
+  'inventory-task-executor-progress': InventoryTaskExecutorProgressPanel,
   'asset-project-overview': AssetProjectOverviewPanel,
   'asset-project-assets': AssetProjectAssetsPanel,
   'asset-project-members': AssetProjectMembersPanel,

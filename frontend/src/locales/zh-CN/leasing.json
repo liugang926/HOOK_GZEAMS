@@ -1,0 +1,29 @@
+{
+    "leasing": {
+        "workbench": {
+            "actions": {
+                "activateContract": "启用合同",
+                "completeContract": "完成合同",
+                "suspendContract": "暂停合同",
+                "reactivateContract": "恢复合同",
+                "terminateContract": "终止合同"
+            },
+            "summary": {
+                "assetCount": "租赁资产数",
+                "returnedAssetCount": "已归还资产数",
+                "pendingReturnCount": "待归还资产数",
+                "unpaidAmount": "未结清金额"
+            },
+            "queues": {
+                "pendingReturns": "待归还资产",
+                "openPayments": "待处理租金",
+                "unsettledDamage": "待处理损坏"
+            },
+            "messages": {
+                "activateContractHint": "资产交付后启用合同，并开始租金计划执行。",
+                "completeContractHint": "只有在归还和租金全部处理完成后，才能完成合同。",
+                "reactivateContractHint": "解除暂停原因后恢复合同，继续推进闭环处理。"
+            }
+        }
+    }
+}

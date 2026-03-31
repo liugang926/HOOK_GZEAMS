@@ -2,7 +2,44 @@ import { defineComponent } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import StatusActionBar, { type StatusAction } from '../StatusActionBar.vue'
+import StatusActionBar from '../StatusActionBar.vue'
+
+interface StatusActionPromptFieldOption {
+  label: string
+  value: string | number | boolean
+}
+
+interface StatusActionPromptField {
+  key: string
+  label: string
+  type: 'text' | 'textarea' | 'select' | 'date' | 'number'
+  required?: boolean
+  defaultValue?: string | number | boolean | null
+  precision?: number
+  options?: StatusActionPromptFieldOption[]
+}
+
+interface StatusActionPrompt {
+  title: string
+  width?: string | number
+  labelWidth?: string | number
+  fields: StatusActionPromptField[]
+}
+
+interface StatusAction {
+  key: string
+  label: string
+  type?: 'primary' | 'success' | 'warning' | 'danger' | 'info'
+  icon?: string
+  loading?: boolean
+  disabled?: boolean
+  disabledTooltip?: string
+  confirmMessage?: string
+  confirmTitle?: string
+  prompt?: StatusActionPrompt
+  visibleWhen?: (status: string) => boolean
+  apiCall: (context?: { values?: Record<string, unknown> }) => Promise<unknown>
+}
 
 vi.mock('vue-i18n', async (importOriginal) => {
   const actual = await importOriginal<typeof import('vue-i18n')>()
@@ -31,7 +68,7 @@ vi.mock('element-plus', () => ({
     warning: vi.fn(),
   },
   ElMessageBox: {
-    confirm: vi.fn().mockResolvedValue(undefined),
+    confirm: vi.fn().mockResolvedValue('confirm' as const),
   },
 }))
 
@@ -174,7 +211,7 @@ const ElInputNumberStub = defineComponent({
   `,
 })
 
-const mountActionBar = (actions: StatusAction[]) => {
+const mountActionBar = (actions: any[]) => {
   return mount(StatusActionBar, {
     props: {
       status: 'pending',
@@ -202,7 +239,7 @@ describe('StatusActionBar', () => {
     vi.mocked(ElMessage.error).mockReset()
     vi.mocked(ElMessage.warning).mockReset()
     vi.mocked(ElMessageBox.confirm).mockReset()
-    vi.mocked(ElMessageBox.confirm).mockResolvedValue(undefined)
+    vi.mocked(ElMessageBox.confirm).mockResolvedValue('confirm' as any)
   })
 
   it('collects prompt values before calling the action api', async () => {

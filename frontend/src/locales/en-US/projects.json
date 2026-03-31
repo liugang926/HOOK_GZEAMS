@@ -41,6 +41,23 @@
     "completedReturns": "Completed returns",
     "rejectedReturns": "Rejected returns"
   },
+  "workbench": {
+    "summary": {
+      "assetCount": "Allocated Assets",
+      "activeAssetCount": "Active Assets",
+      "memberCount": "Active Members",
+      "progress": "Milestone Progress",
+      "pendingReturnCount": "Pending Returns"
+    },
+    "queues": {
+      "activeAllocations": "Active Allocations",
+      "pendingReturns": "Pending Returns",
+      "members": "Project Members"
+    },
+    "messages": {
+      "closeProjectHint": "Close the project only after all active allocations have been returned or transferred."
+    }
+  },
   "overview": {
     "projectManager": "Project manager",
     "department": "Department",

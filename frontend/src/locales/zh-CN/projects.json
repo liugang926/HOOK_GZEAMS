@@ -41,6 +41,23 @@
     "completedReturns": "已完成归还",
     "rejectedReturns": "已驳回归还"
   },
+  "workbench": {
+    "summary": {
+      "assetCount": "已分配资产",
+      "activeAssetCount": "在用资产",
+      "memberCount": "在岗成员",
+      "progress": "里程碑进度",
+      "pendingReturnCount": "待处理归还"
+    },
+    "queues": {
+      "activeAllocations": "在用分配",
+      "pendingReturns": "待处理归还",
+      "members": "项目成员"
+    },
+    "messages": {
+      "closeProjectHint": "仅当全部在用资产已归还或转移后再执行结项。"
+    }
+  },
   "overview": {
     "projectManager": "项目经理",
     "department": "所属部门",

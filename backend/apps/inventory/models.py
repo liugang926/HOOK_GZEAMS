@@ -7,10 +7,11 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _
 
+from apps.common.mixins.workflow_status import WorkflowStatusMixin
 from apps.common.models import BaseModel
 
 
-class InventoryTask(BaseModel):
+class InventoryTask(BaseModel, WorkflowStatusMixin):
     """
     Inventory Task Model.
 
@@ -39,6 +40,7 @@ class InventoryTask(BaseModel):
 
     # ========== Status Choices ==========
     STATUS_DRAFT = 'draft'
+    STATUS_PENDING_APPROVAL = 'pending_approval'
     STATUS_PENDING = 'pending'
     STATUS_IN_PROGRESS = 'in_progress'
     STATUS_COMPLETED = 'completed'
@@ -46,6 +48,7 @@ class InventoryTask(BaseModel):
 
     STATUS_CHOICES = [
         (STATUS_DRAFT, _('Draft')),
+        (STATUS_PENDING_APPROVAL, _('Pending Approval')),
         (STATUS_PENDING, _('Pending')),
         (STATUS_IN_PROGRESS, _('In Progress')),
         (STATUS_COMPLETED, _('Completed')),
@@ -236,6 +239,26 @@ class InventoryTask(BaseModel):
     def can_modify(self):
         """Check if task can be modified."""
         return self.status == self.STATUS_DRAFT
+
+    def on_workflow_submitted(self):
+        """Move the task into approval once the workflow starts."""
+        self.status = self.STATUS_PENDING_APPROVAL
+        self.save(update_fields=['status'])
+
+    def on_workflow_approved(self):
+        """Mark the task as ready to start after workflow approval."""
+        self.status = self.STATUS_PENDING
+        self.save(update_fields=['status'])
+
+    def on_workflow_rejected(self):
+        """Return the task to draft so it can be corrected and resubmitted."""
+        self.status = self.STATUS_DRAFT
+        self.save(update_fields=['status'])
+
+    def on_workflow_cancelled(self):
+        """Keep task cancellation aligned with workflow cancellation."""
+        self.status = self.STATUS_CANCELLED
+        self.save(update_fields=['status'])
 
 
 class InventoryTaskExecutor(BaseModel):

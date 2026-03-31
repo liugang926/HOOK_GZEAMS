@@ -60,8 +60,8 @@ vi.mock('element-plus', () => ({
     error: vi.fn(),
   },
   ElMessageBox: {
-    confirm: vi.fn().mockResolvedValue(undefined),
-    prompt: vi.fn().mockResolvedValue({ value: 'Reason from panel' }),
+    confirm: vi.fn().mockResolvedValue('confirm' as any),
+    prompt: vi.fn().mockResolvedValue({ value: 'Reason from panel', action: 'confirm' } as any),
   },
 }))
 
@@ -166,9 +166,9 @@ describe('AssetProjectReturnsPanel', () => {
     vi.mocked(ElMessage.success).mockReset()
     vi.mocked(ElMessage.error).mockReset()
     vi.mocked(ElMessageBox.confirm).mockReset()
-    vi.mocked(ElMessageBox.confirm).mockResolvedValue(undefined)
+    vi.mocked(ElMessageBox.confirm).mockResolvedValue('confirm' as any)
     vi.mocked(ElMessageBox.prompt).mockReset()
-    vi.mocked(ElMessageBox.prompt).mockResolvedValue({ value: 'Reason from panel' })
+    vi.mocked(ElMessageBox.prompt).mockResolvedValue({ value: 'Reason from panel', action: 'confirm' } as any)
     vi.mocked(createObjectClient).mockClear()
   })
 

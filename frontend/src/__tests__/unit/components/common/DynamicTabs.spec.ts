@@ -1,8 +1,8 @@
-﻿/**
+/**
  * DynamicTabs component tests
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick, markRaw } from 'vue'
 import DynamicTabs from '@/components/common/DynamicTabs.vue'

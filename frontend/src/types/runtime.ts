@@ -264,6 +264,21 @@ export interface ObjectSlaSummary {
   completedAt: string | null
 }
 
+export interface ObjectClosureSummary {
+  objectCode: string
+  businessId: string
+  hasSummary: boolean
+  status: string | null
+  approvalStatus: string | null
+  workflowInstanceId: string | null
+  owner: string
+  stage: string
+  blocker: string
+  completion: number | null
+  completionDisplay: string | null
+  metrics: Record<string, unknown>
+}
+
 export type AggregateDocumentPageMode = 'create' | 'edit' | 'readonly'
 
 export interface AggregateDocumentContext {

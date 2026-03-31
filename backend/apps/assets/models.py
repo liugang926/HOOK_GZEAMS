@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models import Q
 from django.core.validators import MinValueValidator
 from apps.common.models import BaseModel
+from apps.common.mixins.workflow_status import WorkflowStatusMixin
 
 
 def _fallback_status_label(value):
@@ -829,12 +830,13 @@ class Asset(BaseModel):
 # ========== Asset Operation Models ==========
 
 
-class AssetPickup(BaseModel):
+class AssetPickup(BaseModel, WorkflowStatusMixin):
     """
     Asset Pickup Order Model
 
     Records employee asset pickup requests with approval workflow.
     Inherits from BaseModel for organization isolation and soft delete.
+    Inherits WorkflowStatusMixin for workflow-driven approval state tracking.
     """
 
     class Meta:
@@ -895,11 +897,7 @@ class AssetPickup(BaseModel):
         related_name='approved_pickups',
         help_text='Approver'
     )
-    approved_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text='Approval timestamp'
-    )
+    # NOTE: approved_at is inherited from WorkflowStatusMixin
     approval_comment = models.TextField(
         blank=True,
         help_text='Approval comment'
@@ -917,6 +915,53 @@ class AssetPickup(BaseModel):
         if not self.pickup_no:
             self.pickup_no = self._generate_pickup_no()
         super().save(*args, **kwargs)
+
+    # --- WorkflowStatusMixin lifecycle hooks ---
+
+    def on_workflow_submitted(self):
+        """Hook: mark pickup as pending when submitted for approval."""
+        self.status = 'pending'
+        self.save(update_fields=['status'])
+
+    def on_workflow_approved(self):
+        """Hook: complete pickup and update associated asset statuses.
+
+        Called by BusinessStateSyncService when workflow reaches 'approved'.
+        Updates each picked-up asset's status to 'in_use' and assigns the
+        applicant as the custodian.
+        """
+        from django.utils import timezone
+
+        self.status = 'completed'
+        self.completed_at = timezone.now()
+        self.save(update_fields=['status', 'completed_at'])
+
+        from apps.assets.services.lifecycle_coordinator import AssetLifecycleCoordinatorService
+
+        lifecycle_coordinator = AssetLifecycleCoordinatorService()
+
+        # Update each associated asset
+        for item in self.items.select_related('asset').all():
+            if item.asset:
+                lifecycle_coordinator.apply_state_change(
+                    item.asset,
+                    actor=getattr(self, 'approved_by', None) or getattr(self, 'created_by', None),
+                    reason=f'Workflow approved pickup order {self.pickup_no}',
+                    new_status='in_use',
+                    custodian=self.applicant,
+                    assigned_user=self.applicant,
+                    department=self.department,
+                )
+
+    def on_workflow_rejected(self):
+        """Hook: mark pickup as rejected. Assets remain unchanged."""
+        self.status = 'rejected'
+        self.save(update_fields=['status'])
+
+    def on_workflow_cancelled(self):
+        """Hook: mark pickup as cancelled. Assets remain unchanged."""
+        self.status = 'cancelled'
+        self.save(update_fields=['status'])
 
     def _generate_pickup_no(self):
         """

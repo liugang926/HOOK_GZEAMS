@@ -144,6 +144,65 @@ class LeaseContractAPITest(APITestCase):
         self.assertTrue(response.data['success'])
         self.assertEqual(response.data['data']['status'], 'completed')
 
+    def test_complete_contract_requires_returns_and_payment_settlement(self):
+        """Test contract completion is blocked until returns and rent are settled."""
+        from apps.assets.models import Asset, AssetCategory
+
+        category = AssetCategory.objects.create(
+            organization=self.organization,
+            code=f"LEASE_CAT_{uuid.uuid4().hex[:8]}",
+            name="Lease Category",
+            created_by=self.user
+        )
+        asset = Asset.objects.create(
+            organization=self.organization,
+            asset_code=f"LEASE_ASSET_{uuid.uuid4().hex[:8]}",
+            asset_name="Lease Closure Asset",
+            asset_category=category,
+            purchase_price=Decimal('1500.00'),
+            current_value=Decimal('1500.00'),
+            purchase_date=date.today() - timedelta(days=90),
+            created_by=self.user
+        )
+        contract = LeaseContract.objects.create(
+            organization=self.organization,
+            contract_no=f"ZL{self.unique_suffix}0003B",
+            lessee_name=f"Customer {self.unique_suffix}",
+            start_date=date.today() - timedelta(days=30),
+            end_date=date.today() - timedelta(days=1),
+            total_rent=12000,
+            status='active',
+            actual_start_date=date.today() - timedelta(days=30),
+            created_by=self.user
+        )
+        LeaseItem.objects.create(
+            organization=self.organization,
+            contract=contract,
+            asset=asset,
+            daily_rate=Decimal('30.00'),
+            actual_start_date=date.today() - timedelta(days=30),
+            created_by=self.user
+        )
+        RentPayment.objects.create(
+            organization=self.organization,
+            contract=contract,
+            payment_no=f"LEASEPAY_{uuid.uuid4().hex[:8]}",
+            due_date=date.today() - timedelta(days=5),
+            amount=Decimal('600.00'),
+            paid_amount=Decimal('0.00'),
+            status='pending',
+            created_by=self.user
+        )
+
+        url = f'/api/leasing/lease-contracts/{contract.id}/complete/'
+        response = self.client.post(url)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(response.data['success'])
+        self.assertEqual(response.data['error']['code'], 'VALIDATION_ERROR')
+        self.assertEqual(response.data['error']['details']['pending_return_count'], 1)
+        self.assertEqual(response.data['error']['details']['open_payment_count'], 1)
+
     def test_terminate_contract(self):
         """Test terminating an active contract."""
         contract = LeaseContract.objects.create(

@@ -296,7 +296,13 @@ class InventoryTaskMetricsAdapter(ClosedLoopMetricsAdapter):
             completed_at__date__gte=window["start_date"],
             completed_at__date__lte=window["end_date"],
         )
-        backlog_qs = tasks.filter(status__in=[InventoryTask.STATUS_PENDING, InventoryTask.STATUS_IN_PROGRESS])
+        backlog_qs = tasks.filter(
+            status__in=[
+                InventoryTask.STATUS_PENDING_APPROVAL,
+                InventoryTask.STATUS_PENDING,
+                InventoryTask.STATUS_IN_PROGRESS,
+            ]
+        )
         overdue_qs = backlog_qs.filter(planned_date__lt=window["today"])
 
         unresolved_difference_task_ids = differences.filter(

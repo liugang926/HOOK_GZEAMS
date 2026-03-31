@@ -53,6 +53,14 @@ class AssetProjectService(BaseCRUDService):
                 ]
             })
 
+        pending_returns = self._get_project_return_queryset(project).filter(status="pending").count()
+        if pending_returns > 0:
+            raise ValidationError({
+                "returns": [
+                    f"{pending_returns} pending project return orders must be completed or cancelled before closing the project."
+                ]
+            })
+
         project.status = "completed"
         project.actual_end_date = timezone.now().date()
         project.save(update_fields=["status", "actual_end_date", "updated_at"])

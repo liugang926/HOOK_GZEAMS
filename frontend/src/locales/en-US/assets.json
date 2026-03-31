@@ -31,6 +31,26 @@
     "messages": {
         "loadFailed": "Failed to load asset details"
     },
+    "workbench": {
+        "summary": {
+            "sourcePurchaseRequest": "Source Request",
+            "sourceReceipt": "Source Receipt",
+            "activeProjectAllocations": "Active Project Allocations",
+            "pendingInventoryDifferences": "Pending Inventory Differences",
+            "openMaintenance": "Open Maintenance",
+            "openDisposals": "Open Disposals",
+            "linkedFinanceVouchers": "Linked Finance Vouchers",
+            "openFinanceVouchers": "Open Finance Vouchers"
+        },
+        "queues": {
+            "projectAllocations": "Project Allocations",
+            "inventoryDifferences": "Inventory Differences",
+            "inventoryFollowUps": "Inventory Follow-up Tasks",
+            "maintenanceRecords": "Maintenance Records",
+            "disposalRequests": "Disposal Requests",
+            "financeVouchers": "Finance Vouchers"
+        }
+    },
     "status": {
         "idle": "Idle",
         "inUse": "In Use",
@@ -435,6 +455,22 @@
                 "cancelConfirm": "Are you sure to cancel this purchase request?",
                 "noItems": "Please add at least one purchase item",
                 "loadFailed": "Failed to load purchase requests"
+            },
+            "workbench": {
+                "summary": {
+                    "totalAmount": "Request Total",
+                    "linkedReceiptCount": "Linked Receipts",
+                    "generatedAssetCount": "Generated Assets",
+                    "pendingGenerationCount": "Pending Asset Generation",
+                    "linkedFinanceVoucherCount": "Linked Finance Vouchers",
+                    "openFinanceVoucherCount": "Open Finance Vouchers"
+                },
+                "queues": {
+                    "receipts": "Receipts",
+                    "generatedAssets": "Generated Assets",
+                    "financeVouchers": "Finance Vouchers",
+                    "pendingGeneration": "Pending Asset Generation"
+                }
             }
         },
         "maintenance": {
@@ -617,6 +653,21 @@
                 "cancelConfirm": "Are you sure to cancel this receipt?",
                 "cancelSuccess": "Receipt cancelled",
                 "loadFailed": "Failed to load asset receipts"
+            },
+            "workbench": {
+                "summary": {
+                    "sourcePurchaseRequest": "Source Purchase Request",
+                    "totalAmount": "Receipt Total",
+                    "generatedAssetCount": "Generated Assets",
+                    "pendingGenerationCount": "Pending Asset Generation",
+                    "linkedFinanceVoucherCount": "Linked Finance Vouchers",
+                    "openFinanceVoucherCount": "Open Finance Vouchers"
+                },
+                "queues": {
+                    "generatedAssets": "Generated Assets",
+                    "financeVouchers": "Finance Vouchers",
+                    "pendingGeneration": "Pending Asset Generation"
+                }
             }
         },
         "maintenancePlan": {

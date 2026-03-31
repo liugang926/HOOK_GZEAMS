@@ -83,7 +83,9 @@
             "summary": {
                 "balanceState": "平衡状态",
                 "entryCount": "分录数量",
-                "totalAmount": "总金额"
+                "totalAmount": "总金额",
+                "sourceObject": "来源对象",
+                "sourceDocument": "来源单据"
             },
             "queues": {
                 "integrationAttention": "集成关注队列",

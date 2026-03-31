@@ -39,7 +39,7 @@ vi.mock('element-plus', () => ({
     error: vi.fn(),
   },
   ElMessageBox: {
-    confirm: vi.fn().mockResolvedValue(undefined),
+    confirm: vi.fn().mockResolvedValue('confirm' as const),
   },
 }))
 
@@ -122,7 +122,7 @@ describe('ObjectWorkbenchActionBar', () => {
     vi.mocked(ElMessage.success).mockReset()
     vi.mocked(ElMessage.error).mockReset()
     vi.mocked(ElMessageBox.confirm).mockReset()
-    vi.mocked(ElMessageBox.confirm).mockResolvedValue(undefined)
+    vi.mocked(ElMessageBox.confirm).mockResolvedValue('confirm' as any)
   })
 
   it('shows status-gated workbench actions for active AssetProject records', () => {

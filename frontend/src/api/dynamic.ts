@@ -21,6 +21,7 @@ import { checkRuntimeContract, type RuntimeMode } from '@/contracts/runtimeContr
 import type {
     AggregateDocumentPageMode,
     AggregateDocumentResponse,
+    ObjectClosureSummary,
     ObjectSlaSummary,
     RuntimeAggregate,
     RuntimeWorkbench,
@@ -562,6 +563,20 @@ class DynamicAPI {
     }
 
     /**
+     * Get object-level closure summary for a record.
+     * GET /api/system/objects/{code}/{id}/closure/
+     */
+    getClosure(
+        code: string,
+        id: string
+    ): Promise<ObjectClosureSummary> {
+        return request({
+            url: `${this.baseUrl}/${code}/${id}/closure/`,
+            method: 'get'
+        })
+    }
+
+    /**
      * Execute a unified cross-object action for a record.
      * POST /api/system/objects/{code}/{id}/actions/{actionCode}/execute/
      */
@@ -629,6 +644,7 @@ export interface ObjectClient {
     getRelationCounts(id: string): Promise<ApiResponse<{ counts: Record<string, number> }>>
     getCompactDetail(id: string): Promise<ApiResponse<{ fields: CompactDetailField[] }>>
     getSla(id: string): Promise<ObjectSlaSummary>
+    getClosure(id: string): Promise<ObjectClosureSummary>
     getActions(id: string): Promise<ObjectActionsResponse>
     executeAction(id: string, actionCode: string, payload?: Record<string, any>): Promise<ObjectActionExecutionResult>
 }
@@ -679,6 +695,8 @@ export function createObjectClient(code: string): ObjectClient {
             dynamicApi.getCompactDetail(code, id),
         getSla: (id: string) =>
             dynamicApi.getSla(code, id),
+        getClosure: (id: string) =>
+            dynamicApi.getClosure(code, id),
         getActions: (id: string) =>
             dynamicApi.getActions(code, id),
         executeAction: (id: string, actionCode: string, payload?: Record<string, any>) =>

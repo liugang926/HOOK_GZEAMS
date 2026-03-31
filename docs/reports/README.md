@@ -103,6 +103,8 @@ docs/reports/
 - `PHASE7_2_30_FRONTEND_LINT_GATE_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M30 前端质量门禁总览摘要
 - `PHASE7_2_31_SECURITY_SCAN_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M31 安全扫描 advisory 摘要与 artifact 归档
 - `PHASE7_2_32_STATUS_CHECK_SUMMARY_IMPLEMENTATION_REPORT.md` - Demo data M32 最终 status-check 汇总页与 CI summary 脚本测试补齐
+- `PHASE7_2_33_ASSET_FINANCE_TRACE_AND_PROJECT_CLOSURE_IMPLEMENTATION_REPORT.md` - 资产财务追溯与项目结项闭环加固（2026-03-31）
+- `PHASE7_2_34_LIFECYCLE_SOURCE_FINANCE_WORKSPACE_IMPLEMENTATION_REPORT.md` - 采购申请 / 验收到财务闭环视图收敛（2026-03-31）
 
 ### Phase 8: 性能优化与最终集成
 - `PHASE8_PERFORMANCE_INTEGRATION_IMPLEMENTATION_REPORT.md` - Phase 8 性能优化、测试补齐与最终集成实施报告（2026-03-29）
@@ -217,7 +219,7 @@ docs/reports/
 
 ## 📝 报告更新时间
 
-最后更新：2026-03-29
+最后更新：2026-03-31
 
 **最新添加**：
 - ✅ `GZEAMS_PHASE8_FINAL_INTEGRATION_REPORT.md` - Phase 8 最终集成汇总报告（2026-03-29）

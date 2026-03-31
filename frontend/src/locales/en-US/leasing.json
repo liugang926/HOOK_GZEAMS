@@ -1,0 +1,29 @@
+{
+    "leasing": {
+        "workbench": {
+            "actions": {
+                "activateContract": "Activate Contract",
+                "completeContract": "Complete Contract",
+                "suspendContract": "Suspend Contract",
+                "reactivateContract": "Reactivate Contract",
+                "terminateContract": "Terminate Contract"
+            },
+            "summary": {
+                "assetCount": "Leased Assets",
+                "returnedAssetCount": "Returned Assets",
+                "pendingReturnCount": "Pending Returns",
+                "unpaidAmount": "Unpaid Amount"
+            },
+            "queues": {
+                "pendingReturns": "Pending Returns",
+                "openPayments": "Open Payments",
+                "unsettledDamage": "Unsettled Damage"
+            },
+            "messages": {
+                "activateContractHint": "Activate the contract when assets are delivered and the rent schedule is ready.",
+                "completeContractHint": "Complete the contract only after returns and payments are fully settled.",
+                "reactivateContractHint": "Reactivate the contract after the suspension blocker is cleared."
+            }
+        }
+    }
+}

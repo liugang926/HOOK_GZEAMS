@@ -426,7 +426,7 @@ describe('layoutValidation', () => {
 
   describe('getDefaultLayoutConfig', () => {
     it('should return default form config', () => {
-      const config = getDefaultLayoutConfig('form')
+      const config = getDefaultLayoutConfig('form') as any
       expect(config).toHaveProperty('sections')
       expect(config.sections).toBeInstanceOf(Array)
       expect(config.sections?.length).toBeGreaterThan(0)
@@ -479,7 +479,7 @@ describe('layoutValidation', () => {
         ]
       }
 
-      const clone = cloneLayoutConfig(original)
+      const clone = cloneLayoutConfig(original) as any
 
       // Modify clone
       clone.sections[0].id = 'modified'

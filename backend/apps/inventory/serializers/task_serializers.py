@@ -56,6 +56,10 @@ class InventoryTaskListSerializer(BaseModelSerializer):
             'description',
             'inventory_type',
             'inventory_type_label',
+            'approval_status',
+            'workflow_instance_id',
+            'submitted_at',
+            'approved_at',
             'department',
             'department_name',
             'category',
@@ -82,6 +86,10 @@ class InventoryTaskListSerializer(BaseModelSerializer):
             'progress_percentage',
             'status_label',
             'inventory_type_label',
+            'approval_status',
+            'workflow_instance_id',
+            'submitted_at',
+            'approved_at',
         ]
 
 
@@ -110,6 +118,10 @@ class InventoryTaskDetailSerializer(BaseModelSerializer):
             'description',
             'inventory_type',
             'inventory_type_label',
+            'approval_status',
+            'workflow_instance_id',
+            'submitted_at',
+            'approved_at',
             'department',
             'category',
             'sample_ratio',
@@ -135,6 +147,10 @@ class InventoryTaskDetailSerializer(BaseModelSerializer):
             'progress_percentage',
             'status_label',
             'inventory_type_label',
+            'approval_status',
+            'workflow_instance_id',
+            'submitted_at',
+            'approved_at',
         ]
 
     def get_difference_summary(self, obj):

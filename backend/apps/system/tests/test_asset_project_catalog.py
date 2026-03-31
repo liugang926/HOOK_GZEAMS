@@ -39,6 +39,9 @@ def test_build_menu_config_for_asset_project_uses_lifecycle_defaults():
     assert asset_project_config["workbench"]["detail_panels"][2]["component"] == "asset-project-members"
     assert asset_project_config["workbench"]["detail_panels"][3]["component"] == "asset-project-returns"
     assert asset_project_config["workbench"]["detail_panels"][4]["component"] == "asset-project-return-history"
+    assert asset_project_config["workbench"]["summary_cards"][0]["value_field"] == "asset_count"
+    assert asset_project_config["workbench"]["queue_panels"][1]["route"] == "/objects/AssetReturn?project={id}&status=pending"
+    assert asset_project_config["workbench"]["closure_panel"]["blocker_field"] == "closure_summary.blocker"
 
     assert project_asset_config["url"] == "/objects/ProjectAsset"
     assert project_asset_config["show_in_menu"] is False

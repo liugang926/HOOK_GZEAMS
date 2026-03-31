@@ -102,7 +102,7 @@ describe('LocaleSwitcher', () => {
 
   it('syncs locale to profile when user chooses sync mode', async () => {
     storageState.set('locale', 'zh-CN')
-    vi.mocked(ElMessageBox.confirm).mockResolvedValueOnce('confirm')
+    vi.mocked(ElMessageBox.confirm).mockResolvedValueOnce('confirm' as any)
 
     const { wrapper, localeStore, userStore } = await mountLocaleSwitcher()
     userStore.token = 'access-token'

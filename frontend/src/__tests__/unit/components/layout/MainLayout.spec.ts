@@ -230,7 +230,7 @@ const createWrapper = async () => {
         globalProperties: {
           $t: (key: string) => translationMessages[key] || key,
           $te: (key: string) => key in translationMessages,
-        },
+        } as any,
       },
       stubs: elementStubs,
       directives: {
@@ -275,35 +275,35 @@ describe('MainLayout', () => {
   it('renders desktop navigation for large screens', async () => {
     const wrapper = await createWrapper()
 
-    expect(wrapper.vm.isMobile).toBe(false)
+    expect((wrapper.vm as any).isMobile).toBe(false)
     expect(wrapper.find('.sidebar').exists()).toBe(true)
     expect(wrapper.find('.mobile-menu-btn').exists()).toBe(false)
-    expect(wrapper.vm.activeMenu).toBe('/dashboard')
+    expect((wrapper.vm as any).activeMenu).toBe('/dashboard')
   })
 
   it('switches to mobile mode and opens the drawer', async () => {
     setViewportWidth(375)
     const wrapper = await createWrapper()
 
-    expect(wrapper.vm.isMobile).toBe(true)
-    expect(wrapper.vm.drawerVisible).toBe(false)
+    expect((wrapper.vm as any).isMobile).toBe(true)
+    expect((wrapper.vm as any).drawerVisible).toBe(false)
 
     await wrapper.get('.mobile-menu-btn').trigger('click')
 
-    expect(wrapper.vm.drawerVisible).toBe(true)
+    expect((wrapper.vm as any).drawerVisible).toBe(true)
     expect(wrapper.find('.mobile-drawer').attributes('data-open')).toBe('true')
   })
 
   it('updates responsive state on window resize', async () => {
     const wrapper = await createWrapper()
 
-    expect(wrapper.vm.isMobile).toBe(false)
+    expect((wrapper.vm as any).isMobile).toBe(false)
 
     setViewportWidth(500)
     window.dispatchEvent(new Event('resize'))
     await nextTick()
 
-    expect(wrapper.vm.isMobile).toBe(true)
+    expect((wrapper.vm as any).isMobile).toBe(true)
   })
 
   it('maps dynamic object breadcrumbs to canonical object list routes', async () => {

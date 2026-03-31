@@ -78,6 +78,7 @@ const { panelStubFactories } = vi.hoisted(() => {
       financeVoucherIntegrationLogs: buildPanelStub('FinanceVoucherIntegrationLogsPanelStub'),
       financeVoucherSyncStatus: buildPanelStub('FinanceVoucherSyncStatusPanelStub'),
       inventoryDifferenceClosure: buildPanelStub('InventoryDifferenceClosurePanelStub'),
+      inventoryTaskExecutorProgress: buildPanelStub('InventoryTaskExecutorProgressPanelStub'),
     },
   }
 })
@@ -118,6 +119,10 @@ vi.mock('@/components/inventory/InventoryDifferenceClosurePanel.vue', () => ({
   default: panelStubFactories.inventoryDifferenceClosure,
 }))
 
+vi.mock('@/components/inventory/InventoryTaskExecutorProgressPanel.vue', () => ({
+  default: panelStubFactories.inventoryTaskExecutorProgress,
+}))
+
 describe('ObjectWorkbenchPanelHost', () => {
   beforeEach(() => {
     vi.mocked(request.get).mockReset()
@@ -155,6 +160,7 @@ describe('ObjectWorkbenchPanelHost', () => {
           closurePanel: null,
           slaIndicators: [],
           recommendedActions: [],
+          legacyAliases: [],
         },
       },
     })
@@ -211,6 +217,7 @@ describe('ObjectWorkbenchPanelHost', () => {
           closurePanel: null,
           slaIndicators: [],
           recommendedActions: [],
+          legacyAliases: [],
         },
       },
     })
@@ -254,6 +261,7 @@ describe('ObjectWorkbenchPanelHost', () => {
           closurePanel: null,
           slaIndicators: [],
           recommendedActions: [],
+          legacyAliases: [],
         },
       },
     })
@@ -284,6 +292,7 @@ describe('ObjectWorkbenchPanelHost', () => {
           closurePanel: null,
           slaIndicators: [],
           recommendedActions: [],
+          legacyAliases: [],
         },
       },
     })
@@ -292,5 +301,36 @@ describe('ObjectWorkbenchPanelHost', () => {
 
     expect(request.get).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('difference_closure|local|--|--|loaded')
+  })
+
+  it('renders the executor progress panel for InventoryTask workbenches', async () => {
+    const wrapper = mount(ObjectWorkbenchPanelHost, {
+      props: {
+        objectCode: 'InventoryTask',
+        recordId: 'task-1',
+        recordData: { status: 'in_progress' },
+        workbench: {
+          workspaceMode: 'extended',
+          primaryEntryRoute: '/objects/InventoryTask',
+          detailPanels: [
+            { code: 'executor_progress', component: 'inventory-task-executor-progress' },
+          ],
+          toolbar: { primaryActions: [], secondaryActions: [] },
+          asyncIndicators: [],
+          summaryCards: [],
+          queuePanels: [],
+          exceptionPanels: [],
+          closurePanel: null,
+          slaIndicators: [],
+          recommendedActions: [],
+          legacyAliases: [],
+        },
+      },
+    })
+
+    await flushPromises()
+
+    expect(request.get).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('executor_progress|local|--|--|loaded')
   })
 })

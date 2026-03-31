@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   FIELD_COMPONENT_LOADERS,
   buildNormalizedRuntimeField,
@@ -37,9 +37,9 @@ describe('fieldRegistry', () => {
 
     expect(result.fieldType).toBe('sub_table')
     expect(result.field_type).toBe('sub_table')
-    expect(result.componentProps.rows).toBe(6)
-    expect(result.componentProps.mode).toBe('legacy')
-    expect(result.component_props.rows).toBe(6)
+    expect((result.componentProps as any).rows).toBe(6)
+    expect((result.componentProps as any).mode).toBe('legacy')
+    expect((result.component_props as any).rows).toBe(6)
   })
 
   it('keeps a stable supported type baseline for engine rendering', () => {

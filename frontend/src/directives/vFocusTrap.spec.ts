@@ -45,25 +45,25 @@ describe('vFocusTrap directive', () => {
 
   it('activates when value toggles from false to true', () => {
     const { container } = createContainer()
-    directive.mounted?.(container as any, createBinding(false))
+    directive.mounted?.(container as any, createBinding(false), null as any, null as any)
     expect((container as any).__focusTrapHandler).toBeUndefined()
 
-    directive.updated?.(container as any, createBinding(true))
+    directive.updated?.(container as any, createBinding(true), null as any, null as any)
     expect((container as any).__focusTrapHandler).toBeTypeOf('function')
   })
 
   it('deactivates when value toggles to false', () => {
     const { container } = createContainer()
-    directive.mounted?.(container as any, createBinding(true))
+    directive.mounted?.(container as any, createBinding(true), null as any, null as any)
     expect((container as any).__focusTrapHandler).toBeTypeOf('function')
 
-    directive.updated?.(container as any, createBinding(false))
+    directive.updated?.(container as any, createBinding(false), null as any, null as any)
     expect((container as any).__focusTrapHandler).toBeUndefined()
   })
 
   it('traps Tab from last element to first element', () => {
     const { container, first, second } = createContainer()
-    directive.mounted?.(container as any, createBinding(true))
+    directive.mounted?.(container as any, createBinding(true), null as any, null as any)
 
     second.focus()
     const event = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true })
@@ -75,7 +75,7 @@ describe('vFocusTrap directive', () => {
 
   it('traps Shift+Tab from first element to last element', () => {
     const { container, first, second } = createContainer()
-    directive.mounted?.(container as any, createBinding(true))
+    directive.mounted?.(container as any, createBinding(true), null as any, null as any)
 
     first.focus()
     const event = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true })
@@ -88,7 +88,7 @@ describe('vFocusTrap directive', () => {
   it('autofocuses first focusable element when modifier is enabled', () => {
     vi.useFakeTimers()
     const { container, first } = createContainer()
-    directive.mounted?.(container as any, createBinding(true, true))
+    directive.mounted?.(container as any, createBinding(true, true), null as any, null as any)
 
     vi.runAllTimers()
     expect(document.activeElement).toBe(first)

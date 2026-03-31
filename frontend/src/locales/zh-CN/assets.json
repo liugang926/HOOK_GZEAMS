@@ -31,6 +31,26 @@
     "messages": {
         "loadFailed": "加载资产详情失败"
     },
+    "workbench": {
+        "summary": {
+            "sourcePurchaseRequest": "来源申请单",
+            "sourceReceipt": "来源验收单",
+            "activeProjectAllocations": "在用项目占用",
+            "pendingInventoryDifferences": "待处理盘点差异",
+            "openMaintenance": "进行中维修",
+            "openDisposals": "进行中处置",
+            "linkedFinanceVouchers": "关联财务凭证",
+            "openFinanceVouchers": "待完成财务凭证"
+        },
+        "queues": {
+            "projectAllocations": "项目占用",
+            "inventoryDifferences": "盘点差异",
+            "inventoryFollowUps": "盘点跟进任务",
+            "maintenanceRecords": "维修记录",
+            "disposalRequests": "处置申请",
+            "financeVouchers": "财务凭证"
+        }
+    },
     "status": {
         "idle": "闲置",
         "inUse": "使用中",
@@ -435,6 +455,22 @@
                 "cancelConfirm": "确定要取消此采购申请吗？",
                 "noItems": "请至少添加一项采购明细",
                 "loadFailed": "加载采购申请失败"
+            },
+            "workbench": {
+                "summary": {
+                    "totalAmount": "申请总额",
+                    "linkedReceiptCount": "关联验收单",
+                    "generatedAssetCount": "已建卡资产",
+                    "pendingGenerationCount": "待生成资产卡",
+                    "linkedFinanceVoucherCount": "关联财务凭证",
+                    "openFinanceVoucherCount": "待完成财务凭证"
+                },
+                "queues": {
+                    "receipts": "验收单",
+                    "generatedAssets": "已建卡资产",
+                    "financeVouchers": "财务凭证",
+                    "pendingGeneration": "待生成资产卡"
+                }
             }
         },
         "maintenance": {
@@ -617,6 +653,21 @@
                 "cancelConfirm": "确定要取消此入库单吗？",
                 "cancelSuccess": "入库单已取消",
                 "loadFailed": "加载入库验收记录失败"
+            },
+            "workbench": {
+                "summary": {
+                    "sourcePurchaseRequest": "来源采购申请",
+                    "totalAmount": "验收总额",
+                    "generatedAssetCount": "已建卡资产",
+                    "pendingGenerationCount": "待生成资产卡",
+                    "linkedFinanceVoucherCount": "关联财务凭证",
+                    "openFinanceVoucherCount": "待完成财务凭证"
+                },
+                "queues": {
+                    "generatedAssets": "已建卡资产",
+                    "financeVouchers": "财务凭证",
+                    "pendingGeneration": "待生成资产卡"
+                }
             }
         },
         "maintenancePlan": {

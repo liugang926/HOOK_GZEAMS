@@ -1,4 +1,4 @@
-﻿/**
+/**
  * useFileField composable tests
  */
 
@@ -50,7 +50,7 @@ describe('useFileField', () => {
     })
 
     it('should return false for non-PDF', () => {
-      const fileType = 'application/msword'
+      const fileType: string = 'application/msword'
       const isPdf = fileType === 'application/pdf'
 
       expect(isPdf).toBe(false)

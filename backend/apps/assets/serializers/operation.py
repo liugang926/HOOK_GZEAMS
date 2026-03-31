@@ -110,6 +110,7 @@ class AssetPickupListSerializer(BaseListSerializer):
         fields = BaseListSerializer.Meta.fields + [
             'pickup_no', 'applicant', 'department', 'pickup_date',
             'pickup_reason', 'status', 'status_label', 'items_count',
+            'approval_status', 'workflow_instance_id', 'submitted_at',
             'approved_at', 'completed_at'
         ]
 
@@ -139,6 +140,7 @@ class AssetPickupDetailSerializer(BaseModelWithAuditSerializer):
             'pickup_no', 'applicant', 'applicant_id', 'department', 'department_id',
             'pickup_date', 'pickup_reason', 'status', 'status_label',
             'approved_by', 'approved_at', 'approval_comment',
+            'approval_status', 'workflow_instance_id', 'submitted_at',
             'completed_at', 'items', 'items_count'
         ]
         read_only_fields = ['pickup_no', 'approved_at', 'completed_at']
@@ -750,7 +752,8 @@ class AssetPickupSerializer(BaseModelWithAuditSerializer):
         fields = BaseModelWithAuditSerializer.Meta.fields + [
             'pickup_no', 'applicant', 'department', 'pickup_date',
             'pickup_reason', 'status', 'status_label', 'approved_by',
-            'approved_at', 'approval_comment', 'completed_at', 'items_count'
+            'approved_at', 'approval_comment', 'completed_at', 'items_count',
+            'approval_status', 'workflow_instance_id', 'submitted_at',
         ]
 
     def get_items_count(self, obj):

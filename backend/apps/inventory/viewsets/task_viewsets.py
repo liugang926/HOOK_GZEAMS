@@ -123,6 +123,40 @@ class InventoryTaskViewSet(BaseModelViewSetWithBatch):
                 details={'error': str(e)}
             )
 
+    @action(detail=True, methods=['post'], url_path='submit-workflow')
+    def submit_workflow(self, request, pk=None):
+        """
+        Submit an inventory task into the workflow approval chain.
+
+        POST /api/inventory/tasks/{id}/submit-workflow/
+        """
+        task = self.get_object()
+        service = InventoryService()
+        try:
+            updated_task, workflow_instance, workflow_started = service.submit_task_workflow(
+                str(task.id),
+                request.user,
+            )
+            response_serializer = InventoryTaskDetailSerializer(updated_task)
+            return success_response(
+                data={
+                    **response_serializer.data,
+                    'workflow_started': workflow_started,
+                    'workflow_instance_id': (
+                        str(workflow_instance.id)
+                        if workflow_instance is not None
+                        else updated_task.workflow_instance_id
+                    ),
+                },
+                message=_('Inventory task submitted successfully.'),
+            )
+        except Exception as e:
+            return error_response(
+                code='VALIDATION_ERROR',
+                message=_('Failed to submit the inventory task.'),
+                details={'error': str(e)}
+            )
+
     @action(detail=True, methods=['post'], url_path='complete')
     def complete(self, request, pk=None):
         """

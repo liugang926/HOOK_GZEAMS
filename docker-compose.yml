@@ -34,7 +34,7 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     container_name: gzeams-backend
-    command: python manage.py runserver 0.0.0.0:8000
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --reload --timeout 120
     volumes:
       - ./backend:/app
       - backend_logs:/app/logs

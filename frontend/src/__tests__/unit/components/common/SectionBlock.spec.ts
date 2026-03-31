@@ -1,8 +1,8 @@
-﻿/**
+/**
  * SectionBlock component tests
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import SectionBlock from '@/components/common/SectionBlock.vue'
@@ -130,7 +130,7 @@ describe('SectionBlock', () => {
     await nextTick()
 
     expect(wrapper.emitted('update:modelValue')).toBeTruthy()
-    expect(wrapper.emitted('update:modelValue')[0]).toEqual([true])
+    expect(wrapper.emitted('update:modelValue')![0]).toEqual([true])
   })
 
   it('should sync isCollapsed with modelValue prop changes', async () => {

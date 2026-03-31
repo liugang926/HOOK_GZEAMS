@@ -187,6 +187,10 @@ class FinanceApiCompatTest(APITestCase):
         self.assertEqual(asset_response.status_code, status.HTTP_200_OK)
         self.assertTrue(asset_response.data['success'])
         self.assertEqual(asset_response.data['data']['business_type'], 'purchase')
+        self.assertEqual(asset_response.data['data']['source_object_code'], 'Asset')
+        self.assertEqual(asset_response.data['data']['source_record_no'], self.asset.asset_code)
+        self.assertEqual(asset_response.data['data']['source_asset_count'], 1)
+        self.assertEqual(asset_response.data['data']['source_summary']['asset_count'], 1)
 
         DepreciationRecord.objects.create(
             organization=self.org,
@@ -206,6 +210,8 @@ class FinanceApiCompatTest(APITestCase):
         self.assertEqual(dep_response.status_code, status.HTTP_200_OK)
         self.assertTrue(dep_response.data['success'])
         self.assertEqual(dep_response.data['data']['business_type'], 'depreciation')
+        self.assertEqual(dep_response.data['data']['source_object_code'], 'DepreciationRecord')
+        self.assertEqual(dep_response.data['data']['source_record_no'], '2026-02')
 
     def test_generate_disposal(self):
         response = self.client.post(
@@ -218,6 +224,9 @@ class FinanceApiCompatTest(APITestCase):
         self.assertEqual(response.data['data']['business_type'], 'disposal')
         self.assertEqual(Decimal(str(response.data['data']['total_amount'])), Decimal('1200.00'))
         self.assertEqual(len(response.data['data']['entries']), 2)
+        self.assertEqual(response.data['data']['source_object_code'], 'Asset')
+        self.assertEqual(response.data['data']['source_record_no'], self.asset.asset_code)
+        self.assertEqual(response.data['data']['source_summary']['asset_count'], 1)
 
     def test_generate_endpoints_validation_errors(self):
         asset_missing = self.client.post('/api/system/objects/FinanceVoucher/generate/asset-purchase/', {}, format='json')
@@ -388,6 +397,100 @@ class FinanceApiCompatTest(APITestCase):
         self.assertIn(str(self.voucher.id), returned_ids)
         self.assertIn(str(self.draft_voucher.id), returned_ids)
         self.assertEqual(len(returned_ids), 2)
+
+    def test_object_router_supports_source_asset_filter(self):
+        generated_response = self.client.post(
+            '/api/system/objects/FinanceVoucher/generate/disposal/',
+            {'assetId': str(self.asset.id), 'businessId': 'DSP-SCOPE-1'},
+            format='json'
+        )
+        self.assertEqual(generated_response.status_code, status.HTTP_200_OK)
+        generated_id = generated_response.data['data']['id']
+
+        other_asset = Asset.objects.create(
+            organization=self.org,
+            asset_name='Another Finance Asset',
+            asset_category=self.category,
+            purchase_price=Decimal('900.00'),
+            purchase_date=date.today(),
+            created_by=self.user
+        )
+        FinanceVoucher.objects.create(
+            organization=self.org,
+            voucher_no=f'VCH-SOURCE-{uuid.uuid4().hex[:8]}',
+            voucher_date=date.today(),
+            business_type='purchase',
+            summary='Unrelated voucher',
+            total_amount=Decimal('90.00'),
+            status='draft',
+            custom_fields={
+                'source_object_code': 'Asset',
+                'source_id': str(other_asset.id),
+                'source_record_no': other_asset.asset_code,
+                'asset_ids': [str(other_asset.id)],
+                'asset_id_index': f'|{other_asset.id}|',
+            },
+            created_by=self.user,
+        )
+
+        response = self.client.get(f'/api/system/objects/FinanceVoucher/?source_asset={self.asset.id}')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['success'])
+        results = response.data['data']['results']
+        returned_ids = {item['id'] for item in results}
+        self.assertIn(generated_id, returned_ids)
+        self.assertNotIn(str(self.voucher.id), returned_ids)
+
+    def test_object_router_supports_source_purchase_request_and_receipt_filters(self):
+        purchase_voucher = FinanceVoucher.objects.create(
+            organization=self.org,
+            voucher_no=f'VCH-PR-{uuid.uuid4().hex[:8]}',
+            voucher_date=date.today(),
+            business_type='purchase',
+            summary='Purchase request scoped voucher',
+            total_amount=Decimal('1200.00'),
+            status='draft',
+            custom_fields={
+                'source_object_code': 'PurchaseRequest',
+                'source_id': 'request-primary',
+                'source_record_no': 'PR-PRIMARY',
+                'source_purchase_request_id': 'request-1',
+                'source_purchase_request_no': 'PR-001',
+                'source_receipt_id': 'receipt-1',
+                'source_receipt_no': 'RC-001',
+            },
+            created_by=self.user,
+        )
+        FinanceVoucher.objects.create(
+            organization=self.org,
+            voucher_no=f'VCH-OTHER-{uuid.uuid4().hex[:8]}',
+            voucher_date=date.today(),
+            business_type='purchase',
+            summary='Other source voucher',
+            total_amount=Decimal('800.00'),
+            status='draft',
+            custom_fields={
+                'source_object_code': 'PurchaseRequest',
+                'source_id': 'request-other',
+                'source_record_no': 'PR-OTHER',
+                'source_purchase_request_id': 'request-2',
+                'source_purchase_request_no': 'PR-002',
+                'source_receipt_id': 'receipt-2',
+                'source_receipt_no': 'RC-002',
+            },
+            created_by=self.user,
+        )
+
+        by_request = self.client.get('/api/system/objects/FinanceVoucher/?source_purchase_request=request-1')
+        by_receipt = self.client.get('/api/system/objects/FinanceVoucher/?source_receipt=receipt-1')
+
+        self.assertEqual(by_request.status_code, status.HTTP_200_OK)
+        self.assertEqual(by_receipt.status_code, status.HTTP_200_OK)
+        request_ids = {item['id'] for item in by_request.data['data']['results']}
+        receipt_ids = {item['id'] for item in by_receipt.data['data']['results']}
+        self.assertIn(str(purchase_voucher.id), request_ids)
+        self.assertIn(str(purchase_voucher.id), receipt_ids)
 
     def test_detail_action_uses_current_request_org_scope(self):
         first_response = self.client.post(

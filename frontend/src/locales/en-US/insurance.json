@@ -1,0 +1,38 @@
+{
+    "insurance": {
+        "workbench": {
+            "actions": {
+                "activatePolicy": "Activate Policy",
+                "cancelPolicy": "Cancel Policy",
+                "approveClaim": "Approve Claim",
+                "rejectClaim": "Reject Claim",
+                "recordSettlement": "Record Settlement",
+                "closeClaim": "Close Claim"
+            },
+            "summary": {
+                "insuredAssetCount": "Insured Assets",
+                "claimCount": "Claims",
+                "pendingPremiumCount": "Pending Premiums",
+                "daysUntilExpiry": "Days Until Expiry",
+                "claimedAmount": "Claimed Amount",
+                "approvedAmount": "Approved Amount",
+                "paidAmount": "Paid Amount",
+                "payoutRatio": "Payout Ratio"
+            },
+            "queues": {
+                "insuredAssets": "Insured Assets",
+                "claims": "Claims",
+                "pendingPremiums": "Pending Premiums",
+                "settlementQueue": "Settlement Queue",
+                "closureQueue": "Closure Queue"
+            },
+            "messages": {
+                "activatePolicyHint": "Activate the policy to generate premium schedules and start the coverage lifecycle.",
+                "cancelPolicyHint": "Cancel the policy when coverage should not continue, and keep downstream records aligned.",
+                "approveClaimHint": "Approve the claim once investigation is complete so settlement can proceed.",
+                "recordSettlementHint": "Record the claim settlement payment to move the case toward closure.",
+                "closeClaimHint": "Close the claim after payout or rejection is fully confirmed."
+            }
+        }
+    }
+}

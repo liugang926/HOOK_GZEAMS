@@ -34,6 +34,7 @@ const mountRelatedObjectTable = async () => {
         code: 'maintenance_records',
         name: 'Maintenance Records',
         label: 'Maintenance Records',
+        fieldType: 'reverse_fk',
         reverseRelationModel: 'apps.lifecycle.models.Maintenance',
         reverseRelationField: 'asset'
       },

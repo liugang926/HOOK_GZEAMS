@@ -8,6 +8,7 @@ from .asset_service import (
     AssetStatusLogService,
     AssetService,
 )
+from .lifecycle_coordinator import AssetLifecycleCoordinatorService
 from .operation_service import (
     AssetPickupService,
     AssetTransferService,
@@ -22,6 +23,7 @@ __all__ = [
     'LocationService',
     'AssetStatusLogService',
     'AssetService',
+    'AssetLifecycleCoordinatorService',
     'AssetPickupService',
     'AssetTransferService',
     'AssetReturnService',

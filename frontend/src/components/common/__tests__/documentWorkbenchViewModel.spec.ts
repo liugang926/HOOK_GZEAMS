@@ -226,6 +226,7 @@ describe('documentWorkbenchViewModel', () => {
             taskName: 'Dept Approval',
             comment: 'Looks good',
             createdAt: '2026-03-19T08:30:00Z',
+            source: 'workflowApproval',
           },
         ],
       },

@@ -22,6 +22,112 @@ MenuConfig = Dict[str, Any]
 MenuManagementSettings = Dict[str, Any]
 
 
+ASSET_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/Asset",
+    "toolbar": {
+        "primary_actions": [],
+        "secondary_actions": [],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "asset_source_request",
+            "label_key": "assets.workbench.summary.sourcePurchaseRequest",
+            "value_field": "source_purchase_request_no",
+        },
+        {
+            "code": "asset_source_receipt",
+            "label_key": "assets.workbench.summary.sourceReceipt",
+            "value_field": "source_receipt_no",
+        },
+        {
+            "code": "asset_active_project_allocations",
+            "label_key": "assets.workbench.summary.activeProjectAllocations",
+            "value_field": "closure_summary.metrics.active_project_allocation_count",
+            "tone": "warning",
+        },
+        {
+            "code": "asset_pending_inventory_differences",
+            "label_key": "assets.workbench.summary.pendingInventoryDifferences",
+            "value_field": "closure_summary.metrics.pending_inventory_difference_count",
+            "tone": "warning",
+        },
+        {
+            "code": "asset_open_maintenance",
+            "label_key": "assets.workbench.summary.openMaintenance",
+            "value_field": "closure_summary.metrics.open_maintenance_count",
+        },
+        {
+            "code": "asset_open_disposals",
+            "label_key": "assets.workbench.summary.openDisposals",
+            "value_field": "closure_summary.metrics.open_disposal_count",
+        },
+        {
+            "code": "asset_linked_finance_vouchers",
+            "label_key": "assets.workbench.summary.linkedFinanceVouchers",
+            "value_field": "closure_summary.metrics.linked_finance_voucher_count",
+        },
+        {
+            "code": "asset_open_finance_vouchers",
+            "label_key": "assets.workbench.summary.openFinanceVouchers",
+            "value_field": "closure_summary.metrics.open_finance_voucher_count",
+            "tone": "warning",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "asset_project_allocations",
+            "title_key": "assets.workbench.queues.projectAllocations",
+            "count_field": "closure_summary.metrics.active_project_allocation_count",
+            "route": "/objects/ProjectAsset?asset={id}&return_status=in_use",
+        },
+        {
+            "code": "asset_inventory_differences",
+            "title_key": "assets.workbench.queues.inventoryDifferences",
+            "count_field": "closure_summary.metrics.pending_inventory_difference_count",
+            "route": "/objects/InventoryItem?asset={id}&unresolved_only=true",
+        },
+        {
+            "code": "asset_maintenance_records",
+            "title_key": "assets.workbench.queues.maintenanceRecords",
+            "count_field": "closure_summary.metrics.open_maintenance_count",
+            "route": "/objects/Maintenance?asset_id={id}",
+        },
+        {
+            "code": "asset_disposal_requests",
+            "title_key": "assets.workbench.queues.disposalRequests",
+            "count_field": "closure_summary.metrics.open_disposal_count",
+            "route": "/objects/DisposalRequest?asset_id={id}",
+        },
+        {
+            "code": "asset_finance_vouchers",
+            "title_key": "assets.workbench.queues.financeVouchers",
+            "count_field": "closure_summary.metrics.linked_finance_voucher_count",
+            "route": "/objects/FinanceVoucher?source_asset={id}",
+        },
+    ],
+    "exception_panels": [
+        {
+            "code": "asset_inventory_follow_up_tasks",
+            "title_key": "assets.workbench.queues.inventoryFollowUps",
+            "count_field": "closure_summary.metrics.pending_inventory_follow_up_count",
+            "route": "/objects/InventoryItem?asset={id}&manual_follow_up_only=true&unresolved_only=true",
+            "tone": "danger",
+        }
+    ],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [],
+}
+
 ASSET_PROJECT_WORKBENCH: Dict[str, Any] = {
     "workspace_mode": "extended",
     "primary_entry_route": "/objects/AssetProject",
@@ -75,6 +181,238 @@ ASSET_PROJECT_WORKBENCH: Dict[str, Any] = {
         },
     ],
     "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "project_asset_count",
+            "label_key": "projects.workbench.summary.assetCount",
+            "value_field": "asset_count",
+        },
+        {
+            "code": "project_active_asset_count",
+            "label_key": "projects.workbench.summary.activeAssetCount",
+            "value_field": "active_asset_count",
+            "tone": "warning",
+        },
+        {
+            "code": "project_member_count",
+            "label_key": "projects.workbench.summary.memberCount",
+            "value_field": "member_count",
+        },
+        {
+            "code": "project_progress",
+            "label_key": "projects.workbench.summary.progress",
+            "value_field": "progress",
+            "suffix": "%",
+            "tone": "success",
+        },
+        {
+            "code": "project_pending_returns",
+            "label_key": "projects.workbench.summary.pendingReturnCount",
+            "value_field": "closure_summary.metrics.pending_return_count",
+            "tone": "warning",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "project_active_allocations",
+            "title_key": "projects.workbench.queues.activeAllocations",
+            "count_field": "closure_summary.metrics.active_assets",
+            "route": "/objects/ProjectAsset?project={id}&return_status=in_use",
+        },
+        {
+            "code": "project_pending_returns",
+            "title_key": "projects.workbench.queues.pendingReturns",
+            "count_field": "closure_summary.metrics.pending_return_count",
+            "route": "/objects/AssetReturn?project={id}&status=pending",
+        },
+        {
+            "code": "project_members",
+            "title_key": "projects.workbench.queues.members",
+            "count_field": "closure_summary.metrics.member_count",
+            "route": "/objects/ProjectMember?project={id}&is_active=true",
+        },
+    ],
+    "exception_panels": [],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [
+        {
+            "code": "project_close_recommended",
+            "label_key": "projects.actions.closeProject",
+            "description_key": "projects.workbench.messages.closeProjectHint",
+            "action_path": "close",
+            "button_type": "warning",
+            "visible_when": {
+                "status_in": ["active", "suspended"],
+            },
+        }
+    ],
+}
+
+PURCHASE_REQUEST_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/PurchaseRequest",
+    "toolbar": {
+        "primary_actions": [],
+        "secondary_actions": [],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "purchase_request_total_amount",
+            "label_key": "assets.lifecycle.purchaseRequest.workbench.summary.totalAmount",
+            "value_field": "total_amount",
+        },
+        {
+            "code": "purchase_request_linked_receipts",
+            "label_key": "assets.lifecycle.purchaseRequest.workbench.summary.linkedReceiptCount",
+            "value_field": "closure_summary.metrics.linked_receipt_count",
+        },
+        {
+            "code": "purchase_request_generated_assets",
+            "label_key": "assets.lifecycle.purchaseRequest.workbench.summary.generatedAssetCount",
+            "value_field": "closure_summary.metrics.generated_asset_count",
+        },
+        {
+            "code": "purchase_request_pending_generation",
+            "label_key": "assets.lifecycle.purchaseRequest.workbench.summary.pendingGenerationCount",
+            "value_field": "closure_summary.metrics.pending_generation_count",
+            "tone": "warning",
+        },
+        {
+            "code": "purchase_request_linked_finance_vouchers",
+            "label_key": "assets.lifecycle.purchaseRequest.workbench.summary.linkedFinanceVoucherCount",
+            "value_field": "closure_summary.metrics.linked_finance_voucher_count",
+        },
+        {
+            "code": "purchase_request_open_finance_vouchers",
+            "label_key": "assets.lifecycle.purchaseRequest.workbench.summary.openFinanceVoucherCount",
+            "value_field": "closure_summary.metrics.open_finance_voucher_count",
+            "tone": "warning",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "purchase_request_receipts",
+            "title_key": "assets.lifecycle.purchaseRequest.workbench.queues.receipts",
+            "count_field": "closure_summary.metrics.linked_receipt_count",
+            "route": "/objects/AssetReceipt?purchase_request_id={id}",
+        },
+        {
+            "code": "purchase_request_assets",
+            "title_key": "assets.lifecycle.purchaseRequest.workbench.queues.generatedAssets",
+            "count_field": "closure_summary.metrics.generated_asset_count",
+            "route": "/objects/Asset?source_purchase_request={id}",
+        },
+        {
+            "code": "purchase_request_finance_vouchers",
+            "title_key": "assets.lifecycle.purchaseRequest.workbench.queues.financeVouchers",
+            "count_field": "closure_summary.metrics.linked_finance_voucher_count",
+            "route": "/objects/FinanceVoucher?source_purchase_request={id}",
+        },
+    ],
+    "exception_panels": [
+        {
+            "code": "purchase_request_pending_generation",
+            "title_key": "assets.lifecycle.purchaseRequest.workbench.queues.pendingGeneration",
+            "count_field": "closure_summary.metrics.pending_generation_count",
+            "route": "/objects/AssetReceipt?purchase_request_id={id}&status=passed",
+            "tone": "warning",
+        }
+    ],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [],
+}
+
+ASSET_RECEIPT_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/AssetReceipt",
+    "toolbar": {
+        "primary_actions": [],
+        "secondary_actions": [],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "asset_receipt_source_request",
+            "label_key": "assets.lifecycle.assetReceipt.workbench.summary.sourcePurchaseRequest",
+            "value_field": "closure_summary.metrics.source_purchase_request_no",
+        },
+        {
+            "code": "asset_receipt_total_amount",
+            "label_key": "assets.lifecycle.assetReceipt.workbench.summary.totalAmount",
+            "value_field": "total_amount",
+        },
+        {
+            "code": "asset_receipt_generated_assets",
+            "label_key": "assets.lifecycle.assetReceipt.workbench.summary.generatedAssetCount",
+            "value_field": "closure_summary.metrics.generated_asset_count",
+        },
+        {
+            "code": "asset_receipt_pending_generation",
+            "label_key": "assets.lifecycle.assetReceipt.workbench.summary.pendingGenerationCount",
+            "value_field": "closure_summary.metrics.pending_generation_count",
+            "tone": "warning",
+        },
+        {
+            "code": "asset_receipt_linked_finance_vouchers",
+            "label_key": "assets.lifecycle.assetReceipt.workbench.summary.linkedFinanceVoucherCount",
+            "value_field": "closure_summary.metrics.linked_finance_voucher_count",
+        },
+        {
+            "code": "asset_receipt_open_finance_vouchers",
+            "label_key": "assets.lifecycle.assetReceipt.workbench.summary.openFinanceVoucherCount",
+            "value_field": "closure_summary.metrics.open_finance_voucher_count",
+            "tone": "warning",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "asset_receipt_generated_assets",
+            "title_key": "assets.lifecycle.assetReceipt.workbench.queues.generatedAssets",
+            "count_field": "closure_summary.metrics.generated_asset_count",
+            "route": "/objects/Asset?source_receipt={id}",
+        },
+        {
+            "code": "asset_receipt_finance_vouchers",
+            "title_key": "assets.lifecycle.assetReceipt.workbench.queues.financeVouchers",
+            "count_field": "closure_summary.metrics.linked_finance_voucher_count",
+            "route": "/objects/FinanceVoucher?source_receipt={id}",
+        },
+    ],
+    "exception_panels": [
+        {
+            "code": "asset_receipt_pending_generation",
+            "title_key": "assets.lifecycle.assetReceipt.workbench.queues.pendingGeneration",
+            "count_field": "closure_summary.metrics.pending_generation_count",
+            "route": "/objects/AssetReceiptItem?asset_receipt_id={id}&asset_generated=false",
+            "tone": "warning",
+        }
+    ],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [],
 }
 
 FINANCE_VOUCHER_WORKBENCH: Dict[str, Any] = {
@@ -159,6 +497,16 @@ FINANCE_VOUCHER_WORKBENCH: Dict[str, Any] = {
             "value_field": "is_balanced",
             "tone": "success",
         },
+        {
+            "code": "voucher_source_object",
+            "label_key": "finance.workbench.summary.sourceObject",
+            "value_field": "source_object_label",
+        },
+        {
+            "code": "voucher_source_document",
+            "label_key": "finance.workbench.summary.sourceDocument",
+            "value_field": "source_record_no",
+        },
     ],
     "queue_panels": [
         {
@@ -184,7 +532,7 @@ FINANCE_VOUCHER_WORKBENCH: Dict[str, Any] = {
         {
             "code": "voucher_integration_attention",
             "title_key": "finance.workbench.queues.integrationAttention",
-            "count": 1,
+            "count_field": "closure_summary.metrics.failed_sync_count",
             "route": "/objects/FinanceVoucher?status=approved",
             "visible_when": {
                 "status_in": ["approved", "rejected"],
@@ -194,10 +542,10 @@ FINANCE_VOUCHER_WORKBENCH: Dict[str, Any] = {
     ],
     "closure_panel": {
         "title_key": "common.workbench.titles.closure",
-        "stage_field": "status",
-        "owner_field": "posted_by_name",
-        "blocker_field": "notes",
-        "progress_field": "erp_voucher_no",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
     },
     "sla_indicators": [],
     "recommended_actions": [
@@ -224,11 +572,410 @@ FINANCE_VOUCHER_WORKBENCH: Dict[str, Any] = {
     ],
 }
 
+INSURANCE_POLICY_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/InsurancePolicy",
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "activate_policy",
+                "label_key": "insurance.workbench.actions.activatePolicy",
+                "action_path": "activate",
+                "button_type": "primary",
+                "visible_when": {
+                    "status_in": ["draft"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "cancel_policy",
+                "label_key": "insurance.workbench.actions.cancelPolicy",
+                "action_path": "cancel",
+                "button_type": "warning",
+                "visible_when": {
+                    "status_in": ["draft", "active"],
+                },
+            },
+        ],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "insurance_policy_assets",
+            "label_key": "insurance.workbench.summary.insuredAssetCount",
+            "value_field": "total_insured_assets",
+            "tone": "info",
+        },
+        {
+            "code": "insurance_policy_claims",
+            "label_key": "insurance.workbench.summary.claimCount",
+            "value_field": "total_claims",
+        },
+        {
+            "code": "insurance_policy_pending_premiums",
+            "label_key": "insurance.workbench.summary.pendingPremiumCount",
+            "value_field": "closure_summary.metrics.pending_payment_count",
+            "tone": "warning",
+        },
+        {
+            "code": "insurance_policy_days_to_expiry",
+            "label_key": "insurance.workbench.summary.daysUntilExpiry",
+            "value_field": "days_until_expiry",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "insurance_policy_asset_queue",
+            "title_key": "insurance.workbench.queues.insuredAssets",
+            "count_field": "total_insured_assets",
+            "route": "/objects/InsuredAsset?policy={id}",
+        },
+        {
+            "code": "insurance_policy_claim_queue",
+            "title_key": "insurance.workbench.queues.claims",
+            "count_field": "total_claims",
+            "route": "/objects/ClaimRecord?policy={id}",
+        },
+    ],
+    "exception_panels": [
+        {
+            "code": "insurance_policy_pending_premium_attention",
+            "title_key": "insurance.workbench.queues.pendingPremiums",
+            "count_field": "closure_summary.metrics.pending_payment_count",
+            "route": "/objects/PremiumPayment?policy={id}",
+            "tone": "warning",
+        },
+    ],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [
+        {
+            "code": "insurance_policy_activate_recommended",
+            "label_key": "insurance.workbench.actions.activatePolicy",
+            "description_key": "insurance.workbench.messages.activatePolicyHint",
+            "action_path": "activate",
+            "button_type": "primary",
+            "visible_when": {
+                "status_in": ["draft"],
+            },
+        },
+        {
+            "code": "insurance_policy_cancel_recommended",
+            "label_key": "insurance.workbench.actions.cancelPolicy",
+            "description_key": "insurance.workbench.messages.cancelPolicyHint",
+            "action_path": "cancel",
+            "button_type": "warning",
+            "visible_when": {
+                "status_in": ["draft", "active"],
+            },
+        },
+    ],
+}
+
+CLAIM_RECORD_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/ClaimRecord",
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "approve_claim",
+                "label_key": "insurance.workbench.actions.approveClaim",
+                "action_path": "approve",
+                "button_type": "primary",
+                "visible_when": {
+                    "status_in": ["reported", "investigating"],
+                },
+            },
+            {
+                "code": "record_claim_payment",
+                "label_key": "insurance.workbench.actions.recordSettlement",
+                "action_path": "record-payment",
+                "button_type": "success",
+                "visible_when": {
+                    "status_in": ["approved"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "reject_claim",
+                "label_key": "insurance.workbench.actions.rejectClaim",
+                "action_path": "reject",
+                "button_type": "warning",
+                "visible_when": {
+                    "status_in": ["reported", "investigating", "approved"],
+                },
+            },
+            {
+                "code": "close_claim",
+                "label_key": "insurance.workbench.actions.closeClaim",
+                "action_path": "close",
+                "button_type": "default",
+                "visible_when": {
+                    "status_in": ["paid", "rejected"],
+                },
+            },
+        ],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "claim_record_claimed_amount",
+            "label_key": "insurance.workbench.summary.claimedAmount",
+            "value_field": "claimed_amount",
+            "tone": "warning",
+        },
+        {
+            "code": "claim_record_approved_amount",
+            "label_key": "insurance.workbench.summary.approvedAmount",
+            "value_field": "approved_amount",
+        },
+        {
+            "code": "claim_record_paid_amount",
+            "label_key": "insurance.workbench.summary.paidAmount",
+            "value_field": "paid_amount",
+            "tone": "success",
+        },
+        {
+            "code": "claim_record_payout_ratio",
+            "label_key": "insurance.workbench.summary.payoutRatio",
+            "value_field": "payout_ratio",
+            "suffix": "%",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "claim_record_settlement_queue",
+            "title_key": "insurance.workbench.queues.settlementQueue",
+            "count": 1,
+            "route": "/objects/ClaimRecord?status=approved",
+            "visible_when": {
+                "status_in": ["approved"],
+            },
+        },
+        {
+            "code": "claim_record_closure_queue",
+            "title_key": "insurance.workbench.queues.closureQueue",
+            "count": 1,
+            "route": "/objects/ClaimRecord?status=paid",
+            "visible_when": {
+                "status_in": ["paid", "rejected"],
+            },
+        },
+    ],
+    "exception_panels": [],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [
+        {
+            "code": "claim_record_approve_recommended",
+            "label_key": "insurance.workbench.actions.approveClaim",
+            "description_key": "insurance.workbench.messages.approveClaimHint",
+            "action_path": "approve",
+            "button_type": "primary",
+            "visible_when": {
+                "status_in": ["reported", "investigating"],
+            },
+        },
+        {
+            "code": "claim_record_settlement_recommended",
+            "label_key": "insurance.workbench.actions.recordSettlement",
+            "description_key": "insurance.workbench.messages.recordSettlementHint",
+            "action_path": "record-payment",
+            "button_type": "success",
+            "visible_when": {
+                "status_in": ["approved"],
+            },
+        },
+        {
+            "code": "claim_record_close_recommended",
+            "label_key": "insurance.workbench.actions.closeClaim",
+            "description_key": "insurance.workbench.messages.closeClaimHint",
+            "action_path": "close",
+            "button_type": "default",
+            "visible_when": {
+                "status_in": ["paid", "rejected"],
+            },
+        },
+    ],
+}
+
+LEASING_CONTRACT_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/LeasingContract",
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "activate_contract",
+                "label_key": "leasing.workbench.actions.activateContract",
+                "action_path": "activate",
+                "button_type": "primary",
+                "visible_when": {
+                    "status_in": ["draft"],
+                },
+            },
+            {
+                "code": "complete_contract",
+                "label_key": "leasing.workbench.actions.completeContract",
+                "action_path": "complete",
+                "button_type": "success",
+                "visible_when": {
+                    "status_in": ["active", "suspended"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "suspend_contract",
+                "label_key": "leasing.workbench.actions.suspendContract",
+                "action_path": "suspend",
+                "button_type": "warning",
+                "visible_when": {
+                    "status_in": ["active"],
+                },
+            },
+            {
+                "code": "reactivate_contract",
+                "label_key": "leasing.workbench.actions.reactivateContract",
+                "action_path": "reactivate",
+                "button_type": "primary",
+                "visible_when": {
+                    "status_in": ["suspended"],
+                },
+            },
+            {
+                "code": "terminate_contract",
+                "label_key": "leasing.workbench.actions.terminateContract",
+                "action_path": "terminate",
+                "button_type": "danger",
+                "visible_when": {
+                    "status_in": ["active", "suspended"],
+                },
+            },
+        ],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "leasing_contract_asset_count",
+            "label_key": "leasing.workbench.summary.assetCount",
+            "value_field": "closure_summary.metrics.leased_asset_count",
+            "tone": "info",
+        },
+        {
+            "code": "leasing_contract_returned_asset_count",
+            "label_key": "leasing.workbench.summary.returnedAssetCount",
+            "value_field": "closure_summary.metrics.returned_asset_count",
+            "tone": "success",
+        },
+        {
+            "code": "leasing_contract_pending_returns",
+            "label_key": "leasing.workbench.summary.pendingReturnCount",
+            "value_field": "closure_summary.metrics.pending_return_count",
+            "tone": "warning",
+        },
+        {
+            "code": "leasing_contract_unpaid_amount",
+            "label_key": "leasing.workbench.summary.unpaidAmount",
+            "value_field": "closure_summary.metrics.unpaid_amount",
+            "tone": "danger",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "leasing_contract_pending_return_queue",
+            "title_key": "leasing.workbench.queues.pendingReturns",
+            "count_field": "closure_summary.metrics.pending_return_count",
+            "route": "/objects/LeaseItem?contract={id}",
+        },
+        {
+            "code": "leasing_contract_open_payment_queue",
+            "title_key": "leasing.workbench.queues.openPayments",
+            "count_field": "closure_summary.metrics.open_payment_count",
+            "route": "/objects/RentPayment?contract={id}",
+        },
+    ],
+    "exception_panels": [
+        {
+            "code": "leasing_contract_damage_attention",
+            "title_key": "leasing.workbench.queues.unsettledDamage",
+            "count_field": "closure_summary.metrics.unsettled_damage_count",
+            "route": "/objects/LeaseReturn?contract={id}",
+            "tone": "warning",
+        },
+    ],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [
+        {
+            "code": "leasing_contract_activate_recommended",
+            "label_key": "leasing.workbench.actions.activateContract",
+            "description_key": "leasing.workbench.messages.activateContractHint",
+            "action_path": "activate",
+            "button_type": "primary",
+            "visible_when": {
+                "status_in": ["draft"],
+            },
+        },
+        {
+            "code": "leasing_contract_complete_recommended",
+            "label_key": "leasing.workbench.actions.completeContract",
+            "description_key": "leasing.workbench.messages.completeContractHint",
+            "action_path": "complete",
+            "button_type": "success",
+            "visible_when": {
+                "status_in": ["active", "suspended"],
+            },
+        },
+        {
+            "code": "leasing_contract_reactivate_recommended",
+            "label_key": "leasing.workbench.actions.reactivateContract",
+            "description_key": "leasing.workbench.messages.reactivateContractHint",
+            "action_path": "reactivate",
+            "button_type": "primary",
+            "visible_when": {
+                "status_in": ["suspended"],
+            },
+        },
+    ],
+}
+
 INVENTORY_TASK_WORKBENCH: Dict[str, Any] = {
     "workspace_mode": "extended",
     "primary_entry_route": "/objects/InventoryTask",
     "toolbar": {
         "primary_actions": [
+            {
+                "code": "submit_inventory_task_workflow",
+                "label_key": "inventory.workbench.actions.submitTask",
+                "action_path": "submit-workflow",
+                "button_type": "primary",
+                "visible_when": {
+                    "status_in": ["draft"],
+                },
+            },
             {
                 "code": "start_inventory_task",
                 "label_key": "inventory.workbench.actions.startTask",
@@ -264,12 +1011,18 @@ INVENTORY_TASK_WORKBENCH: Dict[str, Any] = {
                 "action_path": "cancel",
                 "button_type": "warning",
                 "visible_when": {
-                    "status_in": ["draft", "pending", "in_progress"],
+                    "status_in": ["draft", "pending_approval", "pending", "in_progress"],
                 },
             },
         ],
     },
-    "detail_panels": [],
+    "detail_panels": [
+        {
+            "code": "inventory_task_executor_progress_panel",
+            "component": "inventory-task-executor-progress",
+            "title_key": "inventory.workbench.panels.executorProgress",
+        },
+    ],
     "async_indicators": [],
     "summary_cards": [
         {
@@ -411,13 +1164,28 @@ INVENTORY_TASK_WORKBENCH: Dict[str, Any] = {
     ],
     "closure_panel": {
         "title_key": "common.workbench.titles.closure",
-        "stage_field": "difference_summary.closure_stage_label",
-        "owner_field": "created_by.username",
-        "blocker_field": "difference_summary.closure_blocker",
-        "progress_field": "difference_summary.closure_progress",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
     },
-    "sla_indicators": [],
+    "sla_indicators": [
+        {
+            "code": "inventory_task_workflow_sla",
+            "label_key": "inventory.workbench.sla.workflow",
+        },
+    ],
     "recommended_actions": [
+        {
+            "code": "inventory_submit_task_recommended",
+            "label_key": "inventory.workbench.actions.submitTask",
+            "description_key": "inventory.workbench.messages.submitTaskHint",
+            "action_path": "submit-workflow",
+            "button_type": "primary",
+            "visible_when": {
+                "status_in": ["draft"],
+            },
+        },
         {
             "code": "inventory_refresh_stats_recommended",
             "label_key": "inventory.workbench.actions.refreshStats",
@@ -752,7 +1520,13 @@ OBJECT_ROUTE_KEY_MAP: Dict[str, str] = {
 
 
 DEFAULT_OBJECT_MENU_RULES: Dict[str, Dict[str, Any]] = {
-    "Asset": {"group_code": "asset_master", "item_order": 10, "icon": "Document"},
+    "Asset": {
+        "group_code": "asset_master",
+        "item_order": 10,
+        "icon": "Document",
+        "url": "/objects/Asset",
+        "workbench": ASSET_WORKBENCH,
+    },
     "TagGroup": {"group_code": "asset_master", "item_order": 15, "icon": "Collection"},
     "AssetTag": {"group_code": "asset_master", "item_order": 18, "icon": "PriceTag"},
     "AssetCategory": {"group_code": "asset_master", "item_order": 20, "icon": "Folder"},
@@ -765,8 +1539,20 @@ DEFAULT_OBJECT_MENU_RULES: Dict[str, Dict[str, Any]] = {
     "AssetTransfer": {"group_code": "asset_operation", "item_order": 20, "icon": "Switch"},
     "AssetReturn": {"group_code": "asset_operation", "item_order": 30, "icon": "Download"},
     "AssetLoan": {"group_code": "asset_operation", "item_order": 40, "icon": "Connection"},
-    "PurchaseRequest": {"group_code": "lifecycle", "item_order": 10, "icon": "ShoppingCart"},
-    "AssetReceipt": {"group_code": "lifecycle", "item_order": 20, "icon": "Box"},
+    "PurchaseRequest": {
+        "group_code": "lifecycle",
+        "item_order": 10,
+        "icon": "ShoppingCart",
+        "url": "/objects/PurchaseRequest",
+        "workbench": PURCHASE_REQUEST_WORKBENCH,
+    },
+    "AssetReceipt": {
+        "group_code": "lifecycle",
+        "item_order": 20,
+        "icon": "Box",
+        "url": "/objects/AssetReceipt",
+        "workbench": ASSET_RECEIPT_WORKBENCH,
+    },
     "Maintenance": {"group_code": "lifecycle", "item_order": 30, "icon": "Tools"},
     "MaintenancePlan": {"group_code": "lifecycle", "item_order": 40, "icon": "Calendar"},
     "MaintenanceTask": {"group_code": "lifecycle", "item_order": 50, "icon": "List"},
@@ -851,11 +1637,29 @@ DEFAULT_OBJECT_MENU_RULES: Dict[str, Dict[str, Any]] = {
     "DepreciationRun": {"group_code": "finance", "item_order": 40, "icon": "VideoPlay"},
     "DepreciationRecord": {"group_code": "finance", "item_order": 50, "icon": "Histogram"},
     "InsuranceCompany": {"group_code": "finance", "item_order": 60, "icon": "OfficeBuilding"},
-    "InsurancePolicy": {"group_code": "finance", "item_order": 70, "icon": "Shield"},
+    "InsurancePolicy": {
+        "group_code": "finance",
+        "item_order": 70,
+        "icon": "Shield",
+        "url": "/objects/InsurancePolicy",
+        "workbench": INSURANCE_POLICY_WORKBENCH,
+    },
     "PremiumPayment": {"group_code": "finance", "item_order": 80, "icon": "Wallet"},
-    "ClaimRecord": {"group_code": "finance", "item_order": 90, "icon": "Warning"},
+    "ClaimRecord": {
+        "group_code": "finance",
+        "item_order": 90,
+        "icon": "Warning",
+        "url": "/objects/ClaimRecord",
+        "workbench": CLAIM_RECORD_WORKBENCH,
+    },
     "PolicyRenewal": {"group_code": "finance", "item_order": 100, "icon": "Refresh"},
-    "LeasingContract": {"group_code": "finance", "item_order": 110, "icon": "Files"},
+    "LeasingContract": {
+        "group_code": "finance",
+        "item_order": 110,
+        "icon": "Files",
+        "url": "/objects/LeasingContract",
+        "workbench": LEASING_CONTRACT_WORKBENCH,
+    },
     "LeaseItem": {"group_code": "finance", "item_order": 120, "icon": "List"},
     "LeaseExtension": {"group_code": "finance", "item_order": 130, "icon": "Clock"},
     "LeaseReturn": {"group_code": "finance", "item_order": 140, "icon": "Back"},

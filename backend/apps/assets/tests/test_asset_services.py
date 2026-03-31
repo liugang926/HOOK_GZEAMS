@@ -20,6 +20,7 @@ from apps.assets.models import (
 )
 from apps.assets.services import (
     AssetService,
+    AssetLifecycleCoordinatorService,
     SupplierService,
     LocationService,
     AssetStatusLogService
@@ -148,6 +149,52 @@ class AssetServiceTest(TestCase):
             )
 
         self.assertIn('already in', str(context.exception))
+
+    def test_lifecycle_coordinator_updates_context_and_logs_status(self):
+        """Test lifecycle coordinator applies context updates and emits a status log."""
+        department = Department.objects.create(
+            organization=self.org,
+            code='OPS',
+            name='Operations',
+        )
+        location = Location.objects.create(
+            organization=self.org,
+            name='Storage A',
+            location_type='warehouse',
+        )
+        asset = Asset.objects.create(
+            organization=self.org,
+            asset_name='Tracked Laptop',
+            asset_category=self.category,
+            purchase_price=Decimal('1000.00'),
+            purchase_date='2024-01-01',
+            asset_status='idle',
+            created_by=self.user
+        )
+
+        coordinator = AssetLifecycleCoordinatorService()
+        coordinator.apply_state_change(
+            asset,
+            actor=self.user,
+            reason='Issued to operation team',
+            new_status='in_use',
+            custodian=self.user,
+            assigned_user=self.user,
+            department=department,
+            location=location,
+        )
+
+        asset.refresh_from_db()
+        self.assertEqual(asset.asset_status, 'in_use')
+        self.assertEqual(asset.custodian, self.user)
+        self.assertEqual(asset.user, self.user)
+        self.assertEqual(asset.department, department)
+        self.assertEqual(asset.location, location)
+
+        log = AssetStatusLog.objects.filter(asset=asset).latest('created_at')
+        self.assertEqual(log.old_status, 'idle')
+        self.assertEqual(log.new_status, 'in_use')
+        self.assertEqual(log.reason, 'Issued to operation team')
 
     def test_get_asset_statistics(self):
         """Test getting asset statistics."""

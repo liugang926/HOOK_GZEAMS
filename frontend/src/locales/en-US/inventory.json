@@ -18,6 +18,7 @@
             "progress": "Progress"
         },
         "status": {
+            "pending_approval": "Pending Approval",
             "pending": "Pending",
             "in_progress": "In Progress",
             "completed": "Completed",
@@ -390,6 +391,7 @@
                 "saveDraft": "Save Draft",
                 "sendFollowUp": "Send Follow-up",
                 "startTask": "Start Task",
+                "submitTask": "Submit for Approval",
                 "submitReview": "Submit Review"
             },
             "closureTypes": {
@@ -441,7 +443,8 @@
                 "title": "Linked Action Result"
             },
             "panels": {
-                "differenceClosure": "Difference Closure Workbench"
+                "differenceClosure": "Difference Closure Workbench",
+                "executorProgress": "Executor Progress"
             },
             "placeholders": {
                 "closureNotes": "Add closure details, approval notes, or asset sync comments",
@@ -490,13 +493,17 @@
                 "completeTaskHint": "Complete the current inventory round and lock the final difference set for follow-up handling.",
                 "confirmDifferenceConfirm": "Confirm this difference and move it into the closure workflow?",
                 "differenceClosureHint": "Complete the handling notes, closure type, and evidence in the detail page before moving through review, approval, execution, and closure.",
+                "executorProgressHint": "Track executor workload and scanning progress directly in the task workbench.",
                 "executeResolutionHint": "Before execution, make sure the review outcome, closure type, and any required asset sync conditions are ready.",
                 "pendingConfirmHint": "This difference is not confirmed yet. Use the top-level action first to move it into the formal closure flow.",
                 "refreshStatsHint": "Recalculate the latest scan, difference, and completion statistics before making the next decision.",
                 "savedDraftHint": "The current handling draft is saved. You can continue refining it or move to the next action.",
-                "submitReviewHint": "Complete the handling notes, closure type, and evidence before submitting the difference for review."
-                ,
+                "submitTaskHint": "Submit the inventory task into the approval workflow so SLA tracking and execution readiness can start.",
+                "submitReviewHint": "Complete the handling notes, closure type, and evidence before submitting the difference for review.",
                 "unsavedDraftHint": "The form has unsaved changes. Save the draft before moving the workflow forward."
+            },
+            "sla": {
+                "workflow": "Workflow SLA"
             }
         },
         "assignment": {

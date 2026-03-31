@@ -37,6 +37,21 @@ class LeaseContractViewSet(BaseModelViewSetWithBatch):
             created_by=self.request.user
         )
 
+    def _get_completion_blockers(self, contract):
+        """Return unresolved closure blockers for a contract."""
+        pending_return_count = contract.items.filter(
+            is_deleted=False,
+            actual_end_date__isnull=True,
+        ).count()
+        open_payment_count = contract.payments.filter(
+            is_deleted=False,
+            status__in=['pending', 'partial', 'overdue'],
+        ).count()
+        return {
+            'pending_return_count': pending_return_count,
+            'open_payment_count': open_payment_count,
+        }
+
     @action(detail=True, methods=['post'])
     def activate(self, request, pk=None):
         """Activate a draft contract."""
@@ -120,6 +135,20 @@ class LeaseContractViewSet(BaseModelViewSetWithBatch):
                     'error': {
                         'code': 'INVALID_STATUS',
                         'message': 'Only active or suspended contracts can be completed'
+                    }
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        blockers = self._get_completion_blockers(contract)
+        if blockers['pending_return_count'] > 0 or blockers['open_payment_count'] > 0:
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 'VALIDATION_ERROR',
+                        'message': 'Contract cannot be completed until all leased assets are returned and remaining rent is settled.',
+                        'details': blockers,
                     }
                 },
                 status=status.HTTP_400_BAD_REQUEST

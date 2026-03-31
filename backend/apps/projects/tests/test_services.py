@@ -100,6 +100,61 @@ class TestProjectServices:
         assert self.source_project.status == "completed"
         assert self.source_project.actual_end_date is not None
 
+    def test_close_project_requires_no_pending_return_orders(self):
+        location = Location.objects.create(
+            organization=self.organization,
+            name="Project Return Storage",
+            path="Project Return Storage",
+            location_type="area",
+            created_by=self.user,
+        )
+        asset = Asset.objects.create(
+            organization=self.organization,
+            asset_code="ASSET-001B",
+            asset_name="Return In Review Device",
+            asset_category=self.asset_category,
+            purchase_price=Decimal("5600.00"),
+            purchase_date=date.today(),
+            created_by=self.user,
+        )
+        allocation = ProjectAsset.objects.create(
+            organization=self.organization,
+            project=self.source_project,
+            asset=asset,
+            allocation_date=date.today(),
+            allocation_type="temporary",
+            allocated_by=self.user,
+            return_status="transferred",
+            created_by=self.user,
+        )
+        pending_return = AssetReturn.objects.create(
+            organization=self.organization,
+            returner=self.user,
+            return_date=date.today(),
+            return_location=location,
+            status="pending",
+            created_by=self.user,
+        )
+        ReturnItem.objects.create(
+            organization=self.organization,
+            asset_return=pending_return,
+            asset=asset,
+            project_allocation=allocation,
+            asset_status="idle",
+            created_by=self.user,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            self.asset_project_service.close_project(
+                str(self.source_project.id),
+                organization_id=str(self.organization.id),
+                user=self.user,
+            )
+
+        assert exc_info.value.message_dict["returns"] == [
+            "1 pending project return orders must be completed or cancelled before closing the project."
+        ]
+
     def test_transfer_to_project_creates_new_allocation_and_closes_source_allocation(self):
         asset = Asset.objects.create(
             organization=self.organization,

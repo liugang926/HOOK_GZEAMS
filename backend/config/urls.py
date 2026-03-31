@@ -16,6 +16,12 @@ from apps.common.viewsets.health import (
     HealthMetricsAPIView,
     ReadinessAPIView,
 )
+from apps.common.viewsets.dashboard import DashboardViewSet
+from rest_framework.routers import SimpleRouter
+
+# Dashboard router
+_dashboard_router = SimpleRouter()
+_dashboard_router.register(r'dashboard', DashboardViewSet, basename='dashboard')
 
 urlpatterns = [
     # Admin
@@ -33,6 +39,7 @@ urlpatterns = [
     # ============================================================
     # SYSTEM-LEVEL ENDPOINTS (Keep - Not business objects)
     # ============================================================
+    path('api/', include(_dashboard_router.urls)),
     path('api/auth/', include('apps.accounts.urls')),
     path('api/organizations/', include('apps.organizations.urls')),
     path('api/permissions/', include('apps.permissions.urls')),

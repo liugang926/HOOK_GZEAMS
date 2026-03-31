@@ -66,14 +66,14 @@ def resolve_summary_path(args: argparse.Namespace) -> pathlib.Path | None:
     return pathlib.Path(summary_path)
 
 
-def load_junit_suite(junit_path: pathlib.Path) -> ET.Element:
+def load_junit_suites(junit_path: pathlib.Path) -> list[ET.Element]:
     root = ET.parse(junit_path).getroot()
     if root.tag == "testsuite":
-        return root
+        return [root]
 
-    suite = root.find("testsuite")
-    if suite is not None:
-        return suite
+    suites = root.findall("testsuite")
+    if suites:
+        return suites
 
     raise ValueError("testsuite node not found")
 
@@ -91,25 +91,26 @@ def append_coverage_line(lines: list[str], coverage_path: pathlib.Path) -> None:
 
 
 def collect_failing_cases(
-    suite: ET.Element,
+    suites: list[ET.Element],
     *,
     include_classname: bool,
     max_cases: int,
 ) -> list[str]:
     failing_cases: list[str] = []
-    for case in suite.iter("testcase"):
-        if case.find("failure") is None and case.find("error") is None:
-            continue
+    for suite in suites:
+        for case in suite.iter("testcase"):
+            if case.find("failure") is None and case.find("error") is None:
+                continue
 
-        name = case.attrib.get("name", "<unknown>")
-        if include_classname:
-            classname = case.attrib.get("classname", "").strip()
-            failing_cases.append(f"{classname}.{name}" if classname else name)
-        else:
-            failing_cases.append(name)
+            name = case.attrib.get("name", "<unknown>")
+            if include_classname:
+                classname = case.attrib.get("classname", "").strip()
+                failing_cases.append(f"{classname}.{name}" if classname else name)
+            else:
+                failing_cases.append(name)
 
-        if len(failing_cases) >= max_cases:
-            break
+            if len(failing_cases) >= max_cases:
+                return failing_cases
 
     return failing_cases
 
@@ -135,12 +136,12 @@ def render_summary(args: argparse.Namespace) -> str:
         return "\n".join(lines) + "\n"
 
     try:
-        suite = load_junit_suite(junit_path)
-        tests = int(suite.attrib.get("tests", 0))
-        failures = int(suite.attrib.get("failures", 0))
-        errors = int(suite.attrib.get("errors", 0))
-        skipped = int(suite.attrib.get("skipped", 0))
-        duration = float(suite.attrib.get("time", "0") or 0)
+        suites = load_junit_suites(junit_path)
+        tests = sum(int(suite.attrib.get("tests", 0)) for suite in suites)
+        failures = sum(int(suite.attrib.get("failures", 0)) for suite in suites)
+        errors = sum(int(suite.attrib.get("errors", 0)) for suite in suites)
+        skipped = sum(int(suite.attrib.get("skipped", 0)) for suite in suites)
+        duration = sum(float(suite.attrib.get("time", "0") or 0) for suite in suites)
         passed = max(0, tests - failures - errors - skipped)
         status = "Passed" if failures == 0 and errors == 0 else "Failed"
 
@@ -164,7 +165,7 @@ def render_summary(args: argparse.Namespace) -> str:
             lines.extend(f"- {scenario}" for scenario in args.covered_scenario)
 
         failing_cases = collect_failing_cases(
-            suite,
+            suites,
             include_classname=args.include_classname,
             max_cases=args.max_failing_cases,
         )

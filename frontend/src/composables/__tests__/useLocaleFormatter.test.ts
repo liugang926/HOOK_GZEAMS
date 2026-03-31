@@ -8,7 +8,7 @@ vi.mock('vue-i18n', () => ({
 }))
 
 describe('useLocaleFormatter', () => {
-  const { formatNumber, formatCurrency, formatPercent, formatDate, formatDateTime, formatRelativeTime } = useLocaleFormatter()
+  const { formatNumber, formatCurrency, formatPercent, formatDate, formatDateTime, formatRelativeTime: _formatRelativeTime } = useLocaleFormatter()
 
   describe('formatNumber', () => {
     it('formats numbers with locale-aware grouping', () => {

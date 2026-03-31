@@ -63,9 +63,9 @@ describe('DesignerCanvasSectionRenderer', () => {
           moveDown: 'Down',
           reorder: 'Reorder'
         },
-        toCanvasField: (field: Record<string, unknown>) => field,
+        toCanvasField: (field: any) => field,
         fieldToDesignDisplayField: () => ({ prop: 'unused', label: 'Unused', type: 'text', visible: true }),
-        getSampleValue: (field: Record<string, unknown>) => {
+        getSampleValue: (field: any) => {
           if (field.fieldType === 'number') return 100
           return 'Sample Text'
         },

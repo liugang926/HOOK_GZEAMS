@@ -1,0 +1,38 @@
+{
+    "insurance": {
+        "workbench": {
+            "actions": {
+                "activatePolicy": "启用保单",
+                "cancelPolicy": "取消保单",
+                "approveClaim": "审批理赔",
+                "rejectClaim": "驳回理赔",
+                "recordSettlement": "登记赔付",
+                "closeClaim": "结案"
+            },
+            "summary": {
+                "insuredAssetCount": "承保资产数",
+                "claimCount": "理赔单数",
+                "pendingPremiumCount": "待处理保费",
+                "daysUntilExpiry": "距到期天数",
+                "claimedAmount": "报案金额",
+                "approvedAmount": "核赔金额",
+                "paidAmount": "已赔付金额",
+                "payoutRatio": "赔付比例"
+            },
+            "queues": {
+                "insuredAssets": "承保资产",
+                "claims": "理赔记录",
+                "pendingPremiums": "待处理保费",
+                "settlementQueue": "待赔付队列",
+                "closureQueue": "待结案队列"
+            },
+            "messages": {
+                "activatePolicyHint": "启用保单后自动生成保费计划，正式进入保障周期。",
+                "cancelPolicyHint": "当保障不再继续时取消保单，并同步收口下游处理事项。",
+                "approveClaimHint": "调查完成后审批理赔，推动后续赔付闭环。",
+                "recordSettlementHint": "登记赔付结果，让理赔记录进入结案阶段。",
+                "closeClaimHint": "赔付或驳回确认完成后，关闭当前理赔记录。"
+            }
+        }
+    }
+}
