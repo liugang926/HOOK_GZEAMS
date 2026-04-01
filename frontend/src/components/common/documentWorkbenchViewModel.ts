@@ -1,8 +1,25 @@
 import type { AggregateDocumentPageMode, AggregateDocumentResponse } from '@/types/runtime'
-import type { ActivityLogEntry } from '@/composables/useActivityTimeline'
+import type { ActivityHighlight, ActivityLogEntry } from '@/composables/useActivityTimeline'
+import type {
+  ObjectWorkspaceActionLink,
+  ObjectWorkspaceStat,
+} from '@/components/common/object-workspace/ObjectWorkspaceHero.vue'
 import type { ObjectWorkspaceInfoRow } from '@/components/common/object-workspace/ObjectWorkspaceInfoCard.vue'
+import type { ResolvedDocumentWorkflowProgress } from '@/platform/workflow/documentWorkflowProgress'
 import { snakeToCamel } from '@/utils/case'
-import { summarizeDisposalProgress } from '@/components/common/documentWorkbenchModel'
+import {
+  buildDocumentWorkbenchStageRows,
+  summarizeDisposalProgress,
+} from '@/components/common/documentWorkbenchModel'
+import {
+  buildTimelineHighlightSourceLocation,
+  formatTimelineHighlightContext,
+  collectTimelineHighlights,
+  formatTimelineHighlightSummary,
+  formatTimelineHighlightTimestamp,
+  resolveLatestTimelineHighlight,
+  resolveTimelineHighlightSourceLabel,
+} from '@/utils/timelineHighlights'
 
 export type DocumentWorkbenchTranslateFn = (key: string, params?: Record<string, unknown>) => string
 
@@ -18,6 +35,7 @@ export interface DocumentWorkbenchWorkflowActivityItem {
   meta: string
   description?: string
   createdAt: string
+  highlights?: ActivityHighlight[]
 }
 
 export interface DocumentWorkbenchFieldPermission {
@@ -33,7 +51,19 @@ export interface DisposalBatchActionDefinition {
   count: number
 }
 
+export interface DocumentWorkbenchLatestSignalSummary {
+  label: string
+  value: string
+  meta?: string
+  sourceValue?: string
+  timeValue?: string
+  actions: ObjectWorkspaceActionLink[]
+  sourceActions: ObjectWorkspaceActionLink[]
+  timelineActions: ObjectWorkspaceActionLink[]
+}
+
 const WORKFLOW_ACTIVITY_LIMIT = 3
+export const DOCUMENT_WORKBENCH_TIMELINE_ANCHOR = '#document-workbench-timeline'
 
 const yesNoLabel = (value: boolean | undefined, t: DocumentWorkbenchTranslateFn) => {
   return value ? t('common.yes') : t('common.no')
@@ -50,6 +80,145 @@ const formatTimelineDate = (value: string | null | undefined, locale: string) =>
     hour: '2-digit',
     minute: '2-digit',
   }).format(candidate)
+}
+
+const resolveDocumentSignalTimelineEntries = (
+  document?: AggregateDocumentResponse | null,
+) => {
+  if ((document?.timeline || []).length > 0) {
+    return document?.timeline || []
+  }
+  return document?.workflow?.timeline || []
+}
+
+const resolveWorkflowProgressActiveStep = (
+  workflowProgress?: ResolvedDocumentWorkflowProgress | null,
+) => {
+  if (!workflowProgress || workflowProgress.steps.length === 0) {
+    return {
+      activeIndex: -1,
+      activeStep: null as ResolvedDocumentWorkflowProgress['steps'][number] | null,
+    }
+  }
+
+  const activeIndex = workflowProgress.steps.findIndex((step) => step.key === workflowProgress.currentStatus)
+  return {
+    activeIndex,
+    activeStep: activeIndex >= 0 ? workflowProgress.steps[activeIndex] : null,
+  }
+}
+
+export const buildDocumentWorkbenchLatestSignalSummary = ({
+  document,
+  locale,
+  t,
+  objectCode,
+  effectiveRecordId,
+  timelineAnchor = DOCUMENT_WORKBENCH_TIMELINE_ANCHOR,
+}: {
+  document?: AggregateDocumentResponse | null
+  locale: string
+  t: DocumentWorkbenchTranslateFn
+  objectCode: string
+  effectiveRecordId: string
+  timelineAnchor?: string
+}): DocumentWorkbenchLatestSignalSummary | null => {
+  const latestSignal = resolveLatestTimelineHighlight(resolveDocumentSignalTimelineEntries(document))
+  if (!latestSignal) return null
+
+  const sourceLocation = buildTimelineHighlightSourceLocation({
+    highlight: latestSignal,
+    currentObjectCode: objectCode,
+    currentRecordId: effectiveRecordId,
+  })
+  const sourceActions = sourceLocation
+    ? [{
+      label: t('common.documentWorkbench.actions.openSource'),
+      to: sourceLocation,
+    }]
+    : []
+  const timelineActions = timelineAnchor
+    ? [{
+      label: t('common.documentWorkbench.actions.jumpToTimeline'),
+      to: { hash: timelineAnchor },
+    }]
+    : []
+
+  return {
+    label: t('common.documentWorkbench.labels.latestSignal'),
+    value: formatTimelineHighlightSummary(latestSignal),
+    meta: formatTimelineHighlightContext(latestSignal, locale) || undefined,
+    sourceValue: resolveTimelineHighlightSourceLabel(latestSignal) || undefined,
+    timeValue: formatTimelineHighlightTimestamp(latestSignal.createdAt, locale) || undefined,
+    actions: [...sourceActions, ...timelineActions],
+    sourceActions,
+    timelineActions,
+  }
+}
+
+export const buildDocumentWorkbenchProcessSummaryStats = ({
+  objectCode,
+  document,
+  modelValue,
+  t,
+}: {
+  objectCode: string
+  document?: AggregateDocumentResponse | null
+  modelValue: Record<string, any>
+  t: DocumentWorkbenchTranslateFn
+}): ObjectWorkspaceStat[] => {
+  return buildDocumentWorkbenchStageRows({
+    objectCode,
+    document,
+    modelValue,
+    t,
+  }).map((row) => ({
+    label: row.label,
+    value: row.value,
+    tooltip: row.tooltip,
+    meta: row.meta,
+    actions: row.actions,
+  }))
+}
+
+export const buildDocumentWorkbenchProcessSummaryRows = ({
+  document,
+  locale,
+  t,
+  objectCode,
+  effectiveRecordId,
+  workflowProgress,
+}: {
+  document?: AggregateDocumentResponse | null
+  locale: string
+  t: DocumentWorkbenchTranslateFn
+  objectCode: string
+  effectiveRecordId: string
+  workflowProgress?: ResolvedDocumentWorkflowProgress | null
+}): ObjectWorkspaceInfoRow[] => {
+  const rows: ObjectWorkspaceInfoRow[] = []
+  const { activeIndex, activeStep } = resolveWorkflowProgressActiveStep(workflowProgress)
+
+  if (workflowProgress && workflowProgress.steps.length > 0) {
+    rows.push({
+      label: t('common.documentWorkbench.sections.workflowProgress'),
+      value: activeStep?.label || String(document?.master?.status || workflowProgress.currentStatus || '-'),
+      ...(activeIndex >= 0
+        ? { meta: `${activeIndex + 1}/${workflowProgress.steps.length}` }
+        : {}),
+    })
+  }
+
+  return [
+    ...rows,
+    ...buildDocumentWorkbenchSignalRows({
+      document,
+      locale,
+      t,
+      objectCode,
+      effectiveRecordId,
+    }),
+  ]
 }
 
 export const resolveDocumentWorkbenchRecordId = ({
@@ -195,17 +364,90 @@ export const buildDocumentWorkbenchWorkflowRows = ({
 
 export const buildDocumentWorkbenchAuditRows = ({
   document,
+  locale,
   t,
+  objectCode,
+  effectiveRecordId,
 }: {
   document?: AggregateDocumentResponse | null
+  locale: string
   t: DocumentWorkbenchTranslateFn
+  objectCode: string
+  effectiveRecordId: string
 }): ObjectWorkspaceInfoRow[] => {
   if (!document) return []
   const counts = document.audit?.counts
+  const timelineEntries = resolveDocumentSignalTimelineEntries(document)
+  const highlightCount = collectTimelineHighlights(timelineEntries).length
+  const latestSignal = buildDocumentWorkbenchLatestSignalSummary({
+    document,
+    locale,
+    t,
+    objectCode,
+    effectiveRecordId,
+  })
+
   return [
     { label: t('common.documentWorkbench.labels.activityLogs'), value: Number(counts?.activityLogs || 0) },
     { label: t('common.documentWorkbench.labels.workflowApprovals'), value: Number(counts?.workflowApprovals || 0) },
     { label: t('common.documentWorkbench.labels.workflowOperationLogs'), value: Number(counts?.workflowOperationLogs || 0) },
+    ...(highlightCount > 0
+      ? [{ label: t('common.documentWorkbench.labels.reasonSignals'), value: highlightCount }]
+      : []),
+    ...(latestSignal
+      ? [{
+        label: latestSignal.label,
+        value: latestSignal.value,
+        meta: latestSignal.meta,
+        actions: latestSignal.actions,
+      }]
+      : []),
+  ]
+}
+
+export const buildDocumentWorkbenchSignalRows = ({
+  document,
+  locale,
+  t,
+  objectCode,
+  effectiveRecordId,
+}: {
+  document?: AggregateDocumentResponse | null
+  locale: string
+  t: DocumentWorkbenchTranslateFn
+  objectCode: string
+  effectiveRecordId: string
+}): ObjectWorkspaceInfoRow[] => {
+  const latestSignal = buildDocumentWorkbenchLatestSignalSummary({
+    document,
+    locale,
+    t,
+    objectCode,
+    effectiveRecordId,
+  })
+  if (!latestSignal) return []
+
+  return [
+    {
+      label: latestSignal.label,
+      value: latestSignal.value,
+      meta: latestSignal.meta,
+      actions: latestSignal.actions,
+    },
+    ...(latestSignal.sourceValue
+      ? [{
+        label: t('common.documentWorkbench.labels.signalSource'),
+        value: latestSignal.sourceValue,
+        actions: latestSignal.sourceActions,
+      }]
+      : []),
+    ...(latestSignal.timeValue
+      ? [{
+        label: t('common.documentWorkbench.labels.signalTime'),
+        value: latestSignal.timeValue,
+        actions: latestSignal.timelineActions,
+      }]
+      : []),
   ]
 }
 
@@ -329,13 +571,47 @@ export const buildDocumentWorkbenchWorkflowActivityItems = ({
   return items.slice(0, WORKFLOW_ACTIVITY_LIMIT).map((item) => {
     const actorName = String(item.actorName || t('common.documentWorkbench.labels.systemActor'))
     const taskName = String(item.taskName || item.operationTypeDisplay || item.actionDisplay || '-')
-    const description = String(item.comment || item.description || item.resultDisplay || '').trim()
+    const highlights = collectTimelineHighlights([item])
+      .map((highlight) => ({
+        code: highlight.code,
+        label: highlight.label,
+        value: highlight.value,
+        tone: highlight.tone,
+      }))
+    const fallbackHighlights = highlights.length > 0
+      ? highlights
+      : [
+        ...(item.comment
+          ? [{
+            code: 'workflow_comment',
+            label: t('common.documentWorkbench.labels.workflowComment'),
+            value: String(item.comment).trim(),
+            tone: 'info',
+          }]
+          : []),
+        ...(item.resultDisplay
+          ? [{
+            code: 'workflow_result',
+            label: t('common.documentWorkbench.labels.workflowResult'),
+            value: String(item.resultDisplay).trim(),
+            tone: 'success',
+          }]
+          : []),
+      ]
+    const description = String(
+      item.comment ||
+      item.description ||
+      item.resultDisplay ||
+      (fallbackHighlights[0] ? formatTimelineHighlightSummary(fallbackHighlights[0]) : '') ||
+      '',
+    ).trim()
     return {
       id: String(item.id || ''),
       title: String(item.title || item.actionDisplay || item.operationTypeDisplay || taskName || '-'),
       meta: `${actorName} | ${taskName}`,
       description: description || undefined,
       createdAt: formatTimelineDate(item.createdAt, locale),
+      highlights: fallbackHighlights,
     }
   })
 }
@@ -392,6 +668,14 @@ export const buildDocumentWorkbenchTimelineEntries = ({
             newValue: change.newValue,
           }))
         : [],
+      highlights: Array.isArray(entry.highlights)
+        ? entry.highlights.map((highlight) => ({
+            code: String(highlight.code || ''),
+            label: String(highlight.label || highlight.code || '') || undefined,
+            value: String(highlight.value || ''),
+            tone: String(highlight.tone || '') || undefined,
+          })).filter((highlight) => highlight.code && highlight.value)
+        : [],
     }
   })
 }
@@ -401,11 +685,18 @@ export const shouldShowDocumentWorkbenchHeaderShell = ({
   showObjectActions,
   effectiveRecordId,
   capabilityItems,
+  hasLatestSignal,
 }: {
   statusActionCount: number
   showObjectActions: boolean
   effectiveRecordId: string
   capabilityItems: DocumentWorkbenchCapabilityItem[]
+  hasLatestSignal: boolean
 }) => {
-  return statusActionCount > 0 || (showObjectActions && !!effectiveRecordId) || capabilityItems.length > 0
+  return (
+    statusActionCount > 0 ||
+    (showObjectActions && !!effectiveRecordId) ||
+    capabilityItems.length > 0 ||
+    hasLatestSignal
+  )
 }

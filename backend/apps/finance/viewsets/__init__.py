@@ -9,6 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import ValidationError
 from django.db.models import Sum, Max
 from django.db import transaction
 from decimal import Decimal
@@ -21,6 +22,7 @@ from apps.finance.serializers import (
     VoucherTemplateSerializer, VoucherTemplateListSerializer, VoucherTemplateDetailSerializer
 )
 from apps.finance.filters import FinanceVoucherFilter, VoucherEntryFilter, VoucherTemplateFilter
+from apps.finance.services import FinanceVoucherService
 from apps.integration.models import IntegrationLog, IntegrationConfig, IntegrationSyncTask
 from apps.integration.constants import IntegrationSystemType, IntegrationModuleType, SyncDirection, SyncStatus
 from apps.integration.serializers import IntegrationLogListSerializer
@@ -899,26 +901,33 @@ class FinanceVoucherViewSet(BaseModelViewSetWithBatch):
             'source_receipt',
             'source_purchase_request',
         )
-        total_amount = sum((asset.purchase_price or Decimal('0.00')) for asset in assets)
-        total_amount = Decimal(str(total_amount or '0.00'))
-
-        if total_amount <= 0:
+        try:
+            voucher = FinanceVoucherService().generate_purchase_voucher_for_assets(
+                assets=assets,
+                organization_id=request.organization_id,
+                user=request.user,
+                business_id=business_id,
+                voucher_date=request.data.get('voucher_date') or request.query_params.get('voucher_date'),
+                notes=request.data.get('notes', ''),
+            )
+        except ValidationError as exc:
+            details = getattr(exc, 'message_dict', None) or {'non_field_errors': exc.messages}
+            message = '; '.join(str(item) for item in getattr(exc, 'messages', None) or ['Validation failed'])
             return Response({
                 'success': False,
                 'error': {
                     'code': 'VALIDATION_ERROR',
-                    'message': 'No valid amount found from selected assets'
+                    'message': message,
+                    'details': details,
                 }
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        summary = f"Asset purchase voucher ({business_id or 'N/A'})"
-        entries = self._build_default_entries(total_amount, 'Asset purchase debit', 'Asset purchase credit')
-        source_trace = self._build_asset_purchase_source_trace(
-            assets=assets,
-            business_id=business_id,
-            organization_id=request.organization_id,
-        )
-        return self._create_generated_voucher(request, 'purchase', summary, total_amount, entries, source_trace=source_trace)
+        serializer = FinanceVoucherDetailSerializer(voucher)
+        return Response({
+            'success': True,
+            'message': 'Voucher generated successfully',
+            'data': serializer.data
+        })
 
     @action(detail=False, methods=['post'], url_path='generate/depreciation')
     def generate_depreciation(self, request):

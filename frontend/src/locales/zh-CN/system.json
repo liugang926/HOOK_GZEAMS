@@ -604,6 +604,31 @@
                 "sectionProperties": "分组属性",
                 "sectionTemplates": "区块模板"
             },
+            "workbench": {
+                "title": "单据摘要布局",
+                "description": "直接配置聚合单据摘要区块的顺序与层级，不再需要手写 workbench 元数据。",
+                "actions": {
+                    "reset": "恢复默认顺序",
+                    "moveUp": "上移",
+                    "moveDown": "下移"
+                },
+                "labels": {
+                    "order": "顺序 {index}"
+                },
+                "sections": {
+                    "process_summary": "流程摘要",
+                    "record": "单据概览",
+                    "workflow": "流程信息",
+                    "batch_tools": "批量辅助"
+                },
+                "priorities": {
+                    "primary": "主层",
+                    "context": "上下文层",
+                    "related": "关联层",
+                    "activity": "活动层",
+                    "admin": "管理层"
+                }
+            },
             "empty": {
                 "layoutEmpty": "布局为空，请先新增分组开始设计。",
                 "selectTarget": "请选择字段或分组后再编辑属性。"
@@ -776,6 +801,7 @@
                 "invalidLayoutConfig": "布局配置无效",
                 "layoutSaved": "布局已保存",
                 "saveFailed": "保存失败",
+                "workbenchSummaryUpdated": "单据摘要元数据已更新",
                 "layoutPublished": "布局已发布",
                 "publishFailed": "发布失败",
                 "resetConfirm": "确认将布局重置为系统默认吗？未保存的改动会丢失。",

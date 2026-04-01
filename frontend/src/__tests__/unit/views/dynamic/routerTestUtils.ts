@@ -9,6 +9,7 @@ export interface RouteMockState {
 export const createRouteMockContext = (initialRoute: RouteMockState) => {
   return {
     pushMock: vi.fn(),
+    replaceMock: vi.fn(),
     routeState: { ...initialRoute } as RouteMockState,
   }
 }

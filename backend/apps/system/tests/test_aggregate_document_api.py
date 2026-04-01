@@ -444,6 +444,27 @@ def test_aggregate_document_get_pickup_includes_workflow_timeline_and_audit_sect
         created_by=user,
     )
     ActivityLogService.log_create(actor=user, instance=pickup, organization=org)
+    ActivityLogService.log_action(
+        actor=user,
+        action='status_change',
+        instance=pickup,
+        organization=org,
+        description='Pickup order approved.',
+        changes=[
+            {
+                'fieldCode': 'status',
+                'fieldLabel': 'Status',
+                'oldValue': 'Pending',
+                'newValue': 'Approved',
+            },
+            {
+                'fieldCode': 'approval_comment',
+                'fieldLabel': 'Approval Comment',
+                'oldValue': '',
+                'newValue': 'Approved in document timeline test',
+            },
+        ],
+    )
 
     workflow_definition = WorkflowDefinition.objects.create(
         organization=org,
@@ -517,6 +538,33 @@ def test_aggregate_document_get_pickup_includes_workflow_timeline_and_audit_sect
     assert any(item['source'] == 'activity' for item in data['timeline'])
     assert any(item['source'] == 'workflowApproval' for item in data['timeline'])
     assert any(item['source'] == 'workflowOperation' for item in data['timeline'])
+    activity_item = next(item for item in data['timeline'] if item['source'] == 'activity' and item['action'] == 'status_change')
+    assert activity_item['highlights'] == [
+        {
+            'code': 'approval_comment',
+            'label': 'Approval Comment',
+            'value': 'Approved in document timeline test',
+            'tone': 'info',
+        }
+    ]
+    workflow_approval_item = next(item for item in data['timeline'] if item['source'] == 'workflowApproval')
+    assert workflow_approval_item['highlights'] == [
+        {
+            'code': 'workflow_comment',
+            'label': 'Workflow Comment',
+            'value': 'Approved in test',
+            'tone': 'info',
+        }
+    ]
+    workflow_operation_item = next(item for item in data['timeline'] if item['source'] == 'workflowOperation')
+    assert workflow_operation_item['highlights'] == [
+        {
+            'code': 'workflow_result',
+            'label': 'Workflow Result',
+            'value': 'Success',
+            'tone': 'success',
+        }
+    ]
 
 
 @pytest.mark.django_db

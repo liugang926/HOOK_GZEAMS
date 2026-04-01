@@ -829,6 +829,27 @@ $transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   border-left: none;
 }
 
+.designer-right-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+  padding: 12px;
+}
+
+.designer-right-stack__properties {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.designer-right-stack__workbench {
+  flex-shrink: 0;
+}
+
 @media (max-width: 1360px) {
   .designer-main {
     grid-template-columns: minmax(236px, 276px) minmax(0, 1fr) minmax(292px, 332px);

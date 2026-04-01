@@ -888,3 +888,91 @@ def test_diff_scope_helper_filters_org_priority_by_org_id():
 
     ids = list(scoped.values_list('id', flat=True))
     assert ids == [layout_a.id]
+
+
+@pytest.mark.django_db
+def test_page_layout_serializer_normalizes_workbench_document_summary_sections():
+    bo = BusinessObject.objects.create(
+        code='LAYOUTWORKBENCHMETA',
+        name='Layout Workbench Metadata',
+        is_hardcoded=False,
+    )
+
+    serializer = PageLayoutSerializer(data={
+        'business_object': str(bo.id),
+        'layout_code': 'layoutworkbenchmeta_form_custom',
+        'layout_name': 'Workbench Metadata Layout',
+        'layout_type': 'form',
+        'mode': 'edit',
+        'status': 'draft',
+        'is_default': False,
+        'is_active': True,
+        'layout_config': {
+            'sections': [
+                {
+                    'id': 'section-basic',
+                    'type': 'section',
+                    'title': 'Basic',
+                    'fields': [
+                        {'fieldCode': 'name', 'label': 'Name', 'span': 12},
+                    ],
+                }
+            ],
+            'workbench': {
+                'documentSummarySections': [
+                    {'code': 'processSummary', 'surfacePriority': 'primary'},
+                    {'code': 'batch-tools', 'surfacePriority': 'admin'},
+                ]
+            }
+        },
+    })
+
+    assert serializer.is_valid(), serializer.errors
+    workbench = serializer.validated_data['layout_config']['workbench']
+    sections = workbench['document_summary_sections']
+
+    assert workbench.get('documentSummarySections') is None
+    assert sections[0]['code'] == 'process_summary'
+    assert sections[0]['surface_priority'] == 'primary'
+    assert sections[1]['code'] == 'batch_tools'
+    assert sections[1]['surface_priority'] == 'admin'
+
+
+@pytest.mark.django_db
+def test_page_layout_serializer_rejects_invalid_workbench_document_summary_priority():
+    bo = BusinessObject.objects.create(
+        code='LAYOUTWORKBENCHINVALID',
+        name='Layout Workbench Invalid',
+        is_hardcoded=False,
+    )
+
+    serializer = PageLayoutSerializer(data={
+        'business_object': str(bo.id),
+        'layout_code': 'layoutworkbenchinvalid_form_custom',
+        'layout_name': 'Workbench Invalid Layout',
+        'layout_type': 'form',
+        'mode': 'edit',
+        'status': 'draft',
+        'is_default': False,
+        'is_active': True,
+        'layout_config': {
+            'sections': [
+                {
+                    'id': 'section-basic',
+                    'type': 'section',
+                    'title': 'Basic',
+                    'fields': [
+                        {'fieldCode': 'name', 'label': 'Name', 'span': 12},
+                    ],
+                }
+            ],
+            'workbench': {
+                'documentSummarySections': [
+                    {'code': 'process_summary', 'surfacePriority': 'hero'},
+                ]
+            }
+        },
+    })
+
+    assert serializer.is_valid() is False
+    assert 'surface_priority' in str(serializer.errors)

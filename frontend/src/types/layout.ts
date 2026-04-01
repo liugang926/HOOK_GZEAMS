@@ -81,6 +81,7 @@ export interface LayoutConfig {
   icon?: string
 
   /** Additional metadata */
+  workbench?: Record<string, unknown>
   [key: string]: any
 }
 

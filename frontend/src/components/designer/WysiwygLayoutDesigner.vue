@@ -228,27 +228,37 @@
         v-if="renderMode === 'design'"
         class="designer-pane designer-pane--right"
       >
-        <DesignerPropertyPanel
-          :render-mode="renderMode"
-          :selected-item="selectedItem"
-          :element-type="elementType"
-          :field-props="fieldProps"
-          :section-props="sectionProps"
-          :detail-region-options="aggregateDetailRegions"
-          :detail-region-field-options="detailRegionFieldOptions"
-          :available-spans="availableSpans"
-          :available-span-columns="availableSpanColumns"
-          :visibility-field-options="visibilityFieldOptions"
-          :layout-mode="layoutMode"
-          :mode="mode"
-          :translation-mode="translationMode"
-          @update:field-props="fieldProps = $event"
-          @update:section-props="sectionProps = $event"
-          @field-property-update="handleFieldPropertyUpdate"
-          @section-property-update="handleSectionPropertyUpdate"
-          @section-property-batch-update="handleSectionPropertyBatchUpdate"
-          @section-preview-property="handleSectionPreviewProperty"
-        />
+        <div class="designer-right-stack">
+          <div class="designer-right-stack__properties">
+            <DesignerPropertyPanel
+              :render-mode="renderMode"
+              :selected-item="selectedItem"
+              :element-type="elementType"
+              :field-props="fieldProps"
+              :section-props="sectionProps"
+              :detail-region-options="aggregateDetailRegions"
+              :detail-region-field-options="detailRegionFieldOptions"
+              :available-spans="availableSpans"
+              :available-span-columns="availableSpanColumns"
+              :visibility-field-options="visibilityFieldOptions"
+              :layout-mode="layoutMode"
+              :mode="mode"
+              :translation-mode="translationMode"
+              @update:field-props="fieldProps = $event"
+              @update:section-props="sectionProps = $event"
+              @field-property-update="handleFieldPropertyUpdate"
+              @section-property-update="handleSectionPropertyUpdate"
+              @section-property-batch-update="handleSectionPropertyBatchUpdate"
+              @section-preview-property="handleSectionPreviewProperty"
+            />
+          </div>
+          <DesignerWorkbenchMetadataPanel
+            v-if="props.mode !== 'search'"
+            class="designer-right-stack__workbench"
+            :metadata="designerWorkbenchMetadata"
+            @update:metadata="handleWorkbenchMetadataUpdate"
+          />
+        </div>
       </aside>
     </div>
 
@@ -269,6 +279,7 @@ import { dynamicApi } from '@/api/dynamic'
 import DesignerToolbar from '@/components/designer/DesignerToolbar.vue'
 import DesignerFieldPanel from '@/components/designer/DesignerFieldPanel.vue'
 import DesignerPropertyPanel from '@/components/designer/DesignerPropertyPanel.vue'
+import DesignerWorkbenchMetadataPanel from '@/components/designer/DesignerWorkbenchMetadataPanel.vue'
 import DesignerCanvas from '@/components/designer/DesignerCanvas.vue'
 import DesignerCanvasSectionRenderer from '@/components/designer/DesignerCanvasSectionRenderer.vue'
 import DesignerSectionHeader from '@/components/designer/DesignerSectionHeader.vue'
@@ -314,7 +325,12 @@ import {
   findSectionByFieldId
 } from '@/components/designer/designerTreeUtils'
 import { useDesignerFieldCatalog } from '@/components/designer/useDesignerFieldCatalog'
+import {
+  normalizeDesignerWorkbenchMetadata,
+  serializeDesignerWorkbenchMetadata,
+} from '@/components/designer/designerWorkbenchMetadata'
 import type {
+  DesignerAnyRecord,
   DesignerDetailRegionOption,
   DesignerFieldDefinition,
   DesignerSectionTemplateOption,
@@ -800,6 +816,15 @@ const visibilityFieldOptions = computed(() =>
     .sort((a, b) => a.label.localeCompare(b.label))
 )
 
+const designerWorkbenchMetadata = computed(() => {
+  const currentConfig = layoutConfig.value as LayoutConfig & {
+    workbench?: DesignerAnyRecord
+  }
+  const workbench = currentConfig.workbench
+
+  return normalizeDesignerWorkbenchMetadata(workbench)
+})
+
 const normalizedLocale = computed<'zh-CN' | 'en-US'>(() => {
   const raw = String(locale.value || 'zh-CN').toLowerCase()
   return raw.startsWith('en') ? 'en-US' : 'zh-CN'
@@ -899,6 +924,29 @@ const handleAddDetailRegionCommand = (payload: string | number | object) => {
   }
   if (typeof payload !== 'string' || !payload.trim()) return
   addDetailRegion(payload)
+}
+
+const handleWorkbenchMetadataUpdate = (metadata: unknown) => {
+  const nextConfig = JSON.parse(JSON.stringify(layoutConfig.value || { sections: [] })) as LayoutConfig & {
+    workbench?: DesignerAnyRecord
+  }
+  const workbench = (
+    nextConfig.workbench &&
+    typeof nextConfig.workbench === 'object' &&
+    !Array.isArray(nextConfig.workbench)
+  )
+    ? { ...nextConfig.workbench }
+    : {}
+
+  nextConfig.workbench = {
+    ...workbench,
+    ...serializeDesignerWorkbenchMetadata(metadata),
+  }
+
+  commitLayoutChange(
+    nextConfig,
+    t('system.pageLayout.designer.messages.workbenchMetadataUpdated'),
+  )
 }
 
 const {

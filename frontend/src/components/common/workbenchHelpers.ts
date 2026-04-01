@@ -7,6 +7,35 @@ export type WorkbenchAction = Record<string, unknown> & {
   code: string
 }
 
+export interface WorkbenchPromptFieldOption {
+  label: string
+  value: string | number | boolean
+}
+
+export interface WorkbenchPromptField {
+  key: string
+  label: string
+  type: 'text' | 'textarea' | 'select' | 'date' | 'number'
+  placeholder?: string
+  required?: boolean
+  rows?: number
+  defaultValue?: string | number | boolean | null
+  options?: WorkbenchPromptFieldOption[]
+  valueFormat?: string
+  min?: number
+  max?: number
+  precision?: number
+  payloadKey?: string
+}
+
+export interface WorkbenchPrompt {
+  title?: string
+  message?: string
+  confirmButtonText?: string
+  cancelButtonText?: string
+  fields: WorkbenchPromptField[]
+}
+
 const toNonEmptyString = (value: unknown) => {
   if (typeof value !== 'string') return ''
   return value.trim()
@@ -89,6 +118,131 @@ export const resolveWorkbenchConfirmMessage = (
     ['confirmMessageKey', 'confirm_message_key'],
     ['confirmMessage', 'confirm_message'],
   )
+}
+
+const resolvePromptFieldOptions = (
+  field: Record<string, unknown>,
+  t: WorkbenchTranslate,
+  te: WorkbenchHasTranslation,
+): WorkbenchPromptFieldOption[] => {
+  const rawOptions = Array.isArray(field.options) ? field.options : []
+  return rawOptions
+    .map((option) => {
+      const optionRecord = toRecord(option)
+      if (!optionRecord) return null
+      const label = resolveWorkbenchText(
+        optionRecord,
+        t,
+        te,
+        ['labelKey', 'label_key', 'titleKey', 'title_key'],
+        ['label', 'title'],
+      )
+      const value = optionRecord.value
+      if (!label || typeof value === 'object' || value === null || value === undefined) {
+        return null
+      }
+      if (!['string', 'number', 'boolean'].includes(typeof value)) {
+        return null
+      }
+      return {
+        label,
+        value: value as string | number | boolean,
+      }
+    })
+    .filter((option): option is WorkbenchPromptFieldOption => Boolean(option))
+}
+
+export const resolveWorkbenchPrompt = (
+  action: WorkbenchAction,
+  t: WorkbenchTranslate,
+  te: WorkbenchHasTranslation,
+): WorkbenchPrompt | null => {
+  const prompt = toRecord(action.prompt || action.promptConfig || action.prompt_config)
+  if (!prompt) {
+    return null
+  }
+
+  const fields = (Array.isArray(prompt.fields) ? prompt.fields : [])
+    .map((field) => {
+      const fieldRecord = toRecord(field)
+      if (!fieldRecord) return null
+      const key = toNonEmptyString(fieldRecord.key)
+      if (!key) return null
+      const label = resolveWorkbenchText(
+        fieldRecord,
+        t,
+        te,
+        ['labelKey', 'label_key', 'titleKey', 'title_key'],
+        ['label', 'title', 'key'],
+      ) || key
+      const typeCandidate = toNonEmptyString(fieldRecord.type || 'text')
+      const type = ['text', 'textarea', 'select', 'date', 'number'].includes(typeCandidate)
+        ? typeCandidate as WorkbenchPromptField['type']
+        : 'text'
+
+      return {
+        key,
+        label,
+        type,
+        placeholder: resolveWorkbenchText(
+          fieldRecord,
+          t,
+          te,
+          ['placeholderKey', 'placeholder_key'],
+          ['placeholder'],
+        ),
+        required: Boolean(fieldRecord.required),
+        rows: typeof fieldRecord.rows === 'number' ? fieldRecord.rows : undefined,
+        defaultValue: (
+          fieldRecord.defaultValue ??
+          fieldRecord.default_value ??
+          null
+        ) as WorkbenchPromptField['defaultValue'],
+        options: resolvePromptFieldOptions(fieldRecord, t, te),
+        valueFormat: toNonEmptyString(fieldRecord.valueFormat || fieldRecord.value_format || ''),
+        min: typeof fieldRecord.min === 'number' ? fieldRecord.min : undefined,
+        max: typeof fieldRecord.max === 'number' ? fieldRecord.max : undefined,
+        precision: typeof fieldRecord.precision === 'number' ? fieldRecord.precision : undefined,
+        payloadKey: toNonEmptyString(fieldRecord.payloadKey || fieldRecord.payload_key || key),
+      }
+    })
+    .filter((field): field is WorkbenchPromptField => Boolean(field))
+
+  if (fields.length === 0) {
+    return null
+  }
+
+  return {
+    title: resolveWorkbenchText(
+      prompt,
+      t,
+      te,
+      ['titleKey', 'title_key'],
+      ['title'],
+    ),
+    message: resolveWorkbenchText(
+      prompt,
+      t,
+      te,
+      ['messageKey', 'message_key'],
+      ['message'],
+    ),
+    confirmButtonText: resolveWorkbenchText(
+      prompt,
+      t,
+      te,
+      ['confirmButtonTextKey', 'confirm_button_text_key'],
+      ['confirmButtonText', 'confirm_button_text'],
+    ),
+    cancelButtonText: resolveWorkbenchText(
+      prompt,
+      t,
+      te,
+      ['cancelButtonTextKey', 'cancel_button_text_key'],
+      ['cancelButtonText', 'cancel_button_text'],
+    ),
+    fields,
+  }
 }
 
 export const resolveWorkbenchActionPath = (action: WorkbenchAction) => {
@@ -175,6 +329,37 @@ export const executeWorkbenchAction = async ({
     data: (response.data as Record<string, unknown> | undefined) || {},
     message: String(response.message || ''),
   }
+}
+
+const hasPromptValue = (value: unknown) => {
+  if (typeof value === 'string') {
+    return value.trim() !== ''
+  }
+  return value !== null && value !== undefined && value !== ''
+}
+
+export const buildWorkbenchActionPayload = (
+  action: WorkbenchAction,
+  promptValues: Record<string, unknown> = {},
+  prompt?: WorkbenchPrompt | null,
+) => {
+  const payload = {
+    ...(toRecord(action.payload || action.staticPayload || action.static_payload || action.requestData || action.request_data) || {}),
+  }
+
+  if (!prompt) {
+    return payload
+  }
+
+  prompt.fields.forEach((field) => {
+    const value = promptValues[field.key]
+    if (!hasPromptValue(value)) {
+      return
+    }
+    payload[field.payloadKey || field.key] = value
+  })
+
+  return payload
 }
 
 export const readWorkbenchRecordValue = (

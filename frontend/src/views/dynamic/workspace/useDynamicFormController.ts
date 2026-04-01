@@ -4,7 +4,7 @@ import type { Router } from 'vue-router'
 import { createObjectClient, type ObjectMetadata } from '@/api/dynamic'
 import { resolveRuntimeLayout } from '@/platform/layout/runtimeLayoutResolver'
 import type { RuntimePermissions } from '@/platform/layout/runtimeLayoutResolver'
-import type { AggregateDocumentResponse, RuntimeAggregate } from '@/types/runtime'
+import type { AggregateDocumentResponse, RuntimeAggregate, RuntimeWorkbench } from '@/types/runtime'
 import {
   buildAggregateDocumentFormData,
   buildAggregateDocumentPayload,
@@ -56,6 +56,7 @@ export const useDynamicFormController = ({
   const metadataPermissions = ref<ObjectMetadata['permissions'] | null>(null)
   const runtimePermissions = ref<RuntimePermissions | null>(null)
   const runtimeAggregate = ref<RuntimeAggregate | null>(null)
+  const runtimeWorkbench = ref<RuntimeWorkbench | null>(null)
   const documentPayload = ref<AggregateDocumentResponse | null>(null)
   const loading = ref(false)
   const loadError = ref<string | null>(null)
@@ -146,6 +147,9 @@ export const useDynamicFormController = ({
       runtimeAggregate.value = runtimeResult.status === 'fulfilled'
         ? (runtimeResult.value.aggregate || null)
         : null
+      runtimeWorkbench.value = runtimeResult.status === 'fulfilled'
+        ? (runtimeResult.value.workbench || null)
+        : null
       documentPayload.value = null
 
       if (metadataResult.status === 'fulfilled') {
@@ -204,6 +208,7 @@ export const useDynamicFormController = ({
     retryLoad,
     documentPayload,
     runtimeAggregate,
+    runtimeWorkbench,
     runtimePermissions,
     submitting,
     usesAggregateDocument,

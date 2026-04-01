@@ -192,7 +192,7 @@ class FinanceVoucherListSerializer(BaseModelSerializer):
         return _read_source_summary(obj).get('record_no', '')
 
 
-class FinanceVoucherDetailSerializer(BaseModelSerializer):
+class FinanceVoucherDetailSerializer(FinanceVoucherSerializer):
     """Detailed voucher serializer with nested entries"""
     entries = VoucherEntryDetailSerializer(many=True, read_only=True)
     entry_count = serializers.IntegerField(source='entries.count', read_only=True)
@@ -200,7 +200,7 @@ class FinanceVoucherDetailSerializer(BaseModelSerializer):
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
     posted_by_name = serializers.CharField(source='posted_by.username', read_only=True)
 
-    class Meta(BaseModelSerializer.Meta):
+    class Meta(FinanceVoucherSerializer.Meta):
         model = FinanceVoucher
         fields = FinanceVoucherSerializer.Meta.fields + [
             'created_by_name', 'posted_by_name',

@@ -604,6 +604,31 @@
                 "sectionProperties": "Section Properties",
                 "sectionTemplates": "Section Templates"
             },
+            "workbench": {
+                "title": "Document Summary Layout",
+                "description": "Adjust the aggregate document summary section order and density without editing raw workbench metadata.",
+                "actions": {
+                    "reset": "Reset Sections",
+                    "moveUp": "Move Up",
+                    "moveDown": "Move Down"
+                },
+                "labels": {
+                    "order": "Order {index}"
+                },
+                "sections": {
+                    "process_summary": "Process Summary",
+                    "record": "Record",
+                    "workflow": "Workflow",
+                    "batch_tools": "Batch Tools"
+                },
+                "priorities": {
+                    "primary": "Primary",
+                    "context": "Context",
+                    "related": "Related",
+                    "activity": "Activity",
+                    "admin": "Admin"
+                }
+            },
             "empty": {
                 "layoutEmpty": "Layout is empty. Add a section to start designing.",
                 "selectTarget": "Select a field or section to edit its properties."
@@ -776,6 +801,7 @@
                 "invalidLayoutConfig": "Layout configuration is invalid",
                 "layoutSaved": "Layout saved",
                 "saveFailed": "Save failed",
+                "workbenchSummaryUpdated": "Document summary metadata updated",
                 "layoutPublished": "Layout published",
                 "publishFailed": "Publish failed",
                 "resetConfirm": "Reset layout to system default? Unsaved changes will be lost.",

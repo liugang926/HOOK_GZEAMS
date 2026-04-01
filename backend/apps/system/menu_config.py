@@ -22,9 +22,100 @@ MenuConfig = Dict[str, Any]
 MenuManagementSettings = Dict[str, Any]
 
 
+def _apply_surface_priority(items: Any, priority: str) -> List[Dict[str, Any]]:
+    if not isinstance(items, list):
+        return []
+
+    result: List[Dict[str, Any]] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        candidate = deepcopy(item)
+        candidate.setdefault("surface_priority", priority)
+        result.append(candidate)
+    return result
+
+
+def _decorate_record_workspace_surfaces(workbench: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(workbench, dict):
+        return {}
+
+    candidate = deepcopy(workbench)
+    candidate["detail_panels"] = _apply_surface_priority(candidate.get("detail_panels"), "related")
+    candidate["async_indicators"] = _apply_surface_priority(candidate.get("async_indicators"), "admin")
+    candidate["summary_cards"] = _apply_surface_priority(candidate.get("summary_cards"), "primary")
+    candidate["queue_panels"] = _apply_surface_priority(candidate.get("queue_panels"), "related")
+    candidate["exception_panels"] = _apply_surface_priority(candidate.get("exception_panels"), "related")
+    candidate["sla_indicators"] = _apply_surface_priority(candidate.get("sla_indicators"), "context")
+    candidate["recommended_actions"] = _apply_surface_priority(candidate.get("recommended_actions"), "admin")
+
+    closure_panel = candidate.get("closure_panel")
+    if isinstance(closure_panel, dict) and closure_panel:
+        closure_panel = deepcopy(closure_panel)
+        closure_panel.setdefault("surface_priority", "context")
+        candidate["closure_panel"] = closure_panel
+
+    return candidate
+
+
+def _build_document_summary_sections() -> List[Dict[str, Any]]:
+    return [
+        {
+            "code": "process_summary",
+            "surface_priority": "primary",
+        },
+        {
+            "code": "record",
+            "surface_priority": "context",
+        },
+        {
+            "code": "workflow",
+            "surface_priority": "context",
+        },
+        {
+            "code": "batch_tools",
+            "surface_priority": "admin",
+        },
+    ]
+
+
+def _decorate_document_summary_sections(workbench: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(workbench, dict):
+        return {}
+
+    candidate = deepcopy(workbench)
+    configured = candidate.get("document_summary_sections")
+    if isinstance(configured, list) and configured:
+        defaults = {item["code"]: item for item in _build_document_summary_sections()}
+        sections: List[Dict[str, Any]] = []
+        seen: set[str] = set()
+        for item in configured:
+            if not isinstance(item, dict):
+                continue
+            code = str(item.get("code") or "").strip()
+            if not code or code in seen:
+                continue
+            merged = deepcopy(defaults.get(code, {"code": code, "surface_priority": "context"}))
+            merged.update(deepcopy(item))
+            merged.setdefault("surface_priority", defaults.get(code, {}).get("surface_priority", "context"))
+            sections.append(merged)
+            seen.add(code)
+        for item in _build_document_summary_sections():
+            code = str(item["code"])
+            if code in seen:
+                continue
+            sections.append(deepcopy(item))
+        candidate["document_summary_sections"] = sections
+        return candidate
+
+    candidate["document_summary_sections"] = _build_document_summary_sections()
+    return candidate
+
+
 ASSET_WORKBENCH: Dict[str, Any] = {
     "workspace_mode": "extended",
     "primary_entry_route": "/objects/Asset",
+    "default_detail_surface_tab": "process",
     "toolbar": {
         "primary_actions": [],
         "secondary_actions": [],
@@ -75,6 +166,41 @@ ASSET_WORKBENCH: Dict[str, Any] = {
             "value_field": "closure_summary.metrics.open_finance_voucher_count",
             "tone": "warning",
         },
+        {
+            "code": "asset_open_pickups",
+            "label_key": "assets.workbench.summary.openPickups",
+            "value_field": "closure_summary.metrics.open_pickup_count",
+            "tone": "warning",
+        },
+        {
+            "code": "asset_open_transfers",
+            "label_key": "assets.workbench.summary.openTransfers",
+            "value_field": "closure_summary.metrics.open_transfer_count",
+            "tone": "warning",
+        },
+        {
+            "code": "asset_open_returns",
+            "label_key": "assets.workbench.summary.openReturns",
+            "value_field": "closure_summary.metrics.open_return_count",
+            "tone": "warning",
+        },
+        {
+            "code": "asset_open_loans",
+            "label_key": "assets.workbench.summary.openLoans",
+            "value_field": "closure_summary.metrics.open_loan_count",
+            "tone": "warning",
+        },
+        {
+            "code": "asset_pending_depreciation",
+            "label_key": "assets.workbench.summary.pendingDepreciation",
+            "value_field": "closure_summary.metrics.pending_depreciation_count",
+            "tone": "warning",
+        },
+        {
+            "code": "asset_active_warranties",
+            "label_key": "assets.workbench.summary.activeWarranties",
+            "value_field": "closure_summary.metrics.active_warranty_count",
+        },
     ],
     "queue_panels": [
         {
@@ -106,6 +232,42 @@ ASSET_WORKBENCH: Dict[str, Any] = {
             "title_key": "assets.workbench.queues.financeVouchers",
             "count_field": "closure_summary.metrics.linked_finance_voucher_count",
             "route": "/objects/FinanceVoucher?source_asset={id}",
+        },
+        {
+            "code": "asset_pickups",
+            "title_key": "assets.workbench.queues.pickups",
+            "count_field": "closure_summary.metrics.open_pickup_count",
+            "route": "/objects/AssetPickup?asset_id={id}",
+        },
+        {
+            "code": "asset_transfers",
+            "title_key": "assets.workbench.queues.transfers",
+            "count_field": "closure_summary.metrics.open_transfer_count",
+            "route": "/objects/AssetTransfer?asset_id={id}",
+        },
+        {
+            "code": "asset_returns",
+            "title_key": "assets.workbench.queues.returns",
+            "count_field": "closure_summary.metrics.open_return_count",
+            "route": "/objects/AssetReturn?asset_id={id}",
+        },
+        {
+            "code": "asset_loans",
+            "title_key": "assets.workbench.queues.loans",
+            "count_field": "closure_summary.metrics.open_loan_count",
+            "route": "/objects/AssetLoan?asset_id={id}",
+        },
+        {
+            "code": "asset_depreciation_records",
+            "title_key": "assets.workbench.queues.depreciationRecords",
+            "count_field": "closure_summary.metrics.pending_depreciation_count",
+            "route": "/objects/DepreciationRecord?asset_id={id}",
+        },
+        {
+            "code": "asset_warranties",
+            "title_key": "assets.workbench.queues.warranties",
+            "count_field": "closure_summary.metrics.active_warranty_count",
+            "route": "/objects/AssetWarranty?asset_id={id}",
         },
     ],
     "exception_panels": [
@@ -258,9 +420,38 @@ ASSET_PROJECT_WORKBENCH: Dict[str, Any] = {
 PURCHASE_REQUEST_WORKBENCH: Dict[str, Any] = {
     "workspace_mode": "extended",
     "primary_entry_route": "/objects/PurchaseRequest",
+    "default_page_mode": "record",
+    "default_detail_surface_tab": "process",
+    "default_document_surface_tab": "summary",
     "toolbar": {
         "primary_actions": [],
-        "secondary_actions": [],
+        "secondary_actions": [
+            {
+                "code": "purchase_request_cancel",
+                "label_key": "common.documentWorkbench.actions.cancel",
+                "action_path": "cancel",
+                "button_type": "warning",
+                "confirm_message_key": "common.documentWorkbench.confirmations.cancel",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.cancel.title",
+                    "message_key": "common.documentWorkbench.prompts.cancel.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "payload_key": "reason",
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        }
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["draft", "submitted", "approved", "rejected", "processing"],
+                },
+            }
+        ],
     },
     "detail_panels": [],
     "async_indicators": [],
@@ -296,6 +487,15 @@ PURCHASE_REQUEST_WORKBENCH: Dict[str, Any] = {
             "label_key": "assets.lifecycle.purchaseRequest.workbench.summary.openFinanceVoucherCount",
             "value_field": "closure_summary.metrics.open_finance_voucher_count",
             "tone": "warning",
+        },
+        {
+            "code": "purchase_request_cancel_reason",
+            "label_key": "common.workbench.labels.cancelReason",
+            "value_field": "closure_summary.metrics.cancel_reason",
+            "tone": "warning",
+            "visible_when": {
+                "status_in": ["cancelled"],
+            },
         },
     ],
     "queue_panels": [
@@ -341,9 +541,38 @@ PURCHASE_REQUEST_WORKBENCH: Dict[str, Any] = {
 ASSET_RECEIPT_WORKBENCH: Dict[str, Any] = {
     "workspace_mode": "extended",
     "primary_entry_route": "/objects/AssetReceipt",
+    "default_page_mode": "record",
+    "default_detail_surface_tab": "process",
+    "default_document_surface_tab": "summary",
     "toolbar": {
         "primary_actions": [],
-        "secondary_actions": [],
+        "secondary_actions": [
+            {
+                "code": "asset_receipt_cancel",
+                "label_key": "common.documentWorkbench.actions.cancel",
+                "action_path": "cancel",
+                "button_type": "warning",
+                "confirm_message_key": "common.documentWorkbench.confirmations.cancel",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.cancel.title",
+                    "message_key": "common.documentWorkbench.prompts.cancel.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "payload_key": "reason",
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        }
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["draft", "submitted", "inspecting", "rejected"],
+                },
+            }
+        ],
     },
     "detail_panels": [],
     "async_indicators": [],
@@ -380,6 +609,15 @@ ASSET_RECEIPT_WORKBENCH: Dict[str, Any] = {
             "value_field": "closure_summary.metrics.open_finance_voucher_count",
             "tone": "warning",
         },
+        {
+            "code": "asset_receipt_cancel_reason",
+            "label_key": "common.workbench.labels.cancelReason",
+            "value_field": "closure_summary.metrics.cancel_reason",
+            "tone": "warning",
+            "visible_when": {
+                "status_in": ["cancelled"],
+            },
+        },
     ],
     "queue_panels": [
         {
@@ -413,6 +651,1327 @@ ASSET_RECEIPT_WORKBENCH: Dict[str, Any] = {
     },
     "sla_indicators": [],
     "recommended_actions": [],
+}
+
+ASSET_PICKUP_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/AssetPickup",
+    "default_page_mode": "record",
+    "default_detail_surface_tab": "process",
+    "default_document_surface_tab": "summary",
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "pickup_submit",
+                "label_key": "common.documentWorkbench.actions.submit",
+                "action_path": "submit",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.submit",
+                "visible_when": {
+                    "status_in": ["draft"],
+                },
+            },
+            {
+                "code": "pickup_approve",
+                "label_key": "common.documentWorkbench.actions.approve",
+                "action_path": "approve",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.approve",
+                "payload": {
+                    "approval": "approved",
+                },
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.approve.title",
+                    "message_key": "common.documentWorkbench.prompts.approve.message",
+                    "fields": [
+                        {
+                            "key": "comment",
+                            "label_key": "common.documentWorkbench.prompts.fields.comment",
+                            "type": "textarea",
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.comment",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["pending"],
+                },
+            },
+            {
+                "code": "pickup_complete",
+                "label_key": "common.documentWorkbench.actions.complete",
+                "action_path": "complete",
+                "button_type": "success",
+                "confirm_message_key": "common.documentWorkbench.confirmations.complete",
+                "visible_when": {
+                    "status_in": ["approved"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "pickup_reject",
+                "label_key": "common.documentWorkbench.actions.reject",
+                "action_path": "approve",
+                "button_type": "danger",
+                "confirm_message_key": "common.documentWorkbench.confirmations.reject",
+                "payload": {
+                    "approval": "rejected",
+                },
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.reject.title",
+                    "message_key": "common.documentWorkbench.prompts.reject.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "payload_key": "comment",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["pending"],
+                },
+            },
+            {
+                "code": "pickup_cancel",
+                "label_key": "common.documentWorkbench.actions.cancel",
+                "action_path": "cancel",
+                "button_type": "warning",
+                "confirm_message_key": "common.documentWorkbench.confirmations.cancel",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.cancel.title",
+                    "message_key": "common.documentWorkbench.prompts.cancel.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["draft", "pending"],
+                },
+            },
+        ],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "pickup_applicant",
+            "label_key": "assets.pickup.workbench.summary.applicant",
+            "value_field": "closure_summary.metrics.applicant_name",
+        },
+        {
+            "code": "pickup_department",
+            "label_key": "assets.pickup.workbench.summary.department",
+            "value_field": "closure_summary.metrics.department_name",
+        },
+        {
+            "code": "pickup_item_count",
+            "label_key": "assets.pickup.workbench.summary.itemCount",
+            "value_field": "closure_summary.metrics.item_count",
+        },
+        {
+            "code": "pickup_approved_items",
+            "label_key": "assets.pickup.workbench.summary.approvedItemCount",
+            "value_field": "closure_summary.metrics.approved_item_count",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "pickup_items",
+            "title_key": "assets.pickup.workbench.queues.items",
+            "count_field": "closure_summary.metrics.item_count",
+            "route": "/objects/PickupItem?pickup_id={id}",
+        },
+    ],
+    "exception_panels": [],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [
+        {
+            "code": "pickup_submit_recommended",
+            "label_key": "common.documentWorkbench.actions.submit",
+            "action_path": "submit",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.submit",
+            "visible_when": {
+                "status_in": ["draft"],
+            },
+        },
+        {
+            "code": "pickup_approve_recommended",
+            "label_key": "common.documentWorkbench.actions.approve",
+            "action_path": "approve",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.approve",
+            "payload": {
+                "approval": "approved",
+            },
+            "prompt": {
+                "title_key": "common.documentWorkbench.prompts.approve.title",
+                "message_key": "common.documentWorkbench.prompts.approve.message",
+                "fields": [
+                    {
+                        "key": "comment",
+                        "label_key": "common.documentWorkbench.prompts.fields.comment",
+                        "type": "textarea",
+                        "rows": 4,
+                        "placeholder_key": "common.documentWorkbench.prompts.placeholders.comment",
+                    },
+                ],
+            },
+            "visible_when": {
+                "status_in": ["pending"],
+            },
+        },
+        {
+            "code": "pickup_complete_recommended",
+            "label_key": "common.documentWorkbench.actions.complete",
+            "action_path": "complete",
+            "button_type": "success",
+            "confirm_message_key": "common.documentWorkbench.confirmations.complete",
+            "visible_when": {
+                "status_in": ["approved"],
+            },
+        },
+    ],
+}
+
+ASSET_TRANSFER_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/AssetTransfer",
+    "default_page_mode": "record",
+    "default_detail_surface_tab": "process",
+    "default_document_surface_tab": "summary",
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "transfer_submit",
+                "label_key": "common.documentWorkbench.actions.submit",
+                "action_path": "submit",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.submit",
+                "visible_when": {
+                    "status_in": ["draft"],
+                },
+            },
+            {
+                "code": "transfer_approve_from",
+                "label_key": "common.documentWorkbench.actions.approveFrom",
+                "action_path": "approve-from",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.approveFrom",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.approveFrom.title",
+                    "message_key": "common.documentWorkbench.prompts.approveFrom.message",
+                    "fields": [
+                        {
+                            "key": "comment",
+                            "label_key": "common.documentWorkbench.prompts.fields.comment",
+                            "type": "textarea",
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.comment",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["pending"],
+                },
+            },
+            {
+                "code": "transfer_approve_to",
+                "label_key": "common.documentWorkbench.actions.approveTo",
+                "action_path": "approve-to",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.approveTo",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.approveTo.title",
+                    "message_key": "common.documentWorkbench.prompts.approveTo.message",
+                    "fields": [
+                        {
+                            "key": "comment",
+                            "label_key": "common.documentWorkbench.prompts.fields.comment",
+                            "type": "textarea",
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.comment",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["out_approved"],
+                },
+            },
+            {
+                "code": "transfer_complete",
+                "label_key": "common.documentWorkbench.actions.complete",
+                "action_path": "complete",
+                "button_type": "success",
+                "confirm_message_key": "common.documentWorkbench.confirmations.complete",
+                "visible_when": {
+                    "status_in": ["approved"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "transfer_reject",
+                "label_key": "common.documentWorkbench.actions.reject",
+                "action_path": "reject",
+                "button_type": "danger",
+                "confirm_message_key": "common.documentWorkbench.confirmations.reject",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.reject.title",
+                    "message_key": "common.documentWorkbench.prompts.reject.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["pending", "out_approved"],
+                },
+            },
+            {
+                "code": "transfer_cancel",
+                "label_key": "common.documentWorkbench.actions.cancel",
+                "action_path": "cancel",
+                "button_type": "warning",
+                "confirm_message_key": "common.documentWorkbench.confirmations.cancel",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.cancel.title",
+                    "message_key": "common.documentWorkbench.prompts.cancel.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["draft", "pending", "out_approved"],
+                },
+            },
+        ],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "transfer_source_department",
+            "label_key": "assets.transfer.workbench.summary.sourceDepartment",
+            "value_field": "closure_summary.metrics.source_department_name",
+        },
+        {
+            "code": "transfer_target_department",
+            "label_key": "assets.transfer.workbench.summary.targetDepartment",
+            "value_field": "closure_summary.metrics.target_department_name",
+        },
+        {
+            "code": "transfer_item_count",
+            "label_key": "assets.transfer.workbench.summary.itemCount",
+            "value_field": "closure_summary.metrics.item_count",
+        },
+        {
+            "code": "transfer_source_approved",
+            "label_key": "assets.transfer.workbench.summary.sourceApprovedCount",
+            "value_field": "closure_summary.metrics.source_approved_count",
+        },
+        {
+            "code": "transfer_target_approved",
+            "label_key": "assets.transfer.workbench.summary.targetApprovedCount",
+            "value_field": "closure_summary.metrics.target_approved_count",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "transfer_items",
+            "title_key": "assets.transfer.workbench.queues.items",
+            "count_field": "closure_summary.metrics.item_count",
+            "route": "/objects/TransferItem?transfer_id={id}",
+        },
+    ],
+    "exception_panels": [],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [
+        {
+            "code": "transfer_submit_recommended",
+            "label_key": "common.documentWorkbench.actions.submit",
+            "action_path": "submit",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.submit",
+            "visible_when": {
+                "status_in": ["draft"],
+            },
+        },
+        {
+            "code": "transfer_approve_from_recommended",
+            "label_key": "common.documentWorkbench.actions.approveFrom",
+            "action_path": "approve-from",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.approveFrom",
+            "prompt": {
+                "title_key": "common.documentWorkbench.prompts.approveFrom.title",
+                "message_key": "common.documentWorkbench.prompts.approveFrom.message",
+                "fields": [
+                    {
+                        "key": "comment",
+                        "label_key": "common.documentWorkbench.prompts.fields.comment",
+                        "type": "textarea",
+                        "rows": 4,
+                        "placeholder_key": "common.documentWorkbench.prompts.placeholders.comment",
+                    },
+                ],
+            },
+            "visible_when": {
+                "status_in": ["pending"],
+            },
+        },
+        {
+            "code": "transfer_approve_to_recommended",
+            "label_key": "common.documentWorkbench.actions.approveTo",
+            "action_path": "approve-to",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.approveTo",
+            "prompt": {
+                "title_key": "common.documentWorkbench.prompts.approveTo.title",
+                "message_key": "common.documentWorkbench.prompts.approveTo.message",
+                "fields": [
+                    {
+                        "key": "comment",
+                        "label_key": "common.documentWorkbench.prompts.fields.comment",
+                        "type": "textarea",
+                        "rows": 4,
+                        "placeholder_key": "common.documentWorkbench.prompts.placeholders.comment",
+                    },
+                ],
+            },
+            "visible_when": {
+                "status_in": ["out_approved"],
+            },
+        },
+        {
+            "code": "transfer_complete_recommended",
+            "label_key": "common.documentWorkbench.actions.complete",
+            "action_path": "complete",
+            "button_type": "success",
+            "confirm_message_key": "common.documentWorkbench.confirmations.complete",
+            "visible_when": {
+                "status_in": ["approved"],
+            },
+        },
+    ],
+}
+
+ASSET_RETURN_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/AssetReturn",
+    "default_page_mode": "record",
+    "default_detail_surface_tab": "process",
+    "default_document_surface_tab": "summary",
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "return_submit",
+                "label_key": "common.documentWorkbench.actions.submit",
+                "action_path": "submit",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.submit",
+                "visible_when": {
+                    "status_in": ["draft"],
+                },
+            },
+            {
+                "code": "return_confirm",
+                "label_key": "common.documentWorkbench.actions.confirmReturn",
+                "action_path": "confirm",
+                "button_type": "success",
+                "confirm_message_key": "common.documentWorkbench.confirmations.confirmReturn",
+                "visible_when": {
+                    "status_in": ["pending"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "return_reject",
+                "label_key": "common.documentWorkbench.actions.reject",
+                "action_path": "reject",
+                "button_type": "danger",
+                "confirm_message_key": "common.documentWorkbench.confirmations.reject",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.reject.title",
+                    "message_key": "common.documentWorkbench.prompts.reject.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["pending"],
+                },
+            },
+            {
+                "code": "return_cancel",
+                "label_key": "common.documentWorkbench.actions.cancel",
+                "action_path": "cancel",
+                "button_type": "warning",
+                "confirm_message_key": "common.documentWorkbench.confirmations.cancel",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.cancel.title",
+                    "message_key": "common.documentWorkbench.prompts.cancel.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["draft", "pending"],
+                },
+            },
+        ],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "return_location",
+            "label_key": "assets.return.workbench.summary.returnLocation",
+            "value_field": "closure_summary.metrics.return_location_name",
+        },
+        {
+            "code": "return_item_count",
+            "label_key": "assets.return.workbench.summary.itemCount",
+            "value_field": "closure_summary.metrics.item_count",
+        },
+        {
+            "code": "return_project_allocations",
+            "label_key": "assets.return.workbench.summary.projectAllocationCount",
+            "value_field": "closure_summary.metrics.project_allocation_count",
+        },
+        {
+            "code": "return_maintenance_follow_up",
+            "label_key": "assets.return.workbench.summary.maintenanceAfterReturnCount",
+            "value_field": "closure_summary.metrics.maintenance_after_return_count",
+            "tone": "warning",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "return_items",
+            "title_key": "assets.return.workbench.queues.items",
+            "count_field": "closure_summary.metrics.item_count",
+            "route": "/objects/ReturnItem?asset_return_id={id}",
+        },
+    ],
+    "exception_panels": [
+        {
+            "code": "return_maintenance_attention",
+            "title_key": "assets.return.workbench.queues.maintenanceFollowUp",
+            "count_field": "closure_summary.metrics.maintenance_after_return_count",
+            "route": "/objects/ReturnItem?asset_return_id={id}",
+            "tone": "warning",
+        },
+    ],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [
+        {
+            "code": "return_submit_recommended",
+            "label_key": "common.documentWorkbench.actions.submit",
+            "action_path": "submit",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.submit",
+            "visible_when": {
+                "status_in": ["draft"],
+            },
+        },
+        {
+            "code": "return_confirm_recommended",
+            "label_key": "common.documentWorkbench.actions.confirmReturn",
+            "action_path": "confirm",
+            "button_type": "success",
+            "confirm_message_key": "common.documentWorkbench.confirmations.confirmReturn",
+            "visible_when": {
+                "status_in": ["pending"],
+            },
+        },
+    ],
+}
+
+ASSET_LOAN_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/AssetLoan",
+    "default_page_mode": "record",
+    "default_detail_surface_tab": "process",
+    "default_document_surface_tab": "summary",
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "loan_submit",
+                "label_key": "common.documentWorkbench.actions.submit",
+                "action_path": "submit",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.submit",
+                "visible_when": {
+                    "status_in": ["draft"],
+                },
+            },
+            {
+                "code": "loan_approve",
+                "label_key": "common.documentWorkbench.actions.approve",
+                "action_path": "approve",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.approve",
+                "payload": {
+                    "approval": "approved",
+                },
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.approve.title",
+                    "message_key": "common.documentWorkbench.prompts.approve.message",
+                    "fields": [
+                        {
+                            "key": "comment",
+                            "label_key": "common.documentWorkbench.prompts.fields.comment",
+                            "type": "textarea",
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.comment",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["pending"],
+                },
+            },
+            {
+                "code": "loan_confirm_borrow",
+                "label_key": "common.documentWorkbench.actions.confirmBorrow",
+                "action_path": "confirm-borrow",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.confirmBorrow",
+                "visible_when": {
+                    "status_in": ["approved"],
+                },
+            },
+            {
+                "code": "loan_confirm_return",
+                "label_key": "common.documentWorkbench.actions.confirmReturn",
+                "action_path": "confirm-return",
+                "button_type": "success",
+                "confirm_message_key": "common.documentWorkbench.confirmations.confirmReturn",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.confirmReturn.title",
+                    "message_key": "common.documentWorkbench.prompts.confirmReturn.message",
+                    "fields": [
+                        {
+                            "key": "condition",
+                            "label_key": "common.documentWorkbench.prompts.fields.condition",
+                            "type": "select",
+                            "required": True,
+                            "default_value": "good",
+                            "options": [
+                                {
+                                    "value": "good",
+                                    "label_key": "common.documentWorkbench.prompts.conditionOptions.good",
+                                },
+                                {
+                                    "value": "minor_damage",
+                                    "label_key": "common.documentWorkbench.prompts.conditionOptions.minorDamage",
+                                },
+                                {
+                                    "value": "major_damage",
+                                    "label_key": "common.documentWorkbench.prompts.conditionOptions.majorDamage",
+                                },
+                                {
+                                    "value": "lost",
+                                    "label_key": "common.documentWorkbench.prompts.conditionOptions.lost",
+                                },
+                            ],
+                        },
+                        {
+                            "key": "comment",
+                            "label_key": "common.documentWorkbench.prompts.fields.comment",
+                            "type": "textarea",
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.comment",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["borrowed", "overdue"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "loan_reject",
+                "label_key": "common.documentWorkbench.actions.reject",
+                "action_path": "approve",
+                "button_type": "danger",
+                "confirm_message_key": "common.documentWorkbench.confirmations.reject",
+                "payload": {
+                    "approval": "rejected",
+                },
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.reject.title",
+                    "message_key": "common.documentWorkbench.prompts.reject.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "payload_key": "comment",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["pending"],
+                },
+            },
+            {
+                "code": "loan_cancel",
+                "label_key": "common.documentWorkbench.actions.cancel",
+                "action_path": "cancel",
+                "button_type": "warning",
+                "confirm_message_key": "common.documentWorkbench.confirmations.cancel",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.cancel.title",
+                    "message_key": "common.documentWorkbench.prompts.cancel.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["draft", "pending"],
+                },
+            },
+        ],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "loan_borrower",
+            "label_key": "assets.loan.workbench.summary.borrower",
+            "value_field": "closure_summary.metrics.borrower_name",
+        },
+        {
+            "code": "loan_expected_return_date",
+            "label_key": "assets.loan.workbench.summary.expectedReturnDate",
+            "value_field": "closure_summary.metrics.expected_return_date",
+        },
+        {
+            "code": "loan_item_count",
+            "label_key": "assets.loan.workbench.summary.itemCount",
+            "value_field": "closure_summary.metrics.item_count",
+        },
+        {
+            "code": "loan_overdue_days",
+            "label_key": "assets.loan.workbench.summary.overdueDays",
+            "value_field": "closure_summary.metrics.overdue_days",
+            "tone": "warning",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "loan_items",
+            "title_key": "assets.loan.workbench.queues.items",
+            "count_field": "closure_summary.metrics.item_count",
+            "route": "/objects/LoanItem?loan_id={id}",
+        },
+    ],
+    "exception_panels": [],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [
+        {
+            "code": "loan_submit_recommended",
+            "label_key": "common.documentWorkbench.actions.submit",
+            "action_path": "submit",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.submit",
+            "visible_when": {
+                "status_in": ["draft"],
+            },
+        },
+        {
+            "code": "loan_approve_recommended",
+            "label_key": "common.documentWorkbench.actions.approve",
+            "action_path": "approve",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.approve",
+            "payload": {
+                "approval": "approved",
+            },
+            "prompt": {
+                "title_key": "common.documentWorkbench.prompts.approve.title",
+                "message_key": "common.documentWorkbench.prompts.approve.message",
+                "fields": [
+                    {
+                        "key": "comment",
+                        "label_key": "common.documentWorkbench.prompts.fields.comment",
+                        "type": "textarea",
+                        "rows": 4,
+                        "placeholder_key": "common.documentWorkbench.prompts.placeholders.comment",
+                    },
+                ],
+            },
+            "visible_when": {
+                "status_in": ["pending"],
+            },
+        },
+        {
+            "code": "loan_confirm_borrow_recommended",
+            "label_key": "common.documentWorkbench.actions.confirmBorrow",
+            "action_path": "confirm-borrow",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.confirmBorrow",
+            "visible_when": {
+                "status_in": ["approved"],
+            },
+        },
+        {
+            "code": "loan_confirm_return_recommended",
+            "label_key": "common.documentWorkbench.actions.confirmReturn",
+            "action_path": "confirm-return",
+            "button_type": "success",
+            "confirm_message_key": "common.documentWorkbench.confirmations.confirmReturn",
+            "prompt": {
+                "title_key": "common.documentWorkbench.prompts.confirmReturn.title",
+                "message_key": "common.documentWorkbench.prompts.confirmReturn.message",
+                "fields": [
+                    {
+                        "key": "condition",
+                        "label_key": "common.documentWorkbench.prompts.fields.condition",
+                        "type": "select",
+                        "required": True,
+                        "default_value": "good",
+                        "options": [
+                            {
+                                "value": "good",
+                                "label_key": "common.documentWorkbench.prompts.conditionOptions.good",
+                            },
+                            {
+                                "value": "minor_damage",
+                                "label_key": "common.documentWorkbench.prompts.conditionOptions.minorDamage",
+                            },
+                            {
+                                "value": "major_damage",
+                                "label_key": "common.documentWorkbench.prompts.conditionOptions.majorDamage",
+                            },
+                            {
+                                "value": "lost",
+                                "label_key": "common.documentWorkbench.prompts.conditionOptions.lost",
+                            },
+                        ],
+                    },
+                    {
+                        "key": "comment",
+                        "label_key": "common.documentWorkbench.prompts.fields.comment",
+                        "type": "textarea",
+                        "rows": 4,
+                        "placeholder_key": "common.documentWorkbench.prompts.placeholders.comment",
+                    },
+                ],
+            },
+            "visible_when": {
+                "status_in": ["borrowed", "overdue"],
+            },
+        },
+    ],
+}
+
+MAINTENANCE_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/Maintenance",
+    "default_detail_surface_tab": "process",
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "maintenance_start_work",
+                "label_key": "common.documentWorkbench.actions.startWork",
+                "action_path": "start_work",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.startWork",
+                "visible_when": {
+                    "status_in": ["assigned"],
+                },
+            },
+            {
+                "code": "maintenance_complete_work",
+                "label_key": "common.documentWorkbench.actions.completeWork",
+                "action_path": "complete_work",
+                "button_type": "success",
+                "confirm_message_key": "common.documentWorkbench.confirmations.completeWork",
+                "visible_when": {
+                    "status_in": ["processing"],
+                },
+            },
+            {
+                "code": "maintenance_verify",
+                "label_key": "common.documentWorkbench.actions.verify",
+                "action_path": "verify",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.verify",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.verify.title",
+                    "message_key": "common.documentWorkbench.prompts.verify.message",
+                    "fields": [
+                        {
+                            "key": "result",
+                            "label_key": "common.documentWorkbench.prompts.fields.result",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.result",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["completed"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "maintenance_cancel",
+                "label_key": "common.documentWorkbench.actions.cancel",
+                "action_path": "cancel",
+                "button_type": "warning",
+                "confirm_message_key": "common.documentWorkbench.confirmations.cancel",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.cancel.title",
+                    "message_key": "common.documentWorkbench.prompts.cancel.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["reported", "assigned", "processing"],
+                },
+            },
+        ],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "maintenance_asset_code",
+            "label_key": "assets.lifecycle.maintenance.workbench.summary.assetCode",
+            "value_field": "closure_summary.metrics.asset_code",
+        },
+        {
+            "code": "maintenance_technician",
+            "label_key": "assets.lifecycle.maintenance.workbench.summary.technician",
+            "value_field": "closure_summary.metrics.technician_name",
+        },
+        {
+            "code": "maintenance_total_cost",
+            "label_key": "assets.lifecycle.maintenance.workbench.summary.totalCost",
+            "value_field": "closure_summary.metrics.total_cost",
+        },
+        {
+            "code": "maintenance_work_hours",
+            "label_key": "assets.lifecycle.maintenance.workbench.summary.workHours",
+            "value_field": "closure_summary.metrics.work_hours",
+        },
+        {
+            "code": "maintenance_fault_photos",
+            "label_key": "assets.lifecycle.maintenance.workbench.summary.faultPhotoCount",
+            "value_field": "closure_summary.metrics.fault_photo_count",
+        },
+    ],
+    "queue_panels": [],
+    "exception_panels": [],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [
+        {
+            "code": "maintenance_start_work_recommended",
+            "label_key": "common.documentWorkbench.actions.startWork",
+            "action_path": "start_work",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.startWork",
+            "visible_when": {
+                "status_in": ["assigned"],
+            },
+        },
+        {
+            "code": "maintenance_complete_work_recommended",
+            "label_key": "common.documentWorkbench.actions.completeWork",
+            "action_path": "complete_work",
+            "button_type": "success",
+            "confirm_message_key": "common.documentWorkbench.confirmations.completeWork",
+            "visible_when": {
+                "status_in": ["processing"],
+            },
+        },
+        {
+            "code": "maintenance_verify_recommended",
+            "label_key": "common.documentWorkbench.actions.verify",
+            "action_path": "verify",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.verify",
+            "prompt": {
+                "title_key": "common.documentWorkbench.prompts.verify.title",
+                "message_key": "common.documentWorkbench.prompts.verify.message",
+                "fields": [
+                    {
+                        "key": "result",
+                        "label_key": "common.documentWorkbench.prompts.fields.result",
+                        "type": "textarea",
+                        "required": True,
+                        "rows": 4,
+                        "placeholder_key": "common.documentWorkbench.prompts.placeholders.result",
+                    },
+                ],
+            },
+            "visible_when": {
+                "status_in": ["completed"],
+            },
+        },
+    ],
+}
+
+DISPOSAL_REQUEST_WORKBENCH: Dict[str, Any] = {
+    "workspace_mode": "extended",
+    "primary_entry_route": "/objects/DisposalRequest",
+    "default_page_mode": "record",
+    "default_detail_surface_tab": "process",
+    "default_document_surface_tab": "summary",
+    "toolbar": {
+        "primary_actions": [
+            {
+                "code": "disposal_submit",
+                "label_key": "common.documentWorkbench.actions.submit",
+                "action_path": "submit",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.submit",
+                "visible_when": {
+                    "status_in": ["draft", "rejected"],
+                },
+            },
+            {
+                "code": "disposal_start_appraisal",
+                "label_key": "common.documentWorkbench.actions.startAppraisal",
+                "action_path": "start_appraisal",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.startAppraisal",
+                "visible_when": {
+                    "status_in": ["submitted"],
+                },
+            },
+            {
+                "code": "disposal_approve",
+                "label_key": "common.documentWorkbench.actions.approve",
+                "action_path": "approve",
+                "button_type": "primary",
+                "confirm_message_key": "common.documentWorkbench.confirmations.approve",
+                "payload": {
+                    "decision": "approved",
+                },
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.approve.title",
+                    "message_key": "common.documentWorkbench.prompts.approve.message",
+                    "fields": [
+                        {
+                            "key": "comment",
+                            "label_key": "common.documentWorkbench.prompts.fields.comment",
+                            "type": "textarea",
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.comment",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["appraising"],
+                },
+            },
+            {
+                "code": "disposal_start_execution",
+                "label_key": "common.documentWorkbench.actions.startExecution",
+                "action_path": "start_execution",
+                "button_type": "warning",
+                "confirm_message_key": "common.documentWorkbench.confirmations.startExecution",
+                "visible_when": {
+                    "status_in": ["approved"],
+                },
+            },
+            {
+                "code": "disposal_complete",
+                "label_key": "common.documentWorkbench.actions.complete",
+                "action_path": "complete",
+                "button_type": "success",
+                "confirm_message_key": "common.documentWorkbench.confirmations.complete",
+                "visible_when": {
+                    "status_in": ["executing"],
+                },
+            },
+        ],
+        "secondary_actions": [
+            {
+                "code": "disposal_reject",
+                "label_key": "common.documentWorkbench.actions.reject",
+                "action_path": "approve",
+                "button_type": "danger",
+                "confirm_message_key": "common.documentWorkbench.confirmations.reject",
+                "payload": {
+                    "decision": "rejected",
+                },
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.reject.title",
+                    "message_key": "common.documentWorkbench.prompts.reject.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "payload_key": "comment",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["submitted", "appraising"],
+                },
+            },
+            {
+                "code": "disposal_cancel",
+                "label_key": "common.documentWorkbench.actions.cancel",
+                "action_path": "cancel",
+                "button_type": "warning",
+                "confirm_message_key": "common.documentWorkbench.confirmations.cancel",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.cancel.title",
+                    "message_key": "common.documentWorkbench.prompts.cancel.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        },
+                    ],
+                },
+                "visible_when": {
+                    "status_in": ["draft", "rejected", "submitted", "appraising", "approved", "executing"],
+                },
+            },
+        ],
+    },
+    "detail_panels": [],
+    "async_indicators": [],
+    "summary_cards": [
+        {
+            "code": "disposal_type",
+            "label_key": "assets.lifecycle.disposalRequest.workbench.summary.disposalType",
+            "value_field": "closure_summary.metrics.disposal_type_label",
+        },
+        {
+            "code": "disposal_item_count",
+            "label_key": "assets.lifecycle.disposalRequest.workbench.summary.itemCount",
+            "value_field": "closure_summary.metrics.item_count",
+        },
+        {
+            "code": "disposal_appraised_items",
+            "label_key": "assets.lifecycle.disposalRequest.workbench.summary.appraisedItemCount",
+            "value_field": "closure_summary.metrics.appraised_item_count",
+        },
+        {
+            "code": "disposal_executed_items",
+            "label_key": "assets.lifecycle.disposalRequest.workbench.summary.executedItemCount",
+            "value_field": "closure_summary.metrics.executed_item_count",
+        },
+        {
+            "code": "disposal_total_net_value",
+            "label_key": "assets.lifecycle.disposalRequest.workbench.summary.totalNetValue",
+            "value_field": "closure_summary.metrics.total_net_value",
+        },
+    ],
+    "queue_panels": [
+        {
+            "code": "disposal_items",
+            "title_key": "assets.lifecycle.disposalRequest.workbench.queues.items",
+            "count_field": "closure_summary.metrics.item_count",
+            "route": "/objects/DisposalItem?disposal_request_id={id}",
+        },
+    ],
+    "exception_panels": [
+        {
+            "code": "disposal_pending_appraisal",
+            "title_key": "assets.lifecycle.disposalRequest.workbench.queues.pendingAppraisal",
+            "count_field": "closure_summary.metrics.pending_appraisal_count",
+            "route": "/objects/DisposalItem?disposal_request_id={id}",
+            "tone": "warning",
+        },
+        {
+            "code": "disposal_pending_execution",
+            "title_key": "assets.lifecycle.disposalRequest.workbench.queues.pendingExecution",
+            "count_field": "closure_summary.metrics.pending_execution_count",
+            "route": "/objects/DisposalItem?disposal_request_id={id}",
+            "tone": "warning",
+        },
+    ],
+    "closure_panel": {
+        "title_key": "common.workbench.titles.closure",
+        "stage_field": "closure_summary.stage",
+        "owner_field": "closure_summary.owner",
+        "blocker_field": "closure_summary.blocker",
+        "progress_field": "closure_summary.completion_display",
+    },
+    "sla_indicators": [],
+    "recommended_actions": [
+        {
+            "code": "disposal_submit_recommended",
+            "label_key": "common.documentWorkbench.actions.submit",
+            "action_path": "submit",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.submit",
+            "visible_when": {
+                "status_in": ["draft", "rejected"],
+            },
+        },
+        {
+            "code": "disposal_start_appraisal_recommended",
+            "label_key": "common.documentWorkbench.actions.startAppraisal",
+            "action_path": "start_appraisal",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.startAppraisal",
+            "visible_when": {
+                "status_in": ["submitted"],
+            },
+        },
+        {
+            "code": "disposal_approve_recommended",
+            "label_key": "common.documentWorkbench.actions.approve",
+            "action_path": "approve",
+            "button_type": "primary",
+            "confirm_message_key": "common.documentWorkbench.confirmations.approve",
+            "payload": {
+                "decision": "approved",
+            },
+            "prompt": {
+                "title_key": "common.documentWorkbench.prompts.approve.title",
+                "message_key": "common.documentWorkbench.prompts.approve.message",
+                "fields": [
+                    {
+                        "key": "comment",
+                        "label_key": "common.documentWorkbench.prompts.fields.comment",
+                        "type": "textarea",
+                        "rows": 4,
+                        "placeholder_key": "common.documentWorkbench.prompts.placeholders.comment",
+                    },
+                ],
+            },
+            "visible_when": {
+                "status_in": ["appraising"],
+            },
+        },
+        {
+            "code": "disposal_start_execution_recommended",
+            "label_key": "common.documentWorkbench.actions.startExecution",
+            "action_path": "start_execution",
+            "button_type": "warning",
+            "confirm_message_key": "common.documentWorkbench.confirmations.startExecution",
+            "visible_when": {
+                "status_in": ["approved"],
+            },
+        },
+        {
+            "code": "disposal_complete_recommended",
+            "label_key": "common.documentWorkbench.actions.complete",
+            "action_path": "complete",
+            "button_type": "success",
+            "confirm_message_key": "common.documentWorkbench.confirmations.complete",
+            "visible_when": {
+                "status_in": ["executing"],
+            },
+        },
+    ],
 }
 
 FINANCE_VOUCHER_WORKBENCH: Dict[str, Any] = {
@@ -593,6 +2152,22 @@ INSURANCE_POLICY_WORKBENCH: Dict[str, Any] = {
                 "label_key": "insurance.workbench.actions.cancelPolicy",
                 "action_path": "cancel",
                 "button_type": "warning",
+                "confirm_message_key": "common.documentWorkbench.confirmations.cancel",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.cancel.title",
+                    "message_key": "common.documentWorkbench.prompts.cancel.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "payload_key": "reason",
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        }
+                    ],
+                },
                 "visible_when": {
                     "status_in": ["draft", "active"],
                 },
@@ -623,6 +2198,15 @@ INSURANCE_POLICY_WORKBENCH: Dict[str, Any] = {
             "code": "insurance_policy_days_to_expiry",
             "label_key": "insurance.workbench.summary.daysUntilExpiry",
             "value_field": "days_until_expiry",
+        },
+        {
+            "code": "insurance_policy_cancel_reason",
+            "label_key": "common.workbench.labels.cancelReason",
+            "value_field": "closure_summary.metrics.cancel_reason",
+            "tone": "warning",
+            "visible_when": {
+                "status_in": ["cancelled"],
+            },
         },
     ],
     "queue_panels": [
@@ -673,6 +2257,22 @@ INSURANCE_POLICY_WORKBENCH: Dict[str, Any] = {
             "description_key": "insurance.workbench.messages.cancelPolicyHint",
             "action_path": "cancel",
             "button_type": "warning",
+            "confirm_message_key": "common.documentWorkbench.confirmations.cancel",
+            "prompt": {
+                "title_key": "common.documentWorkbench.prompts.cancel.title",
+                "message_key": "common.documentWorkbench.prompts.cancel.message",
+                "fields": [
+                    {
+                        "key": "reason",
+                        "label_key": "common.documentWorkbench.prompts.fields.reason",
+                        "type": "textarea",
+                        "required": True,
+                        "rows": 4,
+                        "payload_key": "reason",
+                        "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                    }
+                ],
+            },
             "visible_when": {
                 "status_in": ["draft", "active"],
             },
@@ -1010,6 +2610,22 @@ INVENTORY_TASK_WORKBENCH: Dict[str, Any] = {
                 "label_key": "inventory.workbench.actions.cancelTask",
                 "action_path": "cancel",
                 "button_type": "warning",
+                "confirm_message_key": "common.documentWorkbench.confirmations.cancel",
+                "prompt": {
+                    "title_key": "common.documentWorkbench.prompts.cancel.title",
+                    "message_key": "common.documentWorkbench.prompts.cancel.message",
+                    "fields": [
+                        {
+                            "key": "reason",
+                            "label_key": "common.documentWorkbench.prompts.fields.reason",
+                            "type": "textarea",
+                            "required": True,
+                            "rows": 4,
+                            "payload_key": "reason",
+                            "placeholder_key": "common.documentWorkbench.prompts.placeholders.reason",
+                        }
+                    ],
+                },
                 "visible_when": {
                     "status_in": ["draft", "pending_approval", "pending", "in_progress"],
                 },
@@ -1060,6 +2676,15 @@ INVENTORY_TASK_WORKBENCH: Dict[str, Any] = {
             "label_key": "inventory.workbench.summary.pendingFollowUp",
             "value_field": "difference_summary.manual_follow_up_open_count",
             "tone": "warning",
+        },
+        {
+            "code": "inventory_cancel_reason",
+            "label_key": "common.workbench.labels.cancelReason",
+            "value_field": "closure_summary.metrics.cancel_reason",
+            "tone": "warning",
+            "visible_when": {
+                "status_in": ["cancelled"],
+            },
         },
     ],
     "queue_panels": [
@@ -1396,6 +3021,25 @@ INVENTORY_FOLLOW_UP_WORKBENCH: Dict[str, Any] = {
     "recommended_actions": [],
 }
 
+ASSET_WORKBENCH = _decorate_record_workspace_surfaces(ASSET_WORKBENCH)
+ASSET_PROJECT_WORKBENCH = _decorate_record_workspace_surfaces(ASSET_PROJECT_WORKBENCH)
+PURCHASE_REQUEST_WORKBENCH = _decorate_record_workspace_surfaces(PURCHASE_REQUEST_WORKBENCH)
+ASSET_RECEIPT_WORKBENCH = _decorate_record_workspace_surfaces(ASSET_RECEIPT_WORKBENCH)
+ASSET_PICKUP_WORKBENCH = _decorate_record_workspace_surfaces(ASSET_PICKUP_WORKBENCH)
+ASSET_TRANSFER_WORKBENCH = _decorate_record_workspace_surfaces(ASSET_TRANSFER_WORKBENCH)
+ASSET_RETURN_WORKBENCH = _decorate_record_workspace_surfaces(ASSET_RETURN_WORKBENCH)
+ASSET_LOAN_WORKBENCH = _decorate_record_workspace_surfaces(ASSET_LOAN_WORKBENCH)
+MAINTENANCE_WORKBENCH = _decorate_record_workspace_surfaces(MAINTENANCE_WORKBENCH)
+DISPOSAL_REQUEST_WORKBENCH = _decorate_record_workspace_surfaces(DISPOSAL_REQUEST_WORKBENCH)
+
+PURCHASE_REQUEST_WORKBENCH = _decorate_document_summary_sections(PURCHASE_REQUEST_WORKBENCH)
+ASSET_RECEIPT_WORKBENCH = _decorate_document_summary_sections(ASSET_RECEIPT_WORKBENCH)
+ASSET_PICKUP_WORKBENCH = _decorate_document_summary_sections(ASSET_PICKUP_WORKBENCH)
+ASSET_TRANSFER_WORKBENCH = _decorate_document_summary_sections(ASSET_TRANSFER_WORKBENCH)
+ASSET_RETURN_WORKBENCH = _decorate_document_summary_sections(ASSET_RETURN_WORKBENCH)
+ASSET_LOAN_WORKBENCH = _decorate_document_summary_sections(ASSET_LOAN_WORKBENCH)
+DISPOSAL_REQUEST_WORKBENCH = _decorate_document_summary_sections(DISPOSAL_REQUEST_WORKBENCH)
+
 
 MENU_GROUPS: Dict[str, Dict[str, Any]] = {
     "asset_master": {
@@ -1535,10 +3179,30 @@ DEFAULT_OBJECT_MENU_RULES: Dict[str, Dict[str, Any]] = {
     "AssetStatusLog": {"group_code": "asset_master", "item_order": 50, "icon": "Clock", "show_in_menu": False},
     "ITAsset": {"group_code": "asset_master", "item_order": 60, "icon": "Monitor"},
     "InsuredAsset": {"group_code": "asset_master", "item_order": 70, "icon": "DocumentChecked"},
-    "AssetPickup": {"group_code": "asset_operation", "item_order": 10, "icon": "Upload"},
-    "AssetTransfer": {"group_code": "asset_operation", "item_order": 20, "icon": "Switch"},
-    "AssetReturn": {"group_code": "asset_operation", "item_order": 30, "icon": "Download"},
-    "AssetLoan": {"group_code": "asset_operation", "item_order": 40, "icon": "Connection"},
+    "AssetPickup": {
+        "group_code": "asset_operation",
+        "item_order": 10,
+        "icon": "Upload",
+        "workbench": ASSET_PICKUP_WORKBENCH,
+    },
+    "AssetTransfer": {
+        "group_code": "asset_operation",
+        "item_order": 20,
+        "icon": "Switch",
+        "workbench": ASSET_TRANSFER_WORKBENCH,
+    },
+    "AssetReturn": {
+        "group_code": "asset_operation",
+        "item_order": 30,
+        "icon": "Download",
+        "workbench": ASSET_RETURN_WORKBENCH,
+    },
+    "AssetLoan": {
+        "group_code": "asset_operation",
+        "item_order": 40,
+        "icon": "Connection",
+        "workbench": ASSET_LOAN_WORKBENCH,
+    },
     "PurchaseRequest": {
         "group_code": "lifecycle",
         "item_order": 10,
@@ -1553,10 +3217,20 @@ DEFAULT_OBJECT_MENU_RULES: Dict[str, Dict[str, Any]] = {
         "url": "/objects/AssetReceipt",
         "workbench": ASSET_RECEIPT_WORKBENCH,
     },
-    "Maintenance": {"group_code": "lifecycle", "item_order": 30, "icon": "Tools"},
+    "Maintenance": {
+        "group_code": "lifecycle",
+        "item_order": 30,
+        "icon": "Tools",
+        "workbench": MAINTENANCE_WORKBENCH,
+    },
     "MaintenancePlan": {"group_code": "lifecycle", "item_order": 40, "icon": "Calendar"},
     "MaintenanceTask": {"group_code": "lifecycle", "item_order": 50, "icon": "List"},
-    "DisposalRequest": {"group_code": "lifecycle", "item_order": 60, "icon": "Delete"},
+    "DisposalRequest": {
+        "group_code": "lifecycle",
+        "item_order": 60,
+        "icon": "Delete",
+        "workbench": DISPOSAL_REQUEST_WORKBENCH,
+    },
     "AssetProject": {
         "group_code": "lifecycle",
         "item_order": 25,

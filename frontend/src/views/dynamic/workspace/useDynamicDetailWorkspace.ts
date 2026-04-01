@@ -1,7 +1,23 @@
 import { computed, type ComputedRef, type Ref } from 'vue'
 import type { ObjectMetadata } from '@/api/dynamic'
-import type { ObjectWorkspaceChip, ObjectWorkspaceStat } from '@/components/common/object-workspace/ObjectWorkspaceHero.vue'
+import type { AggregateDocumentResponse } from '@/types/runtime'
+import type {
+  ObjectWorkspaceActionLink,
+  ObjectWorkspaceChip,
+  ObjectWorkspaceStat,
+} from '@/components/common/object-workspace/ObjectWorkspaceHero.vue'
 import type { ObjectWorkspaceInfoRow } from '@/components/common/object-workspace/ObjectWorkspaceInfoCard.vue'
+import {
+  DETAIL_ACTIVITY_ANCHOR,
+  buildTimelineHighlightSourceLocation,
+  formatTimelineHighlightContext,
+  formatTimelineHighlightSummary,
+  formatTimelineHighlightTimestamp,
+  resolveLatestTimelineHighlight,
+  resolveTimelineHighlightSourceLabel,
+  summarizeTimelineHighlightValue,
+  type TimelineHighlightSummary,
+} from '@/utils/timelineHighlights'
 
 interface Params {
   isZhLocale: ComputedRef<boolean>
@@ -9,8 +25,9 @@ interface Params {
   recordId: Ref<string>
   objectMetadata: Ref<ObjectMetadata | null>
   objectDisplayName: ComputedRef<string>
-  canEdit: ComputedRef<boolean>
   loadedRecord: Ref<Record<string, unknown> | null>
+  documentPayload: Ref<AggregateDocumentResponse | null>
+  hasActivitySection: ComputedRef<boolean>
 }
 
 export const useDynamicDetailWorkspace = ({
@@ -19,8 +36,9 @@ export const useDynamicDetailWorkspace = ({
   recordId,
   objectMetadata,
   objectDisplayName,
-  canEdit,
   loadedRecord,
+  documentPayload,
+  hasActivitySection,
 }: Params) => {
   const moduleLabel = computed(() => {
     return String(objectMetadata.value?.module || '').trim() || objectCode.value
@@ -34,6 +52,34 @@ export const useDynamicDetailWorkspace = ({
     if (typeof value === 'number' && Number.isFinite(value)) return value
     if (typeof value === 'string' && value.trim()) return value.trim()
     return fallback
+  }
+  const resolveNestedRecordValue = (
+    record: Record<string, unknown> | null | undefined,
+    path: string[],
+  ): unknown => {
+    let current: unknown = record
+    for (const segment of path) {
+      if (!current || typeof current !== 'object') return undefined
+      current = (current as Record<string, unknown>)[segment]
+    }
+    return current
+  }
+  const resolveCancelReason = () => {
+    const record = loadedRecord.value
+    if (!record || typeof record !== 'object') return ''
+    const candidatePaths = [
+      ['customFields', 'cancelReason'],
+      ['custom_fields', 'cancel_reason'],
+      ['closureSummary', 'metrics', 'cancelReason'],
+      ['closure_summary', 'metrics', 'cancel_reason'],
+    ]
+    for (const path of candidatePaths) {
+      const value = resolveNestedRecordValue(record, path)
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim()
+      }
+    }
+    return ''
   }
   const resolveNestedLabel = (value: unknown, keys: string[], fallback = '--') => {
     if (!value || typeof value !== 'object') return fallback
@@ -73,23 +119,148 @@ export const useDynamicDetailWorkspace = ({
     return isZhLocale.value ? '所属模块' : 'Module'
   })
 
-  const accessLabel = computed(() => {
-    return isZhLocale.value ? '当前权限' : 'Access'
-  })
-
-  const heroAccessValue = computed(() => {
-    if (canEdit.value) return isZhLocale.value ? '可查看与编辑' : 'View and edit'
-    return isZhLocale.value ? '只读查看' : 'View only'
-  })
-
   const statusLabel = computed(() => {
     return isZhLocale.value ? '当前状态' : 'Status'
   })
+  const cancelReasonLabel = computed(() => {
+    return isZhLocale.value ? '取消原因' : 'Cancel reason'
+  })
+  const latestSignalLabel = computed(() => {
+    return isZhLocale.value ? '最近原因信号' : 'Latest signal'
+  })
+  const latestSignalSourceLabel = computed(() => {
+    return isZhLocale.value ? '来源对象' : 'Source object'
+  })
+  const latestSignalTimeLabel = computed(() => {
+    return isZhLocale.value ? '发生时间' : 'Signal time'
+  })
+  const openSourceActionLabel = computed(() => {
+    return isZhLocale.value ? '查看来源' : 'Open source'
+  })
+  const openActivityActionLabel = computed(() => {
+    return isZhLocale.value ? '跳转活动区' : 'Jump to activity'
+  })
+  const displayLocale = computed(() => (isZhLocale.value ? 'zh-CN' : 'en-US'))
 
   const heroStatusValue = computed(() => {
     const status = loadedRecord.value?.status
     if (status !== undefined && status !== null && String(status).trim()) return String(status)
     return isZhLocale.value ? '已加载' : 'Loaded'
+  })
+  const isCancelled = computed(() => heroStatusValue.value.trim().toLowerCase() === 'cancelled')
+  const cancelReason = computed(() => resolveCancelReason())
+  const cancelReasonTooltip = computed(() => {
+    if (!isCancelled.value || !cancelReason.value) return ''
+    return `${cancelReasonLabel.value}: ${cancelReason.value}`
+  })
+  const fallbackSignals = computed<TimelineHighlightSummary[]>(() => {
+    const record = loadedRecord.value
+    if (!record || typeof record !== 'object') return []
+    const customFields = (
+      (record.custom_fields as Record<string, unknown> | undefined) ||
+      (record.customFields as Record<string, unknown> | undefined) ||
+      {}
+    )
+    const directRecord = record as Record<string, unknown>
+    const candidates = [
+      {
+        code: 'reject_reason',
+        label: isZhLocale.value ? '驳回原因' : 'Rejection reason',
+        value: directRecord.reject_reason ?? customFields.reject_reason,
+      },
+      {
+        code: 'approval_comment',
+        label: isZhLocale.value ? '审批备注' : 'Approval comment',
+        value: directRecord.approval_comment ?? customFields.approval_comment,
+      },
+      {
+        code: 'inspection_result',
+        label: isZhLocale.value ? '验收结果' : 'Inspection result',
+        value: directRecord.inspection_result,
+      },
+      {
+        code: 'verification_result',
+        label: isZhLocale.value ? '维修验收结果' : 'Verification result',
+        value: directRecord.verification_result,
+      },
+      {
+        code: 'return_comment',
+        label: isZhLocale.value ? '归还备注' : 'Return comment',
+        value: directRecord.return_comment,
+      },
+    ]
+
+    return candidates
+      .map((candidate) => ({
+        code: candidate.code,
+        label: candidate.label,
+        value: typeof candidate.value === 'string' ? candidate.value.trim() : '',
+        createdAt: String(
+          directRecord.updated_at ||
+          directRecord.updatedAt ||
+          directRecord.created_at ||
+          directRecord.createdAt ||
+          '',
+        ).trim() || null,
+        source: objectCode.value,
+        sourceLabel: objectDisplayName.value,
+        objectCode: objectCode.value,
+        objectId: String(directRecord.id || recordId.value || '').trim() || undefined,
+      }))
+      .filter((candidate) => candidate.value)
+  })
+  const latestReasonHighlight = computed<TimelineHighlightSummary | null>(() => {
+    const timelineEntries = Array.isArray(documentPayload.value?.timeline) && (documentPayload.value?.timeline || []).length > 0
+      ? documentPayload.value?.timeline || []
+      : (Array.isArray(documentPayload.value?.workflow?.timeline) ? documentPayload.value?.workflow?.timeline || [] : [])
+    return resolveLatestTimelineHighlight(timelineEntries) || fallbackSignals.value[0] || null
+  })
+  const latestSignalSummary = computed(() => {
+    return formatTimelineHighlightSummary(latestReasonHighlight.value)
+  })
+  const latestSignalSourceValue = computed(() => {
+    return resolveTimelineHighlightSourceLabel(latestReasonHighlight.value)
+  })
+  const latestSignalTimeValue = computed(() => {
+    return formatTimelineHighlightTimestamp(
+      latestReasonHighlight.value?.createdAt,
+      displayLocale.value,
+    )
+  })
+  const latestSignalMeta = computed(() => {
+    return formatTimelineHighlightContext(latestReasonHighlight.value, displayLocale.value)
+  })
+  const latestSignalActions = computed<ObjectWorkspaceActionLink[]>(() => {
+    if (!latestReasonHighlight.value) return []
+    const actions: ObjectWorkspaceActionLink[] = []
+    const sourceLocation = buildTimelineHighlightSourceLocation({
+      highlight: latestReasonHighlight.value,
+      currentObjectCode: objectCode.value,
+      currentRecordId: recordId.value,
+    })
+
+    if (sourceLocation) {
+      actions.push({
+        label: openSourceActionLabel.value,
+        to: sourceLocation,
+      })
+    }
+
+    if (hasActivitySection.value) {
+      actions.push({
+        label: openActivityActionLabel.value,
+        to: { hash: DETAIL_ACTIVITY_ANCHOR },
+      })
+    }
+
+    return actions
+  })
+  const latestSignalTooltip = computed(() => {
+    return [latestSignalSummary.value, latestSignalMeta.value].filter(Boolean).join(' · ')
+  })
+  const latestSignalValue = computed(() => {
+    if (!latestReasonHighlight.value) return ''
+    return summarizeTimelineHighlightValue(latestReasonHighlight.value.value, 36)
   })
 
   const detailPanelTitle = computed(() => {
@@ -180,7 +351,7 @@ export const useDynamicDetailWorkspace = ({
     return chips
   })
 
-  const heroStats = computed<ObjectWorkspaceStat[]>(() => ([
+  const processSummaryStats = computed<ObjectWorkspaceStat[]>(() => ([
     ...(isAssetProject.value
       ? [
         {
@@ -200,14 +371,62 @@ export const useDynamicDetailWorkspace = ({
         {
           label: statusLabel.value,
           value: heroStatusValue.value,
+          tooltip: cancelReasonTooltip.value || undefined,
         },
       ]
       : [
-        { label: statusLabel.value, value: heroStatusValue.value },
-        { label: objectCodeLabel.value, value: objectCode.value },
-        { label: accessLabel.value, value: heroAccessValue.value },
+        {
+          label: statusLabel.value,
+          value: heroStatusValue.value,
+          tooltip: cancelReasonTooltip.value || undefined,
+        },
       ]),
   ]))
+  const detailHeroStats = computed<ObjectWorkspaceStat[]>(() => [])
+
+  const latestSignalInfoRows = computed<ObjectWorkspaceInfoRow[]>(() => {
+    if (!latestReasonHighlight.value) return []
+
+    const rows: ObjectWorkspaceInfoRow[] = [
+      {
+        label: latestSignalLabel.value,
+        value: latestSignalSummary.value || latestSignalValue.value,
+        tooltip: latestSignalTooltip.value || undefined,
+        meta: latestSignalMeta.value || undefined,
+        actions: latestSignalActions.value,
+      },
+    ]
+
+    if (latestSignalSourceValue.value) {
+      rows.push({
+        label: latestSignalSourceLabel.value,
+        value: latestSignalSourceValue.value,
+        actions: latestSignalActions.value.filter((action) => action.label === openSourceActionLabel.value),
+      })
+    }
+
+    if (latestSignalTimeValue.value) {
+      rows.push({
+        label: latestSignalTimeLabel.value,
+        value: latestSignalTimeValue.value,
+        actions: latestSignalActions.value.filter((action) => action.label === openActivityActionLabel.value),
+      })
+    }
+
+    return rows
+  })
+  const closureRows = computed<ObjectWorkspaceInfoRow[]>(() => {
+    if (!latestReasonHighlight.value) return []
+    return [
+      {
+        label: latestSignalLabel.value,
+        value: latestSignalSummary.value || latestSignalValue.value,
+        tooltip: latestSignalTooltip.value || undefined,
+        meta: latestSignalMeta.value || undefined,
+        actions: latestSignalActions.value,
+      },
+    ]
+  })
 
   const infoRows = computed<ObjectWorkspaceInfoRow[]>(() => ([
     ...(isAssetProject.value
@@ -238,6 +457,10 @@ export const useDynamicDetailWorkspace = ({
         { label: objectCodeLabel.value, value: objectCode.value },
         { label: recordIdLabel.value, value: recordId.value || '--' },
         { label: moduleNameLabel.value, value: moduleLabel.value },
+        ...latestSignalInfoRows.value,
+        ...(isCancelled.value && cancelReason.value
+          ? [{ label: cancelReasonLabel.value, value: cancelReason.value }]
+          : []),
       ]),
   ]))
 
@@ -251,8 +474,10 @@ export const useDynamicDetailWorkspace = ({
     heroTitle,
     heroDescription,
     heroChips,
-    heroStats,
+    detailHeroStats,
+    processSummaryStats,
     infoRows,
+    closureRows,
     tips,
   }
 }

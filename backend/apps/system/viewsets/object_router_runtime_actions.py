@@ -97,6 +97,30 @@ class ObjectRouterRuntimeActionsMixin:
         if isinstance(legacy_aliases, list):
             target['legacy_aliases'] = self._normalize_workbench_aliases(legacy_aliases)
 
+        default_page_mode = self._get_workbench_config_value(
+            source,
+            'default_page_mode',
+            'defaultPageMode',
+        )
+        if default_page_mode:
+            target['default_page_mode'] = str(default_page_mode)
+
+        default_detail_surface_tab = self._get_workbench_config_value(
+            source,
+            'default_detail_surface_tab',
+            'defaultDetailSurfaceTab',
+        )
+        if default_detail_surface_tab:
+            target['default_detail_surface_tab'] = str(default_detail_surface_tab)
+
+        default_document_surface_tab = self._get_workbench_config_value(
+            source,
+            'default_document_surface_tab',
+            'defaultDocumentSurfaceTab',
+        )
+        if default_document_surface_tab:
+            target['default_document_surface_tab'] = str(default_document_surface_tab)
+
         detail_panels = self._get_workbench_config_value(
             source,
             'detail_panels',
@@ -161,6 +185,14 @@ class ObjectRouterRuntimeActionsMixin:
         if isinstance(recommended_actions, list):
             target['recommended_actions'] = list(recommended_actions)
 
+        document_summary_sections = self._get_workbench_config_value(
+            source,
+            'document_summary_sections',
+            'documentSummarySections',
+        )
+        if isinstance(document_summary_sections, list):
+            target['document_summary_sections'] = list(document_summary_sections)
+
         toolbar = self._get_workbench_config_value(source, 'toolbar')
         if isinstance(toolbar, dict):
             primary_actions = self._get_workbench_config_value(
@@ -194,6 +226,9 @@ class ObjectRouterRuntimeActionsMixin:
             'workspace_mode': 'standard',
             'primary_entry_route': f'/objects/{object_code}' if object_code else '',
             'legacy_aliases': [],
+            'default_page_mode': 'record',
+            'default_detail_surface_tab': 'process',
+            'default_document_surface_tab': 'summary',
             'toolbar': {
                 'primary_actions': [],
                 'secondary_actions': [],
@@ -206,6 +241,7 @@ class ObjectRouterRuntimeActionsMixin:
             'closure_panel': {},
             'sla_indicators': [],
             'recommended_actions': [],
+            'document_summary_sections': [],
         }
 
         self._apply_workbench_overrides(payload, menu_config)

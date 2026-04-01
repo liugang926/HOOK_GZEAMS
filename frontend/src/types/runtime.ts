@@ -148,7 +148,23 @@ export interface RuntimeWorkbenchToolbar {
   secondaryActions: Array<Record<string, unknown>>
 }
 
-export interface RuntimeWorkbenchDetailPanel {
+export type RuntimeWorkbenchPageMode = 'record' | 'workspace'
+export type RuntimeDetailSurfaceTab = 'process' | 'activity'
+export type RuntimeDocumentSurfaceTab = 'summary' | 'form' | 'activity'
+export type RuntimeWorkbenchSurfacePriority = 'primary' | 'context' | 'related' | 'activity' | 'admin'
+export type RuntimeWorkbenchDocumentSummarySectionCode =
+  | 'process_summary'
+  | 'record'
+  | 'workflow'
+  | 'batch_tools'
+  | string
+
+export interface RuntimeWorkbenchSurfaceScoped {
+  surfacePriority?: RuntimeWorkbenchSurfacePriority
+  [key: string]: unknown
+}
+
+export interface RuntimeWorkbenchDetailPanel extends RuntimeWorkbenchSurfaceScoped {
   code: string
   title?: string
   component?: string
@@ -157,7 +173,7 @@ export interface RuntimeWorkbenchDetailPanel {
   [key: string]: unknown
 }
 
-export interface RuntimeWorkbenchAsyncIndicator {
+export interface RuntimeWorkbenchAsyncIndicator extends RuntimeWorkbenchSurfaceScoped {
   code: string
   type: string
   taskIdField?: string
@@ -167,7 +183,7 @@ export interface RuntimeWorkbenchAsyncIndicator {
   [key: string]: unknown
 }
 
-export interface RuntimeWorkbenchSummaryCard {
+export interface RuntimeWorkbenchSummaryCard extends RuntimeWorkbenchSurfaceScoped {
   code: string
   title?: string
   label?: string
@@ -179,7 +195,7 @@ export interface RuntimeWorkbenchSummaryCard {
   [key: string]: unknown
 }
 
-export interface RuntimeWorkbenchQueuePanel {
+export interface RuntimeWorkbenchQueuePanel extends RuntimeWorkbenchSurfaceScoped {
   code: string
   title?: string
   queueCode?: string
@@ -189,7 +205,7 @@ export interface RuntimeWorkbenchQueuePanel {
   [key: string]: unknown
 }
 
-export interface RuntimeWorkbenchClosurePanel {
+export interface RuntimeWorkbenchClosurePanel extends RuntimeWorkbenchSurfaceScoped {
   title?: string
   stageField?: string
   ownerField?: string
@@ -199,7 +215,7 @@ export interface RuntimeWorkbenchClosurePanel {
   [key: string]: unknown
 }
 
-export interface RuntimeWorkbenchSlaIndicator {
+export interface RuntimeWorkbenchSlaIndicator extends RuntimeWorkbenchSurfaceScoped {
   code: string
   label?: string
   statusField?: string
@@ -208,7 +224,7 @@ export interface RuntimeWorkbenchSlaIndicator {
   [key: string]: unknown
 }
 
-export interface RuntimeWorkbenchRecommendedAction {
+export interface RuntimeWorkbenchRecommendedAction extends RuntimeWorkbenchSurfaceScoped {
   code: string
   label?: string
   actionPath?: string
@@ -218,10 +234,21 @@ export interface RuntimeWorkbenchRecommendedAction {
   [key: string]: unknown
 }
 
+export interface RuntimeWorkbenchDocumentSummarySection extends RuntimeWorkbenchSurfaceScoped {
+  code: RuntimeWorkbenchDocumentSummarySectionCode
+  labelKey?: string
+  titleKey?: string
+  props?: Record<string, unknown>
+  [key: string]: unknown
+}
+
 export interface RuntimeWorkbench {
   workspaceMode: string
   primaryEntryRoute: string
   legacyAliases: string[]
+  defaultPageMode: RuntimeWorkbenchPageMode
+  defaultDetailSurfaceTab: RuntimeDetailSurfaceTab
+  defaultDocumentSurfaceTab: RuntimeDocumentSurfaceTab
   toolbar: RuntimeWorkbenchToolbar
   detailPanels: RuntimeWorkbenchDetailPanel[]
   asyncIndicators: RuntimeWorkbenchAsyncIndicator[]
@@ -231,6 +258,7 @@ export interface RuntimeWorkbench {
   closurePanel: RuntimeWorkbenchClosurePanel | null
   slaIndicators: RuntimeWorkbenchSlaIndicator[]
   recommendedActions: RuntimeWorkbenchRecommendedAction[]
+  documentSummarySections?: RuntimeWorkbenchDocumentSummarySection[]
 }
 
 export interface ObjectSlaAssignee {
@@ -323,9 +351,18 @@ export interface AggregateDocumentTimelineChange {
   newValue: unknown
 }
 
+export interface AggregateDocumentTimelineHighlight {
+  code: string
+  label?: string
+  value: string
+  tone?: string
+}
+
 export interface AggregateDocumentTimelineEntry {
   id: string
   source: string
+  sourceCode?: string
+  sourceLabel?: string
   createdAt?: string | null
   title?: string
   description?: string
@@ -338,7 +375,11 @@ export interface AggregateDocumentTimelineEntry {
   operationTypeDisplay?: string
   result?: string
   resultDisplay?: string
+  objectCode?: string
+  objectId?: string
+  recordLabel?: string
   changes?: AggregateDocumentTimelineChange[]
+  highlights?: AggregateDocumentTimelineHighlight[]
   [key: string]: unknown
 }
 

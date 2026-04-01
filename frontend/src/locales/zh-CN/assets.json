@@ -40,7 +40,13 @@
             "openMaintenance": "进行中维修",
             "openDisposals": "进行中处置",
             "linkedFinanceVouchers": "关联财务凭证",
-            "openFinanceVouchers": "待完成财务凭证"
+            "openFinanceVouchers": "待完成财务凭证",
+            "openPickups": "进行中领用",
+            "openTransfers": "进行中调拨",
+            "openReturns": "待确认归还",
+            "openLoans": "进行中借用",
+            "pendingDepreciation": "待过账折旧",
+            "activeWarranties": "有效保修"
         },
         "queues": {
             "projectAllocations": "项目占用",
@@ -48,7 +54,13 @@
             "inventoryFollowUps": "盘点跟进任务",
             "maintenanceRecords": "维修记录",
             "disposalRequests": "处置申请",
-            "financeVouchers": "财务凭证"
+            "financeVouchers": "财务凭证",
+            "pickups": "领用单",
+            "transfers": "调拨单",
+            "returns": "归还单",
+            "loans": "借用单",
+            "depreciationRecords": "折旧记录",
+            "warranties": "保修记录"
         }
     },
     "status": {
@@ -166,6 +178,17 @@
             "submitApproveSuccess": "提交审批成功",
             "submitApproveFailed": "提交审批失败",
             "selectAssetWarning": "请至少添加一项资产"
+        },
+        "workbench": {
+            "summary": {
+                "borrower": "借用人",
+                "expectedReturnDate": "预计归还日期",
+                "itemCount": "借用明细",
+                "overdueDays": "逾期天数"
+            },
+            "queues": {
+                "items": "借用明细"
+            }
         }
     },
     "return": {
@@ -198,6 +221,18 @@
             "submitSuccess": "提交成功",
             "submitApproveSuccess": "提交审批成功",
             "submitFailed": "提交失败"
+        },
+        "workbench": {
+            "summary": {
+                "returnLocation": "退库位置",
+                "itemCount": "退库明细",
+                "projectAllocationCount": "关联项目占用",
+                "maintenanceAfterReturnCount": "需维修资产"
+            },
+            "queues": {
+                "items": "退库明细",
+                "maintenanceFollowUp": "维修跟进"
+            }
         }
     },
     "pickup": {
@@ -232,6 +267,17 @@
             "selectAssetWarning": "请至少添加一项资产",
             "submitApproveSuccess": "提交审批成功",
             "submitApproveFailed": "提交审批失败"
+        },
+        "workbench": {
+            "summary": {
+                "applicant": "申请人",
+                "department": "领用部门",
+                "itemCount": "领用明细",
+                "approvedItemCount": "已审批明细"
+            },
+            "queues": {
+                "items": "领用明细"
+            }
         }
     },
     "transfer": {
@@ -268,6 +314,18 @@
             "submitSuccess": "提交成功",
             "submitApproveSuccess": "提交审批成功",
             "submitFailed": "提交失败"
+        },
+        "workbench": {
+            "summary": {
+                "sourceDepartment": "调出部门",
+                "targetDepartment": "调入部门",
+                "itemCount": "调拨明细",
+                "sourceApprovedCount": "调出审批",
+                "targetApprovedCount": "调入审批"
+            },
+            "queues": {
+                "items": "调拨明细"
+            }
         }
     },
     "location": {
@@ -541,6 +599,15 @@
                 "cancelSuccess": "工单已取消",
                 "cancelConfirm": "确定要取消此维修工单吗？",
                 "loadFailed": "加载维修工单失败"
+            },
+            "workbench": {
+                "summary": {
+                    "assetCode": "资产编号",
+                    "technician": "维修技术员",
+                    "totalCost": "维修总成本",
+                    "workHours": "工时",
+                    "faultPhotoCount": "故障图片数"
+                }
             }
         },
         "disposalRequest": {
@@ -593,6 +660,20 @@
                 "cancelConfirm": "确定要取消此报废申请吗？",
                 "noItems": "请至少添加一项报废资产",
                 "loadFailed": "加载报废申请失败"
+            },
+            "workbench": {
+                "summary": {
+                    "disposalType": "处置类型",
+                    "itemCount": "处置明细",
+                    "appraisedItemCount": "已评估明细",
+                    "executedItemCount": "已执行明细",
+                    "totalNetValue": "净值合计"
+                },
+                "queues": {
+                    "items": "处置明细",
+                    "pendingAppraisal": "待评估",
+                    "pendingExecution": "待执行"
+                }
             }
         },
         "assetReceipt": {

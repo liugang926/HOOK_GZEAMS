@@ -71,6 +71,9 @@ export const useDynamicDetailShell = ({
       (key: string) => te(key),
     )
   })
+  const hasActivitySection = computed(() => {
+    return Boolean(documentPayload.value || detailTimelineConfig.value)
+  })
 
   const workspace = useDynamicDetailWorkspace({
     isZhLocale,
@@ -78,8 +81,9 @@ export const useDynamicDetailShell = ({
     recordId,
     objectMetadata,
     objectDisplayName,
-    canEdit,
     loadedRecord,
+    documentPayload,
+    hasActivitySection,
   })
 
   const hasDetailEnhancements = computed(() => shouldShowDynamicDetailEnhancements({

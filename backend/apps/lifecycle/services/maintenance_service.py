@@ -24,7 +24,29 @@ from apps.lifecycle.models import (
     MaintenanceTaskStatus,
 )
 from apps.system.services.activity_log_service import ActivityLogService
+from apps.system.services.timeline_highlight_service import build_reason_change
 from apps.lifecycle.services.closed_loop_service import LifecycleClosedLoopService
+
+
+def _set_custom_field_text(instance, key: str, value) -> str:
+    normalized_value = str(value or '').strip()
+    custom_fields = dict(instance.custom_fields or {})
+
+    if normalized_value:
+        custom_fields[key] = normalized_value
+    elif key in custom_fields:
+        custom_fields.pop(key, None)
+
+    instance.custom_fields = custom_fields
+    return normalized_value
+
+
+def _build_cancellation_description(record_no: str, reason: str = '') -> str:
+    description = f'Maintenance record {record_no} cancelled.'
+    normalized_reason = str(reason or '').strip()
+    if normalized_reason:
+        description = f'{description} Cancellation reason: {normalized_reason}'
+    return description
 
 
 # ========== Maintenance Service ==========
@@ -196,6 +218,12 @@ class MaintenanceService(BaseCRUDService):
         maintenance.verified_at = timezone.now()
         maintenance.verification_result = result
         maintenance.save()
+        self.closed_loop_service.log_custom_action(
+            actor=verifier,
+            instance=maintenance,
+            description=f'Maintenance record {maintenance.maintenance_no} verified.',
+            changes=[build_reason_change('verification_result', result)],
+        )
 
         return maintenance
 
@@ -217,12 +245,22 @@ class MaintenanceService(BaseCRUDService):
                 'status': 'Cannot cancel completed maintenance record'
             })
 
+        previous_status = maintenance.status
+        normalized_reason = _set_custom_field_text(maintenance, 'cancel_reason', reason)
         maintenance.status = MaintenanceStatus.CANCELLED
-        maintenance.save()
+        maintenance.save(update_fields=['status', 'custom_fields', 'updated_at'])
+        self.closed_loop_service.log_status_change(
+            actor=user or maintenance.reporter,
+            instance=maintenance,
+            old_status=previous_status,
+            new_status=maintenance.status,
+            description=_build_cancellation_description(maintenance.maintenance_no, normalized_reason),
+            extra_changes=[build_reason_change('cancel_reason', normalized_reason)],
+        )
         self._restore_asset_after_maintenance(
             maintenance,
             user=user or maintenance.reporter,
-            reason=reason or f'Maintenance {maintenance.maintenance_no} cancelled',
+            reason=normalized_reason or f'Maintenance {maintenance.maintenance_no} cancelled',
         )
 
         return maintenance

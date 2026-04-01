@@ -299,6 +299,22 @@ class AssetPickupViewSet(BaseModelViewSetWithBatch):
             message=message
         )
 
+    @action(detail=True, methods=['post'], url_path='approve-pass')
+    def approve_pass(self, request, pk=None):
+        """Approve a pickup order without requiring a request payload."""
+        pickup = self.service.approve(
+            pk,
+            request.user,
+            'approved',
+            request.data.get('comment', '')
+        )
+
+        response_serializer = AssetPickupDetailSerializer(pickup)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Pickup order approved'
+        )
+
     @action(detail=True, methods=['post'], url_path='complete')
     def complete(self, request, pk=None):
         """Mark pickup order as completed."""
@@ -312,7 +328,8 @@ class AssetPickupViewSet(BaseModelViewSetWithBatch):
     @action(detail=True, methods=['post'], url_path='cancel')
     def cancel(self, request, pk=None):
         """Cancel pickup order."""
-        pickup = self.service.cancel_pickup(pk, request.user)
+        reason = request.data.get('reason', request.data.get('comment', ''))
+        pickup = self.service.cancel_pickup(pk, request.user, reason)
         response_serializer = AssetPickupDetailSerializer(pickup)
         return BaseResponse.success(
             data=response_serializer.data,
@@ -571,7 +588,8 @@ class AssetTransferViewSet(BaseModelViewSetWithBatch):
     @action(detail=True, methods=['post'], url_path='cancel')
     def cancel(self, request, pk=None):
         """Cancel a transfer order."""
-        transfer = self.service.cancel_transfer(pk, request.user)
+        reason = request.data.get('reason', request.data.get('comment', ''))
+        transfer = self.service.cancel_transfer(pk, request.user, reason)
         response_serializer = AssetTransferDetailSerializer(transfer)
         return BaseResponse.success(
             data=response_serializer.data,
@@ -681,7 +699,8 @@ class AssetReturnViewSet(BaseModelViewSetWithBatch):
     @action(detail=True, methods=['post'], url_path='cancel')
     def cancel(self, request, pk=None):
         """Cancel return order."""
-        return_order = self.service.cancel_return(pk, request.user)
+        reason = request.data.get('reason', request.data.get('comment', ''))
+        return_order = self.service.cancel_return(pk, request.user, reason)
         response_serializer = AssetReturnDetailSerializer(return_order)
         return BaseResponse.success(
             data=response_serializer.data,
@@ -814,7 +833,8 @@ class AssetLoanViewSet(BaseModelViewSetWithBatch):
     @action(detail=True, methods=['post'], url_path='cancel')
     def cancel(self, request, pk=None):
         """Cancel loan order."""
-        loan = self.service.cancel_loan(pk, request.user)
+        reason = request.data.get('reason', request.data.get('comment', ''))
+        loan = self.service.cancel_loan(pk, request.user, reason)
         response_serializer = AssetLoanDetailSerializer(loan)
         return BaseResponse.success(
             data=response_serializer.data,
@@ -839,6 +859,22 @@ class AssetLoanViewSet(BaseModelViewSetWithBatch):
         return BaseResponse.success(
             data=response_serializer.data,
             message=message
+        )
+
+    @action(detail=True, methods=['post'], url_path='approve-pass')
+    def approve_pass(self, request, pk=None):
+        """Approve a loan order without requiring a request payload."""
+        loan = self.service.approve_loan(
+            pk,
+            request.user,
+            'approved',
+            request.data.get('comment', '')
+        )
+
+        response_serializer = AssetLoanDetailSerializer(loan)
+        return BaseResponse.success(
+            data=response_serializer.data,
+            message='Loan approved'
         )
 
     @action(detail=True, methods=['post'], url_path='confirm-borrow')

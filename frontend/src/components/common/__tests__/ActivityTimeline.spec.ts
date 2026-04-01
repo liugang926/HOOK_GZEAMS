@@ -59,6 +59,14 @@ describe('ActivityTimeline', () => {
             userName: 'Admin',
             createdAt: '2026-03-16T08:00:00Z',
             description: 'Department approval',
+            highlights: [
+              {
+                code: 'approval_comment',
+                label: 'Approval Comment',
+                value: 'Budget owner confirmed',
+                tone: 'info',
+              },
+            ],
           },
         ],
       },
@@ -99,5 +107,7 @@ describe('ActivityTimeline', () => {
     expect(wrapper.text()).toContain('Approved')
     expect(wrapper.text()).toContain('Department approval')
     expect(wrapper.text()).toContain('Workflow Approval')
+    expect(wrapper.text()).toContain('Approval Comment')
+    expect(wrapper.text()).toContain('Budget owner confirmed')
   })
 })

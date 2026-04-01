@@ -409,10 +409,13 @@ def normalize_layout_config_structure(config: Dict[str, Any]) -> Dict[str, Any]:
 
     next_config = dict(config)
     sections = next_config.get('sections')
-    if not _is_list(sections):
-        return next_config
+    if _is_list(sections):
+        next_config['sections'] = [_normalize_section_node(section) for section in sections]
 
-    next_config['sections'] = [_normalize_section_node(section) for section in sections]
+    workbench = next_config.get('workbench')
+    if _is_dict(workbench):
+        next_config['workbench'] = _normalize_layout_workbench_payload(workbench)
+
     return next_config
 
 
@@ -423,6 +426,14 @@ VALID_DETAIL_EDIT_MODES = ['inline_table', 'nested_form', 'readonly_table']
 
 # Valid column span values (1-24, must be divisible by common grid systems)
 VALID_SPANS = [1, 2, 3, 4, 6, 8, 12, 24]
+
+VALID_WORKBENCH_SURFACE_PRIORITIES = ['primary', 'context', 'related', 'activity', 'admin']
+
+VALID_WORKBENCH_PAGE_MODES = ['record', 'workspace']
+
+VALID_WORKBENCH_DOCUMENT_SURFACE_TABS = ['summary', 'form', 'activity']
+
+VALID_DOCUMENT_SUMMARY_SECTION_CODES = ['process_summary', 'record', 'workflow', 'batch_tools']
 
 # Layout modes (new unified system)
 LAYOUT_MODES = ['edit', 'readonly', 'search']
@@ -446,6 +457,150 @@ class LayoutValidationError(ValidationError):
         self.field_path = field_path
         detail_message = f"{field_path}: {message}" if field_path else message
         super().__init__(detail_message)
+
+
+def _normalize_layout_workbench_document_summary_section(item: Dict[str, Any]) -> Dict[str, Any]:
+    next_item = dict(item)
+
+    code = _normalize_candidate(str(next_item.get('code') or ''))
+    if code:
+        next_item['code'] = code
+
+    surface_priority = _normalize_candidate(
+        str(next_item.get('surface_priority') or next_item.get('surfacePriority') or '')
+    )
+    if surface_priority:
+        next_item['surface_priority'] = surface_priority
+    else:
+        next_item.pop('surface_priority', None)
+
+    next_item.pop('surfacePriority', None)
+    return next_item
+
+
+def _normalize_layout_workbench_page_mode(value: Any) -> str:
+    return str(value or '').strip().lower()
+
+
+def _normalize_layout_workbench_document_surface_tab(value: Any) -> str:
+    return str(value or '').strip().lower()
+
+
+def _normalize_layout_workbench_payload(workbench: Dict[str, Any]) -> Dict[str, Any]:
+    next_workbench = dict(workbench)
+
+    default_page_mode = next_workbench.get('default_page_mode')
+    if default_page_mode is None:
+        default_page_mode = next_workbench.get('defaultPageMode')
+    if default_page_mode is not None:
+        next_workbench['default_page_mode'] = _normalize_layout_workbench_page_mode(default_page_mode)
+
+    default_document_surface_tab = next_workbench.get('default_document_surface_tab')
+    if default_document_surface_tab is None:
+        default_document_surface_tab = next_workbench.get('defaultDocumentSurfaceTab')
+    if default_document_surface_tab is not None:
+        next_workbench['default_document_surface_tab'] = _normalize_layout_workbench_document_surface_tab(
+            default_document_surface_tab
+        )
+
+    document_summary_sections = (
+        next_workbench.get('document_summary_sections')
+        if _is_list(next_workbench.get('document_summary_sections'))
+        else next_workbench.get('documentSummarySections')
+    )
+    if _is_list(document_summary_sections):
+        next_workbench['document_summary_sections'] = [
+            _normalize_layout_workbench_document_summary_section(item)
+            for item in document_summary_sections
+            if _is_dict(item)
+        ]
+
+    next_workbench.pop('defaultPageMode', None)
+    next_workbench.pop('defaultDocumentSurfaceTab', None)
+    next_workbench.pop('documentSummarySections', None)
+    return next_workbench
+
+
+def validate_layout_workbench_config(config: Dict[str, Any]) -> None:
+    """Validate optional workbench metadata embedded in layout_config."""
+    if not _is_dict(config):
+        return
+
+    workbench = config.get('workbench')
+    if workbench is None:
+        return
+    if not _is_dict(workbench):
+        raise LayoutValidationError("workbench must be an object", field_path='workbench')
+
+    default_page_mode = workbench.get('default_page_mode')
+    if default_page_mode is None:
+        default_page_mode = workbench.get('defaultPageMode')
+    if default_page_mode is not None:
+        normalized_page_mode = _normalize_layout_workbench_page_mode(default_page_mode)
+        if normalized_page_mode not in VALID_WORKBENCH_PAGE_MODES:
+            raise LayoutValidationError(
+                "default_page_mode must be one of: "
+                + ', '.join(VALID_WORKBENCH_PAGE_MODES),
+                field_path='workbench.default_page_mode'
+            )
+
+    default_document_surface_tab = workbench.get('default_document_surface_tab')
+    if default_document_surface_tab is None:
+        default_document_surface_tab = workbench.get('defaultDocumentSurfaceTab')
+    if default_document_surface_tab is not None:
+        normalized_document_surface_tab = _normalize_layout_workbench_document_surface_tab(
+            default_document_surface_tab
+        )
+        if normalized_document_surface_tab not in VALID_WORKBENCH_DOCUMENT_SURFACE_TABS:
+            raise LayoutValidationError(
+                "default_document_surface_tab must be one of: "
+                + ', '.join(VALID_WORKBENCH_DOCUMENT_SURFACE_TABS),
+                field_path='workbench.default_document_surface_tab'
+            )
+
+    document_summary_sections = (
+        workbench.get('document_summary_sections')
+        if workbench.get('document_summary_sections') is not None
+        else workbench.get('documentSummarySections')
+    )
+    if document_summary_sections is None:
+        return
+    if not _is_list(document_summary_sections):
+        raise LayoutValidationError(
+            "document_summary_sections must be an array",
+            field_path='workbench.document_summary_sections'
+        )
+
+    seen_codes = set()
+    for index, item in enumerate(document_summary_sections):
+        field_path = f'workbench.document_summary_sections[{index}]'
+        if not _is_dict(item):
+            raise LayoutValidationError("Each section must be an object", field_path=field_path)
+
+        code = _normalize_candidate(str(item.get('code') or ''))
+        if not code:
+            raise LayoutValidationError("code is required", field_path=f'{field_path}.code')
+        if code not in VALID_DOCUMENT_SUMMARY_SECTION_CODES:
+            raise LayoutValidationError(
+                f"Unsupported code: {code}. Valid codes: {', '.join(VALID_DOCUMENT_SUMMARY_SECTION_CODES)}",
+                field_path=f'{field_path}.code'
+            )
+        if code in seen_codes:
+            raise LayoutValidationError(
+                f"Duplicate code: {code}",
+                field_path=f'{field_path}.code'
+            )
+        seen_codes.add(code)
+
+        surface_priority = _normalize_candidate(
+            str(item.get('surface_priority') or item.get('surfacePriority') or '')
+        )
+        if surface_priority not in VALID_WORKBENCH_SURFACE_PRIORITIES:
+            raise LayoutValidationError(
+                "surface_priority must be one of: "
+                + ', '.join(VALID_WORKBENCH_SURFACE_PRIORITIES),
+                field_path=f'{field_path}.surface_priority'
+            )
 
 
 def validate_layout_config(config: Dict[str, Any], layout_type: str = 'form') -> None:

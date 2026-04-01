@@ -213,6 +213,26 @@ class FinanceApiCompatTest(APITestCase):
         self.assertEqual(dep_response.data['data']['source_object_code'], 'DepreciationRecord')
         self.assertEqual(dep_response.data['data']['source_record_no'], '2026-02')
 
+    def test_generate_asset_purchase_rejects_duplicate_source_vouchers(self):
+        payload = {'businessId': 'PR-DUPLICATE', 'assetIds': [str(self.asset.id)]}
+        first_response = self.client.post(
+            '/api/system/objects/FinanceVoucher/generate/asset-purchase/',
+            payload,
+            format='json'
+        )
+        self.assertEqual(first_response.status_code, status.HTTP_200_OK)
+        self.assertTrue(first_response.data['success'])
+
+        duplicate_response = self.client.post(
+            '/api/system/objects/FinanceVoucher/generate/asset-purchase/',
+            payload,
+            format='json'
+        )
+        self.assertEqual(duplicate_response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(duplicate_response.data['success'])
+        self.assertEqual(duplicate_response.data['error']['code'], 'VALIDATION_ERROR')
+        self.assertIn('already exists for this source', duplicate_response.data['error']['message'])
+
     def test_generate_disposal(self):
         response = self.client.post(
             '/api/system/objects/FinanceVoucher/generate/disposal/',

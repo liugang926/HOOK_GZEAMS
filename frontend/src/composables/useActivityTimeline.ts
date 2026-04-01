@@ -9,6 +9,13 @@ export interface ActivityChange {
   newValue: any
 }
 
+export interface ActivityHighlight {
+  code: string
+  label?: string
+  value: string
+  tone?: string
+}
+
 export interface ActivityLogEntry {
   id: string
   action: string
@@ -23,6 +30,7 @@ export interface ActivityLogEntry {
   timestamp?: string
   description?: string
   changes?: ActivityChange[]
+  highlights?: ActivityHighlight[]
 }
 
 export interface DateGroup {
@@ -76,6 +84,16 @@ export function useActivityTimeline(
       timestamp: String(item?.timestamp || item?.createdAt || item?.created_at || '') || undefined,
       description: String(item?.description || '') || undefined,
       changes: Array.isArray(item?.changes) ? item.changes : [],
+      highlights: Array.isArray(item?.highlights)
+        ? item.highlights
+          .map((highlight: any) => ({
+            code: String(highlight?.code || ''),
+            label: String(highlight?.label || highlight?.code || '') || undefined,
+            value: String(highlight?.value || ''),
+            tone: String(highlight?.tone || '') || undefined,
+          }))
+          .filter((highlight: ActivityHighlight) => highlight.code && highlight.value)
+        : [],
     }
   }
 

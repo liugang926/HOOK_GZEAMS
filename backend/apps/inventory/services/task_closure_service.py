@@ -21,6 +21,7 @@ class InventoryTaskClosureService:
     def build_summary(self, task: InventoryTask) -> Dict[str, Any]:
         """Return a stable closure summary for a single inventory task."""
         owner = self._resolve_owner(task)
+        cancel_reason = self._resolve_cancel_reason(task)
         difference_summary = (
             self.difference_service.get_difference_summary(str(task.id))
             if task.status == InventoryTask.STATUS_COMPLETED
@@ -51,6 +52,7 @@ class InventoryTaskClosureService:
                 'progressPercentage': task.progress_percentage,
                 'totalCount': int(task.total_count or 0),
                 'scannedCount': int(task.scanned_count or 0),
+                'cancelReason': cancel_reason,
                 'differenceSummary': difference_summary or {},
             },
         }
@@ -82,6 +84,9 @@ class InventoryTaskClosureService:
         difference_summary: Optional[Dict[str, Any]],
     ) -> str:
         if task.status == InventoryTask.STATUS_CANCELLED:
+            cancel_reason = self._resolve_cancel_reason(task)
+            if cancel_reason:
+                return f'Cancellation reason: {cancel_reason}'
             return str(_('Task was cancelled before closed-loop completion.'))
         if task.approval_status == WorkflowStatusMixin.APPROVAL_REJECTED:
             return str(_('Update the task and resubmit it for approval before execution can begin.'))
@@ -102,11 +107,18 @@ class InventoryTaskClosureService:
         task: InventoryTask,
         difference_summary: Optional[Dict[str, Any]],
     ) -> float:
+        if task.status == InventoryTask.STATUS_CANCELLED:
+            return 100.0
         if task.status == InventoryTask.STATUS_COMPLETED and difference_summary is not None:
             return float(difference_summary.get('closure_progress') or 0)
         if task.status == InventoryTask.STATUS_IN_PROGRESS:
             return float(task.progress_percentage or 0)
         return 0.0
+
+    @staticmethod
+    def _resolve_cancel_reason(task: InventoryTask) -> str:
+        custom_fields = getattr(task, 'custom_fields', None) or {}
+        return str(custom_fields.get('cancel_reason', '') or '').strip()
 
     def _resolve_owner(self, task: InventoryTask) -> str:
         primary_executor = (

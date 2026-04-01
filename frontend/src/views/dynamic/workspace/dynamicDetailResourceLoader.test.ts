@@ -28,6 +28,9 @@ const defaultWorkbench: RuntimeWorkbench = {
   workspaceMode: 'standard',
   primaryEntryRoute: '/objects/PurchaseRequest',
   legacyAliases: [],
+  defaultPageMode: 'record',
+  defaultDetailSurfaceTab: 'process',
+  defaultDocumentSurfaceTab: 'summary',
   toolbar: {
     primaryActions: [],
     secondaryActions: [],

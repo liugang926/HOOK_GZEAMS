@@ -119,22 +119,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, withDefaults } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Plus, Delete } from '@element-plus/icons-vue'
 
 const { t } = useI18n()
 const locale = computed(() => t('locale'))
 
+interface FieldDef {
+  code: string
+  name: string
+}
+
 interface Props {
   modelValue: Record<string, any>
+  /** Field definitions passed down from WorkflowDesigner (real object fields). */
+  availableFields?: FieldDef[]
 }
 
 interface Emits {
   (e: 'update:modelValue', value: Record<string, any>): void
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  availableFields: () => [],
+})
 const emit = defineEmits<Emits>()
 
 const localValue = computed({
@@ -147,12 +156,18 @@ const localValue = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-// 可用字段（从业务对象获取）
-const availableFields = ref([
-  { code: 'amount', name: t('workflow.fields.amount') },
-  { code: 'department', name: t('workflow.fields.department') },
-  { code: 'applicant', name: t('workflow.fields.applicant') }
-])
+// Use fields injected by WorkflowDesigner; fall back to a minimal static list
+// when the parent does not yet supply any (e.g. businessObject not selected).
+const availableFields = computed<FieldDef[]>(() => {
+  if (props.availableFields && props.availableFields.length > 0) {
+    return props.availableFields
+  }
+  return [
+    { code: 'amount', name: t('workflow.fields.amount') },
+    { code: 'department', name: t('workflow.fields.department') },
+    { code: 'applicant', name: t('workflow.fields.applicant') },
+  ]
+})
 
 const addBranch = () => {
   if (!localValue.value.branches) {

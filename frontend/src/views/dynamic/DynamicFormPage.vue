@@ -101,6 +101,7 @@
         :mode="isEdit ? 'edit' : 'create'"
         :model-value="formData"
         :document="documentPayload"
+        :workbench="runtimeWorkbench"
         :status-actions="aggregateStatusActions"
         :readonly="!canEdit"
         @update:model-value="handleModelUpdate"
@@ -169,6 +170,7 @@ const {
   objectMetadata,
   retryLoad,
   runtimePermissions,
+  runtimeWorkbench,
   submitting,
   usesAggregateDocument,
 } = useDynamicFormController({

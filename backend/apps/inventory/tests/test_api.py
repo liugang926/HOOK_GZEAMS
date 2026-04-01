@@ -52,6 +52,15 @@ class InventoryTaskAPITests(APITestCase):
             email=f"owner{self.unique_suffix}@example.com",
             organization=self.organization
         )
+        BusinessObject.objects.update_or_create(
+            code='InventoryTask',
+            defaults={
+                'name': 'InventoryTask',
+                'name_en': 'InventoryTask',
+                'is_hardcoded': True,
+                'django_model_path': 'apps.inventory.models.InventoryTask',
+            },
+        )
 
     def _make_client(self):
         """Create a fresh API client for each request."""
@@ -180,6 +189,30 @@ class InventoryTaskAPITests(APITestCase):
 
         task.refresh_from_db()
         self.assertEqual(task.status, InventoryTask.STATUS_IN_PROGRESS)
+
+    def test_cancel_inventory_task_persists_cancel_reason(self):
+        """Test cancelling an inventory task persists cancel reason."""
+        task = InventoryTask.all_objects.create(
+            task_code=f"INV_{uuid.uuid4().hex[:8]}",
+            task_name="Cancel Inventory Task",
+            inventory_type=InventoryTask.TYPE_FULL,
+            planned_date="2024-01-01",
+            status=InventoryTask.STATUS_PENDING,
+            organization=self.organization,
+            created_by=self.user
+        )
+
+        client = self._make_client()
+        response = client.post(
+            f'/api/inventory/tasks/{task.id}/cancel/',
+            {'reason': 'Site inventory window was moved'},
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, getattr(response, 'data', None))
+        task.refresh_from_db()
+        self.assertEqual(task.status, InventoryTask.STATUS_CANCELLED)
+        self.assertEqual(task.custom_fields['cancel_reason'], 'Site inventory window was moved')
 
     def test_submit_inventory_task_without_workflow_definition_moves_task_to_pending(self):
         """Test submitting a task without a workflow definition falls back to ready state."""

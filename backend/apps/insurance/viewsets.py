@@ -25,6 +25,7 @@ from .filters import (
     InsuredAssetFilter, PremiumPaymentFilter,
     ClaimRecordFilter, PolicyRenewalFilter
 )
+from .services import InsurancePolicyService
 
 
 class InsuranceCompanyViewSet(BaseModelViewSetWithBatch):
@@ -168,14 +169,20 @@ class InsurancePolicyViewSet(BaseModelViewSetWithBatch):
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         """Cancel an active policy."""
-        policy = self.get_object()
-        if policy.status not in ['draft', 'active']:
-            return Response(
-                {'error': 'Only draft or active policies can be cancelled.'},
-                status=status.HTTP_400_BAD_REQUEST
+        service = InsurancePolicyService()
+        reason = request.data.get('reason', request.data.get('comment', ''))
+        try:
+            policy = service.cancel(
+                pk,
+                reason=reason,
+                organization_id=request.user.organization_id,
+                user=request.user,
             )
-        policy.status = 'cancelled'
-        policy.save(update_fields=['status'])
+        except Exception as exc:
+            return Response(
+                {'error': str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         serializer = self.get_serializer(policy)
         return Response(serializer.data)
 

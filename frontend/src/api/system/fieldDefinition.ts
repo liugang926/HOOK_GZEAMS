@@ -110,6 +110,7 @@ export interface PageLayout {
             type: string
             position: string
         }>
+        workbench?: Record<string, unknown>
     }
     status: 'draft' | 'published' | 'archived'
     statusDisplay?: string
@@ -238,4 +239,3 @@ export const fieldDefinitionApi = {
         })
     }
 }
-

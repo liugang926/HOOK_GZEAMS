@@ -4,13 +4,15 @@ import type { AggregateDocumentPageMode, AggregateDocumentResponse } from '@/typ
 import { resolveDocumentWorkflowProgress } from '@/platform/workflow/documentWorkflowProgress'
 import {
   buildDocumentWorkbenchNavigation,
-  buildDocumentWorkbenchStageRows,
 } from '@/components/common/documentWorkbenchModel'
 import {
   buildDocumentWorkbenchAuditRows,
   buildDocumentWorkbenchCapabilityItems,
   buildDocumentWorkbenchDisposalBatchActions,
   buildDocumentWorkbenchFieldPermissions,
+  buildDocumentWorkbenchLatestSignalSummary,
+  buildDocumentWorkbenchProcessSummaryRows,
+  buildDocumentWorkbenchProcessSummaryStats,
   buildDocumentWorkbenchTimelineEntries,
   buildDocumentWorkbenchWorkflowActivityItems,
   resolveDocumentWorkbenchModeLabel,
@@ -81,16 +83,26 @@ export function useDocumentWorkbenchState({
     t,
   }))
   const workflowStatusLabel = computed(() => resolveDocumentWorkbenchWorkflowStatusLabel(props.document))
-  const auditRows = computed(() => buildDocumentWorkbenchAuditRows({
+  const latestSignalSummary = computed(() => buildDocumentWorkbenchLatestSignalSummary({
     document: props.document,
+    locale: locale.value || 'en-US',
     t,
-  }))
-  const stageRows = computed(() => buildDocumentWorkbenchStageRows({
+      objectCode: props.objectCode,
+      effectiveRecordId: effectiveRecordId.value,
+    }))
+  const processSummaryStats = computed(() => buildDocumentWorkbenchProcessSummaryStats({
     objectCode: props.objectCode,
     document: props.document,
     modelValue: props.modelValue,
     t,
   }))
+  const auditRows = computed(() => buildDocumentWorkbenchAuditRows({
+    document: props.document,
+    locale: locale.value || 'en-US',
+    t,
+      objectCode: props.objectCode,
+      effectiveRecordId: effectiveRecordId.value,
+    }))
   const navigationSection = computed(() => buildDocumentWorkbenchNavigation({
     objectCode: props.objectCode,
     document: props.document,
@@ -101,6 +113,14 @@ export function useDocumentWorkbenchState({
     objectCode: props.objectCode,
     document: props.document,
     t: (key: string) => t(key),
+  }))
+  const processSummaryRows = computed(() => buildDocumentWorkbenchProcessSummaryRows({
+    document: props.document,
+    locale: locale.value || 'en-US',
+    t,
+    objectCode: props.objectCode,
+    effectiveRecordId: effectiveRecordId.value,
+    workflowProgress: workflowProgress.value,
   }))
   const capabilityItems = computed(() => buildDocumentWorkbenchCapabilityItems({
     document: props.document,
@@ -135,6 +155,7 @@ export function useDocumentWorkbenchState({
     showObjectActions: props.showObjectActions !== false,
     effectiveRecordId: effectiveRecordId.value,
     capabilityItems: capabilityItems.value,
+    hasLatestSignal: Boolean(latestSignalSummary.value),
   }))
 
   return {
@@ -147,10 +168,11 @@ export function useDocumentWorkbenchState({
     fieldPermissions,
     modeLabel,
     navigationSection,
+    processSummaryRows,
+    processSummaryStats,
     recordRows,
     recordStatusLabel,
     showHeaderShell,
-    stageRows,
     timelineEntries,
     workflowActivityItems,
     workflowProgress,
@@ -159,4 +181,3 @@ export function useDocumentWorkbenchState({
     workflowTitle,
   }
 }
-

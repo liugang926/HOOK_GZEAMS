@@ -121,6 +121,25 @@
               </div>
 
               <div
+                v-if="entry.highlights && entry.highlights.length > 0"
+                class="timeline-entry__highlights"
+              >
+                <div
+                  v-for="highlight in entry.highlights"
+                  :key="`${entry.id}-${highlight.code}-${highlight.value}`"
+                  class="timeline-highlight"
+                >
+                  <span class="timeline-highlight__label">{{ highlight.label || highlight.code }}</span>
+                  <span
+                    class="timeline-highlight__value"
+                    :class="`timeline-highlight__value--${resolveHighlightTone(highlight.tone)}`"
+                  >
+                    {{ highlight.value }}
+                  </span>
+                </div>
+              </div>
+
+              <div
                 v-if="canNavigate(entry)"
                 class="timeline-entry__link-row"
               >
@@ -277,7 +296,27 @@
             show-overflow-tooltip
           >
             <template #default="{ row }">
-              {{ row.description || '-' }}
+              <div class="timeline-table-description">
+                <div>{{ row.description || '-' }}</div>
+                <div
+                  v-if="row.showHighlights && row.highlights && row.highlights.length > 0"
+                  class="timeline-entry__highlights timeline-entry__highlights--table"
+                >
+                  <div
+                    v-for="highlight in row.highlights"
+                    :key="`${row.rowKey}-${highlight.code}-${highlight.value}`"
+                    class="timeline-highlight"
+                  >
+                    <span class="timeline-highlight__label">{{ highlight.label || highlight.code }}</span>
+                    <span
+                      class="timeline-highlight__value"
+                      :class="`timeline-highlight__value--${resolveHighlightTone(highlight.tone)}`"
+                    >
+                      {{ highlight.value }}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -309,7 +348,12 @@ import {
   Plus, EditPen, Delete, Right, Switch, InfoFilled, UserFilled,
 } from '@element-plus/icons-vue'
 import BaseEmptyState from '@/components/common/BaseEmptyState.vue'
-import { useActivityTimeline, type ActivityLogEntry, type DateGroup } from '@/composables/useActivityTimeline'
+import {
+  useActivityTimeline,
+  type ActivityHighlight,
+  type ActivityLogEntry,
+  type DateGroup,
+} from '@/composables/useActivityTimeline'
 
 interface Props {
   objectCode: string
@@ -325,6 +369,8 @@ interface TimelineRow extends ActivityLogEntry {
   fieldLabel?: string
   oldValue: any
   newValue: any
+  showHighlights?: boolean
+  highlights?: ActivityHighlight[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -469,6 +515,14 @@ const formatValue = (value: unknown): string => {
   return String(value)
 }
 
+const resolveHighlightTone = (tone?: string) => {
+  const normalizedTone = String(tone || '').trim().toLowerCase()
+  if (['success', 'warning', 'danger', 'info'].includes(normalizedTone)) {
+    return normalizedTone
+  }
+  return 'info'
+}
+
 const historyRows = computed<TimelineRow[]>(() => {
   return filteredActivities.value.flatMap((a, ai) => {
     const base = {
@@ -483,9 +537,10 @@ const historyRows = computed<TimelineRow[]>(() => {
       userName: a.userName,
       timestamp: a.createdAt || a.timestamp,
       description: a.description,
+      highlights: a.highlights || [],
     }
     if (!a.changes?.length) {
-      return [{ rowKey: `${a.id || ai}-summary`, ...base, fieldLabel: '', oldValue: '', newValue: '' }]
+      return [{ rowKey: `${a.id || ai}-summary`, ...base, fieldLabel: '', oldValue: '', newValue: '', showHighlights: true }]
     }
     return a.changes.map((c, ci) => ({
       rowKey: `${a.id || ai}-${c.fieldCode || ci}`,
@@ -493,6 +548,7 @@ const historyRows = computed<TimelineRow[]>(() => {
       fieldLabel: c.fieldLabel || c.fieldCode,
       oldValue: c.oldValue,
       newValue: c.newValue,
+      showHighlights: ci === 0,
     }))
   })
 })
@@ -684,6 +740,60 @@ const groupByDate = (entries: ActivityLogEntry[]): DateGroup[] => {
   line-height: 1.5;
 }
 
+.timeline-entry__highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.timeline-entry__highlights--table {
+  margin-top: 6px;
+}
+
+.timeline-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.timeline-highlight__label {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.timeline-highlight__value {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.timeline-highlight__value--info {
+  color: var(--el-color-info-dark-2);
+  background: var(--el-color-info-light-9);
+}
+
+.timeline-highlight__value--success {
+  color: var(--el-color-success-dark-2);
+  background: var(--el-color-success-light-9);
+}
+
+.timeline-highlight__value--warning {
+  color: var(--el-color-warning-dark-2);
+  background: var(--el-color-warning-light-9);
+}
+
+.timeline-highlight__value--danger {
+  color: var(--el-color-danger-dark-2);
+  background: var(--el-color-danger-light-9);
+}
+
 .timeline-entry__link-row {
   margin-top: 8px;
   display: flex;
@@ -754,6 +864,11 @@ const groupByDate = (entries: ActivityLogEntry[]): DateGroup[] => {
   .history-table :deep(.cell) {
     line-height: 1.6;
   }
+}
+
+.timeline-table-description {
+  display: flex;
+  flex-direction: column;
 }
 
 .action-badge {

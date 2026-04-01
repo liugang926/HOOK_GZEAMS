@@ -22,7 +22,33 @@ from apps.lifecycle.models import (
 )
 from apps.organizations.models import Department
 from apps.system.services.activity_log_service import ActivityLogService
+from apps.system.services.timeline_highlight_service import build_reason_change
 from apps.lifecycle.services.closed_loop_service import LifecycleClosedLoopService
+
+
+def _normalize_free_text(value) -> str:
+    return str(value or '').strip()
+
+
+def _set_custom_field_text(instance, key: str, value) -> str:
+    normalized_value = _normalize_free_text(value)
+    custom_fields = dict(instance.custom_fields or {})
+
+    if normalized_value:
+        custom_fields[key] = normalized_value
+    elif key in custom_fields:
+        custom_fields.pop(key, None)
+
+    instance.custom_fields = custom_fields
+    return normalized_value
+
+
+def _build_cancellation_description(record_no: str, reason: str = '') -> str:
+    description = f'Receipt {record_no} cancelled.'
+    normalized_reason = _normalize_free_text(reason)
+    if normalized_reason:
+        description = f'{description} Cancellation reason: {normalized_reason}'
+    return description
 
 
 class AssetReceiptService(BaseCRUDService):
@@ -302,6 +328,7 @@ class AssetReceiptService(BaseCRUDService):
                 if passed
                 else f'Inspection rejected receipt {receipt.receipt_no}.'
             ),
+            extra_changes=[build_reason_change('inspection_result', result)],
         )
         if receipt.purchase_request_id:
             self.closed_loop_service.sync_purchase_request_status(receipt.purchase_request, actor=inspector)
@@ -328,13 +355,15 @@ class AssetReceiptService(BaseCRUDService):
 
         old_status = receipt.status
         receipt.status = AssetReceiptStatus.CANCELLED
+        normalized_reason = _set_custom_field_text(receipt, 'cancel_reason', reason)
         receipt.save()
         self.closed_loop_service.log_status_change(
             actor=actor,
             instance=receipt,
             old_status=old_status,
             new_status=receipt.status,
-            description=f'Receipt {receipt.receipt_no} cancelled.',
+            description=_build_cancellation_description(receipt.receipt_no, normalized_reason),
+            extra_changes=[build_reason_change('cancel_reason', normalized_reason)],
         )
         if receipt.purchase_request_id:
             self.closed_loop_service.sync_purchase_request_status(receipt.purchase_request, actor=actor)

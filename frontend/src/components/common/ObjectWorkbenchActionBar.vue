@@ -31,22 +31,31 @@
       </el-button>
     </div>
   </div>
+
+  <WorkbenchActionPromptDialog
+    v-model="promptVisible"
+    :action="activeAction"
+    :prompt="activePrompt"
+    :values="promptValues"
+    :loading="Boolean(loadingActionCode)"
+    @set-value="setPromptValue"
+    @confirm="confirmPromptAction"
+    @cancel="closePromptDialog"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, toRef } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useObjectWorkbench } from '@/composables/useObjectWorkbench'
 import type { RuntimeWorkbench } from '@/types/runtime'
 import type { WorkbenchAction } from './workbenchHelpers'
 import {
-  executeWorkbenchAction,
   resolveWorkbenchActionLabel,
   resolveWorkbenchButtonType,
-  resolveWorkbenchConfirmMessage,
-  resolveWorkbenchSyncTaskId,
 } from './workbenchHelpers'
+import WorkbenchActionPromptDialog from './WorkbenchActionPromptDialog.vue'
+import { useWorkbenchActionExecutor } from './useWorkbenchActionExecutor'
 
 interface SyncTaskState {
   syncTaskId: string
@@ -69,62 +78,31 @@ const emit = defineEmits<{
 }>()
 
 const { t, te } = useI18n()
-const loadingActionCode = ref<string | null>(null)
-
 const { hasActions, primaryActions, secondaryActions } = useObjectWorkbench({
   workbench: toRef(props, 'workbench'),
   recordData: toRef(props, 'recordData'),
 })
 
+const {
+  activeAction,
+  activePrompt,
+  closePromptDialog,
+  confirmPromptAction,
+  handleAction,
+  loadingActionCode,
+  promptValues,
+  promptVisible,
+  setPromptValue,
+} = useWorkbenchActionExecutor({
+  objectCode: props.objectCode,
+  recordId: props.recordId,
+  taskStateKey: props.taskStateKey,
+  startTaskPolling: props.startTaskPolling,
+  onRefreshRequested: () => emit('refresh-requested'),
+})
+
 const resolveButtonType = (action: WorkbenchAction) => resolveWorkbenchButtonType(action)
 const resolveActionLabel = (action: WorkbenchAction) => resolveWorkbenchActionLabel(action, t, te)
-const resolveConfirmMessage = (action: WorkbenchAction) => resolveWorkbenchConfirmMessage(action, t, te)
-
-const handleAction = async (action: WorkbenchAction) => {
-  const confirmMessage = resolveConfirmMessage(action)
-  if (confirmMessage) {
-    try {
-      await ElMessageBox.confirm(
-        confirmMessage,
-        t('common.dialog.confirmTitle') || t('common.messages.confirmTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.actions.confirm'),
-          cancelButtonText: t('common.actions.cancel'),
-        }
-      )
-    } catch {
-      return
-    }
-  }
-
-  loadingActionCode.value = action.code
-  try {
-    const result = await executeWorkbenchAction({
-      action,
-      objectCode: props.objectCode,
-      recordId: props.recordId,
-    })
-    const syncTaskId = resolveWorkbenchSyncTaskId(result.data)
-    const taskStateKey = String(props.taskStateKey || `${props.objectCode}:${props.recordId}`).trim()
-
-    if (syncTaskId && props.startTaskPolling && taskStateKey) {
-      props.startTaskPolling(taskStateKey, syncTaskId, {
-        onDone: async () => {
-          emit('refresh-requested')
-        },
-      })
-    }
-
-    ElMessage.success(result.message || t('common.messages.operationSuccess'))
-    emit('refresh-requested')
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : t('common.messages.operationFailed')
-    ElMessage.error(message)
-  } finally {
-    loadingActionCode.value = null
-  }
-}
 </script>
 
 <style scoped>

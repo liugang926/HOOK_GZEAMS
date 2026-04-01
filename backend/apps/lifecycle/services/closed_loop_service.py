@@ -14,18 +14,28 @@ from typing import Iterable, List, Optional
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 
-from apps.assets.models import Asset
+from apps.assets.models import Asset, AssetLoan, AssetPickup, AssetReturn, AssetTransfer
 from apps.assets.services.asset_service import AssetStatusLogService
+from apps.depreciation.models import DepreciationRecord
+from apps.finance.models import FinanceVoucher
 from apps.lifecycle.models import (
     AssetReceipt,
     AssetReceiptStatus,
+    AssetWarranty,
     DisposalRequest,
     Maintenance,
     PurchaseRequest,
     PurchaseRequestStatus,
 )
+from apps.projects.models import ProjectAsset
 from apps.system.activity_log import ActivityLog
 from apps.system.services.activity_log_service import ActivityLogService
+from apps.system.services.timeline_highlight_service import (
+    build_timeline_highlight,
+    build_timeline_highlights_from_changes,
+    build_timeline_highlights_from_description,
+    merge_timeline_highlights,
+)
 
 
 @dataclass(frozen=True)
@@ -38,24 +48,36 @@ class TimelineSource:
 class LifecycleClosedLoopService:
     """Cross-object helpers for lifecycle closed-loop workflows."""
 
-    def log_status_change(self, *, actor, instance, old_status: str, new_status: str, description: str):
+    def log_status_change(
+        self,
+        *,
+        actor,
+        instance,
+        old_status: str,
+        new_status: str,
+        description: str,
+        extra_changes: Optional[List[dict]] = None,
+    ):
         """Persist a standardized status-change activity log."""
         if not actor or instance is None or old_status == new_status:
             return None
+
+        changes = [
+            {
+                'fieldCode': 'status',
+                'fieldLabel': 'Status',
+                'oldValue': self._resolve_status_display(instance, old_status),
+                'newValue': self._resolve_status_display(instance, new_status),
+            }
+        ]
+        changes.extend(change for change in (extra_changes or []) if change)
 
         return ActivityLogService.log_action(
             actor=actor,
             action='status_change',
             instance=instance,
             description=description,
-            changes=[
-                {
-                    'fieldCode': 'status',
-                    'fieldLabel': 'Status',
-                    'oldValue': self._resolve_status_display(instance, old_status),
-                    'newValue': self._resolve_status_display(instance, new_status),
-                }
-            ],
+            changes=changes,
             organization=getattr(instance, 'organization', None),
         )
 
@@ -139,7 +161,7 @@ class LifecycleClosedLoopService:
         return purchase_request
 
     def build_purchase_request_timeline(self, purchase_request: PurchaseRequest) -> List[dict]:
-        """Build a merged timeline across purchase request, receipts, assets, maintenance, and disposal."""
+        """Build a merged timeline across purchase request, receipts, assets, maintenance, disposal, and finance."""
         receipts = list(
             purchase_request.receipts.filter(is_deleted=False).select_related('receiver', 'inspector')
         )
@@ -162,6 +184,15 @@ class LifecycleClosedLoopService:
             .select_related('applicant', 'created_by')
             .distinct()
         )
+        finance_vouchers = list(
+            FinanceVoucher.all_objects.filter(
+                organization_id=purchase_request.organization_id,
+                is_deleted=False,
+            ).filter(
+                Q(custom_fields__source_purchase_request_id=str(purchase_request.id))
+                | Q(custom_fields__source_id=str(purchase_request.id), custom_fields__source_object_code='PurchaseRequest')
+            ).select_related('created_by', 'posted_by').distinct()
+        )
 
         sources = [
             TimelineSource('Purchase Request', 'PurchaseRequest', [purchase_request]),
@@ -169,6 +200,7 @@ class LifecycleClosedLoopService:
             TimelineSource('Asset', 'Asset', assets),
             TimelineSource('Maintenance', 'Maintenance', maintenances),
             TimelineSource('Disposal Request', 'DisposalRequest', disposal_requests),
+            TimelineSource('Finance Voucher', 'FinanceVoucher', finance_vouchers),
         ]
         return self._build_timeline_entries(sources)
 
@@ -189,6 +221,15 @@ class LifecycleClosedLoopService:
             .select_related('applicant', 'created_by')
             .distinct()
         )
+        finance_vouchers = list(
+            FinanceVoucher.all_objects.filter(
+                organization_id=receipt.organization_id,
+                is_deleted=False,
+            ).filter(
+                Q(custom_fields__source_receipt_id=str(receipt.id))
+                | Q(custom_fields__source_id=str(receipt.id), custom_fields__source_object_code='AssetReceipt')
+            ).select_related('created_by', 'posted_by').distinct()
+        )
 
         purchase_objects = [receipt.purchase_request] if receipt.purchase_request_id else []
         sources = [
@@ -197,6 +238,7 @@ class LifecycleClosedLoopService:
             TimelineSource('Asset', 'Asset', assets),
             TimelineSource('Maintenance', 'Maintenance', maintenances),
             TimelineSource('Disposal Request', 'DisposalRequest', disposal_requests),
+            TimelineSource('Finance Voucher', 'FinanceVoucher', finance_vouchers),
         ]
         return self._build_timeline_entries(sources)
 
@@ -204,6 +246,26 @@ class LifecycleClosedLoopService:
         """Build a merged timeline for an asset and its upstream/downstream lifecycle records."""
         receipt = getattr(asset, 'source_receipt', None)
         purchase_request = getattr(asset, 'source_purchase_request', None)
+        pickup_orders = list(
+            AssetPickup.objects.filter(is_deleted=False, items__asset=asset)
+            .select_related('applicant', 'department', 'approved_by', 'created_by')
+            .distinct()
+        )
+        transfer_orders = list(
+            AssetTransfer.objects.filter(is_deleted=False, items__asset=asset)
+            .select_related('from_department', 'to_department', 'created_by')
+            .distinct()
+        )
+        return_orders = list(
+            AssetReturn.objects.filter(is_deleted=False, items__asset=asset)
+            .select_related('returner', 'return_location', 'confirmed_by', 'created_by')
+            .distinct()
+        )
+        loan_orders = list(
+            AssetLoan.objects.filter(is_deleted=False, items__asset=asset)
+            .select_related('borrower', 'approved_by', 'lent_by', 'return_confirmed_by', 'created_by')
+            .distinct()
+        )
         maintenances = list(
             Maintenance.objects.filter(is_deleted=False, asset=asset)
             .select_related('asset', 'reporter', 'created_by')
@@ -214,13 +276,43 @@ class LifecycleClosedLoopService:
             .select_related('applicant', 'created_by')
             .distinct()
         )
+        project_allocations = list(
+            ProjectAsset.objects.filter(is_deleted=False, asset=asset)
+            .select_related('project', 'allocated_by', 'custodian', 'created_by')
+            .distinct()
+        )
+        finance_vouchers = list(
+            FinanceVoucher.all_objects.filter(
+                organization_id=asset.organization_id,
+                is_deleted=False,
+                custom_fields__asset_id_index__icontains=f'|{asset.id}|',
+            ).select_related('created_by', 'posted_by').distinct()
+        )
+        depreciation_records = list(
+            DepreciationRecord.objects.filter(is_deleted=False, asset=asset)
+            .select_related('created_by')
+            .distinct()
+        )
+        warranties = list(
+            AssetWarranty.objects.filter(is_deleted=False, asset=asset)
+            .select_related('created_by')
+            .distinct()
+        )
 
         sources = [
             TimelineSource('Asset', 'Asset', [asset]),
             TimelineSource('Asset Receipt', 'AssetReceipt', [receipt] if receipt else []),
             TimelineSource('Purchase Request', 'PurchaseRequest', [purchase_request] if purchase_request else []),
+            TimelineSource('Pickup Order', 'AssetPickup', pickup_orders),
+            TimelineSource('Transfer Order', 'AssetTransfer', transfer_orders),
+            TimelineSource('Return Order', 'AssetReturn', return_orders),
+            TimelineSource('Loan Order', 'AssetLoan', loan_orders),
             TimelineSource('Maintenance', 'Maintenance', maintenances),
             TimelineSource('Disposal Request', 'DisposalRequest', disposal_requests),
+            TimelineSource('Project Allocation', 'ProjectAsset', project_allocations),
+            TimelineSource('Finance Voucher', 'FinanceVoucher', finance_vouchers),
+            TimelineSource('Depreciation Record', 'DepreciationRecord', depreciation_records),
+            TimelineSource('Asset Warranty', 'AssetWarranty', warranties),
         ]
         events = self._build_timeline_entries(sources)
         events.extend(self._build_asset_status_log_events(asset))
@@ -277,6 +369,10 @@ class LifecycleClosedLoopService:
                             instance=source_instance,
                         ),
                         'changes': log.changes or [],
+                        'highlights': merge_timeline_highlights(
+                            build_timeline_highlights_from_changes(log.changes or []),
+                            build_timeline_highlights_from_description(log.description),
+                        ),
                     }
                 )
 
@@ -298,6 +394,22 @@ class LifecycleClosedLoopService:
             description = f'Maintenance {record_no} created for asset {getattr(instance.asset, "asset_code", "-")}.'
         elif source_code == 'DisposalRequest':
             description = f'Disposal request {record_no} created from downstream asset action.'
+        elif source_code == 'AssetPickup':
+            description = f'Pickup order {record_no} created for asset {getattr(getattr(instance.items.first(), "asset", None), "asset_code", "-")}.'
+        elif source_code == 'AssetTransfer':
+            description = f'Transfer order {record_no} created for asset movement.'
+        elif source_code == 'AssetReturn':
+            description = f'Return order {record_no} created for asset recovery.'
+        elif source_code == 'AssetLoan':
+            description = f'Loan order {record_no} created for temporary asset lending.'
+        elif source_code == 'ProjectAsset':
+            description = f'Project allocation {record_no} created for project asset usage.'
+        elif source_code == 'FinanceVoucher':
+            description = f'Finance voucher {record_no} created for downstream accounting closure.'
+        elif source_code == 'DepreciationRecord':
+            description = f'Depreciation record {record_no} created for scheduled accounting depreciation.'
+        elif source_code == 'AssetWarranty':
+            description = f'Asset warranty {record_no} created for coverage tracking.'
 
         return {
             'id': f'synthetic-{code}-{instance.pk}-create',
@@ -312,34 +424,42 @@ class LifecycleClosedLoopService:
             'timestamp': getattr(instance, 'created_at', None).isoformat() if getattr(instance, 'created_at', None) else '',
             'description': description,
             'changes': [],
+            'highlights': [],
         }
 
     def _build_asset_status_log_events(self, asset: Asset) -> List[dict]:
         logs = AssetStatusLogService().get_asset_history(str(asset.id)).select_related('created_by')
-        return [
-            {
-                'id': f'asset-status-{log.id}',
-                'action': 'status_change',
-                'actionLabel': 'Status Changed',
-                'sourceCode': 'Asset',
-                'sourceLabel': 'Asset',
-                'objectCode': 'Asset',
-                'objectId': str(asset.pk),
-                'recordLabel': asset.asset_code,
-                'userName': self._user_name(log.created_by),
-                'timestamp': log.created_at.isoformat() if log.created_at else '',
-                'description': f'[Asset] {log.reason or f"Asset {asset.asset_code} status updated."}',
-                'changes': [
-                    {
-                        'fieldCode': 'asset_status',
-                        'fieldLabel': 'Asset Status',
-                        'oldValue': log.old_status,
-                        'newValue': log.new_status,
-                    }
-                ],
-            }
-            for log in logs
-        ]
+        events = []
+        for log in logs:
+            reason_highlight = build_timeline_highlight(code='reason', value=log.reason)
+            events.append(
+                {
+                    'id': f'asset-status-{log.id}',
+                    'action': 'status_change',
+                    'actionLabel': 'Status Changed',
+                    'sourceCode': 'Asset',
+                    'sourceLabel': 'Asset',
+                    'objectCode': 'Asset',
+                    'objectId': str(asset.pk),
+                    'recordLabel': asset.asset_code,
+                    'userName': self._user_name(log.created_by),
+                    'timestamp': log.created_at.isoformat() if log.created_at else '',
+                    'description': f'[Asset] {log.reason or f"Asset {asset.asset_code} status updated."}',
+                    'changes': [
+                        {
+                            'fieldCode': 'asset_status',
+                            'fieldLabel': 'Asset Status',
+                            'oldValue': log.old_status,
+                            'newValue': log.new_status,
+                        }
+                    ],
+                    'highlights': merge_timeline_highlights(
+                        [reason_highlight] if reason_highlight else [],
+                        build_timeline_highlights_from_description(log.reason),
+                    ),
+                }
+            )
+        return events
 
     def _transition_purchase_request(self, purchase_request: PurchaseRequest, new_status: str, *, actor, description: str):
         old_status = purchase_request.status
@@ -376,8 +496,16 @@ class LifecycleClosedLoopService:
         for attr in (
             'request_no',
             'receipt_no',
+            'pickup_no',
+            'transfer_no',
+            'return_no',
+            'loan_no',
             'maintenance_no',
             'asset_code',
+            'allocation_no',
+            'voucher_no',
+            'warranty_no',
+            'period',
         ):
             value = getattr(instance, attr, None)
             if value:
@@ -385,7 +513,16 @@ class LifecycleClosedLoopService:
         return str(instance.pk)
 
     def _fallback_actor(self, instance):
-        for attr in ('created_by', 'applicant', 'receiver', 'reporter'):
+        for attr in (
+            'created_by',
+            'applicant',
+            'receiver',
+            'reporter',
+            'returner',
+            'borrower',
+            'allocated_by',
+            'posted_by',
+        ):
             actor = getattr(instance, attr, None)
             if actor:
                 return actor

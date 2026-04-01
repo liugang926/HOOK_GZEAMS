@@ -462,14 +462,31 @@
       "syntax": "Formula syntax error: {detail}"
     }
   },
+  "detailWorkspace": {
+    "pageModes": {
+      "record": "Record",
+      "workspace": "Workspace"
+    },
+    "tabs": {
+      "process": "Process",
+      "activity": "Activity"
+    }
+  },
   "documentWorkbench": {
+    "tabs": {
+      "summary": "Summary",
+      "form": "Form",
+      "activity": "Activity"
+    },
     "sections": {
       "actions": "Actions",
       "record": "Record",
       "workflow": "Workflow",
       "workflowProgress": "Workflow Progress",
+      "signalSummary": "Signal Summary",
       "stageInsights": "Stage Insights",
       "relatedRecords": "Related Records",
+      "moreSummary": "More Summary",
       "batchTools": "Batch Tools",
       "audit": "Audit",
       "workflowActivity": "Recent Workflow Activity",
@@ -496,6 +513,12 @@
       "activityLogs": "Activity Logs",
       "workflowApprovals": "Workflow Approvals",
       "workflowOperationLogs": "Workflow Operations",
+      "reasonSignals": "Reason Signals",
+      "latestSignal": "Latest Signal",
+      "signalSource": "Signal Source",
+      "signalTime": "Signal Time",
+      "workflowComment": "Workflow Comment",
+      "workflowResult": "Workflow Result",
       "systemActor": "System"
     },
     "sources": {
@@ -504,11 +527,16 @@
       "workflowOperation": "Workflow Operation"
     },
     "actions": {
+      "openSource": "Open Source",
+      "jumpToTimeline": "Jump to Timeline",
       "submit": "Submit",
       "approve": "Approve",
       "reject": "Reject",
       "cancel": "Cancel",
       "complete": "Complete",
+      "startWork": "Start Work",
+      "completeWork": "Complete Work",
+      "verify": "Verify",
       "approveFrom": "Approve Source",
       "approveTo": "Approve Target",
       "confirmBorrow": "Confirm Borrow",
@@ -525,6 +553,9 @@
       "reject": "Reject this document?",
       "cancel": "Cancel this document?",
       "complete": "Mark this document as completed?",
+      "startWork": "Start work on this maintenance record?",
+      "completeWork": "Mark this maintenance work as completed?",
+      "verify": "Verify this completed maintenance work?",
       "approveFrom": "Approve this transfer from the source side?",
       "approveTo": "Approve this transfer from the target side?",
       "confirmBorrow": "Confirm these assets have been lent out?",
@@ -550,9 +581,17 @@
         "title": "Rejection Reason",
         "message": "Provide a reason before rejecting this document."
       },
+      "cancel": {
+        "title": "Cancellation Reason",
+        "message": "Provide a reason before cancelling this document."
+      },
       "confirmReturn": {
         "title": "Return Confirmation",
         "message": "Confirm the returned asset condition and record any notes."
+      },
+      "verify": {
+        "title": "Verification Result",
+        "message": "Record the verification result before completing this maintenance validation."
       },
       "passInspection": {
         "title": "Inspection Result",
@@ -654,6 +693,7 @@
       "closure": "Closure",
       "exceptionQueues": "Exception Queues",
       "pendingQueues": "Queues",
+      "processSummary": "Process Summary",
       "recommendedActions": "Recommended Actions",
       "sla": "SLA"
     },
@@ -661,11 +701,13 @@
       "closure": "Closure Status",
       "exceptionQueues": "Exception Handling Queues",
       "pendingQueues": "Pending Queues",
+      "processSummary": "Process Summary",
       "recommendedActions": "Recommended Next Actions",
       "sla": "Workflow SLA"
     },
     "labels": {
       "blocker": "Current Blocker",
+      "cancelReason": "Cancel Reason",
       "completion": "Completion",
       "dueDate": "Due Date",
       "owner": "Owner",
@@ -676,6 +718,7 @@
       "blockerHint": "There is still an open blocker before this record can be fully closed.",
       "exceptionQueueHint": "Focus first on queues that need exception handling or manual follow-up.",
       "notAvailable": "Not available",
+      "processSummaryHint": "Keep the current stage, key signals, and recommended navigation in one compact process summary.",
       "queueHint": "Review the main pending queues for this record and continue processing from the most urgent item.",
       "recommendedActionHint": "These actions are prioritized from the current record state and help continue the closure path.",
       "slaHint": "Track whether the current workflow is still within SLA and who owns the next response.",

@@ -3,16 +3,37 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
+from django.utils import timezone
 
 from apps.accounts.models import User
-from apps.assets.models import Asset, AssetCategory, AssetLoan, AssetReturn, LoanItem, Location, ReturnItem
+from apps.assets.models import (
+    Asset,
+    AssetCategory,
+    AssetLoan,
+    AssetPickup,
+    AssetReturn,
+    AssetTransfer,
+    LoanItem,
+    Location,
+    PickupItem,
+    ReturnItem,
+    TransferItem,
+)
 from apps.depreciation.models import DepreciationRecord
 from apps.finance.models import FinanceVoucher, VoucherEntry
 from apps.inventory.models import InventoryDifference, InventoryFollowUp, InventoryTask
 from apps.insurance.models import ClaimRecord, InsuranceCompany, InsurancePolicy, PremiumPayment
 from apps.integration.models import IntegrationLog
 from apps.leasing.models import LeaseContract, LeaseItem, RentPayment
-from apps.lifecycle.models import AssetReceipt, AssetReceiptItem, PurchaseRequest, PurchaseRequestItem
+from apps.lifecycle.models import (
+    AssetReceipt,
+    AssetReceiptItem,
+    DisposalItem,
+    DisposalRequest,
+    Maintenance,
+    PurchaseRequest,
+    PurchaseRequestItem,
+)
 from apps.organizations.models import Department, Organization
 from apps.projects.models import AssetProject, ProjectAsset
 from apps.system.services.object_closure_binding_service import ObjectClosureBindingService
@@ -536,6 +557,608 @@ def test_asset_summary_tracks_pending_depreciation_after_operational_blockers_cl
     assert summary['stage'] == 'Depreciation posting pending'
     assert summary['blocker'] == 'Post or resolve outstanding depreciation records before accounting closure.'
     assert summary['metrics']['pendingDepreciationCount'] == 1
+
+
+@pytest.mark.django_db
+def test_asset_pickup_summary_tracks_pending_approval_metrics():
+    suffix = uuid.uuid4().hex[:8]
+    organization, user = _build_org_and_user(suffix)
+    department = _build_department(organization, suffix)
+    category = AssetCategory.objects.create(
+        organization=organization,
+        code=f'PICKUP-CAT-{suffix}',
+        name='Pickup Category',
+        created_by=user,
+    )
+    asset = Asset.objects.create(
+        organization=organization,
+        asset_code=f'ASSET-PICKUP-{suffix}',
+        asset_name='Pickup Asset',
+        asset_category=category,
+        purchase_price=Decimal('1200.00'),
+        current_value=Decimal('1200.00'),
+        purchase_date=date.today(),
+        asset_status='idle',
+        created_by=user,
+    )
+    pickup = AssetPickup.objects.create(
+        organization=organization,
+        applicant=user,
+        department=department,
+        pickup_date=date.today(),
+        status='pending',
+        created_by=user,
+    )
+    PickupItem.objects.create(
+        organization=organization,
+        pickup=pickup,
+        asset=asset,
+        created_by=user,
+    )
+
+    summary = ObjectClosureBindingService().get_object_closure_summary(
+        object_code='AssetPickup',
+        business_id=str(pickup.id),
+        instance=pickup,
+        organization_id=str(organization.id),
+    )
+
+    assert summary['hasSummary'] is True
+    assert summary['stage'] == 'Awaiting approval'
+    assert summary['blocker'] == 'Review and approve or reject the pickup order.'
+    assert summary['metrics']['itemCount'] == 1
+    assert summary['metrics']['departmentName'] == department.name
+
+
+@pytest.mark.django_db
+def test_asset_transfer_summary_tracks_dual_approval_progress():
+    suffix = uuid.uuid4().hex[:8]
+    organization, user = _build_org_and_user(suffix)
+    from_department = _build_department(organization, f'{suffix}_FROM')
+    to_department = _build_department(organization, f'{suffix}_TO')
+    category = AssetCategory.objects.create(
+        organization=organization,
+        code=f'TRANSFER-CAT-{suffix}',
+        name='Transfer Category',
+        created_by=user,
+    )
+    asset = Asset.objects.create(
+        organization=organization,
+        asset_code=f'ASSET-TRANSFER-{suffix}',
+        asset_name='Transfer Asset',
+        asset_category=category,
+        purchase_price=Decimal('2300.00'),
+        current_value=Decimal('2300.00'),
+        purchase_date=date.today(),
+        asset_status='in_use',
+        department=from_department,
+        created_by=user,
+    )
+    transfer = AssetTransfer.objects.create(
+        organization=organization,
+        from_department=from_department,
+        to_department=to_department,
+        transfer_date=date.today(),
+        status='out_approved',
+        from_approved_by=user,
+        from_approved_at=timezone.now(),
+        created_by=user,
+    )
+    TransferItem.objects.create(
+        organization=organization,
+        transfer=transfer,
+        asset=asset,
+        created_by=user,
+    )
+
+    summary = ObjectClosureBindingService().get_object_closure_summary(
+        object_code='AssetTransfer',
+        business_id=str(transfer.id),
+        instance=transfer,
+        organization_id=str(organization.id),
+    )
+
+    assert summary['hasSummary'] is True
+    assert summary['stage'] == 'Awaiting target approval'
+    assert summary['blocker'] == 'Target department approval is still pending.'
+    assert summary['metrics']['sourceApprovedCount'] == 1
+    assert summary['metrics']['targetApprovedCount'] == 0
+    assert summary['metrics']['targetDepartmentName'] == to_department.name
+
+
+@pytest.mark.django_db
+def test_asset_return_summary_tracks_project_and_maintenance_follow_up():
+    suffix = uuid.uuid4().hex[:8]
+    organization, user = _build_org_and_user(suffix)
+    department = _build_department(organization, suffix)
+    location = Location.objects.create(
+        organization=organization,
+        name=f'Return Location {suffix}',
+        location_type='warehouse',
+        created_by=user,
+    )
+    category = AssetCategory.objects.create(
+        organization=organization,
+        code=f'RETURN-CAT-{suffix}',
+        name='Return Category',
+        created_by=user,
+    )
+    asset = Asset.objects.create(
+        organization=organization,
+        asset_code=f'ASSET-RETURN-{suffix}',
+        asset_name='Return Asset',
+        asset_category=category,
+        purchase_price=Decimal('2500.00'),
+        current_value=Decimal('2500.00'),
+        purchase_date=date.today(),
+        asset_status='in_use',
+        custodian=user,
+        user=user,
+        created_by=user,
+    )
+    project = AssetProject.objects.create(
+        organization=organization,
+        project_name=f'Return Project {suffix}',
+        project_manager=user,
+        department=department,
+        start_date=date.today(),
+        status='active',
+        created_by=user,
+    )
+    allocation = ProjectAsset.objects.create(
+        organization=organization,
+        project=project,
+        asset=asset,
+        allocation_date=date.today(),
+        allocated_by=user,
+        custodian=user,
+        return_status='in_use',
+        created_by=user,
+    )
+    return_order = AssetReturn.objects.create(
+        organization=organization,
+        returner=user,
+        return_date=date.today(),
+        status='pending',
+        return_location=location,
+        created_by=user,
+    )
+    ReturnItem.objects.create(
+        organization=organization,
+        asset_return=return_order,
+        asset=asset,
+        project_allocation=allocation,
+        asset_status='maintenance',
+        created_by=user,
+    )
+
+    summary = ObjectClosureBindingService().get_object_closure_summary(
+        object_code='AssetReturn',
+        business_id=str(return_order.id),
+        instance=return_order,
+        organization_id=str(organization.id),
+    )
+
+    assert summary['hasSummary'] is True
+    assert summary['stage'] == 'Awaiting confirmation'
+    assert summary['metrics']['itemCount'] == 1
+    assert summary['metrics']['projectAllocationCount'] == 1
+    assert summary['metrics']['maintenanceAfterReturnCount'] == 1
+    assert summary['metrics']['returnLocationName'] == location.name
+
+
+@pytest.mark.django_db
+def test_asset_loan_summary_tracks_overdue_days():
+    suffix = uuid.uuid4().hex[:8]
+    organization, user = _build_org_and_user(suffix)
+    category = AssetCategory.objects.create(
+        organization=organization,
+        code=f'OVERDUE-CAT-{suffix}',
+        name='Overdue Loan Category',
+        created_by=user,
+    )
+    asset = Asset.objects.create(
+        organization=organization,
+        asset_code=f'ASSET-OVERDUE-{suffix}',
+        asset_name='Overdue Loan Asset',
+        asset_category=category,
+        purchase_price=Decimal('1600.00'),
+        current_value=Decimal('1600.00'),
+        purchase_date=date.today(),
+        asset_status='lent',
+        created_by=user,
+    )
+    loan = AssetLoan.objects.create(
+        organization=organization,
+        borrower=user,
+        borrow_date=date.today() - timedelta(days=8),
+        expected_return_date=date.today() - timedelta(days=3),
+        status='overdue',
+        created_by=user,
+    )
+    LoanItem.objects.create(
+        organization=organization,
+        loan=loan,
+        asset=asset,
+        created_by=user,
+    )
+
+    summary = ObjectClosureBindingService().get_object_closure_summary(
+        object_code='AssetLoan',
+        business_id=str(loan.id),
+        instance=loan,
+        organization_id=str(organization.id),
+    )
+
+    assert summary['hasSummary'] is True
+    assert summary['stage'] == 'Overdue return'
+    assert summary['blocker'] == 'Recover the asset and confirm return immediately.'
+    assert summary['metrics']['itemCount'] == 1
+    assert summary['metrics']['overdueDays'] == 3
+
+
+@pytest.mark.django_db
+def test_maintenance_summary_requires_verification_before_final_closure():
+    suffix = uuid.uuid4().hex[:8]
+    organization, user = _build_org_and_user(suffix)
+    category = AssetCategory.objects.create(
+        organization=organization,
+        code=f'MAINT-CAT-{suffix}',
+        name='Maintenance Category',
+        created_by=user,
+    )
+    asset = Asset.objects.create(
+        organization=organization,
+        asset_code=f'ASSET-MAINT-{suffix}',
+        asset_name='Maintained Asset',
+        asset_category=category,
+        purchase_price=Decimal('5400.00'),
+        current_value=Decimal('5000.00'),
+        purchase_date=date.today(),
+        asset_status='maintenance',
+        created_by=user,
+    )
+    maintenance = Maintenance.objects.create(
+        organization=organization,
+        maintenance_no=f'MT-{suffix}',
+        status='completed',
+        priority='high',
+        asset=asset,
+        reporter=user,
+        technician=user,
+        report_time=timezone.now() - timedelta(days=1),
+        fault_description='Battery issue',
+        work_hours=Decimal('2.5'),
+        total_cost=Decimal('300.00'),
+        fault_photo_urls=['https://example.com/fault-1.jpg'],
+        created_by=user,
+    )
+
+    summary = ObjectClosureBindingService().get_object_closure_summary(
+        object_code='Maintenance',
+        business_id=str(maintenance.id),
+        instance=maintenance,
+        organization_id=str(organization.id),
+    )
+
+    assert summary['hasSummary'] is True
+    assert summary['stage'] == 'Completed, awaiting verification'
+    assert summary['blocker'] == 'Verify the maintenance result to finish closure.'
+    assert summary['metrics']['assetCode'] == asset.asset_code
+    assert summary['metrics']['faultPhotoCount'] == 1
+
+    maintenance.verified_by = user
+    maintenance.verified_at = timezone.now()
+    maintenance.save(update_fields=['verified_by', 'verified_at', 'updated_at'])
+
+    verified_summary = ObjectClosureBindingService().get_object_closure_summary(
+        object_code='Maintenance',
+        business_id=str(maintenance.id),
+        instance=maintenance,
+        organization_id=str(organization.id),
+    )
+
+    assert verified_summary['stage'] == 'Verified and closed'
+    assert verified_summary['blocker'] == ''
+    assert verified_summary['metrics']['isVerified'] is True
+
+
+@pytest.mark.django_db
+def test_disposal_request_summary_tracks_pending_execution_metrics():
+    suffix = uuid.uuid4().hex[:8]
+    organization, user = _build_org_and_user(suffix)
+    department_org = Organization.objects.create(
+        name=f'Disposal Department {suffix}',
+        code=f'DISPOSAL_DEPT_{suffix}',
+        org_type='department',
+        parent=organization,
+    )
+    category = AssetCategory.objects.create(
+        organization=organization,
+        code=f'DISPOSAL-CAT-{suffix}',
+        name='Disposal Category',
+        created_by=user,
+    )
+    request = DisposalRequest.objects.create(
+        organization=organization,
+        applicant=user,
+        department=department_org,
+        request_date=date.today(),
+        disposal_reason='Retire old devices',
+        reason_type='obsolete',
+        disposal_type='sale',
+        status='executing',
+        created_by=user,
+    )
+    first_asset = Asset.objects.create(
+        organization=organization,
+        asset_code=f'ASSET-DISPOSAL-A-{suffix}',
+        asset_name='Disposal Asset A',
+        asset_category=category,
+        purchase_price=Decimal('2000.00'),
+        current_value=Decimal('1200.00'),
+        purchase_date=date.today(),
+        asset_status='scrapped',
+        created_by=user,
+    )
+    second_asset = Asset.objects.create(
+        organization=organization,
+        asset_code=f'ASSET-DISPOSAL-B-{suffix}',
+        asset_name='Disposal Asset B',
+        asset_category=category,
+        purchase_price=Decimal('1800.00'),
+        current_value=Decimal('900.00'),
+        purchase_date=date.today(),
+        asset_status='scrapped',
+        created_by=user,
+    )
+    DisposalItem.objects.create(
+        organization=organization,
+        disposal_request=request,
+        asset=first_asset,
+        sequence=1,
+        original_value=Decimal('2000.00'),
+        accumulated_depreciation=Decimal('800.00'),
+        net_value=Decimal('1200.00'),
+        appraisal_result='Sellable',
+        residual_value=Decimal('300.00'),
+        appraised_by=user,
+        appraised_at=timezone.now() - timedelta(days=1),
+        disposal_executed=True,
+        executed_at=timezone.now(),
+        actual_residual_value=Decimal('280.00'),
+        created_by=user,
+    )
+    DisposalItem.objects.create(
+        organization=organization,
+        disposal_request=request,
+        asset=second_asset,
+        sequence=2,
+        original_value=Decimal('1800.00'),
+        accumulated_depreciation=Decimal('900.00'),
+        net_value=Decimal('900.00'),
+        appraisal_result='Recycle',
+        residual_value=Decimal('100.00'),
+        appraised_by=user,
+        appraised_at=timezone.now() - timedelta(days=1),
+        disposal_executed=False,
+        created_by=user,
+    )
+
+    summary = ObjectClosureBindingService().get_object_closure_summary(
+        object_code='DisposalRequest',
+        business_id=str(request.id),
+        instance=request,
+        organization_id=str(organization.id),
+    )
+
+    assert summary['hasSummary'] is True
+    assert summary['stage'] == 'Execution in progress'
+    assert summary['blocker'] == 'Complete disposal execution for all items.'
+    assert summary['metrics']['itemCount'] == 2
+    assert summary['metrics']['appraisedItemCount'] == 2
+    assert summary['metrics']['pendingExecutionCount'] == 1
+    assert summary['metrics']['totalNetValue'] == 2100.0
+
+
+@pytest.mark.django_db
+def test_cancelled_operation_and_lifecycle_summaries_expose_cancel_reason():
+    suffix = uuid.uuid4().hex[:8]
+    organization, user = _build_org_and_user(suffix)
+    from_department = _build_department(organization, f'{suffix}_FROM')
+    to_department = _build_department(organization, f'{suffix}_TO')
+    department_org = Organization.objects.create(
+        name=f'Lifecycle Department {suffix}',
+        code=f'LIFECYCLE_DEPT_{suffix}',
+        org_type='department',
+        parent=organization,
+    )
+    location = Location.objects.create(
+        organization=organization,
+        name=f'Cancelled Location {suffix}',
+        location_type='warehouse',
+        created_by=user,
+    )
+    category = AssetCategory.objects.create(
+        organization=organization,
+        code=f'CANCEL-CAT-{suffix}',
+        name='Cancelled Flow Category',
+        created_by=user,
+    )
+    asset = Asset.objects.create(
+        organization=organization,
+        asset_code=f'ASSET-CANCEL-{suffix}',
+        asset_name='Cancelled Flow Asset',
+        asset_category=category,
+        purchase_price=Decimal('1800.00'),
+        current_value=Decimal('1800.00'),
+        purchase_date=date.today(),
+        asset_status='idle',
+        created_by=user,
+    )
+
+    cancel_reason = 'Business owner withdrew the request'
+    pickup = AssetPickup.objects.create(
+        organization=organization,
+        applicant=user,
+        department=from_department,
+        pickup_date=date.today(),
+        status='cancelled',
+        custom_fields={'cancel_reason': cancel_reason},
+        created_by=user,
+    )
+    transfer = AssetTransfer.objects.create(
+        organization=organization,
+        from_department=from_department,
+        to_department=to_department,
+        transfer_date=date.today(),
+        status='cancelled',
+        custom_fields={'cancel_reason': cancel_reason},
+        created_by=user,
+    )
+    return_order = AssetReturn.objects.create(
+        organization=organization,
+        returner=user,
+        return_date=date.today(),
+        return_location=location,
+        status='cancelled',
+        custom_fields={'cancel_reason': cancel_reason},
+        created_by=user,
+    )
+    loan = AssetLoan.objects.create(
+        organization=organization,
+        borrower=user,
+        borrow_date=date.today(),
+        expected_return_date=date.today(),
+        status='cancelled',
+        custom_fields={'cancel_reason': cancel_reason},
+        created_by=user,
+    )
+    maintenance = Maintenance.objects.create(
+        organization=organization,
+        maintenance_no=f'MT-CANCEL-{suffix}',
+        status='cancelled',
+        priority='normal',
+        asset=asset,
+        reporter=user,
+        report_time=timezone.now(),
+        fault_description='No longer needed',
+        custom_fields={'cancel_reason': cancel_reason},
+        created_by=user,
+    )
+    disposal_request = DisposalRequest.objects.create(
+        organization=organization,
+        applicant=user,
+        department=department_org,
+        request_date=date.today(),
+        disposal_reason='Duplicate disposal request',
+        reason_type='other',
+        status='cancelled',
+        custom_fields={'cancel_reason': cancel_reason},
+        created_by=user,
+    )
+
+    cases = [
+        ('AssetPickup', pickup.id),
+        ('AssetTransfer', transfer.id),
+        ('AssetReturn', return_order.id),
+        ('AssetLoan', loan.id),
+        ('Maintenance', maintenance.id),
+        ('DisposalRequest', disposal_request.id),
+    ]
+
+    for object_code, business_id in cases:
+        summary = ObjectClosureBindingService().get_object_closure_summary(
+            object_code=object_code,
+            business_id=str(business_id),
+            organization_id=str(organization.id),
+        )
+
+        assert summary['stage'] == 'Cancelled'
+        assert summary['blocker'] == f'Cancellation reason: {cancel_reason}'
+        assert summary['metrics']['cancelReason'] == cancel_reason
+
+
+@pytest.mark.django_db
+def test_cancelled_business_domain_summaries_expose_cancel_reason():
+    suffix = uuid.uuid4().hex[:8]
+    organization, user = _build_org_and_user(suffix)
+    department = Organization.objects.create(
+        name=f'Closure Department {suffix}',
+        code=f'CL_DEPT_{suffix}',
+        org_type='department',
+        parent=organization,
+    )
+    insurance_company = InsuranceCompany.objects.create(
+        organization=organization,
+        code=f'POLICY-{suffix}',
+        name='Policy Carrier',
+        created_by=user,
+    )
+
+    purchase_request = PurchaseRequest.objects.create(
+        organization=organization,
+        applicant=user,
+        department=department,
+        request_date=date.today(),
+        expected_date=date.today() + timedelta(days=3),
+        reason='Cancelled procurement request',
+        status='cancelled',
+        custom_fields={'cancel_reason': 'Budget switched to another project'},
+        created_by=user,
+    )
+    receipt = AssetReceipt.objects.create(
+        organization=organization,
+        purchase_request=purchase_request,
+        receipt_date=date.today(),
+        receiver=user,
+        status='cancelled',
+        custom_fields={'cancel_reason': 'Supplier will re-deliver next week'},
+        created_by=user,
+    )
+    policy = InsurancePolicy.objects.create(
+        organization=organization,
+        policy_no=f'POL-{suffix}',
+        company=insurance_company,
+        insurance_type='property',
+        start_date=date.today(),
+        end_date=date.today() + timedelta(days=90),
+        total_insured_amount=Decimal('50000.00'),
+        total_premium=Decimal('1800.00'),
+        status='cancelled',
+        custom_fields={'cancel_reason': 'Coverage moved to the global master policy'},
+        created_by=user,
+    )
+    task = InventoryTask.objects.create(
+        organization=organization,
+        task_code=f'INV-CANCEL-{suffix}',
+        task_name='Cancelled inventory round',
+        inventory_type=InventoryTask.TYPE_FULL,
+        planned_date=date.today(),
+        status='cancelled',
+        custom_fields={'cancel_reason': 'Warehouse closure window changed'},
+        created_by=user,
+    )
+
+    cases = [
+        ('PurchaseRequest', purchase_request, 'Budget switched to another project'),
+        ('AssetReceipt', receipt, 'Supplier will re-deliver next week'),
+        ('InsurancePolicy', policy, 'Coverage moved to the global master policy'),
+        ('InventoryTask', task, 'Warehouse closure window changed'),
+    ]
+
+    for object_code, instance, cancel_reason in cases:
+        summary = ObjectClosureBindingService().get_object_closure_summary(
+            object_code=object_code,
+            business_id=str(instance.id),
+            instance=instance,
+            organization_id=str(organization.id),
+        )
+
+        assert summary['stage']
+        assert summary['blocker'] == f'Cancellation reason: {cancel_reason}'
+        assert summary['metrics']['cancelReason'] == cancel_reason
+        assert summary['completionDisplay'] == '100%'
 
 
 @pytest.mark.django_db

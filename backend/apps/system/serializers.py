@@ -466,7 +466,11 @@ class PageLayoutSerializer(BaseModelSerializer):
 
     def validate_layout_config(self, value):
         """Validate layout configuration."""
-        from apps.system.validators import validate_layout_config, normalize_layout_config_structure
+        from apps.system.validators import (
+            validate_layout_config,
+            normalize_layout_config_structure,
+            validate_layout_workbench_config,
+        )
         try:
             # Fill missing section/field ids for legacy payload compatibility.
             value = normalize_layout_config_structure(value)
@@ -513,6 +517,8 @@ class PageLayoutSerializer(BaseModelSerializer):
                 validate_layout_config_by_mode(value, mode)
             else:
                 validate_layout_config(value, layout_type or 'form')
+
+            validate_layout_workbench_config(value)
         except Exception as e:
             raise serializers.ValidationError(str(e))
         return value

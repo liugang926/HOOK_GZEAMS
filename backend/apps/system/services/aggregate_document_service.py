@@ -69,6 +69,12 @@ from apps.lifecycle.services.purchase_service import PurchaseRequestService
 from apps.lifecycle.services.receipt_service import AssetReceiptService
 from apps.system.models import BusinessObject, ObjectRelationDefinition
 from apps.system.services.activity_log_service import ActivityLogService
+from apps.system.services.timeline_highlight_service import (
+    build_timeline_highlight,
+    build_timeline_highlights_from_changes,
+    build_timeline_highlights_from_description,
+    merge_timeline_highlights,
+)
 
 
 @dataclass(frozen=True)
@@ -800,6 +806,7 @@ class AggregateDocumentService:
         actor_name = ""
         if getattr(activity_log, "actor", None) is not None:
             actor_name = activity_log.actor.get_full_name() or activity_log.actor.username
+        changes = activity_log.changes or []
 
         return {
             "id": str(activity_log.id),
@@ -809,12 +816,17 @@ class AggregateDocumentService:
             "description": activity_log.description,
             "action": activity_log.action,
             "actorName": actor_name,
-            "changes": activity_log.changes or [],
+            "changes": changes,
+            "highlights": merge_timeline_highlights(
+                build_timeline_highlights_from_changes(changes),
+                build_timeline_highlights_from_description(activity_log.description),
+            ),
         }
 
     @staticmethod
     def _normalize_workflow_approval_timeline_entry(workflow_approval) -> Dict[str, Any]:
         approver_name = workflow_approval.approver.get_full_name() or workflow_approval.approver.username
+        comment_highlight = build_timeline_highlight(code="workflow_comment", value=workflow_approval.comment)
         return {
             "id": str(workflow_approval.id),
             "source": "workflowApproval",
@@ -826,6 +838,7 @@ class AggregateDocumentService:
             "actorName": approver_name,
             "taskName": workflow_approval.task.node_name,
             "comment": workflow_approval.comment,
+            "highlights": [comment_highlight] if comment_highlight else [],
         }
 
     @staticmethod
@@ -833,6 +846,10 @@ class AggregateDocumentService:
         actor_name = ""
         if getattr(workflow_operation_log, "actor", None) is not None:
             actor_name = workflow_operation_log.actor.get_full_name() or workflow_operation_log.actor.username
+        result_highlight = build_timeline_highlight(
+            code="workflow_result",
+            value=workflow_operation_log.get_result_display(),
+        )
 
         return {
             "id": str(workflow_operation_log.id),
@@ -845,6 +862,7 @@ class AggregateDocumentService:
             "actorName": actor_name,
             "result": workflow_operation_log.result,
             "resultDisplay": workflow_operation_log.get_result_display(),
+            "highlights": [result_highlight] if result_highlight else [],
         }
 
     @staticmethod

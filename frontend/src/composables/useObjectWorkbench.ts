@@ -4,6 +4,7 @@ import type {
   RuntimeWorkbenchAsyncIndicator,
   RuntimeWorkbenchClosurePanel,
   RuntimeWorkbenchDetailPanel,
+  RuntimeWorkbenchSurfacePriority,
   RuntimeWorkbenchQueuePanel,
   RuntimeWorkbenchRecommendedAction,
   RuntimeWorkbenchSlaIndicator,
@@ -32,6 +33,14 @@ interface WorkbenchDefinitionBase {
 interface WorkbenchActionDefinition extends WorkbenchDefinitionBase, Record<string, unknown> {
   code: string
 }
+
+const VALID_SURFACE_PRIORITIES: RuntimeWorkbenchSurfacePriority[] = [
+  'primary',
+  'context',
+  'related',
+  'activity',
+  'admin',
+]
 
 const toNormalizedStatus = (recordData: WorkbenchRecord) => {
   if (!recordData || typeof recordData !== 'object') return ''
@@ -84,6 +93,42 @@ const normalizeActionList = (value: unknown): WorkbenchActionDefinition[] => {
   return value.filter((item): item is WorkbenchActionDefinition => {
     return Boolean(item && typeof item === 'object' && String((item as Record<string, unknown>).code || '').trim())
   })
+}
+
+const normalizeSurfacePriority = (value: unknown): RuntimeWorkbenchSurfacePriority | null => {
+  if (typeof value !== 'string') return null
+  const candidate = value.trim() as RuntimeWorkbenchSurfacePriority
+  return VALID_SURFACE_PRIORITIES.includes(candidate) ? candidate : null
+}
+
+const resolveSurfacePriority = (
+  definition: Record<string, unknown>,
+): RuntimeWorkbenchSurfacePriority | null => {
+  return normalizeSurfacePriority(definition.surfacePriority ?? definition.surface_priority)
+}
+
+const normalizeAllowedSurfacePriorities = (
+  value: unknown,
+): RuntimeWorkbenchSurfacePriority[] | null => {
+  if (!Array.isArray(value)) return null
+  const priorities = value
+    .map((item) => normalizeSurfacePriority(item))
+    .filter((item): item is RuntimeWorkbenchSurfacePriority => Boolean(item))
+  return priorities.length > 0 ? priorities : null
+}
+
+const isVisibleForSurfacePriority = (
+  definition: Record<string, unknown>,
+  allowedSurfacePriorities: RuntimeWorkbenchSurfacePriority[] | null,
+) => {
+  if (!allowedSurfacePriorities || allowedSurfacePriorities.length === 0) {
+    return true
+  }
+  const priority = resolveSurfacePriority(definition)
+  if (!priority) {
+    return true
+  }
+  return allowedSurfacePriorities.includes(priority)
 }
 
 const normalizePanelList = (value: unknown): RuntimeWorkbenchDetailPanel[] => {
@@ -142,10 +187,14 @@ const normalizeClosurePanel = (value: unknown): RuntimeWorkbenchClosurePanel | n
 export const useObjectWorkbench = ({
   workbench,
   recordData,
+  allowedSurfacePriorities,
 }: {
   workbench: Ref<RuntimeWorkbench | null> | ComputedRef<RuntimeWorkbench | null>
   recordData: Ref<WorkbenchRecord> | ComputedRef<WorkbenchRecord>
+  allowedSurfacePriorities?: Ref<RuntimeWorkbenchSurfacePriority[] | null> | ComputedRef<RuntimeWorkbenchSurfacePriority[] | null>
 }) => {
+  const activeSurfacePriorities = computed(() => normalizeAllowedSurfacePriorities(allowedSurfacePriorities?.value))
+
   const primaryActions = computed(() => {
     return normalizeActionList(workbench.value?.toolbar?.primaryActions).filter((action) =>
       isVisibleForRecord(action, recordData.value)
@@ -160,49 +209,59 @@ export const useObjectWorkbench = ({
 
   const detailPanels = computed(() => {
     return normalizePanelList(workbench.value?.detailPanels).filter((panel) =>
-      isVisibleForRecord(panel as WorkbenchDefinitionBase, recordData.value)
+      isVisibleForRecord(panel as WorkbenchDefinitionBase, recordData.value) &&
+      isVisibleForSurfacePriority(panel, activeSurfacePriorities.value)
     )
   })
 
   const asyncIndicators = computed(() => {
     return normalizeIndicatorList(workbench.value?.asyncIndicators).filter((indicator) =>
-      isVisibleForRecord(indicator as WorkbenchDefinitionBase, recordData.value)
+      isVisibleForRecord(indicator as WorkbenchDefinitionBase, recordData.value) &&
+      isVisibleForSurfacePriority(indicator, activeSurfacePriorities.value)
     )
   })
 
   const summaryCards = computed(() => {
     return normalizeSummaryCardList(workbench.value?.summaryCards).filter((card) =>
-      isVisibleForRecord(card as WorkbenchDefinitionBase, recordData.value)
+      isVisibleForRecord(card as WorkbenchDefinitionBase, recordData.value) &&
+      isVisibleForSurfacePriority(card, activeSurfacePriorities.value)
     )
   })
 
   const queuePanels = computed(() => {
     return normalizeQueuePanelList(workbench.value?.queuePanels).filter((panel) =>
-      isVisibleForRecord(panel as WorkbenchDefinitionBase, recordData.value)
+      isVisibleForRecord(panel as WorkbenchDefinitionBase, recordData.value) &&
+      isVisibleForSurfacePriority(panel, activeSurfacePriorities.value)
     )
   })
 
   const exceptionPanels = computed(() => {
     return normalizeQueuePanelList(workbench.value?.exceptionPanels).filter((panel) =>
-      isVisibleForRecord(panel as WorkbenchDefinitionBase, recordData.value)
+      isVisibleForRecord(panel as WorkbenchDefinitionBase, recordData.value) &&
+      isVisibleForSurfacePriority(panel, activeSurfacePriorities.value)
     )
   })
 
   const closurePanel = computed(() => {
     const panel = normalizeClosurePanel(workbench.value?.closurePanel)
     if (!panel) return null
-    return isVisibleForRecord(panel as WorkbenchDefinitionBase, recordData.value) ? panel : null
+    return (
+      isVisibleForRecord(panel as WorkbenchDefinitionBase, recordData.value) &&
+      isVisibleForSurfacePriority(panel, activeSurfacePriorities.value)
+    ) ? panel : null
   })
 
   const slaIndicators = computed(() => {
     return normalizeSlaIndicatorList(workbench.value?.slaIndicators).filter((indicator) =>
-      isVisibleForRecord(indicator as WorkbenchDefinitionBase, recordData.value)
+      isVisibleForRecord(indicator as WorkbenchDefinitionBase, recordData.value) &&
+      isVisibleForSurfacePriority(indicator, activeSurfacePriorities.value)
     )
   })
 
   const recommendedActions = computed(() => {
     return normalizeRecommendedActionList(workbench.value?.recommendedActions).filter((action) =>
-      isVisibleForRecord(action as WorkbenchDefinitionBase, recordData.value)
+      isVisibleForRecord(action as WorkbenchDefinitionBase, recordData.value) &&
+      isVisibleForSurfacePriority(action, activeSurfacePriorities.value)
     )
   })
 

@@ -92,6 +92,9 @@ def test_object_router_runtime_returns_layout_and_fields():
     assert workbench['workspaceMode'] == 'standard'
     assert workbench['primaryEntryRoute'] == '/objects/TESTOBJ'
     assert workbench['legacyAliases'] == []
+    assert workbench['defaultPageMode'] == 'record'
+    assert workbench['defaultDetailSurfaceTab'] == 'process'
+    assert workbench['defaultDocumentSurfaceTab'] == 'summary'
     assert workbench['detailPanels'] == []
     assert workbench['asyncIndicators'] == []
     assert workbench['summaryCards'] == []
@@ -100,6 +103,7 @@ def test_object_router_runtime_returns_layout_and_fields():
     assert workbench['closurePanel'] == {}
     assert workbench['slaIndicators'] == []
     assert workbench['recommendedActions'] == []
+    assert workbench['documentSummarySections'] == []
     assert workbench['toolbar']['primaryActions'] == []
     assert workbench['toolbar']['secondaryActions'] == []
 
@@ -161,18 +165,25 @@ def test_object_router_runtime_applies_workbench_overrides_from_layout():
                 'workspaceMode': 'extended',
                 'primaryEntryRoute': '/objects/WORKBENCHOBJ',
                 'legacyAliases': ['/legacy/workbench'],
+                'defaultPageMode': 'workspace',
+                'defaultDetailSurfaceTab': 'activity',
+                'defaultDocumentSurfaceTab': 'form',
                 'toolbar': {
                     'primaryActions': [{'code': 'publish'}],
                     'secondaryActions': [{'code': 'archive'}],
                 },
                 'detailPanels': [{'code': 'integration_logs', 'component': 'integration-log-table'}],
                 'asyncIndicators': [{'code': 'sync_task', 'type': 'sync-task'}],
-                'summaryCards': [{'code': 'pending_count', 'valueField': 'pendingCount'}],
-                'queuePanels': [{'code': 'approaching_sla', 'queueCode': 'approaching_sla'}],
-                'exceptionPanels': [{'code': 'push_failed', 'queueCode': 'push_failed'}],
-                'closurePanel': {'stageField': 'status', 'ownerField': 'ownerName'},
+                'summaryCards': [{'code': 'pending_count', 'valueField': 'pendingCount', 'surfacePriority': 'primary'}],
+                'queuePanels': [{'code': 'approaching_sla', 'queueCode': 'approaching_sla', 'surfacePriority': 'related'}],
+                'exceptionPanels': [{'code': 'push_failed', 'queueCode': 'push_failed', 'surfacePriority': 'related'}],
+                'closurePanel': {'stageField': 'status', 'ownerField': 'ownerName', 'surfacePriority': 'context'},
                 'slaIndicators': [{'code': 'workflow_sla', 'statusField': 'slaStatus'}],
-                'recommendedActions': [{'code': 'follow_up', 'actionPath': 'follow_up'}],
+                'recommendedActions': [{'code': 'follow_up', 'actionPath': 'follow_up', 'surfacePriority': 'admin'}],
+                'documentSummarySections': [
+                    {'code': 'process_summary', 'surfacePriority': 'primary'},
+                    {'code': 'batch_tools', 'surfacePriority': 'admin'},
+                ],
             },
         },
     )
@@ -190,16 +201,26 @@ def test_object_router_runtime_applies_workbench_overrides_from_layout():
     assert workbench['workspaceMode'] == 'extended'
     assert workbench['primaryEntryRoute'] == '/objects/WORKBENCHOBJ'
     assert workbench['legacyAliases'] == ['/legacy/workbench']
+    assert workbench['defaultPageMode'] == 'workspace'
+    assert workbench['defaultDetailSurfaceTab'] == 'activity'
+    assert workbench['defaultDocumentSurfaceTab'] == 'form'
     assert workbench['toolbar']['primaryActions'][0]['code'] == 'publish'
     assert workbench['toolbar']['secondaryActions'][0]['code'] == 'archive'
     assert workbench['detailPanels'][0]['code'] == 'integration_logs'
     assert workbench['asyncIndicators'][0]['code'] == 'sync_task'
     assert workbench['summaryCards'][0]['code'] == 'pending_count'
+    assert workbench['summaryCards'][0]['surfacePriority'] == 'primary'
     assert workbench['queuePanels'][0]['queueCode'] == 'approaching_sla'
+    assert workbench['queuePanels'][0]['surfacePriority'] == 'related'
     assert workbench['exceptionPanels'][0]['queueCode'] == 'push_failed'
+    assert workbench['exceptionPanels'][0]['surfacePriority'] == 'related'
     assert workbench['closurePanel']['stageField'] == 'status'
+    assert workbench['closurePanel']['surfacePriority'] == 'context'
     assert workbench['slaIndicators'][0]['statusField'] == 'slaStatus'
     assert workbench['recommendedActions'][0]['actionPath'] == 'follow_up'
+    assert workbench['recommendedActions'][0]['surfacePriority'] == 'admin'
+    assert workbench['documentSummarySections'][0]['code'] == 'process_summary'
+    assert workbench['documentSummarySections'][1]['surfacePriority'] == 'admin'
 
 
 @pytest.mark.django_db

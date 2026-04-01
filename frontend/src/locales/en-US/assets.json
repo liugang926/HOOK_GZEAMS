@@ -40,7 +40,13 @@
             "openMaintenance": "Open Maintenance",
             "openDisposals": "Open Disposals",
             "linkedFinanceVouchers": "Linked Finance Vouchers",
-            "openFinanceVouchers": "Open Finance Vouchers"
+            "openFinanceVouchers": "Open Finance Vouchers",
+            "openPickups": "Open Pickups",
+            "openTransfers": "Open Transfers",
+            "openReturns": "Open Returns",
+            "openLoans": "Open Loans",
+            "pendingDepreciation": "Pending Depreciation",
+            "activeWarranties": "Active Warranties"
         },
         "queues": {
             "projectAllocations": "Project Allocations",
@@ -48,7 +54,13 @@
             "inventoryFollowUps": "Inventory Follow-up Tasks",
             "maintenanceRecords": "Maintenance Records",
             "disposalRequests": "Disposal Requests",
-            "financeVouchers": "Finance Vouchers"
+            "financeVouchers": "Finance Vouchers",
+            "pickups": "Pickup Orders",
+            "transfers": "Transfer Orders",
+            "returns": "Return Orders",
+            "loans": "Loan Orders",
+            "depreciationRecords": "Depreciation Records",
+            "warranties": "Warranty Records"
         }
     },
     "status": {
@@ -166,6 +178,17 @@
             "submitApproveSuccess": "Submitted for approval",
             "submitApproveFailed": "Failed to submit",
             "selectAssetWarning": "Please add at least one asset"
+        },
+        "workbench": {
+            "summary": {
+                "borrower": "Borrower",
+                "expectedReturnDate": "Expected Return Date",
+                "itemCount": "Loan Items",
+                "overdueDays": "Overdue Days"
+            },
+            "queues": {
+                "items": "Loan Items"
+            }
         }
     },
     "return": {
@@ -198,6 +221,18 @@
             "submitSuccess": "Submitted successfully",
             "submitApproveSuccess": "Submitted for approval",
             "submitFailed": "Failed to submit"
+        },
+        "workbench": {
+            "summary": {
+                "returnLocation": "Return Location",
+                "itemCount": "Return Items",
+                "projectAllocationCount": "Linked Project Allocations",
+                "maintenanceAfterReturnCount": "Maintenance Follow-up"
+            },
+            "queues": {
+                "items": "Return Items",
+                "maintenanceFollowUp": "Maintenance Follow-up"
+            }
         }
     },
     "pickup": {
@@ -232,6 +267,17 @@
             "selectAssetWarning": "Please add at least one asset",
             "submitApproveSuccess": "Submitted for approval",
             "submitApproveFailed": "Failed to submit"
+        },
+        "workbench": {
+            "summary": {
+                "applicant": "Applicant",
+                "department": "Department",
+                "itemCount": "Pickup Items",
+                "approvedItemCount": "Approved Items"
+            },
+            "queues": {
+                "items": "Pickup Items"
+            }
         }
     },
     "transfer": {
@@ -268,6 +314,18 @@
             "submitSuccess": "Submitted successfully",
             "submitApproveSuccess": "Submitted for approval",
             "submitFailed": "Failed to submit"
+        },
+        "workbench": {
+            "summary": {
+                "sourceDepartment": "Source Department",
+                "targetDepartment": "Target Department",
+                "itemCount": "Transfer Items",
+                "sourceApprovedCount": "Source Approval",
+                "targetApprovedCount": "Target Approval"
+            },
+            "queues": {
+                "items": "Transfer Items"
+            }
         }
     },
     "location": {
@@ -541,6 +599,15 @@
                 "cancelSuccess": "Order cancelled",
                 "cancelConfirm": "Are you sure to cancel this maintenance order?",
                 "loadFailed": "Failed to load maintenance orders"
+            },
+            "workbench": {
+                "summary": {
+                    "assetCode": "Asset Code",
+                    "technician": "Technician",
+                    "totalCost": "Total Cost",
+                    "workHours": "Work Hours",
+                    "faultPhotoCount": "Fault Photos"
+                }
             }
         },
         "disposalRequest": {
@@ -593,6 +660,20 @@
                 "cancelConfirm": "Are you sure to cancel this disposal request?",
                 "noItems": "Please add at least one asset to dispose",
                 "loadFailed": "Failed to load disposal requests"
+            },
+            "workbench": {
+                "summary": {
+                    "disposalType": "Disposal Type",
+                    "itemCount": "Disposal Items",
+                    "appraisedItemCount": "Appraised Items",
+                    "executedItemCount": "Executed Items",
+                    "totalNetValue": "Total Net Value"
+                },
+                "queues": {
+                    "items": "Disposal Items",
+                    "pendingAppraisal": "Pending Appraisal",
+                    "pendingExecution": "Pending Execution"
+                }
             }
         },
         "assetReceipt": {

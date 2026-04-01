@@ -26,6 +26,7 @@ import {
 const props = defineProps<{
   panel: RuntimeWorkbenchClosurePanel | null
   recordData?: Record<string, unknown> | null
+  extraRows?: ObjectWorkspaceInfoRow[]
 }>()
 
 const { t, te } = useI18n()
@@ -60,7 +61,7 @@ const rows = computed<ObjectWorkspaceInfoRow[]>(() => {
   const blockerValue = readWorkbenchRecordValue(props.recordData, props.panel.blockerField || props.panel.blocker_field)
   const progressValue = readWorkbenchRecordValue(props.recordData, props.panel.progressField || props.panel.progress_field)
 
-  return [
+  const baseRows = [
     {
       label: t('common.workbench.labels.stage'),
       value: formatWorkbenchValue(stageValue, t('common.workbench.messages.notAvailable'), '', {
@@ -90,6 +91,8 @@ const rows = computed<ObjectWorkspaceInfoRow[]>(() => {
       }),
     },
   ].filter((row) => row.value !== t('common.workbench.messages.notAvailable'))
+
+  return [...baseRows, ...(props.extraRows || [])]
 })
 
 const tips = computed(() => {

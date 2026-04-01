@@ -163,6 +163,24 @@ class TestPurchaseRequestService(TestCase):
         )
         self.assertEqual(rejected.status, PurchaseRequestStatus.REJECTED)
 
+    def test_cancel_request_persists_cancel_reason(self):
+        """Test cancelling purchase request persists cancel reason."""
+        pr = PurchaseRequest.objects.create(
+            organization=self.org,
+            applicant=self.user,
+            department=self.dept,
+            request_date=timezone.now().date(),
+            expected_date=timezone.now().date(),
+            reason='Need equipment',
+            status=PurchaseRequestStatus.PROCESSING
+        )
+
+        cancelled = self.service.cancel(str(pr.id), 'Budget frozen', actor=self.user)
+
+        self.assertEqual(cancelled.status, PurchaseRequestStatus.CANCELLED)
+        self.assertEqual(cancelled.approval_comment, 'Budget frozen')
+        self.assertEqual(cancelled.custom_fields['cancel_reason'], 'Budget frozen')
+
 
 class TestAssetReceiptService(TestCase):
     """Tests for AssetReceiptService"""
@@ -249,6 +267,20 @@ class TestAssetReceiptService(TestCase):
             passed=False
         )
         self.assertEqual(updated.status, AssetReceiptStatus.REJECTED)
+
+    def test_cancel_receipt_persists_cancel_reason(self):
+        """Test cancelling receipt persists cancel reason."""
+        receipt = AssetReceipt.objects.create(
+            organization=self.org,
+            receipt_date=timezone.now().date(),
+            receiver=self.user,
+            status=AssetReceiptStatus.INSPECTING
+        )
+
+        cancelled = self.service.cancel(str(receipt.id), 'Delivery replaced', actor=self.user)
+
+        self.assertEqual(cancelled.status, AssetReceiptStatus.CANCELLED)
+        self.assertEqual(cancelled.custom_fields['cancel_reason'], 'Delivery replaced')
 
 
 class TestMaintenanceService(TestCase):

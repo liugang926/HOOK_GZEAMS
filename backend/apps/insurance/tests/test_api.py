@@ -367,10 +367,12 @@ class InsurancePolicyAPITest(APITestCase):
         )
 
         url = f'/api/insurance/policies/{policy.id}/cancel/'
-        response = self.client.post(url)
+        response = self.client.post(url, {'reason': 'Coverage moved to a new vendor'}, format='json')
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['status'], 'cancelled')
+        policy.refresh_from_db()
+        self.assertEqual(policy.custom_fields['cancel_reason'], 'Coverage moved to a new vendor')
 
     def test_policy_summary(self):
         """Test getting policy summary."""

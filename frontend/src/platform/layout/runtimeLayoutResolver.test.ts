@@ -62,6 +62,9 @@ describe('resolveRuntimeLayout', () => {
         workspaceMode: 'extended',
         primaryEntryRoute: '/objects/Asset',
         legacyAliases: ['/assets'],
+        defaultPageMode: 'workspace',
+        defaultDetailSurfaceTab: 'activity',
+        defaultDocumentSurfaceTab: 'form',
         toolbar: {
           primaryActions: [{ code: 'saveDraft' }],
           secondaryActions: [{ code: 'openAudit' }],
@@ -74,6 +77,10 @@ describe('resolveRuntimeLayout', () => {
         closurePanel: { stageField: 'status' },
         slaIndicators: [{ code: 'approval_sla', statusField: 'slaStatus' }],
         recommendedActions: [{ code: 'follow_up', actionPath: 'follow_up' }],
+        documentSummarySections: [
+          { code: 'process_summary', surfacePriority: 'primary' },
+          { code: 'batch_tools', surfacePriority: 'admin' },
+        ],
       },
       isDefault: false,
       layout: {
@@ -111,6 +118,9 @@ describe('resolveRuntimeLayout', () => {
     expect(result.workbench.workspaceMode).toBe('extended')
     expect(result.workbench.primaryEntryRoute).toBe('/objects/Asset')
     expect(result.workbench.legacyAliases).toEqual(['/assets'])
+    expect(result.workbench.defaultPageMode).toBe('workspace')
+    expect(result.workbench.defaultDetailSurfaceTab).toBe('activity')
+    expect(result.workbench.defaultDocumentSurfaceTab).toBe('form')
     expect(result.workbench.toolbar.primaryActions).toHaveLength(1)
     expect(result.workbench.detailPanels[0]?.code).toBe('integration_logs')
     expect(result.workbench.asyncIndicators[0]?.code).toBe('voucher_push')
@@ -120,6 +130,8 @@ describe('resolveRuntimeLayout', () => {
     expect(result.workbench.closurePanel?.stageField).toBe('status')
     expect(result.workbench.slaIndicators[0]?.code).toBe('approval_sla')
     expect(result.workbench.recommendedActions[0]?.code).toBe('follow_up')
+    expect(result.workbench.documentSummarySections?.[0]?.code).toBe('process_summary')
+    expect(result.workbench.documentSummarySections?.[1]?.surfacePriority).toBe('admin')
     expect(result.aggregate?.isAggregateRoot).toBe(true)
     expect(result.aggregate?.detailRegions?.[0]?.relationCode).toBe('pickup_items')
     expect(result.aggregate?.detailRegions?.[0]?.fieldCode).toBe('items')
@@ -209,6 +221,9 @@ describe('resolveRuntimeLayout', () => {
     expect(result.workbench.workspaceMode).toBe('standard')
     expect(result.workbench.primaryEntryRoute).toBe('/objects/Asset')
     expect(result.workbench.legacyAliases).toEqual([])
+    expect(result.workbench.defaultPageMode).toBe('record')
+    expect(result.workbench.defaultDetailSurfaceTab).toBe('process')
+    expect(result.workbench.defaultDocumentSurfaceTab).toBe('summary')
     expect(result.workbench.toolbar.primaryActions).toEqual([])
     expect(result.workbench.detailPanels).toEqual([])
     expect(result.workbench.asyncIndicators).toEqual([])
@@ -218,6 +233,7 @@ describe('resolveRuntimeLayout', () => {
     expect(result.workbench.closurePanel).toBeNull()
     expect(result.workbench.slaIndicators).toEqual([])
     expect(result.workbench.recommendedActions).toEqual([])
+    expect(result.workbench.documentSummarySections).toEqual([])
     expect(result.fields).toHaveLength(1)
     expect(layoutConfig?.sections?.[0]?.fields?.[0]?.fieldCode).toBe('assetName')
     expect(businessObjectApi.getFieldsWithContext).toHaveBeenCalledWith('Asset', 'form', { includeRelations: true })

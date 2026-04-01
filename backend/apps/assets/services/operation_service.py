@@ -22,6 +22,7 @@ from apps.assets.models import (
 )
 from apps.assets.services.lifecycle_coordinator import AssetLifecycleCoordinatorService
 from apps.projects.services import ProjectAssetService
+from apps.system.services.timeline_highlight_service import build_reason_change
 
 
 def _extract_reference_id(value):
@@ -33,6 +34,37 @@ def _extract_reference_id(value):
 
 def _normalize_item_id(value) -> str:
     return str(value or '').strip()
+
+
+def _normalize_free_text(value: Any) -> str:
+    return str(value or '').strip()
+
+
+def _set_custom_field_text(instance, key: str, value: Any) -> str:
+    normalized_value = _normalize_free_text(value)
+    custom_fields = dict(instance.custom_fields or {})
+
+    if normalized_value:
+        custom_fields[key] = normalized_value
+    elif key in custom_fields:
+        custom_fields.pop(key, None)
+
+    instance.custom_fields = custom_fields
+    return normalized_value
+
+
+def _build_cancellation_description(document_label: str, record_no: str, reason: str = '') -> str:
+    description = f'{document_label} {record_no} cancelled.'
+    normalized_reason = _normalize_free_text(reason)
+    if normalized_reason:
+        description = f'{description} Cancellation reason: {normalized_reason}'
+    return description
+
+
+def _build_closed_loop_service():
+    from apps.lifecycle.services.closed_loop_service import LifecycleClosedLoopService
+
+    return LifecycleClosedLoopService()
 
 
 def _resolve_first_present(item_data: Dict[str, Any], *keys: str, fallback=None):
@@ -309,6 +341,7 @@ class AssetPickupService(BaseCRUDService):
     def __init__(self):
         super().__init__(AssetPickup)
         self.lifecycle_coordinator = AssetLifecycleCoordinatorService()
+        self.closed_loop_service = _build_closed_loop_service()
 
     def create_with_items(
         self,
@@ -572,6 +605,7 @@ class AssetPickupService(BaseCRUDService):
                 'status': f'Cannot approve pickup with status {pickup.get_status_label()}'
             })
 
+        previous_status = pickup.status
         pickup.approved_by = user
         pickup.approved_at = timezone.now()
         pickup.approval_comment = comment
@@ -594,6 +628,18 @@ class AssetPickupService(BaseCRUDService):
             pickup.status = 'rejected'
 
         pickup.save()
+        self.closed_loop_service.log_status_change(
+            actor=user,
+            instance=pickup,
+            old_status=previous_status,
+            new_status=pickup.status,
+            description=(
+                f'Pickup order {pickup.pickup_no} approved.'
+                if approval == 'approved'
+                else f'Pickup order {pickup.pickup_no} rejected.'
+            ),
+            extra_changes=[build_reason_change('approval_comment', comment)],
+        )
         return pickup
 
     def complete_pickup(self, pickup_id: str, user) -> AssetPickup:
@@ -620,13 +666,14 @@ class AssetPickupService(BaseCRUDService):
 
         return pickup
 
-    def cancel_pickup(self, pickup_id: str, user) -> AssetPickup:
+    def cancel_pickup(self, pickup_id: str, user, reason: str = '') -> AssetPickup:
         """
         Cancel a pickup order.
 
         Args:
             pickup_id: Pickup order ID
             user: User cancelling the request
+            reason: Cancellation reason
 
         Returns:
             Updated pickup order
@@ -638,8 +685,18 @@ class AssetPickupService(BaseCRUDService):
                 'status': f'Cannot cancel pickup with status {pickup.get_status_label()}'
             })
 
+        previous_status = pickup.status
+        normalized_reason = _set_custom_field_text(pickup, 'cancel_reason', reason)
         pickup.status = 'cancelled'
-        pickup.save()
+        pickup.save(update_fields=['status', 'custom_fields', 'updated_at'])
+        self.closed_loop_service.log_status_change(
+            actor=user,
+            instance=pickup,
+            old_status=previous_status,
+            new_status=pickup.status,
+            description=_build_cancellation_description('Pickup order', pickup.pickup_no, normalized_reason),
+            extra_changes=[build_reason_change('cancel_reason', normalized_reason)],
+        )
 
         return pickup
 
@@ -664,6 +721,7 @@ class AssetTransferService(BaseCRUDService):
     def __init__(self):
         super().__init__(AssetTransfer)
         self.lifecycle_coordinator = AssetLifecycleCoordinatorService()
+        self.closed_loop_service = _build_closed_loop_service()
 
     def create_with_items(
         self,
@@ -817,11 +875,20 @@ class AssetTransferService(BaseCRUDService):
                 'status': 'Transfer must be in pending status for source approval'
             })
 
+        previous_status = transfer.status
         transfer.status = 'out_approved'
         transfer.from_approved_by = user
         transfer.from_approved_at = timezone.now()
         transfer.from_approve_comment = comment
         transfer.save()
+        self.closed_loop_service.log_status_change(
+            actor=user,
+            instance=transfer,
+            old_status=previous_status,
+            new_status=transfer.status,
+            description=f'Transfer order {transfer.transfer_no} approved by the source department.',
+            extra_changes=[build_reason_change('from_approve_comment', comment)],
+        )
 
         return transfer
 
@@ -839,11 +906,20 @@ class AssetTransferService(BaseCRUDService):
                 'status': 'Transfer must be approved by source department first'
             })
 
+        previous_status = transfer.status
         transfer.status = 'approved'
         transfer.to_approved_by = user
         transfer.to_approved_at = timezone.now()
         transfer.to_approve_comment = comment
         transfer.save()
+        self.closed_loop_service.log_status_change(
+            actor=user,
+            instance=transfer,
+            old_status=previous_status,
+            new_status=transfer.status,
+            description=f'Transfer order {transfer.transfer_no} approved by the target department.',
+            extra_changes=[build_reason_change('to_approve_comment', comment)],
+        )
 
         return transfer
 
@@ -874,9 +950,26 @@ class AssetTransferService(BaseCRUDService):
             transfer.to_approve_comment = comment
 
         transfer.save()
+        self.closed_loop_service.log_status_change(
+            actor=user,
+            instance=transfer,
+            old_status=previous_status,
+            new_status=transfer.status,
+            description=(
+                f'Transfer order {transfer.transfer_no} rejected by the source department.'
+                if previous_status == 'pending'
+                else f'Transfer order {transfer.transfer_no} rejected by the target department.'
+            ),
+            extra_changes=[
+                build_reason_change(
+                    'from_approve_comment' if previous_status == 'pending' else 'to_approve_comment',
+                    comment,
+                )
+            ],
+        )
         return transfer
 
-    def cancel_transfer(self, transfer_id: str, user) -> AssetTransfer:
+    def cancel_transfer(self, transfer_id: str, user, reason: str = '') -> AssetTransfer:
         """Cancel a transfer order before completion."""
         transfer = self.get(transfer_id, user=user)
 
@@ -885,8 +978,18 @@ class AssetTransferService(BaseCRUDService):
                 'status': f'Cannot cancel transfer with status {transfer.get_status_label()}'
             })
 
+        previous_status = transfer.status
+        normalized_reason = _set_custom_field_text(transfer, 'cancel_reason', reason)
         transfer.status = 'cancelled'
-        transfer.save()
+        transfer.save(update_fields=['status', 'custom_fields', 'updated_at'])
+        self.closed_loop_service.log_status_change(
+            actor=user,
+            instance=transfer,
+            old_status=previous_status,
+            new_status=transfer.status,
+            description=_build_cancellation_description('Transfer order', transfer.transfer_no, normalized_reason),
+            extra_changes=[build_reason_change('cancel_reason', normalized_reason)],
+        )
         return transfer
 
     def complete_transfer(self, transfer_id: str, user) -> AssetTransfer:
@@ -938,6 +1041,7 @@ class AssetReturnService(BaseCRUDService):
     def __init__(self):
         super().__init__(AssetReturn)
         self.lifecycle_coordinator = AssetLifecycleCoordinatorService()
+        self.closed_loop_service = _build_closed_loop_service()
 
     def create_with_items(
         self,
@@ -1124,7 +1228,7 @@ class AssetReturnService(BaseCRUDService):
         return_order.save()
         return return_order
 
-    def cancel_return(self, return_id: str, user) -> AssetReturn:
+    def cancel_return(self, return_id: str, user, reason: str = '') -> AssetReturn:
         """Cancel a return order before confirmation."""
         return_order = self.get(return_id, user=user)
 
@@ -1133,8 +1237,18 @@ class AssetReturnService(BaseCRUDService):
                 'status': f'Cannot cancel return with status {return_order.get_status_label()}'
             })
 
+        previous_status = return_order.status
+        normalized_reason = _set_custom_field_text(return_order, 'cancel_reason', reason)
         return_order.status = 'cancelled'
-        return_order.save()
+        return_order.save(update_fields=['status', 'custom_fields', 'updated_at'])
+        self.closed_loop_service.log_status_change(
+            actor=user,
+            instance=return_order,
+            old_status=previous_status,
+            new_status=return_order.status,
+            description=_build_cancellation_description('Return order', return_order.return_no, normalized_reason),
+            extra_changes=[build_reason_change('cancel_reason', normalized_reason)],
+        )
         return return_order
 
     def confirm_return(
@@ -1158,6 +1272,8 @@ class AssetReturnService(BaseCRUDService):
             raise ValidationError({
                 'status': f'Cannot confirm return with status {return_order.get_status_label()}'
             })
+
+        previous_status = return_order.status
 
         with transaction.atomic():
             project_asset_service = ProjectAssetService()
@@ -1196,6 +1312,13 @@ class AssetReturnService(BaseCRUDService):
             return_order.confirmed_at = timezone.now()
             return_order.completed_at = timezone.now()
             return_order.save()
+            self.closed_loop_service.log_status_change(
+                actor=user,
+                instance=return_order,
+                old_status=previous_status,
+                new_status=return_order.status,
+                description=f'Return order {return_order.return_no} confirmed and completed.',
+            )
 
         return return_order
 
@@ -1212,6 +1335,8 @@ class AssetReturnService(BaseCRUDService):
             raise ValidationError({
                 'status': f'Cannot reject return with status {return_order.get_status_label()}'
             })
+
+        previous_status = return_order.status
 
         with transaction.atomic():
             project_asset_service = ProjectAssetService()
@@ -1237,6 +1362,14 @@ class AssetReturnService(BaseCRUDService):
             return_order.status = 'rejected'
             return_order.reject_reason = reason
             return_order.save(update_fields=['status', 'reject_reason', 'updated_at'])
+            self.closed_loop_service.log_status_change(
+                actor=user,
+                instance=return_order,
+                old_status=previous_status,
+                new_status=return_order.status,
+                description=f'Return order {return_order.return_no} rejected.',
+                extra_changes=[build_reason_change('reject_reason', reason)],
+            )
 
         return return_order
 
@@ -1264,6 +1397,7 @@ class AssetLoanService(BaseCRUDService):
     def __init__(self):
         super().__init__(AssetLoan)
         self.lifecycle_coordinator = AssetLifecycleCoordinatorService()
+        self.closed_loop_service = _build_closed_loop_service()
 
     def create_with_items(
         self,
@@ -1417,7 +1551,7 @@ class AssetLoanService(BaseCRUDService):
         loan.save()
         return loan
 
-    def cancel_loan(self, loan_id: str, user) -> AssetLoan:
+    def cancel_loan(self, loan_id: str, user, reason: str = '') -> AssetLoan:
         """Cancel a loan order before lending starts."""
         loan = self.get(loan_id, user=user)
 
@@ -1426,8 +1560,18 @@ class AssetLoanService(BaseCRUDService):
                 'status': f'Cannot cancel loan with status {loan.get_status_label()}'
             })
 
+        previous_status = loan.status
+        normalized_reason = _set_custom_field_text(loan, 'cancel_reason', reason)
         loan.status = 'cancelled'
-        loan.save()
+        loan.save(update_fields=['status', 'custom_fields', 'updated_at'])
+        self.closed_loop_service.log_status_change(
+            actor=user,
+            instance=loan,
+            old_status=previous_status,
+            new_status=loan.status,
+            description=_build_cancellation_description('Loan order', loan.loan_no, normalized_reason),
+            extra_changes=[build_reason_change('cancel_reason', normalized_reason)],
+        )
         return loan
 
     def approve_loan(
@@ -1445,6 +1589,7 @@ class AssetLoanService(BaseCRUDService):
                 'status': f'Cannot approve loan with status {loan.get_status_label()}'
             })
 
+        previous_status = loan.status
         loan.approved_by = user
         loan.approved_at = timezone.now()
         loan.approval_comment = comment
@@ -1455,6 +1600,18 @@ class AssetLoanService(BaseCRUDService):
             loan.status = 'rejected'
 
         loan.save()
+        self.closed_loop_service.log_status_change(
+            actor=user,
+            instance=loan,
+            old_status=previous_status,
+            new_status=loan.status,
+            description=(
+                f'Loan order {loan.loan_no} approved.'
+                if approval == 'approved'
+                else f'Loan order {loan.loan_no} rejected.'
+            ),
+            extra_changes=[build_reason_change('approval_comment', comment)],
+        )
         return loan
 
     def confirm_borrow(self, loan_id: str, user) -> AssetLoan:
@@ -1481,6 +1638,13 @@ class AssetLoanService(BaseCRUDService):
             loan.lent_by = user
             loan.lent_at = timezone.now()
             loan.save()
+            self.closed_loop_service.log_status_change(
+                actor=user,
+                instance=loan,
+                old_status='approved',
+                new_status=loan.status,
+                description=f'Loan order {loan.loan_no} borrow confirmed.',
+            )
 
         return loan
 
@@ -1525,6 +1689,17 @@ class AssetLoanService(BaseCRUDService):
             loan.asset_condition = condition
             loan.return_comment = comment
             loan.save()
+            self.closed_loop_service.log_status_change(
+                actor=user,
+                instance=loan,
+                old_status=previous_status,
+                new_status=loan.status,
+                description=f'Loan order {loan.loan_no} return confirmed.',
+                extra_changes=[
+                    build_reason_change('asset_condition', condition),
+                    build_reason_change('return_comment', comment),
+                ],
+            )
 
         return loan
 

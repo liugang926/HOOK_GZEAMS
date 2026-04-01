@@ -1,19 +1,34 @@
 import { ref } from 'vue'
 import { describe, expect, it } from 'vitest'
+import type { RuntimeWorkbench, RuntimeWorkbenchSurfacePriority } from '@/types/runtime'
 import { useObjectWorkbench } from '../useObjectWorkbench'
+
+const buildWorkbench = (overrides: Partial<RuntimeWorkbench> = {}): RuntimeWorkbench => ({
+  workspaceMode: 'extended',
+  primaryEntryRoute: '/objects/TestObject',
+  legacyAliases: [],
+  defaultPageMode: 'record',
+  defaultDetailSurfaceTab: 'process',
+  defaultDocumentSurfaceTab: 'summary',
+  toolbar: {
+    primaryActions: [],
+    secondaryActions: [],
+  },
+  detailPanels: [],
+  asyncIndicators: [],
+  summaryCards: [],
+  queuePanels: [],
+  exceptionPanels: [],
+  closurePanel: null,
+  slaIndicators: [],
+  recommendedActions: [],
+  ...overrides,
+})
 
 describe('useObjectWorkbench', () => {
   it('filters workbench sections by record status and exposes queue and insight flags', () => {
-    const workbench = ref({
-      workspaceMode: 'extended',
+    const workbench = ref(buildWorkbench({
       primaryEntryRoute: '/objects/FinanceVoucher',
-      legacyAliases: [],
-      toolbar: {
-        primaryActions: [],
-        secondaryActions: [],
-      },
-      detailPanels: [],
-      asyncIndicators: [],
       summaryCards: [
         { code: 'total_amount', valueField: 'total_amount' },
       ],
@@ -32,7 +47,7 @@ describe('useObjectWorkbench', () => {
       recommendedActions: [
         { code: 'approve', visibleWhen: { statusIn: ['submitted'] } },
       ],
-    })
+    }))
     const recordData = ref({
       status: 'submitted',
       total_amount: 1200,
@@ -51,23 +66,11 @@ describe('useObjectWorkbench', () => {
   })
 
   it('treats an empty closure panel payload as absent', () => {
-    const workbench = ref({
+    const workbench = ref(buildWorkbench({
       workspaceMode: 'standard',
       primaryEntryRoute: '/objects/InventoryTask',
-      legacyAliases: [],
-      toolbar: {
-        primaryActions: [],
-        secondaryActions: [],
-      },
-      detailPanels: [],
-      asyncIndicators: [],
-      summaryCards: [],
-      queuePanels: [],
-      exceptionPanels: [],
       closurePanel: {},
-      slaIndicators: [],
-      recommendedActions: [],
-    })
+    }))
     const recordData = ref({
       status: 'draft',
     })
@@ -79,8 +82,7 @@ describe('useObjectWorkbench', () => {
   })
 
   it('shows only the status-matched InventoryItem closure actions', () => {
-    const workbench = ref({
-      workspaceMode: 'extended',
+    const workbench = ref(buildWorkbench({
       primaryEntryRoute: '/objects/InventoryItem',
       legacyAliases: ['/inventory/items'],
       toolbar: {
@@ -108,7 +110,7 @@ describe('useObjectWorkbench', () => {
       recommendedActions: [
         { code: 'submit_review_hint', visibleWhen: { statusIn: ['confirmed'] } },
       ],
-    })
+    }))
     const recordData = ref({
       status: 'confirmed',
       status_label: 'Confirmed',
@@ -126,5 +128,51 @@ describe('useObjectWorkbench', () => {
     expect(state.recommendedActions.value.map((action) => action.code)).toEqual(['submit_review_hint'])
     expect(state.hasActions.value).toBe(true)
     expect(state.hasInsights.value).toBe(true)
+  })
+
+  it('hides workspace-priority surfaces on record mode while keeping primary and context cards', () => {
+    const workbench = ref(buildWorkbench({
+      primaryEntryRoute: '/objects/Asset',
+      detailPanels: [
+        { code: 'asset_history', component: 'asset-history-panel', surfacePriority: 'related' as RuntimeWorkbenchSurfacePriority },
+      ],
+      summaryCards: [
+        { code: 'asset_code', valueField: 'asset_code', surfacePriority: 'primary' as RuntimeWorkbenchSurfacePriority },
+      ],
+      queuePanels: [
+        { code: 'asset_returns', surfacePriority: 'related' as RuntimeWorkbenchSurfacePriority },
+      ],
+      exceptionPanels: [
+        { code: 'asset_alerts', surfacePriority: 'related' as RuntimeWorkbenchSurfacePriority },
+      ],
+      closurePanel: {
+        stageField: 'status',
+        surfacePriority: 'context' as RuntimeWorkbenchSurfacePriority,
+      },
+      slaIndicators: [
+        { code: 'asset_sla', surfacePriority: 'context' as RuntimeWorkbenchSurfacePriority },
+      ],
+      recommendedActions: [
+        { code: 'schedule_follow_up', surfacePriority: 'admin' as RuntimeWorkbenchSurfacePriority },
+      ],
+    }))
+    const recordData = ref({
+      status: 'active',
+      asset_code: 'ASSET-001',
+    })
+    const allowedSurfacePriorities = ref<RuntimeWorkbenchSurfacePriority[]>(['primary', 'context'])
+
+    const state = useObjectWorkbench({ workbench, recordData, allowedSurfacePriorities })
+
+    expect(state.summaryCards.value.map((card) => card.code)).toEqual(['asset_code'])
+    expect(state.queuePanels.value).toEqual([])
+    expect(state.exceptionPanels.value).toEqual([])
+    expect(state.detailPanels.value).toEqual([])
+    expect(state.recommendedActions.value).toEqual([])
+    expect(state.closurePanel.value?.stageField).toBe('status')
+    expect(state.slaIndicators.value.map((indicator) => indicator.code)).toEqual(['asset_sla'])
+    expect(state.hasInsights.value).toBe(true)
+    expect(state.hasQueues.value).toBe(false)
+    expect(state.hasPanels.value).toBe(false)
   })
 })

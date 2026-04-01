@@ -23,6 +23,23 @@ from apps.assets.models import Asset
 logger = logging.getLogger(__name__)
 
 
+def _normalize_free_text(value: Optional[str]) -> str:
+    return str(value or '').strip()
+
+
+def _set_custom_field_text(instance, key: str, value: Optional[str]) -> str:
+    normalized_value = _normalize_free_text(value)
+    custom_fields = dict(instance.custom_fields or {})
+
+    if normalized_value:
+        custom_fields[key] = normalized_value
+    elif key in custom_fields:
+        custom_fields.pop(key, None)
+
+    instance.custom_fields = custom_fields
+    return normalized_value
+
+
 class InventoryService(BaseCRUDService):
     """Service for inventory task management."""
 
@@ -351,10 +368,11 @@ class InventoryService(BaseCRUDService):
 
             task.refresh_from_db()
 
+        normalized_reason = _set_custom_field_text(task, 'cancel_reason', reason)
         task.status = InventoryTask.STATUS_CANCELLED
-        if reason:
-            task.notes = (task.notes or '') + f"\n\nCancelled: {reason}"
-        task.save(update_fields=['status', 'notes'])
+        if normalized_reason:
+            task.notes = (task.notes or '') + f"\n\nCancelled: {normalized_reason}"
+        task.save(update_fields=['status', 'notes', 'custom_fields'])
 
         return task
 

@@ -11,6 +11,17 @@ class ObjectClosureBindingService:
 
     _LEASE_DAMAGE_CONDITIONS = ('poor', 'broken', 'lost')
 
+    @staticmethod
+    def _resolve_custom_field_text(instance: Optional[Any], key: str) -> str:
+        custom_fields = getattr(instance, 'custom_fields', None) or {}
+        return str(custom_fields.get(key, '') or '').strip()
+
+    def _build_cancelled_blocker(self, instance: Optional[Any]) -> str:
+        cancel_reason = self._resolve_custom_field_text(instance, 'cancel_reason')
+        if cancel_reason:
+            return f'Cancellation reason: {cancel_reason}'
+        return ''
+
     def get_object_closure_summary(
         self,
         *,
@@ -52,6 +63,48 @@ class ObjectClosureBindingService:
             )
         if normalized_object_code == 'AssetReceipt':
             return self._build_asset_receipt_summary(
+                business_id=normalized_business_id,
+                instance=instance,
+                fallback=summary,
+                organization_id=organization_id,
+            )
+        if normalized_object_code == 'AssetPickup':
+            return self._build_asset_pickup_summary(
+                business_id=normalized_business_id,
+                instance=instance,
+                fallback=summary,
+                organization_id=organization_id,
+            )
+        if normalized_object_code == 'AssetTransfer':
+            return self._build_asset_transfer_summary(
+                business_id=normalized_business_id,
+                instance=instance,
+                fallback=summary,
+                organization_id=organization_id,
+            )
+        if normalized_object_code == 'AssetReturn':
+            return self._build_asset_return_summary(
+                business_id=normalized_business_id,
+                instance=instance,
+                fallback=summary,
+                organization_id=organization_id,
+            )
+        if normalized_object_code == 'AssetLoan':
+            return self._build_asset_loan_summary(
+                business_id=normalized_business_id,
+                instance=instance,
+                fallback=summary,
+                organization_id=organization_id,
+            )
+        if normalized_object_code == 'Maintenance':
+            return self._build_maintenance_summary(
+                business_id=normalized_business_id,
+                instance=instance,
+                fallback=summary,
+                organization_id=organization_id,
+            )
+        if normalized_object_code == 'DisposalRequest':
+            return self._build_disposal_request_summary(
                 business_id=normalized_business_id,
                 instance=instance,
                 fallback=summary,
@@ -266,6 +319,7 @@ class ObjectClosureBindingService:
             Q(status='posted', erp_voucher_no=''),
         ).count()
         latest_finance_voucher = linked_finance_vouchers.order_by('-voucher_date', '-created_at').first()
+        cancel_reason = self._resolve_custom_field_text(purchase_request, 'cancel_reason')
 
         stage = 'Draft'
         blocker = 'Submit the purchase request for approval.'
@@ -284,7 +338,7 @@ class ObjectClosureBindingService:
             approval_status = 'rejected'
         elif purchase_request.status == PurchaseRequestStatus.CANCELLED:
             stage = 'Request cancelled'
-            blocker = ''
+            blocker = self._build_cancelled_blocker(purchase_request)
             completion = 100.0
             approval_status = 'cancelled'
         elif active_receipt_count == 0:
@@ -348,6 +402,7 @@ class ObjectClosureBindingService:
                 'latestFinanceVoucherNo': str(getattr(latest_finance_voucher, 'voucher_no', '') or ''),
                 'latestFinanceVoucherStatus': str(getattr(latest_finance_voucher, 'status', '') or ''),
                 'm18PurchaseOrderNo': str(getattr(purchase_request, 'm18_purchase_order_no', '') or ''),
+                'cancelReason': cancel_reason,
             },
         }
 
@@ -406,6 +461,7 @@ class ObjectClosureBindingService:
         ).count()
         latest_finance_voucher = linked_finance_vouchers.order_by('-voucher_date', '-created_at').first()
         source_purchase_request = getattr(receipt, 'purchase_request', None)
+        cancel_reason = self._resolve_custom_field_text(receipt, 'cancel_reason')
 
         stage = 'Draft'
         blocker = 'Submit the receipt for inspection.'
@@ -425,7 +481,7 @@ class ObjectClosureBindingService:
             completion = 25.0
         elif receipt.status == AssetReceiptStatus.CANCELLED:
             stage = 'Receipt cancelled'
-            blocker = ''
+            blocker = self._build_cancelled_blocker(receipt)
             completion = 100.0
         elif pending_generation_count > 0:
             stage = 'Asset generation pending'
@@ -468,6 +524,562 @@ class ObjectClosureBindingService:
                 'latestFinanceVoucherStatus': str(getattr(latest_finance_voucher, 'status', '') or ''),
                 'sourcePurchaseRequestNo': str(getattr(source_purchase_request, 'request_no', '') or ''),
                 'sourcePurchaseRequestId': str(getattr(source_purchase_request, 'id', '') or ''),
+                'cancelReason': cancel_reason,
+            },
+        }
+
+    def _build_asset_pickup_summary(
+        self,
+        *,
+        business_id: str,
+        instance: Optional[Any],
+        fallback: Dict[str, Any],
+        organization_id: Optional[str],
+    ) -> Dict[str, Any]:
+        from apps.assets.models import AssetPickup
+
+        pickup = instance
+        if not isinstance(pickup, AssetPickup):
+            queryset = AssetPickup.all_objects.filter(id=business_id, is_deleted=False)
+            if organization_id:
+                queryset = queryset.filter(organization_id=organization_id)
+            pickup = queryset.select_related(
+                'applicant',
+                'department',
+                'approved_by',
+                'created_by',
+            ).prefetch_related('items').first()
+
+        if pickup is None:
+            return fallback
+
+        item_count = pickup.items.filter(is_deleted=False).count()
+        approved_item_count = item_count if pickup.status in {'approved', 'completed'} else 0
+        cancel_reason = self._resolve_custom_field_text(pickup, 'cancel_reason')
+
+        stage = 'Draft'
+        blocker = 'Submit the pickup order for approval.'
+        completion = 15.0
+        approval_status = 'not_submitted'
+
+        if pickup.status == 'pending':
+            stage = 'Awaiting approval'
+            blocker = 'Review and approve or reject the pickup order.'
+            completion = 45.0
+            approval_status = 'pending'
+        elif pickup.status == 'approved':
+            stage = 'Approved, awaiting handover completion'
+            blocker = 'Complete the pickup order after the asset handover is finished.'
+            completion = 80.0
+            approval_status = 'approved'
+        elif pickup.status == 'completed':
+            stage = 'Pickup completed'
+            blocker = ''
+            completion = 100.0
+            approval_status = 'approved'
+        elif pickup.status == 'rejected':
+            stage = 'Rejected'
+            blocker = 'Update the pickup order and resubmit it for approval.'
+            completion = 25.0
+            approval_status = 'rejected'
+        elif pickup.status == 'cancelled':
+            stage = 'Cancelled'
+            blocker = self._build_cancelled_blocker(pickup)
+            completion = 100.0
+            approval_status = 'cancelled'
+
+        return {
+            'objectCode': 'AssetPickup',
+            'businessId': str(pickup.id),
+            'hasSummary': True,
+            'status': pickup.status,
+            'approvalStatus': approval_status,
+            'workflowInstanceId': None,
+            'owner': self._resolve_owner(
+                getattr(pickup, 'approved_by', None),
+                getattr(pickup, 'applicant', None),
+                getattr(pickup, 'created_by', None),
+            ),
+            'stage': stage,
+            'blocker': blocker,
+            'completion': completion,
+            'completionDisplay': self._format_completion(completion),
+            'metrics': {
+                'itemCount': item_count,
+                'approvedItemCount': approved_item_count,
+                'applicantName': self._resolve_owner(getattr(pickup, 'applicant', None)),
+                'departmentName': self._resolve_owner(getattr(pickup, 'department', None)),
+                'cancelReason': cancel_reason,
+            },
+        }
+
+    def _build_asset_transfer_summary(
+        self,
+        *,
+        business_id: str,
+        instance: Optional[Any],
+        fallback: Dict[str, Any],
+        organization_id: Optional[str],
+    ) -> Dict[str, Any]:
+        from apps.assets.models import AssetTransfer
+
+        transfer = instance
+        if not isinstance(transfer, AssetTransfer):
+            queryset = AssetTransfer.all_objects.filter(id=business_id, is_deleted=False)
+            if organization_id:
+                queryset = queryset.filter(organization_id=organization_id)
+            transfer = queryset.select_related(
+                'from_department',
+                'to_department',
+                'from_approved_by',
+                'to_approved_by',
+                'created_by',
+            ).prefetch_related('items').first()
+
+        if transfer is None:
+            return fallback
+
+        item_count = transfer.items.filter(is_deleted=False).count()
+        source_approved_count = 1 if transfer.from_approved_by_id else 0
+        target_approved_count = 1 if transfer.to_approved_by_id else 0
+        cancel_reason = self._resolve_custom_field_text(transfer, 'cancel_reason')
+
+        stage = 'Draft'
+        blocker = 'Submit the transfer order for approval.'
+        completion = 10.0
+        approval_status = 'not_submitted'
+
+        if transfer.status == 'pending':
+            stage = 'Awaiting source approval'
+            blocker = 'Source department approval is still pending.'
+            completion = 35.0
+            approval_status = 'pending'
+        elif transfer.status == 'out_approved':
+            stage = 'Awaiting target approval'
+            blocker = 'Target department approval is still pending.'
+            completion = 60.0
+            approval_status = 'pending'
+        elif transfer.status == 'approved':
+            stage = 'Approved, awaiting completion'
+            blocker = 'Complete the transfer to update the asset department and location.'
+            completion = 85.0
+            approval_status = 'approved'
+        elif transfer.status == 'completed':
+            stage = 'Transfer completed'
+            blocker = ''
+            completion = 100.0
+            approval_status = 'approved'
+        elif transfer.status == 'rejected':
+            stage = 'Rejected'
+            blocker = 'Update the transfer order and resubmit it for approval.'
+            completion = 25.0
+            approval_status = 'rejected'
+        elif transfer.status == 'cancelled':
+            stage = 'Cancelled'
+            blocker = self._build_cancelled_blocker(transfer)
+            completion = 100.0
+            approval_status = 'cancelled'
+
+        return {
+            'objectCode': 'AssetTransfer',
+            'businessId': str(transfer.id),
+            'hasSummary': True,
+            'status': transfer.status,
+            'approvalStatus': approval_status,
+            'workflowInstanceId': None,
+            'owner': self._resolve_owner(
+                getattr(transfer, 'to_approved_by', None),
+                getattr(transfer, 'from_approved_by', None),
+                getattr(transfer, 'created_by', None),
+            ),
+            'stage': stage,
+            'blocker': blocker,
+            'completion': completion,
+            'completionDisplay': self._format_completion(completion),
+            'metrics': {
+                'itemCount': item_count,
+                'sourceApprovedCount': source_approved_count,
+                'targetApprovedCount': target_approved_count,
+                'sourceDepartmentName': self._resolve_owner(getattr(transfer, 'from_department', None)),
+                'targetDepartmentName': self._resolve_owner(getattr(transfer, 'to_department', None)),
+                'cancelReason': cancel_reason,
+            },
+        }
+
+    def _build_asset_return_summary(
+        self,
+        *,
+        business_id: str,
+        instance: Optional[Any],
+        fallback: Dict[str, Any],
+        organization_id: Optional[str],
+    ) -> Dict[str, Any]:
+        from apps.assets.models import AssetReturn
+
+        return_order = instance
+        if not isinstance(return_order, AssetReturn):
+            queryset = AssetReturn.all_objects.filter(id=business_id, is_deleted=False)
+            if organization_id:
+                queryset = queryset.filter(organization_id=organization_id)
+            return_order = queryset.select_related(
+                'returner',
+                'return_location',
+                'confirmed_by',
+                'created_by',
+            ).prefetch_related('items').first()
+
+        if return_order is None:
+            return fallback
+
+        items = return_order.items.filter(is_deleted=False)
+        item_count = items.count()
+        project_allocation_count = items.filter(project_allocation__isnull=False).count()
+        maintenance_after_return_count = items.filter(asset_status='maintenance').count()
+        cancel_reason = self._resolve_custom_field_text(return_order, 'cancel_reason')
+
+        stage = 'Draft'
+        blocker = 'Submit the return order for confirmation.'
+        completion = 15.0
+        approval_status = 'not_submitted'
+
+        if return_order.status == 'pending':
+            stage = 'Awaiting confirmation'
+            blocker = 'Confirm or reject the return order after warehouse inspection.'
+            completion = 60.0
+            approval_status = 'pending'
+        elif return_order.status in {'completed', 'confirmed'}:
+            stage = 'Return completed'
+            blocker = ''
+            completion = 100.0
+            approval_status = 'approved'
+        elif return_order.status == 'rejected':
+            stage = 'Rejected'
+            blocker = 'Update the return order and resubmit it for confirmation.'
+            completion = 25.0
+            approval_status = 'rejected'
+        elif return_order.status == 'cancelled':
+            stage = 'Cancelled'
+            blocker = self._build_cancelled_blocker(return_order)
+            completion = 100.0
+            approval_status = 'cancelled'
+
+        return {
+            'objectCode': 'AssetReturn',
+            'businessId': str(return_order.id),
+            'hasSummary': True,
+            'status': return_order.status,
+            'approvalStatus': approval_status,
+            'workflowInstanceId': None,
+            'owner': self._resolve_owner(
+                getattr(return_order, 'confirmed_by', None),
+                getattr(return_order, 'returner', None),
+                getattr(return_order, 'created_by', None),
+            ),
+            'stage': stage,
+            'blocker': blocker,
+            'completion': completion,
+            'completionDisplay': self._format_completion(completion),
+            'metrics': {
+                'itemCount': item_count,
+                'projectAllocationCount': project_allocation_count,
+                'maintenanceAfterReturnCount': maintenance_after_return_count,
+                'returnLocationName': self._resolve_owner(getattr(return_order, 'return_location', None)),
+                'cancelReason': cancel_reason,
+            },
+        }
+
+    def _build_asset_loan_summary(
+        self,
+        *,
+        business_id: str,
+        instance: Optional[Any],
+        fallback: Dict[str, Any],
+        organization_id: Optional[str],
+    ) -> Dict[str, Any]:
+        from django.utils import timezone
+
+        from apps.assets.models import AssetLoan
+
+        loan = instance
+        if not isinstance(loan, AssetLoan):
+            queryset = AssetLoan.all_objects.filter(id=business_id, is_deleted=False)
+            if organization_id:
+                queryset = queryset.filter(organization_id=organization_id)
+            loan = queryset.select_related(
+                'borrower',
+                'approved_by',
+                'lent_by',
+                'return_confirmed_by',
+                'created_by',
+            ).prefetch_related('items').first()
+
+        if loan is None:
+            return fallback
+
+        item_count = loan.items.filter(is_deleted=False).count()
+        overdue_days = 0
+        cancel_reason = self._resolve_custom_field_text(loan, 'cancel_reason')
+        if loan.expected_return_date and loan.status == 'overdue':
+            overdue_days = max((timezone.now().date() - loan.expected_return_date).days, 0)
+
+        stage = 'Draft'
+        blocker = 'Submit the loan order for approval.'
+        completion = 15.0
+        approval_status = 'not_submitted'
+
+        if loan.status == 'pending':
+            stage = 'Awaiting approval'
+            blocker = 'Review and approve or reject the loan order.'
+            completion = 35.0
+            approval_status = 'pending'
+        elif loan.status == 'approved':
+            stage = 'Approved, awaiting lending'
+            blocker = 'Confirm asset lending to activate the loan.'
+            completion = 65.0
+            approval_status = 'approved'
+        elif loan.status == 'borrowed':
+            stage = 'On loan'
+            blocker = 'Confirm asset return to complete the loan lifecycle.'
+            completion = 80.0
+            approval_status = 'approved'
+        elif loan.status == 'overdue':
+            stage = 'Overdue return'
+            blocker = 'Recover the asset and confirm return immediately.'
+            completion = 70.0
+            approval_status = 'approved'
+        elif loan.status == 'returned':
+            stage = 'Loan returned'
+            blocker = ''
+            completion = 100.0
+            approval_status = 'approved'
+        elif loan.status == 'rejected':
+            stage = 'Rejected'
+            blocker = 'Update the loan order and resubmit it for approval.'
+            completion = 25.0
+            approval_status = 'rejected'
+        elif loan.status == 'cancelled':
+            stage = 'Cancelled'
+            blocker = self._build_cancelled_blocker(loan)
+            completion = 100.0
+            approval_status = 'cancelled'
+
+        return {
+            'objectCode': 'AssetLoan',
+            'businessId': str(loan.id),
+            'hasSummary': True,
+            'status': loan.status,
+            'approvalStatus': approval_status,
+            'workflowInstanceId': None,
+            'owner': self._resolve_owner(
+                getattr(loan, 'return_confirmed_by', None),
+                getattr(loan, 'lent_by', None),
+                getattr(loan, 'approved_by', None),
+                getattr(loan, 'borrower', None),
+                getattr(loan, 'created_by', None),
+            ),
+            'stage': stage,
+            'blocker': blocker,
+            'completion': completion,
+            'completionDisplay': self._format_completion(completion),
+            'metrics': {
+                'itemCount': item_count,
+                'overdueDays': overdue_days,
+                'borrowerName': self._resolve_owner(getattr(loan, 'borrower', None)),
+                'expectedReturnDate': str(loan.expected_return_date or ''),
+                'actualReturnDate': str(loan.actual_return_date or ''),
+                'cancelReason': cancel_reason,
+            },
+        }
+
+    def _build_maintenance_summary(
+        self,
+        *,
+        business_id: str,
+        instance: Optional[Any],
+        fallback: Dict[str, Any],
+        organization_id: Optional[str],
+    ) -> Dict[str, Any]:
+        from apps.lifecycle.models import Maintenance
+
+        maintenance = instance
+        if not isinstance(maintenance, Maintenance):
+            queryset = Maintenance.all_objects.filter(id=business_id, is_deleted=False)
+            if organization_id:
+                queryset = queryset.filter(organization_id=organization_id)
+            maintenance = queryset.select_related(
+                'asset',
+                'reporter',
+                'technician',
+                'verified_by',
+                'created_by',
+            ).first()
+
+        if maintenance is None:
+            return fallback
+
+        is_verified = bool(maintenance.verified_by_id and maintenance.verified_at)
+        fault_photo_count = len(maintenance.fault_photo_urls or [])
+        cancel_reason = self._resolve_custom_field_text(maintenance, 'cancel_reason')
+
+        stage = 'Reported'
+        blocker = 'Assign a technician and schedule the repair work.'
+        completion = 20.0
+
+        if maintenance.status == 'assigned':
+            stage = 'Technician assigned'
+            blocker = 'Start maintenance work to continue closure.'
+            completion = 45.0
+        elif maintenance.status == 'processing':
+            stage = 'Maintenance in progress'
+            blocker = 'Complete repair work and record the repair result.'
+            completion = 70.0
+        elif maintenance.status == 'completed':
+            if is_verified:
+                stage = 'Verified and closed'
+                blocker = ''
+                completion = 100.0
+            else:
+                stage = 'Completed, awaiting verification'
+                blocker = 'Verify the maintenance result to finish closure.'
+                completion = 90.0
+        elif maintenance.status == 'cancelled':
+            stage = 'Cancelled'
+            blocker = self._build_cancelled_blocker(maintenance)
+            completion = 100.0
+
+        return {
+            'objectCode': 'Maintenance',
+            'businessId': str(maintenance.id),
+            'hasSummary': True,
+            'status': maintenance.status,
+            'approvalStatus': 'approved' if is_verified else None,
+            'workflowInstanceId': None,
+            'owner': self._resolve_owner(
+                getattr(maintenance, 'technician', None),
+                getattr(maintenance, 'reporter', None),
+                getattr(maintenance, 'created_by', None),
+            ),
+            'stage': stage,
+            'blocker': blocker,
+            'completion': completion,
+            'completionDisplay': self._format_completion(completion),
+            'metrics': {
+                'assetCode': str(getattr(getattr(maintenance, 'asset', None), 'asset_code', '') or ''),
+                'technicianName': self._resolve_owner(getattr(maintenance, 'technician', None)),
+                'totalCost': self._serialize_number(maintenance.total_cost),
+                'workHours': self._serialize_number(maintenance.work_hours),
+                'faultPhotoCount': fault_photo_count,
+                'isVerified': is_verified,
+                'cancelReason': cancel_reason,
+            },
+        }
+
+    def _build_disposal_request_summary(
+        self,
+        *,
+        business_id: str,
+        instance: Optional[Any],
+        fallback: Dict[str, Any],
+        organization_id: Optional[str],
+    ) -> Dict[str, Any]:
+        from django.db.models import Sum
+
+        from apps.lifecycle.models import DisposalRequest, DisposalRequestStatus
+
+        request = instance
+        if not isinstance(request, DisposalRequest):
+            queryset = DisposalRequest.all_objects.filter(id=business_id, is_deleted=False)
+            if organization_id:
+                queryset = queryset.filter(organization_id=organization_id)
+            request = queryset.select_related(
+                'applicant',
+                'current_approver',
+                'created_by',
+            ).prefetch_related('items').first()
+
+        if request is None:
+            return fallback
+
+        items = request.items.filter(is_deleted=False)
+        item_count = items.count()
+        appraised_item_count = items.filter(appraised_by__isnull=False).count()
+        executed_item_count = items.filter(disposal_executed=True).count()
+        total_net_value = items.aggregate(total=Sum('net_value')).get('total')
+        pending_appraisal_count = max(item_count - appraised_item_count, 0)
+        pending_execution_count = max(item_count - executed_item_count, 0)
+        cancel_reason = self._resolve_custom_field_text(request, 'cancel_reason')
+
+        stage = 'Draft'
+        blocker = 'Submit the disposal request for approval.'
+        completion = 15.0
+        approval_status = 'not_submitted'
+
+        if request.status == DisposalRequestStatus.SUBMITTED:
+            stage = 'Awaiting appraisal'
+            blocker = 'Start technical appraisal for all disposal items.'
+            completion = 35.0
+            approval_status = 'pending'
+        elif request.status == DisposalRequestStatus.APPRAISING:
+            if pending_appraisal_count > 0:
+                stage = 'Appraisal in progress'
+                blocker = 'Complete appraisal for all disposal items before approval.'
+                completion = 55.0
+            else:
+                stage = 'Ready for approval'
+                blocker = 'Approve or reject the disposal request to continue execution.'
+                completion = 65.0
+            approval_status = 'pending'
+        elif request.status == DisposalRequestStatus.APPROVED:
+            stage = 'Approved, awaiting execution'
+            blocker = 'Start disposal execution and record actual disposal results.'
+            completion = 80.0
+            approval_status = 'approved'
+        elif request.status == DisposalRequestStatus.EXECUTING:
+            stage = 'Execution in progress'
+            blocker = 'Complete disposal execution for all items.'
+            completion = 90.0 if pending_execution_count == 0 else 85.0
+            approval_status = 'approved'
+        elif request.status == DisposalRequestStatus.COMPLETED:
+            stage = 'Disposal completed'
+            blocker = ''
+            completion = 100.0
+            approval_status = 'approved'
+        elif request.status == DisposalRequestStatus.REJECTED:
+            stage = 'Rejected'
+            blocker = 'Update the disposal request and resubmit it for approval.'
+            completion = 25.0
+            approval_status = 'rejected'
+        elif request.status == DisposalRequestStatus.CANCELLED:
+            stage = 'Cancelled'
+            blocker = self._build_cancelled_blocker(request)
+            completion = 100.0
+            approval_status = 'cancelled'
+
+        return {
+            'objectCode': 'DisposalRequest',
+            'businessId': str(request.id),
+            'hasSummary': True,
+            'status': request.status,
+            'approvalStatus': approval_status,
+            'workflowInstanceId': None,
+            'owner': self._resolve_owner(
+                getattr(request, 'current_approver', None),
+                getattr(request, 'applicant', None),
+                getattr(request, 'created_by', None),
+            ),
+            'stage': stage,
+            'blocker': blocker,
+            'completion': completion,
+            'completionDisplay': self._format_completion(completion),
+            'metrics': {
+                'itemCount': item_count,
+                'appraisedItemCount': appraised_item_count,
+                'pendingAppraisalCount': pending_appraisal_count,
+                'executedItemCount': executed_item_count,
+                'pendingExecutionCount': pending_execution_count,
+                'totalNetValue': self._serialize_number(total_net_value),
+                'disposalTypeLabel': str(request.get_disposal_type_display() or ''),
+                'cancelReason': cancel_reason,
             },
         }
 
@@ -500,6 +1112,7 @@ class ObjectClosureBindingService:
             status='overdue',
         ).count()
         open_claim_count = policy.claims.filter(is_deleted=False).exclude(status='closed').count()
+        cancel_reason = self._resolve_custom_field_text(policy, 'cancel_reason')
         completion = 15.0
         stage = 'Draft'
         blocker = 'Activate the policy to start coverage and generate premium payments.'
@@ -533,7 +1146,7 @@ class ObjectClosureBindingService:
         elif policy.status == 'cancelled':
             stage = 'Cancelled'
             completion = 100.0
-            blocker = ''
+            blocker = self._build_cancelled_blocker(policy)
         elif policy.status == 'terminated':
             stage = 'Terminated'
             completion = 100.0
@@ -564,6 +1177,7 @@ class ObjectClosureBindingService:
                 'unpaidPremium': self._serialize_number(policy.unpaid_premium),
                 'daysUntilExpiry': policy.days_until_expiry,
                 'isExpiringSoon': bool(policy.is_expiring_soon),
+                'cancelReason': cancel_reason,
             },
         }
 

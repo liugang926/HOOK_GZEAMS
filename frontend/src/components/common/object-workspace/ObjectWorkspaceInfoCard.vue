@@ -21,7 +21,33 @@
         :class="`${baseClass}__row`"
       >
         <dt>{{ row.label }}</dt>
-        <dd>{{ row.value }}</dd>
+        <dd>
+          <span
+            :class="`${baseClass}__value`"
+            :title="row.tooltip || undefined"
+          >
+            {{ row.value }}
+          </span>
+          <span
+            v-if="row.meta"
+            :class="`${baseClass}__meta`"
+          >
+            {{ row.meta }}
+          </span>
+          <span
+            v-if="row.actions && row.actions.length > 0"
+            :class="`${baseClass}__actions`"
+          >
+            <RouterLink
+              v-for="action in row.actions"
+              :key="`${row.label}-${action.label}`"
+              :to="action.to"
+              :class="`${baseClass}__action`"
+            >
+              {{ action.label }}
+            </RouterLink>
+          </span>
+        </dd>
       </div>
     </dl>
 
@@ -41,10 +67,15 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
+import type { ObjectWorkspaceActionLink } from './ObjectWorkspaceHero.vue'
 
 export interface ObjectWorkspaceInfoRow {
   label: string
   value: string | number
+  tooltip?: string
+  meta?: string
+  actions?: ObjectWorkspaceActionLink[]
 }
 
 interface Props {
@@ -99,6 +130,51 @@ const cardClass = computed(() => [
 
     dd {
       @include workspace.info-row-value();
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+  }
+
+  &__value {
+    display: block;
+  }
+
+  &__meta {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #64748b;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  &__action {
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  &__action:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+  }
+
+  @media (max-width: 900px) {
+    &__row {
+      align-items: flex-start;
+    }
+
+    &__row dd {
+      align-items: flex-start;
+      text-align: left;
     }
   }
 

@@ -11,6 +11,186 @@ export type RuntimeContractCheck = {
   errors: string[]
 }
 
+const pushIfInvalidString = (errors: string[], path: string, value: unknown) => {
+  if (value !== undefined && typeof value !== 'string') {
+    errors.push(`${path} is not a string`)
+  }
+}
+
+const pushIfInvalidBoolean = (errors: string[], path: string, value: unknown) => {
+  if (value !== undefined && typeof value !== 'boolean') {
+    errors.push(`${path} is not a boolean`)
+  }
+}
+
+const pushIfInvalidNumber = (errors: string[], path: string, value: unknown) => {
+  if (value !== undefined && typeof value !== 'number') {
+    errors.push(`${path} is not a number`)
+  }
+}
+
+const pushIfInvalidEnum = (
+  errors: string[],
+  path: string,
+  value: unknown,
+  allowed: string[],
+) => {
+  if (value === undefined || value === null) {
+    return
+  }
+  if (typeof value !== 'string') {
+    errors.push(`${path} is not a string`)
+    return
+  }
+  if (!allowed.includes(value)) {
+    errors.push(`${path} is not one of: ${allowed.join(', ')}`)
+  }
+}
+
+const WORKBENCH_SURFACE_PRIORITIES = ['primary', 'context', 'related', 'activity', 'admin']
+
+const validateWorkbenchSurfacePriority = (
+  definition: AnyRecord,
+  path: string,
+  errors: string[],
+) => {
+  pushIfInvalidEnum(
+    errors,
+    `${path}.surfacePriority`,
+    definition.surfacePriority ?? definition.surface_priority,
+    WORKBENCH_SURFACE_PRIORITIES,
+  )
+}
+
+const validateWorkbenchPromptField = (
+  field: unknown,
+  path: string,
+  errors: string[],
+) => {
+  if (!isObject(field)) {
+    errors.push(`${path} is not an object`)
+    return
+  }
+
+  if (typeof field.key !== 'string') {
+    errors.push(`${path}.key is not a string`)
+  }
+  pushIfInvalidString(errors, `${path}.type`, field.type)
+  pushIfInvalidString(errors, `${path}.payloadKey`, field.payloadKey ?? field.payload_key)
+  pushIfInvalidString(errors, `${path}.valueFormat`, field.valueFormat ?? field.value_format)
+  pushIfInvalidBoolean(errors, `${path}.required`, field.required)
+  pushIfInvalidNumber(errors, `${path}.rows`, field.rows)
+  pushIfInvalidNumber(errors, `${path}.min`, field.min)
+  pushIfInvalidNumber(errors, `${path}.max`, field.max)
+  pushIfInvalidNumber(errors, `${path}.precision`, field.precision)
+
+  const options = field.options
+  if (options !== undefined) {
+    if (!isArray(options)) {
+      errors.push(`${path}.options is not an array`)
+    } else {
+      for (const [index, option] of options.entries()) {
+        if (!isObject(option)) {
+          errors.push(`${path}.options[${index}] is not an object`)
+          continue
+        }
+        const value = option.value
+        if (
+          value !== undefined &&
+          !['string', 'number', 'boolean'].includes(typeof value)
+        ) {
+          errors.push(`${path}.options[${index}].value is not a scalar`)
+        }
+      }
+    }
+  }
+}
+
+const validateWorkbenchPrompt = (
+  prompt: unknown,
+  path: string,
+  errors: string[],
+) => {
+  if (!isObject(prompt)) {
+    errors.push(`${path} is not an object`)
+    return
+  }
+
+  const fields = prompt.fields
+  if (!isArray(fields)) {
+    errors.push(`${path}.fields is not an array`)
+    return
+  }
+
+  for (const [index, field] of fields.entries()) {
+    validateWorkbenchPromptField(field, `${path}.fields[${index}]`, errors)
+  }
+}
+
+const validateWorkbenchActionCollection = (
+  actions: unknown,
+  path: string,
+  errors: string[],
+) => {
+  if (!isArray(actions)) {
+    errors.push(`${path} is not an array`)
+    return
+  }
+
+  for (const [index, action] of actions.entries()) {
+    if (!isObject(action)) {
+      errors.push(`${path}[${index}] is not an object`)
+      continue
+    }
+
+    validateWorkbenchSurfacePriority(action, `${path}[${index}]`, errors)
+
+    const prompt = action.prompt ?? action.promptConfig ?? action.prompt_config
+    if (prompt !== undefined && prompt !== null) {
+      validateWorkbenchPrompt(prompt, `${path}[${index}].prompt`, errors)
+    }
+  }
+}
+
+const validateWorkbenchSurfaceCollection = (
+  collection: unknown,
+  path: string,
+  errors: string[],
+) => {
+  if (!isArray(collection)) {
+    errors.push(`${path} is not an array`)
+    return
+  }
+
+  for (const [index, item] of collection.entries()) {
+    if (!isObject(item)) {
+      errors.push(`${path}[${index}] is not an object`)
+      continue
+    }
+    validateWorkbenchSurfacePriority(item, `${path}[${index}]`, errors)
+  }
+}
+
+const validateWorkbenchDocumentSummarySections = (
+  collection: unknown,
+  path: string,
+  errors: string[],
+) => {
+  if (!isArray(collection)) {
+    errors.push(`${path} is not an array`)
+    return
+  }
+
+  for (const [index, item] of collection.entries()) {
+    if (!isObject(item)) {
+      errors.push(`${path}[${index}] is not an object`)
+      continue
+    }
+    pushIfInvalidString(errors, `${path}[${index}].code`, item.code)
+    validateWorkbenchSurfacePriority(item, `${path}[${index}]`, errors)
+  }
+}
+
 /**
  * Lightweight runtime DTO validation.
  *
@@ -94,6 +274,10 @@ export function checkRuntimeContract(payload: any): RuntimeContractCheck {
     if (!isObject(workbench)) {
       errors.push('workbench is not an object')
     } else {
+      const toolbar = (workbench as AnyRecord).toolbar
+      const defaultPageMode = (workbench as AnyRecord).defaultPageMode ?? (workbench as AnyRecord).default_page_mode
+      const defaultDetailSurfaceTab = (workbench as AnyRecord).defaultDetailSurfaceTab ?? (workbench as AnyRecord).default_detail_surface_tab
+      const defaultDocumentSurfaceTab = (workbench as AnyRecord).defaultDocumentSurfaceTab ?? (workbench as AnyRecord).default_document_surface_tab
       const detailPanels = (workbench as AnyRecord).detailPanels ?? (workbench as AnyRecord).detail_panels
       const asyncIndicators = (workbench as AnyRecord).asyncIndicators ?? (workbench as AnyRecord).async_indicators
       const summaryCards = (workbench as AnyRecord).summaryCards ?? (workbench as AnyRecord).summary_cards
@@ -102,16 +286,69 @@ export function checkRuntimeContract(payload: any): RuntimeContractCheck {
       const slaIndicators = (workbench as AnyRecord).slaIndicators ?? (workbench as AnyRecord).sla_indicators
       const recommendedActions = (workbench as AnyRecord).recommendedActions ?? (workbench as AnyRecord).recommended_actions
       const closurePanel = (workbench as AnyRecord).closurePanel ?? (workbench as AnyRecord).closure_panel
+      const documentSummarySections = (workbench as AnyRecord).documentSummarySections ?? (workbench as AnyRecord).document_summary_sections
 
-      if (detailPanels !== undefined && !isArray(detailPanels)) errors.push('workbench.detailPanels is not an array')
-      if (asyncIndicators !== undefined && !isArray(asyncIndicators)) errors.push('workbench.asyncIndicators is not an array')
-      if (summaryCards !== undefined && !isArray(summaryCards)) errors.push('workbench.summaryCards is not an array')
-      if (queuePanels !== undefined && !isArray(queuePanels)) errors.push('workbench.queuePanels is not an array')
-      if (exceptionPanels !== undefined && !isArray(exceptionPanels)) errors.push('workbench.exceptionPanels is not an array')
-      if (slaIndicators !== undefined && !isArray(slaIndicators)) errors.push('workbench.slaIndicators is not an array')
-      if (recommendedActions !== undefined && !isArray(recommendedActions)) errors.push('workbench.recommendedActions is not an array')
+      pushIfInvalidEnum(errors, 'workbench.defaultPageMode', defaultPageMode, ['record', 'workspace'])
+      pushIfInvalidEnum(errors, 'workbench.defaultDetailSurfaceTab', defaultDetailSurfaceTab, ['process', 'activity'])
+      pushIfInvalidEnum(errors, 'workbench.defaultDocumentSurfaceTab', defaultDocumentSurfaceTab, ['summary', 'form', 'activity'])
+
+      if (toolbar !== undefined && toolbar !== null) {
+        if (!isObject(toolbar)) {
+          errors.push('workbench.toolbar is not an object')
+        } else {
+          const primaryActions = (toolbar as AnyRecord).primaryActions ?? (toolbar as AnyRecord).primary_actions
+          const secondaryActions = (toolbar as AnyRecord).secondaryActions ?? (toolbar as AnyRecord).secondary_actions
+
+          if (primaryActions !== undefined && !isArray(primaryActions)) {
+            errors.push('workbench.toolbar.primaryActions is not an array')
+          }
+          if (secondaryActions !== undefined && !isArray(secondaryActions)) {
+            errors.push('workbench.toolbar.secondaryActions is not an array')
+          }
+
+          if (isArray(primaryActions)) {
+            validateWorkbenchActionCollection(primaryActions, 'workbench.toolbar.primaryActions', errors)
+          }
+          if (isArray(secondaryActions)) {
+            validateWorkbenchActionCollection(secondaryActions, 'workbench.toolbar.secondaryActions', errors)
+          }
+        }
+      }
+
+      if (detailPanels !== undefined) {
+        validateWorkbenchSurfaceCollection(detailPanels, 'workbench.detailPanels', errors)
+      }
+      if (asyncIndicators !== undefined) {
+        validateWorkbenchSurfaceCollection(asyncIndicators, 'workbench.asyncIndicators', errors)
+      }
+      if (summaryCards !== undefined) {
+        validateWorkbenchSurfaceCollection(summaryCards, 'workbench.summaryCards', errors)
+      }
+      if (queuePanels !== undefined) {
+        validateWorkbenchSurfaceCollection(queuePanels, 'workbench.queuePanels', errors)
+      }
+      if (exceptionPanels !== undefined) {
+        validateWorkbenchSurfaceCollection(exceptionPanels, 'workbench.exceptionPanels', errors)
+      }
+      if (slaIndicators !== undefined) {
+        validateWorkbenchSurfaceCollection(slaIndicators, 'workbench.slaIndicators', errors)
+      }
+      if (isArray(recommendedActions)) {
+        validateWorkbenchActionCollection(recommendedActions, 'workbench.recommendedActions', errors)
+      } else if (recommendedActions !== undefined) {
+        errors.push('workbench.recommendedActions is not an array')
+      }
+      if (documentSummarySections !== undefined) {
+        validateWorkbenchDocumentSummarySections(
+          documentSummarySections,
+          'workbench.documentSummarySections',
+          errors,
+        )
+      }
       if (closurePanel !== undefined && closurePanel !== null && !isObject(closurePanel)) {
         errors.push('workbench.closurePanel is not an object')
+      } else if (isObject(closurePanel)) {
+        validateWorkbenchSurfacePriority(closurePanel, 'workbench.closurePanel', errors)
       }
     }
   }

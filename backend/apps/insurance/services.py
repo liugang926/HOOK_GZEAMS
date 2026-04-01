@@ -13,10 +13,28 @@ from django.db.models import Sum, Q
 from django.utils import timezone
 
 from apps.common.services.base_crud import BaseCRUDService
+from apps.system.services.activity_log_service import ActivityLogService
 from .models import (
     InsuranceCompany, InsurancePolicy, InsuredAsset,
     PremiumPayment, ClaimRecord, PolicyRenewal
 )
+
+
+def _normalize_free_text(value) -> str:
+    return str(value or '').strip()
+
+
+def _set_custom_field_text(instance, key: str, value) -> str:
+    normalized_value = _normalize_free_text(value)
+    custom_fields = dict(instance.custom_fields or {})
+
+    if normalized_value:
+        custom_fields[key] = normalized_value
+    elif key in custom_fields:
+        custom_fields.pop(key, None)
+
+    instance.custom_fields = custom_fields
+    return normalized_value
 
 
 class InsuranceCompanyService(BaseCRUDService):
@@ -60,15 +78,32 @@ class InsurancePolicyService(BaseCRUDService):
         self._generate_payment_schedule(policy)
         return policy
 
-    def cancel(self, policy_id, organization_id=None, user=None):
+    def cancel(self, policy_id, reason=None, organization_id=None, user=None):
         """Cancel a draft or active policy."""
         policy = self.get(policy_id, organization_id=organization_id, user=user)
         if policy.status not in ['draft', 'active']:
             raise ValidationError({
                 'status': ['Only draft or active policies can be cancelled.']
             })
+        before_snapshot = ActivityLogService.snapshot_instance(policy, fields={'status', 'custom_fields', 'notes'})
         policy.status = 'cancelled'
-        policy.save(update_fields=['status', 'updated_at'])
+        normalized_reason = _set_custom_field_text(policy, 'cancel_reason', reason)
+        if normalized_reason:
+            existing_notes = str(policy.notes or '').strip()
+            policy.notes = (
+                f'{existing_notes}\n\nCancellation reason: {normalized_reason}'
+                if existing_notes
+                else f'Cancellation reason: {normalized_reason}'
+            )
+        policy.save(update_fields=['status', 'custom_fields', 'notes', 'updated_at'])
+        if user is not None:
+            ActivityLogService.log_update(
+                actor=user,
+                before_snapshot=before_snapshot,
+                instance=policy,
+                changed_fields={'status', 'custom_fields', 'notes'},
+                organization=policy.organization,
+            )
         return policy
 
     def get_expiring_soon(self, days=30, organization_id=None, user=None):

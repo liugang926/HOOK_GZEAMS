@@ -148,6 +148,7 @@ export interface LayoutConfig {
   modeOverrides?: DesignerAnyRecord
   layoutOverrides?: DesignerAnyRecord
   layoutType?: 'Detail' | 'Compact'
+  workbench?: DesignerAnyRecord
 }
 
 export type DesignerConfigNode = LayoutSection | LayoutTab | LayoutCollapseItem | LayoutField

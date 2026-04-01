@@ -21,9 +21,10 @@ const {
 
 const { getMetadataMock, getSlaMock, getClosureMock } = createMetadataApiMockContext()
 const { resolveRuntimeLayoutMock } = createRuntimeLayoutMockContext()
-const { pushMock, routeState } = createRouteMockContext({
+const { pushMock, replaceMock, routeState } = createRouteMockContext({
   params: { code: 'Asset', id: 'asset-1' },
 })
+const getDocumentMock = vi.fn()
 
 const CommonDynamicDetailPageStub = defineComponent({
   name: 'CommonDynamicDetailPage',
@@ -75,7 +76,8 @@ vi.mock('vue-router', async (importOriginal) => {
     ...actual,
     useRoute: () => routeState,
     useRouter: () => ({
-      push: pushMock
+      push: pushMock,
+      replace: replaceMock,
     })
   }
 })
@@ -85,6 +87,7 @@ vi.mock('@/api/dynamic', () => ({
     getMetadata: getMetadataMock,
     getSla: getSlaMock,
     getClosure: getClosureMock,
+    getDocument: getDocumentMock,
   }),
   purchaseRequestApi: {},
   assetReceiptApi: {},
@@ -123,6 +126,14 @@ vi.mock('@/components/common/ActivityTimeline.vue', () => ({
   }),
 }))
 
+vi.mock('@/components/common/DocumentWorkbench.vue', () => ({
+  default: defineComponent({
+    name: 'DocumentWorkbench',
+    props: ['objectCode', 'recordId', 'document', 'workbench'],
+    template: '<div class="document-workbench-stub">{{ objectCode }}|{{ recordId }}|{{ workbench?.defaultPageMode || "--" }}</div>',
+  }),
+}))
+
 vi.mock('@/components/common/ObjectActionBar.vue', () => ({
   default: defineComponent({
     name: 'ObjectActionBar',
@@ -158,12 +169,16 @@ vi.mock('@/components/common/WorkbenchQueuePanel.vue', () => ({
   }),
 }))
 
-vi.mock('@/components/common/ClosureStatusPanel.vue', () => ({
+vi.mock('@/components/common/ProcessSummaryPanel.vue', () => ({
   default: defineComponent({
-    name: 'ClosureStatusPanel',
-    props: ['panel', 'recordData'],
+    name: 'ProcessSummaryPanel',
+    props: ['stats', 'panel', 'recordData', 'extraRows', 'navigationSection'],
     template: `
-      <div class="closure-status-panel-stub">
+      <div class="process-summary-panel-stub">
+        {{ navigationSection?.title || "--" }}|
+        {{ Array.isArray(stats) ? stats.length : 0 }}|
+        {{ Array.isArray(extraRows) ? extraRows.length : 0 }}|
+        {{ navigationSection && Array.isArray(navigationSection.items) ? navigationSection.items.length : 0 }}|
         {{ recordData?.closure_summary?.stage || recordData?.closureSummary?.stage || "--" }}|
         {{ recordData?.closure_summary?.completion_display || recordData?.closureSummary?.completionDisplay || "--" }}
       </div>
@@ -198,17 +213,55 @@ vi.mock('vue-i18n', async (importOriginal) => {
   }
 })
 
-const buildWrapper = async () => {
+const ElTabsStub = defineComponent({
+  name: 'ElTabsStub',
+  props: {
+    modelValue: {
+      type: String,
+      default: '',
+    },
+  },
+  template: '<div class="el-tabs-stub" :data-model-value="modelValue"><slot /></div>',
+})
+
+const ElTabPaneStub = defineComponent({
+  name: 'ElTabPaneStub',
+  props: {
+    label: {
+      type: String,
+      default: '',
+    },
+    name: {
+      type: String,
+      default: '',
+    },
+  },
+  template: '<section class="el-tab-pane-stub" :data-label="label" :data-name="name"><slot /></section>',
+})
+
+const setHash = (hash = '') => {
+  window.history.replaceState({}, '', `${window.location.pathname}${hash}`)
+}
+
+const buildWrapper = async (stubOverrides: Record<string, unknown> = {}) => {
   const DynamicDetailPage = (await import('@/views/dynamic/DynamicDetailPage.vue')).default
   return mount(DynamicDetailPage, {
-    global: createDynamicDetailGlobalOptions()
+    global: {
+      ...createDynamicDetailGlobalOptions(),
+      stubs: {
+        ...createDynamicDetailGlobalOptions().stubs,
+        ...stubOverrides,
+      },
+    },
   })
 }
 
 describe('DynamicDetailPage navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    setHash('')
     routeState.params = { code: 'Asset', id: 'asset-1' }
+    routeState.query = {}
     maintenanceListMock.mockResolvedValue({
       count: 2,
       results: [],
@@ -255,6 +308,55 @@ describe('DynamicDetailPage navigation', () => {
       completion: null,
       completionDisplay: null,
       metrics: {},
+    })
+    getDocumentMock.mockResolvedValue({
+      documentVersion: 1,
+      context: {
+        objectCode: 'Asset',
+        recordId: 'asset-1',
+        pageMode: 'readonly',
+        recordLabel: 'REC-001',
+      },
+      aggregate: {
+        objectCode: 'Asset',
+        objectRole: 'root',
+        isAggregateRoot: false,
+        isDetailObject: false,
+        detailRegions: [],
+      },
+      master: {
+        status: 'draft',
+      },
+      details: {},
+      capabilities: {
+        canEditMaster: true,
+        canEditDetails: true,
+        canSave: true,
+        canSubmit: true,
+        canDelete: true,
+        canApprove: true,
+        readOnly: true,
+      },
+      workflow: {
+        businessObjectCode: 'Asset',
+        hasPublishedDefinition: false,
+        definition: null,
+        hasInstance: false,
+        isActive: false,
+        instance: null,
+        timeline: [],
+      },
+      timeline: [],
+      audit: {
+        counts: {
+          activityLogs: 0,
+          workflowApprovals: 0,
+          workflowOperationLogs: 0,
+        },
+        activityLogs: [],
+        workflowApprovals: [],
+        workflowOperationLogs: [],
+      },
     })
     resolveRuntimeLayoutMock.mockResolvedValue({
       permissions: { view: true, add: true, change: true, delete: true }
@@ -326,14 +428,27 @@ describe('DynamicDetailPage navigation', () => {
 
     await flushPromises()
 
-    expect(wrapper.find('.closed-loop-card-stub').exists()).toBe(true)
-    expect(wrapper.find('.closed-loop-card-stub').text()).toContain('common.detailNavigation.sections.lifecycleLinks')
+    expect(wrapper.find('.process-summary-panel-stub').exists()).toBe(true)
+    expect(wrapper.find('.process-summary-panel-stub').text()).toContain('common.detailNavigation.sections.lifecycleLinks')
     expect(wrapper.find('.activity-timeline-stub').text()).toContain('Asset|asset-1|/assets/asset-1/lifecycle-timeline/')
     expect(maintenanceListMock).toHaveBeenCalledWith({ asset_id: 'asset-1', page: 1, page_size: 1 })
     expect(disposalListMock).toHaveBeenCalledWith({ asset_id: 'asset-1', page: 1, page_size: 1 })
   })
 
-  it('renders runtime workbench action and panel hosts for finance vouchers', async () => {
+  it('switches the detail surface tab when the activity hash is present', async () => {
+    setHash('#detail-activity')
+
+    const wrapper = await buildWrapper({
+      'el-tabs': ElTabsStub,
+      'el-tab-pane': ElTabPaneStub,
+    })
+
+    await flushPromises()
+
+    expect(wrapper.get('.el-tabs-stub').attributes('data-model-value')).toBe('activity')
+  })
+
+  it('keeps finance voucher record mode focused on primary and context surfaces', async () => {
     routeState.params = { code: 'FinanceVoucher', id: 'voucher-1' }
     getMetadataMock.mockResolvedValueOnce({
       code: 'FinanceVoucher',
@@ -351,14 +466,14 @@ describe('DynamicDetailPage navigation', () => {
           primaryActions: [{ code: 'post' }],
           secondaryActions: [],
         },
-        detailPanels: [{ code: 'integration_logs', component: 'finance-voucher-integration-logs' }],
+        detailPanels: [{ code: 'integration_logs', component: 'finance-voucher-integration-logs', surfacePriority: 'related' }],
         asyncIndicators: [],
-        summaryCards: [{ code: 'total_amount', valueField: 'total_amount' }],
-        queuePanels: [{ code: 'approval_queue', count: 1, route: '/objects/FinanceVoucher?status=submitted' }],
-        exceptionPanels: [{ code: 'push_failed', count: 0, route: '/objects/FinanceVoucher?status=approved' }],
-        closurePanel: { stageField: 'status', ownerField: 'created_by.username' },
-        slaIndicators: [{ code: 'approval_sla', status: 'approaching_sla' }],
-        recommendedActions: [{ code: 'submit', actionPath: 'submit' }],
+        summaryCards: [{ code: 'total_amount', valueField: 'total_amount', surfacePriority: 'primary' }],
+        queuePanels: [{ code: 'approval_queue', count: 1, route: '/objects/FinanceVoucher?status=submitted', surfacePriority: 'related' }],
+        exceptionPanels: [{ code: 'push_failed', count: 0, route: '/objects/FinanceVoucher?status=approved', surfacePriority: 'related' }],
+        closurePanel: { stageField: 'status', ownerField: 'created_by.username', surfacePriority: 'context' },
+        slaIndicators: [{ code: 'approval_sla', status: 'approaching_sla', surfacePriority: 'context' }],
+        recommendedActions: [{ code: 'submit', actionPath: 'submit', surfacePriority: 'admin' }],
       },
     })
 
@@ -368,9 +483,49 @@ describe('DynamicDetailPage navigation', () => {
 
     expect(wrapper.find('.object-workbench-action-bar-stub').exists()).toBe(true)
     expect(wrapper.find('.workbench-summary-cards-stub').exists()).toBe(true)
-    expect(wrapper.find('.workbench-queue-panel-stub').exists()).toBe(true)
-    expect(wrapper.find('.closure-status-panel-stub').exists()).toBe(true)
+    expect(wrapper.find('.workbench-queue-panel-stub').exists()).toBe(false)
+    expect(wrapper.find('.process-summary-panel-stub').exists()).toBe(true)
     expect(wrapper.find('.sla-indicator-bar-stub').exists()).toBe(true)
+    expect(wrapper.find('.recommended-action-panel-stub').exists()).toBe(false)
+    expect(wrapper.find('.object-workbench-panel-host-stub').exists()).toBe(false)
+  })
+
+  it('expands related and admin surfaces for extended workbench objects in workspace mode', async () => {
+    routeState.params = { code: 'FinanceVoucher', id: 'voucher-1' }
+    routeState.query = { page_mode: 'workspace' }
+    getMetadataMock.mockResolvedValueOnce({
+      code: 'FinanceVoucher',
+      name: 'Finance Voucher',
+      module: 'Finance',
+      permissions: { view: true, add: true, change: true, delete: true }
+    })
+    resolveRuntimeLayoutMock.mockResolvedValueOnce({
+      permissions: { view: true, add: true, change: true, delete: false },
+      workbench: {
+        workspaceMode: 'extended',
+        primaryEntryRoute: '/objects/FinanceVoucher',
+        legacyAliases: ['/finance/vouchers'],
+        toolbar: {
+          primaryActions: [{ code: 'post' }],
+          secondaryActions: [],
+        },
+        detailPanels: [{ code: 'integration_logs', component: 'finance-voucher-integration-logs', surfacePriority: 'related' }],
+        asyncIndicators: [],
+        summaryCards: [{ code: 'total_amount', valueField: 'total_amount', surfacePriority: 'primary' }],
+        queuePanels: [{ code: 'approval_queue', count: 1, route: '/objects/FinanceVoucher?status=submitted', surfacePriority: 'related' }],
+        exceptionPanels: [{ code: 'push_failed', count: 0, route: '/objects/FinanceVoucher?status=approved', surfacePriority: 'related' }],
+        closurePanel: { stageField: 'status', ownerField: 'created_by.username', surfacePriority: 'context' },
+        slaIndicators: [{ code: 'approval_sla', status: 'approaching_sla', surfacePriority: 'context' }],
+        recommendedActions: [{ code: 'submit', actionPath: 'submit', surfacePriority: 'admin' }],
+      },
+    })
+
+    const wrapper = await buildWrapper()
+
+    await flushPromises()
+
+    expect(wrapper.find('.workbench-summary-cards-stub').exists()).toBe(true)
+    expect(wrapper.find('.workbench-queue-panel-stub').exists()).toBe(true)
     expect(wrapper.find('.recommended-action-panel-stub').exists()).toBe(true)
     expect(wrapper.find('.object-workbench-panel-host-stub').exists()).toBe(true)
   })
@@ -481,8 +636,8 @@ describe('DynamicDetailPage navigation', () => {
     await flushPromises()
 
     expect(getClosureMock).toHaveBeenCalledWith('asset-1')
-    expect(wrapper.find('.closure-status-panel-stub').text()).toContain('Awaiting closure')
-    expect(wrapper.find('.closure-status-panel-stub').text()).toContain('80%')
+    expect(wrapper.find('.process-summary-panel-stub').text()).toContain('Awaiting closure')
+    expect(wrapper.find('.process-summary-panel-stub').text()).toContain('80%')
   })
 
   it('renders AssetProject workbench actions and panels on the unified detail page', async () => {
@@ -564,7 +719,220 @@ describe('DynamicDetailPage navigation', () => {
 
     expect(wrapper.find('.object-workbench-action-bar-stub').exists()).toBe(true)
     expect(wrapper.find('.workbench-summary-cards-stub').exists()).toBe(true)
-    expect(wrapper.find('.closure-status-panel-stub').exists()).toBe(true)
+    expect(wrapper.find('.process-summary-panel-stub').exists()).toBe(true)
     expect(wrapper.find('.recommended-action-panel-stub').exists()).toBe(true)
+  })
+
+  it('defaults aggregate objects to record mode when configured by runtime workbench', async () => {
+    routeState.params = { code: 'AssetPickup', id: 'pickup-1' }
+    getMetadataMock.mockResolvedValueOnce({
+      code: 'AssetPickup',
+      name: 'Asset Pickup',
+      module: 'Operations',
+      permissions: { view: true, add: true, change: true, delete: true },
+    })
+    resolveRuntimeLayoutMock.mockResolvedValueOnce({
+      permissions: { view: true, add: true, change: true, delete: true },
+      aggregate: {
+        objectCode: 'AssetPickup',
+        objectRole: 'root',
+        isAggregateRoot: true,
+        isDetailObject: false,
+        detailRegions: [
+          {
+            relationCode: 'pickup_items',
+            fieldCode: 'items',
+            title: 'Pickup Items',
+            targetObjectCode: 'PickupItem',
+          },
+        ],
+      },
+      workbench: {
+        workspaceMode: 'extended',
+        primaryEntryRoute: '/objects/AssetPickup',
+        defaultPageMode: 'record',
+        defaultDetailSurfaceTab: 'process',
+        defaultDocumentSurfaceTab: 'summary',
+        legacyAliases: [],
+        toolbar: { primaryActions: [], secondaryActions: [] },
+        detailPanels: [],
+        asyncIndicators: [],
+        summaryCards: [],
+        queuePanels: [],
+        exceptionPanels: [],
+        closurePanel: null,
+        slaIndicators: [],
+        recommendedActions: [],
+      },
+    })
+    getDocumentMock.mockResolvedValueOnce({
+      documentVersion: 1,
+      context: {
+        objectCode: 'AssetPickup',
+        recordId: 'pickup-1',
+        pageMode: 'readonly',
+        recordLabel: 'PU-0001',
+      },
+      aggregate: {
+        objectCode: 'AssetPickup',
+        objectRole: 'root',
+        isAggregateRoot: true,
+        isDetailObject: false,
+        detailRegions: [
+          {
+            relationCode: 'pickup_items',
+            fieldCode: 'items',
+            title: 'Pickup Items',
+            targetObjectCode: 'PickupItem',
+          },
+        ],
+      },
+      master: { status: 'draft' },
+      details: {},
+      capabilities: {
+        canEditMaster: true,
+        canEditDetails: true,
+        canSave: true,
+        canSubmit: true,
+        canDelete: true,
+        canApprove: true,
+        readOnly: true,
+      },
+      workflow: {
+        businessObjectCode: 'AssetPickup',
+        hasPublishedDefinition: false,
+        definition: null,
+        hasInstance: false,
+        isActive: false,
+        instance: null,
+        timeline: [],
+      },
+      timeline: [],
+      audit: {
+        counts: {
+          activityLogs: 0,
+          workflowApprovals: 0,
+          workflowOperationLogs: 0,
+        },
+        activityLogs: [],
+        workflowApprovals: [],
+        workflowOperationLogs: [],
+      },
+    })
+
+    const wrapper = await buildWrapper()
+
+    await flushPromises()
+
+    expect(wrapper.find('.dynamic-detail-page-stub').exists()).toBe(true)
+    expect(wrapper.find('.document-workbench-stub').exists()).toBe(false)
+    expect(getDocumentMock).toHaveBeenCalledWith('pickup-1', 'readonly')
+  })
+
+  it('supports page_mode query override for aggregate workspace mode', async () => {
+    routeState.params = { code: 'AssetPickup', id: 'pickup-1' }
+    routeState.query = { page_mode: 'workspace' }
+    getMetadataMock.mockResolvedValueOnce({
+      code: 'AssetPickup',
+      name: 'Asset Pickup',
+      module: 'Operations',
+      permissions: { view: true, add: true, change: true, delete: true },
+    })
+    resolveRuntimeLayoutMock.mockResolvedValueOnce({
+      permissions: { view: true, add: true, change: true, delete: true },
+      aggregate: {
+        objectCode: 'AssetPickup',
+        objectRole: 'root',
+        isAggregateRoot: true,
+        isDetailObject: false,
+        detailRegions: [
+          {
+            relationCode: 'pickup_items',
+            fieldCode: 'items',
+            title: 'Pickup Items',
+            targetObjectCode: 'PickupItem',
+          },
+        ],
+      },
+      workbench: {
+        workspaceMode: 'extended',
+        primaryEntryRoute: '/objects/AssetPickup',
+        defaultPageMode: 'record',
+        defaultDetailSurfaceTab: 'process',
+        defaultDocumentSurfaceTab: 'summary',
+        legacyAliases: [],
+        toolbar: { primaryActions: [], secondaryActions: [] },
+        detailPanels: [],
+        asyncIndicators: [],
+        summaryCards: [],
+        queuePanels: [],
+        exceptionPanels: [],
+        closurePanel: null,
+        slaIndicators: [],
+        recommendedActions: [],
+      },
+    })
+    getDocumentMock.mockResolvedValueOnce({
+      documentVersion: 1,
+      context: {
+        objectCode: 'AssetPickup',
+        recordId: 'pickup-1',
+        pageMode: 'readonly',
+        recordLabel: 'PU-0001',
+      },
+      aggregate: {
+        objectCode: 'AssetPickup',
+        objectRole: 'root',
+        isAggregateRoot: true,
+        isDetailObject: false,
+        detailRegions: [
+          {
+            relationCode: 'pickup_items',
+            fieldCode: 'items',
+            title: 'Pickup Items',
+            targetObjectCode: 'PickupItem',
+          },
+        ],
+      },
+      master: { status: 'draft' },
+      details: {},
+      capabilities: {
+        canEditMaster: true,
+        canEditDetails: true,
+        canSave: true,
+        canSubmit: true,
+        canDelete: true,
+        canApprove: true,
+        readOnly: true,
+      },
+      workflow: {
+        businessObjectCode: 'AssetPickup',
+        hasPublishedDefinition: false,
+        definition: null,
+        hasInstance: false,
+        isActive: false,
+        instance: null,
+        timeline: [],
+      },
+      timeline: [],
+      audit: {
+        counts: {
+          activityLogs: 0,
+          workflowApprovals: 0,
+          workflowOperationLogs: 0,
+        },
+        activityLogs: [],
+        workflowApprovals: [],
+        workflowOperationLogs: [],
+      },
+    })
+
+    const wrapper = await buildWrapper()
+
+    await flushPromises()
+
+    expect(wrapper.find('.document-workbench-stub').exists()).toBe(true)
+    expect(wrapper.find('.document-workbench-stub').text()).toContain('AssetPickup|pickup-1|record')
+    expect(wrapper.find('.dynamic-detail-page-stub').exists()).toBe(false)
   })
 })

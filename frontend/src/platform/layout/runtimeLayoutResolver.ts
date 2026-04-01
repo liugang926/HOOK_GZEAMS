@@ -81,6 +81,9 @@ const EMPTY_RUNTIME_WORKBENCH = Object.freeze<RuntimeWorkbench>({
   workspaceMode: 'standard',
   primaryEntryRoute: '',
   legacyAliases: [],
+  defaultPageMode: 'record',
+  defaultDetailSurfaceTab: 'process',
+  defaultDocumentSurfaceTab: 'summary',
   toolbar: {
     primaryActions: [],
     secondaryActions: [],
@@ -93,6 +96,7 @@ const EMPTY_RUNTIME_WORKBENCH = Object.freeze<RuntimeWorkbench>({
   closurePanel: null,
   slaIndicators: [],
   recommendedActions: [],
+  documentSummarySections: [],
 })
 
 function normalizeFieldsPayload(payload: unknown): {
@@ -136,6 +140,20 @@ function normalizeStringList(value: unknown): string[] {
     .filter(Boolean)
 }
 
+function normalizeWorkbenchPageMode(value: unknown): RuntimeWorkbench['defaultPageMode'] {
+  return value === 'workspace' ? 'workspace' : 'record'
+}
+
+function normalizeDetailSurfaceTab(value: unknown): RuntimeWorkbench['defaultDetailSurfaceTab'] {
+  return value === 'activity' ? 'activity' : 'process'
+}
+
+function normalizeDocumentSurfaceTab(value: unknown): RuntimeWorkbench['defaultDocumentSurfaceTab'] {
+  if (value === 'activity') return 'activity'
+  if (value === 'form') return 'form'
+  return 'summary'
+}
+
 function normalizeWorkbench(payload: unknown, objectCode: string): RuntimeWorkbench {
   if (!payload || typeof payload !== 'object') {
     return {
@@ -150,10 +168,14 @@ function normalizeWorkbench(payload: unknown, objectCode: string): RuntimeWorkbe
       summaryCards: [],
       queuePanels: [],
       exceptionPanels: [],
+      defaultPageMode: 'record',
+      defaultDetailSurfaceTab: 'process',
+      defaultDocumentSurfaceTab: 'summary',
       closurePanel: null,
       slaIndicators: [],
       recommendedActions: [],
       legacyAliases: [],
+      documentSummarySections: [],
     }
   }
 
@@ -188,6 +210,9 @@ function normalizeWorkbench(payload: unknown, objectCode: string): RuntimeWorkbe
   const recommendedActions = Array.isArray(candidate.recommendedActions || candidate.recommended_actions)
     ? [...((candidate.recommendedActions || candidate.recommended_actions) as Array<Record<string, unknown>>)]
     : []
+  const documentSummarySections = Array.isArray(candidate.documentSummarySections || candidate.document_summary_sections)
+    ? [...((candidate.documentSummarySections || candidate.document_summary_sections) as Array<Record<string, unknown>>)]
+    : []
 
   return {
     workspaceMode: String(candidate.workspaceMode || candidate.workspace_mode || 'standard'),
@@ -197,6 +222,13 @@ function normalizeWorkbench(payload: unknown, objectCode: string): RuntimeWorkbe
       (objectCode ? `/objects/${objectCode}` : '')
     ),
     legacyAliases: normalizeStringList(candidate.legacyAliases || candidate.legacy_aliases),
+    defaultPageMode: normalizeWorkbenchPageMode(candidate.defaultPageMode || candidate.default_page_mode),
+    defaultDetailSurfaceTab: normalizeDetailSurfaceTab(
+      candidate.defaultDetailSurfaceTab || candidate.default_detail_surface_tab
+    ),
+    defaultDocumentSurfaceTab: normalizeDocumentSurfaceTab(
+      candidate.defaultDocumentSurfaceTab || candidate.default_document_surface_tab
+    ),
     toolbar: {
       primaryActions,
       secondaryActions,
@@ -209,6 +241,7 @@ function normalizeWorkbench(payload: unknown, objectCode: string): RuntimeWorkbe
     closurePanel: closurePanel as RuntimeWorkbench['closurePanel'],
     slaIndicators: slaIndicators as RuntimeWorkbench['slaIndicators'],
     recommendedActions: recommendedActions as RuntimeWorkbench['recommendedActions'],
+    documentSummarySections: documentSummarySections as RuntimeWorkbench['documentSummarySections'],
   }
 }
 

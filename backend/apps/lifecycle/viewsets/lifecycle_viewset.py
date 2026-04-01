@@ -329,7 +329,8 @@ class AssetReceiptViewSet(BaseModelViewSetWithBatch):
         POST /api/lifecycle/asset-receipts/{id}/cancel/
         """
         service = AssetReceiptService()
-        instance = service.cancel(pk, actor=request.user)
+        reason = request.data.get('reason', request.data.get('comment', ''))
+        instance = service.cancel(pk, reason=reason, actor=request.user)
         serializer = AssetReceiptDetailSerializer(instance)
         return BaseResponse.success(data=serializer.data, message='Receipt cancelled')
 
@@ -818,6 +819,14 @@ class DisposalRequestViewSet(BaseModelViewSetWithBatch):
 
         msg = 'Request approved' if decision == 'approved' else 'Request rejected'
         return BaseResponse.success(data=serializer.data, message=msg)
+
+    @action(detail=True, methods=['post'], url_path='approve-pass')
+    def approve_pass(self, request, pk=None):
+        """Approve a disposal request without requiring a request payload."""
+        service = DisposalRequestService()
+        instance = service.approve(pk, request.user, 'approved', request.data.get('comment'))
+        serializer = DisposalRequestDetailSerializer(instance)
+        return BaseResponse.success(data=serializer.data, message='Request approved')
 
     @action(detail=True, methods=['post'])
     def start_execution(self, request, pk=None):
